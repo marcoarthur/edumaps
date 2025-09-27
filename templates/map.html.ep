@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mojolicious + Leaflet Map</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Database-Optimized GeoJSON Map</h1>
+        
+        <div class="controls">
+            <button id="searchCity">Search City</button>
+            <button id="clearData">Clear Map</button>
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <span id="status"></span>
+        </div>
+        
+        <div id="map"></div>
+        <div class="info-panel">
+            <h3>Database-Generated GeoJSON</h3>
+            <p>GeoJSON is fully formatted by PostgreSQL, served as text by Perl</p>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <!-- Our JavaScript -->
+    <script src="/js/map.js"></script>
+</body>
+</html>
