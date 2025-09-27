@@ -28,19 +28,7 @@ get '/api/geojson' => sub ($c) {
 get '/api/details' => sub ($c) {
   my $fid = $c->param('fid');
   return unless $fid;
-  my @params = ( 
-    { fid => $fid }, 
-    { 
-      columns => [ 
-        qw( 
-          fid  cd_mun  nm_mun  cd_rgi  nm_rgi  cd_rgint  nm_rgint  cd_uf  nm_uf  
-          sigla_uf  cd_regia  nm_regia  sigla_rg  cd_concu  nm_concu  area_km2 
-        )
-      ],
-      result_class => 'DBIx::Class::ResultClass::HashRefInflator',
-    }
-  );
-  $c->render( json => $c->municipios->search_rs( @params )->first );
+  $c->render( json => $c->municipios->details($fid)->first );
 };
 
 app->start;
