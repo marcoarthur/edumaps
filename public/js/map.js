@@ -59,10 +59,12 @@ function loadCityGeoJSON(cityName) {
           onEachFeature: function(feature, layer) {
             if (feature.properties) {
               const props = feature.properties;
+              const details = `<a class="detail" href=/api/details?fid=${props.fid}>detail</a>`;
               const popupContent = `
                 <div>
                 <strong>${props.name || 'Unnamed Feature'}</strong><br>
                 Area: ${props.area || ''} km<sup>2</sup><br>
+                ${details}
                 </div>
                 `;
               layer.bindPopup(popupContent);
@@ -88,4 +90,16 @@ $('#clearData').click(function() {
   geoJsonLayer.clearLayers();
   $('#geometryInfo').html('');
   $('#status').text('Map cleared');
+});
+
+// Detail link
+$(document).on( 'click', 'a', function (e) {
+  e.preventDefault();
+  const url = $(this).attr('href');
+  $.getJSON(url, function(data) {
+    $('#debugInfo').text(JSON.stringify(data,null,2));
+  })
+  .fail(function (jqxhr, textStatus, error) {
+      console.error('Request failed:', textStatus, error);
+  });
 });
