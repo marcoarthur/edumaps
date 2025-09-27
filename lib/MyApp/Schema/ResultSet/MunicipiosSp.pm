@@ -30,7 +30,7 @@ sub feat_collection($self) {
                       qw('type' 'Feature' 'geometry'),
                       \"ST_AsGeoJSON(geog)::json",
                       qw('properties'),
-                      { json_build_object => [qw('name'), 'nm_mun', qw('area'), 'area_km2'] }
+                      { json_build_object => [qw('name'), 'nm_mun', qw('area'), 'area_km2', qw('fid'), 'fid'] }
                     ]
                   } 
                 },
