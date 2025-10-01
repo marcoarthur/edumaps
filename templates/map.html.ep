@@ -19,7 +19,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🗺️ Database-Optimized GeoJSON Map</h1>
+        <h1>🗺️ Municipalidades de São Paulo</h1>
         
         <div class="controls">
             <button id="searchCity">Search City</button>
