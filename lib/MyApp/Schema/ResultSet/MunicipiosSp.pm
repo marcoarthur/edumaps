@@ -1,7 +1,5 @@
 package MyApp::Schema::ResultSet::MunicipiosSp;
-use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
-use Role::Tiny::With;
-with qw(MyApp::Roles::PrettyPrint);
+use Mojo::Base 'MyApp::Schema::ResultSet::Base', -signatures;
 
 sub with_geojson($self) {
 
@@ -36,12 +34,15 @@ sub details($self,$id) {
     { codigo_concurso => 'cd_concu' },
     { nome_concurso => 'nm_concu' },
     { area => 'area_km2' },
+    { total_escolas => { count => 'escolas' } },
   ];
   my @params = ( 
     { fid => $id }, 
     { 
+      join => ['escolas'],
       columns => $cols,
       result_class => 'DBIx::Class::ResultClass::HashRefInflator',
+      group_by => 'fid',
     }
   );
   $self->search_rs( @params );

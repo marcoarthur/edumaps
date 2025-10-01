@@ -180,4 +180,18 @@ __PACKAGE__->set_primary_key("fid");
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->has_many(
+  'escolas', # This will be the relationship name
+  'MyApp::Schema::Result::Escola', # The related Result class
+  sub {
+    my $args = shift;
+    my $f_alias = $args->{foreign_alias};
+    my $s_alias = $args->{self_alias};
+    my $on_clause = sprintf "ST_Contains(%s.geog::geometry, %s.geom)", $s_alias, $f_alias;
+
+    return \["$on_clause"];
+  },
+);
+
 1;
