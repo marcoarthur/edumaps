@@ -15,34 +15,9 @@ sub with_geojson($self) {
 }
 
 sub feat_collection($self) {
-  $self->search_rs(
-    undef,
-    {
-      select => [
-        {
-          json_build_object => [
-            qw('type' 'FeatureCollection' 'features'),
-            { coalesce => 
-              [
-                { 
-                  json_agg => { 
-                    json_build_object => [
-                      qw('type' 'Feature' 'geometry'),
-                      \"ST_AsGeoJSON(geog)::json",
-                      qw('properties'),
-                      { json_build_object => [qw('name'), 'nm_mun', qw('area'), 'area_km2', qw('fid'), 'fid'] }
-                    ]
-                  } 
-                },
-                \"'[]'::json"
-              ]
-            }
-          ],
-          -as => 'feature',
-        }
-      ],
-      as => ['feature'],
-    }
+  $self->geojson_features(
+    'geog',
+    { name => 'nm_mun', area => 'area_km2', fid => 'fid' }
   );
 }
 
