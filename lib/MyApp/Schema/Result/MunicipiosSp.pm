@@ -174,9 +174,26 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("fid");
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-09-26 08:26:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AYNVhECs/xGc3Bz4AzdtpQ
+=head2 osm_landuses
+
+Type: has_many
+
+Related object: L<MyApp::Schema::Result::OsmLanduse>
+
+=cut
+
+__PACKAGE__->has_many(
+  "osm_landuses",
+  "MyApp::Schema::Result::OsmLanduse",
+  { "foreign.municipio_id" => "self.fid" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-10-05 12:03:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PFgIKKs1PbWljB99IXSXzg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
