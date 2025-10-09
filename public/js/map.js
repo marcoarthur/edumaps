@@ -252,6 +252,7 @@ function createDetailLink(fid, displayText = null) {
 function createCityPopup(props) {
   const details = createDetailLink(props.fid, 'Detalhes')
   const schools = createSchoolLink(props.name, 'Escolas');
+  const osm     = createOSMLink(props.fid, 'OSM');
   const popupContent = $('<div>');
   popupContent.append(
     $('<strong>').text(props.name),
@@ -259,6 +260,8 @@ function createCityPopup(props) {
     details,
     $('<br>'),
     schools,
+    $('<br>'),
+    osm
   );
   return popupContent;
 }
@@ -271,4 +274,34 @@ function createSchoolPopup(props) {
     ${props.telefone || ''}
     </div>`;
   return popupContent;
+}
+
+function show_json(json) {
+  const formattedJSON = JSON.stringify(json, null, 4);
+  const $pre = $('<pre>').text(formattedJSON);
+  return $pre;
+}
+
+function createOSMLink(CityID, displayText = 'OSM Link') {
+  let $link = $('<a>', {
+    href: `/api/query-osm?fid=${CityID}`,
+    text: displayText || `Load ${CityID}`
+  });
+
+  $link.addClass('osm');
+  $link.data('fid', CityID);
+  $link.on('click', function(event) {
+    event.preventDefault();
+    let city = $(this).data('CityID');
+    const url = $(this).attr('href');
+    $.getJSON(url, function(data) {
+      const $vp = $('div.info-panel');
+      $vp.find('.details-container').remove();
+      $vp.append(show_json(data));
+    })
+    // We need to monitor progress HOW ???
+      //loadRelatedPoints(city);
+  });
+
+  return $link;
 }
