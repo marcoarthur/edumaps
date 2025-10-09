@@ -1,4 +1,4 @@
-use v5.38;
+use Mojo::Base -strict, -signatures;
 use Test2::V0;
 use lib qw(./lib);
 use MyApp::OSM::Query;

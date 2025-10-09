@@ -18,5 +18,4 @@ requires 'Term::Table';
 
 on test => sub {
     requires 'Test2::V0';
-    requires 'perl', 'v5.38.0';
 };
