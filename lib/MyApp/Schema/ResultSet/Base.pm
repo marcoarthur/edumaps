@@ -1,7 +1,15 @@
 package MyApp::Schema::ResultSet::Base;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Role::Tiny::With;
-with qw(MyApp::Roles::PrettyPrint);
+our @APP_ROLES = map { "MyApp::Roles::$_" } qw(PrettyPrint Formats);
+with @APP_ROLES;
+
+# full qualified column name
+sub fqcn( $self, %spec ) {
+  my $me  = $spec{relation} // $self->current_source_alias;
+  my $col = $spec{column};
+  return "$me.$col";
+}
 
 sub geojson_features($self, $geom, $properties) {
   my $attrs = ref $properties eq 'ARRAY' ?

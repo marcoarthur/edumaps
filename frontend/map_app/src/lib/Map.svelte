@@ -130,7 +130,7 @@
 
   function setSSE(job_id) {
     osmDisabled.set(true);
-    sse = new EventSource(`/api/query-osm/result/${job_id}`);
+    sse = new EventSource(`/api/query-osm/progress/${job_id}`);
     sse.addEventListener('progress', (event) => {
       try {
         const edata = JSON.parse(event.data);
@@ -152,7 +152,7 @@
       const data = await res.json();
       currentDetails = { type: 'osm', data };
       statusMessage = `Loaded OSM data for FID: ${fid}`;
-      setSSE(data.job_id);
+      if ( data.job_id ) setSSE(data.job_id);
     } catch (err) {
       statusMessage = `Error loading OSM data: ${err.message}`;
     }
