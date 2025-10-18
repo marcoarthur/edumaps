@@ -137,6 +137,8 @@
         progress = edata;
         if (edata.progress.state === 'finished' || edata.progress.state === 'failed') {
           sse.close();
+          sse = null;
+          progress = null;
           osmDisabled.set(false);
         }
       } catch (err) {
@@ -177,8 +179,15 @@
     on:search={() => loadCityGeoJSON(cityName)}
     on:clear={clearMap}
   />
-
-  <div id="map" bind:this={mapContainer}></div>
+  <!-- Map container with progress bar integrated at the top -->
+  <div class="map-with-progress">
+    {#if sse && progress}
+      <div class="progress-overlay">
+        <ProgressBar {progress} />
+      </div>
+    {/if}
+    <div id="map" bind:this={mapContainer}></div>
+  </div>
 
   <div class="info-panel">
     <h3>Database-Generated GeoJSON</h3>
@@ -191,17 +200,32 @@
       </div>
     {/if}
 
-    {#if sse}
-      <ProgressBar {progress} />
-    {/if}
   </div>
 </div>
 
 <style>
-  #map { height: 600px; width: 100%; border: 2px solid #ccc; border-radius: 8px; }
-  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-  .info-panel {
-    background: white; padding: 10px; margin-top: 10px;
-    border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  .map-with-progress {
+    position: relative;
+    width: 100%;
   }
+  
+  .progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Ensure it appears above the map */
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+    border-radius: 8px 8px 0 0; /* Match map's border radius on top */
+  }
+  
+  #map { 
+    height: 600px; 
+    width: 100%; 
+    border: 2px solid #ccc; 
+    border-radius: 8px; 
+  }
+  
+  /* ... rest of your styles ... */
 </style>
