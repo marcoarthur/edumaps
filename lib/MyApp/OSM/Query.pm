@@ -3,30 +3,25 @@ use Mojo::Base 'Mojo::EventEmitter', -signatures, -async_await;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::URL;
 use Mojo::Log;
-use Time::HiRes qw(gettimeofday tv_interval);
 use Digest::SHA qw(sha1_hex);
 use Mojo::UserAgent;
-use List::Util qw(first);
+use DDP;
 require MyApp::Schema;
+require MyApp::OSM::Service;
 
 has municipio   => sub { die 'Need the municipio id' };
 has config      => sub { die 'Need configuration' };
 has log         => sub { Mojo::Log->new };
-has _polygon    => sub { die 'Need a polygon' };
-has _timeout    => sub { 3*60 };
-has _ua         => sub ($self) { Mojo::UserAgent->new->connect_timeout($self->_timeout) };
-has _overpass_url => sub {
-  state $url = Mojo::URL->new('https://overpass-api.de/api/interpreter');
-};
-has _osm_raw    => sub { die "Get by run_query()" };
+has save_db     => sub { 0 };
+has _service    => sub { die 'Need MyApp::OSM::Service object'};
 has _sch        => sub ($self) { 
   my $conf = $self->config;
   state $sch = MyApp::Schema->connect($conf->{db_params}->@*,$conf->{db_opts}); 
 };
 has _query      => sub { 'Die get query from db' };
 has _srid       => sub { 4674 };
-has _minion_job => sub { 'Need minion context' };
-has _landuse    => sub { 'Need OsmLanduse resultset' };
+has _minion_job => sub { undef };
+has _landuse    => sub { die 'Need OsmLanduse resultset' };
 
 sub new($class, @args) {
   my $self = $class->SUPER::new(@args);
@@ -41,147 +36,35 @@ sub _setup($self) {
   );
 
   die sprintf ("Cannot find city with id %s", $self->municipio) unless $city;
-  $self->_polygon( decode_json($city->get_column('geojson')) );
-  $self->_landuse($self->_sch->resultset('OsmLanduse'));
-}
-
-sub _poly_string($self) {
-  my @coords;
-  for my $poly ($self->_polygon->{coordinates}->@*) {
-    my $ring = $poly->[0];
-    push @coords, map { sprintf("%.6f %.6f", $_->[1], $_->[0]) } @$ring;
-  }
-  return join(' ', @coords);
-}
-
-sub _build_query($self) {
-  my $poly_str = $self->_poly_string;
-  my $tout = $self->_timeout;
-  return <<~"QUERY";
-  [out:json][timeout:$tout];
-  (
-    way["landuse"](poly:"$poly_str");
-    way["natural"](poly:"$poly_str");
-    way["leisure"](poly:"$poly_str");
-    way["man_made"](poly:"$poly_str");
+  $self->_service( 
+    MyApp::OSM::Service->new( polygon => decode_json($city->get_column('geojson')))
   );
-  out body;
-  >;
-  out skel qt;
-  QUERY
-}
-
-async sub run_query_p($self) {
-  $self->log->info(sprintf 'Start query for municipio id %s', $self->municipio);
-  my $q = $self->_build_query;
-  my $data = $self->_get_from_db($q);
-  $data = await $self->_get_from_osm($q) unless $data;
-
-  $self->_osm_raw($data);
-}
-
-sub run_query($self) {
-  $self->run_query_p->wait;
-}
-
-sub _get_from_db($self, $q) {
-  $self->log->info('Searching OSM data in DB');
-  my $query = $self->_sch->resultset('OsmQuery')
-  ->find( { digest => sha1_hex($q) });
-  return unless $query;
-  $self->_query($query);
-  return decode_json($query->raw_results);
-}
-
-async sub _get_from_osm($self, $q) {
-  $self->log->info("Getting data from OSM service");
-  $self->emit( progress => { total => 0, processed => 0, phase => 'osm' } );
-  my $t0 = [gettimeofday];
-  my $tx  = await $self->_ua->post_p( $self->_overpass_url => form => { data => $q } );
-  my $res = $tx->res;
-
-  if ($res->is_success) {
-    $self->_save_query(
-      { 
-        query => $q,
-        data => $res->body,
-        elapsed => tv_interval($t0),
-      }
+  $self->_landuse($self->_sch->resultset('OsmLanduse'));
+  if ($self->_minion_job) {
+    $self->_service->on(
+      progress => sub( $evt, $data ) { $self->_minion_job->note( progress => $data ) }
     );
-  } else {
-    $self->log->error( sprintf "Failed query: %s, Error %s", $q, $res->message );
   }
-  return decode_json($res->body);
 }
 
-sub _collect_from_db($self) {
-  $self->log->info('Gathering geometry features from DB');
-  my $geo = $self->_landuse
-  ->search_rs( { municipio_id => $self->municipio })
-  ->feat_collection->get_column('feature')->first;
-  $geo = decode_json($geo);
-
-  my $total = scalar $geo->{features}->@*;
-  $self->log->info("Found $total features in DataBase");
-  return $geo;
+sub from_db($self) {
+  return $self->_get_from_db;
 }
 
-sub to_geojson($self) {
-  # get from database the geometries
-  my $geo = $self->_collect_from_db;
-  if ( my $total = $geo->{features}->@* ) {
-    $self->emit( progress => { total => $total, processed => $total, phase => 'geojson' } );
-    return $geo;
-  }
-  
-  # otherwise: process and save in database
-  $self->_set_feature_save;
-  $self->_raw_to_geojson;
+sub _get_from_db($self, $q = $self->_service->query) {
+  $self->log->info(sprintf 'Searching OSM data for id %s in DB', $self->municipio);
+  my $data = $self->_sch->resultset('OsmQuery')
+  ->search_rs({ digest => sha1_hex($q) })
+  ->search_related( 'osm_landuses', {})->feat_collection->get_column('feature')->first;
+  return decode_json($data);
 }
 
-sub _raw_to_geojson($self, $osm_data = $self->_osm_raw) {
-  $self->log->info('Processing raw data into GeoJSON format');
-  my @nodes = grep { $_->{type} eq 'node' } $osm_data->{elements}->@*;
-  my @ways;
-  my $total = scalar( $osm_data->{elements}->@* ) - scalar( @nodes );
-  my $processed = 0;
-
-  $self->emit(progress => {total => ($total-1), processed => $processed, phase => 'geojson'});
-
-  foreach my $el ($osm_data->{elements}->@*) {
-    next unless $el->{type} eq 'way';
-    my $props = { properties => { $el->{tags}->%* , id => $el->{id} } };
-    my $coords = [];
-
-    # find the nodes of polygon
-    foreach my $node ($el->{nodes}->@*) {
-      my $n = first { $_->{id} eq $node } @nodes;
-      push @$coords, [$n->{lon}, $n->{lat}];
-    }
-    my $type;
-    if (
-      $coords->[0][0] == $coords->[-1][0]
-      &&
-      $coords->[0][1] == $coords->[-1][1]
-    ) {
-      $type = 'Polygon';
-    } else {
-      $type = 'LineString';
-    }
-    my $feat = {
-      type => 'Feature',
-      geometry => { 
-        type => $type,
-        coordinates => $type eq 'LineString' ? $coords : [ $coords ],
-      },
-      $props->%*
-    };
-    push @ways, $feat;
-    $self->emit( feature => $feat );
-    $self->emit( progress => { total => $total, processed => ++$processed, phase => 'geojson' });
-  }
-  # make geojson
-  return { type => 'FeatureCollection', features => [@ways] };
+sub from_osm($self) {
+  $self->_set_dbsave if $self->save_db;
+  $self->emit( progress => { processed => 'None', total => 'Unknown', phase => 'osm', });
+  my $osm_data = $self->_service->run_query;
+  $self->emit( progress => { processed => 'Raw', total => 'Unknown', phase => 'osm', });
+  return $osm_data;
 }
 
 sub _save_query($self, $info) {
@@ -200,12 +83,13 @@ sub _save_query($self, $info) {
   return $query;
 }
 
-sub _set_feature_save($self) {
+sub _set_dbsave($self) {
+  $self->log->info('Setting to save OSM data into DB');
   # data
   my $land = $self->_sch->resultset('OsmLanduse');
   my $srid = $self->_srid;
-  # call back to save in database
-  my $save_db = sub ($evt, $f) {
+  # callback to save in database
+  my $save_feature = sub ($evt, $f) {
     my $geom = encode_json($f->{geometry});
     my $id = $f->{properties}{id};
     my $sql = qq~ST_Transform(ST_GeomFromGeoJSON('$geom'::json), $srid)~;
@@ -225,12 +109,13 @@ sub _set_feature_save($self) {
   };
   # callback to pass job metadata (progress)
   my $inform_user = sub ($job, $progress) {
-    $self->_minion_job->note(progress => $progress);
+    $self->_minion_job->note(progress => $progress) if $self->_minion_job;
   };
 
   # set the callbacks
-  $self->on( progress => $inform_user);
-  $self->on( feature => $save_db );
+  $self->_service->on( progress => $inform_user );
+  $self->_service->on( query_data => sub ( $evt, $data) { $self->_save_query($data) });
+  $self->_service->on( feature => $save_feature );
 }
 
 1;
@@ -243,20 +128,15 @@ MyApp::OSM::Query - Fetch and cache OpenStreetMap data for geographic areas
 
 =head1 SYNOPSIS
 
-use MyApp::OSM::Query;
+  use MyApp::OSM::Query;
 
-# Synchronous interface
-my $query = MyApp::OSM::Query->new(
-  municipio => 123,
-  log       => Mojo::Log->new
-);
-$query->run_query;
-my $geojson = $query->_raw_to_geojson;
+  # Synchronous interface
+  my $query = MyApp::OSM::Query->new(
+    municipio => 123,
+    log       => Mojo::Log->new
+  );
+  my $geo_data = $query->from_db;
 
-# Asynchronous interface  
-my $query = MyApp::OSM::Query->new(municipio => 456);
-await $query->run_query_p;
-my $geojson = $query->_raw_to_geojson;
 
 =head1 DESCRIPTION
 
@@ -310,14 +190,6 @@ await $query->run_query_p;
 
 Asynchronous version of L</run_query>. Returns a L<Mojo::Promise>.
 
-=head2 _raw_to_geojson
-
-my $geojson_string = $query->_raw_to_geojson;
-my $geojson_string = $query->_raw_to_geojson($custom_osm_data);
-
-Converts OSM data to GeoJSON format. Automatically detects geometry types
-(Polygon for closed ways, LineString for open ways). Returns a JSON string
-representing a GeoJSON FeatureCollection.
 
 =head1 INTERNAL METHODS
 
@@ -327,16 +199,6 @@ These methods are for internal use but documented for maintenance purposes.
 
 Called automatically during object construction. Retrieves the municipality
 boundary polygon from the database and prepares it for querying.
-
-=head2 _build_query
-
-Builds the Overpass QL query string using the municipality boundary polygon.
-Queries for landuse, natural features, leisure facilities, and man-made structures.
-
-=head2 _poly_string
-
-Converts the internal GeoJSON polygon representation to the coordinate string
-format required by Overpass API.
 
 =head2 _get_from_db
 
@@ -352,15 +214,6 @@ my $live_data = await $query->_get_from_osm($query_string);
 Fetches data from the Overpass API. Records query timing and saves results
 to database cache.
 
-=head2 _save_query
-
-my $query_id = $query->_save_query({
-    query   => $query_string,
-    data    => $response_data,
-    elapsed => $processing_time
-  });
-
-Stores query results in the database cache with timing information.
 
 =head1 DATABASE SCHEMA
 
@@ -418,24 +271,8 @@ my $query = MyApp::OSM::Query->new(
 );
 
 $query->run_query;
-my $geojson = $query->_raw_to_geojson;
 
 # Use $geojson in web applications or mapping tools
-
-=head2 Integration with Web Framework
-
-get '/municipio/:id/osm' => sub ($c) {
-  my $query = MyApp::OSM::Query->new(
-    municipio => $c->param('id'),
-    log       => $c->app->log
-  );
-
-  $query->run_query;
-  $c->render(
-    json => $query->_raw_to_geojson,
-    format => 'geojson'
-  );
-};
 
 =head1 SEE ALSO
 
