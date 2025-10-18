@@ -212,12 +212,16 @@
   .progress-overlay {
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
     z-index: 1000; /* Ensure it appears above the map */
+    transform: translateX(-50%); /* Center horizontally */
     padding: 10px;
     background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
     border-radius: 8px 8px 0 0; /* Match map's border radius on top */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   #map { 
@@ -227,5 +231,4 @@
     border-radius: 8px; 
   }
   
-  /* ... rest of your styles ... */
 </style>
