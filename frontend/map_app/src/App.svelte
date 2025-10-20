@@ -1,5 +1,5 @@
 <script>
-  import Map from './lib/Map.svelte';
+  import Map from './lib/AppMap.svelte';
 </script>
 
 <main>
