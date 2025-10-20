@@ -197,11 +197,6 @@
     <h3>Database-Generated GeoJSON</h3>
     {#if currentDetails && currentDetails.type !== 'osm'}
       <CityDetail data={currentDetails} />
-    {:else if currentDetails && currentDetails.type === 'osm'}
-      <div class="details-container">
-        <h3>OSM Data</h3>
-        <pre>{JSON.stringify(currentDetails.data, null, 2)}</pre>
-      </div>
     {/if}
   </div>
 </div>
