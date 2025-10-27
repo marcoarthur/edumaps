@@ -48,11 +48,11 @@ sub _setup($self) {
 }
 
 sub from_db($self) {
+  $self->log->info(sprintf 'Searching OSM data for id %s in DB', $self->municipio);
   return $self->_get_from_db;
 }
 
 sub _get_from_db($self, $q = $self->_service->query) {
-  $self->log->info(sprintf 'Searching OSM data for id %s in DB', $self->municipio);
   my $data = $self->_sch->resultset('OsmQuery')
   ->search_rs({ digest => sha1_hex($q) })
   ->search_related( 'osm_landuses', {})->feat_collection->get_column('feature')->first;
@@ -107,13 +107,8 @@ sub _set_dbsave($self) {
     };
     $self->log->warn("OSM feature $id already in database!") if $@;
   };
-  # callback to pass job metadata (progress)
-  my $inform_user = sub ($job, $progress) {
-    $self->_minion_job->note(progress => $progress) if $self->_minion_job;
-  };
 
   # set the callbacks
-  $self->_service->on( progress => $inform_user );
   $self->_service->on( query_data => sub ( $evt, $data) { $self->_save_query($data) });
   $self->_service->on( feature => $save_feature );
 }

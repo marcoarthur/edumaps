@@ -1,0 +1,51 @@
+% my $params = shift;
+[out:json][timeout:<%= $params->{timeout} %>];
+(
+  // INFRAESTRUTURA ENERGÉTICA
+  
+  // Subestações elétricas (centros de distribuição/transmissão)
+  node["power"="substation"](poly:"<%= $params->{poly} %>");
+  way["power"="substation"](poly:"<%= $params->{poly} %>");
+  relation["power"="substation"](poly:"<%= $params->{poly} %>");
+  
+  // Usinas/plantas de energia
+  node["power"="plant"](poly:"<%= $params->{poly} %>");
+  way["power"="plant"](poly:"<%= $params->{poly} %>");
+  relation["power"="plant"](poly:"<%= $params->{poly} %>");
+  
+  // Transformadores
+  node["power"="transformer"](poly:"<%= $params->{poly} %>");
+  way["power"="transformer"](poly:"<%= $params->{poly} %>");
+  
+  // INFRAESTRUTURA DE ÁGUA
+  
+  // Estações de tratamento de água
+  node["man_made"="water_works"](poly:"<%= $params->{poly} %>");
+  way["man_made"="water_works"](poly:"<%= $params->{poly} %>");
+  relation["man_made"="water_works"](poly:"<%= $params->{poly} %>");
+  
+  // Estações de tratamento de esgoto
+  node["man_made"="wastewater_plant"](poly:"<%= $params->{poly} %>");
+  way["man_made"="wastewater_plant"](poly:"<%= $params->{poly} %>");
+  relation["man_made"="wastewater_plant"](poly:"<%= $params->{poly} %>");
+  
+  // Torres/tanques de água
+  node["man_made"="water_tower"](poly:"<%= $params->{poly} %>");
+  way["man_made"="water_tower"](poly:"<%= $params->{poly} %>");
+  
+  // Reservatórios de água
+  node["man_made"="reservoir_covered"](poly:"<%= $params->{poly} %>");
+  way["man_made"="reservoir_covered"](poly:"<%= $params->{poly} %>");
+  
+  // Poços de água
+  node["man_made"="water_well"](poly:"<%= $params->{poly} %>");
+  way["man_made"="water_well"](poly:"<%= $params->{poly} %>");
+  
+  // Estações de bombeamento
+  node["man_made"="pumping_station"](poly:"<%= $params->{poly} %>");
+  way["man_made"="pumping_station"](poly:"<%= $params->{poly} %>");
+);
+
+out body;
+>;
+out skel qt;

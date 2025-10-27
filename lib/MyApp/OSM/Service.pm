@@ -7,6 +7,7 @@ use Mojo::Log;
 use Mojo::File qw(path);
 use Mojo::UserAgent;
 use Time::HiRes qw(gettimeofday tv_interval);
+use Mojo::Template;
 use DDP;
 
 has log           => sub { Mojo::Log->new };
@@ -22,6 +23,7 @@ has _osm_geojson  => sub { die 'require run_query() first' };
 
 # how many decimal points in coordinates
 has _precision    => sub { 6 };
+has _tmpl         => sub { Mojo::Template->new };
 
 
 # for OFFLINE testing only
@@ -59,6 +61,12 @@ sub _build_query($self) {
   >;
   out skel qt;
   QUERY
+}
+
+sub _build_query_tmpl($self, $tmpl) {
+  my $params = { timeout => $self->timeout, poly => $self->_poly_string };
+  my $code    = path($tmpl)->slurp;
+  return $self->_tmpl->render($code,$params);
 }
 
 async sub run_query_p($self) {

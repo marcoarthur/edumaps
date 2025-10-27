@@ -1,0 +1,11 @@
+% my $params = shift;
+[out:json][timeout:<%=$params->{timeout}%>];
+(
+  way["landuse"](poly:"<%=$params->{poly}%>");
+  way["natural"](poly:"<%=$params->{poly}%>");
+  way["leisure"](poly:"<%=$params->{poly}%>");
+  way["man_made"](poly:"<%=$params->{poly}%>");
+);
+out body;
+>;
+out skel qt;

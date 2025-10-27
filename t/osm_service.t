@@ -24,13 +24,21 @@ my $json_str =<<'EOS';
 EOS
 
 my $osm = MyApp::OSM::Service->new( polygon => decode_json($json_str) );
+my $poly_str = q(poly:"-23.4439 -45.0811 -23.4439 -45.0611 -23.4239 -45.0611 -23.4239 -45.0811 -23.4439 -45.0811");
 
 subtest create_obj => sub {
   ok $osm->isa('MyApp::OSM::Service'), 'ok type';
 };
 
+subtest templates => sub {
+  $osm->_precision(4);
+  my $q = $osm->_build_query_tmpl('templates/osm/query/infrastructure.opq.ep');
+  ok $q, 'got a query';
+  like $q, qr/nrw\[.*\]/, 'expected nrw presence in query';
+  like $q, qr/\Q$poly_str\E/, 'expected polygon in query';
+};
+
 subtest run_query => sub {
-  my $poly_str = q(poly:"-23.4439 -45.0811 -23.4439 -45.0611 -23.4239 -45.0611 -23.4239 -45.0811 -23.4439 -45.0811");
   $osm->_precision(4);
   $osm->on(
     query => sub ($evt, $query) { 

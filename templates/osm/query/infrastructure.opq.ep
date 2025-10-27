@@ -1,0 +1,21 @@
+% my $params = shift;
+[out:json][timeout:<%=$params->{timeout}%>];
+(
+  // Power infra
+  nrw["power"="substation"](poly:"<%= $params->{poly} %>");
+  nrw["power"="plant"](poly:"<%= $params->{poly} %>");
+  nrw["power"="transformer"](poly:"<%= $params->{poly} %>");
+  
+  // Water infra
+  nrw["man_made"="water_works"](poly:"<%= $params->{poly} %>");
+  nrw["man_made"="wastewater_plant"](poly:"<%= $params->{poly} %>");
+  nrw["man_made"="water_tower"](poly:"<%= $params->{poly} %>");
+  
+  nrw["man_made"="reservoir_covered"](poly:"<%= $params->{poly} %>");
+  nrw["man_made"="water_well"](poly:"<%= $params->{poly} %>");
+  nrw["man_made"="pumping_station"](poly:"<%= $params->{poly} %>");
+);
+
+out body;
+>;
+out skel qt;

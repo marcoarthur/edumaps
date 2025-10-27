@@ -46,9 +46,41 @@ helper find_municipio => sub ($c, $name) {
 helper find_escolas => sub ($c, $name) {
   return $c->escolas->find_by_city_name($name)->get_column('feature')->first;
 };
-
 helper find_query_for => sub ($c, $fid) {
   $c->dbic->resultset('OsmQuery')->search_rs( { city_fid => $fid } )->first;
+};
+helper job_progress_poll => sub ($c, $job_id, $poll_intv = 2) {
+  my $job = $c->minion->job($job_id);
+  return $c->reply->not_found unless $job;
+  my $monitor;
+
+  $c->write_sse;
+  $c->on(finish => sub($c) { Mojo::IOLoop->remove($monitor) if $monitor });
+  return $c->finish if $job->info->{state} eq 'finished';
+
+  $monitor = Mojo::IOLoop->recurring(
+    $poll_intv => sub {
+      my $note = $job->info->{notes};
+      my $unknown = {
+        total     => 'Unknown',
+        processed => 'None',
+        phase     => 'osm',
+      };
+      $note = keys %$note ? $note : { progress => $unknown };
+      $note->{progress}{state} = $job->info->{state};
+      $c->log->debug(
+        sprintf (
+          "Job (%d) at state (%s): processed (%d) from total (%d)",
+          $job->info->{id},
+          $note->{progress}{state},
+          $note->{progress}{processed},
+          $note->{progress}{total},
+        )
+      );
+      $c->write_sse( {type => 'progress', text => encode_json($note)} );
+      $c->finish if $job->info->{state} ne 'active';
+    }
+  );
 };
 
 get '/' => 'map_svelte';
@@ -87,6 +119,11 @@ get '/api/query-osm' => sub ($c) {
 };
 
 get '/api/query-osm/progress/:job_id' => sub ($c) {
+  my $job_id = $c->param('job_id');
+  $c->job_progress_poll($job_id);
+};
+
+get '/api/query-osm/progress-old/:job_id' => sub ($c) {
   my $job_id = $c->param('job_id');
   my $job = $c->minion->job($job_id);
   my $cb;
