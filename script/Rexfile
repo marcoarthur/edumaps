@@ -1,0 +1,195 @@
+use Mojo::Base -strict, -signatures;
+use Rex -feature => [qw( 1.4 exec_autodie) ];
+use Rex::Commands::Rsync;
+binmode STDOUT, ':encoding(UTF-8)';   # ou ':utf8'
+binmode STDERR, ':encoding(UTF-8)';
+
+user 'root';
+key_auth;
+my $app_dir = "/opt/map_app";
+my $frontend_dir = "$app_dir/frontend/map_app";
+
+sub info(@args) { Rex::Logger::info(@args) };
+
+desc "Deploy aplicação GIS para container LXC";
+task "deploy", 
+sub {
+
+  # 1. Instalar dependências do sistema
+  install_system_dependencies();
+
+  # 2. Sincronizar arquivos via Rex::Commands::Rsync
+  LOCAL {
+    my $server = Rex::get_current_connection()->{server};
+    my $args = [ 
+      qw{ 
+        -rl 
+        --stats 
+        --verbose 
+        --exclude=*.swp 
+        --exclude=*.tmp 
+        --exclude=.git* 
+        --exclude=*.conf
+        --exclude=dist/*
+        --exclude=.vscode*
+        --exclude=node_modules/*
+        --recursive --links --verbose --stats --backup --perms 
+        .
+      }, "$server:$app_dir" 
+    ];
+    info "🔄 Sincronizando arquivos da aplicação...";
+    run 'rsync', $args, auto_die => TRUE;
+  };
+
+  # 3. Instalar dependências Perl
+  install_perl_dependencies();
+  #
+  # # 5. Configurar frontend
+  # setup_frontend($frontend_dir);
+  #
+  # # 6. Configurar serviços
+  # setup_services($app_dir);
+  #
+  # say "✅ Deploy concluído com sucesso!";
+};
+
+sub install_system_dependencies() {
+  info "📦 Instalando dependências do sistema...";
+
+  update_package_db;
+
+  # Instalar pacotes essenciais 
+  my @packages = qw(
+    rsync
+    build-essential
+    curl
+  );
+
+  pkg $_, ensure => "present" for @packages;
+}
+
+sub install_perl_dependencies() {
+  info "🐫 Instalando dependências Perl...";
+
+  # Instalar cpanminus se não existir
+  if (!is_installed("cpanm")) {
+    say "Instalando cpanminus...";
+    run "curl -L https://cpanmin.us | perl - App::cpanminus";
+    run "cpanm App::cpm";
+  }
+
+  # Instalar módulos Perl necessários (apenas se não estiverem instalados)
+  my @modules = qw(
+    Carton
+  );
+
+  for my $module (@modules) {
+    say "📥 Instalando módulo Perl: $module";
+    run "cpm install -g $module";
+    say "✅ Módulo $module instalado";
+  }
+  
+  info("🐫 Instalando dependencias para map_app.pl");
+  run "carton install", cwd => $app_dir;
+}
+
+sub setup_frontend($frontend_dir) {
+  info "🎨 Configurando frontend Svelte...";
+
+  if (is_file("package.json") && (!is_dir("node_modules") || needs_npm_install($frontend_dir))) {
+    say "📦 Instalando dependências Node.js...";
+    run "npm install";
+  }
+
+  # Build da aplicação Svelte (apenas se necessário)
+  if (!is_dir("$frontend_dir/dist") || needs_build($frontend_dir)) {
+    say "🏗️  Executando build do frontend...";
+    run "npm run build";
+  } else {
+    say "✅ Frontend já está construído";
+  }
+}
+
+sub setup_services($app_dir) {
+  say "🔧 Configurando serviços...";
+
+  # Criar arquivo de serviço systemd
+  file "/etc/systemd/system/sp_municipalities.service",
+  content => template('@service_unit',
+    app_dir => $app_dir,
+    user => "root"
+  ),
+  on_change => sub {
+    say "🔄 Recarregando systemd...";
+    run "systemctl daemon-reload";
+  };
+
+  # Habilitar e iniciar serviço
+  service "sp_municipalities", ensure => "started";
+  service "sp_municipalities", enable => TRUE;
+}
+
+# Funções auxiliares para verificar necessidade de rebuild
+sub needs_npm_install($frontend_dir) {
+  my $local_pkg = "./frontend/map_app/package.json";
+  my $remote_pkg = "$frontend_dir/package.json";
+
+  if (!is_file($remote_pkg)) {
+    return 1;
+  }
+
+  # Comparação simples - em produção usar checksum
+  my $local_mtime = (stat($local_pkg))[9];
+  my $remote_mtime = run "stat -c %Y $remote_pkg";
+
+  return $local_mtime > $remote_mtime;
+}
+
+sub needs_build($frontend_dir) {
+  my $dist_dir = "$frontend_dir/dist";
+
+  if (!is_dir($dist_dir)) {
+    return 1;
+  }
+
+  # Verificar se os arquivos fonte são mais recentes que o build
+  my $src_mtime = run "find $frontend_dir/src -name '*.svelte' -exec stat -c %Y {} \\; | sort -n | tail -1";
+  my $dist_mtime = run "find $dist_dir -name '*.js' -exec stat -c %Y {} \\; | sort -n | tail -1";
+
+  return $src_mtime > $dist_mtime;
+}
+
+desc "Verificar status da aplicação";
+task "status", group => "lxc_containers", sub {
+  service "sp_municipalities", status => TRUE;
+  run "systemctl status sp_municipalities";
+};
+
+desc "Parar aplicação";
+task "stop", group => "lxc_containers", sub {
+  service "sp_municipalities", ensure => "stopped";
+};
+
+desc "Reiniciar aplicação";
+task "restart", group => "lxc_containers", sub {
+  service "sp_municipalities", ensure => "restarted";
+};
+
+__DATA__
+@service_unit
+[Unit]
+Description=SP Municipalities GIS Application
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=<%= $user %>
+WorkingDirectory=<%= $app_dir %>
+ExecStart=/usr/bin/perl <%= $app_dir %>/script/sp_municipalities daemon -l http://*:3000
+Restart=always
+RestartSec=5
+Environment=MOJO_MODE=production
+
+[Install]
+WantedBy=multi-user.target
