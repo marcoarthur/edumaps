@@ -5,7 +5,7 @@ use MyApp::Schema;
 use Mojo::JSON qw(encode_json);
 use MyApp::OSM::Query;
 
-push @{app->static->paths}, qw(./public frontend/map_app/dist);
+push @{app->static->paths}, qw(./public ../frontend/map_app/dist);
 
 plugin Config => {file => './map_app.conf'};
 my $conf = app->config;

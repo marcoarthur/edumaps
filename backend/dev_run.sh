@@ -58,7 +58,7 @@ run() {
 
 run "minion-worker" bash -c "find . -name '*.pl' -o -name '*.pm' | entr -r ./map_app.pl minion worker"
 run "morbo-server" bash -c "morbo ./map_app.pl"
-run "svelte-build" bash -c "cd ./frontend/map_app && find . -name '*.svelte' | entr -r npm run build"
+run "svelte-build" bash -c "cd ../frontend/map_app && find . -name '*.svelte' | entr -r npm run build"
 
 # --- WAIT for Ctrl+C ---
 echo "✅ All services running (PID $$). Press Ctrl+C to stop."
