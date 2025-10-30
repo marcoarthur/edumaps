@@ -1,0 +1,240 @@
+use utf8;
+package EduMaps::Schema::Result::MunicipiosSp;
+
+# Created by DBIx::Class::Schema::Loader
+# DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+EduMaps::Schema::Result::MunicipiosSp
+
+=head1 DESCRIPTION
+
+Dados limpos de municípios de São Paulo (IBGE 2024) com nomenclatura semântica e geometrias validadas
+
+=cut
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+=head1 TABLE: C<municipios_sp>
+
+=cut
+
+__PACKAGE__->table("municipios_sp");
+
+=head1 ACCESSORS
+
+=head2 id_original
+
+  data_type: 'bigint'
+  is_nullable: 1
+
+ID original do shapefile (fid)
+
+=head2 codigo_ibge
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 7
+
+Código oficial do IBGE para o município
+
+=head2 nome
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 100
+
+Nome do município
+
+=head2 nome_municipio
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 100
+
+Nome completo do município (redundante para compatibilidade)
+
+=head2 codigo_regiao_imediata
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 6
+
+Código da região imediata according to IBGE
+
+=head2 nome_regiao_imediata
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 100
+
+Nome da região imediata
+
+=head2 codigo_regiao_intermediaria
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 4
+
+Código da região intermediária
+
+=head2 nome_regiao_intermediaria
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 100
+
+Nome da região intermediária
+
+=head2 codigo_uf
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 2
+
+Código da Unidade Federativa
+
+=head2 nome_estado
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 50
+
+Nome do estado
+
+=head2 sigla_estado
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 2
+
+Sigla do estado (SP)
+
+=head2 codigo_regiao
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 1
+
+Código da região geográfica
+
+=head2 nome_regiao
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
+Nome da região geográfica
+
+=head2 sigla_regiao
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 2
+
+Sigla da região geográfica
+
+=head2 codigo_concurso
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 7
+
+Código do concurso (campo específico IBGE)
+
+=head2 nome_concurso
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 100
+
+Nome do concurso (campo específico IBGE)
+
+=head2 area_km2
+
+  data_type: 'double precision'
+  is_nullable: 1
+
+Área do município em quilômetros quadrados
+
+=head2 geometry
+
+  data_type: 'geometry'
+  is_nullable: 1
+  size: '16916,18'
+
+Geometria do município em MULTIPOLYGON (SRID 4674)
+
+=head2 geometria_corrigida
+
+  data_type: 'boolean'
+  is_nullable: 1
+
+Indica se a geometria original foi corrigida com ST_MakeValid
+
+=cut
+
+__PACKAGE__->add_columns(
+  "id_original",
+  { data_type => "bigint", is_nullable => 1 },
+  "codigo_ibge",
+  { data_type => "varchar", is_nullable => 0, size => 7 },
+  "nome",
+  { data_type => "varchar", is_nullable => 1, size => 100 },
+  "nome_municipio",
+  { data_type => "varchar", is_nullable => 1, size => 100 },
+  "codigo_regiao_imediata",
+  { data_type => "varchar", is_nullable => 1, size => 6 },
+  "nome_regiao_imediata",
+  { data_type => "varchar", is_nullable => 1, size => 100 },
+  "codigo_regiao_intermediaria",
+  { data_type => "varchar", is_nullable => 1, size => 4 },
+  "nome_regiao_intermediaria",
+  { data_type => "varchar", is_nullable => 1, size => 100 },
+  "codigo_uf",
+  { data_type => "varchar", is_nullable => 1, size => 2 },
+  "nome_estado",
+  { data_type => "varchar", is_nullable => 1, size => 50 },
+  "sigla_estado",
+  { data_type => "varchar", is_nullable => 1, size => 2 },
+  "codigo_regiao",
+  { data_type => "varchar", is_nullable => 1, size => 1 },
+  "nome_regiao",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
+  "sigla_regiao",
+  { data_type => "varchar", is_nullable => 1, size => 2 },
+  "codigo_concurso",
+  { data_type => "varchar", is_nullable => 1, size => 7 },
+  "nome_concurso",
+  { data_type => "varchar", is_nullable => 1, size => 100 },
+  "area_km2",
+  { data_type => "double precision", is_nullable => 1 },
+  "geometry",
+  { data_type => "geometry", is_nullable => 1, size => "16916,18" },
+  "geometria_corrigida",
+  { data_type => "boolean", is_nullable => 1 },
+);
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</codigo_ibge>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("codigo_ibge");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-10-30 09:18:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2w1EngIo6WlntWlYcZc2Vw
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
+1;
