@@ -426,6 +426,64 @@ BEGIN;
       
   FROM raw.inep_raw;
 
+  -- ===========================================================================
+  -- CORREÇÃO: GARANTIR CHAVE PRIMÁRIA E REMOVER REGISTROS COM id_escola NULL
+  -- ===========================================================================
+  
+  -- Log antes da correção
+  DO $$
+    DECLARE
+      total_before integer;
+      null_ids integer;
+    BEGIN
+      SELECT COUNT(*) INTO total_before FROM clean.inep;
+      SELECT COUNT(*) INTO null_ids FROM clean.inep WHERE id_escola IS NULL OR TRIM(id_escola) = '';
+      
+      RAISE NOTICE 'Registros antes da correção: %', total_before;
+      RAISE NOTICE 'Registros com id_escola NULL ou vazio: %', null_ids;
+    END 
+  $$;
+
+  -- Remover registros onde id_escola é NULL, vazio ou inválido
+  DELETE FROM clean.inep 
+  WHERE id_escola IS NULL 
+     OR TRIM(id_escola) = '' 
+     OR id_escola = 'NA' 
+     OR id_escola = 'ND' 
+     OR id_escola = '-';
+
+  -- Verificar se há duplicatas de id_escola
+  DO $$
+    DECLARE
+      duplicate_count integer;
+    BEGIN
+      SELECT COUNT(*) INTO duplicate_count
+      FROM (
+        SELECT id_escola, COUNT(*)
+        FROM clean.inep
+        WHERE id_escola IS NOT NULL
+        GROUP BY id_escola
+        HAVING COUNT(*) > 1
+      ) AS duplicates;
+      
+      IF duplicate_count > 0 THEN
+        RAISE WARNING 'Encontrados % id_escola duplicados. Criando chave primária composta.', duplicate_count;
+        
+        -- Adicionar chave primária composta com linha_original para garantir unicidade
+        ALTER TABLE clean.inep 
+        ADD CONSTRAINT pk_inep PRIMARY KEY (id_escola, linha_original);
+        
+      ELSE
+        RAISE NOTICE 'Nenhuma duplicata encontrada em id_escola. Adicionando chave primária simples.';
+        
+        -- Adicionar chave primária simples
+        ALTER TABLE clean.inep 
+        ADD CONSTRAINT pk_inep PRIMARY KEY (id_escola);
+      END IF;
+    END 
+  $$;
+
+
   -- Log para debug da limpeza
   DO $$
     DECLARE
@@ -436,7 +494,7 @@ BEGIN;
       SELECT COUNT(*) INTO null_notes_count FROM clean.inep WHERE vl_nota_media_2023 IS NULL;
       
       RAISE NOTICE 'Tabela clean.inep criada com % registros', clean_count;
-      RAISE NOTICE 'Registros com nota média 2023 NULL após limpeza: %', null_notes_count;
+      RAISE NOTICE 'Registros com nota média NULL após limpeza: %', null_notes_count;
     END 
   $$;
 
