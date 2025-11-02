@@ -201,4 +201,11 @@ __PACKAGE__->set_primary_key("codigo_inep");
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->might_have(
+  'inep',
+  'EduMaps::Schema::Result::Inep',
+  {'foreign.id_escola' => 'self.codigo_inep' },
+);
+
 1;

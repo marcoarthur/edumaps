@@ -55,7 +55,7 @@ Código completo do município no padrão IBGE (7 dígitos)
 =head2 id_escola
 
   data_type: 'text'
-  is_nullable: 1
+  is_nullable: 0
 
 =head2 no_escola
 
@@ -669,7 +669,7 @@ __PACKAGE__->add_columns(
   "no_municipio",
   { data_type => "text", is_nullable => 1 },
   "id_escola",
-  { data_type => "text", is_nullable => 1 },
+  { data_type => "text", is_nullable => 0 },
   "no_escola",
   { data_type => "text", is_nullable => 1 },
   "rede",
@@ -912,10 +912,28 @@ __PACKAGE__->add_columns(
   { data_type => "numeric", is_nullable => 1 },
 );
 
+=head1 PRIMARY KEY
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-01 19:24:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l58hIURxALhZUqaGbM09gA
+=over 4
+
+=item * L</id_escola>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("id_escola");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-02 10:58:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rgWOfc3+qsYS9Fse7YxEFw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  'escola',
+  'EduMaps::Schema::Result::Escolas',
+  { 'foreign.codigo_inep' => 'self.id_escola' },
+);
+
 1;
