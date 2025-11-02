@@ -54,7 +54,7 @@ Código completo do município no padrão IBGE (7 dígitos)
 
 =head2 id_escola
 
-  data_type: 'text'
+  data_type: 'bigint'
   is_nullable: 0
 
 =head2 no_escola
@@ -669,7 +669,7 @@ __PACKAGE__->add_columns(
   "no_municipio",
   { data_type => "text", is_nullable => 1 },
   "id_escola",
-  { data_type => "text", is_nullable => 0 },
+  { data_type => "bigint", is_nullable => 0 },
   "no_escola",
   { data_type => "text", is_nullable => 1 },
   "rede",
@@ -925,8 +925,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id_escola");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-02 10:58:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rgWOfc3+qsYS9Fse7YxEFw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-02 11:41:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A8o3l2hH5NEfYnBiy0+dhw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

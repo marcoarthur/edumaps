@@ -457,6 +457,11 @@ BEGIN;
     DECLARE
       duplicate_count integer;
     BEGIN
+
+      ALTER TABLE clean.inep
+          ALTER COLUMN id_escola TYPE bigint
+          USING id_escola::bigint;
+
       SELECT COUNT(*) INTO duplicate_count
       FROM (
         SELECT id_escola, COUNT(*)
