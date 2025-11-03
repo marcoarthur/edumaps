@@ -237,4 +237,17 @@ __PACKAGE__->set_primary_key("codigo_ibge");
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  'populacao',
+  'EduMaps::Schema::Result::PopulacaoMunicipal',
+  { 'foreign.codigo_ibge' => 'self.codigo_ibge' },
+);
+
+__PACKAGE__->has_many(
+  'inep_info',
+  'EduMaps::Schema::Result::Inep',
+  {'foreign.codigo_ibge' => 'self.codigo_ibge' },
+);
+
 1;

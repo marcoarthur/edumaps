@@ -936,4 +936,10 @@ __PACKAGE__->belongs_to(
   { 'foreign.codigo_inep' => 'self.id_escola' },
 );
 
+__PACKAGE__->belongs_to(
+  'municipio',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  { 'foreign.codigo_ibge' => 'self.codigo_ibge' },
+);
+
 1;
