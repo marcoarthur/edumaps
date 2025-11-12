@@ -100,4 +100,17 @@ sub nearest_from($self, $point, $n = 5, $opts = {}) {
   );
 }
 
+sub as_text($self, $col = undef ) {
+  die "Need column name" unless $col;
+  my $me = $self->current_source_alias;
+  return $self->search_rs(
+    {},
+    {
+      columns => [
+        { codigo => \"${me}.${col}::text" },
+      ]
+    }
+  )->get_column('codigo');
+}
+
 1;
