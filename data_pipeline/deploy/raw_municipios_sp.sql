@@ -43,6 +43,12 @@ BEGIN;
       NOT ST_IsValid(geom) as geometria_corrigida
   FROM raw.sp_municipios_2024;
 
+  -- Adicionar coluna para código ibge antigo
+  ALTER TABLE clean.municipios_sp ADD COLUMN codigo_ibge_antigo VARCHAR(6);
+
+  -- Popular a coluna com os 6 primeiros dígitos do codigo_ibge
+  UPDATE clean.municipios_sp SET codigo_ibge_antigo = LEFT(codigo_ibge, 6);
+
   -- Adicionar constraints e índices
   ALTER TABLE clean.municipios_sp 
     ADD CONSTRAINT pk_municipios_sp PRIMARY KEY (codigo_ibge),
@@ -55,6 +61,8 @@ BEGIN;
   CREATE INDEX ix_municipios_sp_regiao_imediata ON clean.municipios_sp (codigo_regiao_imediata);
   CREATE INDEX ix_municipios_sp_regiao_intermediaria ON clean.municipios_sp (codigo_regiao_intermediaria);
   CREATE INDEX ix_municipios_sp_estado ON clean.municipios_sp (sigla_estado);
+  -- Adicionar um índice para melhor performance
+  CREATE INDEX ix_municipios_sp_codigo_ibge_antigo ON clean.municipios_sp (codigo_ibge_antigo);
 
   -- Comentários para documentação
   COMMENT ON TABLE clean.municipios_sp IS 'Dados limpos de municípios de São Paulo (IBGE 2024) com nomenclatura semântica e geometrias validadas';
@@ -80,6 +88,8 @@ BEGIN;
 
   COMMENT ON SERVER fdw_municipios_sp IS 'Servidor FDW para dados de municípios de SP do IBGE (2024)';
   COMMENT ON FOREIGN TABLE raw.sp_municipios_2024 IS 'Dados brutos de municípios de São Paulo importados via OGR_FDW';
+  -- Opcional: Adicionar comentário na coluna
+  COMMENT ON COLUMN clean.municipios_sp.codigo_ibge_antigo IS 'Código IBGE antigo (6 dígitos) - primeiros 6 dígitos do código oficial de 7 dígitos';
 
   -- Estatísticas para otimização do planner
   ANALYZE clean.municipios_sp;

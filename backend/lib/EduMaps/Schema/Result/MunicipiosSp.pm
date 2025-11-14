@@ -176,6 +176,14 @@ Geometria do município em MULTIPOLYGON (SRID 4674)
 
 Indica se a geometria original foi corrigida com ST_MakeValid
 
+=head2 codigo_ibge_antigo
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 6
+
+Código IBGE antigo (6 dígitos) - primeiros 6 dígitos do código oficial de 7 dígitos
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -217,6 +225,8 @@ __PACKAGE__->add_columns(
   { data_type => "geometry", is_nullable => 1, size => "16916,18" },
   "geometria_corrigida",
   { data_type => "boolean", is_nullable => 1 },
+  "codigo_ibge_antigo",
+  { data_type => "varchar", is_nullable => 1, size => 6 },
 );
 
 =head1 PRIMARY KEY
@@ -232,8 +242,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("codigo_ibge");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-10-30 09:18:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2w1EngIo6WlntWlYcZc2Vw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-13 16:19:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AKpMAIsNAmEa8Wj7SvWJkw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
