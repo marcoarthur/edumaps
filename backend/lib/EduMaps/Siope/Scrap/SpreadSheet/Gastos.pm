@@ -49,6 +49,7 @@ has ua => sub {
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
   );
   $ua->connect_timeout(90);
+  $ua->inactivity_timeout(180);
   return $ua;
 };
 
@@ -195,8 +196,10 @@ sub get_data($self) {
 sub _process_sheet($self) {
   # get data from server if not found the sheet file
   $self->get_data unless -f $self->sheet;
-  my $sheet   = Spreadsheet::Read->new($self->sheet)->sheet(1);
-  my @rows    = $sheet->rows;
+
+  # How to read faster ?
+  my @rows    = $self->_read_sheet_fast->@*;
+  #my @rows    = $self->_read_sheet->@*;
 
   # discard the headers
   my $header  = shift @rows;
@@ -208,8 +211,11 @@ sub _process_sheet($self) {
   @rows = map {
     my $row = $_;
 
-    # trim all columns
-    $_ = trim $_ for @$row;
+    # trim all columns undef empty
+    for (@$row) {
+      $_ = trim $_;
+      $_ = undef if $_ eq '';
+    }
 
     # convert to numeric the columns for salary
     $_ = $self->_to_num($_) for @$row[11..15];
@@ -253,6 +259,36 @@ sub cleanup($self) {
     unlink $self->sheet or warn "Não foi possível remover " . $self->sheet;
   }
   return $self;
+}
+
+sub _read_sheet($self) {
+  my $sheet   = Spreadsheet::Read->new($self->sheet)->sheet(1);
+  my @rows    = $sheet->rows;
+  return \@rows;
+}
+
+sub _read_sheet_fast($self) {
+  my $csv = $self->sheet . ".Planilha.csv";
+  my @cmd = ( qw(xlsx2csv_fast -s ;), $self->sheet);
+
+  system(@cmd) == 0
+    or die "Falha ao executar xlsx2csv";
+
+  my @rows;
+  open my $fh, "<:encoding(UTF-8)", $csv or die "Cannot open $csv file: $!";
+  while (<$fh>) {
+    chomp;
+    my @cols = split /;/, $_;
+    # clean field year (e.g. 2023.0) and other integer numbers wrongly put as decimal
+    for (@cols) {
+      s/\.0$//;
+    }
+    push @rows, \@cols;
+  }
+  close $fh;
+  unlink $csv;
+
+  return \@rows;
 }
 
 1;

@@ -9,6 +9,9 @@ use Syntax::Keyword::Try;
 use EduMaps::Siope::Scrap::SpreadSheet::Gastos;
 use utf8;
 use DDP;
+use constant {
+  CHUNK_SIZE => 5000, # records to send DB->populate 
+};
 binmode(STDOUT, ':utf8');
 binmode(STDERR, ':utf8');
 
@@ -39,7 +42,7 @@ if ($options{debug}) {
 }
 
 sub debug_msg {
-  say join ("\n", @_);
+  say join ("\n", @_) if $options{debug};
 }
 
 # populate table clean.remuneracao
@@ -61,7 +64,7 @@ sub populate {
   }
   debug_msg(
     sprintf("Buscando dados FNDE para município de %s", uc $mun->nome_municipio)
-  ) if $options{debug};
+  );
 
   my $col_order = [ 
     qw(ano mes nome_profissional cpf cod_inep escola carga_horaria tipo categoria 
@@ -70,16 +73,31 @@ sub populate {
   ];
 
   try {
+    my @rows = $api->get_and_process->@*;
+    debug_msg(
+      sprintf("Processando total de dados: %d", scalar(@rows))
+    );
     # adiciona o cod_municipio e rede
-    my @rows = map { 
+    @rows = map { 
       my $row = $_;
       push @$row, $options{cod_mun}, 'Municipal';
       $row;
-    } $api->get_and_process->@*;
+    } @rows;
 
     # carrega no banco de dados --bulk insertion--
-    my $population = [$col_order, @rows];
-    $rs->populate($population);
+    debug_msg(
+      sprintf("Salvando dados no banco de dados")
+    );
+
+    while(my @chunk = splice(@rows, 0, CHUNK_SIZE)) {
+      my $population = [$col_order, @chunk];
+      $rs->populate($population);
+    }
+
+    debug_msg(
+      sprintf("Removendo arquivo temporário")
+    );
+
     $api->cleanup;
   } catch ($err){
     warn "Error: $err";
@@ -87,9 +105,9 @@ sub populate {
 }
 
 sub main {
-  debug_msg(sprintf ('Salvando dados do município de código: %d. Ano: %d. Processo: %d',$options{cod_mun},$options{ano}, $$)) if $options{debug};
+  debug_msg(sprintf ('Salvando dados do município de código: %d. Ano: %d. Processo: %d',$options{cod_mun},$options{ano}, $$));
   populate;
-  debug_msg(sprintf ('Finalizado (%d)', $$)) if $options{debug};
+  debug_msg(sprintf ('Finalizado (%d)', $$));
 }
 
 main;

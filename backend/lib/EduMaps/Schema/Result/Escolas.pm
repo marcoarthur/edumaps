@@ -208,4 +208,10 @@ __PACKAGE__->might_have(
   {'foreign.id_escola' => 'self.codigo_inep' },
 );
 
+__PACKAGE__->has_many(
+  'folha_pagamentos',
+  'EduMaps::Schema::Result::RemuneracaoMunicipal',
+  {'foreign.cod_inep' => 'self.codigo_inep'}
+);
+
 1;
