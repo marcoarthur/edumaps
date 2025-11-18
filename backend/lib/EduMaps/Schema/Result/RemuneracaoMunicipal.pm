@@ -199,4 +199,11 @@ __PACKAGE__->add_columns(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+  'escola',
+  'EduMaps::Schema::Result::Escolas',
+  {'foreign.codigo_inep' => 'self.cod_inep'},
+);
+
 1;
