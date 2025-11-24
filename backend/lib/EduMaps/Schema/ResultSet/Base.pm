@@ -1,7 +1,7 @@
 package EduMaps::Schema::ResultSet::Base;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Role::Tiny::With;
-our @APP_ROLES = map { "MyApp::Roles::$_" } qw(PrettyPrint Formats);
+our @APP_ROLES = map { "EduMaps::Roles::$_" } qw(PrettyPrint Formats);
 with @APP_ROLES;
 
 # full qualified column name

@@ -214,4 +214,15 @@ __PACKAGE__->has_many(
   {'foreign.cod_inep' => 'self.codigo_inep'}
 );
 
+__PACKAGE__->belongs_to(
+  'municipio',
+  'EduMaps::Schema::Result::MuncipiosSp',
+  sub {
+    my $args = shift;
+    my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
+    my $on_join_clause = sprintf "ST_Contains(%s.geometry::geometry, %s.geometry)", $foreign_a, $self_a;
+    return \[$on_join_clause];
+  },
+);
+
 1;
