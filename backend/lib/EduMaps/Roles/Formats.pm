@@ -1,8 +1,9 @@
-package MyApp::Roles::Formats;
+package EduMaps::Roles::Formats;
 use Mojo::Base -role, -signatures;
 use Mojo::JSON qw(encode_json);
 use Mojo::DOM;
 use Mojo::Collection qw(c);
+use Text::CSV_XS qw(csv);
 use YAML;
 
 requires qw(next search_rs result_source);
@@ -125,6 +126,12 @@ sub to_fixed_width($self, $fh = undef, %options) {
   };
 
   return $self->_apply_format($fixed_formatter, $fh);
+}
+
+sub to_csv($self, $fh = undef) {
+  my $csv;
+  csv (in =>  [ $self->as_hash->all ], out => \$csv);
+  return $fh ? print $fh $csv : $csv;
 }
 
 sub to_json($self, $fh = undef) {

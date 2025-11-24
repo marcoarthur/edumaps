@@ -39,7 +39,7 @@ sub go {
     pg_keepalive        => 1,          # Enable TCP keepalive
 
     # Application identification
-    pg_appname          => 'map_app',  # Shows in pg_stat_activity
+    pg_appname          => 'edumaps',  # Shows in pg_stat_activity
   };
 
   my @db_params = (
