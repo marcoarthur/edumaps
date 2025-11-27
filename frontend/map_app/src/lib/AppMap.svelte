@@ -1,4 +1,5 @@
 <script>
+  import { fade } from 'svelte/transition';
   import { onDestroy } from 'svelte';
   import CityDetail from './CityDetail.svelte';
   import ProgressBar from './ProgressBar.svelte';
@@ -28,7 +29,7 @@
   });
 
   async function loadCityGeoJSON(name) {
-    statusMessage = `Searching for ${name}...`;
+    statusMessage = `Buscando por ${name}...`;
     currentDetails = null;
     cityData = null;
     schoolData = null;
@@ -38,7 +39,7 @@
       const data = await response.json();
 
       if (!data.features?.length) {
-        statusMessage = `No features found for ${name}`;
+        statusMessage = `Nenhuma cidade parecida com ${name}`;
         return;
       }
 
@@ -154,50 +155,57 @@
 </script>
 
 <div class="container">
-  <h1>🗺️ Municipalidades de São Paulo</h1>
+  <h1>🗺️ Mapas da Educação</h1>
   
-  <MapControls
-    bind:cityName
-    {statusMessage}
-    on:search={() => loadCityGeoJSON(cityName)}
-    on:clear={clearMap}
-  />
+  <div class="layout">
+    <div class="map-wrapper">
+      <MapControls
+        bind:cityName
+        {statusMessage}
+        on:search={() => loadCityGeoJSON(cityName)}
+        on:clear={clearMap}
+      />
 
-  <div class="map-with-progress">
-    {#if sse && progress}
-      <div class="progress-overlay">
-        <ProgressBar {progress} />
+      <div class="map-with-progress">
+        {#if sse && progress}
+          <div class="progress-overlay">
+            <ProgressBar {progress} />
+          </div>
+        {/if}
+        
+        <BaseMap bind:this={baseMap} center={[-23.56, -45.15]} zoom={15}>
+          <OSMBaseLayer />
+          
+          <CityLayer 
+            bind:this={cityLayer}
+            {cityData}
+            on:details={(e) => loadDetails(e.detail.fid)}
+            on:schools={(e) => loadRelatedPoints(e.detail.city)}
+            on:osm={(e) => loadOSMData(e.detail.fid)}
+          />
+
+          <OsmWays
+            bind:this={osmWaysLayer}
+            {osmData}
+          />
+          
+          <SchoolLayer 
+            bind:this={schoolLayer}
+            {schoolData}
+          />
+        </BaseMap>
       </div>
-    {/if}
-    
-    <BaseMap bind:this={baseMap} center={[-23.56, -45.15]} zoom={15}>
-      <OSMBaseLayer />
-      
-      <CityLayer 
-        bind:this={cityLayer}
-        {cityData}
-        on:details={(e) => loadDetails(e.detail.fid)}
-        on:schools={(e) => loadRelatedPoints(e.detail.city)}
-        on:osm={(e) => loadOSMData(e.detail.fid)}
-      />
+    </div>
 
-      <OsmWays
-        bind:this={osmWaysLayer}
-        {osmData}
-      />
-      
-      <SchoolLayer 
-        bind:this={schoolLayer}
-        {schoolData}
-      />
-    </BaseMap>
-  </div>
-
-  <div class="info-panel">
-    <h3>Database-Generated GeoJSON</h3>
-    {#if currentDetails && currentDetails.type !== 'osm'}
-      <CityDetail data={currentDetails} />
-    {/if}
+    <div class="info-panel">
+      {#if currentDetails && currentDetails.type !== 'osm'}
+        {#key currentDetails.id}
+          <div class="details-wrapper" transition:fade>
+            <CityDetail data={currentDetails} />
+          </div>
+        {/key}
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -205,6 +213,13 @@
   .map-with-progress {
     position: relative;
     width: 100%;
+  }
+
+  .map-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
   }
   
   .progress-overlay {
@@ -220,5 +235,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+
+  .layout {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .map-wrapper {
+    flex: 1; /* ocupa o resto */
+  }
+
+  .info-panel {
+    width: 350px;
+    display: block;
+    position: relative;
   }
 </style>
