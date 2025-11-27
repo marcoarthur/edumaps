@@ -6,3 +6,4 @@ data_pipeline/config/database.ini
 data_pipeline/sqitch.conf
 data_pipeline/sqitch.plan
 backend/sandbox/*
+*.vim
