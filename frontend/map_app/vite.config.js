@@ -1,33 +1,50 @@
 // vite.config.js
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import fs from "node:fs";
-import path from "node:path";
 
-// ---------------------------------------------------------------------
-// Vite configuration
-// ---------------------------------------------------------------------
-export default defineConfig({
-  plugins: [svelte()],
+export default defineConfig(({ mode }) => {
+  const isDev = mode === "development";
 
-  // Build output goes directly into the folder you’ll serve from Mojolicious
-  build: {
-    outDir: "dist/assets",
-    rollupOptions: {
-      output: {
-        // entry points (e.g., main.js) → index.js (no hash)
-        entryFileNames: "[name].js",
-        // code‑splitting chunks → keep name, no hash
-        chunkFileNames: "[name].js",
-        // CSS assets → index.css (no hash)
-        assetFileNames: ({ name }) => {
-          if (name && name.endsWith(".css")) {
-            return "[name].css";
-          }
-          // other assets (images, fonts, etc.)
-          return "[name][extname]";
+  return {
+    plugins: [svelte()],
+
+    // -------------------------------------------------------
+    // DEV SERVER CONFIG (somente quando rodando `npm run dev`)
+    // -------------------------------------------------------
+    server: {
+      port: 5173,
+      strictPort: true,
+      open: false,
+
+      // Todo request do frontend para /api é enviado ao Mojolicious
+      proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+          secure: false,
         },
       },
     },
-  },
+
+    // -------------------------------------------------------
+    // BUILD DE PRODUÇÃO (usado por npm run build)
+    // -------------------------------------------------------
+    build: {
+      sourcemap: true,      // necessário para debug após build
+      outDir: "dist/assets",
+
+      rollupOptions: {
+        output: {
+          entryFileNames: "[name].js",
+          chunkFileNames: "[name].js",
+          assetFileNames: ({ name }) => {
+            if (name && name.endsWith(".css")) {
+              return "[name].css";
+            }
+            return "[name][extname]";
+          },
+        },
+      },
+    },
+  };
 });
