@@ -1,5 +1,4 @@
 <script>
-  import { mount } from 'svelte';
   import { onMount, getContext, createEventDispatcher } from 'svelte';
   import L from 'leaflet';
   import OsmPopup from './OsmPopup.svelte';
@@ -52,7 +51,7 @@
         const popup = L.popup();
         const popupContainer = document.createElement('div');
 
-        mount(OsmPopup, {
+        new OsmPopup({
           target: popupContainer,
           props: {
             feature: feature.properties,

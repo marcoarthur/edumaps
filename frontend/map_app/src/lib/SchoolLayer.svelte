@@ -1,5 +1,4 @@
 <script>
-  import { mount } from 'svelte';
   import { onMount, getContext } from 'svelte';
   import L from 'leaflet';
   import SchoolPopup from './SchoolPopup.svelte';
@@ -49,7 +48,7 @@
         }),
       onEachFeature: (feature, layer) => {
         const popupContainer = document.createElement('div');
-        mount(SchoolPopup, {
+        new SchoolPopup({
           target: popupContainer,
           props: { school: feature.properties }
         });

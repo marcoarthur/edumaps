@@ -9,7 +9,7 @@
 <div class="popup">
   <strong>{feature.name}</strong><br />
   <button on:click={() => onDetails(feature.fid)}>Detalhes</button><br />
-  <button on:click={() => onSchools(feature.name)}>Escolas</button><br />
+  <button on:click={() => onSchools(feature.fid)}>Escolas</button><br />
   <button on:click={() => onOSM(feature.fid)} disabled={$osmDisabled}>
   OSM {$osmDisabled ? '⏳' : ''}
   </button>

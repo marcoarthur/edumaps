@@ -1,5 +1,4 @@
 <script>
-  import { mount } from 'svelte';
   import { onMount, getContext, createEventDispatcher } from 'svelte';
   import L from 'leaflet';
   import CityPopup from './CityPopup.svelte';
@@ -51,7 +50,7 @@
         const popup = L.popup();
         const popupContainer = document.createElement('div');
 
-        mount(CityPopup, {
+        new CityPopup({
           target: popupContainer,
           props: {
             feature: feature.properties,

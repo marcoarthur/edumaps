@@ -65,7 +65,7 @@
         return;
       }
       osmData = data;
-      statusMessage = `Found ${data.features.lenght} OSM features`;
+      statusMessage = `Found ${data.features.length} OSM features`;
     } catch(err) {
       statusMessage = `Error: ${err.message}`;
       console.error(err);
@@ -155,7 +155,8 @@
 </script>
 
 <div class="container">
-  <h1>🗺️ Mapas da Educação</h1>
+  <h1>🗺️ EduMaps</h1>
+  <h2>Mapas da Educação</h2>
   
   <div class="layout">
     <div class="map-wrapper">
@@ -173,7 +174,7 @@
           </div>
         {/if}
         
-        <BaseMap bind:this={baseMap} center={[-23.56, -45.15]} zoom={15}>
+        <BaseMap bind:this={baseMap} center={[-23.56, -45.75]} zoom={15}>
           <OSMBaseLayer />
           
           <CityLayer 
@@ -199,7 +200,7 @@
 
     <div class="info-panel">
       {#if currentDetails && currentDetails.type !== 'osm'}
-        {#key currentDetails.id}
+        {#key currentDetails.codigo_ibge}
           <div class="details-wrapper" transition:fade>
             <CityDetail data={currentDetails} />
           </div>

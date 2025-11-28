@@ -1,5 +1,4 @@
 <script>
-  import { mount } from 'svelte';
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
@@ -62,7 +61,7 @@
           const popupContainer = document.createElement('div');
 
           // Mount the Svelte popup component inside Leaflet popup
-          mount( CityPopup, {
+          new CityPopup({
             target: popupContainer,
             props: {
               feature: feature.properties,
@@ -117,7 +116,7 @@
           }),
         onEachFeature: (feature, layer) => {
           const popupContainer = document.createElement('div');
-          mount(SchoolPopup, { target: popupContainer, props: { school: feature.properties } } );
+          new SchoolPopup( { target: popupContainer, props: { school: feature.properties } } );
           layer.bindPopup(popupContainer);
         }
       }).addTo(pointsLayer);
