@@ -216,7 +216,7 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->belongs_to(
   'municipio',
-  'EduMaps::Schema::Result::MuncipiosSp',
+  'EduMaps::Schema::Result::MunicipiosSp',
   sub {
     my $args = shift;
     my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});

@@ -26,4 +26,32 @@ sub with_escolas_count($self) {
   );
 }
 
+sub to_geojson($self) {
+  my $geom = 'geometry';
+  my $cols_map = { name => 'nome_municipio', area => 'area_km2', fid => 'codigo_ibge' };
+  $self->geojson_features($geom, $cols_map);
+}
+
+sub details($self,$id) {
+
+  my $cols = [
+    { codigo_ibge => 'codigo_ibge' },
+    { nome_municipio => 'nome_municipio' },
+    { area => 'area_km2' },
+    { total_escolas => { count => 'escolas' } },
+    { populacao => 'populacao.populacao_estimada' },
+  ];
+
+  my @params = ( 
+    { 'me.codigo_ibge' => $id }, 
+    { 
+      join          => ['escolas', 'populacao'],
+      'columns'     => $cols,
+      result_class  => 'DBIx::Class::ResultClass::HashRefInflator',
+      group_by      => ['me.codigo_ibge','populacao_estimada'],
+    }
+  );
+  $self->search_rs( @params );
+}
+
 1;

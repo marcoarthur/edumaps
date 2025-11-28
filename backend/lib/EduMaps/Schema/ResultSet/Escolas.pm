@@ -12,10 +12,22 @@ sub with_geojson($self) {
   );
 }
 
+sub find_by_city_id($self, $id) {
+  $self->search_rs(
+    { 'municipio.codigo_ibge' => $id },
+    {
+      join => [ 'municipio' ],
+    }
+  )->geojson_features(
+    'me.geometry',
+    [ qw(endereco escola municipio categoria_administrativa telefone etapas_modalidades) ],
+  );
+}
+
 sub find_by_city_name($self, $name) {
   $self->search_rs({municipio => $name})
   ->geojson_features(
-    'geometry',
+    'me.geometry',
     [ qw(endereco escola municipio categoria_administrativa telefone) ]
   );
 }
