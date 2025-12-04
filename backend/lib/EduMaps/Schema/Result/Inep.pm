@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<inep>
+=head1 TABLE: C<clean.inep>
 
 =cut
 
-__PACKAGE__->table("inep");
+__PACKAGE__->table("clean.inep");
 
 =head1 ACCESSORS
 
@@ -925,8 +925,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id_escola");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-11-02 11:41:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A8o3l2hH5NEfYnBiy0+dhw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-03 21:38:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6kdtiVt1Ks6/+1zIKNA0BQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
