@@ -4,12 +4,7 @@ use Role::Tiny::With;
 our @APP_ROLES = map { "EduMaps::Roles::$_" } qw(PrettyPrint Formats);
 with @APP_ROLES;
 
-# full qualified column name
-sub fqcn( $self, %spec ) {
-  my $me  = $spec{relation} // $self->current_source_alias;
-  my $col = $spec{column};
-  return "$me.$col";
-}
+__PACKAGE__->load_components(qw{Helper::ResultSet::SetOperations});
 
 sub geojson_features($self, $geom, $properties) {
   my $attrs = ref $properties eq 'ARRAY' ?
