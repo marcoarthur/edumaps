@@ -40,6 +40,7 @@ sub details($self,$id) {
     { area => 'area_km2' },
     { total_escolas => { count => 'escolas' } },
     { populacao => 'populacao.populacao_estimada' },
+    { estado => 'nome_estado' },
   ];
 
   my @params = ( 

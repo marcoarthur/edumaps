@@ -268,7 +268,8 @@ __PACKAGE__->has_many(
     my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
     my $on_join_clause = sprintf "ST_Contains(%s.geometry::geometry, %s.geometry)", $self_a, $foreign_a;
     return \[$on_join_clause];
-  }
+  },
+  { join_type => 'LEFT' },
 );
 
 __PACKAGE__->has_one(

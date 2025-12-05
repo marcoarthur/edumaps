@@ -113,7 +113,7 @@ get '/api/details' => sub ($c) {
     { bind => [$radius] }
   )->sumario_municipio->as_hash->first;
 
-  my $mun_details = { %$details, %$cobertura };
+  my $mun_details = { %$details, $cobertura ? (%$cobertura) : () };
   $c->format_float_nums($mun_details);
   $c->render( json => $mun_details );
 };
