@@ -3,12 +3,13 @@
 
 BEGIN;
 
-  -- Configurar servidor FDW para municípios de SP (IBGE 2024)
+  --   -- Configurar servidor FDW para municípios de SP (IBGE 2024)
   DROP SERVER IF EXISTS fdw_municipios_sp CASCADE;
   CREATE SERVER fdw_municipios_sp
     FOREIGN DATA WRAPPER ogr_fdw
     OPTIONS(
-      datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/UFs/SP/SP_Municipios_2024.zip',
+      -- datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/ufs/sp/sp_municipios_2024.zip',
+      datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip',
       format 'ESRI Shapefile'
     );
 
@@ -41,7 +42,7 @@ BEGIN;
           ELSE ST_Multi(ST_MakeValid(geom))::geometry(MULTIPOLYGON, 4674)
       END AS geometry,
       NOT ST_IsValid(geom) as geometria_corrigida
-  FROM raw.sp_municipios_2024;
+  FROM raw.BR_Municipios_2024;
 
   -- Adicionar coluna para código ibge antigo
   ALTER TABLE clean.municipios_sp ADD COLUMN codigo_ibge_antigo VARCHAR(6);
@@ -87,7 +88,7 @@ BEGIN;
   COMMENT ON COLUMN clean.municipios_sp.geometria_corrigida IS 'Indica se a geometria original foi corrigida com ST_MakeValid';
 
   COMMENT ON SERVER fdw_municipios_sp IS 'Servidor FDW para dados de municípios de SP do IBGE (2024)';
-  COMMENT ON FOREIGN TABLE raw.sp_municipios_2024 IS 'Dados brutos de municípios de São Paulo importados via OGR_FDW';
+  COMMENT ON FOREIGN TABLE raw.BR_Municipios_2024 IS 'Dados brutos de municípios de São Paulo importados via OGR_FDW';
   -- Opcional: Adicionar comentário na coluna
   COMMENT ON COLUMN clean.municipios_sp.codigo_ibge_antigo IS 'Código IBGE antigo (6 dígitos) - primeiros 6 dígitos do código oficial de 7 dígitos';
 
