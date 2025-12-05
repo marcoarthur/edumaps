@@ -24,17 +24,8 @@ BEGIN;
     salario_total       NUMERIC
   );
 
-  -- Adicionar a nova coluna
-  -- ALTER TABLE clean.remuneracao_municipal
-  -- ADD COLUMN rede VARCHAR(12);
-  --
-  -- -- Popular a coluna rede com 'Municipal', pois os dados, vieram da rede
-  -- UPDATE clean.remuneracao_municipal
-  -- SET rede = 'Municipal';
-
 
 -- Opcional: Adicionar comentário na coluna
-COMMENT ON COLUMN clean.municipios_sp.codigo_ibge_antigo 
   CREATE INDEX ix_remuneracao_cod_inep ON clean.remuneracao_municipal(cod_inep);
   CREATE INDEX ix_remuneracao_cod_municipio ON clean.remuneracao_municipal(cod_municipio);
   CREATE INDEX ix_remuneracao_categoria ON clean.remuneracao_municipal(categoria);
