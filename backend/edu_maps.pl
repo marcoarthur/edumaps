@@ -5,7 +5,7 @@ use EduMaps::Schema;
 use Mojo::JSON qw(encode_json);
 use Mojo::Collection qw(c);
 use Scalar::Util qw( looks_like_number );
-use MyApp::OSM::Query;
+use EduMaps::OSM::Query;
 
 push @{app->static->paths}, qw(./public ../frontend/map_app/dist);
 
@@ -15,7 +15,7 @@ my $conf = app->config;
 plugin Minion => {Pg => $conf->{db_url}};
 app->minion->add_task(
   query_osm => sub ($job, $municipio_id) {
-    my $query = MyApp::OSM::Query->new(
+    my $query = EduMaps::OSM::Query->new(
       municipio     => $municipio_id,
       log           => $job->app->log,
       config        => $conf,
@@ -126,7 +126,7 @@ get '/api/schools' => sub ($c) {
 
 get '/api/query-osm' => sub ($c) {
   my $fid = $c->param('fid');
-  my $query = MyApp::OSM::Query->new(
+  my $query = EduMaps::OSM::Query->new(
     municipio     => $fid,
     log           => app->log,
     config        => $conf,
