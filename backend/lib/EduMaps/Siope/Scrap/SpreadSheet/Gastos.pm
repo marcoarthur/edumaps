@@ -1,5 +1,5 @@
 package EduMaps::Siope::Scrap::SpreadSheet::Gastos;
-use Mojo::Base -base, -signatures, -async_await;
+use Mojo::Base "Mojo::EventEmitter", -signatures, -async_await;
 use Mojo::UserAgent;
 use Mojo::Util qw(trim);
 use Mojo::Exception;
@@ -149,6 +149,11 @@ Exemplo: C</tmp/350030_2024.xlsx>
 
 async sub get_data_p($self) {
   $self->base->query( %{$self->_data} );
+
+  $self->_progress(
+    {state => 'active', phase => 'Siope HTTP' , total => 0, processed => 0}
+  );
+
   my $tx = await $self->ua->get_p( $self->base );
 
   unless ($tx->result->is_success) {
@@ -164,6 +169,9 @@ async sub get_data_p($self) {
   my $data = $tx->result->body;
 
   try {
+    $self->_progress(
+      {state => 'active', phase => 'XLSX processe', total => 0, processed => 0}
+    );
     io($self->sheet)->binary->print($data);
   } catch($e) {
     Mojo::Exception->throw("Não foi possível salvar o arquivo: $e");
@@ -174,7 +182,7 @@ async sub get_data_p($self) {
 
 =head2 get_data
 
-     my $file = $self->get_data;
+my $file = $self->get_data;
 
 Versão blocked (síncrona) de C<get_data_p>.
 
@@ -229,7 +237,7 @@ sub _process_sheet($self) {
 
 =head2 get_and_process
 
-  my $rows = $self->get_and_process;
+my $rows = $self->get_and_process;
 
 =head3 Descrição
 
@@ -248,7 +256,7 @@ sub _to_num($self, $val) {
 
 =head2 cleanup
 
-  $self->cleanup;
+$self->cleanup;
 
 Remove o arquivo Excel temporário do disco.
 
@@ -289,6 +297,10 @@ sub _read_sheet_fast($self) {
   unlink $csv;
 
   return \@rows;
+}
+
+sub _progress($self, $data) {
+  $self->emit(progress => $data);
 }
 
 1;

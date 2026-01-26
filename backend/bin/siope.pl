@@ -45,6 +45,26 @@ sub debug_msg {
   say join ("\n", @_) if $options{debug};
 }
 
+sub copy_to_db {
+  my ($dbh, $rows, $col_order) = @_;
+  $dbh->do("SET synchronous_commit TO off");
+  $dbh->do("COPY clean.remuneracao_municipal (" .
+      join(',', $col_order->@*) . ") FROM STDIN");
+  foreach my $row (@$rows) {
+    my @final_row = ($row->@*, $options{cod_mun}, 'Municipal' );
+    my $line = join("\t", 
+      map {
+        defined $_ ? 
+        do { (my $t = $_) =~ s/[\t\n\r]/ /g; $t }
+        :
+        "\\N"
+      } @final_row );
+    $dbh->pg_putcopydata($line . "\n");
+  }
+
+  $dbh->pg_putcopyend();
+}
+
 # populate table clean.remuneracao
 sub populate {
 
@@ -77,22 +97,13 @@ sub populate {
     debug_msg(
       sprintf("Processando total de dados: %d", scalar(@rows))
     );
-    # adiciona o cod_municipio e rede
-    @rows = map { 
-      my $row = $_;
-      push @$row, $options{cod_mun}, 'Municipal';
-      $row;
-    } @rows;
 
     # carrega no banco de dados --bulk insertion--
     debug_msg(
       sprintf("Salvando dados no banco de dados")
     );
 
-    while(my @chunk = splice(@rows, 0, CHUNK_SIZE)) {
-      my $population = [$col_order, @chunk];
-      $rs->populate($population);
-    }
+    copy_to_db($sch->storage->dbh, [@rows], $col_order);
 
     debug_msg(
       sprintf("Removendo arquivo temporário")
