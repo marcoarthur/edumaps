@@ -17,4 +17,20 @@ sub with_deltas($self) {
   );
 }
 
+sub from_cities($self, $cities) {
+  $cities = ref $cities ? $cities : [ $cities ];
+
+  my $city_search = $self->search_in('MunicipiosSp')
+  ->filter_by( nome_municipio => $cities )
+  ->get_column('codigo_ibge');
+
+  $self->search_rs(
+    { codigo_ibge => { -in => $city_search->as_query } }
+  );
+}
+
+sub from_school_name($self, $name) {
+  $self->search_rs({ no_escola => { -ilike => "%${name}%" } });
+}
+
 1;

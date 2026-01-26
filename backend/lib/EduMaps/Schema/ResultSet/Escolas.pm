@@ -1,5 +1,7 @@
 package EduMaps::Schema::ResultSet::Escolas;
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
+use DateTime;
+use utf8;
 
 sub with_geojson($self) {
 
@@ -253,6 +255,169 @@ sub expand_modalidades($self) {
       '+select' => [@selects],
       '+as' => [@as],
     }
+  );
+}
+
+=pod
+
+=head2 payroll_by_city($city_name, $date = DateTime->now(locale => 'pt'))
+
+Returns payroll summary by school for a specific city.
+
+=cut
+
+=head3 Parameters
+
+=over 4
+
+=item * C<$city_name> (String or SubQuery) - City name to filter schools
+
+=item * C<$date> (DateTime) - Date object for month/year filtering
+
+Default: Current date with Portuguese locale
+
+=back
+
+=head3 Returns
+
+=over 4
+
+=item * L<EduMaps::Schema::ResultSet> - ResultSet with aggregated payroll data grouped by school:
+
+=over 8
+
+=item * escola - School name
+
+=item * mes - Month name in Portuguese (capitalized)
+
+=item * ano - Year
+
+=item * total_professores - Count of professionals
+
+=item * total_salarios - Sum of total salaries
+
+=back
+
+=back
+
+=head3 Example
+
+  # Get payroll for current month
+  my $payroll_rs = $rs->payroll_by_city('São Paulo');
+  
+  while (my $row = $payroll_rs->next) {
+    say "School: " . $row->escola;
+    say "Period: " . $row->mes . "/" . $row->ano;
+    say "Teachers: " . $row->total_professores;
+    say "Total salary: R$ " . $row->total_salarios;
+  }
+  
+  # With specific date
+  use DateTime;
+  my $date = DateTime->new(year => 2025, month => 5, locale => 'pt');
+  my $may_payroll = $rs->payroll_by_city('Rio de Janeiro', $date);
+
+=cut
+
+sub payroll_by_city($self, $city_name, $date = DateTime->now( locale => 'pt')) {
+
+  # if we have a query for city id use it, otherwise assume a simple string
+  my $params = {
+    municipio => ref $city_name ? { -in => $city_name } : $city_name,
+  };
+  # parameters for payroll
+  my $params_folha = {
+    ano => $date->year,
+    # since 2025 has incomplete data, if we have this year we set month manually
+    mes => (
+      $date->year == 2025 && $date->month > 6 ? 'Junho' : ucfirst($date->month_name)
+    ),
+  };
+
+  $self->search_rs($params)
+  ->search_related(
+    'folha_pagamentos', 
+    $params_folha,
+    { 
+      columns => [
+        { total_professores => { count  => 'nome_profissional' }},
+        { total_salarios    => { sum    => 'salario_total' } },
+        qw(escola mes ano),
+      ],
+      group_by => [ qw(folha_pagamentos.escola mes ano) ],
+    },
+  );
+}
+
+sub count_by_size($self, $city) {
+  $self->search_rs(
+    { municipio => $city, porte_escola => { '<>' => q/''/} },
+    {
+      columns => [
+        'porte_escola',
+        { total_por_porte => { count => '*' } }
+      ],
+      group_by  => [ qw(municipio porte_escola) ],
+    }
+  );
+}
+
+sub add_osm_url($self) {
+  $self->add_derived(
+    osm_url => q<
+      FORMAT(
+        'https://www.openstreetmap.org/search?query=%s%%2C%s',
+        REPLACE(ROUND(latitude::numeric, 6)::text, ',', '.'),
+        REPLACE(ROUND(longitude::numeric, 6)::text, ',', '.')
+      )
+    >
+  );
+}
+
+sub reduce_convex_hull_by($self, %opts) {
+  my $me = $self->current_source_alias;
+  my $group_cols = $opts{group_by} or die "group_by is mandatory";
+
+  # pairs: json_attr_name : value
+  my $properties = join(
+    ",\n",
+    map { 
+      my ($table, $col) = $self->separate_fqn($_);
+      sprintf q/'%s', %s/, $col, defined $table ? "$table.$col" : "$me.$col";
+    } @$group_cols
+  );
+  my $props_sql = \qq{
+    jsonb_build_object( 
+      $properties,
+      'total_escolas', COUNT(*),
+      'hull_area_km2', ROUND(CAST(ST_Area(ST_Transform(ST_ConvexHull(ST_Collect($me.geometry)), 5880)) / 1000000 AS numeric), 3)
+    )
+  };
+
+  $self->select_derived(
+    geojson => {
+      jsonb_build_object => [
+        qw/'type' 'FeatureCollection' 'features'/,
+        {
+          jsonb_build_array => {
+            jsonb_build_object => [
+              qw/'type' 'Feature' 'geometry'/,
+              \"ST_AsGeoJSON(ST_ConvexHull(ST_Collect($me.geometry)))::jsonb",
+              "'properties'",
+              $props_sql,
+            ]
+          }
+        }
+      ]
+    }
+  )->group_by( $group_cols );
+}
+
+sub reduce_centroid($self, %opts) {
+  my $me = $self->current_source_alias;
+  my $centroid = $opts{as} // 'centroid';
+  $self->select_derived(
+    $centroid => "ST_SetSRID(ST_Centroid(ST_Collect($me.geometry)), 4674)" 
   );
 }
 
