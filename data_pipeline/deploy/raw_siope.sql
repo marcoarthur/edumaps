@@ -9,7 +9,7 @@ BEGIN;
     ano                 INT,
     mes                 TEXT,
     nome_profissional   TEXT,
-    cod_municipio       BIGINT,
+    cod_municipio       VARCHAR(8),
     cod_inep            BIGINT,
     escola              TEXT,
     carga_horaria       INT,
@@ -29,6 +29,11 @@ BEGIN;
   CREATE INDEX ix_remuneracao_cod_inep ON clean.remuneracao_municipal(cod_inep);
   CREATE INDEX ix_remuneracao_cod_municipio ON clean.remuneracao_municipal(cod_municipio);
   CREATE INDEX ix_remuneracao_categoria ON clean.remuneracao_municipal(categoria);
+  CREATE INDEX ix_remuneracao_nome_profissional ON clean.remuneracao_municipal(nome_profissional);
+  CREATE INDEX ix_remuneracao_escola ON clean.remuneracao_municipal(escola);
+  CREATE INDEX ix_remuneracao_segmento_ensino ON clean.remuneracao_municipal(segmento_ensino);
+  CREATE INDEX ix_remuneracao_cpf ON clean.remuneracao_municipal(cpf);
+  CREATE INDEX ix_remuneracao_tipo ON clean.remuneracao_municipal(tipo);
 
   -- Comentários para documentação
   COMMENT ON TABLE clean.remuneracao_municipal IS 'Dados com as remunerações dos profissionais da educação da rede municipal';

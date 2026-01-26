@@ -168,4 +168,10 @@ __PACKAGE__->set_primary_key("id_escola", "ano");
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  'escola',
+  'EduMaps::Schema::Result::InepNotasDesagregadas',
+  {'foreign.cod_inep' => 'self.id_escola' },
+);
+
 1;

@@ -59,6 +59,7 @@ BEGIN;
   CREATE INDEX ix_municipios_sp_geometry ON clean.municipios_sp USING GIST (geometry);
   CREATE INDEX ix_municipios_sp_codigo_ibge ON clean.municipios_sp (codigo_ibge);
   CREATE INDEX ix_municipios_sp_nome ON clean.municipios_sp (nome);
+  CREATE INDEX ix_municipios_sp_nome_municipio ON clean.municipios_sp (nome_municipio);
   CREATE INDEX ix_municipios_sp_regiao_imediata ON clean.municipios_sp (codigo_regiao_imediata);
   CREATE INDEX ix_municipios_sp_regiao_intermediaria ON clean.municipios_sp (codigo_regiao_intermediaria);
   CREATE INDEX ix_municipios_sp_estado ON clean.municipios_sp (sigla_estado);

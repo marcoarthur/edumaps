@@ -24,4 +24,6 @@ BEGIN;
     land_use          TEXT
   );
 
+  CREATE INDEX idx_osm_landuse_geography_gist ON clean.osm_landuse USING GIST (geography(geom));
+  CREATE INDEX idx_osm_landuse_properties_gin ON clean.osm_landuse USING GIN (properties);
 COMMIT;

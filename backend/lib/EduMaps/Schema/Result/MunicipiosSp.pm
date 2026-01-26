@@ -241,9 +241,26 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("codigo_ibge");
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-03 21:38:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GUCVbM9181iNzaKP20omxw
+=head2 osm_landuses
+
+Type: has_many
+
+Related object: L<EduMaps::Schema::Result::OsmLanduse>
+
+=cut
+
+__PACKAGE__->has_many(
+  "osm_landuses",
+  "EduMaps::Schema::Result::OsmLanduse",
+  { "foreign.municipio_id" => "self.codigo_ibge" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-07 06:50:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D+d1k4nqBtmrJ5rZxDl7kg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -266,7 +283,7 @@ __PACKAGE__->has_many(
   sub {
     my $args = shift;
     my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
-    my $on_join_clause = sprintf "ST_Contains(%s.geometry::geometry, %s.geometry)", $self_a, $foreign_a;
+    my $on_join_clause = sprintf "ST_Contains(%s.geometry, %s.geometry)", $self_a, $foreign_a;
     return \[$on_join_clause];
   },
   { join_type => 'LEFT' },
@@ -276,6 +293,23 @@ __PACKAGE__->has_one(
   'analise_cobertura',
   'EduMaps::Schema::Result::AnaliseCoberturaEscolar',
   {'foreign.codigo_ibge' => 'self.codigo_ibge'}
+);
+
+__PACKAGE__->might_have(
+  'metrica',
+  'EduMaps::Schema::Result::MetricasAcessibilidadeMunicipios',
+  'codigo_ibge',
+);
+
+__PACKAGE__->has_many(
+  'vizinhos',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  sub {
+    my $args = shift;
+    my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
+    my $on_join_clause = sprintf "ST_Touches(%s.geometry, %s.geometry)", $self_a, $foreign_a;
+    return \[$on_join_clause];
+  }
 );
 
 1;

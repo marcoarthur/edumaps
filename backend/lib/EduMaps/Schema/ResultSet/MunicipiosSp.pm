@@ -34,6 +34,16 @@ sub to_geojson($self) {
 
 sub details($self,$id) {
 
+  my %counts = (
+    fundamental   => \q/COUNT(escolas) FILTER(WHERE escolas.etapas_modalidades ILIKE '%ensino fundamental%')/,
+    medio         => \q/COUNT(escolas) FILTER(WHERE escolas.etapas_modalidades ILIKE '%Médio%')/,
+    infantil      => \q/COUNT(escolas) FILTER(WHERE escolas.etapas_modalidades ILIKE '%infantil%')/,
+    profissional  => \q/COUNT(escolas) FILTER(WHERE escolas.etapas_modalidades ILIKE '%Educação Profissional%')/,
+    eja           => \q/COUNT(escolas) FILTER(WHERE escolas.etapas_modalidades ILIKE '%Educação de Jovens Adultos%')/,
+    publicas      => \q/COUNT(escolas) FILTER(WHERE escolas.categoria_administrativa = 'Pública')/,
+  );
+  my @total_counts = map { +{"total_$_" => $counts{$_} } } keys %counts;
+
   my $cols = [
     { codigo_ibge => 'codigo_ibge' },
     { nome_municipio => 'nome_municipio' },
@@ -41,6 +51,7 @@ sub details($self,$id) {
     { total_escolas => { count => 'escolas' } },
     { populacao => 'populacao.populacao_estimada' },
     { estado => 'nome_estado' },
+    @total_counts,
   ];
 
   my @params = ( 
@@ -54,5 +65,34 @@ sub details($self,$id) {
   );
   $self->search_rs( @params );
 }
+
+sub school_grades($self, %opts) {
+  my $me = $self->current_source_alias;
+  my $rs = $self
+  ->join({ escolas => 'notas' })
+  ->select_derived(
+    codigo_inep       => 'escolas.codigo_inep',
+    nome_municipio    => "$me.nome_municipio",
+    portuguese_grades => { 
+      jsonb_agg => { json_build_object => [ q/'nota'/, 'notas.nota_por', q/'ano'/, 'notas.ano'] } 
+    },
+    math_grades     => { 
+      jsonb_agg => { json_build_object => [ q/'nota'/, 'notas.nota_mat', q/'ano'/, 'notas.ano'] } 
+    },
+  )
+  ->group_by( ['codigo_inep',"$me.nome_municipio"] );
+  return $rs->having( 
+    { 
+      -and => 
+      [
+        \["COUNT(notas.nota_mat) > ?",0],
+        \["COUNT(notas.nota_por) > ?",0]
+      ]
+    }
+  ) if $opts{graded_only};
+  return $rs;
+}
+
+sub neighbor_cities($self) { $self->search_related_rs('vizinhos') }
 
 1;

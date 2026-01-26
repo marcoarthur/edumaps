@@ -1,5 +1,9 @@
 <script>
+  import { getSiopePayroll } from './js/siope.js';
+  import Payroll     from './Siope/Payroll.svelte';
+  import JobProgress from './Siope/JobProgress.svelte';
   export let data = null;
+  export let year = new Date().getFullYear(); // Ano padrão
   
   const fieldLabels = {
     'id': 'ID',
@@ -34,6 +38,55 @@
         return String(value);
     }
   }
+
+  // Variáveis de estado para o SIOPE
+  let siopePayroll = null; // Armazena os dados finais (Componente 1)
+  let siopeJobId = null;  // Armazena o ID do Job (Componente 2)
+  let isFetching = false; // Estado de carregamento inicial
+  let hasAttempted = false; // Para não mostrar o botão de primeira
+  let fetchError = null;
+
+  async function handleFetchSiope() {
+      if (!data || !data.codigo_ibge) {
+          console.error("Código do município não disponível.");
+          return;
+      }
+
+      const cityId = String(data.codigo_ibge).slice(0,-1);
+      isFetching = true;
+      hasAttempted = true;
+      siopeJobId = null;
+      siopePayroll = null;
+      fetchError = null;
+
+      try {
+          // Chamada da função principal (GET -> POST, se necessário)
+          const result = await getSiopePayroll(cityId, year);
+          
+          // O getSiopePayroll resolve com o job ID ou com os dados.
+          if (typeof result === 'number') {
+              // Caso 202 Accepted, result é o Job ID
+              siopeJobId = result;
+              // O monitorJobProgress do JobProgress.svelte continuará o fluxo
+          } else {
+              // Caso 200 OK, result são os dados do payroll
+              siopePayroll = result;
+          }
+
+      } catch (e) {
+          fetchError = e.message;
+          console.error("Erro no fluxo SIOPE:", e);
+      } finally {
+          isFetching = false;
+      }
+  }
+
+  // Callback chamado pelo JobProgress.svelte quando o job Minion termina
+  function handleJobComplete(data) {
+      siopeJobId = null;
+      siopePayroll = data;
+      console.log("Fluxo SIOPE concluído e dados recebidos!");
+  }
 </script>
 
 {#if data}
@@ -55,7 +108,42 @@
         {/each}
       </tbody>
     </table>
+
+    <hr/>
+    
+    <div class="siope-section">
+        {#if siopePayroll}
+            <Payroll payrollData={siopePayroll} />
+
+        {:else if siopeJobId}
+            <JobProgress 
+                jobId={siopeJobId} 
+                onJobComplete={handleJobComplete} 
+                jobName={`Cálculo SIOPE para ${year}`}
+            />
+
+        {:else if fetchError}
+            <div class="error-message">⚠️ Erro ao buscar dados SIOPE: {fetchError}</div>
+            <button on:click={handleFetchSiope} class="fetch-button">Tentar novamente</button>
+
+        {:else}
+            <button 
+                on:click={handleFetchSiope} 
+                disabled={isFetching}
+                class="fetch-button primary"
+            >
+                {#if isFetching}
+                    Carregando...
+                {:else}
+                    Buscar Detalhes SIOPE {year}
+                {/if}
+            </button>
+            <p class="fetch-note">A primeira busca pode iniciar um processo demorado.</p>
+        {/if}
+    </div>
+
   </div>
+
 {/if}
 
 <style>

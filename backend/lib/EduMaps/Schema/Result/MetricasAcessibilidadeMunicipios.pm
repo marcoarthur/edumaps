@@ -132,4 +132,16 @@ __PACKAGE__->add_unique_constraint("idx_metricas_acessibilidade_codigo", ["codig
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+  'populacao',
+  'EduMaps::Schema::Result::PopulacaoMunicipal',
+  { 'foreign.codigo_ibge' => 'self.codigo_ibge' },
+);
+
+__PACKAGE__->belongs_to(
+  'municipio',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  'codigo_ibge',
+);
 1;

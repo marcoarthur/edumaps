@@ -111,6 +111,12 @@ Situação de contrato
 
 Segmento do ensino onde atua
 
+=head2 rede
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 12
+
 =head2 salario_base
 
   data_type: 'numeric'
@@ -146,12 +152,6 @@ Outras fontes de receita no salário
 
 Total Salarial do profissional
 
-=head2 rede
-
-  data_type: 'varchar'
-  is_nullable: 1
-  size: 12
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -179,6 +179,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "segmento_ensino",
   { data_type => "text", is_nullable => 1 },
+  "rede",
+  { data_type => "varchar", is_nullable => 1, size => 12 },
   "salario_base",
   { data_type => "numeric", is_nullable => 1 },
   "salario_fundeb_max",
@@ -189,13 +191,11 @@ __PACKAGE__->add_columns(
   { data_type => "numeric", is_nullable => 1 },
   "salario_total",
   { data_type => "numeric", is_nullable => 1 },
-  "rede",
-  { data_type => "varchar", is_nullable => 1, size => 12 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-03 21:38:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sTR8PZH3WI/ze2EZXhCviQ
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-07 06:50:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0+ghDTAdxOvNAZPBr9M/eA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -204,6 +204,12 @@ __PACKAGE__->belongs_to(
   'escola',
   'EduMaps::Schema::Result::Escolas',
   {'foreign.codigo_inep' => 'self.cod_inep'},
+);
+
+__PACKAGE__->belongs_to(
+  'municipio',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  {'foreign.codigo_ibge_antigo' => 'self.cod_municipio'}
 );
 
 1;
