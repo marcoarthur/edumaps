@@ -134,4 +134,19 @@ __PACKAGE__->belongs_to(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->might_have(
+  'escolas',
+  'EduMaps::Schema::Result::Escolas',
+  sub {
+    my $args = shift;
+    my $radius = 1000;
+    my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
+    my $on_join_clause = sprintf 
+    "ST_DWithin(%s.geom::geography, %s.geometry::geography, $radius)", 
+    $self_a, $foreign_a;
+    return \[$on_join_clause];
+  }
+);
+
 1;

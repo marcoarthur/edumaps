@@ -283,7 +283,7 @@ __PACKAGE__->has_many(
   sub {
     my $args = shift;
     my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
-    my $on_join_clause = sprintf "ST_Contains(%s.geometry::geometry, %s.geometry)", $self_a, $foreign_a;
+    my $on_join_clause = sprintf "ST_Contains(%s.geometry, %s.geometry)", $self_a, $foreign_a;
     return \[$on_join_clause];
   },
   { join_type => 'LEFT' },
@@ -293,6 +293,23 @@ __PACKAGE__->has_one(
   'analise_cobertura',
   'EduMaps::Schema::Result::AnaliseCoberturaEscolar',
   {'foreign.codigo_ibge' => 'self.codigo_ibge'}
+);
+
+__PACKAGE__->might_have(
+  'metrica',
+  'EduMaps::Schema::Result::MetricasAcessibilidadeMunicipios',
+  'codigo_ibge',
+);
+
+__PACKAGE__->has_many(
+  'vizinhos',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  sub {
+    my $args = shift;
+    my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
+    my $on_join_clause = sprintf "ST_Touches(%s.geometry, %s.geometry)", $self_a, $foreign_a;
+    return \[$on_join_clause];
+  }
 );
 
 1;

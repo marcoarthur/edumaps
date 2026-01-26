@@ -221,8 +221,36 @@ __PACKAGE__->belongs_to(
     my $args = shift;
     my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
     my $on_join_clause = sprintf "ST_Contains(%s.geometry::geometry, %s.geometry)", $foreign_a, $self_a;
+    #my $on_join_clause = sprintf "%s.geometry && %s.geometry::geometry", $self_a, $foreign_a;
     return \[$on_join_clause];
   },
+);
+
+__PACKAGE__->has_many(
+  'notas',
+  'EduMaps::Schema::Result::InepNotasDesagregadas',
+  {'foreign.id_escola' => 'self.codigo_inep' },
+);
+
+__PACKAGE__->has_many(
+  'equipamentos',
+  'EduMaps::Schema::Result::OsmLanduse',
+  sub {
+    my $args = shift;
+    my ($distance) = (1000);
+    my ($foreign_a, $self_a) = ($args->{foreign_alias}, $args->{self_alias});
+    my $on_join_clause = sprintf 
+    "
+    %s.geom && ST_Expand(%s.geometry, 0.02) AND
+    ST_DWithin(
+      %s.geom::geography,
+      %s.geometry::geography,
+      $distance
+    )",
+    $foreign_a, $self_a, $foreign_a, $self_a;
+
+    return \[$on_join_clause];
+  }
 );
 
 1;
