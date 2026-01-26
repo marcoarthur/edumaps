@@ -507,6 +507,7 @@ BEGIN;
   CREATE INDEX ix_inep_codigo_ibge ON clean.inep (codigo_ibge);
   CREATE INDEX ix_inep_id_escola ON clean.inep (id_escola);
   CREATE INDEX ix_inep_rede ON clean.inep (rede);
+  CREATE INDEX idx_inep_rede_codigo_ibge ON clean.inep(rede, codigo_ibge);
 
   -- Comentários para documentação
   COMMENT ON TABLE  clean.inep IS 'Dados limpos do INEP - Indicadores educacionais por escola e município';
