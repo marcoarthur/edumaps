@@ -79,8 +79,27 @@ async sub run_query_p($self) {
 
 async sub _get_from_osm($self, $q = $self->_build_query) {
   $self->log->info("Getting data from OSM service");
-  $self->emit( progress => { total => 0, processed => 0, phase => 'osm' } );
+  $self->emit( progress => { total => 0, processed => 0, phase => 'requesting osm' } );
   my $t0 = [ gettimeofday ];
+  my $id = $self->_ua->on( 
+    start => sub ($ua, $txx, @rest) 
+    {
+      # download phase
+      $txx->req->once(
+        finish => sub {
+          $txx->res->on(
+            progress => sub ($msg, @rest){
+              return unless my $len = $msg->headers->content_length;
+              my $size = $msg->content->progress;
+              $self->emit(
+                progress => {total => 100, processed => int($size / ($len / 100)), phase => 'download osm'}
+              );
+            }
+          );
+        }
+      );
+    }
+  );
   my $tx = await $self->_ua->post_p( $self->_overpass_url => form => { data => $q } );
   my $res = $tx->res;
 
@@ -94,6 +113,7 @@ async sub _get_from_osm($self, $q = $self->_build_query) {
   } else {
     $self->log->error( sprintf "Failed query: %s, Error %s", $q, $res->message );
   }
+  $self->_ua->unsubscribe(start => $id);
   return decode_json($res->body);
 }
 

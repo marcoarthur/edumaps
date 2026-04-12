@@ -3,7 +3,7 @@
   import Payroll     from './Siope/Payroll.svelte';
   import JobProgress from './Siope/JobProgress.svelte';
   export let data = null;
-  export let year = new Date().getFullYear(); // Ano padrão
+  export let year = new Date().getFullYear() - 1; //  Last year
   
   const fieldLabels = {
     'id': 'ID',

@@ -64,8 +64,9 @@ Nome completo do profissional
 
 =head2 cod_municipio
 
-  data_type: 'bigint'
+  data_type: 'varchar'
   is_nullable: 1
+  size: 8
 
 Código do município formato antigo 6 dígitos do IBGE
 
@@ -166,7 +167,7 @@ __PACKAGE__->add_columns(
   "nome_profissional",
   { data_type => "text", is_nullable => 1 },
   "cod_municipio",
-  { data_type => "bigint", is_nullable => 1 },
+  { data_type => "varchar", is_nullable => 1, size => 8 },
   "cod_inep",
   { data_type => "bigint", is_nullable => 1 },
   "escola",
@@ -194,8 +195,8 @@ __PACKAGE__->add_columns(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-07 06:50:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0+ghDTAdxOvNAZPBr9M/eA
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sx1EwIeqAIFNMqWuRKmA/w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

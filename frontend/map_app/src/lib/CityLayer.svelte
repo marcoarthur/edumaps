@@ -57,6 +57,7 @@
             onDetails: (fid) => dispatch('details', { fid }),
             onSchools: (city) => dispatch('schools', { city }),
             onOSM: (fid) => dispatch('osm', { fid }),
+            onCluster: (clusterData) => dispatch('cluster', clusterData)
           }
         });
 

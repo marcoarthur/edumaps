@@ -134,7 +134,7 @@ Longitude em graus decimais (WGS84)
 
   data_type: 'geometry'
   is_nullable: 1
-  size: '16896,18'
+  size: [18,16896]
 
 Geometria do ponto da escola em SIRGAS 2000 (4674)
 
@@ -180,7 +180,7 @@ __PACKAGE__->add_columns(
   "longitude",
   { data_type => "double precision", is_nullable => 1 },
   "geometry",
-  { data_type => "geometry", is_nullable => 1, size => "16896,18" },
+  { data_type => "geometry", is_nullable => 1, size => [18, 16896] },
 );
 
 =head1 PRIMARY KEY
@@ -196,8 +196,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("codigo_inep");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-03 21:38:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mLdSd0gD0h/BjpWFmTJgYw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:V3WHEKDp0IP3SwtpcGSHoA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
