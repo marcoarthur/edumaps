@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
@@ -12,6 +12,8 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@carbon/charts-svelte": "^1.22.18",
+    "@carbon/styles": "^1.103.0",
     "leaflet": "^1.9.4",
     "svelte": "^4.0.0"
   },

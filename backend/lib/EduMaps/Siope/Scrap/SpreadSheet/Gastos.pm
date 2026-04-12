@@ -150,10 +150,6 @@ Exemplo: C</tmp/350030_2024.xlsx>
 async sub get_data_p($self) {
   $self->base->query( %{$self->_data} );
 
-  $self->_progress(
-    {state => 'active', phase => 'Siope HTTP' , total => 0, processed => 0}
-  );
-
   my $tx = await $self->ua->get_p( $self->base );
 
   unless ($tx->result->is_success) {
@@ -162,16 +158,15 @@ async sub get_data_p($self) {
     Mojo::Exception->throw($err_msg);
   }
 
-  unless ( $tx->result->headers->content_type =~ /excel/i ) {
-    Mojo::Exception->throw("Erro API não retornou um arquivo excel");
+  unless ( (my $content = $tx->result->headers->content_type) =~ /excel/i ) {
+    Mojo::Exception->throw(
+      sprintf("Erro API não retornou um arquivo excel (content-type: %s)", $content)
+    );
   }
 
   my $data = $tx->result->body;
 
   try {
-    $self->_progress(
-      {state => 'active', phase => 'XLSX processe', total => 0, processed => 0}
-    );
     io($self->sheet)->binary->print($data);
   } catch($e) {
     Mojo::Exception->throw("Não foi possível salvar o arquivo: $e");

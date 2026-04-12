@@ -50,4 +50,13 @@ sub add_extra_info($self) {
   );
 }
 
+# Siope Service providing the xlsx file with data, requires this order
+sub siope_column_order($self) {
+  return [ 
+    qw(ano mes nome_profissional cpf cod_inep escola carga_horaria tipo categoria 
+      situacao segmento_ensino salario_base salario_fundeb_max salario_fundeb_min
+      salario_outros salario_total cod_municipio rede)
+  ];
+}
+
 1;

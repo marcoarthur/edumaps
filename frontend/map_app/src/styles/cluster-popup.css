@@ -1,0 +1,93 @@
+/* cluster-popup.css - Estilos para os popups dos clusters */
+
+.cluster-popup-wrapper .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.cluster-popup {
+  min-width: 260px;
+}
+
+.popup-header {
+  padding: 12px;
+  background: #f8f9fa;
+  border-left: 4px solid;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.popup-header h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.cluster-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+}
+
+.popup-body {
+  padding: 12px;
+  font-size: 12px;
+}
+
+.popup-body p {
+  margin: 6px 0;
+}
+
+.popup-body hr {
+  margin: 8px 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.positive {
+  color: #10b981;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.popup-footer {
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-details {
+  width: 100%;
+  padding: 6px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-details:hover {
+  background: #2563eb;
+}
+
+/* Estilos para os marcadores de cluster */
+.cluster-marker div {
+  transition: transform 0.2s;
+}
+
+.cluster-marker div:hover {
+  transform: scale(1.1);
+}

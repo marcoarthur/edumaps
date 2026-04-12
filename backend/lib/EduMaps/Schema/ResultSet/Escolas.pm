@@ -22,7 +22,7 @@ sub find_by_city_id($self, $id) {
     }
   )->geojson_features(
     'me.geometry',
-    [ qw(endereco escola municipio categoria_administrativa telefone etapas_modalidades) ],
+    [ qw(endereco escola municipio categoria_administrativa telefone etapas_modalidades codigo_inep) ],
   );
 }
 
@@ -327,7 +327,10 @@ sub payroll_by_city($self, $city_name, $date = DateTime->now( locale => 'pt')) {
   };
   # parameters for payroll
   my $params_folha = {
-    ano => $date->year,
+    # since we don't have 2026 yet we should assume 2025 if 2026
+    ano => do { 
+      $date->year == 2026 ? 2025 : $date->year
+    },
     # since 2025 has incomplete data, if we have this year we set month manually
     mes => (
       $date->year == 2025 && $date->month > 6 ? 'Junho' : ucfirst($date->month_name)
@@ -355,7 +358,8 @@ sub count_by_size($self, $city) {
     {
       columns => [
         'porte_escola',
-        { total_por_porte => { count => '*' } }
+        { total_por_porte => { count => '*' } },
+        { ids_escola => { string_agg => [\'codigo_inep::text', \"','"]} },
       ],
       group_by  => [ qw(municipio porte_escola) ],
     }

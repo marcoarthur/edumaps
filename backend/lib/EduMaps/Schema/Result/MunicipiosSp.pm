@@ -165,7 +165,7 @@ Nome do concurso (campo específico IBGE)
 
   data_type: 'geometry'
   is_nullable: 1
-  size: '16916,18'
+  size: [18,16916]
 
 Geometria do município em MULTIPOLYGON (SRID 4674)
 
@@ -222,7 +222,7 @@ __PACKAGE__->add_columns(
   "area_km2",
   { data_type => "double precision", is_nullable => 1 },
   "geometry",
-  { data_type => "geometry", is_nullable => 1, size => "16916,18" },
+  { data_type => "geometry", is_nullable => 1, size => [18, 16916] },
   "geometria_corrigida",
   { data_type => "boolean", is_nullable => 1 },
   "codigo_ibge_antigo",
@@ -259,8 +259,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-07 06:50:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D+d1k4nqBtmrJ5rZxDl7kg
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dHCltUEH0VCkb8PgIfQApg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -310,6 +310,12 @@ __PACKAGE__->has_many(
     my $on_join_clause = sprintf "ST_Touches(%s.geometry, %s.geometry)", $self_a, $foreign_a;
     return \[$on_join_clause];
   }
+);
+
+__PACKAGE__->has_many(
+  'remuneracao_educacao',
+  'EduMaps::Schema::Result::RemuneracaoMunicipal',
+  {'foreign.cod_municipio' => 'self.codigo_ibge_antigo'},
 );
 
 1;

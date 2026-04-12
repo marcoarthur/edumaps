@@ -45,7 +45,7 @@ __PACKAGE__->table("clean.osm_landuse");
 
   data_type: 'geometry'
   is_nullable: 1
-  size: '16892,18'
+  size: [18,16892]
 
 =head2 properties
 
@@ -67,7 +67,7 @@ __PACKAGE__->add_columns(
   "osm_query_id",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
   "geom",
-  { data_type => "geometry", is_nullable => 1, size => "16892,18" },
+  { data_type => "geometry", is_nullable => 1, size => [18, 16892] },
   "properties",
   { data_type => "jsonb", is_nullable => 1 },
   "land_use",
@@ -129,8 +129,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-07 06:50:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UtsAnuMV8AcUmhJahDOmAQ
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OaIMEP+eDn/Lz/7QAiolxA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

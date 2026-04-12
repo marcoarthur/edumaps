@@ -51,7 +51,7 @@ $mock->redefine(
 
 # --- Teste --------------------------------------------------------------
 
-my $pipe = EduMpas::R::Pipe->new(
+my $pipe = EduMaps::R::Pipe->new(
   data => Test::RS->new,
 );
 

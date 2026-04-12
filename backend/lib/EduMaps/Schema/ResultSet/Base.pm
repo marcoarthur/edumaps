@@ -68,6 +68,8 @@ sub geojson_features($self, $geom, $properties) {
 
 sub get_all($self) { c($self->all) }
 
+sub cache($self) { $self->search_rs(undef, { cache => 1 } ) };
+
 sub count_of($self, $col, $total = "total") {
 
   $col = ref $col ? $col : [$col];
