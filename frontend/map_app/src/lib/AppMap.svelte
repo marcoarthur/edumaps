@@ -12,6 +12,8 @@
   import SchoolClusterLayer from './School/ClusterLayer.svelte';
   import { osmDisabled } from './osmStore.js';
   import '../styles/cluster-popup.css';
+  import SchoolTable from './SchoolTable.svelte';
+  import { schools, selectedSchool, hoveredSchool } from './js/schoolStore.js';
 
   let baseMap;
   let cityLayer;
@@ -32,6 +34,12 @@
   let selectedClusters = [1, 2, 3, 4, 5, 6];
   let currentCityForCluster = null; // Armazena a cidade atual para clusters
   let clusterKey = 0;
+
+  $: if (schoolData?.features?.length) {
+    schools.set(schoolData.features);
+  } else {
+    schools.set([]);
+  }
 
   onDestroy(() => {
     sse?.close();
@@ -263,6 +271,9 @@
     osmDisabled.set(false);
     showClusters = false;
     currentCityForCluster = null;
+    schools.set([]);
+    selectedSchool.set(null);
+    hoveredSchool.set(null);
   }
 </script>
 
@@ -327,6 +338,7 @@
     </div>
 
     <div class="info-panel">
+      <SchoolTable />
       {#if currentDetails && currentDetails.type !== 'osm'}
         {#key currentDetails.codigo_ibge}
           <div class="details-wrapper" transition:fade>
