@@ -1,4 +1,5 @@
 package EduMaps::OSM::Service;
+
 use Mojo::Base 'Mojo::EventEmitter', -signatures, -async_await;
 use Mojo::JSON qw(decode_json encode_json);
 use List::Util qw(first);

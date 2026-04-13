@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::Base;
+
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Mojo::Collection qw(c);
 use Role::Tiny::With;

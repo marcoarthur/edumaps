@@ -1,4 +1,5 @@
 package EduMaps::Roles::Formats;
+
 use Mojo::Base -role, -signatures;
 use Mojo::JSON qw(encode_json);
 use Mojo::DOM;

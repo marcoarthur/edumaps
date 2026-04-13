@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::AnaliseCoberturaEscolar;
+
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
 
 sub sumario_municipio($self) {

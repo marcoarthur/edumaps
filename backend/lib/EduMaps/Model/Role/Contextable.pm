@@ -1,4 +1,5 @@
 package EduMaps::Model::Role::Contextable;
+
 use Mojo::Base -role, -signatures;
 use EduMaps::Model::Exception;
 use EduMaps::Util::ContextFluent;

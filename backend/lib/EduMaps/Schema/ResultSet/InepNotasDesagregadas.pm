@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::InepNotasDesagregadas;
+
 use Mojo::Base "EduMaps::Schema::ResultSet::Base", -signatures;
 
 sub with_deltas($self) {

@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::MunicipiosSp;
+
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
 
 

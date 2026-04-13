@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::Component::Stash;
+
 use Mojo::Base "DBIx::Class::ResultSet", -strict, -signatures;
 use EduMaps::Util::Context;
 use Mojo::Collection qw(c);

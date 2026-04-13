@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::Inep;
+
 use Mojo::Base "EduMaps::Schema::ResultSet::Base", -signatures;
 
 sub full_grade($self, $cod_inep) {

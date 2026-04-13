@@ -1,4 +1,5 @@
 package EduMaps::Model::Role::Searchable;
+
 use Mojo::Base -role, -signatures;
 use EduMaps::Model::Exception;
 

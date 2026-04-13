@@ -1,4 +1,5 @@
 package EduMaps::R::Script;
+
 use Mojo::Base -base, -signatures, -async_await;
 
 use Mojo::IOLoop;
