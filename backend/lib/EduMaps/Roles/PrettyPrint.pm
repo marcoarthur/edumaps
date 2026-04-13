@@ -1,4 +1,5 @@
 package EduMaps::Roles::PrettyPrint;
+
 use Mojo::Base -role, -signatures;
 use Mojo::Util qw(tablify);
 use Term::Table;

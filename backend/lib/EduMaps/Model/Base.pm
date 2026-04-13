@@ -1,4 +1,5 @@
 package EduMaps::Model::Base;
+
 use Mojo::Base "Mojo::EventEmitter", -signatures;
 use Carp qw/croak/;
 use Mojo::Log;

@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::RemuneracaoMunicipal;
+
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
 
 sub from_municipio($self, $city_name) {

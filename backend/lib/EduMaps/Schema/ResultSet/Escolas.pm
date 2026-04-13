@@ -1,4 +1,5 @@
 package EduMaps::Schema::ResultSet::Escolas;
+
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
 use DateTime;
 use utf8;

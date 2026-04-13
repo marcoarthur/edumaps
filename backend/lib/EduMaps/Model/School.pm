@@ -1,4 +1,5 @@
 package EduMaps::Model::School;
+
 use Mojo::Base "EduMaps::Model::Base", -signatures;
 use DateTime;
 use Mojo::Exception qw(raise);

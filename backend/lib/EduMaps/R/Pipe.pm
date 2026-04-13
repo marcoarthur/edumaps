@@ -1,4 +1,5 @@
 package EduMaps::R::Pipe;
+
 use Mojo::Base "Mojo::EventEmitter", -signatures, -async_await;
 use EduMaps::R::Script;
 use Mojo::Template;

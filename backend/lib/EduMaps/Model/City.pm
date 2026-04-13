@@ -1,4 +1,5 @@
 package EduMaps::Model::City;
+
 use Mojo::Base "EduMaps::Model::Base", -signatures;
 use EduMaps::Model::School;
 use JSON::PP qw();

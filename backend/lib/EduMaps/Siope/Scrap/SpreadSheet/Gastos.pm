@@ -1,4 +1,5 @@
 package EduMaps::Siope::Scrap::SpreadSheet::Gastos;
+
 use Mojo::Base "Mojo::EventEmitter", -signatures, -async_await;
 use Mojo::UserAgent;
 use Mojo::Util qw(trim);

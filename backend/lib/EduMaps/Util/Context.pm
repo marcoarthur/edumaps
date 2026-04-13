@@ -1,4 +1,5 @@
 package EduMaps::Util::Context;
+
 use Mojo::Base -base, -signatures;
 
 has stash => sub { +{} };
