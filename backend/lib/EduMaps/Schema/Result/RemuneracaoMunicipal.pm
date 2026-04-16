@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<clean.remuneracao_municipal>
+=head1 TABLE: C<remuneracao_municipal>
 
 =cut
 
-__PACKAGE__->table("clean.remuneracao_municipal");
+__PACKAGE__->table("remuneracao_municipal");
 
 =head1 ACCESSORS
 
@@ -195,8 +195,8 @@ __PACKAGE__->add_columns(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sx1EwIeqAIFNMqWuRKmA/w
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 10:52:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7Uek0Hr/v+n9lJDQ01pLGA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -15,11 +15,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<clean.osm_landuse>
+=head1 TABLE: C<osm_landuse>
 
 =cut
 
-__PACKAGE__->table("clean.osm_landuse");
+__PACKAGE__->table("osm_landuse");
 
 =head1 ACCESSORS
 
@@ -129,8 +129,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OaIMEP+eDn/Lz/7QAiolxA
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 10:52:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a2bw2k1PUkqMq8JBsVyrLw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

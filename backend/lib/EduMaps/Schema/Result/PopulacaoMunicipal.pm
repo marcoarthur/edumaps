@@ -15,11 +15,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<clean.populacao_municipal>
+=head1 TABLE: C<populacao_municipal>
 
 =cut
 
-__PACKAGE__->table("clean.populacao_municipal");
+__PACKAGE__->table("populacao_municipal");
 
 =head1 ACCESSORS
 
@@ -294,8 +294,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("codigo_ibge");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2025-12-19 08:55:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HUnW+IPL2+NFt4FQqbP7zA
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 10:52:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:L6I3TrMNEjEOqx+IFwnxaA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

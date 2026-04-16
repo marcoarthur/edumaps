@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<clean.municipios_sp>
+=head1 TABLE: C<municipios_sp>
 
 =cut
 
-__PACKAGE__->table("clean.municipios_sp");
+__PACKAGE__->table("municipios_sp");
 
 =head1 ACCESSORS
 
@@ -259,8 +259,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-12 13:44:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dHCltUEH0VCkb8PgIfQApg
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 10:52:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6uQhjh9yBf03LkMW7IwlVg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
