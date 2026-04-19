@@ -35,6 +35,8 @@ push @{app->static->paths}, qw(./public ../frontend/map_app/dist);
 plugin Config => {file => './edu_maps.conf'};
 my $conf = app->config;
 
+plugin 'Status';
+
 ##############################################
 # MINION JOBS
 ##############################################
@@ -467,5 +469,17 @@ get 'api/school/cluster' => sub ($c) {
     data => $model->cluster_schools, format => 'json'
   );
 } => 'school_city_cluster';
+
+get 'api/school/:codigo_inep/cover' => [codigo_inep => qr/\d+/] => sub ($c) {
+  my $model = $c->instantiate_model(
+    model => 'School',
+    route_params => [qw(codigo_inep)],
+  );
+
+  $c->render(
+    data => $model->gis_cover,
+    format => 'json',
+  );
+} => 'school_gis_cover';
 
 app->start;

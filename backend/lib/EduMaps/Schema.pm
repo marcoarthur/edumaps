@@ -42,11 +42,10 @@ sub go {
     pg_appname          => 'edumaps',  # Shows in pg_stat_activity
   };
 
+  my $params = do 'edu_maps.conf';
   my @db_params = (
-    'dbi:Pg:dbname=edumaps_dev;host=ubatexu.lan',
-    'devel',
-    'senhaboa123',
-    $db_opts,
+    $params->{db_params}->@*,
+    $params->{db_opts},
   );
   return $class->connect(@db_params);
 }
