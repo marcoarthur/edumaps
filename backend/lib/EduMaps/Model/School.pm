@@ -3,7 +3,6 @@ package EduMaps::Model::School;
 use Mojo::Base "EduMaps::Model::Base", -signatures;
 use DateTime;
 use Mojo::Exception qw(raise);
-use List::Util qw(first);
 use DDP;
 use utf8;
 
@@ -472,6 +471,35 @@ sub cluster_schools($self, $params = {}) {
   );
 
   return $self->json->encode($results->to_array);
+}
+
+sub gis_cover($self, $params = {}) {
+  my $rs = $self->schema->resultset('Escolas');
+
+  $self->set_params_map(
+    params => $params,
+    map => {
+      codigo_inep => [qw(inep codigo_inep)],
+      radius => [qw(radius raio)],
+    }
+  );
+
+  my $properties = [qw/escola codigo_inep dependencia_administrativa raio_km/]; # properties
+  my $radius = $params->{radius} || 5; # cover radius
+  my $cover = qq<ST_Transform(
+    ST_SetSRID(ST_Buffer(geography(geometry), $radius*1000)::geometry, 4674 ), 4326
+  )>; # cover area
+
+  return $self->json->encode( 
+    {error => "raio ($radius) demasiado grande, máximo 10 km"}
+  ) if $radius > 10;
+
+  my $results = $rs->search_rs( codigo_inep => $params->{codigo_inep} )
+  ->add_derived(cobertura => $cover, raio_km => $radius )
+  ->as_subselect_rs->geojson_features('cobertura', $properties)
+  ->as_hash->first;
+
+  return $results->{feature};
 }
 
 1;
