@@ -3,6 +3,8 @@
   import L from 'leaflet';
   import SchoolPopup from './SchoolPopup.svelte';
   import { selectedSchool, hoveredSchool } from './js/schoolStore.js';
+  import CoverArea from './School/CoverArea.svelte';
+  import { activeCoverSchool } from './stores/activeCoverStore.js';
 
   export let schoolData = null;
 
@@ -83,3 +85,5 @@
     });
   }
 </script>
+
+<CoverArea />
