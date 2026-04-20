@@ -81,7 +81,6 @@ BEGIN;
 
   CREATE INDEX ix_escolas_geometry ON clean.escolas USING GIST (geometry);
   CREATE INDEX ix_escolas_geography_gist ON clean.escolas USING GIST (geography(geometry));
-  CREATE INDEX ix_escolas_codigo_inep ON clean.escolas (codigo_inep);
   CREATE INDEX ix_escolas_uf ON clean.escolas (uf);
   CREATE INDEX ix_escolas_municipio ON clean.escolas (municipio);
 
