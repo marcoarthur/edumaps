@@ -5,18 +5,63 @@
   export let loading = false;
   export let error = null;
   
+  // Paginação
+  export let pageSize = 20;        // itens por página
+  export let currentPage = 1;      // página atual (1-indexed)
+
   const dispatch = createEventDispatcher();
 
+  // Total de páginas
+  $: totalPages = Math.ceil(escolas.length / pageSize);
+  
+  // Garantir que currentPage esteja dentro dos limites
+  $: {
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = totalPages;
+    }
+    if (currentPage < 1 && escolas.length > 0) {
+      currentPage = 1;
+    }
+  }
+  
+  // Escolas da página atual (fatia do array)
+  $: paginatedEscolas = escolas.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  
+  // Funções de navegação
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      // Disparar evento para que o componente pai possa, se quiser, fazer server-side pagination
+      dispatch('pageChange', { page, pageSize });
+    }
+  }
+  
+  function nextPage() {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  }
+  
+  function prevPage() {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  }
+  
+  function handlePageSizeChange(event) {
+    pageSize = parseInt(event.target.value, 10);
+    currentPage = 1; // reset para primeira página
+    dispatch('pageSizeChange', { pageSize });
+  }
+  
+  // Resto das funções originais (getHeaderColor, getModalidadeIcon, etc.)
   const getHeaderColor = (tipo) => {
     if (!tipo) return 'header-default';
-    
     const tipoLower = tipo.toLowerCase();
-    
     if (tipoLower === 'municipal') return 'header-municipal';
     if (tipoLower === 'estadual') return 'header-estadual';
     if (tipoLower === 'privada') return 'header-privada';
     if (tipoLower === 'federal') return 'header-federal';
-    
     return 'header-default';
   };
 
@@ -71,7 +116,7 @@
   </div>
 {:else}
   <div class="schools-grid">
-    {#each escolas as escola (escola.codigo_inep)}
+    {#each paginatedEscolas as escola (escola.codigo_inep)}
       <div class="school-card">
         <!-- Header com cor baseada no tipo -->
         <div class={`card-header ${getHeaderColor(escola.tipo)}`}>
@@ -160,6 +205,39 @@
         </div>
       </div>
     {/each}
+  </div>
+  
+  <!-- Controles de Paginação -->
+  <div class="pagination-container">
+    <div class="pagination-controls">
+      <button 
+        class="pagination-btn" 
+        on:click={prevPage} 
+        disabled={currentPage === 1}>
+        ← Anterior
+      </button>
+      
+      <div class="page-info">
+        Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+      </div>
+      
+      <button 
+        class="pagination-btn" 
+        on:click={nextPage} 
+        disabled={currentPage === totalPages}>
+        Próxima →
+      </button>
+    </div>
+    
+    <div class="page-size-selector">
+      <label for="pageSize">Itens por página:</label>
+      <select id="pageSize" bind:value={pageSize} on:change={handlePageSizeChange}>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
   </div>
   
   <div class="stats">
@@ -432,6 +510,62 @@
     color: #6b7280;
   }
 
+  .pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.5rem 1rem;
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .pagination-btn:hover:not(:disabled) {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+  }
+  
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .page-info {
+    font-size: 0.875rem;
+    color: #374151;
+  }
+  
+  .page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .page-size-selector select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    background-color: white;
+  }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -450,6 +584,12 @@
     
     .buttons-container {
       grid-template-columns: 1fr;
+    }
+    .pagination-controls {
+      justify-content: center;
+    }
+    .page-size-selector {
+      justify-content: center;
     }
   }
 </style>
