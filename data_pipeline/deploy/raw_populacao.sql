@@ -65,7 +65,6 @@ BEGIN;
   ALTER TABLE clean.populacao_municipal 
       ADD CONSTRAINT pk_populacao_municipal PRIMARY KEY (codigo_ibge);
 
-  CREATE INDEX ix_populacao_codigo_ibge ON clean.populacao_municipal (codigo_ibge);
   CREATE INDEX ix_populacao_nome ON clean.populacao_municipal (nome_municipio);
 
   -- Comentários para documentação

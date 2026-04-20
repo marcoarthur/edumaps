@@ -505,7 +505,6 @@ BEGIN;
 
   -- Adicionar constraints e índices
   CREATE INDEX ix_inep_codigo_ibge ON clean.inep (codigo_ibge);
-  CREATE INDEX ix_inep_id_escola ON clean.inep (id_escola);
   CREATE INDEX ix_inep_rede ON clean.inep (rede);
   CREATE INDEX idx_inep_rede_codigo_ibge ON clean.inep(rede, codigo_ibge);
 
