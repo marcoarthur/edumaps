@@ -2,7 +2,7 @@ use Mojo::Base -strict, -signatures;
 use Test2::V0;
 use Test2::Tools::Compare qw(T F D DF E DNE FDNE U L);
 use lib qw(./lib);
-use MyApp::OSM::Service;
+use EduMaps::OSM::Service;
 use Mojo::JSON qw(decode_json encode_json);
 use DDP;
 
@@ -23,11 +23,11 @@ my $json_str =<<'EOS';
 }
 EOS
 
-my $osm = MyApp::OSM::Service->new( polygon => decode_json($json_str) );
+my $osm = EduMaps::OSM::Service->new( polygon => decode_json($json_str) );
 my $poly_str = q(poly:"-23.4439 -45.0811 -23.4439 -45.0611 -23.4239 -45.0611 -23.4239 -45.0811 -23.4439 -45.0811");
 
 subtest create_obj => sub {
-  ok $osm->isa('MyApp::OSM::Service'), 'ok type';
+  ok $osm->isa('EduMaps::OSM::Service'), 'ok type';
 };
 
 subtest templates => sub {

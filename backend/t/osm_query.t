@@ -1,7 +1,7 @@
 use Mojo::Base -strict, -signatures;
 use Test2::V0;
 use lib qw(./lib);
-use MyApp::OSM::Query;
+use EduMaps::OSM::Query;
 use Mojo::File;
 use Mojo::JSON qw(decode_json encode_json);
 use DDP;
@@ -13,8 +13,8 @@ BEGIN {
   $ENV{DBIC_TRACE} = 1;
 }
 
-my $conf = do './map_app.conf';
-my $q = MyApp::OSM::Query->new(
+my $conf = do './edu_maps.conf';
+my $q = EduMaps::OSM::Query->new(
   municipio => 113,
   config => $conf,
 );
