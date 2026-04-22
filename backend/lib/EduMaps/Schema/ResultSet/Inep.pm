@@ -12,6 +12,7 @@ sub full_grade($self, $cod_inep) {
               'municipio', no_municipio,
               'uf', sg_uf,
               'codigo_ibge', codigo_ibge,
+              'codigo_inep', id_escola,
               'rede', rede
           ),
           'notas_por_serie', jsonb_build_object(
