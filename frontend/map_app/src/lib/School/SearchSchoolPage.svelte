@@ -13,16 +13,19 @@
   let selectedEscola = null;
 
   // --- Filtros ---
-  let filtroTipo = 'todos';      // 'todos' ou um valor específico (ex: 'Municipal')
-  let filtroCidade = 'todas';    // 'todas' ou um valor específico (ex: 'São Paulo - SP')
-  let opcoesTipos = [];          // ex: ['Municipal', 'Estadual', 'Privada', 'Federal']
-  let opcoesCidades = [];        // ex: ['São Paulo - SP', 'Rio de Janeiro - RJ']
+  let filtroTipo = 'todos';           // 'todos' ou um valor específico (ex: 'Municipal')
+  let filtroCidade = 'todas';         // 'todas' ou um valor específico (ex: 'São Paulo - SP')
+  let filtroModalidade = 'todas';     // 'todas' ou uma modalidade específica (ex: 'Ensino Fundamental')
+  
+  let opcoesTipos = [];               // ex: ['Municipal', 'Estadual', 'Privada', 'Federal']
+  let opcoesCidades = [];             // ex: ['São Paulo - SP', 'Rio de Janeiro - RJ']
+  let opcoesModalidades = [];         // ex: ['Ensino Fundamental', 'Ensino Médio', 'EJA']
 
   // --- Lista filtrada (reativa) ---
-  $: listaFiltrada = aplicarFiltros(escolas, filtroTipo, filtroCidade);
+  $: listaFiltrada = aplicarFiltros(escolas, filtroTipo, filtroCidade, filtroModalidade);
 
   // Função que aplica os filtros sobre a lista original
-  function aplicarFiltros(lista, tipo, cidade) {
+  function aplicarFiltros(lista, tipo, cidade, modalidade) {
     if (!lista || lista.length === 0) return [];
     
     return lista.filter(escola => {
@@ -38,16 +41,25 @@
           return false;
         }
       }
+
+      // Filtro por modalidade (escola.modalidades é um array)
+      if (modalidade !== 'todas') {
+        // Verifica se o array existe e contém a modalidade selecionada
+        if (!escola.modalidades || !escola.modalidades.includes(modalidade)) {
+          return false;
+        }
+      }
       
       return true;
     });
   }
 
-  // Extrai os valores únicos de tipo e cidade/estado a partir dos resultados da busca
+  // Extrai os valores únicos de tipo, cidade/estado e modalidades a partir dos resultados da busca
   function atualizarOpcoesFiltro(resultados) {
     if (!resultados || resultados.length === 0) {
       opcoesTipos = [];
       opcoesCidades = [];
+      opcoesModalidades = [];
       return;
     }
     
@@ -68,12 +80,24 @@
       }
     });
     opcoesCidades = Array.from(cidadesSet).sort();
+
+    // Modalidades únicas (extraídas dos arrays)
+    const modalidadesSet = new Set();
+    resultados.forEach(escola => {
+      if (escola.modalidades && Array.isArray(escola.modalidades)) {
+        escola.modalidades.forEach(mod => {
+          if (mod) modalidadesSet.add(mod);
+        });
+      }
+    });
+    opcoesModalidades = Array.from(modalidadesSet).sort();
   }
 
   // Reseta os filtros para "todos"/"todas"
   function resetarFiltros() {
     filtroTipo = 'todos';
     filtroCidade = 'todas';
+    filtroModalidade = 'todas';
   }
 
   // Limpa a busca atual e reseta os filtros
@@ -84,6 +108,7 @@
     resetarFiltros();
     opcoesTipos = [];
     opcoesCidades = [];
+    opcoesModalidades = [];
   }
 
   // Busca de escolas (já existente)
@@ -184,6 +209,17 @@
             <option value="todas">Todas</option>
             {#each opcoesCidades as cidade}
               <option value={cidade}>{cidade}</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- Novo filtro de Modalidade -->
+        <div class="filtro-group">
+          <label>📚 Modalidade:</label>
+          <select bind:value={filtroModalidade}>
+            <option value="todas">Todas</option>
+            {#each opcoesModalidades as modalidade}
+              <option value={modalidade}>{modalidade}</option>
             {/each}
           </select>
         </div>
