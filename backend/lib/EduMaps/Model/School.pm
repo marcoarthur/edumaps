@@ -267,7 +267,7 @@ sub search($self, $params = {}) {
     }
   );
 
-  my $results = $school->search_rs($params)->columns($DEFAULT_COLS)->as_hash->get_all;
+  my $results = $school->search_rs($params)->order_by('escola')->columns($DEFAULT_COLS)->as_hash->get_all;
   return $self->json->encode($results->to_array);
 }
 
@@ -494,7 +494,7 @@ sub gis_cover($self, $params = {}) {
     {error => "raio ($radius) demasiado grande, máximo 10 km"}
   ) if $radius > 10;
 
-  my $results = $rs->search_rs( codigo_inep => $params->{codigo_inep} )
+  my $results = $rs->search_rs( { codigo_inep => $params->{codigo_inep} } )
   ->add_derived(cobertura => $cover, raio_km => $radius )
   ->as_subselect_rs->geojson_features('cobertura', $properties)
   ->as_hash->first;

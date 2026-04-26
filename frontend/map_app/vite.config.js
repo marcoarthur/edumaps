@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
       open: false,
+      allowedHosts: ['ubatexu.lan'],
 
       // Todo request do frontend para /api é enviado ao Mojolicious
       proxy: {

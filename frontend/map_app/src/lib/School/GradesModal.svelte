@@ -283,7 +283,7 @@
           <div class="school-info">
             <h3>{schoolData.escola.nome}</h3>
             <div class="school-details">
-              <span class="detail">Código INEP: {schoolData.escola.codigo_inep}</span>
+              <span class="detail">Código INEP: {schoolData.escola.id}</span>
               <span class="detail">Município: {schoolData.escola.municipio}/{schoolData.escola.uf}</span>
               <span class="detail">Rede: {schoolData.escola.rede}</span>
               <span class="detail">Código IBGE: {schoolData.escola.codigo_ibge}</span>

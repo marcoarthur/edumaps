@@ -1,6 +1,5 @@
 .vscode/*
 backend/*.conf
-frontend/map_app/*.html
 frontend/map_app/package-lock.json
 data_pipeline/config/database.ini
 data_pipeline/sqitch.conf
