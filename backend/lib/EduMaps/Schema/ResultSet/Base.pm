@@ -172,7 +172,8 @@ sub summary_stats($self, $value_column, @group_by_columns) {
 }
 
 sub not_null ($self, $col) {
-  $self->search_rs({ $col => { '!=' => undef } });
+  $col = ref $col ? $col : [$col];
+  $self->search_rs({ map { $_ => { '!=' => undef } } @$col });
 }
 
 sub like ($self, %patterns) {

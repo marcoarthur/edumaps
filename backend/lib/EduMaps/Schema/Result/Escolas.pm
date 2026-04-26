@@ -253,4 +253,10 @@ __PACKAGE__->has_many(
   }
 );
 
+__PACKAGE__->has_one(
+  'censo',
+  'EduMaps::Schema::Result::CensoEscolas',
+  {'foreign.co_entidade' => 'self.codigo_inep' },
+);
+
 1;
