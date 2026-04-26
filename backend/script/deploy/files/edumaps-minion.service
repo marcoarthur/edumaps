@@ -1,0 +1,15 @@
+[Unit]
+Description=EduMaps Minion Worker
+After=network.target edumaps-web.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=<%= $work_dir %>
+Environment=MOJO_MODE=<%= $mojo_mode %>
+ExecStart=<%= $carton_path || '/usr/local/bin/carton' %> exec -- perl <%= $edumaps_path %> minion worker
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
