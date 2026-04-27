@@ -1,9 +1,9 @@
 package EduMaps::Schema::ResultSet::CensoEscolas;
 
 use Mojo::Base "EduMaps::Schema::ResultSet::Base", -signatures;
+use List::Util qw(reduce);
 
 has _types => sub {
-
   state $types = { 
     administration => [
       qw/
@@ -236,6 +236,113 @@ sub columns_for($self, $params) {
   };
 
   return $self->search_rs(undef, {columns => $cols});
+}
+
+# score to define internet level
+sub with_internet_score($self) {
+  my $weights = {
+    IN_INTERNET => 3,
+    IN_BANDA_LARGA => 3,
+    IN_LABORATORIO_INFORMATICA => 3,
+    IN_INTERNET_APRENDIZAGEM => 2,
+    IN_INTERNET_COMUNIDADE => 2,
+    IN_ACESSO_INTERNET_COMPUTADOR => 1,
+    IN_ACES_INTERNET_DISP_PESSOAIS => 1,
+    IN_EQUIP_LOUSA_DIGITAL => 1,
+  };
+
+  $self->_compute_score(internet_score => $weights);
+}
+
+# score to define accessibility level
+sub with_accessibility_score($self) {
+  my $weights = {
+    IN_ACESSIBILIDADE_RAMPAS => 3,
+    IN_BANHEIRO_PNE => 3,
+    IN_ACESSIBILIDADE_ELEVADOR => 2,
+    IN_ACESSIBILIDADE_PISOS_TATEIS => 2,
+    IN_ACESSIBILIDADE_SINAL_SONORO => 1,
+  };
+
+  $self->_compute_score(accessibility_score => $weights);
+}
+
+sub with_support_staff_score($self) {
+  my $conditions = { 
+    'qt_prof_psicologo > 0' => 3,
+    'qt_prof_assist_social > 0' => 3,
+    'qt_prof_nutricionista > 0' => 2,
+    'qt_prof_bibliotecario > 0' => 2,
+    'qt_prof_coordenador > 1' => 1,
+  };
+
+  $self->_compute_score(support_staff_score => $conditions);
+}
+
+# TODO: infrastructure score
+sub with_infrastructure_score($self) {
+  my $weights = {
+    IN_BIBLIOTECA => 2,
+    IN_LABORATORIO_CIENCIAS => 2,
+    IN_QUADRA_ESPORTES => 2,
+    IN_REFEITORIO => 2,
+    IN_COZINHA => 1,
+    IN_BANHEIRO => 1,
+    IN_AGUA_POTAVEL => 3,
+    IN_ENERGIA_REDE_PUBLICA => 2,
+    'QT_SALAS_UTILIZADAS > 10' => 1,
+    'QT_SALAS_UTILIZA_CLIMATIZADAS > 5' => 2,
+  };
+
+  $self->_compute_score( infrastructure_score => $weights );
+}
+
+sub with_all_scores($self) {
+  $self->with_support_staff_score
+  ->with_internet_score
+  ->with_accessibility_score
+  ->with_infrastructure_score
+  ->order_by(
+    { -desc => [qw(internet_score accessibility_score support_staff_score infrastructure_score)] }
+  );
+}
+
+#TODO:
+sub with_critical_infra_highlight($self) {
+  ...;
+};
+
+#TODO:
+sub with_vulnerability_score($self) {
+  ...;
+}
+
+#TODO
+sub with_highlight_badges($self) {
+}
+
+#TODO
+sub with_extra_activities_score($self) {
+}
+
+sub _compute_score($self, $name, $weights) {
+  # USE CASE to protect from NULLs or any Noise in data
+  my $case = sub($col, $weight) {
+    my $case_expr;
+    # column is of form: a condition expression OR a 1/0 (yes/no) boolean
+    if ( $col =~ /[>=<]/ ) {
+      $case_expr = "CASE WHEN $col THEN 1 ELSE 0 END";
+    } else {
+      $case_expr = "CASE WHEN $col = 1 THEN 1 ELSE 0 END";
+    }
+    return sprintf ("%d * COALESCE(%s,0)", $weight, $case_expr);
+  };
+
+  my $expr = join('+', map { $case->($_, $weights->{$_}) } keys %$weights);
+  my $sum  = reduce {$a + $b} values %$weights;
+  $self->add_derived(
+    $name => "ROUND(($expr)::numeric/$sum, 2)",
+  );
 }
 
 1;
