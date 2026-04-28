@@ -713,6 +713,11 @@ BEGIN;
   CREATE INDEX IF NOT EXISTS idx_censo_escolas_uf_municipio
       ON clean.censo_escolas (SG_UF, CO_MUNICIPIO);
 
+  -- Índice para busca case-insensitive com prefixo
+  CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  CREATE INDEX idx_censo_escolas_entidade_trgm ON clean.censo_escolas USING gin (no_entidade gin_trgm_ops);
+  CREATE INDEX idx_censo_escolas_municipio ON clean.censo_escolas (no_municipio);
+
   -- (Opcional) Se for usar busca por localização (latitude/longitude), considere um índice GiST depois de criar a coluna geometry
   ALTER TABLE clean.censo_escolas ADD COLUMN geometry geometry(Point, 4674);
   UPDATE clean.censo_escolas SET geometry = ST_SetSRID(ST_MakePoint(LONGITUDE, LATITUDE),4674 );
