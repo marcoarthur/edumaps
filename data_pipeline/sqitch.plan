@@ -21,3 +21,4 @@ dados_ibge [raw_municipios_sp] 2026-04-16T15:20:55Z Marco Arthur <arthurpbs@gmai
 censo_escolar_2025 2026-04-26T14:36:26Z Marco Arthur <arthurpbs@gmail.com> # create table clean.escolas_censo
 scores_view 2026-04-27T12:36:58Z Marco Arthur <arthurpbs@gmail.com> # all scores derived from censo_escolas
 badge_functions [scores_view] 2026-04-27T13:18:17Z Marco Arthur <arthurpbs@gmail.com> # create many badge and avaliation functions for school quality
+matriculas_censo_2025 [censo_escolar_2025] 2026-04-28T19:44:16Z Marco Arthur <arthurpbs@gmail.com> # add data of enrollment in each brazilian school

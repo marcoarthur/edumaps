@@ -284,7 +284,7 @@ Número do telefone
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x55661360a430)"]
+  size: [undef,"ARRAY(0x55a981b07178)"]
 
 Coordenada latitude (graus decimais)
 
@@ -292,7 +292,7 @@ Coordenada latitude (graus decimais)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x5566129c5990)"]
+  size: [undef,"ARRAY(0x55a981cfbbf0)"]
 
 Coordenada longitude (graus decimais)
 
@@ -2254,13 +2254,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x55661360a430)"],
+    size => [undef, "ARRAY(0x55a981b07178)"],
   },
   "longitude",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x5566129c5990)"],
+    size => [undef, "ARRAY(0x55a981cfbbf0)"],
   },
   "tp_situacao_funcionamento",
   { data_type => "smallint", is_nullable => 1 },
@@ -2813,8 +2813,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("linha_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-27 09:59:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0z0kuXBG1cneEaTldASgIQ
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-28 17:01:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bVdjoFLLAPs/bzYUJy8crg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -2828,6 +2828,12 @@ __PACKAGE__->has_one(
 __PACKAGE__->has_one(
   'score',
   'EduMaps::Schema::Result::CensoEscolasScores',
+  { 'foreign.co_entidade' => 'self.co_entidade' },
+);
+
+__PACKAGE__->has_many(
+  'matricula',
+  'EduMaps::Schema::Result::CensoMatriculas',
   { 'foreign.co_entidade' => 'self.co_entidade' },
 );
 
