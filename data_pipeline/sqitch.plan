@@ -1,0 +1,23 @@
+%syntax-version=1.0.0
+%project=edumaps
+
+schemas 2025-10-29T18:23:52Z Marco Arthur <arthurpbs@gmail.com> # Iniciando os schemas para edumaps
+extensions [schemas] 2025-10-29T21:29:18Z Marco Arthur <arthurpbs@gmail.com> # Instala todas as extensões PostGIS e utilitárias
+raw_countries [extensions] 2025-10-29T21:55:05Z Marco Arthur <arthurpbs@gmail.com> # Importa dados brutos de países via OGR_FDW e cria tabela limpa
+raw_municipios_sp [extensions] 2025-10-30T10:19:26Z Marco Arthur <arthurpbs@gmail.com> # Importa dados de municípios de SP do IBGE com nomenclatura semântica
+raw_escolas [extensions] 2025-10-30T13:35:19Z Marco Arthur <arthurpbs@gmail.com> # Importa dados brutos de escolas do CSV
+analytics_acessibility [raw_escolas raw_municipios_sp] 2025-10-31T13:33:41Z Marco Arthur <arthurpbs@gmail.com> # Analise de acessibilidade escolas, áreas de cobertura
+analytics_acessibility_views [analytics_acessibility] 2025-10-31T15:18:42Z Marco Arthur <arthurpbs@gmail.com> # Cria view materializada com métricas de acessibilidade
+raw_populacao [raw_municipios_sp] 2025-10-31T23:03:01Z Marco Arthur <arthurpbs@gmail.com> # Importa dados de população por município para 2025 oferecido pelo IBGE
+raw_inep [raw_municipios_sp raw_escolas] 2025-11-01T14:49:39Z Marco Arthur <arthurpbs@gmail.com> # Importa dados do INEP por município e escola
+raw_siope [extensions] 2025-11-03T00:00:09Z Marco Arthur <arthurpbs@gmail.com> # Dados Siope Remuneração educação FNDE
+ideb_analytics [raw_inep raw_municipios_sp raw_escolas] 2025-11-18T20:52:16Z Marco Arthur <arthurpbs@gmail.com> # Implementa funções analíticas para análise temporal de dados INEP por município, incluindo despivotamento de séries históricas, evolução de notas e estatísticas municipais consolidadas
+ideb_despivot [raw_inep] 2025-12-04T16:09:01Z Marco Arthur <arthurpbs@gmail.com> # to unpivot the table, so we can have a better format to work the time-series, we unpivot only for the total values (not values related to each learning stage-1,2...n-th grade)
+osm_data [raw_municipios_sp] 2025-12-07T09:38:26Z Marco Arthur <arthurpbs@gmail.com> # data from OSM project using our EduMaps::OSM::Query driver
+raw_populacao_faixas_etarias [raw_populacao] 2025-12-14T16:08:04Z Marco Arthur <arthurpbs@gmail.com> # Importa dados de população por faixa etária municipal sidra censo 2022
+analytical_views_for_modeling 2026-04-06T19:31:15Z Marco Arthur <arthurpbs@gmail.com> # Views para modelagem de ML com intuito de preencher notas faltantes das escolas
+analytics_municipios_similaridade 2026-04-12T14:32:14Z Marco Arthur <arthurpbs@gmail.com> # cria a matriz de (des)similaridade entre municipios baseado em metrica euclidiana
+dados_ibge [raw_municipios_sp] 2026-04-16T15:20:55Z Marco Arthur <arthurpbs@gmail.com> # add data from ibge sources for municipalities, this at beginning includes economic data
+censo_escolar_2025 2026-04-26T14:36:26Z Marco Arthur <arthurpbs@gmail.com> # create table clean.escolas_censo
+scores_view 2026-04-27T12:36:58Z Marco Arthur <arthurpbs@gmail.com> # all scores derived from censo_escolas
+badge_functions [scores_view] 2026-04-27T13:18:17Z Marco Arthur <arthurpbs@gmail.com> # create many badge and avaliation functions for school quality
