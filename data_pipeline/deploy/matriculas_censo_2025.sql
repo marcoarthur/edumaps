@@ -732,4 +732,7 @@ BEGIN;
   FROM '/data/Tabela_Matricula_2025.csv'
   DELIMITER ';'
   CSV HEADER;
+
+  CREATE INDEX idx_censo_matriculas_co_entidade ON censo_matriculas(co_entidade);
+
 COMMIT;
