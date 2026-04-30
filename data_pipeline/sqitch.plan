@@ -24,3 +24,6 @@ badge_functions [scores_view] 2026-04-27T13:18:17Z Marco Arthur <arthurpbs@gmail
 matriculas_censo_2025 [censo_escolar_2025] 2026-04-28T19:44:16Z Marco Arthur <arthurpbs@gmail.com> # add data of enrollment in each brazilian school
 censo_docentes [censo_escolar_2025] 2026-04-28T23:40:59Z Marco Arthur <arthurpbs@gmail.com> # teachers' info from census
 censo_gestor [censo_escolar_2025] 2026-04-29T11:42:44Z Marco Arthur <arthurpbs@gmail.com> # adding the managers information for brazilian school census 2025
+indicadores_gestao_docente [censo_gestor censo_docentes] 2026-04-29T16:39:49Z Marco Arthur <arthurpbs@gmail.com> # indicadores para o corpo docente e gestores das escolas
+ideb_notas_escolas 2026-04-30T15:48:02Z Marco Arthur <arthurpbs@gmail.com> # dados ideb/saeb para os anos finais do ensino básico (fundamental II) e o ensino médio, series 2005-2023
+ideb_historico_escola 2026-04-30T20:05:56Z Marco Arthur <arthurpbs@gmail.com> # função para obter dados historicos aggregados da serie historica do ideb para escola
