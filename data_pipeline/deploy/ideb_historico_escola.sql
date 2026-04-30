@@ -32,6 +32,7 @@ BEGIN;
               json_agg(
                   json_build_object(
                       'etapa', CASE ed.etapa
+                          WHEN 'fundamental_i' THEN 'Ensino Fundamental - Anos Iniciais (1º ao 5º ano)'
                           WHEN 'fundamental_ii' THEN 'Ensino Fundamental - Anos Finais (6º ao 9º ano)'
                           WHEN 'ensino_medio' THEN 'Ensino Médio'
                           ELSE ed.etapa
