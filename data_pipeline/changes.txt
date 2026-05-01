@@ -1,0 +1,9 @@
+EduMaps Data Pipeline - CHANGELOG
+==================================
+
+Version 1.0.0 (2026-04-30)
+--------------------------
+
+Primeira versão estável do pipeline de dados do EduMaps, contendo toda a base
+educacional brasileira do Censo Escolar 2025 e dados históricos do IDEB/SAEB
+(2005-2023).
