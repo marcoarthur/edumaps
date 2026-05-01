@@ -28,6 +28,7 @@ sub print_table($self, $pager = 0, $exclude = undef) {
     my $pager = IO::Pager->new;
     $pager->print($txt);
   } : say $txt;
+  $self;
 }
 
 sub _exclude($self, @excols) {
