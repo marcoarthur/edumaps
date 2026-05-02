@@ -29,3 +29,6 @@ ideb_notas_escolas 2026-04-30T15:48:02Z Marco Arthur <arthurpbs@gmail.com> # dad
 ideb_historico_escola 2026-04-30T20:05:56Z Marco Arthur <arthurpbs@gmail.com> # função para obter dados historicos aggregados da serie historica do ideb para escola
 ideb_anos_iniciais 2026-04-30T23:12:47Z Marco Arthur <arthurpbs@gmail.com> # Adiciona dados do IDEB/SAEB para os anos iniciais do ensino fundamental (1º ao 5º ano) - série 2005-2023
 @1.0.0 2026-05-01T01:33:46Z Marco Arthur <arthurpbs@gmail.com> # Versão estável 1.0.0 do banco de dados EduMaps
+
+analytics_municipios_consolidado 2026-05-01T12:55:06Z Marco Arthur <arthurpbs@gmail.com> # Cria view consolidada para análise municipal no schema analytics
+maker_gis_function 2026-05-02T10:22:23Z Marco Arthur <arthurpbs@gmail.com> # crates a database function to help search for enveloped area
