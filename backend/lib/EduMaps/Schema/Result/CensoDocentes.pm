@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<censo_docentes>
+=head1 TABLE: C<clean.censo_docentes>
 
 =cut
 
-__PACKAGE__->table("censo_docentes");
+__PACKAGE__->table("clean.censo_docentes");
 
 =head1 ACCESSORS
 
@@ -1451,8 +1451,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("nu_ano_censo", "co_entidade");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-28 20:55:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VRWSSyhnuKE8w67jM6qTrg
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 13:47:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GSYbidjbhP6LVJ//pE2dxw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

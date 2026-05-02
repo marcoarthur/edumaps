@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<countries>
+=head1 TABLE: C<clean.countries>
 
 =cut
 
-__PACKAGE__->table("countries");
+__PACKAGE__->table("clean.countries");
 
 =head1 ACCESSORS
 
@@ -77,8 +77,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 10:52:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1MvmdAiwGpuQ1bVjpzBC9Q
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 13:47:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RzStGscbY1Kj86kB3Bqc8g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

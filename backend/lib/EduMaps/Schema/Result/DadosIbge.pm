@@ -19,11 +19,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<dados_ibge>
+=head1 TABLE: C<clean.dados_ibge>
 
 =cut
 
-__PACKAGE__->table("dados_ibge");
+__PACKAGE__->table("clean.dados_ibge");
 
 =head1 ACCESSORS
 
@@ -153,8 +153,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("ano", "codigo_ibge");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-16 12:31:59
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+KDNyYHcJu2LxGUwuwldiw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 13:47:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nq3Mh1EtrTZAd2CokytnbA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
