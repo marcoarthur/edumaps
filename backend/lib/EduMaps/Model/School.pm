@@ -225,7 +225,7 @@ sub ideb_grades($self, $params = {}) {
     }
   );
 
-  $self->json->encode($rs->all_grades_for( $params ));
+  $self->json->encode($rs->all_grades_for( $params ) // {});
 }
 
 sub info($self, $cod_inep) {

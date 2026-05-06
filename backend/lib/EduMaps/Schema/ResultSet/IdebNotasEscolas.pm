@@ -8,11 +8,12 @@ sub all_grades_for($self, $params = {}) {
   my $rendimento = {};
   my $ideb = {};
 
+  my $nota = sub ($n) { defined $n ? $n/50 : undef };
   my $results = $self->filter_by(id_escola => $params->{id_escola})->get_all->each(
     sub {
-      $grades->{notas_por_serie}{$_->etapa}{matematica}{$_->ano} = $_->nota_matematica/50;
-      $grades->{notas_por_serie}{$_->etapa}{portugues}{$_->ano}  = $_->nota_portugues/50;
-      $grades->{notas_por_serie}{$_->etapa}{media}{$_->ano}      = $_->nota_media;
+      $grades->{notas_por_serie}{$_->etapa}{matematica}{$_->ano} = $nota->($_->nota_matematica);
+      $grades->{notas_por_serie}{$_->etapa}{portugues}{$_->ano}  = $nota->($_->nota_portugues);
+      $grades->{notas_por_serie}{$_->etapa}{media}{$_->ano}      = $nota->($_->nota_media);
       $rendimento->{$_->etapa}{$_->ano}{'serie_1'} = $_->aprovacao_1;
       $rendimento->{$_->etapa}{$_->ano}{'serie_2'} = $_->aprovacao_2;
       $rendimento->{$_->etapa}{$_->ano}{'serie_3'} = $_->aprovacao_3;
