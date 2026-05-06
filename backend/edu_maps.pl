@@ -452,7 +452,7 @@ get 'api/school/:cod_inep/full_grades' => [ cod_inep => qr/\d+/ ] => sub ($c) {
   );
 
   $c->render(
-    text => $model->ideb_grades,
+    data => $model->ideb_grades,
     format => 'json'
   );
 } => 'school_full_grades';
