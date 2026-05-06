@@ -446,8 +446,15 @@ get 'api/school/:cod_inep/grades' => [ cod_inep => qr/\d+/ ] => sub ($c) {
 } => 'school_grades';
 
 get 'api/school/:cod_inep/full_grades' => [ cod_inep => qr/\d+/ ] => sub ($c) {
-  my $model = $c->instantiate_model(model => 'School');
-  $c->render(text => $model->full_inep_grades({cod_inep => $c->param('cod_inep')}), format => 'json');
+  my $model = $c->instantiate_model(
+    model => 'School',
+    route_params => [qw(cod_inep)],
+  );
+
+  $c->render(
+    text => $model->ideb_grades,
+    format => 'json'
+  );
 } => 'school_full_grades';
 
 get 'api/school/:cod_inep/professionals' => [ cod_inep => qr/\d+/ ] => sub ($c) {
