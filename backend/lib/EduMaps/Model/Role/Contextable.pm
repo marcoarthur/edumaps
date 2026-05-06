@@ -58,7 +58,8 @@ sub _fetch_values($self, $hash, @source_keys) {
 }
 
 sub _assign_from ($self, $hash, $key, @source_keys) {
-  my $found_key = first { 
+  $self->ctx->params({}) unless $self->ctx->{params};
+  my $found_key = first {
     defined $hash->{$_} ||
     defined $self->ctx->params->{$_}
   } @source_keys;

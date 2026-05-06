@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import BuscaEscolasPage from './lib/School/SearchSchoolPage.svelte';
+  import MunicipiosMapa from './lib/City/MunicipiosMapa.svelte';
   
   // Você pode adicionar outros componentes aqui quando necessário
   // import Map from './lib/Siope/Map.svelte';
@@ -15,6 +16,8 @@
       currentView = 'mapa';
     } else if (path === '/busca') {
       currentView = 'busca';
+    } else if (path === '/analytic') {
+      currentView = 'analytic';
     }
   });
 </script>
@@ -30,6 +33,9 @@
         <a href="/busca" class="nav-link" class:active={currentView === 'busca'}>
           🔍 Buscar Escolas
         </a>
+        <a href="/analytic" class="nav-link" class:active={currentView === 'analytic'}>
+          🔍 Análises Municípios 
+        </a>
         <a href="/mapa" class="nav-link" class:active={currentView === 'mapa'}>
           🗺️ Mapa
         </a>
@@ -42,6 +48,8 @@
       <BuscaEscolasPage />
     {:else if currentView === 'mapa'}
       <Map />
+    {:else if currentView === 'analytic'}
+      <MunicipiosMapa />
     {/if}
   </div>
 </main>

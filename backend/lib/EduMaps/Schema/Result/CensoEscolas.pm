@@ -15,11 +15,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<censo_escolas>
+=head1 TABLE: C<clean.censo_escolas>
 
 =cut
 
-__PACKAGE__->table("censo_escolas");
+__PACKAGE__->table("clean.censo_escolas");
 
 =head1 ACCESSORS
 
@@ -284,7 +284,7 @@ Número do telefone
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x556d9287ee20)"]
+  size: [undef,"ARRAY(0x562f4e3cd3b0)"]
 
 Coordenada latitude (graus decimais)
 
@@ -292,7 +292,7 @@ Coordenada latitude (graus decimais)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x556d9212edc8)"]
+  size: [undef,"ARRAY(0x562f4eaae890)"]
 
 Coordenada longitude (graus decimais)
 
@@ -2254,13 +2254,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x556d9287ee20)"],
+    size => [undef, "ARRAY(0x562f4e3cd3b0)"],
   },
   "longitude",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x556d9212edc8)"],
+    size => [undef, "ARRAY(0x562f4eaae890)"],
   },
   "tp_situacao_funcionamento",
   { data_type => "smallint", is_nullable => 1 },
@@ -2813,8 +2813,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("linha_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-04-30 16:33:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0lgHkjbf5ndlhEQG6ZRFGg
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 14:14:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:o2yyX5VfoI/ydR1fqRXGNg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

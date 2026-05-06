@@ -384,6 +384,33 @@ get 'api/city/detail/:name' => sub($c) {
   );
 } => 'city_search_by_name';
 
+# core of basic analysis for the municipality
+get 'api/analytics/city/:codigo_ibge/details' => [codigo_ibge => qr/\d{7}/] => sub ($c) {
+  my $model = $c->instantiate_model(model => 'City', route_params => [qw(codigo_ibge)]);
+
+  $c->render(
+    data => $model->analytic_details, format => 'json'
+  );
+} => 'city_analytic_details';
+
+# use for autocompletion of municipalities names
+get 'api/analytics/cities/search' => sub ($c) {
+  my $model = $c->instantiate_model(model => 'City');
+
+  $c->render(
+    data => $model->search_for_complete, format => 'json'
+  );
+} => 'search_analityc_cities';
+
+# map client sends boundbox areas and expects information on that area (visual area)
+get 'api/analytics/cities/markers' => sub ($c) {
+  my $model = $c->instantiate_model(model => 'City');
+
+  $c->render(
+    text => $model->search_in_bbox, format => 'json'
+  );
+} => 'search_markers';
+
 ################################################################################
 # API FOR SCHOOL
 ################################################################################
@@ -419,8 +446,15 @@ get 'api/school/:cod_inep/grades' => [ cod_inep => qr/\d+/ ] => sub ($c) {
 } => 'school_grades';
 
 get 'api/school/:cod_inep/full_grades' => [ cod_inep => qr/\d+/ ] => sub ($c) {
-  my $model = $c->instantiate_model(model => 'School');
-  $c->render(text => $model->full_inep_grades({cod_inep => $c->param('cod_inep')}), format => 'json');
+  my $model = $c->instantiate_model(
+    model => 'School',
+    route_params => [qw(cod_inep)],
+  );
+
+  $c->render(
+    data => $model->ideb_grades,
+    format => 'json'
+  );
 } => 'school_full_grades';
 
 get 'api/school/:cod_inep/professionals' => [ cod_inep => qr/\d+/ ] => sub ($c) {

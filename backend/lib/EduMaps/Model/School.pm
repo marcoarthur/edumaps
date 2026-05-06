@@ -210,9 +210,22 @@ sub grades($self, $params = {}) {
 }
 
 sub full_inep_grades($self, $params = {}) {
-  my $inep = $self->schema->resultset('Inep');
+  my $inep = $self->schema->resultset('IdebNotasEscolas');
 
   return $inep->full_grade($params->{cod_inep});
+}
+
+sub ideb_grades($self, $params = {}) {
+  my $rs = $self->schema->resultset('IdebNotasEscolas');
+
+  $self->set_params_map(
+    params => $params,
+    map => {
+      id_escola => [qw/cod_inep inep/],
+    }
+  );
+
+  $self->json->encode($rs->all_grades_for( $params ) // {});
 }
 
 sub info($self, $cod_inep) {

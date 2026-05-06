@@ -1,7 +1,6 @@
 package EduMaps::Util::ContextFluent;
 
 use Mojo::Base -base, -signatures;
-use DDP;
 our $AUTOLOAD;
 
 sub new ($class, @args) {
