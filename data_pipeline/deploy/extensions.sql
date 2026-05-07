@@ -3,6 +3,7 @@
 BEGIN;
 
   -- Instalar extensões PostGIS no schema apropriado
+  DROP EXTENSION IF EXISTS postgis CASCADE; -- when postgis is already in public
   CREATE EXTENSION IF NOT EXISTS postgis SCHEMA postgis;
   CREATE EXTENSION IF NOT EXISTS postgis_raster SCHEMA postgis;
   CREATE EXTENSION IF NOT EXISTS postgis_sfcgal SCHEMA postgis;
