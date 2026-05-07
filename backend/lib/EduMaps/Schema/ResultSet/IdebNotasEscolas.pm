@@ -13,7 +13,7 @@ sub all_grades_for($self, $params = {}) {
     sub {
       $grades->{notas_por_serie}{$_->etapa}{matematica}{$_->ano} = $nota->($_->nota_matematica);
       $grades->{notas_por_serie}{$_->etapa}{portugues}{$_->ano}  = $nota->($_->nota_portugues);
-      $grades->{notas_por_serie}{$_->etapa}{media}{$_->ano}      = $nota->($_->nota_media);
+      $grades->{notas_por_serie}{$_->etapa}{media}{$_->ano}      = $_->nota_media;
       $rendimento->{$_->etapa}{$_->ano}{'serie_1'} = $_->aprovacao_1;
       $rendimento->{$_->etapa}{$_->ano}{'serie_2'} = $_->aprovacao_2;
       $rendimento->{$_->etapa}{$_->ano}{'serie_3'} = $_->aprovacao_3;
