@@ -30,10 +30,34 @@ foreach my $class (@model_classes) {
   }
 }
 
+# docker reads from config from environment variables
+sub read_confs_from_env {
+  my $conf = {};
+  my $setup = {
+    EDUMAPS_DB_PARAMS => sub ($value) { [split(/[,\s+]/, $value)] },
+    EDUMAPS_DB_OPTS   => sub ($value) {
+      +{
+          map { my ($k, $v) = split /=/; $k => $v } split(/;/,$value)
+       };
+    }
+  };
+
+  c(qw/EDUMAPS_DB_URL EDUMAPS_DB_PARAMS EDUMAPS_DB_OPTS/)->each(
+    sub($var, $idx) {
+      my ($val, $cb) = ($ENV{$var}, $setup->{$var});
+      die "Needs to set $var in Enviroment" unless $val;
+      $var =~ s/EDUMAPS_//;
+      $conf->{lc($var)} = ref $cb ? $cb->($val) : $val;
+    }
+  );
+
+  return $conf;
+}
+
 push @{app->static->paths}, qw(./public ../frontend/map_app/dist);
 
 plugin Config => {file => './edu_maps.conf'};
-my $conf = app->config;
+my $conf = -f './edu_maps.conf' ?  app->config : read_confs_from_env;
 
 plugin 'Status';
 

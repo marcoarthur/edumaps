@@ -48,7 +48,6 @@ requires "warnings" => "0";
 
 on 'test' => sub {
   requires "Devel::StackTrace" => "0";
-  requires "EduMaps::Model::Escola" => "0";
   requires "File::Spec" => "0";
   requires "IO::Handle" => "0";
   requires "IPC::Open3" => "0";
