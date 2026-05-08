@@ -1,0 +1,61 @@
+services:
+  db:
+    build: ./db
+    container_name: edumaps-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./datasets:/data
+
+  sqitch:
+    build: ./data_pipeline
+    container_name: edumaps-sqitch
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=db
+    # Adicione esta linha:
+    command: deploy db:pg://${DB_USER}:${DB_PASS}@db/${DB_NAME}
+
+  backend:
+    build: ./backend
+    container_name: edumaps-backend
+    depends_on:
+      sqitch:
+        condition: service_completed_successfully
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=db
+    ports:
+      - "3000:3000"
+
+  minion:
+    build: ./backend
+    container_name: edumaps-minion
+    depends_on:
+      - db
+    environment:
+      - EDUMAPS_DB_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
+    command: ["/usr/local/bin/docker-entrypoint.sh", "minion"]
+
+  frontend:
+    build: ./frontend
+    container_name: edumaps-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
