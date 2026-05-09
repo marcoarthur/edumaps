@@ -1,0 +1,8 @@
+# Perl Best Practices (plus errata) .perltidyrc file
+--maximum-line-length=78         # Be less generous
+--warning-output                 # Show warnings
+--maximum-consecutive-blank-lines=2
+--nohanging-side-comments
+-i=2
+-ci=2
+-l=78

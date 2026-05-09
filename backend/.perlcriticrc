@@ -1,0 +1,3 @@
+# O padrão 'gentle' já é suficiente para hooks (severidade 4)
+verbose = %f %l:%c (Severity: %s)\n %P
+colour = 1
