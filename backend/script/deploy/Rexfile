@@ -10,7 +10,7 @@ set db_password => $ENV{EDUMAPS_DB_PASS} || 'change_me';
 set db_user => $ENV{EDUMAPS_DB_USER} || 'edumaps';
 set db_name => $ENV{EDUMAPS_DB_NAME} || 'edumaps_dev';
 
-group all => qw( backend.edumaps database.edumaps );
+group all => qw( backend.edumaps database.edumaps analytic.edumaps );
 
 desc "Update Debian, install minimum dev tools, Rsync your code";
 task "prepare" => group => all => sub {
@@ -158,6 +158,58 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
   ;
 
   service 'edumaps-minion' => 'restart';
+};
+
+desc "Configure and Install R edumaps package";
+task deploy_analytics_dev => 'analytic.edumaps' => sub {
+  my $path =get('edumaps_dir') . '/analytics';
+
+  # install R and all packages we need to run edumaps
+  pkg $_, ensure => 'present' for (
+    qw/
+    r-base
+    r-base-dev
+    libxml2-dev
+    libcurl4-openssl-dev
+    libsodium-dev
+    libx11-dev
+    libpq-dev libssl-dev
+    /
+  );
+
+  file "$path/.Renviron",
+  content => template(
+    'files/Renviron',
+    {
+      db_pass => get('db_password'),
+      db_user => get('db_user'),
+      db_name => get('db_name'),
+      db_host => get('db_host') || 'Database',
+      db_schema => get('db_schema') || 'clean',
+      db_port => get('db_port') || 5432,
+    }
+  )
+  ;
+
+  # install packages globally
+  my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
+  run q{Rscript -e "source('R/utils.R'); install_dependencies()"}, cwd => $path, env => $env;
+  run q{Rscript -e "source('./data-raw/indices.R'); source('./data-raw/efetividade.R')"}, cwd => "$path", env => $env;
+
+  # create the service file
+  file "/etc/systemd/system/edumaps-analytic.service",
+    content => template(
+      './files/edumaps-analytic.service',
+      {
+        path => $path,
+      }
+    ),
+    on_change => sub {
+      run q{systemctl daemon-reload};
+      run q{systemctl enable --now edumaps-analytic};
+    }
+  ;
+  service 'edumaps-analytic' => 'restart';
 };
 
 desc "Configure and Install (Svelte/Vite) Frontend";
