@@ -32,3 +32,4 @@ ideb_anos_iniciais 2026-04-30T23:12:47Z Marco Arthur <arthurpbs@gmail.com> # Adi
 
 analytics_municipios_consolidado 2026-05-01T12:55:06Z Marco Arthur <arthurpbs@gmail.com> # Cria view consolidada para análise municipal no schema analytics
 maker_gis_function 2026-05-02T10:22:23Z Marco Arthur <arthurpbs@gmail.com> # crates a database function to help search for enveloped area
+consistent_schools_mv [ideb_notas_escolas] 2026-05-12T20:46:40Z Marco Arthur <arthurpbs@gmail.com> # materialized view for schools which consistently applies to national tests SAEB IDEB
