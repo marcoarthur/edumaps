@@ -284,7 +284,7 @@ Número do telefone
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e3cd3b0)"]
+  size: [undef,"ARRAY(0x5605fa63b960)"]
 
 Coordenada latitude (graus decimais)
 
@@ -292,7 +292,7 @@ Coordenada latitude (graus decimais)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4eaae890)"]
+  size: [undef,"ARRAY(0x5605fa010ae8)"]
 
 Coordenada longitude (graus decimais)
 
@@ -2174,6 +2174,14 @@ Oferece educação profissional (educação especial exclusiva)?
   is_nullable: 1
   size: [18,16896]
 
+=head2 nro_participacoes_exame
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
+Número de exames nacionais já realizados
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -2254,13 +2262,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e3cd3b0)"],
+    size => [undef, "ARRAY(0x5605fa63b960)"],
   },
   "longitude",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4eaae890)"],
+    size => [undef, "ARRAY(0x5605fa010ae8)"],
   },
   "tp_situacao_funcionamento",
   { data_type => "smallint", is_nullable => 1 },
@@ -2798,6 +2806,8 @@ __PACKAGE__->add_columns(
   { data_type => "smallint", is_nullable => 1 },
   "geometry",
   { data_type => "geometry", is_nullable => 1, size => [18, 16896] },
+  "nro_participacoes_exame",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -2813,8 +2823,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("linha_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 14:14:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:o2yyX5VfoI/ydR1fqRXGNg
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-13 15:42:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FPzGx57Fkdsg0qv4o2AyxQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

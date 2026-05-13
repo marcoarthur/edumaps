@@ -92,7 +92,7 @@ Etapa de ensino (fundamental_ii ou ensino_medio)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4dee81b0)"]
+  size: [undef,"ARRAY(0x5605fa9c64b8)"]
 
 Indicador de rendimento (0-1) - Taxa de aprovação ajustada
 
@@ -100,7 +100,7 @@ Indicador de rendimento (0-1) - Taxa de aprovação ajustada
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4ec18490)"]
+  size: [undef,"ARRAY(0x5605fa8bafa0)"]
 
 Taxa de aprovação da 1ª série/ano (%)
 
@@ -108,7 +108,7 @@ Taxa de aprovação da 1ª série/ano (%)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e37b860)"]
+  size: [undef,"ARRAY(0x5605fa660640)"]
 
 Taxa de aprovação da 2ª série/ano (%)
 
@@ -116,7 +116,7 @@ Taxa de aprovação da 2ª série/ano (%)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e8dcf30)"]
+  size: [undef,"ARRAY(0x5605fa457578)"]
 
 Taxa de aprovação da 3ª série/ano (%)
 
@@ -124,7 +124,7 @@ Taxa de aprovação da 3ª série/ano (%)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e074970)"]
+  size: [undef,"ARRAY(0x5605fa048948)"]
 
 Taxa de aprovação da 4ª série/ano (%) - aplicável ao ensino médio
 
@@ -132,7 +132,7 @@ Taxa de aprovação da 4ª série/ano (%) - aplicável ao ensino médio
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4ed65ec0)"]
+  size: [undef,"ARRAY(0x5605fa155308)"]
 
 Proficiência média em Matemática (escala SAEB)
 
@@ -140,7 +140,7 @@ Proficiência média em Matemática (escala SAEB)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4eda7bf0)"]
+  size: [undef,"ARRAY(0x5605fa9a0d18)"]
 
 Proficiência média em Língua Portuguesa (escala SAEB)
 
@@ -148,7 +148,7 @@ Proficiência média em Língua Portuguesa (escala SAEB)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e444ab8)"]
+  size: [undef,"ARRAY(0x5605fae32a78)"]
 
 Média das proficiências em Matemática e Português
 
@@ -156,7 +156,7 @@ Média das proficiências em Matemática e Português
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e1cb2c0)"]
+  size: [undef,"ARRAY(0x5605fa514d58)"]
 
 IDEB observado no ano
 
@@ -164,7 +164,7 @@ IDEB observado no ano
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x562f4e0d3bf0)"]
+  size: [undef,"ARRAY(0x5605fa667260)"]
 
 Meta IDEB projetada para o ano
 
@@ -191,61 +191,61 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4dee81b0)"],
+    size => [undef, "ARRAY(0x5605fa9c64b8)"],
   },
   "aprovacao_1",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4ec18490)"],
+    size => [undef, "ARRAY(0x5605fa8bafa0)"],
   },
   "aprovacao_2",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e37b860)"],
+    size => [undef, "ARRAY(0x5605fa660640)"],
   },
   "aprovacao_3",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e8dcf30)"],
+    size => [undef, "ARRAY(0x5605fa457578)"],
   },
   "aprovacao_4",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e074970)"],
+    size => [undef, "ARRAY(0x5605fa048948)"],
   },
   "nota_matematica",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4ed65ec0)"],
+    size => [undef, "ARRAY(0x5605fa155308)"],
   },
   "nota_portugues",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4eda7bf0)"],
+    size => [undef, "ARRAY(0x5605fa9a0d18)"],
   },
   "nota_media",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e444ab8)"],
+    size => [undef, "ARRAY(0x5605fae32a78)"],
   },
   "ideb_observado",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e1cb2c0)"],
+    size => [undef, "ARRAY(0x5605fa514d58)"],
   },
   "ideb_projecao",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x562f4e0d3bf0)"],
+    size => [undef, "ARRAY(0x5605fa667260)"],
   },
 );
 
@@ -266,8 +266,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id_escola", "etapa", "ano");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-01 14:14:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BI/gQFdjAeP5cM4RU5sZuw
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-13 15:42:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gvmb+rGCopSqNnyURJO0xQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
