@@ -59,7 +59,7 @@ run() {
 run "minion-worker" bash -c "find . -name '*.pl' -o -name '*.pm' | entr -r ./edu_maps.pl minion worker"
 run "morbo-server" bash -c "morbo ./edu_maps.pl"
 run "svelte-build" bash -c "cd ../frontend/map_app && npm run dev"
-run "r-plumber" bash -c "cd ../analytics && Rscript run_api.R"
+run "r-plumber" bash -c "cd ../analytics && find -name '*.R' | entr -r Rscript ./run_api.R"
 # --- WAIT for Ctrl+C ---
 echo "✅ All services running (PID $$). Press Ctrl+C to stop."
 wait
