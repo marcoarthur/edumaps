@@ -284,7 +284,7 @@ Número do telefone
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x5605fa63b960)"]
+  size: [undef,"ARRAY(0x5637e509e118)"]
 
 Coordenada latitude (graus decimais)
 
@@ -292,7 +292,7 @@ Coordenada latitude (graus decimais)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x5605fa010ae8)"]
+  size: [undef,"ARRAY(0x5637e4e16ea0)"]
 
 Coordenada longitude (graus decimais)
 
@@ -2262,13 +2262,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x5605fa63b960)"],
+    size => [undef, "ARRAY(0x5637e509e118)"],
   },
   "longitude",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x5605fa010ae8)"],
+    size => [undef, "ARRAY(0x5637e4e16ea0)"],
   },
   "tp_situacao_funcionamento",
   { data_type => "smallint", is_nullable => 1 },
@@ -2823,8 +2823,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("linha_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-13 15:42:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FPzGx57Fkdsg0qv4o2AyxQ
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-16 16:27:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:utVqkIHZHpyn8TglHB2+PQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -2869,4 +2869,9 @@ __PACKAGE__->has_many(
   { join_type => 'INNER' },
 );
 
+__PACKAGE__->has_one(
+  'inse',
+  'EduMaps::Schema::Result::Inse',
+  { 'foreign.id_escola' => 'self.co_entidade' },
+);
 1;
