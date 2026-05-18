@@ -35,3 +35,4 @@ maker_gis_function 2026-05-02T10:22:23Z Marco Arthur <arthurpbs@gmail.com> # cra
 consistent_schools_mv [ideb_notas_escolas] 2026-05-12T20:46:40Z Marco Arthur <arthurpbs@gmail.com> # materialized view for schools which consistently applies to national tests SAEB IDEB
 participacoes_exame [censo_escolar_2025] 2026-05-13T10:41:45Z Marco Arthur <arthurpbs@gmail.com> # add column to censo_escolas that shows number of participation in national exams for the school
 inse_2023 2026-05-16T17:43:41Z Marco Arthur <arthurpbs@gmail.com> # add the INSE index that measures socialeconomic level for the school students, given a measure of wealth and social status
+analytic_school_model 2026-05-17T18:39:40Z Marco Arthur <arthurpbs@gmail.com> # adds a parametarized function for data cleanup in order to pump data into model
