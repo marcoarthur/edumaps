@@ -405,6 +405,22 @@ task deploy_db_dev => 'database.edumaps' => sub {
   service 'postgresql' => 'restart';
 };
 
+desc "Creating analytics prediction models";
+task deploy_analytic_models => 'analytic.edumaps' => sub ($params, @rest){
+  my $model = $params->{driver} || get('default_model_conf');
+  my $path =get('edumaps_dir') . '/analytics';
+  die "Need a --driver=some/driver.yml file" unless $model;
+
+  Rex::Logger::info("Creating a model may take 5 minutes... ");
+  run qq{
+    export LC_ALL='C.UTF-8'; export LANG='C.UTF-8'; Rscript R/run_pipeline.R $model 
+  }, cwd => $path
+  ;
+
+  # restart service
+  service 'edumaps-analytic' => 'restart';
+};
+
 __END__
 
 =head1 NAME
