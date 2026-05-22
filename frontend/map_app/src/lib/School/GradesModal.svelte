@@ -198,12 +198,11 @@
       <div class="modal-content">
         {#if schoolData}
           <div class="school-info">
-            <h3>{schoolData.escola?.nome || 'Nome não informado'}</h3>
+            <h3>{school.escola || 'Nome não informado'}</h3>
             <div class="school-details">
-              <span class="detail">Código INEP: {schoolData.escola?.id || '—'}</span>
-              <span class="detail">Município: {schoolData.escola?.municipio || '—'}</span>
-              <span class="detail">Rede: {schoolData.escola?.rede || '—'}</span>
-              <span class="detail">Código IBGE: {schoolData.escola?.codigo_ibge || '—'}</span>
+              <span class="detail">Código INEP: {school.codigo_inep || '—'}</span>
+              <span class="detail">Município: {school.municipio || '—'}</span>
+              <span class="detail">Rede: {school.tipo || '—'}</span>
             </div>
           </div>
           
