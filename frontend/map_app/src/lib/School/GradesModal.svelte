@@ -135,7 +135,7 @@
       tooltip: {
         enabled: true,
         customHTML: (data) => {
-          const { group, year, value } = data;
+          const { group, year, value } = data[0];
           const formattedValue = (value != null && !isNaN(value)) ? value.toFixed(2) : 'N/A';
           return `<div style="padding:8px;background:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
             <strong>${group}</strong><br/>Ano: ${year}<br/>Nota: ${formattedValue}
