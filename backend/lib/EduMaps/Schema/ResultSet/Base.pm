@@ -713,4 +713,16 @@ sub explain($self, %options) {
   return $explain;
 }
 
+sub health_check($self) {
+  my $cols = [
+    qw/column_name data_type total_rows null_count non_null_count 
+    null_percentage distinct_approx/
+  ];
+  my ($schema, $table) = split (/\./, $self->result_source->name);
+  do {$table = $schema; $schema = 'public' } unless $table;
+  my $QUERY = sprintf ("SELECT * FROM health_check_approx('%s','%s')", $schema, $table);
+
+  $self->custom_query($QUERY,$cols)
+}
+
 1;
