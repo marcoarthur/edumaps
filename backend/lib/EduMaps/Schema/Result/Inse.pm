@@ -121,7 +121,7 @@ Quantidade de alunos da escola que responderam ao questionário socioeconômico 
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c757b00)"]
+  size: [undef,"ARRAY(0x55d1fcca0eb0)"]
 
 Média do INSE dos alunos da escola (0 a 10). Valores mais altos indicam maior nível socioeconômico.
 
@@ -137,7 +137,7 @@ Classificação da média da escola em níveis: Nível I (mais baixo) a Nível V
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c45e800)"]
+  size: [undef,"ARRAY(0x55d1fc5ee8d8)"]
 
 Percentual (%) de alunos da escola classificados no Nível I de INSE (muito baixo).
 
@@ -145,7 +145,7 @@ Percentual (%) de alunos da escola classificados no Nível I de INSE (muito baix
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c3bb4e8)"]
+  size: [undef,"ARRAY(0x55d1fc55b608)"]
 
 Percentual (%) de alunos no Nível II.
 
@@ -153,7 +153,7 @@ Percentual (%) de alunos no Nível II.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131bc2fb88)"]
+  size: [undef,"ARRAY(0x55d1fcc50590)"]
 
 Percentual (%) de alunos no Nível III.
 
@@ -161,7 +161,7 @@ Percentual (%) de alunos no Nível III.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c4b9178)"]
+  size: [undef,"ARRAY(0x55d1fcdb2de8)"]
 
 Percentual (%) de alunos no Nível IV.
 
@@ -169,7 +169,7 @@ Percentual (%) de alunos no Nível IV.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131b9b5f80)"]
+  size: [undef,"ARRAY(0x55d1fc898ad0)"]
 
 Percentual (%) de alunos no Nível V.
 
@@ -177,7 +177,7 @@ Percentual (%) de alunos no Nível V.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c020e70)"]
+  size: [undef,"ARRAY(0x55d1fcdba7b8)"]
 
 Percentual (%) de alunos no Nível VI.
 
@@ -185,7 +185,7 @@ Percentual (%) de alunos no Nível VI.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131bd420a0)"]
+  size: [undef,"ARRAY(0x55d1fc6729c8)"]
 
 Percentual (%) de alunos no Nível VII.
 
@@ -193,7 +193,7 @@ Percentual (%) de alunos no Nível VII.
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x56131c5c49d8)"]
+  size: [undef,"ARRAY(0x55d1fce9db80)"]
 
 Percentual (%) de alunos no Nível VIII (muito alto).
 
@@ -228,7 +228,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c757b00)"],
+    size => [undef, "ARRAY(0x55d1fcca0eb0)"],
   },
   "inse_classificacao",
   { data_type => "varchar", is_nullable => 1, size => 20 },
@@ -236,49 +236,49 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c45e800)"],
+    size => [undef, "ARRAY(0x55d1fc5ee8d8)"],
   },
   "pc_nivel_2",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c3bb4e8)"],
+    size => [undef, "ARRAY(0x55d1fc55b608)"],
   },
   "pc_nivel_3",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131bc2fb88)"],
+    size => [undef, "ARRAY(0x55d1fcc50590)"],
   },
   "pc_nivel_4",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c4b9178)"],
+    size => [undef, "ARRAY(0x55d1fcdb2de8)"],
   },
   "pc_nivel_5",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131b9b5f80)"],
+    size => [undef, "ARRAY(0x55d1fc898ad0)"],
   },
   "pc_nivel_6",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c020e70)"],
+    size => [undef, "ARRAY(0x55d1fcdba7b8)"],
   },
   "pc_nivel_7",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131bd420a0)"],
+    size => [undef, "ARRAY(0x55d1fc6729c8)"],
   },
   "pc_nivel_8",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x56131c5c49d8)"],
+    size => [undef, "ARRAY(0x55d1fce9db80)"],
   },
 );
 
@@ -297,8 +297,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("nu_ano_saeb", "id_escola");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-18 15:25:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:73ObdqMgn5q+ktf4vzv8dQ
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-29 09:14:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8XD+DU9YOdtlah0i1xPQgg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
