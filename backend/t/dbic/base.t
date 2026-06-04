@@ -4,15 +4,23 @@ use Mojo::Collection qw(c);
 use EduMaps::Schema;
 
 my $sch = EduMaps::Schema->go;
-my $health_check = c($sch->sources)->map(sub {$sch->resultset($_)})->grep(sub {$_->can('health_check')});
+sub filter_resultsets($filter_cb) {
+  c($sch->sources)->map( sub { $sch->resultset($_ ) } )->grep( $filter_cb );
+}
 
-subtest healtcheck_method => sub {
-  ok ($health_check->size <= scalar($sch->sources), 'a subset of rs can health_check');
-
-  $health_check->each(
-    sub ($rs, $idx) {
+subtest  health_check_method => sub {
+  my $can_health_check = filter_resultsets(
+    sub ($rs) {
+      $rs->can('health_check') &&
       # purely dbic view, does not make sense for health_check
-      return if $rs->result_source->isa('DBIx::Class::ResultSource::View');
+      not $rs->result_source->isa('DBIx::Class::ResultSource::View');
+    }
+  );
+
+  ok ($can_health_check->size <= scalar($sch->sources), 'a subset of rs can health_check');
+
+  $can_health_check->each(
+    sub ($rs, $idx) {
       is(
         $rs->health_check->as_hash->first,
         hash {
@@ -22,6 +30,7 @@ subtest healtcheck_method => sub {
           field null_count => E;
           field non_null_count => E;
           field distinct_approx => E;
+          etc();
         },
         "counting fields for health checking"
       );
