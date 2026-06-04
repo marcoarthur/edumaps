@@ -8,6 +8,7 @@ User=root
 WorkingDirectory=<%= $work_dir %>
 Environment=MOJO_MODE=<%= $mojo_mode || 'development' %>
 Environment=MOJO_LISTEN=http://0.0.0.0:<%= $morbo_port || 3000 %>
+Environment=MOJO_REVERSE_PROXY=1
 ExecStart=<%= $carton_path || '/usr/local/bin/carton' %> exec -- morbo <%= $edumaps_path || '/opt/edumaps/EduMaps-0.001/edu_maps.pl' %>
 Restart=on-failure
 RestartSec=5
