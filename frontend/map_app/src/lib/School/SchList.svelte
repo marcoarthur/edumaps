@@ -97,6 +97,11 @@
     console.log('Disparando evento viewGrades para:', escola);
     dispatch('viewGrades', { escola });
   }
+
+  function handleViewScores(escola) {
+    console.log('Disparando evento viewScores para:', escola);
+    dispatch('viewScores', { escola } );
+  }
 </script>
 
 {#if loading}
@@ -172,17 +177,24 @@
 
           <!-- Botões de ação -->
           <div class="buttons-container">
-            <button 
-              class="payroll-btn"
-              on:click={() => handleViewPayroll(escola)}>
-              💰 Ver Folha de Pagamento
+            <button
+              class="scores-btn"
+              on:click={() => handleViewScores(escola)}>
+              📊 Pontuação
             </button>
-            
+
             <button
               class="grades-btn"
               on:click={() => handleViewGrades(escola)}>
               📝 Notas INEP
             </button>
+
+            <button 
+              class="payroll-btn"
+              on:click={() => handleViewPayroll(escola)}>
+              💰 Folha de Pagamento
+            </button>
+
           </div>
 
           <div class="map-links">
@@ -400,7 +412,7 @@
     margin-top: 0.5rem;
   }
   
-  .payroll-btn, .grades-btn {
+  .payroll-btn, .grades-btn, .scores-btn {
     width: 100%;
     padding: 0.5rem;
     color: white;
@@ -431,6 +443,16 @@
   
   .grades-btn:hover {
     background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .scores-btn {
+    background-color: #13b081;
+  }
+  
+  .scores-btn:hover {
+    background-color: #099869;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }

@@ -3,6 +3,7 @@
   import SchList from './SchList.svelte';
   import PayrollModal from './PayrollModal.svelte';
   import GradesModal from './GradesModal.svelte';
+  import ScoresModal from './ScoresModal.svelte';
   
   let escolas = [];           // resultados originais da API
   let loading = false;
@@ -10,6 +11,7 @@
   let buscaRealizada = false;
   let showPayrollModal = false;
   let showGradesModal = false;
+  let showScoreModal = false;
   let selectedEscola = null;
 
   // --- Filtros ---
@@ -165,6 +167,16 @@
     selectedEscola = null;
   }
 
+  function openScoreModal(school) {
+    selectedEscola = school;
+    showScoreModal = true;
+  }
+
+  function closeScoreModal() {
+    showScoreModal = false;
+    selectedEscola = null;
+  }
+
   function handleViewPayroll(event) {
     selectedEscola = event.detail.escola;
     showPayrollModal = true;
@@ -173,6 +185,11 @@
   function handleViewGrades(event) {
     selectedEscola = event.detail.escola;
     showGradesModal = true;
+  }
+
+  function handleViewScores(event) {
+    selectedEscola = event.detail.escola;
+    showScoreModal = true;
   }
 </script>
 
@@ -238,6 +255,7 @@
         error={error}
         on:viewPayroll={handleViewPayroll}
         on:viewGrades={handleViewGrades}
+        on:viewScores={handleViewScores}
       />
     </div>
   {/if}
@@ -257,6 +275,12 @@
   school={selectedEscola}
   bind:isOpen={showGradesModal}
   on:close={closeGradesModal}
+/>
+
+<ScoresModal
+  escola={selectedEscola}
+  bind:isOpen={showScoreModal}
+  on:close={closeScoreModal}
 />
 
 <style>
