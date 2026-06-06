@@ -218,10 +218,10 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
   # NodeSource repo (Node 22 LTS)
   run q{
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  }, unless => "which npm";
+  }, unless => q<node -v | cut -d '.' -f1 | sed 's/v//' | xargs -I {} bash -c 'test {} -ge 20'>;
 
   run qq{apt-get -y update};
-  pkg $_, ensure => 'present' for qw(nodejs npm nginx);
+  pkg $_, ensure => 'present' for qw(nodejs nginx);
 
   my $frontend_path = get('edumaps_dir') . "/frontend/map_app";
   Rex::Logger::info("Installing frontend dependencies");
@@ -433,6 +433,8 @@ task deploy_analytic_models => 'analytic.edumaps' => sub ($params, @rest){
   # restart service
   service 'edumaps-analytic' => 'restart';
 };
+
+batch deploy => qw/prepare deploy_backend_dev deploy_db_dev deploy_frontend_dev deploy_minion_dev/;
 
 __END__
 
