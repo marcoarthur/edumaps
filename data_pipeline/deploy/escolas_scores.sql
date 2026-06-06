@@ -92,51 +92,35 @@ BEGIN;
 
   -- ========== 4. SCORE CAPACITAÇÃO DOCENTE ==========
   score_docente AS (
-      SELECT
-          d.nu_ano_censo,
-          d.co_entidade,
-          ROUND(
-              0.3 * CASE
-                  WHEN d.qt_doc_bas > 0
-                  THEN (COALESCE(d.qt_doc_bas_esco_sup_grad,0)::numeric / d.qt_doc_bas) * 10
-                  ELSE 0
-              END +
-              0.3 * CASE
-                  WHEN d.qt_doc_bas > 0
-                  THEN ( (COALESCE(d.qt_doc_bas_esco_sup_pos_espec,0) +
-                          COALESCE(d.qt_doc_bas_esco_sup_pos_mestra,0) +
-                          COALESCE(d.qt_doc_bas_esco_sup_pos_douto,0))::numeric / d.qt_doc_bas ) * 10
-                  ELSE 0
-              END +
-              0.2 * CASE
-                  WHEN d.qt_doc_bas > 0
-                  THEN (COALESCE(d.qt_doc_bas_vinculo_concur,0)::numeric / d.qt_doc_bas) * 10
-                  ELSE 0
-              END +
-              0.2 * CASE
-                  WHEN d.qt_doc_bas > 0
-                  THEN ( (COALESCE(d.qt_doc_bas_espec_cre,0) +
-                          COALESCE(d.qt_doc_bas_espec_pre_escola,0) +
-                          COALESCE(d.qt_doc_bas_espec_anos_iniciais,0) +
-                          COALESCE(d.qt_doc_bas_espec_anos_finais,0) +
-                          COALESCE(d.qt_doc_bas_espec_ens_medio,0) +
-                          COALESCE(d.qt_doc_bas_espec_eja,0) +
-                          COALESCE(d.qt_doc_bas_espec_ed_especial,0) +
-                          COALESCE(d.qt_doc_bas_espec_bil_surdos,0) +
-                          COALESCE(d.qt_doc_bas_espec_ed_indigena,0) +
-                          COALESCE(d.qt_doc_bas_espec_campo,0) +
-                          COALESCE(d.qt_doc_bas_espec_ambiental,0) +
-                          COALESCE(d.qt_doc_bas_espec_dir_humanos,0) +
-                          COALESCE(d.qt_doc_bas_espec_div_sexual,0) +
-                          COALESCE(d.qt_doc_bas_espec_dir_adolesc,0) +
-                          COALESCE(d.qt_doc_bas_espec_afro,0) +
-                          COALESCE(d.qt_doc_bas_espec_gestao,0) +
-                          COALESCE(d.qt_doc_bas_espec_educ_tic,0) +
-                          COALESCE(d.qt_doc_bas_espec_outros,0))::numeric / d.qt_doc_bas ) * 10
-                  ELSE 0
-              END
-          , 2) AS score_capacitacao_docente
-      FROM clean.censo_docentes d
+    SELECT
+    d.nu_ano_censo,
+    d.co_entidade,
+    ROUND(
+      0.3 * LEAST(1, COALESCE(d.qt_doc_bas_esco_sup_grad,0)::numeric / NULLIF(d.qt_doc_bas,0)) * 10 +
+      0.3 * LEAST(1, (COALESCE(d.qt_doc_bas_esco_sup_pos_espec,0) +
+          COALESCE(d.qt_doc_bas_esco_sup_pos_mestra,0) +
+          COALESCE(d.qt_doc_bas_esco_sup_pos_douto,0))::numeric / NULLIF(d.qt_doc_bas,0)) * 10 +
+      0.2 * LEAST(1, COALESCE(d.qt_doc_bas_vinculo_concur,0)::numeric / NULLIF(d.qt_doc_bas,0)) * 10 +
+      0.2 * LEAST(1, (COALESCE(d.qt_doc_bas_espec_cre,0) +
+          COALESCE(d.qt_doc_bas_espec_pre_escola,0) +
+          COALESCE(d.qt_doc_bas_espec_anos_iniciais,0) +
+          COALESCE(d.qt_doc_bas_espec_anos_finais,0) +
+          COALESCE(d.qt_doc_bas_espec_ens_medio,0) +
+          COALESCE(d.qt_doc_bas_espec_eja,0) +
+          COALESCE(d.qt_doc_bas_espec_ed_especial,0) +
+          COALESCE(d.qt_doc_bas_espec_bil_surdos,0) +
+          COALESCE(d.qt_doc_bas_espec_ed_indigena,0) +
+          COALESCE(d.qt_doc_bas_espec_campo,0) +
+          COALESCE(d.qt_doc_bas_espec_ambiental,0) +
+          COALESCE(d.qt_doc_bas_espec_dir_humanos,0) +
+          COALESCE(d.qt_doc_bas_espec_div_sexual,0) +
+          COALESCE(d.qt_doc_bas_espec_dir_adolesc,0) +
+          COALESCE(d.qt_doc_bas_espec_afro,0) +
+          COALESCE(d.qt_doc_bas_espec_gestao,0) +
+          COALESCE(d.qt_doc_bas_espec_educ_tic,0) +
+          COALESCE(d.qt_doc_bas_espec_outros,0))::numeric / NULLIF(d.qt_doc_bas,0)) * 10
+      , 2) AS score_capacitacao_docente
+    FROM clean.censo_docentes d
   ),
 
   -- ========== 5. SCORE DIVERSIDADE DISCENTE ==========
@@ -147,64 +131,69 @@ BEGIN;
           ROUND(
               0.35 * CASE
                   WHEN m.qt_mat_bas > 0
-                  THEN (1 - ( POWER(COALESCE(m.qt_mat_bas_branca,0)::numeric / m.qt_mat_bas, 2) +
-                             POWER(COALESCE(m.qt_mat_bas_preta,0)::numeric / m.qt_mat_bas, 2) +
-                             POWER(COALESCE(m.qt_mat_bas_parda,0)::numeric / m.qt_mat_bas, 2) +
-                             POWER(COALESCE(m.qt_mat_bas_amarela,0)::numeric / m.qt_mat_bas, 2) +
-                             POWER(COALESCE(m.qt_mat_bas_indigena,0)::numeric / m.qt_mat_bas, 2) )) * 10
+                  THEN (1 - ( LEAST(1, POWER(COALESCE(m.qt_mat_bas_branca,0)::numeric / m.qt_mat_bas, 2)) +
+                              LEAST(1, POWER(COALESCE(m.qt_mat_bas_preta,0)::numeric / m.qt_mat_bas, 2)) +
+                              LEAST(1, POWER(COALESCE(m.qt_mat_bas_parda,0)::numeric / m.qt_mat_bas, 2)) +
+                              LEAST(1, POWER(COALESCE(m.qt_mat_bas_amarela,0)::numeric / m.qt_mat_bas, 2)) +
+                              LEAST(1, POWER(COALESCE(m.qt_mat_bas_indigena,0)::numeric / m.qt_mat_bas, 2)) )) * 10
                   ELSE 0
               END +
               0.25 * CASE
                   WHEN m.qt_mat_bas > 0
-                  THEN 2 * LEAST(COALESCE(m.qt_mat_bas_fem,0)::numeric, COALESCE(m.qt_mat_bas_masc,0)::numeric) / m.qt_mat_bas * 10
+                  THEN 2 * LEAST(1, LEAST(COALESCE(m.qt_mat_bas_fem,0)::numeric, COALESCE(m.qt_mat_bas_masc,0)::numeric) / m.qt_mat_bas) * 10
                   ELSE 0
               END +
               0.20 * CASE
                   WHEN m.qt_mat_bas > 0
-                  THEN (COALESCE(m.qt_mat_bas_d,0) + COALESCE(m.qt_mat_bas_dm,0) + COALESCE(m.qt_mat_bas_dv,0))::numeric / m.qt_mat_bas * 10
+                  THEN LEAST(1, (COALESCE(m.qt_mat_bas_d,0) + COALESCE(m.qt_mat_bas_dm,0) + COALESCE(m.qt_mat_bas_dv,0))::numeric / m.qt_mat_bas) * 10
                   ELSE 0
               END +
               0.20 * CASE
                   WHEN m.qt_mat_bas > 0
-                  THEN COALESCE(m.qt_mat_eja,0)::numeric / m.qt_mat_bas * 10
+                  THEN LEAST(1, COALESCE(m.qt_mat_eja,0)::numeric / m.qt_mat_bas) * 10
                   ELSE 0
               END
           , 2) AS score_diversidade_discente
       FROM clean.censo_matriculas m
   ),
-
   -- ========== 6. SCORE CAPACIDADE GESTORA ==========
   score_gestao AS (
       SELECT
           g.nu_ano_censo,
           g.co_entidade,
           ROUND(
-              0.3 * CASE
-                  WHEN g.qt_gest_bas > 0
-                  THEN ( (COALESCE(g.qt_gest_bas_esco_sup_grad,0)::numeric / g.qt_gest_bas) * 10 +
-                         (COALESCE(g.qt_gest_bas_esco_sup_pos_espec,0) +
-                          COALESCE(g.qt_gest_bas_esco_sup_pos_mestra,0) +
-                          COALESCE(g.qt_gest_bas_esco_sup_pos_douto,0))::numeric / g.qt_gest_bas * 10 ) / 2
-                  ELSE 0
-              END +
-              0.2 * CASE
-                  WHEN g.qt_gest_bas > 0
-                  THEN (COALESCE(g.qt_gest_bas_espec_gestao,0)::numeric / g.qt_gest_bas) * 10
-                  ELSE 0
-              END +
+              -- 1. Qualificação do gestor (média entre graduação e pós)
+              0.3 * (
+                  ( CASE WHEN g.qt_gest_bas > 0
+                         THEN LEAST(1, COALESCE(g.qt_gest_bas_esco_sup_grad,0)::numeric / g.qt_gest_bas) * 10
+                         ELSE 0 END
+                  + CASE WHEN g.qt_gest_bas > 0
+                         THEN LEAST(1, (COALESCE(g.qt_gest_bas_esco_sup_pos_espec,0) +
+                                        COALESCE(g.qt_gest_bas_esco_sup_pos_mestra,0) +
+                                        COALESCE(g.qt_gest_bas_esco_sup_pos_douto,0))::numeric / g.qt_gest_bas) * 10
+                         ELSE 0 END
+                  ) / 2.0
+              ) +
+              -- 2. Especialização em gestão
+              0.2 * ( CASE WHEN g.qt_gest_bas > 0
+                           THEN LEAST(1, COALESCE(g.qt_gest_bas_espec_gestao,0)::numeric / g.qt_gest_bas) * 10
+                           ELSE 0 END
+                     ) +
+              -- 3. Proporção gestor/aluno
               0.2 * CASE
                   WHEN g.qt_gest_bas > 0 AND COALESCE(m.qt_mat_bas, 0) > 0
                   THEN 10 * LEAST(1, 200.0 * g.qt_gest_bas / m.qt_mat_bas)
                   ELSE 0
               END +
-              0.2 * ( COALESCE(o.qt_colegiados, 0) / 5.0 * 10 ) +
-              0.1 * CASE
-                  WHEN g.qt_gest_bas > 0
-                  THEN ( (COALESCE(g.qt_gest_bas_acesso_cargo_conca,0) +
-                          COALESCE(g.qt_gest_bas_acesso_cargo_eleic,0) +
-                          COALESCE(g.qt_gest_bas_acesso_cargo_p_sel,0))::numeric / g.qt_gest_bas ) * 10
-                  ELSE 0
-              END
+              -- 4. Órgãos colegiados
+              0.2 * ( LEAST(1, COALESCE(o.qt_colegiados,0) / 5.0) * 10 ) +
+              -- 5. Acesso meritocrático ao cargo
+              0.1 * ( CASE WHEN g.qt_gest_bas > 0
+                           THEN LEAST(1, (COALESCE(g.qt_gest_bas_acesso_cargo_conca,0) +
+                                          COALESCE(g.qt_gest_bas_acesso_cargo_eleic,0) +
+                                          COALESCE(g.qt_gest_bas_acesso_cargo_p_sel,0))::numeric / g.qt_gest_bas) * 10
+                           ELSE 0 END
+                     )
           , 2) AS score_capacidade_gestora
       FROM clean.censo_gestor g
       LEFT JOIN clean.censo_matriculas m
@@ -213,11 +202,11 @@ BEGIN;
           SELECT
               co_entidade,
               nu_ano_censo,
-              (COALESCE(in_orgao_ass_pais,0) +
-               COALESCE(in_orgao_ass_pais_mestres,0) +
-               COALESCE(in_orgao_conselho_escolar,0) +
-               COALESCE(in_orgao_gremio_estudantil,0) +
-               COALESCE(in_orgao_outros,0)) AS qt_colegiados
+              ( COALESCE(in_orgao_ass_pais,0) +
+                COALESCE(in_orgao_ass_pais_mestres,0) +
+                COALESCE(in_orgao_conselho_escolar,0) +
+                COALESCE(in_orgao_gremio_estudantil,0) +
+                COALESCE(in_orgao_outros,0) ) AS qt_colegiados
           FROM clean.censo_escolas
           WHERE tp_situacao_funcionamento = 1
       ) o ON g.co_entidade = o.co_entidade AND g.nu_ano_censo = o.nu_ano_censo

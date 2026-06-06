@@ -129,4 +129,14 @@ __PACKAGE__->add_unique_constraint("idx_mv_scores_pk", ["nu_ano_censo", "co_enti
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+  'escola',
+  'EduMaps::Schema::Result::CensoEscolas',
+  { 
+    'foreign.co_entidade' => 'self.co_entidade',
+    'foreign.nu_ano_censo' => 'self.nu_ano_censo',
+  },
+);
+
 1;

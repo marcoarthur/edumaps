@@ -2881,4 +2881,14 @@ __PACKAGE__->has_one(
   'EduMaps::Schema::Result::Inse',
   { 'foreign.id_escola' => 'self.co_entidade' },
 );
+
+__PACKAGE__->might_have(
+  'score',
+  'EduMaps::Schema::Result::MvEscolasScores',
+  { 
+    'foreign.co_entidade'  => 'self.co_entidade',
+    'foreign.nu_ano_censo' => 'self.nu_ano_censo',
+  },
+);
+
 1;

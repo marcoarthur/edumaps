@@ -3,7 +3,6 @@ package EduMaps::Model::School;
 use Mojo::Base "EduMaps::Model::Base", -signatures;
 use DateTime;
 use Mojo::Exception qw(raise);
-use DDP;
 use utf8;
 
 ################################################################
@@ -513,6 +512,25 @@ sub gis_cover($self, $params = {}) {
   ->as_hash->first;
 
   return $results->{feature};
+}
+
+sub scores($self, $params = {}) {
+  $self->set_params_map(
+    params => $params,
+    map => {
+      co_entidade => [qw(id school_id cod_entidade)],
+    }
+  );
+
+  my $results = $self->schema->resultset('MvEscolasScores')->search_rs($params)->as_hash->first;
+  unless($results) {
+    return $self->json->encode(
+      {
+        error => sprintf('Escola de código %s não encontrada', $params->{co_entidade})
+      }
+    );
+  }
+  return $self->json->encode($results);
 }
 
 1;
