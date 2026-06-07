@@ -9,6 +9,7 @@ set mode => 'development';
 set db_password => $ENV{EDUMAPS_DB_PASS} || 'change_me';
 set db_user => $ENV{EDUMAPS_DB_USER} || 'edumaps';
 set db_name => $ENV{EDUMAPS_DB_NAME} || 'edumaps_dev';
+set frontend_server_name => 'ubatexu.lan';
 
 group all => qw( backend.edumaps database.edumaps analytic.edumaps );
 
@@ -217,11 +218,10 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
   # NodeSource repo (Node 22 LTS)
   run q{
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  }, unless => "which npm";
+  }, unless => q<node -v | cut -d '.' -f1 | sed 's/v//' | xargs -I {} bash -c 'test {} -ge 20'>;
 
   run qq{apt-get -y update};
-  pkg 'nodejs', ensure => 'present';
-  pkg 'npm', ensure => 'present';
+  pkg $_, ensure => 'present' for qw(nodejs nginx);
 
   my $frontend_path = get('edumaps_dir') . "/frontend/map_app";
   Rex::Logger::info("Installing frontend dependencies");
@@ -229,24 +229,37 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
   Rex::Logger::info("Building frontend");
   run q{npm run build}, cwd => $frontend_path;
 
-  #
-  # Vite dev server service
-  #
+  my $web_root = '/var/www/edumaps-frontend';
+  run qq{mkdir -p $web_root}, unless => qq{test -d $web_root};
+  run qq{rm -rf $web_root/*};  # limpa versões anteriores
+  run qq{cp -r $frontend_path/dist/* $web_root/};
+  run qq{chown -R www-data:www-data $web_root};
 
-  file "/etc/systemd/system/edumaps-frontend.service",
+  my $nginx_cnf = "/etc/nginx/sites-available/edumaps-frontend.conf";
+  file $nginx_cnf,
     content => template(
-      './files/edumaps-frontend.service',
+      './files/edumaps-frontend-nginx.conf',
       {
-        frontend_path => $frontend_path,
+        web_root     => $web_root,
+        server_name  => get('frontend_server_name') || '_',
+        backend_api  => 'http://localhost:3000',
+        analytic_api => 'http://analytic:8000',
       }
     ),
     on_change => sub {
-      run q{systemctl daemon-reload};
-      run q{systemctl enable --now edumaps-frontend.service};
+      run qq{ln -sf $nginx_cnf /etc/nginx/sites-enabled/};
+      run q{nginx -t};
     }
   ;
+  service 'nginx' => 'restart';
+};
 
-  service 'edumaps-frontend' => 'restart';
+desc "Disabling and removing frontend vite service";
+task disable_frontend_vite => 'backend.edumaps' => sub {
+  service 'edumaps-frontend' => 'stop';
+  run q{systemctl disable edumaps-frontend.service};
+  file "/etc/systemd/system/edumaps-frontend.service", ensure => 'absent';
+  run q{systemctl daemon-reload};
 };
 
 desc "Configure and Install PostgreSQL/PostGIS/Sqitch";
@@ -420,6 +433,8 @@ task deploy_analytic_models => 'analytic.edumaps' => sub ($params, @rest){
   # restart service
   service 'edumaps-analytic' => 'restart';
 };
+
+batch deploy => qw/prepare deploy_backend_dev deploy_db_dev deploy_frontend_dev deploy_minion_dev/;
 
 __END__
 

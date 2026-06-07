@@ -6,7 +6,7 @@ BEGIN;
 
   CREATE TABLE clean.censo_escolas (
       linha_id SERIAL PRIMARY KEY, -- número da linha (1 = primeira linha de dados)
-      NU_ANO_CENSO INTEGER,
+      NU_ANO_CENSO INTEGER NOT NULL,
       NO_REGIAO VARCHAR(20),
       CO_REGIAO SMALLINT,
       NO_UF VARCHAR(50),

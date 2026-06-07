@@ -97,7 +97,11 @@
 </script>
 
 {#if isOpen && cityData}
-  <div class="modal-overlay" on:click={closeModal}>
+  <div class="modal-overlay" on:click={closeModal} 
+  on:keydown={(e) => e.key === 'Escape' && closeModal()}
+  role="button"
+  tabindex=0
+  >
     <div class="modal-container" on:click|stopPropagation>
       <div class="modal-header">
         <div class="modal-title">

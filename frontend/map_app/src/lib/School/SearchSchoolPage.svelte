@@ -3,6 +3,7 @@
   import SchList from './SchList.svelte';
   import PayrollModal from './PayrollModal.svelte';
   import GradesModal from './GradesModal.svelte';
+  import ScoresModal from './ScoresModal.svelte';
   
   let escolas = [];           // resultados originais da API
   let loading = false;
@@ -10,6 +11,7 @@
   let buscaRealizada = false;
   let showPayrollModal = false;
   let showGradesModal = false;
+  let showScoreModal = false;
   let selectedEscola = null;
 
   // --- Filtros ---
@@ -165,6 +167,16 @@
     selectedEscola = null;
   }
 
+  function openScoreModal(school) {
+    selectedEscola = school;
+    showScoreModal = true;
+  }
+
+  function closeScoreModal() {
+    showScoreModal = false;
+    selectedEscola = null;
+  }
+
   function handleViewPayroll(event) {
     selectedEscola = event.detail.escola;
     showPayrollModal = true;
@@ -173,6 +185,11 @@
   function handleViewGrades(event) {
     selectedEscola = event.detail.escola;
     showGradesModal = true;
+  }
+
+  function handleViewScores(event) {
+    selectedEscola = event.detail.escola;
+    showScoreModal = true;
   }
 </script>
 
@@ -194,8 +211,8 @@
     {#if escolas.length > 0}
       <div class="filtros-bar">
         <div class="filtro-group">
-          <label>🏫 Tipo de escola:</label>
-          <select bind:value={filtroTipo}>
+          <label for="filtro-tipo">🏫 Tipo de escola:</label>
+          <select id="filtro-tipo" bind:value={filtroTipo}>
             <option value="todos">Todos</option>
             {#each opcoesTipos as tipo}
               <option value={tipo}>{tipo}</option>
@@ -204,8 +221,8 @@
         </div>
 
         <div class="filtro-group">
-          <label>📍 Cidade / Estado:</label>
-          <select bind:value={filtroCidade}>
+          <label for="filtro-cidade">📍 Cidade / Estado:</label>
+          <select id="filtro-cidade" bind:value={filtroCidade}>
             <option value="todas">Todas</option>
             {#each opcoesCidades as cidade}
               <option value={cidade}>{cidade}</option>
@@ -215,8 +232,8 @@
 
         <!-- Novo filtro de Modalidade -->
         <div class="filtro-group">
-          <label>📚 Modalidade:</label>
-          <select bind:value={filtroModalidade}>
+          <label for="filtro-modalidade">📚 Modalidade:</label>
+          <select id="filtro-modalidade" bind:value={filtroModalidade}>
             <option value="todas">Todas</option>
             {#each opcoesModalidades as modalidade}
               <option value={modalidade}>{modalidade}</option>
@@ -238,6 +255,7 @@
         error={error}
         on:viewPayroll={handleViewPayroll}
         on:viewGrades={handleViewGrades}
+        on:viewScores={handleViewScores}
       />
     </div>
   {/if}
@@ -257,6 +275,12 @@
   school={selectedEscola}
   bind:isOpen={showGradesModal}
   on:close={closeGradesModal}
+/>
+
+<ScoresModal
+  escola={selectedEscola}
+  bind:isOpen={showScoreModal}
+  on:close={closeScoreModal}
 />
 
 <style>

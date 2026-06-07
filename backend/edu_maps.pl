@@ -208,6 +208,14 @@ helper instantiate_model => sub($c, %args) {
   return $model;
 };
 
+helper check_params => sub ($c, $check) {
+  my $ret;
+  unless ($ret = $check->($c)) {
+    $c->render( json => { error => 'invalid request' }, status => 400 );
+  }
+  $ret;
+};
+
 ############################################################
 # ROUTES + API
 ############################################################
@@ -541,5 +549,24 @@ get 'api/school/:codigo_inep/cover' => [codigo_inep => qr/\d+/] => sub ($c) {
     format => 'json',
   );
 } => 'school_gis_cover';
+
+get 'api/school/scores' => sub ($c) {
+  my $model = $c->instantiate_model(
+    model => 'School',
+  );
+  my $check = sub ($ctx) {
+    my $param = c(qw/id co_entidade/)
+    ->map(sub { $ctx->param($_) })
+    ->first(sub ($p) {defined $p && length($p) > 0 && $p =~ m/\d+/ });
+    return $param;
+  };
+
+  $c->check_params($check) or return;
+
+  $c->render(
+    data => $model->scores,
+    format => 'json',
+  );
+} => 'school_scores';
 
 app->start;
