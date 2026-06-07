@@ -555,12 +555,9 @@ get 'api/school/scores' => sub ($c) {
     model => 'School',
   );
   my $check = sub ($ctx) {
-    my $param = c(qw/id co_entidade/)->first(
-      sub {
-        my $p = $ctx->param($_);
-        defined $p && length($p) > 0 && $p =~ m/\d+/;
-      }
-    );
+    my $param = c(qw/id co_entidade/)
+    ->map(sub { $ctx->param($_) })
+    ->first(sub ($p) {defined $p && length($p) > 0 && $p =~ m/\d+/ });
     return $param;
   };
 

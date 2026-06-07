@@ -3,6 +3,7 @@ use Imports;
 use Test::Mojo;
 
 my $t = Test::Mojo->new(Mojo::File->new('./edu_maps.pl'));
+$t->app->log->level('fatal');
 my $school_id_valid    = 35047824;
 my $school_id_invalid  = 12123123;
 
@@ -30,7 +31,7 @@ subtest 'ID válido' => sub {
   );
   for my $field (@score_fields) {
     $t->json_like("/$field" => qr/^(?:[0-9]|[1-9][0-9]?|100)(?:\.[0-9]{1,2})?$/)
-    ->or( diag("Campo $field parece inválido") );
+    ->or( sub { diag("Campo $field parece inválido: $_") } );
   }
 };
 
