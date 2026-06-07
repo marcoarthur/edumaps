@@ -211,8 +211,8 @@
     {#if escolas.length > 0}
       <div class="filtros-bar">
         <div class="filtro-group">
-          <label>🏫 Tipo de escola:</label>
-          <select bind:value={filtroTipo}>
+          <label for="filtro-tipo">🏫 Tipo de escola:</label>
+          <select id="filtro-tipo" bind:value={filtroTipo}>
             <option value="todos">Todos</option>
             {#each opcoesTipos as tipo}
               <option value={tipo}>{tipo}</option>
@@ -221,8 +221,8 @@
         </div>
 
         <div class="filtro-group">
-          <label>📍 Cidade / Estado:</label>
-          <select bind:value={filtroCidade}>
+          <label for="filtro-cidade">📍 Cidade / Estado:</label>
+          <select id="filtro-cidade" bind:value={filtroCidade}>
             <option value="todas">Todas</option>
             {#each opcoesCidades as cidade}
               <option value={cidade}>{cidade}</option>
@@ -232,8 +232,8 @@
 
         <!-- Novo filtro de Modalidade -->
         <div class="filtro-group">
-          <label>📚 Modalidade:</label>
-          <select bind:value={filtroModalidade}>
+          <label for="filtro-modalidade">📚 Modalidade:</label>
+          <select id="filtro-modalidade" bind:value={filtroModalidade}>
             <option value="todas">Todas</option>
             {#each opcoesModalidades as modalidade}
               <option value={modalidade}>{modalidade}</option>

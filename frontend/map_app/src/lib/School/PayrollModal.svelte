@@ -100,7 +100,11 @@
 </script>
 
 {#if show}
-  <div class="modal-overlay" on:click={handleOverlayClick}>
+  <div class="modal-overlay" on:click={handleOverlayClick}
+    on:keydown={(e) => e.key === 'Escape' && closeModal()}
+    role="button"
+    tabindex="0"
+  >
     <div class="modal-container">
       <div class="modal-header">
         <div>

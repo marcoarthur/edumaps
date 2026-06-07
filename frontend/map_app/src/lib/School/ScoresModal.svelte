@@ -60,7 +60,11 @@
 </script>
 
 {#if isOpen}
-  <div class="modal-overlay" on:click={handleClose}>
+  <div class="modal-overlay" on:click={handleClose}
+    on:keydown={(e) => e.key === 'Escape' && handleClose()}
+    role="button"
+    tabindex="0"
+  >
     <div class="modal-container" on:click|stopPropagation>
       <div class="modal-header">
         <h2>Scores da Escola</h2>

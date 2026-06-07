@@ -188,7 +188,11 @@
 </script>
 
 {#if isOpen}
-  <div class="modal-backdrop" on:click={handleBackdropClick}>
+  <div class="modal-backdrop" on:click={handleBackdropClick}
+    on:keydown={(e) => e.key === 'Escape' && closeModal()}
+    role="button"
+    tabindex="0"
+  >
     <div class="modal">
       <div class="modal-header">
         <h2>Dados Completos da Escola</h2>
