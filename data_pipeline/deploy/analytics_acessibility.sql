@@ -116,6 +116,7 @@ BEGIN;
       codigo_ibge_municipio VARCHAR(7)
   ) 
   LANGUAGE plpgsql
+  SET search_path = public, postgis, analytics, clean   -- <--- LINHA ADICIONADA
   AS $$
   BEGIN
       RETURN QUERY
