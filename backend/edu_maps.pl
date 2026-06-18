@@ -56,8 +56,9 @@ sub read_confs_from_env {
 
 push @{app->static->paths}, qw(./public ../frontend/map_app/dist);
 
-my $conf = -f './edu_maps.conf' ? do {
-  plugin Config => {file => './edu_maps.conf'};
+my $conf_file = $ENV{EDUMAPS_CONF} || './edu_maps.conf';
+my $conf = -f $conf_file ? do {
+  plugin Config => {file => $conf_file};
   app->config;
 } : read_confs_from_env;
 
