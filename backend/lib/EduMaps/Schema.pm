@@ -5,7 +5,9 @@ use utf8;
 sub go {
   my $class = shift;
 
-  my $params = do './edu_maps.conf';
+  my $conf_file = $ENV{EDUMAPS_CONF} || './edu_maps.conf';
+  die "$conf_file not found configuration file" unless -f $conf_file;
+  my $params = do $conf_file;
   my @db_params = (
     $params->{db_params}->@*,
     $params->{db_opts},
