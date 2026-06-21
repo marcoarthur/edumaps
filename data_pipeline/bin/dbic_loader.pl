@@ -48,6 +48,7 @@ say "🔗 DSN: $db_config->{dsn}";
 path($options{tolib})->make_path unless -d $options{tolib};
 
 eval {
+  my @tables = $options{constraint} ? (constraint => qr/$options{constraint}/) : ();
   make_schema_at(
     $options{namespace},
     {
@@ -64,6 +65,7 @@ eval {
         $table =~ s/(?:^|_)([a-z])/\U$1/g;
         return $table;
       },
+      @tables,
     },
     \@db_params
   );

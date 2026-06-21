@@ -35,7 +35,7 @@ Número da linha no arquivo original (1 = primeira linha de dados)
 =head2 nu_ano_censo
 
   data_type: 'integer'
-  is_nullable: 1
+  is_nullable: 0
 
 Ano de referência do Censo Escolar (ex: 2025)
 
@@ -284,7 +284,7 @@ Número do telefone
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x55d1fc6e7da8)"]
+  size: [undef,"ARRAY(0x55dee5983c50)"]
 
 Coordenada latitude (graus decimais)
 
@@ -292,7 +292,7 @@ Coordenada latitude (graus decimais)
 
   data_type: 'numeric'
   is_nullable: 1
-  size: [undef,"ARRAY(0x55d1fc76a318)"]
+  size: [undef,"ARRAY(0x55dee4e43108)"]
 
 Coordenada longitude (graus decimais)
 
@@ -2198,7 +2198,7 @@ __PACKAGE__->add_columns(
     sequence          => "censo_escolas_linha_id_seq",
   },
   "nu_ano_censo",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "integer", is_nullable => 0 },
   "no_regiao",
   { data_type => "varchar", is_nullable => 1, size => 20 },
   "co_regiao",
@@ -2267,13 +2267,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x55d1fc6e7da8)"],
+    size => [undef, "ARRAY(0x55dee5983c50)"],
   },
   "longitude",
   {
     data_type => "numeric",
     is_nullable => 1,
-    size => [undef, "ARRAY(0x55d1fc76a318)"],
+    size => [undef, "ARRAY(0x55dee4e43108)"],
   },
   "tp_situacao_funcionamento",
   { data_type => "smallint", is_nullable => 1 },
@@ -2830,8 +2830,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("linha_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-05-29 09:14:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d7ppdt04Xw3BUfCQkxgU6w
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-06-21 11:17:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EDXhIm3FAnghp0nI2UMIHg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
