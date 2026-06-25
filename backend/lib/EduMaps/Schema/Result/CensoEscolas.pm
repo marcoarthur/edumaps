@@ -2891,4 +2891,10 @@ __PACKAGE__->might_have(
   },
 );
 
+__PACKAGE__->belongs_to(
+  'municipio',
+  'EduMaps::Schema::Result::MunicipiosSp',
+  { 'foreign.codigo_ibge' => 'self.co_municipio' },
+);
+
 1;

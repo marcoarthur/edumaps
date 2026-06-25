@@ -6,6 +6,7 @@ use Mojo::URL;
 use Mojo::Log;
 use Digest::SHA qw(sha1_hex);
 use Mojo::UserAgent;
+use Syntax::Keyword::Try;
 require EduMaps::Schema;
 require EduMaps::OSM::Service;
 
@@ -61,16 +62,23 @@ sub _get_from_db($self, $q = $self->_service->query) {
 
 sub from_osm($self) {
   $self->_set_dbsave if $self->save_db;
-  $self->emit( progress => { processed => 'None', total => 'Unknown', phase => 'osm', });
-  my $osm_data = $self->_service->run_query;
-  $self->emit( progress => { processed => 'Raw', total => 'Unknown', phase => 'osm', });
+  $self->emit(progress => { processed => 'None', total => 'Unknown', phase => 'osm', });
+
+  my $osm_data;
+  if ($self->save_db) {
+    $self->_sch->txn_do(sub {$osm_data = $self->_service->run_query})
+  } else {
+    $osm_data = $self->_service->run_query;
+  }
+
+  $self->emit(progress => { processed => 'Raw', total => 'Unknown', phase => 'osm', });
   return $osm_data;
 }
 
 sub _save_query($self, $info) {
   $self->log->info('Saving OSM results into DB');
   my $query = $self->_sch->resultset('OsmQuery')
-  ->create( 
+  ->update_or_create( 
     { 
       digest        => sha1_hex($info->{query}),
       query         => $info->{query}, 
@@ -94,17 +102,25 @@ sub _set_dbsave($self) {
     my $id = $f->{properties}{id};
     my $sql = qq~ST_Transform(ST_GeomFromGeoJSON('$geom'::json), $srid)~;
     $self->log->info(sprintf 'Saving landuse to DB, OSM %s', $id);
-    eval {
-      $land->create(
-        {
-          osm_id        => $id,
-          municipio_id  => $self->municipio,
-          osm_query_id  => $self->_query->digest,
-          geom          => \$sql,
-          properties    => encode_json($f->{properties}),
-        }
-      );
-    };
+
+    try {
+      $land->create({
+        osm_id        => $id,
+        municipio_id  => $self->municipio,
+        osm_query_id  => $self->_query->digest,
+        geom          => \$sql,
+        properties    => encode_json($f->{properties}),
+      });
+    } catch ($err) {
+      # Se for violação de chave única (duplicata), apenas loga e continua
+      if ($err =~ /duplicate key value|23505/) {
+        $self->log->warn("OSM feature $id already in database, skipping.");
+        return;
+      }
+      # Qualquer outro erro deve interromper a transação
+      die $err;
+    }
+
     $self->log->warn("OSM feature $id already in database!") if $@;
   };
 

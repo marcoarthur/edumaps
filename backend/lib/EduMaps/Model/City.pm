@@ -262,27 +262,26 @@ sub overall_payroll($self, $params = {}) {
 }
 
 sub search_by_name($self, $params = {}) {
-  my $rs = $self->schema->resultset('MunicipiosSp');
-  my $expr = \q{unaccent(nome_municipio) ILIKE unaccent(?)};
-  my $results = $rs
-  ->search_rs(\[$expr, $self->_wrap_percent($params->{name})])
+  
+  my $results = $self->_search_unaccent($params->{name})
   ->to_geojson->get_column('feature')->first;
 
-  return $results;
+  return $results // '{"type":"FeatureCollection","features":[]}';
 }
 
 sub city_details($self, $params = {}) {
   my $rs = $self->schema->resultset('MunicipiosSp');
-  # kind of fuzzy search
-  my $expr = \q{unaccent(nome_municipio) ILIKE unaccent(?)};
+  my $expr = q{unaccent(nome_municipio) ILIKE unaccent(?)};
   my $results = $rs
   ->search_rs(\[$expr, $self->_wrap_percent($params->{name})])
-  ->columns([
+  ->columns(
+    [
       qw/
       nome_municipio nome_regiao_imediata nome_regiao area_km2 nome_estado
       codigo_ibge
       /
-    ])
+    ]
+  )
   ->as_hash->get_all;
 
   return $self->json->encode($results->to_array);
@@ -391,7 +390,30 @@ sub _search_unaccent($self, $term) {
   return $rs->search_rs(\[$expr, $self->_wrap_percent($term)]);
 }
 
-sub _wrap_percent($self, $value) { return "%$value%"; }
+sub find_schools($self,$cod) {
+  my $tel = q<CONCAT('(', nu_ddd,')',' ', nu_telefone)>;
+  my $end = q<CONCAT_WS(' ', ds_endereco, nu_endereco, no_bairro, '-', co_cep)>;
+
+  my $attrs = {
+    escola => 'no_entidade',
+    municipio => 'no_municipio', 
+    telefone => \$tel,
+    codigo_inep => 'co_entidade',
+    endereco => \$end,
+  };
+
+  my $rs = $self->schema->resultset('CensoEscolas')
+  ->search_rs({ co_municipio => $cod })
+  ->not_null('geometry')
+  ->geojson_features('geometry', $attrs);
+
+  return $rs->get_column('feature')->first || 'null';
+}
+
+sub _wrap_percent($self, $value) {
+  my $saned = ($value =~ s/[%']//gr);
+  return "%$saned%";
+}
 
 1;
 
@@ -406,12 +428,12 @@ EduMaps::Model::City - City data management for EduMaps application
 =head1 SYNOPSIS
 
   use EduMaps::Model::City;
-  
+
   my $city_model = EduMaps::Model::City->new(schema => $schema);
-  
+
   # Get complete city information
   my $city_data = $city_model->details('3550308');
-  
+
   # Get OSM landuse features
   my $geojson = $city_model->osm_features('3550308');
 
@@ -420,34 +442,6 @@ EduMaps::Model::City - City data management for EduMaps application
 This model provides comprehensive city data management for the EduMaps application. It aggregates information from multiple result sets including school distribution, education professionals statistics, school coverage analysis, and geographic features from OpenStreetMap.
 
 The model is designed to be efficient with large datasets, using optimized database queries and avoiding unnecessary data transformations.
-
-=head1 METHODS
-
-=head2 details($code, $radius = 3000)
-
-Returns complete city information including:
-
-=over 4
-
-=item * Basic city details from IBGE database
-
-=item * School distribution categorized by size (small, medium, large)
-
-=item * Education professionals count by type and teaching segment
-
-=item * School coverage analysis within specified radius
-
-=back
-
-=head2 osm_features($code)
-
-Returns OpenStreetMap landuse features as a GeoJSON FeatureCollection with metadata. The method uses string concatenation to avoid decoding/recoding the GeoJSON, making it memory-efficient for large datasets.
-
-=head1 INTERNAL METHODS
-
-=head2 _format_float_nums($hash)
-
-Formats floating point numbers in a hash reference to two decimal places. This ensures consistent numeric formatting across API responses.
 
 =head1 DEPENDENCIES
 

@@ -325,4 +325,17 @@ __PACKAGE__->has_one(
   { join_type => 'INNER' },
 );
 
+__PACKAGE__->has_many(
+  'censo_escolas',
+  'EduMaps::Schema::Result::CensoEscolas',
+  sub {
+    my $args = shift;
+    return {
+      sprintf("%s.co_municipio",$args->{foreign_alias}) => { 
+        '=' => \sprintf("CAST(%s.codigo_ibge AS integer)",$args->{self_alias})
+      },
+    };
+  },
+);
+
 1;
