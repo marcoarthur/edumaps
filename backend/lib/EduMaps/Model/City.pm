@@ -301,7 +301,7 @@ sub analytic_details($self, $params = {}) {
   ->search_related_rs('analise')
   ->as_hash->first;
 
-  return $self->json->encode($results);
+  return $results;
 }
 
 sub search_for_complete($self, $params = {}) {

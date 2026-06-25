@@ -117,6 +117,19 @@ sub _sorted_json($self, $data) {
   $self->json_handle->encode($data);
 }
 
+sub analytic_details($self) {
+  my $model = $self->_instantiate_model(
+    model => 'City', route_params => [qw(codigo_ibge)]
+  );
+
+  my $results = $model->analytic_details;
+  if ( $results ) {
+    $self->render(json => $results);
+  } else {
+    $self->render(text => 'Not found', status => 404);
+  }
+}
+
 1;
 
 __END__
