@@ -262,7 +262,7 @@ get '/api/details' => sub ($c) {
     $cobertura ? (%$cobertura) : () 
   };
   $c->format_float_nums($mun_details);
-  $c->render( json => $mun_details, encoding => 'UTF-8' );
+  $c->render( json => $mun_details );
 };
 
 get '/api/schools' => sub ($c) {
@@ -417,7 +417,7 @@ get 'api/city/detail/:name' => sub($c) {
     data => $model->city_details({name => $c->param('name')}),
     format => 'json'
   );
-} => 'city_search_by_name';
+} => 'city_detail_by_name';
 
 # core of basic analysis for the municipality
 get 'api/analytics/city/:codigo_ibge/details' => [codigo_ibge => qr/\d{7}/] => sub ($c) {
