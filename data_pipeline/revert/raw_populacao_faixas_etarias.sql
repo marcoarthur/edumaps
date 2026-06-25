@@ -15,9 +15,12 @@ BEGIN;
   DROP INDEX IF EXISTS idx_populacao_grupos;
   
   -- Log do revert
-  RAISE NOTICE 'Revertido: raw_populacao_faixas_etarias. Tabela raw removida.';
-  RAISE NOTICE 'NOTA: As colunas de faixa etária em clean.populacao_municipal NÃO foram removidas.';
-  RAISE NOTICE 'Para removê-las manualmente, execute:';
-  RAISE NOTICE 'ALTER TABLE clean.populacao_municipal DROP COLUMN faixa_0_4_anos, DROP COLUMN faixa_5_9_anos, ...';
+  DO $$
+    BEGIN
+      RAISE NOTICE 'Revertido: raw_populacao_faixas_etarias. Tabela raw removida.';
+      RAISE NOTICE 'NOTA: As colunas de faixa etária em clean.populacao_municipal NÃO foram removidas.';
+      RAISE NOTICE 'Para removê-las manualmente, execute:';
+      RAISE NOTICE 'ALTER TABLE clean.populacao_municipal DROP COLUMN faixa_0_4_anos, DROP COLUMN faixa_5_9_anos, ...';
+    END $$;
 
 COMMIT;

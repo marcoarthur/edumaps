@@ -2,6 +2,6 @@
 
 BEGIN;
 
-  DROP TABLE clean.gestor_escolar;
+  DROP TABLE IF EXISTS clean.gestor_escolar;
 
 COMMIT;

@@ -9,7 +9,8 @@ BEGIN;
     FOREIGN DATA WRAPPER ogr_fdw
     OPTIONS(
       -- datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/ufs/sp/sp_municipios_2024.zip',
-      datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip',
+      -- datasource '/vsizip//vsicurl/https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip',
+      datasource '/vsizip///data/BR_Municipios_2024.zip',
       format 'ESRI Shapefile'
     );
 
