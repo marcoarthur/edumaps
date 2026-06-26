@@ -4,8 +4,10 @@ use EduMaps::Model::City;
 use List::Util qw(any all);
 use DateTime;
 
+has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
+
 sub details($self) {
-  my $details = $self->model('City')->details($self->param('codigo_ibge'));
+  my $details = $self->instantiate_model(model => 'City')->details($self->param('codigo_ibge'));
   return $self->reply->not_found unless keys %$details;
 
   $self->render(data => $self->sorted_json($details), format => 'json');
@@ -13,7 +15,7 @@ sub details($self) {
 
 sub schools($self) {
   my $cod = $self->param('codigo_ibge');
-  my $schools = $self->model('City')->find_schools($cod);
+  my $schools = $self->instantiate_model(model => 'City')->find_schools($cod);
 
   $self->render(text => $schools, format => 'json');
 }
@@ -21,14 +23,15 @@ sub schools($self) {
 sub osm_features($self) {
   my $cod = $self->param('codigo_ibge');
   $self->render(
-    data => $self->model('City')->osm_features($cod),
+    text => $self->instantiate_model(model => 'City')->osm_features($cod),
     format => 'json',
   );
 }
 
 sub payroll($self) {
   my %opts = (
-    month => $self->param('month') || 6, year => $self->param('year') || 2025
+    month => $self->param('month') || $self->default_date->month,
+    year => $self->param('year') || $self->default_date->year,
   );
 
   if ( $opts{month} < 1 or $opts{month} > 12 or $opts{year} < 0 or any { m/[^0-9]/ } values %opts ) {
@@ -41,7 +44,7 @@ sub payroll($self) {
   );
 
   return $self->render(
-    text => $self->model('City')->payroll(@params),
+    text => $self->instantiate_model(model => 'City')->payroll(@params),
     format => 'json',
   );
 }
@@ -50,7 +53,7 @@ sub overall_payroll($self) {
   my $model = $self->instantiate_model(model => 'City', route_params => [qw(codigo_ibge)]);
 
   $self->render(
-    data => $model->overall_payroll,
+    text => $model->overall_payroll,
     format => 'json'
   );
 }
@@ -60,14 +63,14 @@ sub payroll_details($self) {
   my @params = (
     $self->param('codigo_ibge'),
     DateTime->new(
-      year    => $self->param('year')  || 2025,
-      month   => $self->param('month') || 06,
+      year    => $self->param('year')  || $self->default_date->year,
+      month   => $self->param('month') || $self->default_date->month,
       locale  => 'pt'
     ),
   );
 
   $self->render(
-    text => $self->model('City')->payroll_details(@params),
+    text => $self->instantiate_model(model => 'City')->payroll_details(@params),
     format => 'json',
   );
 
@@ -114,7 +117,7 @@ sub search_for_complete($self) {
   my $model = $self->instantiate_model(model => 'City');
 
   $self->render(
-    data => $model->search_for_complete, format => 'json'
+    text => $model->search_for_complete, format => 'json'
   );
 }
 
