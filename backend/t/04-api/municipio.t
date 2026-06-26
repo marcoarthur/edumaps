@@ -135,7 +135,7 @@ subtest 'OSM features com dados existentes' => sub {
 };
 
 subtest 'OSM features: código existente sem dados OSM' => sub {
-  my $cod = 1100015;   # município existente, mas sem dados OSM
+  my $cod = 1100020;   # município existente, mas sem dados OSM
 
   my $tx = $t->get_ok("/api/city/$cod/osm_features")->status_is(200)->tx;
   my $json = $tx->res->json;
@@ -232,13 +232,11 @@ subtest 'payroll: mês inválido (não numérico)' => sub {
 
 subtest 'payroll: mês inválido (fora do intervalo 1-12)' => sub {
   my $cod = 2302701;
-  # O controller valida apenas se é numérico, mas DateTime vai morrer com mês 13.
-  # Isso resultará em erro 500 (a menos que haja um eval).
-  $t->get_ok("/api/city/$cod/payroll?month=13")->status_is(500);
+  $t->get_ok("/api/city/$cod/payroll?month=13")->status_is(400);
 };
 
 subtest 'payroll: código existente sem dados de folha' => sub {
-  my $cod = 1100015;   # município existente, mas sem folha (ou que não tenha)
+  my $cod = 3553807;   # município existente, mas sem folha (ou que não tenha)
   my $tx = $t->get_ok("/api/city/$cod/payroll")->status_is(200)->tx;
   my $data = $tx->res->json;
   ok ref($data) eq 'ARRAY', 'resposta é um array';

@@ -32,20 +32,16 @@ sub osm_features($self) {
 }
 
 sub payroll($self) {
-  my $v = $self->validation;
-  $v->optional($_)->num for qw/year month/;
-  $v->required('codigo_ibge');
-
   my %opts = (
-    month => $v->param('month') || 6, year => $v->param('year') || 2025
+    month => $self->param('month') || 6, year => $self->param('year') || 2025
   );
 
-  if ( $opts{month} < 1 or $opts{month} > 12 or $opts{year} < 0 ) {
+  if ( $opts{month} < 1 or $opts{month} > 12 or $opts{year} < 0 or any { m/[^0-9]/ } values %opts ) {
     return $self->render(text => "Bad request", status => 400);
   }
   
   my @params = (
-    $v->param('codigo_ibge'),
+    $self->param('codigo_ibge'),
     DateTime->new(year => $opts{'year'}, month => $opts{'month'}, locale => 'pt'),
   );
 
@@ -128,6 +124,14 @@ sub analytic_details($self) {
   } else {
     $self->render(text => 'Not found', status => 404);
   }
+}
+
+sub search_for_complete($self) {
+  my $model = $self->_instantiate_model(model => 'City');
+
+  $self->render(
+    data => $model->search_for_complete, format => 'json'
+  );
 }
 
 1;
