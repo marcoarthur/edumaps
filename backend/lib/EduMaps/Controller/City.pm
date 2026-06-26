@@ -1,19 +1,14 @@
 package EduMaps::Controller::City;
-use Mojo::Base 'Mojolicious::Controller', -signatures;
+use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use EduMaps::Model::City;
 use List::Util qw(any all);
 use DateTime;
-use JSON::PP qw();
-
-has json_handle => sub {
-  state $json = JSON::PP->new->canonical->utf8(1);
-};
 
 sub details($self) {
   my $details = $self->app->model('City')->details($self->param('codigo_ibge'));
   return $self->reply->not_found unless keys %$details;
 
-  $self->render(data => $self->_sorted_json($details), format => 'json');
+  $self->render(data => $self->sorted_json($details), format => 'json');
 }
 
 sub schools($self) {
@@ -52,7 +47,7 @@ sub payroll($self) {
 }
 
 sub overall_payroll($self) {
-  my $model = $self->_instantiate_model(model => 'City', route_params => [qw(codigo_ibge)]);
+  my $model = $self->instantiate_model(model => 'City', route_params => [qw(codigo_ibge)]);
 
   $self->render(
     data => $model->overall_payroll,
@@ -79,7 +74,7 @@ sub payroll_details($self) {
 }
 
 sub search_by_name($self) {
-  my $model = $self->_instantiate_model(model => 'City', route_params => [qw(name)]);
+  my $model = $self->instantiate_model(model => 'City', route_params => [qw(name)]);
   my $opts = {name => $self->param('name')};
 
   if (length($opts->{name}) < 4 ) {
@@ -93,7 +88,7 @@ sub search_by_name($self) {
 }
 
 sub detail_by_name($self) {
-  my $model = $self->_instantiate_model(model => 'City');
+  my $model = $self->instantiate_model(model => 'City');
   my $opts = {name => $self->param('name')};
 
   $self->render(
@@ -102,19 +97,8 @@ sub detail_by_name($self) {
   );
 }
 
-sub _instantiate_model($self, %args) {
-  my ($model, $params) = ($self->model($args{model}), $self->req->params->to_hash);
-  $params->{$_} = $self->param($_) for $args{route_params}->@*;
-  $model->ctx->params({ %$params });
-  return $model;
-}
-
-sub _sorted_json($self, $data) {
-  $self->json_handle->encode($data);
-}
-
 sub analytic_details($self) {
-  my $model = $self->_instantiate_model(
+  my $model = $self->instantiate_model(
     model => 'City', route_params => [qw(codigo_ibge)]
   );
 
@@ -127,7 +111,7 @@ sub analytic_details($self) {
 }
 
 sub search_for_complete($self) {
-  my $model = $self->_instantiate_model(model => 'City');
+  my $model = $self->instantiate_model(model => 'City');
 
   $self->render(
     data => $model->search_for_complete, format => 'json'
