@@ -5,7 +5,7 @@ use List::Util qw(any all);
 use DateTime;
 
 sub details($self) {
-  my $details = $self->app->model('City')->details($self->param('codigo_ibge'));
+  my $details = $self->model('City')->details($self->param('codigo_ibge'));
   return $self->reply->not_found unless keys %$details;
 
   $self->render(data => $self->sorted_json($details), format => 'json');
@@ -13,7 +13,7 @@ sub details($self) {
 
 sub schools($self) {
   my $cod = $self->param('codigo_ibge');
-  my $schools = $self->app->model('City')->find_schools($cod);
+  my $schools = $self->model('City')->find_schools($cod);
 
   $self->render(text => $schools, format => 'json');
 }
@@ -21,7 +21,7 @@ sub schools($self) {
 sub osm_features($self) {
   my $cod = $self->param('codigo_ibge');
   $self->render(
-    data => $self->app->model('City')->osm_features($cod),
+    data => $self->model('City')->osm_features($cod),
     format => 'json',
   );
 }
@@ -41,7 +41,7 @@ sub payroll($self) {
   );
 
   return $self->render(
-    text => $self->app->model('City')->payroll(@params),
+    text => $self->model('City')->payroll(@params),
     format => 'json',
   );
 }
