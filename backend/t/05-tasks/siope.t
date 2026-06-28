@@ -14,14 +14,10 @@ sub _delete_previous {
   )->delete;
 }
 
-sub _enqueue {
-  my $id = $minion->enqueue('query_siope' => [$cod, $ano]);
-  return $minion->job($id);
-}
-
 subtest qq{executando task query_siope com codigo_municipio = $cod e ano = $ano} => sub {
   _delete_previous;
-  my $job = _enqueue;
+  my $job_id = $t->app->get_siope($cod, $ano);
+  my $job = $minion->job($job_id);
   $minion->perform_jobs;
 
   my $result = $job->info->{result};

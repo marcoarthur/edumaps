@@ -7,10 +7,12 @@ use Time::Piece;
 use constant {
   CHUNK_SIZE => 5000,
   CAPTCHA => $ENV{CAPTCHA_SIOPE} || '',
+  DEFAULT_YEAR => 2025,
 };
 
 sub register ($self, $app, $config){
   $app->minion->add_task(query_siope => \&_query_siope);
+  $app->helper(get_siope => \&_enqueue_siope_task);
 }
 
 sub _query_siope($job, $city_id, $year) {
@@ -58,6 +60,10 @@ sub _query_siope($job, $city_id, $year) {
 
   $job->app->log->info("Sucessuful downloaded data for $city_id, total records: $total");
   $job->finish($meta);
+}
+
+sub _enqueue_siope_task($app, $cod_ibge, $year = DEFAULT_YEAR) {
+  return $app->minion->enqueue(query_siope => [$cod_ibge, $year]);
 }
 
 1;

@@ -387,7 +387,7 @@ sub search_analytic($self, $params = {}) {
 
 sub _search_unaccent($self, $term) {
   my $rs = $self->schema->resultset('MunicipiosSp');
-  my $expr = q{unaccent(me.nome_municipio) ILIKE unaccent(?)};
+  my $expr = q{contrib.unaccent(me.nome_municipio) ILIKE contrib.unaccent(?)};
   return $rs->search_rs(\[$expr, $self->_wrap_percent($term)]);
 }
 

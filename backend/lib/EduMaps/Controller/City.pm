@@ -1,52 +1,56 @@
 package EduMaps::Controller::City;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
-use EduMaps::Model::City;
-use List::Util qw(any all);
 use DateTime;
 
 has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
+has min_search_len => 4;
 
 sub details($self) {
-  my $details = $self->instantiate_model(model => 'City')->details($self->param('codigo_ibge'));
+  my $model = $self->instantiate_model(model => 'City');
+  my $details = $model->details($self->param('codigo_ibge'));
   return $self->reply->not_found unless keys %$details;
 
-  $self->render(data => $self->sorted_json($details), format => 'json');
+  $self->render(json => $details);
 }
 
 sub schools($self) {
   my $cod = $self->param('codigo_ibge');
+  my $model = $self->instantiate_model(model => 'City');
   my $schools = $self->instantiate_model(model => 'City')->find_schools($cod);
 
+  return $self->reply->not_found unless $schools;
   $self->render(text => $schools, format => 'json');
 }
 
 sub osm_features($self) {
   my $cod = $self->param('codigo_ibge');
+  my $model = $self->instantiate_model(model => 'City'); 
+
   $self->render(
-    text => $self->instantiate_model(model => 'City')->osm_features($cod),
+    text => $model->osm_features($cod),
     format => 'json',
   );
 }
 
 sub payroll($self) {
-  my %opts = (
-    month => $self->param('month') || $self->default_date->month,
-    year => $self->param('year') || $self->default_date->year,
-  );
+  my $v = $self->validation;
+  $v->optional('month')->like(qr/^\d+$/);
+  $v->optional('year')->like(qr/^\d+$/);
 
-  if ( $opts{month} < 1 or $opts{month} > 12 or $opts{year} < 0 or any { m/[^0-9]/ } values %opts ) {
-    return $self->render(text => "Bad request", status => 400);
-  }
-  
-  my @params = (
-    $self->param('codigo_ibge'),
-    DateTime->new(year => $opts{'year'}, month => $opts{'month'}, locale => 'pt'),
-  );
+  return $self->bad_req if $self->any_error;
 
-  return $self->render(
-    text => $self->instantiate_model(model => 'City')->payroll(@params),
-    format => 'json',
-  );
+  my $date = eval {
+    DateTime->new( 
+      year    => $v->param('year') // $self->default_date->year,
+      month   => $v->param('month') // $self->default_date->month,
+      locale  => 'pt',
+    );
+  };
+  return $self->bad_req if $@;
+
+  my $model = $self->instantiate_model(model => 'City');
+  my $result = $model->payroll($v->param('codigo_ibge'), $date);
+  $self->render(text => $result, format => 'json');
 }
 
 sub overall_payroll($self) {
@@ -60,17 +64,24 @@ sub overall_payroll($self) {
 
 sub payroll_details($self) {
 
-  my @params = (
-    $self->param('codigo_ibge'),
-    DateTime->new(
-      year    => $self->param('year')  || $self->default_date->year,
-      month   => $self->param('month') || $self->default_date->month,
-      locale  => 'pt'
-    ),
-  );
+  my $model = $self->instantiate_model(model => 'City');
+  my $v = $self->validation;
+  $v->optional('month')->like(qr/^\d+$/);
+  $v->optional('year')->like(qr/^\d+$/);
+
+  return $self->bad_req if $self->any_error;
+
+  my $date = eval {
+    DateTime->new( 
+      year    => $v->param('year') // $self->default_date->year,
+      month   => $v->param('month') // $self->default_date->month,
+      locale  => 'pt',
+    );
+  };
+  return $self->bad_req if $@;
 
   $self->render(
-    text => $self->instantiate_model(model => 'City')->payroll_details(@params),
+    text => $model->payroll_details($self->param('codigo_ibge'), $date),
     format => 'json',
   );
 
@@ -80,8 +91,8 @@ sub search_by_name($self) {
   my $model = $self->instantiate_model(model => 'City', route_params => [qw(name)]);
   my $opts = {name => $self->param('name')};
 
-  if (length($opts->{name}) < 4 ) {
-    return $self->render(text => 'Bad request', status => 400);
+  if (length($opts->{name}) < $self->min_search_len ) {
+    return $self->bad_req('name have to be greater than ' . $self->min_search_len);
   }
 
   $self->render(
@@ -93,6 +104,10 @@ sub search_by_name($self) {
 sub detail_by_name($self) {
   my $model = $self->instantiate_model(model => 'City');
   my $opts = {name => $self->param('name')};
+
+  if (length($opts->{name}) < $self->min_search_len ) {
+    return $self->bad_req('name have to be greater than ' . $self->min_search_len);
+  }
 
   $self->render(
     text => $model->city_details($opts),

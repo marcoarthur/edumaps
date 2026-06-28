@@ -3,12 +3,12 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use EduMaps::OSM::Query;
 use Syntax::Keyword::Try;
 
-# DBIx::Class::Schema
 sub register ($self, $app, $config){
-  $app->minion->add_task(query_osm => \&_query_siope);
+  $app->minion->add_task(query_osm => \&_query_osm);
+  $app->helper(get_osm => \&_enqueue_osm_task);
 }
 
-sub _query_siope($job, $city_id) {
+sub _query_osm($job, $city_id) {
   my $query = EduMaps::OSM::Query->new(
     municipio     => $city_id,
     log           => $job->app->log,
@@ -26,6 +26,10 @@ sub _query_siope($job, $city_id) {
   }
 
   return $job->finish($geojson);
+}
+
+sub _enqueue_osm_task($app, $cod_ibge) {
+  return $app->minion->enqueue(query_osm => [$cod_ibge]);
 }
 
 1;

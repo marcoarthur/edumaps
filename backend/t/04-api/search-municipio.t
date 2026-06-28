@@ -175,15 +175,12 @@ subtest 'detail_by_name: case-insensitive' => sub {
   }
 };
 
-subtest 'detail_by_name: nome curto (menos de 4 caracteres) => deve funcionar' => sub {
+subtest 'detail_by_name: nome curto (menos de 4 caracteres) => não deve funcionar' => sub {
   my $name = 'Rio';
   my $encoded = url_escape($name);
 
-  my $tx = $t->get_ok("/api/city/detail/$encoded")->status_is(200)->tx;
-  my $json = eval { ($tx->res->json) } || [];
-  ok ref($json) eq 'ARRAY', 'resposta é um array';
-  # Não exige que tenha resultados, apenas que a resposta seja um array
-  pass 'aceita nomes curtos (sem exigir 4+ caracteres)';
+  my $tx = $t->get_ok("/api/city/detail/$encoded")->status_is(400)->tx;
+  pass 'não aceita nomes curtos (menos de 4 caracteres)';
 };
 
 subtest 'detail_by_name: nome que não existe retorna array vazio' => sub {

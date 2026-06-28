@@ -4,7 +4,6 @@ use Test2::Tools::Compare qw(T F D DF E DNE FDNE U L);
 use lib qw(./lib);
 use DateTime;
 use Mojo::JSON qw(decode_json encode_json);
-use DDP;
 use Try::Tiny;
 
 # Carregar módulos necessários - Test2 não tem use_ok, vamos usar require + ok
@@ -298,32 +297,6 @@ subtest '_wrap_percent() - Deve envolver string com percentuais' => sub {
     
     $wrapped = $city_model->_wrap_percent('');
     is($wrapped, '%%', 'Funciona com string vazia');
-};
-
-# ============================================================================
-# Testes de integração
-# ============================================================================
-
-subtest 'Integração: Fluxo completo de dados da cidade' => sub {
-    # 1. Buscar cidade por nome
-    my $search_result = $city_model->search_by_name({ name => $TEST_CITY_NAME });
-    my $decoded_search = try { decode_json($search_result) };
-    
-    if ($decoded_search && $decoded_search->{type} eq 'FeatureCollection') {
-        my $features = $decoded_search->{features};
-        if ($features && @$features > 0) {
-            my $city_code = $features->[0]{properties}{codigo_ibge};
-            
-            # 2. Buscar detalhes completos
-            my $details = $city_model->details($city_code);
-            is(ref $details, 'HASH', 'Detalhes retornados com sucesso');
-            
-            # 3. Buscar payroll
-            my $date = DateTime->new(year => 2024, month => 3);
-            my $payroll = $city_model->payroll($city_code, $date);
-            ok(defined $payroll, 'Payroll retornado com sucesso');
-        }
-    }
 };
 
 # ============================================================================

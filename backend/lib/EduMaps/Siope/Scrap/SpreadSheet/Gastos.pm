@@ -273,7 +273,7 @@ sub _read_sheet($self) {
 
 sub _read_sheet_fast($self) {
   my $csv = $self->sheet . ".Planilha.csv";
-  my @cmd = ( qw(xlsx2csv_fast -s ;), $self->sheet);
+  my @cmd = ( qw(xlsx2csv_fast -b -s ;), $self->sheet);
 
   system(@cmd) == 0
     or die "Falha ao executar xlsx2csv";
@@ -283,6 +283,11 @@ sub _read_sheet_fast($self) {
   while (<$fh>) {
     chomp;
     my @cols = split /;/, $_;
+    # Aplica a correção apenas na coluna de índice 7
+    if (defined $cols[7]) {
+      $cols[7] =~ s/magistï¿½rio/magistério/g;
+      $cols[7] =~ s/educaï¿½ï¿½o/educação/g;
+    }
     # clean field year (e.g. 2023.0) and other integer numbers wrongly put as decimal
     for (@cols) {
       s/\.0$//;
