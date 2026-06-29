@@ -1,4 +1,4 @@
-package EduMaps::Roles::Plot;
+package EduMaps::Roles::DB::Plot;
 use Mojo::Base -role, -signatures;
 use Syntax::Keyword::Try;
 use EduMaps::R::Pipe;

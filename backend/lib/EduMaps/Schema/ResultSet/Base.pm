@@ -1,9 +1,8 @@
 package EduMaps::Schema::ResultSet::Base;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
-use Mojo::Collection qw(c);
 use Role::Tiny::With;
-our @APP_ROLES = map { "EduMaps::Roles::$_" } 
+our @APP_ROLES = map { "EduMaps::Roles::DB::$_" } 
   qw(PrettyPrint Formats SearchHelpers Scaling Stats Geo Joins Derived SQLUtils Plot Aggregates);
 with @APP_ROLES;
 

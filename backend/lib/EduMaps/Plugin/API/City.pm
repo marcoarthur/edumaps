@@ -31,6 +31,9 @@ sub register ($self, $app, @args) {
 
   $analytics->get('/cities/markers')
   ->to('city#search_in_bbox')->name('search_markers');
+
+  $analytics->get('/city/search')
+  ->to('city#search_analytic')->name('search_analytic');
 }
 
 1;

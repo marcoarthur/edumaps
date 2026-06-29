@@ -1,4 +1,4 @@
-package EduMaps::Roles::Joins;
+package EduMaps::Roles::DB::Joins;
 use Mojo::Base -role, -signatures;
 use Mojo::Collection qw(c);
 

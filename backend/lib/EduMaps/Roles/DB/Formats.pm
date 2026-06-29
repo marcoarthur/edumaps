@@ -1,4 +1,4 @@
-package EduMaps::Roles::Formats;
+package EduMaps::Roles::DB::Formats;
 
 use Mojo::Base -role, -signatures;
 use Mojo::JSON qw(encode_json);

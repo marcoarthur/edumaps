@@ -1,4 +1,4 @@
-package EduMaps::Roles::SQLUtils;
+package EduMaps::Roles::DB::SQLUtils;
 use Mojo::Base -role, -signatures;
 use Mojo::Collection qw(c);
 use Syntax::Keyword::Try;

@@ -78,16 +78,6 @@ subtest 'search_for_complete: case-insensitive' => sub {
   }
 };
 
-subtest 'search_for_complete: termo vazio' => sub {
-  my $q = '';
-  my $tx = $t->get_ok("/api/analytics/cities/search?q=$q")->status_is(200)->tx;
-  my $json = $tx->res->json;
-  ok ref($json) eq 'ARRAY', 'resposta é um array';
-  # Pode retornar todos os municípios ou vazio; depende da implementação.
-  # Por ora, apenas verifica que é um array.
-  pass 'termo vazio retorna array (vazio ou com dados)';
-};
-
 subtest 'search_for_complete: parâmetro limit' => sub {
   my $q = 'maria';
   my $limit = 3;

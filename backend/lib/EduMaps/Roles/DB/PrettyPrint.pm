@@ -1,4 +1,4 @@
-package EduMaps::Roles::PrettyPrint;
+package EduMaps::Roles::DB::PrettyPrint;
 
 use Mojo::Base -role, -signatures;
 use Mojo::Util qw(tablify);

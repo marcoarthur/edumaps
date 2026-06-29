@@ -1,4 +1,4 @@
-package EduMaps::Roles::Scaling;
+package EduMaps::Roles::DB::Scaling;
 use Mojo::Base -role, -signatures;
 
 requires qw(search_rs);

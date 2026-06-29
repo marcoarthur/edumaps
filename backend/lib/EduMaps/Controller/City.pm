@@ -4,6 +4,7 @@ use DateTime;
 
 has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
 has min_search_len => 4;
+has default_limit => 10;
 
 sub details($self) {
   my $model = $self->instantiate_model(model => 'City');
@@ -132,8 +133,26 @@ sub search_for_complete($self) {
   my $model = $self->instantiate_model(model => 'City');
 
   $self->render(
-    text => $model->search_for_complete, format => 'json'
+    data => $model->search_for_complete, format => 'json'
   );
+}
+
+sub search_analytic($self) {
+  my $v = $self->validation;
+  $v->required('term','not_empty')->like(qr/^[\w\s]+$/);
+  $v->optional('limit')->num;
+
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'City');
+  my $result = $model->search_analytic(
+    {
+      term => $self->param('term'),
+      limit => $self->param('limit') || $self->default_limit
+    }
+  );
+
+  $self->render(text => $result, format => 'json');
 }
 
 1;
