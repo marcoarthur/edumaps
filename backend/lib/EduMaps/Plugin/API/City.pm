@@ -34,6 +34,8 @@ sub register ($self, $app, @args) {
 
   $analytics->get('/city/search')
   ->to('city#search_analytic')->name('search_analytic');
+
+  $analytics->get('/city/similar_to')->to('city#similar_cities')->name('similars');
 }
 
 1;

@@ -1,5 +1,6 @@
 package EduMaps::Plugin::CustomValidations;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use Carp qw(croak);
 
 sub register ($self, $app, @args) {
   $self->_add_custom_checks($app->validator);
@@ -27,6 +28,21 @@ sub _add_custom_checks($self, $v) {
       return 1 unless defined $value && $value =~ /^[+-]?\d+(\.\d+)?$/;
       my $num = $value + 0;
       return ($num >= -180 && $num <= 180) ? 0:1;
+    }
+  );
+  
+  $v->add_check(
+    is_float => sub($v, $name, $value) {
+      (defined $value) && ($value =~ /^[+-]?\d+(\.\d+)?$/) ? 1:0;
+    }
+  );
+
+  $v->add_check(
+    is_between => sub($v, $name, $value, $inf, $sup) {
+      return 1 unless defined $value && $value =~ /^[+-]?\d+(\.\d+)?$/;
+      croak "$inf needs to be smaller than $sup" if $inf >= $sup;
+      my $num = $value + 0;
+      return ($num < $inf or $num > $sup) ? 1:0;
     }
   );
 }

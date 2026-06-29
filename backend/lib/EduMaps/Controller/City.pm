@@ -155,6 +155,26 @@ sub search_analytic($self) {
   $self->render(text => $result, format => 'json');
 }
 
+sub similar_cities($self) {
+  my $v = $self->validation;
+  $v->required('codigo_ibge')->is_ibge_code;
+  $v->optional('limit')->num(1,100);
+  $v->optional('similarity')->is_between(0,1);
+
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'City');
+  my $result = $model->similar_cities(
+    { 
+      codigo_ibge => $v->param('codigo_ibge'),
+      limit => $v->param('limit') || $self->default_limit,
+      similarity => $v->param('similarity'),
+    }
+  );
+
+  $self->render( json => $result->to_array );
+}
+
 1;
 
 __END__
