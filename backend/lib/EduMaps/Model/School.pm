@@ -3,11 +3,25 @@ package EduMaps::Model::School;
 use Mojo::Base "EduMaps::Model::Base", -signatures;
 use DateTime;
 use Mojo::Exception qw(raise);
+use Role::Tiny::With;
 use utf8;
 
-################################################################
-# CLASS INTERNALS
-################################################################
+our @BUSINESS_ROLES = map {
+  "EduMaps::Roles::Business::School::$_"
+} qw/Profile Geo Finance/;
+
+with @BUSINESS_ROLES;
+
+sub default_columns($self) {
+  state $DEFAULT_COLS = [
+    qw(escola codigo_inep latitude longitude endereco telefone municipio uf porte_escola),
+    { osm => \q<'https://www.openstreetmap.org/?mlat=' || latitude || '&mlon=' || longitude ||'&zoom=18#map=18/' || latitude || '/' || longitude> },
+    { whatsapp => \q<'https://wa.me/' || 55 || regexp_replace(telefone, '\D', '', 'g')> },
+    { modalidades => \q<regexp_split_to_array(etapas_modalidades, '\s*,\s*')> },
+    { tipo => 'dependencia_administrativa' },
+  ];
+};
+
 our $DEFAULT_COLS = [
   qw(escola codigo_inep latitude longitude endereco telefone municipio uf porte_escola),
   { osm => \q<'https://www.openstreetmap.org/?mlat=' || latitude || '&mlon=' || longitude ||'&zoom=18#map=18/' || latitude || '/' || longitude> },
@@ -23,190 +37,6 @@ sub _sanitize_like_pattern ($self, $string, $escape_char = '\\') {
 ###########################################################################################
 # PUBLIC METHODS
 ###########################################################################################
-sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
-  my $rs = $self->schema->resultset('Escolas');
-
-  my $SQL =<<~'EOQ';
-  WITH dados_escola AS (
-      SELECT DISTINCT
-          e.escola,
-          e.codigo_inep,
-          e.uf,
-          e.municipio,
-          e.localizacao,
-          e.endereco,
-          e.telefone,
-          e.dependencia_administrativa,
-          e.porte_escola
-      FROM clean.escolas e
-      WHERE e.codigo_inep = :cod_inep
-  ),
-  totais_gerais AS (
-      SELECT 
-          COUNT(DISTINCT r.cpf) AS total_profissionais,
-          COUNT(*) AS total_registros,
-          SUM(r.salario_total) AS total_salario_geral,
-          ROUND(AVG(r.salario_total), 2) AS media_salario
-      FROM clean.remuneracao_municipal r
-      WHERE r.cod_inep = :cod_inep
-        AND r.ano = :ano
-        AND r.mes = :mes
-  ),
-  profissionais_detalhados AS (
-      SELECT 
-          JSON_AGG(
-              JSONB_BUILD_OBJECT(
-                  'nome', r.nome_profissional,
-                  'cpf', r.cpf,
-                  'categoria', r.categoria,
-                  'tipo', r.tipo,
-                  'segmento_ensino', r.segmento_ensino,
-                  'carga_horaria', r.carga_horaria,
-                  'situacao', r.situacao,
-                  'salario_base', r.salario_base,
-                  'salario_fundeb_max', r.salario_fundeb_max,
-                  'salario_fundeb_min', r.salario_fundeb_min,
-                  'salario_outros', r.salario_outros,
-                  'salario_total', r.salario_total
-              )
-              ORDER BY r.categoria, r.nome_profissional
-          ) AS profissionais
-      FROM clean.remuneracao_municipal r
-      WHERE r.cod_inep = :cod_inep
-        AND r.ano = :ano
-        AND r.mes = :mes
-  ),
-  resumo_categoria AS (
-      SELECT 
-          JSON_AGG(
-              JSONB_BUILD_OBJECT(
-                  'categoria', categoria,
-                  'profissionais', profissionais,
-                  'total_salarios', total_salarios
-              )
-          ) AS resumo_categoria
-      FROM (
-          SELECT 
-              categoria,
-              COUNT(DISTINCT cpf) AS profissionais,
-              SUM(salario_total) AS total_salarios
-          FROM clean.remuneracao_municipal
-          WHERE cod_inep = :cod_inep
-            AND ano = :ano
-            AND mes = :mes
-          GROUP BY categoria
-          ORDER BY categoria
-      ) cat
-  ),
-  resumo_segmento AS (
-      SELECT 
-          JSON_AGG(
-              JSONB_BUILD_OBJECT(
-                  'segmento', segmento_ensino,
-                  'profissionais', profissionais,
-                  'total_salarios', total_salarios
-              )
-          ) AS resumo_segmento
-      FROM (
-          SELECT 
-              segmento_ensino,
-              COUNT(DISTINCT cpf) AS profissionais,
-              SUM(salario_total) AS total_salarios
-          FROM clean.remuneracao_municipal
-          WHERE cod_inep = :cod_inep
-            AND ano = :ano
-            AND mes = :mes
-          GROUP BY segmento_ensino
-          ORDER BY segmento_ensino
-      ) seg
-  )
-  SELECT 
-      e.*,
-      :ano AS ano,
-      :mes AS mes,
-      t.*,
-      p.profissionais,
-      c.resumo_categoria,
-      s.resumo_segmento
-  FROM 
-      dados_escola e
-  CROSS JOIN 
-      totais_gerais t
-  CROSS JOIN 
-      profissionais_detalhados p
-  CROSS JOIN 
-      resumo_categoria c
-  CROSS JOIN 
-      resumo_segmento s
-  EOQ
-
-  my ($year, $month) = ($dt->year, ucfirst($dt->month_name));
-  my $params = {cod_inep => $cod_inep , ano => $year, mes => $month};
-  my $resolved = $self->resolve_bindings($SQL, $params);
-  my ($aggregates, $school_data) = ( 
-    [qw(profissionais resumo_segmento resumo_categoria)],
-    [qw(ano mes escola codigo_inep endereco telefone dependencia_administrativa)]
-  );
-
-  my $payroll = $rs->custom_query(
-    $resolved->{sql},
-    [@$aggregates, @$school_data],
-    $resolved->{bind_values},
-  )->as_hash->first;
-
-  unless ($payroll) {
-    return $self->json->encode({
-        error => "Nenhum dado encontrado para a escola $cod_inep em $month/$year",
-        escola => $cod_inep,
-        periodo => "$month/$year"
-      });
-  }
-
-  my $null = "null";
-  my %dados_escola = map { $_ => $payroll->{$_} } @$school_data;
-  my $json = sprintf q/{"escola":%s, "profissionais":%s, "resumo_categoria":%s, "resumo_segmento":%s}/,
-  $self->json->encode(\%dados_escola),
-  $payroll->{profissionais}     || $null,
-  $payroll->{resumo_categoria}  || $null,
-  $payroll->{resumo_segmento}   || $null;
-
-  return $json;
-}
-
-sub payroll_monthly($self, $cod_inep, $months, $year) {
-  my @dates = map { 
-    raise 'EduMaps::Exception::Date', "$_ month is out of range" if ($_ < 1 || $_ > 12);
-    DateTime->new(year => $year, month => $_, locale => 'pt');
-  } $months->@*;
-  my @reports = map {$self->payroll($cod_inep, $_)} @dates;
-  return sprintf "[%s]", join(',', @reports);
-}
-
-sub grades($self, $params = {}) {
-  my $notas = $self->schema->resultset('InepNotasDesagregadas');
-  $self->set_params_map(
-    params => $params,
-    map => {
-      id_escola => [qw/cod_inep inep/],
-      ano => [
-        [[qw(since)],[qw(until)]],
-        sub ($since, $until = DateTime->now->year) { return {-between => [$since, $until]} }
-      ],
-    }
-  );
-
-  my $columns = [
-    'ano',
-    { portugues => \q{round(nota_por/50, 2)} },
-    { matematica => \q{round(nota_mat/50, 2)} },
-    { media => \q{nota_media} },
-  ];
-
-  my $grades = $notas->search_rs($params)->columns($columns)->as_hash->get_all->each(
-    sub {$self->_format_float_nums($_)}
-  );
-  return $self->json->encode($grades->to_array);
-}
 
 sub full_inep_grades($self, $params = {}) {
   my $inep = $self->schema->resultset('IdebNotasEscolas');
@@ -225,17 +55,6 @@ sub ideb_grades($self, $params = {}) {
   );
 
   $self->json->encode($rs->all_grades_for( $params ) // {});
-}
-
-sub info($self, $cod_inep) {
-  my $info = $self->schema->resultset('Escolas')->search_rs({codigo_inep => $cod_inep})
-  ->columns($DEFAULT_COLS)->as_hash->first;
-
-  unless ($info) {
-    return $self->json->encode({error => "Escola com código $cod_inep não encontrada"});
-  }
-
-  return $self->json->encode($info);
 }
 
 sub workers($self, $params = {}) {
@@ -297,16 +116,6 @@ sub search_all_from($self, $params = {}) {
   );
 
   my $results = $school->search_rs($params)->columns($DEFAULT_COLS)->as_hash->get_all;
-  return $self->json->encode($results->to_array);
-}
-
-sub search_nearby($self, $params = {}) {
-  my $sch = $self->schema->resultset('Escolas');
-  my ($max_results, $opts) = (10, $params->{opts} // { max => 5000 });
-  my $columns = [@$DEFAULT_COLS, {distancia => \q/ROUND(distancia_metros::numeric,2)/}];
-
-  my $results = $sch->nearest_from($params, $max_results, $opts)
-  ->as_subselect_rs->columns($columns)->as_hash->get_all;
   return $self->json->encode($results->to_array);
 }
 
@@ -535,9 +344,6 @@ sub scores($self, $params = {}) {
 
 1;
 
-################################################################################
-# DOCUMENTATION
-################################################################################
 __END__
 
 =pod
@@ -546,25 +352,13 @@ __END__
 
 =head1 NAME
 
-EduMaps::Model::School - School data model for the EduMaps educational mapping system
-
-=head1 SYNOPSIS
-
-  use EduMaps::Model::School;
-  
-  my $school_model = EduMaps::Model::School->new;
-  
-  # Get complete school payroll for March 2025
-  my $payroll = $school_model->payroll(11000040, DateTime->new(year => 2025, month => 3));
-  
-  # Parse and use the data
-  my $data = decode_json($payroll);
-  print "School: " . $data->{escola}{escola} . "\n";
-  print "Total teachers: " . $data->{resumo_categoria}[0]{profissionais} . "\n";
+EduMaps::Model::School - Modelo para Escolas no EduMaps
 
 =head1 DESCRIPTION
 
-This module provides comprehensive school data management functionality for the EduMaps platform, including payroll processing, school information retrieval, and statistical analysis of educational institutions and their personnel.
+O Modelo representa os dados relacionados a unidade escolar. Desempenho em exames, dados
+da escola segundo Censo Escolar, docentes, dados financeiros, de gestão, por fim, análises
+e estatísticas para cada unidade.
 
 =head1 AUTHOR
 

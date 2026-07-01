@@ -3,7 +3,6 @@ use Imports;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
-use DDP;
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');

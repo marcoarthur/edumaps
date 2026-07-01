@@ -2894,7 +2894,14 @@ __PACKAGE__->might_have(
 __PACKAGE__->belongs_to(
   'municipio',
   'EduMaps::Schema::Result::MunicipiosSp',
-  { 'foreign.codigo_ibge' => 'self.co_municipio' },
+  sub {
+    my $args = shift;
+    return {
+      sprintf("%s.codigo_ibge",$args->{foreign_alias}) => { 
+        '=' => \sprintf("CAST(%s.co_municipio AS text)",$args->{self_alias})
+      },
+    };
+  },
 );
 
 1;

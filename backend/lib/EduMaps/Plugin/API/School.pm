@@ -24,8 +24,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/search/:term')->to('school#search')->name('school_search');
 
-  $api->get('/nearby/:lat/:lon' => [lat => qr/[^\/]+/, lon => qr/[^\/]+/])
-  ->to('school#nearby')->name('school_nearby');
+  $api->get('/geo/search')
+  ->to('school#search_nearby')->name('school_nearby');
 
   $api->get('/cluster')
   ->to('school#cluster')->name('school_city_cluster');
