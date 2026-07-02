@@ -34,8 +34,8 @@ $tag <listagem de matriculas>
           field infantil => number_ge(0);
           field fundamental => number_ge(0);
           field sexo => hash {
-            field feminino => number_gt(0);
-            field masculino => number_gt(0);
+            field feminino => number_ge(0);
+            field masculino => number_ge(0);
           };
           field raca => hash {
             field branca => L();
