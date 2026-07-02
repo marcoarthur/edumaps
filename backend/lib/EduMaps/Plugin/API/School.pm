@@ -20,21 +20,15 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/professionals' => $check)->to('school#professionals')->name('school_professionals');
 
-  $api->get('/search')->to('school#search_all')->name('school_search_all');
+  $api->get('/search')->to('school#search')->name('school_search');
 
-  $api->get('/search/:term')->to('school#search')->name('school_search');
+  $api->get('/geo/search')->to('school#search_nearby')->name('school_nearby');
 
-  $api->get('/geo/search')
-  ->to('school#search_nearby')->name('school_nearby');
+  $api->get('/cluster')->to('school#cluster_schools')->name('school_city_cluster');
 
-  $api->get('/cluster')
-  ->to('school#cluster')->name('school_city_cluster');
+  $api->get('/:cod_inep/cover' => $check)->to('school#cover')->name('school_gis_cover');
 
-  $api->get('/:cod_inep/cover' => $check)
-  ->to('school#cover')->name('school_gis_cover');
-
-  $api->get('/scores')
-  ->to('school#scores')->name('school_scores');
+  $api->get('/scores')->to('school#scores')->name('school_scores');
 }
 
 1;

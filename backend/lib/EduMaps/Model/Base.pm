@@ -6,6 +6,7 @@ use Mojo::Log;
 use Role::Tiny::With;
 use Scalar::Util qw( looks_like_number );
 use JSON::XS;
+use Mojolicious::Validator;
 with map { 'EduMaps::Model::Role::' . $_ } qw/Contextable/;
 
 has schema => sub { 
@@ -14,8 +15,10 @@ has schema => sub {
 has rs     => sub { croak 'requires a ResultSet' };
 has log    => sub { Mojo::Log->new };
 has json   => sub { JSON::XS->new->canonical->utf8 };
+has [qw/validator v/] => sub { Mojolicious::Validator->new };
 
 sub dbic($self) { return $self->schema->resultset($self->rs); }
+sub validation($self) { return $self->validator->validation; }
 
 sub resolve_bindings ($self, $sql, $params){
   # Encontrar todos os placeholders nomeados na query

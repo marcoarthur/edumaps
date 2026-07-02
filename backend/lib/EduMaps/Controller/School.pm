@@ -2,13 +2,19 @@ package EduMaps::Controller::School;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 
 has default_distance => 10;
+has default_limit => 10;
 
 sub _not_found_msg($self, $params) {
-  my $params_str = join(
-    "\n",
-    map { sprintf(qq/%s => %s/, $_, $params->{$_}) } keys $params->%* 
-  );
-  return "Escola não encontrada com os parametros:\n" . $params_str;
+  my $params_str;
+  if ( keys $params_str->%* ) {
+    my $params_str = join(
+      "\n",
+      map { sprintf(qq/%s => %s/, $_, $params->{$_}) } keys $params->%* 
+    );
+    return "Escola não encontrada com os parametros:\n" . $params_str;
+  } else {
+    return "Não encontrado";
+  }
 }
 
 sub info($self){
@@ -45,15 +51,37 @@ sub search_all($self){
   ...
 }
 
-sub search($self){
-  ...
+sub search($self) {
+  my $v = $self->validation;
+
+  $v->optional($_, 'trim')->like(qr/.{3,100}/) for qw/escola municipio/;
+  $v->optional('limit', 'trim')->num(1,500);
+
+  return $self->bad_req if $self->any_error;
+
+  my $params = {};
+  for (qw/escola municipio/) {
+    $params->{$_} = $v->param($_) if $v->param($_);
+  }
+
+  my $model  = $self->instantiate_model(model => 'School');
+  $params->{limit} = $v->param('limit') || $model->default_limit;
+
+  my $result = $model->search($params);
+  unless($result || $result->size == 0) {
+    return $self->render(
+      json => { error => $self->_not_found_msg($params) }, status => 404
+    );
+  }
+
+  $self->render(json => $result->to_array);
 }
 
 sub search_nearby($self){
   my $v = $self->validation;
   $v->optional('dist')->num;
-  $v->required('lon')->is_longitude;
-  $v->required('lat')->is_latitude;
+  $v->required('lon', 'trim')->is_longitude;
+  $v->required('lat', 'trim')->is_latitude;
 
   my $params = {
     latitude => $self->param('lat'),
@@ -74,8 +102,22 @@ sub search_nearby($self){
   $self->render(json => $result->to_array);
 }
 
-sub cluster($self){
-  ...
+sub cluster_schools($self, $params = {}) {
+  my $v = $self->validation;
+  $v->required('codigo_ibge', 'trim')->is_ibge_code;
+  return $self->bad_req if $self->any_error;
+
+  $params->{codigo_ibge} = $v->param('codigo_ibge');
+
+  my $model = $self->instantiate_model(model => 'School');
+  my $result = $model->simple_cluster_school($params);
+  unless($result) {
+    return $self->render(
+      json => { error => $self->_not_found_msg($params) }, status => 404
+    );
+  }
+
+  $self->render(json => $result->to_array);
 }
 
 sub cover($self){
