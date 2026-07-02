@@ -487,4 +487,16 @@ BEGIN;
   COMMENT ON COLUMN clean.censo_docentes.qt_doc_bas_disc_projeto_de_vida IS 'Docentes que lecionam Projeto de Vida';
   COMMENT ON COLUMN clean.censo_docentes.qt_doc_bas_disc_outras IS 'Docentes que lecionam outras disciplinas';
   COMMENT ON COLUMN clean.censo_docentes.qt_doc_bas_libras IS 'Docentes com proficiência em Libras';
+
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.censo_docentes'::text,
+         '/data/Tabela_Docente_2025.csv'::text,
+         COUNT(*)::bigint,
+         'Importação via deploy Sqitch: censo_docentes'
+  FROM clean.censo_docentes;
+
 COMMIT;

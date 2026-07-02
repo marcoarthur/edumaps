@@ -151,4 +151,15 @@ BEGIN;
 
   CREATE INDEX IF NOT EXISTS idx_censo_gestor_co_entidade ON clean.censo_gestor (co_entidade);
 
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.censo_gestor'::text,
+         '/data/Tabela_Gestor_Escolar_2025.csv'::text,
+         COUNT(*)::bigint,
+         'Importação via deploy Sqitch: censo_gestor'
+  FROM clean.censo_gestor;
+
 COMMIT;

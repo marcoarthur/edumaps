@@ -14,4 +14,13 @@ BEGIN;
       EXECUTE format('ALTER DATABASE %I SET search_path = clean, analytics, raw, public, postgis, contrib, topology, tiger', current_database());
   END $$;
 
+  CREATE TABLE IF NOT EXISTS clean.import_metadata (
+      id_import SERIAL PRIMARY KEY,
+      table_name TEXT NOT NULL,
+      source_file TEXT NOT NULL,
+      import_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      row_count_loaded BIGINT,
+      notes TEXT
+  );
+
 COMMIT;

@@ -735,4 +735,14 @@ BEGIN;
 
   CREATE INDEX idx_censo_matriculas_co_entidade ON censo_matriculas(co_entidade);
 
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.censo_matriculas'::text,
+         '/data/Tabela_Matricula_2025.csv'::text,
+         COUNT(*)::bigint,
+         'Importação via deploy Sqitch: matriculas_censo_2025'
+  FROM clean.censo_matriculas;
+
 COMMIT;
