@@ -16,23 +16,13 @@ sub startup ($self) {
   # ------------------------------------------------------------
   my $conf = $self->plugin(Config => {file => $ENV{EDUMAPS_CONF} || $self->default_conf_file });
   $self->plugin(Minion => {Pg => $conf->{db_url} });
+  $self->plugin('Minion::Admin');
   $self->plugin("EduMaps::Task::$_") for qw/Siope OSM/;
 
   # ------------------------------------------------------------
   # Helpers
   # ------------------------------------------------------------
-  my $models_cache = {};
-  $self->helper(
-    model => sub ($c, $model) {
-      my $class = "EduMaps::Model::$model";
-      return $models_cache->{$class} ||= do {
-        unless ($class->can('new')) {
-          eval "require $class" or die "Não foi possível carregar o modelo $class: $@";
-        }
-        $class->new( schema => $self->schema );
-      };
-    }
-  );
+  $self->plugin("EduMaps::Plugin::Helpers");
 
   # ------------------------------------------------------------
   # Custom Validations
@@ -44,7 +34,7 @@ sub startup ($self) {
   # ------------------------------------------------------------
   push @{$self->routes->namespaces}, 'EduMaps::Controller';
 
-  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School);
+  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Task);
 
   $self->log->info("EduMaps inicializado com sucesso [v$VERSION].");
 }

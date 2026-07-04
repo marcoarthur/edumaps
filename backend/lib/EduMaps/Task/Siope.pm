@@ -4,15 +4,24 @@ use EduMaps::Siope::Scrap::SpreadSheet::Gastos;
 use Mojo::Collection qw(c);
 use Syntax::Keyword::Try;
 use Time::Piece;
+use Minion::Task::Generator qw/task/;
+
 use constant {
-  CHUNK_SIZE => 5000,
+  CHUNK_SIZE => 2000,
   CAPTCHA => $ENV{CAPTCHA_SIOPE} || '',
   DEFAULT_YEAR => 2025,
 };
 
 sub register ($self, $app, $config){
-  $app->minion->add_task(query_siope => \&_query_siope);
+  $app->minion->add_task(
+    query_siope => task { 
+      sub   => \&_query_siope,
+      roles => {'+Progress' => {log => $app->log}}
+    }
+  );
+
   $app->helper(get_siope => \&_enqueue_siope_task);
+  $app->helper(monitor_siope => \&_monitor_siope_task);
 }
 
 sub _query_siope($job, $city_id, $year) {
@@ -37,14 +46,10 @@ sub _query_siope($job, $city_id, $year) {
     );
 
     while(@$rows) {
-      my @chunk    = splice(@$rows, 0, $chunk_size);
-      my $progress = {
-        phase => 'DB saving',
-        total => $total,
-        processed => ($processed += scalar @chunk)
-      };
+      my @chunk   = splice(@$rows, 0, $chunk_size);
+      $processed += scalar(@chunk);
       $rs->populate([$col_order, @chunk]);
-      $job->note(progress => $progress);
+      $job->progress(($processed / $total)*100, "$processed records saved");
     }
   } catch($err) {
     $job->app->log->error("Error during $city_id payroll for year $year");
@@ -64,6 +69,16 @@ sub _query_siope($job, $city_id, $year) {
 
 sub _enqueue_siope_task($app, $cod_ibge, $year = DEFAULT_YEAR) {
   return $app->minion->enqueue(query_siope => [$cod_ibge, $year]);
+}
+
+sub _monitor_siope_task($c, $job_id) {
+  $c->monitor_job(
+    {
+      job_id    => $job_id,
+      poll_time => 1,
+      on_finish => sub {$c->log->info("job $job_id sucessfull ended")},
+    }
+  );
 }
 
 1;
