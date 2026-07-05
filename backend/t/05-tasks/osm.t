@@ -8,6 +8,7 @@ my $t = Test::Mojo->new('EduMaps');
 my $minion = $t->app->minion;
 my $cod = 3555406;
 my $not_exist = 110001; #código de município inexistente (antigo falta 1 digito)
+my $tag = '[task] osm:';
 
 sub _delete_previous {
   my $rs = $t->app->schema->resultset('OsmQuery')->search_rs( { city_fid => $cod } );
@@ -37,6 +38,34 @@ subtest qq{executando task query_osm com codigo_municipio = $cod} => sub {
 
   # Verifica se a task foi registrada com o nome correto
   is $job->task, 'query_osm', 'task executada é query_osm';
+};
+
+
+subtest qq/
+$tag <executando task via app>
+  - deleta dados anteriores
+  - enfileira e executa a task
+/ => sub {
+  _delete_previous;
+
+  my $tx = $t->post_ok("/api/task/osm?codigo_ibge=$cod")
+  ->status_is(202)
+  ->header_like( Location => qr/progress\?job_id=\d+/ )
+  ->json_has('/job_id')
+  ->json_has('/task')
+  ->tx
+  ;
+
+  my $json = $tx->res->json;
+  my $location = $tx->res->headers->location;
+  $t->get_sse_ok("$location")
+  ->status_is(200)
+  ->sse_ok
+  ->sse_type_is('progress')
+  ->sse_text_like(qr/percent/)
+  ;
+
+  ok ($minion->backend->remove_job($json->{job_id}), "job $json->{job_id} removido");
 };
 
 done_testing;

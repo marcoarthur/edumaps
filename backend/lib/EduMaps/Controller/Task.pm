@@ -40,4 +40,20 @@ sub job_progress($self) {
   );
 }
 
+sub request_osm($self) {
+  my $v = $self->validation;
+  $v->required('codigo_ibge', 'trim')->is_ibge_code;
+
+  return $self->bad_req if $self->any_error;
+
+  my $job_id = $self->get_osm($v->param('codigo_ibge'));
+
+  $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
+
+  $self->render(
+    status => 202,
+    json => {task => 'query_osm', job_id => $job_id},
+  );
+}
+
 1;

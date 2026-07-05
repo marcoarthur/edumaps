@@ -9,6 +9,7 @@ sub register ($self, $app, @args) {
 
   $api->post('/siope')->to('task#request_siope')->name('request_siope');
   $api->get('/progress')->to('task#job_progress')->name('job_progress');
+  $api->post('/osm')->to('task#request_osm')->name('request_osm');
 }
 
 1;
