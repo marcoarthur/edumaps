@@ -1,6 +1,9 @@
 package EduMaps::Schema;
 use Mojo::Base 'DBIx::Class::Schema', -strict, -signatures;
+use Role::Tiny::With;
 use utf8;
+
+with qw/EduMaps::Roles::DB::InjectRelation/;
 
 sub go {
   my $class = shift;

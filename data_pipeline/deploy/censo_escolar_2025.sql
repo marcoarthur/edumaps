@@ -723,4 +723,14 @@ BEGIN;
   UPDATE clean.censo_escolas SET geometry = ST_SetSRID(ST_MakePoint(LONGITUDE, LATITUDE),4674 );
   CREATE INDEX idx_censo_escolas_geom ON clean.censo_escolas USING GIST (geometry);
 
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.censo_escolas',
+         '/data/Tabela_Escolas.csv',
+         COUNT(*),
+         'Importação via deploy Sqitch: censo_escolar_2025'
+  FROM clean.censo_escolas;
+
 COMMIT;

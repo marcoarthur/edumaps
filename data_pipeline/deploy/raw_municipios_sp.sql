@@ -97,4 +97,15 @@ BEGIN;
   -- Estatísticas para otimização do planner
   ANALYZE clean.municipios_sp;
 
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.municipios_sp'::text,
+         'BR_Municipios_2024.zip (via OGR_FDW)'::text,
+         COUNT(*)::bigint,
+         'Importação via deploy Sqitch: raw_municipios_sp (shapefile IBGE 2024)'
+  FROM clean.municipios_sp;
+
 COMMIT;

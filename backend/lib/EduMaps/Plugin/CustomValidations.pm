@@ -1,0 +1,56 @@
+package EduMaps::Plugin::CustomValidations;
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use Carp qw(croak);
+
+sub register ($self, $app, @args) {
+  $self->_add_custom_checks($app->validator);
+}
+
+sub _add_custom_checks($self, $v) {
+  $v->add_check(
+    is_ibge_code => sub($v, $name, $value) { ($value =~ /^\d{7}\z/) ? 0:1 }
+  );
+
+  $v->add_check(
+    is_inep_code => sub($v, $name, $value) { ($value =~ /^\d{8}\z/) ? 0:1 }
+  );
+
+  $v->add_check(
+    is_latitude => sub($v, $name, $value) {
+      return 1 unless defined $value && $value =~ /^[+-]?\d+(\.\d+)?$/;
+      my $num = $value + 0;   # força numérico
+      return ($num >= -90 && $num <= 90) ? 0:1;
+    }
+  );
+
+  $v->add_check(
+    is_longitude => sub($v, $name, $value) {
+      return 1 unless defined $value && $value =~ /^[+-]?\d+(\.\d+)?$/;
+      my $num = $value + 0;
+      return ($num >= -180 && $num <= 180) ? 0:1;
+    }
+  );
+  
+  $v->add_check(
+    is_float => sub($v, $name, $value) {
+      (defined $value) && ($value =~ /^[+-]?\d+(\.\d+)?$/) ? 1:0;
+    }
+  );
+
+  $v->add_check(
+    is_between => sub($v, $name, $value, $inf, $sup) {
+      return 1 unless defined $value && $value =~ /^[+-]?\d+(\.\d+)?$/;
+      croak "$inf needs to be smaller than $sup" if $inf >= $sup;
+      my $num = $value + 0;
+      return ($num < $inf or $num > $sup) ? 1:0;
+    }
+  );
+
+  $v->add_check(
+    is_dbic_rs => sub($v, $name, $value) {
+      (defined $value) && (ref $value) =~ qr/ResultSet/i ? 0:1;
+    }
+  );
+}
+
+1;

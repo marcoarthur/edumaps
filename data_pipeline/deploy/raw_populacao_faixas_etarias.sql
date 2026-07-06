@@ -418,4 +418,15 @@ BEGIN;
   CREATE INDEX IF NOT EXISTS idx_populacao_faixa_60_64 ON clean.populacao_municipal (faixa_60_64_anos);
   CREATE INDEX IF NOT EXISTS idx_populacao_grupos ON clean.populacao_municipal (pop_0_a_14, pop_15_a_24, pop_25_a_59, pop_60_mais);
 
+  -- =================================================================
+  -- Registro de metadados da importação
+  -- =================================================================
+
+  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  SELECT 'clean.populacao_municipal'::text,
+         '/data/populacao_faixas_etarias.csv'::text,
+         COUNT(*)::bigint,
+         'Importação via deploy Sqitch: raw_populacao_faixas_etarias (atualização de faixas etárias)'
+  FROM clean.populacao_municipal;
+
 COMMIT;

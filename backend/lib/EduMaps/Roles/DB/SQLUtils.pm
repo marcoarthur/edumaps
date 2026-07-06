@@ -1,4 +1,4 @@
-package EduMaps::Roles::SQLUtils;
+package EduMaps::Roles::DB::SQLUtils;
 use Mojo::Base -role, -signatures;
 use Mojo::Collection qw(c);
 use Syntax::Keyword::Try;
@@ -115,15 +115,15 @@ sub health_check($self) {
   $self->custom_query($QUERY,$cols)
 }
 
-# TODO: too weak implementation
+# TODO: fragile implementation
 sub save_in_table($self,  %opts) {
   # remove the schema part from table name
   my $name = $self->result_source->name =~ s/\w+\.//r;
   # read options
   my ($tbl_name, $schema, $is_temporary) = (
-    $opts{temp}       || ( $name . '_temp'),
-    $opts{schema}     || 'pg_temp', 
-    $opts{temporary}  || 1,
+    $opts{tbl_name}       || ( $name . '_temp'),
+    $opts{schema}         || 'pg_temp', 
+    defined $opts{temporary} ? $opts{temporary} : 1,
   );
   # get the select statement and bindings
   my ($stmt, @binds)  = @{ $self->as_query->$* };

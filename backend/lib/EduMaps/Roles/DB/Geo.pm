@@ -1,4 +1,4 @@
-package EduMaps::Roles::Geo;
+package EduMaps::Roles::DB::Geo;
 use Mojo::Base -role, -signatures;
 
 requires qw(search_rs);

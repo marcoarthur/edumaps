@@ -9,7 +9,7 @@ set mode => 'development';
 set db_password => $ENV{EDUMAPS_DB_PASS} || 'change_me';
 set db_user => $ENV{EDUMAPS_DB_USER} || 'edumaps';
 set db_name => $ENV{EDUMAPS_DB_NAME} || 'edumaps_dev';
-set frontend_server_name => 'ubatexu.lan bore.pub *.shares.zrok.io';
+set frontend_server_name => 'ubatexu.lan bore.pub *.shares.zrok.io *.ngrok-free.dev';
 
 group all => qw( backend.edumaps database.edumaps analytic.edumaps );
 

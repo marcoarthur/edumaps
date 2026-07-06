@@ -1,4 +1,4 @@
-package EduMaps::Roles::SearchHelpers;
+package EduMaps::Roles::DB::SearchHelpers;
 use Mojo::Base -role, -signatures;
 use Mojo::Collection qw(c);
 

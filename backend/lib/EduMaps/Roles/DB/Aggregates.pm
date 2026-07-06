@@ -1,4 +1,4 @@
-package EduMaps::Roles::Aggregates;
+package EduMaps::Roles::DB::Aggregates;
 use Mojo::Base -role, -signatures;
 
 sub rollup($self, $cols) {

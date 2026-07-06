@@ -17,6 +17,8 @@ sub import {
     qw(T F D DF E DNE FDNE U L)
   );
 
+  # for performance test
+  Time::HiRes->import::into($target, qw/gettimeofday tv_interval/);
   $_->import::into($target) for @DEFAULTS;
   binmode(STDOUT, ':utf8');
   binmode(STDERR, ':utf8');
