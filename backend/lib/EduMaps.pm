@@ -17,7 +17,7 @@ sub startup ($self) {
   my $conf = $self->plugin(Config => {file => $ENV{EDUMAPS_CONF} || $self->default_conf_file });
   $self->plugin(Minion => {Pg => $conf->{db_url} });
   $self->plugin('Minion::Admin');
-  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM/;
+  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Kmeans/;
 
   # ------------------------------------------------------------
   # Helpers

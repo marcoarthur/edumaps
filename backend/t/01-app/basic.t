@@ -109,4 +109,25 @@ subtest 'custom validations - is_longitude' => sub {
   }
 };
 
+subtest 'custom validations - is_dbic_rs' => sub {
+  my $v = $t->app->validator->validation;
+  my $sch = $t->app->schema;
+
+  # Válidas
+  my @valid_dbic = (map {$sch->resultset($_)} qw/Escolas CensoEscolas MunicipiosSp/);
+  for my $dbic (@valid_dbic) {
+    $v->input({ dbic => $dbic });
+    $v->required('dbic')->is_dbic_rs;
+    is $v->has_error, F, "valid dbic resulset $dbic";
+  }
+
+  # Inválidas
+  my @invalid = (200, 'abc', undef, $t);
+  for my $dbic (@invalid) {
+    $v->input({ dbic => $dbic });
+    $v->required('dbic')->is_dbic_rs;
+    is $v->has_error, T, "invalid dbic resultset: @{[$dbic ? $dbic: 'undef']}";
+  }
+};
+
 done_testing;

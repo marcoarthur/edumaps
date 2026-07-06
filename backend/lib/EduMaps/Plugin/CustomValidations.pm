@@ -45,6 +45,12 @@ sub _add_custom_checks($self, $v) {
       return ($num < $inf or $num > $sup) ? 1:0;
     }
   );
+
+  $v->add_check(
+    is_dbic_rs => sub($v, $name, $value) {
+      (defined $value) && (ref $value) =~ qr/ResultSet/i ? 0:1;
+    }
+  );
 }
 
 1;
