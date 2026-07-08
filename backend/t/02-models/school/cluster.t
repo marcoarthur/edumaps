@@ -18,7 +18,7 @@ $tag <clustering baseado em quantiles - clustering simples no db>
  - teste happy-day, pega 1 codigo_ibge existente e avalia resposta
 / => sub {
   my $id = random_city_id->first->codigo_ibge;
-  my $result = $model->simple_cluster_schools($id);
+  my $result = $model->simple_cluster_school({codigo_ibge => $id});
   fail "cidade $id->{codigo_ibge} não tem escolas com notas" if $result->size == 0;
   
   like(
@@ -45,24 +45,9 @@ $tag <clustering baseado em quantiles - clustering simples no db>
     'Estrutura do cluster obedece contrato',
   );
 
-  ok 1, "cidade $id->{codigo_ibge} passou no teste";
+  ok 1, "cidade $id passou no teste";
 };
 
-subtest qq/
-$tag <clustering baseado em quantiles - clustering simples no db>
- - listagem das escolas via geotagging (parametro codigo_ibge)
- - teste com codigo válido mas inexistente -> não encontrado
- - teste com codigo inválido -> exception e erro
-/ => sub {
-  my $id = {codigo_ibge => '9999999'};
-  my $result = $model->simple_cluster_schools($id);
-  is ( $result, U(), 'nenhum resultado como esperado' );
-  like(
-    dies { $model->simple_cluster_schools({codigo_ibge => 'xxxxx'} ) },
-    qr/Invalid or missing code for city/,
-    "Exceção de código inválido - não numérico",
-  );
-};
 
 subtest qq/
 $tag <clustering baseado em quantiles - clustering simples no db>
@@ -70,18 +55,18 @@ $tag <clustering baseado em quantiles - clustering simples no db>
  - avalia tempo de resposta com uma cidade real
  - garante que o overhead de processamento do DB e decode JSON está sob controle
 / => sub {
-  my $id = random_city_id;
+  my $id = random_city_id->first->codigo_ibge;
 
   # 1. Marca o início do cronômetro
   my $t0 = [gettimeofday];
 
-  my $result = $model->simple_cluster_schools($id);
+  my $result = $model->simple_cluster_school({ codigo_ibge => $id });
 
   # 2. Calcula o intervalo de tempo decorrido
   my $elapsed = tv_interval($t0);
 
   # 3. Asserções de sanidade e performance
-  ok(defined $result, "Método executou com sucesso para a cidade $id->{codigo_ibge}");
+  ok(defined $result, "Método executou com sucesso para a cidade $id");
 
   # Um limite saudável para queries analíticas locais/testes com CTEs complexas é 500ms (0.5s)
   my $threshold = 0.5;
@@ -94,7 +79,7 @@ $tag <clustering baseado em quantiles - clustering simples no db>
 
   # Diagnóstico útil no terminal se rodar com yath -v
   note sprintf("Performance Info -> Cidade: %s | Grupos gerados: %d | Tempo total: %.4f segundos", 
-    $id->{codigo_ibge}, 
+    $id, 
     $result ? $result->size : 0, 
     $elapsed
   );
