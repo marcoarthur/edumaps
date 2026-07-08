@@ -2,6 +2,7 @@ package EduMaps::Analysis::R::Pipe;
 use Mojo::Base -base, -signatures;
 use Mojo::File qw(path tempfile);
 use Mojo::Collection qw(c);
+use Mojo::JSON qw(decode_json);
 use Carp qw(croak);
 use IPC::Run;
 
@@ -64,6 +65,19 @@ sub _run ($self) {
   }
 
   croak "Rscript failed: $err" unless $ok;
+
+  if ($out) {
+    my $result;
+    eval {
+      $result = decode_json($out);
+      1;
+    } or do {
+      croak "Failed to parse JSON response from R: $@. Raw output: $out";
+    };
+    return $result;
+  }
+
+  return { status => 'success', message => 'No output captured' };
 }
 
 1;

@@ -1,29 +1,15 @@
-#' Compute K-means, Save Cluster IDs and Centroid Metadata to Postgres
+#' Compute Gaussian Mixture Model (GMM), Save Cluster IDs and Metadata to Postgres
 #'
 #' @param con Conexao ativa com o banco (DBI/RPostgres)
 #' @param schema Nome do esquema no banco (ex: "analytics")
 #' @param table_name Nome da tabela alvo
-#' @param k Numero de clusters para o K-means
+#' @param k Numero de componentes/clusters do GMM
 #' @param id_column Nome da chave primaria da tabela
 #'
-compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_column) {
+compute_and_save_gmm_with_meta <- function(con, schema, table_name, k, id_column) {
 
-  # 0. Localiza e carrega clustering_utils.R no mesmo diretorio deste script,
-  # independente do working directory do processo Rscript.
-  #
-  # No nosso pipeline, quem e efetivamente invocado via `Rscript` e o
-  # wrapper temporario gerado por EduMaps::Analysis::R::Pipe (em /tmp),
-  # cuja PRIMEIRA linha e sempre `source("/caminho/absoluto/kmeans.R")`
-  # (ver Pipe::_mount_final_script). Como esse source() ja terminou e saiu
-  # da pilha de chamadas quando esta funcao roda, nao da para descobrir o
-  # caminho via sys.frames(); em vez disso lemos essa primeira linha do
-  # proprio wrapper (cujo caminho o commandArgs("--file=") sempre entrega
-  # corretamente) para extrair o caminho real deste script.
-  #
-  # ATENCAO: isto acopla este resolvedor ao formato exato gerado por
-  # Pipe::_mount_final_script. Se esse formato mudar, ajustar aqui tambem
-  # (alternativa mais robusta: Pipe passar o diretorio explicitamente,
-  # ex. via variavel de ambiente ou argumento extra no script gerado).
+  # 0. Localiza e carrega clustering_utils.R no mesmo diretorio deste script.
+  # Ver comentario equivalente em kmeans.R para o racional completo.
   resolve_script_dir <- function() {
     initial_options <- commandArgs(trailingOnly = FALSE)
     file_arg <- "--file="
@@ -37,13 +23,10 @@ compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_col
       }
     }
 
-    # Fallback: script chamado diretamente via `Rscript kmeans.R`
-    # (ex: execucao manual para debug, fora do pipeline do Minion)
     if (length(wrapper_path) > 0) {
       return(dirname(normalizePath(wrapper_path)))
     }
 
-    # Fallback final: sessao interativa - assume working directory
     getwd()
   }
 
@@ -53,6 +36,7 @@ compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_col
     library(tidyverse, quietly = TRUE)
     library(DBI, quietly = TRUE)
     library(dbplyr, quietly = TRUE)
+    library(mclust, quietly = TRUE)
     library(jsonlite, quietly = TRUE)
   })
 
@@ -70,47 +54,61 @@ compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_col
     collect() %>%
     drop_na()
 
-  # Dados para o algoritmo (K-means necessita de escala normalizada)
-  kmeans_input <- local_data %>%
+  # GMM (assim como kmeans) e sensivel a escala das features
+  gmm_input <- local_data %>%
     select(all_of(numeric_features)) %>%
     scale()
 
-  # Salva os atributos de escala (media e desvio padrao) para
-  # desnormalizar os centroides depois
-  scale_center <- attr(kmeans_input, "scaled:center")
-  scale_scale <- attr(kmeans_input, "scaled:scale")
+  scale_center <- attr(gmm_input, "scaled:center")
+  scale_scale <- attr(gmm_input, "scaled:scale")
 
-  # 3. Executa o K-means
+  # 3. Executa o GMM com numero fixo de componentes = k
+  # modelNames = NULL deixa o mclust escolher a melhor parametrizacao de
+  # covariancia para os dados; G = k fixa o numero de clusters desejado
   set.seed(42)
-  kmeans_result <- kmeans(kmeans_input, centers = k, nstart = 25)
+  gmm_result <- mclust::Mclust(gmm_input, G = k, verbose = FALSE)
 
-  # 4. Preparacao dos metadados (centroides desnormalizados, em JSON por linha)
-  centroids_scaled <- kmeans_result$centers
+  if (is.null(gmm_result)) {
+    stop(sprintf("Nao foi possivel ajustar um GMM com G = %d para os dados fornecidos.", k))
+  }
+
+  # 4. Preparacao dos metadados
+  # Centroides dos componentes, desnormalizados de volta a escala original
+  centroids_scaled <- t(gmm_result$parameters$mean)
   centroids_original <- t(apply(centroids_scaled, 1, function(row) {
     row * scale_scale + scale_center
   }))
   centroids_df <- as_tibble(centroids_original)
+  colnames(centroids_df) <- numeric_features
 
   centroids_json <- sapply(seq_len(nrow(centroids_df)), function(i) {
-    # jsonlite::toJSON de um dataframe de 1 linha gera um array contendo
-    # um objeto: [{...}]. Removemos os colchetes externos para extrair
-    # apenas o objeto literal: {...}
     jsonlite::toJSON(centroids_df[i, ], auto_unbox = TRUE) %>%
       stringr::str_remove_all("^\\[|\\]$")
   })
 
-  # Estrutura generica e fixa, compartilhada com os demais algoritmos
+  cluster_sizes <- as.integer(table(factor(gmm_result$classification, levels = seq_len(k))))
+
+  # Probabilidade media de pertencimento (confianca) de cada componente,
+  # metrica especifica do GMM (equivalente ao within_ss do kmeans)
+  avg_probability <- sapply(seq_len(k), function(g) {
+    idx <- which(gmm_result$classification == g)
+    if (length(idx) == 0) return(NA_real_)
+    mean(gmm_result$z[idx, g])
+  })
+
   clusters_df <- tibble(
-    cluster_id = 1:k,
-    cluster_size = kmeans_result$size,
+    cluster_id = seq_len(k),
+    cluster_size = cluster_sizes,
     is_noise = FALSE,
-    within_ss = kmeans_result$withinss,
-    centroids = centroids_json
+    centroids = centroids_json,
+    avg_probability = avg_probability,
+    bic = gmm_result$bic,
+    log_likelihood = gmm_result$loglik
   )
 
   assignments_df <- tibble(
     !!sym(id_column) := local_data[[id_column]],
-    cluster_id = kmeans_result$cluster
+    cluster_id = gmm_result$classification
   )
 
   # 5. Atualiza a tabela original com os cluster_id (in-place, via UPDATE)
@@ -119,7 +117,7 @@ compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_col
   # 6. Grava os metadados na tabela compartilhada clustering_metadata
   write_cluster_metadata(
     con, schema,
-    algorithm = "kmeans",
+    algorithm = "gmm",
     run_id = run_id,
     target_table = paste0(schema, ".", table_name),
     params = list(k = k),
@@ -128,7 +126,7 @@ compute_and_save_kmeans_with_meta <- function(con, schema, table_name, k, id_col
 
   # 7. Monta e imprime o payload padrao em stdout, encerrando o processo
   build_response_payload(
-    algorithm = "kmeans",
+    algorithm = "gmm",
     run_id = run_id,
     schema = schema,
     table_name = table_name,
