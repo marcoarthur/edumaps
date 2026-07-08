@@ -49,10 +49,11 @@ sub _apply_kmeans($job, $args) {
   $args->{db_service}   //= DB_SERVICE;
 
   # motor R para cálculo de clusters
+  my $r_out;
   try {
-    $rpipe->run(
+    $r_out = $rpipe->run(
       {
-        paths => $job->app->renderer->paths,
+        paths => $args->{paths} || $job->app->renderer->paths,
         source_file => $args->{source_file},
         script => <<~"EOS",
           compute_and_save_kmeans_with_meta(
@@ -85,6 +86,7 @@ sub _apply_kmeans($job, $args) {
           cluster_column => 'cluster_id',
           table_name => $args->{table_name},
         },
+        r_meta => $r_out,
       }
     }
   );

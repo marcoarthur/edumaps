@@ -53,11 +53,18 @@ $tag <construindo um clustering>
       },
       cluster_info => {
         inject_args => {
-          schema_name => L(),
-          id_column => L(),
-          cluster_column => L(),
+          schema_name => 'staging',
+          id_column => 'co_entidade',
+          cluster_column => 'cluster_id',
           table_name => $table_name,
         },
+        r_meta => {
+          metadata => 'kmeans_metadata',
+          k_param => 5,
+          status => 'success',
+          run_id => qr/run_\d+/,
+          centroids => L(),
+        }
       }
     },
     "Estrutura do contrato correta"
