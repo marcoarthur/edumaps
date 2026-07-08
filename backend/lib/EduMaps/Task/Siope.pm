@@ -68,7 +68,9 @@ sub _query_siope($job, $city_id, $year) {
 }
 
 sub _enqueue_siope_task($app, $cod_ibge, $year = DEFAULT_YEAR) {
-  return $app->minion->enqueue(query_siope => [$cod_ibge, $year]);
+  return $app->minion->enqueue(
+    query_siope => [$cod_ibge, $year] => { attempts => 3 }
+  );
 }
 
 sub _monitor_siope_task($c, $job_id) {
