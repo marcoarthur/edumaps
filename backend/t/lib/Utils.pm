@@ -2,13 +2,14 @@ package Utils;
 use Mojo::Base -signatures;
 use Mojo::Collection qw(c);
 use EduMaps::Schema;
-use Test2::V1 -ipP;
+use Test2::Tools::Basic qw(ok);
 use Test2::Tools::Compare qw(D);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(
   filter_resultsets c random_schools_ids random_schools_with_grades random_city_id
   run_clustering_job cleanup_job expected_clustering_contract
+  run_similarity_job expected_similarity_contract
 );
 our $sch = EduMaps::Schema->go;
 
@@ -54,7 +55,10 @@ sub run_clustering_job ($t, $args) {
 # @param $t   Test::Mojo instance
 # @param $job Minion::Job ja finalizado/falho
 sub cleanup_job ($t, $job) {
-  ok $t->app->minion->backend->remove_job($job->id), "job @{[ $job->id ]} removido";
+  ok(
+    $t->app->minion->backend->remove_job($job->id),
+    "job @{[ $job->id ]} removido"
+  );
 }
 
 # Monta a estrutura de contrato esperada para um job de clusterização bem
@@ -96,6 +100,73 @@ sub expected_clustering_contract ($algorithm, $job_id, $table_name, %extra_param
         timestamp      => qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
         n_clusters     => D(),
         clusters       => D(),
+        params         => { %extra_params },
+      }
+    }
+  };
+}
+
+# --------------------------------------------------------------------------
+# Helpers de teste para EduMaps::Task::Similarity
+#
+# Mesma logica dos helpers de clustering acima, adaptada ao formato de
+# resultado de similarity (meta.metric em vez de meta.algorithm,
+# similarity_info em vez de cluster_info, r_meta com n_entities/n_pairs/
+# avg_similarity/sample_top_pairs em vez de n_clusters/clusters).
+# --------------------------------------------------------------------------
+
+# Enfileira, executa e retorna o job de similaridade ja finalizado.
+#
+# @param $t    Test::Mojo instance
+# @param $args hashref de argumentos para apply_similarity
+sub run_similarity_job ($t, $args) {
+  my $id  = $t->app->apply_similarity($args);
+  my $job = $t->app->minion->job($id);
+  $t->app->minion->perform_jobs;
+  return $job;
+}
+
+# Monta a estrutura de contrato esperada para um job de similaridade bem
+# sucedido, parametrizada pela metrica, tabela de origem e parametros
+# extras de entrada (ex: {composition_columns => [...]}).
+#
+# Assim como em expected_clustering_contract, r_meta.metric precisa bater
+# exatamente com a metrica pedida - protege contra o mesmo tipo de bug de
+# dispatch ja visto em Task::Clustering (metric validado mas nao usado
+# para escolher a funcao/script real).
+#
+# @param $metric     nome da metrica ('gower', 'euclidean_zscore', ...)
+# @param $job_id     id do job no Minion
+# @param $table_name nome da tabela de staging usada no teste
+# @param %extra_params parametros especificos da metrica esperados em r_meta.params
+sub expected_similarity_contract ($metric, $job_id, $table_name, %extra_params) {
+  return {
+    meta => {
+      name   => "similarity",
+      job_id => $job_id,
+      metric => $metric,
+      took   => qr/\d+/,
+    },
+    similarity_info => {
+      query_args => {
+        schema_name  => 'analytics',
+        output_table => 'similarity_pairs',
+        target_table => "staging.$table_name",
+        metric       => $metric,
+      },
+      r_meta => {
+        status         => 'success',
+        metric         => $metric,
+        run_id         => qr/^run_\d+$/,
+        schema         => 'staging',
+        table_name     => $table_name,
+        id_column      => 'co_entidade',
+        output_table   => 'analytics.similarity_pairs',
+        timestamp      => qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+        n_entities     => D(),
+        n_pairs        => D(),
+        avg_similarity => D(),
+        sample_top_pairs => D(),
         params         => { %extra_params },
       }
     }

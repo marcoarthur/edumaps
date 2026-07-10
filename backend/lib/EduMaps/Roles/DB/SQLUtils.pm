@@ -52,7 +52,7 @@ sub comments($self) {
   ORDER BY n.nspname, c.relname, a.attnum
   EOQ
 
-  $self->custom_query(
+  $self->as_hash->custom_query(
     $QUERY,
     [qw/schema_name table_name column_name column_comment/],
   );

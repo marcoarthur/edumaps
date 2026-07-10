@@ -1,5 +1,6 @@
 use utf8;
 package EduMaps::Schema::Result::CensoEscolas;
+use constant PI => 3.141592653589793;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -2842,11 +2843,6 @@ __PACKAGE__->has_one(
   {'foreign.codigo_inep' => 'self.co_entidade' },
 );
 
-__PACKAGE__->has_one(
-  'score',
-  'EduMaps::Schema::Result::CensoEscolasScores',
-  { 'foreign.co_entidade' => 'self.co_entidade' },
-);
 
 __PACKAGE__->has_many(
   'matricula',
@@ -2903,5 +2899,32 @@ __PACKAGE__->belongs_to(
     };
   },
 );
+
+# distance in meters from location ($point) given by lat,lon.
+#
+# IMPORTANT: ** This is only useful for smalls distances **
+# topically inside one city. Don't use it for large distances where
+# sphere geometry needs to be taken into account
+sub distance_from {
+  my ($self, $point) = @_;
+  my $R = 6371000;  # raio da Terra em metros
+
+  my $location = { lat => $self->latitude, lon => $self->longitude };
+  # Converte graus para radianos
+  my $deg_to_rad = PI / 180;
+  my $lat1 = $location->{lat} * $deg_to_rad;
+  my $lon1 = $location->{lon} * $deg_to_rad;
+  my $lat2 = $point->{lat} * $deg_to_rad;
+  my $lon2 = $point->{lon} * $deg_to_rad;
+
+  my $delta_lat = $lat2 - $lat1;
+  my $delta_lon = $lon2 - $lon1;
+
+  my $lat_m = ($lat1 + $lat2) / 2;
+  my $x = $delta_lon * cos($lat_m) * $R;
+  my $y = $delta_lat * $R;
+
+  return sqrt($x * $x + $y * $y);
+}
 
 1;
