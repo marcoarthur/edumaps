@@ -49,34 +49,6 @@ sub resolve_bindings ($self, $sql, $params){
   };
 }
 
-=head2 _format_float_nums($hash)
-
-Format floating point numbers in a hash to two decimal places.
-
-=cut
-
-=head3 Parameters
-
-=over 4
-
-=item * C<$hash> (HashRef) - Hash reference containing numeric values to format
-
-=back
-
-=head3 Returns
-
-=over 4
-
-=item * (Undefined) - Modifies the hash in place
-
-=back
-
-=head3 Notes
-
-This is an internal method used to ensure consistent numeric formatting in API responses. Only numbers with decimal places are formatted; integers are left unchanged.
-
-=cut
-
 sub _format_float_nums($self, $hash) {
   while( my ($key, $val) = each %$hash ) {
     my $ref = ref $val;
