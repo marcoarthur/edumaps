@@ -20,19 +20,21 @@ sub run ($self, $args) {
 sub _set_args ($self, $args) {
   $self->paths(c($args->{paths}->@*)->map(sub { path($_) }));
 
-  my $target_name = path($args->{source_file})->basename;
+  if ( $args->{source_file} ) {
+    my $target_name = path($args->{source_file})->basename;
 
-  # Busca o script R iterando de forma segura pelas rotas de paths
-  my $file = $self->paths->map(
-    sub ($dir) {
-      return unless -d $dir;
-      $dir->list_tree->first(sub ($f) { $f->basename eq $target_name });
-    }
-  )->grep(sub { defined $_ && -e $_ })->first;
+    # Busca o script R iterando de forma segura pelas rotas de paths
+    my $file = $self->paths->map(
+      sub ($dir) {
+        return unless -d $dir;
+        $dir->list_tree->first(sub ($f) { $f->basename eq $target_name });
+      }
+    )->grep(sub { defined $_ && -e $_ })->first;
 
-  croak "R Script '$target_name' not found in paths" unless $file;
+    croak "R Script '$target_name' not found in paths" unless $file;
+    $self->source_file($file);
+  }
 
-  $self->source_file($file);
   $self->script($args->{script});
   $self;
 }
@@ -45,11 +47,18 @@ sub _resolve_cmd ($self) {
 }
 
 sub _mount_final_script ($self) {
-  $self->script_tmp->spew(
-    sprintf qq{source("%s")\n%s},
-    $self->source_file->to_abs->to_string,
-    $self->script
-  );
+
+  if ( $self->source_file && -f $self->source_file->to_abs->to_string ) {
+    $self->script_tmp->spew(
+      sprintf qq{source("%s")\n%s},
+      $self->source_file->to_abs->to_string,
+      $self->script
+    );
+  } else {
+    $self->script_tmp->spew(
+      sprintf qq{%s}, $self->script
+    );
+  }
 
   $self->full_cmd(c($self->cmd_str, $self->cmd_args->@*, $self->script_tmp));
   $self;
