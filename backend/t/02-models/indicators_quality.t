@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use lib qw(t/lib lib);
 use Imports;
+use Utils qw(build_r_dataframe);
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Model::Domain::SchoolQuality';
 use ok 'EduMaps::Analysis::R::Pipe';
@@ -23,7 +24,10 @@ my %thresholds = (
     n_min    => 5,   
 );
 
-subtest 'Validação estatística dos indicadores com IDEB usando R::Pipe' => sub {
+
+subtest '
+  - Validação estatística dos indicadores com IDEB usando R::Pipe
+' => sub {
 
   my $schools_rs = $schema->resultset('CensoEscolas')->search({no_municipio => $municipio});
 
@@ -66,21 +70,20 @@ subtest 'Validação estatística dos indicadores com IDEB usando R::Pipe' => su
     return;
   }
 
-  # 3. Preparar a estrutura de dados no formato de R vectors
-  my @nota_vec = map { sprintf("%.4f", $_->{nota}) } @dataset;
-  my $r_df_definition = "df <- data.frame(\n";
-    $r_df_definition .= "  nota = c(" . join(',', @nota_vec) . "),\n";
+  # 3. Preparar dados e construir o dataframe R de forma dinâmica usando o Helper
+  my %column_data = (
+    nota => [ map { $_->{nota} } @dataset ]
+  );
 
-    for my $ind (@indicators) {
-      my $code = $ind->code;
-      my @score_vec = map { sprintf("%.4f", $_->{scores}{$code}) } @dataset;
-      $r_df_definition .= "  $code = c(" . join(',', @score_vec) . "),\n";
-    }
-    $r_df_definition =~ s/,\n$/\n/;
-    $r_df_definition .= ")\n";
+  for my $ind (@indicators) {
+    my $code = $ind->code;
+    $column_data{$code} = [ map { $_->{scores}{$code} } @dataset ];
+  }
+
+  # Gera a definição "df <- data.frame(...)" de forma robusta
+  my $r_df_definition = build_r_dataframe('df', \%column_data);
 
   # 4. Construir script R dinâmico injetando as estatísticas e gerando JSON no final
-  # O R::Pipe espera obrigatoriamente um JSON estruturado em STDOUT em caso de sucesso.
   my @codes = map { $_->code } @indicators;
   my $r_codes_array = "c(" . join(',', map { "'$_'" } @codes) . ")";
 
@@ -181,6 +184,5 @@ subtest 'Validação estatística dos indicadores com IDEB usando R::Pipe' => su
 
   pass('Subtest de validação concluído com sucesso.');
 };
-
 
 done_testing;

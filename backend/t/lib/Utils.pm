@@ -10,6 +10,7 @@ our @EXPORT_OK = qw(
   filter_resultsets c random_schools_ids random_schools_with_grades random_city_id
   run_clustering_job cleanup_job expected_clustering_contract
   run_similarity_job expected_similarity_contract
+  build_r_dataframe
 );
 our $sch = EduMaps::Schema->go;
 
@@ -171,6 +172,36 @@ sub expected_similarity_contract ($metric, $job_id, $table_name, %extra_params) 
       }
     }
   };
+}
+
+# --------------------------------------------------------------------------
+# Helper para geração de código R
+#
+# Transforma um hash de vetores Perl em uma definição de data.frame do R.
+# Trata automaticamente valores nulos (convertendo para NA do R) e formata
+# números decimais para evitar problemas de parsing no interpretador.
+#
+# @param $df_name Nome da variável que conterá o data.frame no R (ex: 'df')
+# @param $columns_hashref Hashref de { nome_coluna => [ valores_numéricos ] }
+# --------------------------------------------------------------------------
+sub build_r_dataframe ($df_name, $columns_hashref) {
+  my $r_df = "$df_name <- data.frame(\n";
+    my @lines;
+
+    for my $col_name (sort keys %$columns_hashref) {
+      my $vec = $columns_hashref->{$col_name};
+
+      # Converte valores numéricos formatados para string do R.
+      # Undefs ou strings vazias viram "NA".
+      my @formatted = map {
+        (defined $_ && $_ ne '') ? sprintf("%.4f", $_) : 'NA'
+      } @$vec;
+
+      push @lines, "  $col_name = c(" . join(',', @formatted) . ")";
+    }
+
+    $r_df .= join(",\n", @lines) . "\n)\n";
+  return $r_df;
 }
 
 1;
