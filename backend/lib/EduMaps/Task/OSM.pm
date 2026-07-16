@@ -29,7 +29,7 @@ sub _query_osm($job, $city_id) {
 }
 
 sub _enqueue_osm_task($app, $cod_ibge) {
-  return $app->minion->enqueue(query_osm => [$cod_ibge]);
+  return $app->minion->enqueue(query_osm => [$cod_ibge] => { attempts => 3 });
 }
 
 1;

@@ -3,7 +3,7 @@ package EduMaps::Schema::ResultSet::Base;
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use Role::Tiny::With;
 our @APP_ROLES = map { "EduMaps::Roles::DB::$_" } 
-  qw(PrettyPrint Formats SearchHelpers Scaling Stats Geo Joins Derived SQLUtils Plot Aggregates);
+  qw(PrettyPrint Formats SearchHelpers Scaling Stats Geo Joins Derived SQLUtils Aggregates ProcessedJob);
 with @APP_ROLES;
 
 __PACKAGE__->load_components(qw{Helper::ResultSet::SetOperations});

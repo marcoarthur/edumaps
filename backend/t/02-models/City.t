@@ -288,18 +288,6 @@ subtest 'city_details() - Deve retornar array vazio para nome inexistente' => su
 };
 
 # ============================================================================
-# Testes para método privado _wrap_percent()
-# ============================================================================
-
-subtest '_wrap_percent() - Deve envolver string com percentuais' => sub {
-    my $wrapped = $city_model->_wrap_percent('teste');
-    is($wrapped, '%teste%', 'Adiciona % antes e depois');
-    
-    $wrapped = $city_model->_wrap_percent('');
-    is($wrapped, '%%', 'Funciona com string vazia');
-};
-
-# ============================================================================
 # Testes de validação de tipos
 # ============================================================================
 

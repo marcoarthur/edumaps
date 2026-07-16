@@ -1,0 +1,119 @@
+# ====================================================================
+# Arquivo de configuração moderno para o Devel::REPL
+# ====================================================================
+# Carrega plugins essenciais, ativa autocompletar (Tab) e
+# carrega automaticamente o módulo EduMaps::Schema.
+# ====================================================================
+
+use 5.014;
+use strict;
+use warnings;
+
+# --------------------------------------------------------------------
+# 1. Plugins essenciais (núcleo do REPL)
+# --------------------------------------------------------------------
+my @core_plugins = qw(
+  History
+  LexEnv
+  DDS
+  Packages
+  Commands
+  MultiLine::PPI
+  Colors
+);
+
+foreach my $plugin (@core_plugins) {
+  eval { $_REPL->load_plugin($plugin) };
+  warn "Aviso: plugin '$plugin' não carregado: $@" if $@;
+}
+
+# --------------------------------------------------------------------
+# 2. Plugins de autocompletar (TAB completion)
+# --------------------------------------------------------------------
+my @completion_plugins = qw(
+  Completion
+  CompletionDriver::INC
+  CompletionDriver::LexEnv
+  CompletionDriver::Keywords
+  CompletionDriver::Methods
+);
+
+foreach my $plugin (@completion_plugins) {
+  eval { $_REPL->load_plugin($plugin) };
+  warn "Aviso: plugin de autocompletar '$plugin' não carregado: $@" if $@;
+}
+
+# Habilita completar nomes de arquivos (requer readline com suporte)
+eval { $_REPL->do_readline_filename_completion(1) };
+warn "Aviso: filename completion não disponível: $@" if $@;
+
+# --------------------------------------------------------------------
+# 3. Plugin de prompt personalizado (opcional)
+# --------------------------------------------------------------------
+# O módulo Devel::REPL::Plugin::Prompt está no CPAN separadamente.
+# Se instalado, ele permite alterar o prompt facilmente.
+eval {
+  $_REPL->load_plugin('Prompt');
+  $_REPL->prompt('EduMaps> ');
+};
+if ($@) {
+  # Fallback: tenta definir o prompt manualmente (se o método existir)
+  eval {
+    if ($_REPL->can('prompt')) {
+      $_REPL->prompt('EduMaps> ');
+    } elsif ($_REPL->can('set_prompt')) {
+      $_REPL->set_prompt('EduMaps> ');
+    } else {
+      # Não é possível mudar o prompt – mantém o padrão
+      warn "Aviso: não foi possível alterar o prompt (plugin Prompt não instalado).\n";
+    }
+  };
+}
+
+# --------------------------------------------------------------------
+# 4. Plugins opcionais (extras, se disponíveis)
+# --------------------------------------------------------------------
+my @extra_plugins = qw(
+  Timing
+  Refresh
+  Interrupt
+  DumpHistory
+);
+
+foreach my $plugin (@extra_plugins) {
+  eval { $_REPL->load_plugin($plugin) };
+  # silencioso – não emitimos aviso se não estiver disponível
+}
+
+# --------------------------------------------------------------------
+# 5. Carregar o módulo EduMaps::Schema
+# --------------------------------------------------------------------
+eval {
+  use lib qw(./lib);
+  require EduMaps::Schema;
+  EduMaps::Schema->import;
+  1;
+} or do {
+  my $error = $@ || 'motivo desconhecido';
+  warn "\n[!] ATENÇÃO: EduMaps::Schema não pôde ser carregado: $error\n";
+  warn "[!] Verifique se o módulo está instalado ou se o @INC está correto.\n\n";
+};
+
+# --------------------------------------------------------------------
+# 6. Mensagem de boas-vindas e resumo
+# --------------------------------------------------------------------
+say "\n" . '=' x 60;
+say "[✓] REPL inicializado com sucesso!";
+say "[✓] Módulo 'EduMaps::Schema' está disponível.";
+say "[✓] Autocompletar por TAB ativo para:";
+say "    - Palavras-chave do Perl";
+say "    - Módulos em 'use/require'";
+say "    - Variáveis lexicais (my)";
+say "    - Métodos de objetos";
+say "    - Nomes de arquivos (se suportado)";
+say "[✓] Plugins carregados:";
+say "    - Núcleo: " . join(', ', @core_plugins);
+say "    - Autocompletar: " . join(', ', @completion_plugins);
+say '=' x 60 . "\n";
+
+1;

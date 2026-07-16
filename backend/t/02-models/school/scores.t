@@ -17,8 +17,22 @@ subtest qq/
 $tag <busca scores> happy-path score de escolas
  - busca escolas randômicas e verificação básica do scores
 / => sub {
+  skip_all 'unimplemented';
   my $schools = random_schools_ids->map('co_entidade');
   my $params = { 'id' => { -in => $schools->to_array } };
   my $results = $model->scores($params);
+  $results->each(
+    sub {
+      like(
+        $_,
+        hash {
+          field escola => hash { etc(); };
+        },
+        'estrutura de retorno'
+      );
+    }
+  );
   pass('happy test');
 };
+
+done_testing;

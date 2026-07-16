@@ -1,6 +1,7 @@
 package EduMaps::Roles::DB::SQLUtils;
 use Mojo::Base -role, -signatures;
 use Mojo::Collection qw(c);
+use Carp qw(croak);
 use Syntax::Keyword::Try;
 
 our %re = (
@@ -52,7 +53,7 @@ sub comments($self) {
   ORDER BY n.nspname, c.relname, a.attnum
   EOQ
 
-  $self->custom_query(
+  $self->as_hash->custom_query(
     $QUERY,
     [qw/schema_name table_name column_name column_comment/],
   );
@@ -155,6 +156,61 @@ sub save_in_table($self,  %opts) {
       }
     }
   );
+}
+
+sub count_null($self, $col) {
+  $col = ref $col ? $col : [$col];
+  my @count_null;
+  my $alias = $self->current_source_alias;
+
+  my %seen;
+
+  for my $c (@$col) {
+    next if ref $c; # we don't know what to do
+    next if $seen{$c};
+    my $null = "${c}_nulls";
+    my $expr = sprintf "COUNT(*) FILTER ( WHERE %s IS NULL ) AS %s", "$alias.$c", $null;
+    push @count_null, {$c =>  \$expr};
+    $seen{$c} = 1;
+  }
+
+  $self->columns(\@count_null);
+}
+
+sub summary_for_nulls($self, $opts) {
+  my $row = $self->as_hash->first;
+  croak "No columns in resultset" unless $row;
+  my $cols  = [keys $row->%*];
+  my $total_rows = $self->count;
+
+  my $null_count = $self->count_null($cols)->as_hash->first;
+  my $bellow = sub($c) {
+    ($null_count->{$c} / $total_rows) < $opts->{threshold}/100
+  };
+
+  # select columns with nulls percentage less than threshold
+  my @cols_with_data = grep {$bellow->($_)} keys $null_count->%*;
+
+  # total data lost because of nulls
+  my $lost_count = $self->search_rs(
+    {-or => [map { $_ => undef } @cols_with_data]}
+  )->count;
+
+  my $summary = {
+    max_null_acceptable => $opts->{threshold},
+    acceptable_features_percent => (@cols_with_data/@$cols)*100,
+    max_sample_lost => ($lost_count/$total_rows)*100,
+  };
+
+  my @cols_without_data = grep {! $bellow->($_)} keys $null_count->%*;
+
+  return {
+    summary => $summary,
+    acceptable_features => [@cols_with_data],
+    non_acceptable_features => [@cols_without_data],
+    sample_size => $total_rows,
+    total_features_size => scalar(@$cols),
+  };
 }
 
 sub separate_fqn($self, $target) {
