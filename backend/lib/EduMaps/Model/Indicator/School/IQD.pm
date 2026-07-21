@@ -32,6 +32,14 @@ has 'weights'     => sub {
         return $pos / $total;
       }, 2
     ],
+    # Razão Alunos / docentes para inclusão do IQD
+    [ sub ($r) {
+        my $docentes = $r->{qt_doc_bas} // 0;
+        return 0 if $docentes <= 0;
+        my $alunos = $r->{qt_mat_bas} // 0;
+        return $alunos/$docentes;
+      }, 3
+    ],
   ];
 };
 
@@ -42,6 +50,7 @@ has extra_cols => sub {
       qt_doc_bas_esco_sup_pos_espec
       qt_doc_bas_esco_sup_pos_mestra
       qt_doc_bas_esco_sup_pos_douto
+      qt_mat_bas
     )];
 };
 

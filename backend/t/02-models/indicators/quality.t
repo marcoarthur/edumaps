@@ -11,7 +11,7 @@ use Text::Table;
 
 my $schema = EduMaps::Schema->go;
 my $tag = '[indicator quality] qualidade dos índices:';
-my $municipio = 'São Paulo';
+my $municipio = 'São José dos Campos';
 
 # --------------------------------------------------------------------
 # Critérios de relevância estatística de um indicador
@@ -142,6 +142,7 @@ my @EXTRA_DOCENTE_COLS = qw(
   qt_doc_bas_esco_sup_pos_douto
 );
 my @EXTRA_INSE_COLS = qw(media_inse inse_classificacao);
+my @EXTRA_MAT_COLS = qw(qt_mat_bas);
 
 subtest ' - Validação estatística dos indicadores com IDEB usando R::Pipe ' => sub {
   # 'docente' e has_many + INNER JOIN (escolas sem nenhum docente
@@ -150,13 +151,14 @@ subtest ' - Validação estatística dos indicadores com IDEB usando R::Pipe ' =
   # INSE continuam no resultset, so com inse_classificacao undef).
   my $schools_rs = $schema->resultset('CensoEscolas')
     ->search({ 'me.no_municipio' => $municipio })
-    ->join([qw/docente inse/])
+    ->join([qw/docente inse matricula/])
     ->search(undef, {
       '+select' => [
         (map { "docente.$_" } @EXTRA_DOCENTE_COLS),
         (map { "inse.$_" } @EXTRA_INSE_COLS),
+        (map { "matricula.$_" } @EXTRA_MAT_COLS),
       ],
-      '+as' => [ @EXTRA_DOCENTE_COLS, @EXTRA_INSE_COLS ],
+      '+as' => [ @EXTRA_DOCENTE_COLS, @EXTRA_INSE_COLS, @EXTRA_MAT_COLS ],
     });
 
   my @indicators = (
