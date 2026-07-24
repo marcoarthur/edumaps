@@ -8,6 +8,16 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/about");
   });
 
+  it("encontra a rota /busca", () => {
+    const match = matchRoute("/busca");
+    expect(match?.path).toBe("/busca");
+  });
+
+  it("encontra a rota /escola/ranking?inep=codigo", () => {
+    const match = matchRoute("/escola/ranking");
+    expect(match?.path).toBe("/escola/ranking");
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });
