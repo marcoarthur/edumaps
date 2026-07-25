@@ -1,6 +1,6 @@
 package EduMaps::Task::OSM;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
-use EduMaps::OSM::Query;
+use EduMaps::Task::OSM::Query;
 use Syntax::Keyword::Try;
 
 sub register ($self, $app, $config){
@@ -9,7 +9,7 @@ sub register ($self, $app, $config){
 }
 
 sub _query_osm($job, $city_id) {
-  my $query = EduMaps::OSM::Query->new(
+  my $query = EduMaps::Task::OSM::Query->new(
     municipio     => $city_id,
     log           => $job->app->log,
     config        => $job->app->config,

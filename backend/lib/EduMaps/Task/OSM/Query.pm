@@ -1,4 +1,4 @@
-package EduMaps::OSM::Query;
+package EduMaps::Task::OSM::Query;
 
 use Mojo::Base 'Mojo::EventEmitter', -signatures, -async_await;
 use Mojo::JSON qw(decode_json encode_json);
@@ -8,13 +8,13 @@ use Digest::SHA qw(sha1_hex);
 use Mojo::UserAgent;
 use Syntax::Keyword::Try;
 require EduMaps::Schema;
-require EduMaps::OSM::Service;
+require EduMaps::Task::OSM::Service;
 
 has municipio   => sub { die 'Need the municipio id' };
 has config      => sub { die 'Need configuration' };
 has log         => sub { Mojo::Log->new };
 has save_db     => sub { 0 };
-has _service    => sub { die 'Need EduMaps::OSM::Service object'};
+has _service    => sub { die 'Need EduMaps::Task::OSM::Service object'};
 has _sch        => sub ($self) { 
   my $conf = $self->config;
   state $sch = EduMaps::Schema->connect($conf->{db_params}->@*,$conf->{db_opts}); 
@@ -38,7 +38,7 @@ sub _setup($self) {
 
   die sprintf ("Cannot find city with id %s", $self->municipio) unless $city;
   $self->_service( 
-    EduMaps::OSM::Service->new(polygon => decode_json($city->get_column('geojson')))
+    EduMaps::Task::OSM::Service->new(polygon => decode_json($city->get_column('geojson')))
   );
   $self->_landuse($self->_sch->resultset('OsmLanduse'));
   if ($self->_minion_job) {
@@ -135,14 +135,14 @@ __END__
 
 =head1 NAME
 
-EduMaps::OSM::Query - Fetch and cache OpenStreetMap data for geographic areas
+EduMaps::Task::OSM::Query - Fetch and cache OpenStreetMap data for geographic areas
 
 =head1 SYNOPSIS
 
-  use EduMaps::OSM::Query;
+  use EduMaps::Task::OSM::Query;
 
   # Synchronous interface
-  my $query = EduMaps::OSM::Query->new(
+  my $query = EduMaps::Task::OSM::Query->new(
     municipio => 123,
     log       => Mojo::Log->new
   );
@@ -183,7 +183,7 @@ L</run_query> is called.
 
 =head2 new
 
-my $query = EduMaps::OSM::Query->new(municipio => 123);
+my $query = EduMaps::Task::OSM::Query->new(municipio => 123);
 
 Constructor. Creates a new query instance and sets up the geographic polygon
 from the database.
@@ -276,7 +276,7 @@ The module uses a combination of exceptions (die) and logged errors:
 
 =head2 Basic Usage
 
-my $query = EduMaps::OSM::Query->new(
+my $query = EduMaps::Task::OSM::Query->new(
   municipio => 42,
   log       => Mojo::Log->new(level => 'debug')
 );
