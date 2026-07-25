@@ -127,6 +127,18 @@
   {:else if loadingRanking}
     <p class="text-gray-500 text-sm">Calculando ranking...</p>
   {:else if ranking}
+    
+    <div class="mb-4 p-4 bg-brand-50 border border-brand-200 rounded-lg">
+      <p class="text-sm text-brand-700 font-medium">
+        Valor do indicador <span class="font-normal text-brand-600">{ranking.indicador.label}</span>
+      </p>
+      <p class="text-3xl font-bold text-brand-700">
+        {ranking.indicador.valor}
+        <span class="text-sm font-normal text-brand-500 ml-1">
+          (ano {ranking.ano})
+        </span>
+      </p>
+    </div>
     <!-- Rankings -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {#if ranking.ranking.municipio}

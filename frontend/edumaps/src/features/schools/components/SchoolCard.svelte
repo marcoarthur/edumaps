@@ -66,4 +66,15 @@
       {/if}
     </div>
   </div>
+  <!-- Links internos (ações dentro do app) -->
+  <div class="flex items-center gap-3 pt-2 border-t border-gray-100 text-sm">
+    <a
+      href={`/escola/ranking?inep=${school.codigo_inep}`}
+      class="text-brand-600 font-medium hover:underline"
+      title="Rankings por município/estado"
+    >
+      📊 Ranking
+    </a>
+    <!-- Futuros links internos podem ser adicionados aqui -->
+  </div>
 </article>
