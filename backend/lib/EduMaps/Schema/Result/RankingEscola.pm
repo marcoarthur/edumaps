@@ -175,4 +175,11 @@ __PACKAGE__->set_primary_key("indicador_id", "rede", "id_escola");
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+  'escola',
+  'EduMaps::Schema::Result::CensoEscolas',
+  {'foreign.co_entidade' => 'self.id_escola'},
+);
+
 1;
