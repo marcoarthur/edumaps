@@ -19,3 +19,13 @@ export function searchSchools({ escola, municipio, limit } = {}) {
 export function getSchoolInfo(codInep) {
   return apiClient.get(`${BASE}/${codInep}/info`);
 }
+
+/**
+ * Obtém a folha de pagamento (payroll) de uma escola para um determinado mês/ano.
+ * @param {string|number} codInep - Código INEP da escola (8 dígitos)
+ * @param {string} date - Mês/ano no formato "MM-YYYY" (padrão: "10-2025")
+ * @returns {Promise<Array<Object>>} Lista de registros de pagamento
+ */
+export function getSchoolPayroll(codInep, date = "10-2025") {
+  return apiClient.get(`${BASE}/${codInep}/payroll`, { date });
+}
