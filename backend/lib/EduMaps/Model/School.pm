@@ -24,14 +24,6 @@ sub default_columns($self) {
   ];
 };
 
-our $DEFAULT_COLS = [
-  qw(escola codigo_inep latitude longitude endereco telefone municipio uf porte_escola),
-  { osm => \q<'https://www.openstreetmap.org/?mlat=' || latitude || '&mlon=' || longitude ||'&zoom=18#map=18/' || latitude || '/' || longitude> },
-  { whatsapp => \q<'https://wa.me/' || 55 || regexp_replace(telefone, '\D', '', 'g')> },
-  { modalidades => \q<regexp_split_to_array(etapas_modalidades, '\s*,\s*')> },
-  { tipo => 'dependencia_administrativa' },
-];
-
 sub _sanitize_like_pattern ($self, $string, $escape_char = '\\') {
     $$string =~ s/([%_\\])/$escape_char$1/g;
 }
@@ -95,7 +87,7 @@ sub search_all_from($self, $params = {}) {
     }
   );
 
-  my $results = $school->search_rs($params)->columns($DEFAULT_COLS)->as_hash->get_all;
+  my $results = $school->search_rs($params)->columns($self->default_columns)->as_hash->get_all;
   return $self->json->encode($results->to_array);
 }
 

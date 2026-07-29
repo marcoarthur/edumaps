@@ -1,5 +1,6 @@
 package EduMaps::Model::Indicator;
 use Mojo::Base -base, -signatures;
+use Scalar::Util qw(looks_like_number);
 
 has name        => 'Indicador Base';
 has code        => 'BASE';
@@ -12,6 +13,7 @@ has decimals    => 4; # Dígitos decimais
 # Limpeza e sanitização robusta por campo (reutilizável)
 sub clean_value ($self, $field, $val) {
   return 0 unless defined $val;
+  return 0 unless looks_like_number($val);
   # Se for indicador binário do Censo (in_*), garante valores no intervalo [0, 1]
   if ($field =~ /^in_/) {
     return $val >= 1 ? 1 : 0;

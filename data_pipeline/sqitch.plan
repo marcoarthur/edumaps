@@ -39,3 +39,4 @@ analytic_school_model 2026-05-17T18:39:40Z Marco Arthur <arthurpbs@gmail.com> # 
 nro_etapas [censo_escolar_2025] 2026-05-18T10:48:16Z Marco Arthur <arthurpbs@gmail.com> # number of etapas (educational stages) a school offers, based on the columns of census representing the stage
 health_check 2026-05-18T17:41:06Z Marco Arthur <arthurpbs@gmail.com> # health check function to visualize quickly the data into a table
 escolas_scores 2026-05-25T17:55:04Z Marco Arthur <arthurpbs@gmail.com> # add scores for schools a materialized view of major topics
+ranking_escolas 2026-07-26T23:26:52Z Marco Arthur <arthurpbs@gmail.com> # Sistema de ranking para escolas baseados em indicadores diversos

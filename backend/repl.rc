@@ -5,9 +5,11 @@
 # carrega automaticamente o módulo EduMaps::Schema.
 # ====================================================================
 
-use 5.014;
+use 5.038;
 use strict;
 use warnings;
+use utf8;
+use open ':std', ':encoding(UTF-8)';
 
 # --------------------------------------------------------------------
 # 1. Plugins essenciais (núcleo do REPL)
@@ -100,7 +102,13 @@ eval {
 };
 
 # --------------------------------------------------------------------
-# 6. Mensagem de boas-vindas e resumo
+# 6. Configura ambiente para EduMaps
+# --------------------------------------------------------------------
+$ENV{EDUMAPS_CONF} = '/home/itaipu/Projects/leaflet/backend/local_edumaps.conf';
+my $schema = EduMaps::Schema->go;
+
+# --------------------------------------------------------------------
+# 7. Mensagem de boas-vindas e resumo
 # --------------------------------------------------------------------
 say "\n" . '=' x 60;
 say "[✓] REPL inicializado com sucesso!";

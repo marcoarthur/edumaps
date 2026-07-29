@@ -1,0 +1,34 @@
+/* src/app.css */
+@import "tailwindcss";
+
+@theme {
+  /* Paleta central — antes duplicada em dezenas de <style> inline */
+  --color-brand-50: #eff6ff;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1e40af;
+
+  --color-cluster-1: #10b981; /* Excelência */
+  --color-cluster-2: #3b82f6; /* Alto desempenho */
+  --color-cluster-3: #f59e0b; /* Médio desempenho */
+  --color-cluster-4: #ef4444; /* Baixo desempenho */
+  --color-cluster-5: #8b5cf6; /* Em declínio */
+  --color-cluster-6: #06b6d4; /* Em ascensão */
+
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+
+/* Leaflet precisa dessas overrides globais — mantido fora do @layer
+   para não ser purgado e para vencer a especificidade do Leaflet */
+.leaflet-container {
+  font-family: inherit;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+}

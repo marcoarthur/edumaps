@@ -1,6 +1,6 @@
 package EduMaps::Task::Siope;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
-use EduMaps::Siope::Scrap::SpreadSheet::Gastos;
+use EduMaps::Task::Siope::Scrap::SpreadSheet::Gastos;
 use Mojo::Collection qw(c);
 use Syntax::Keyword::Try;
 use Time::Piece;
@@ -26,7 +26,7 @@ sub register ($self, $app, $config){
 
 sub _query_siope($job, $city_id, $year) {
   my $start = localtime;
-  my $driver = EduMaps::Siope::Scrap::SpreadSheet::Gastos->new(
+  my $driver = EduMaps::Task::Siope::Scrap::SpreadSheet::Gastos->new(
     cod_mun => $city_id,
     captcha => CAPTCHA,
     ano     => $year,

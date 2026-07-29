@@ -2,8 +2,18 @@ package EduMaps::Roles::Business::School::Finance;
 use Mojo::Base -role, -signatures;
 use Mojo::Exception qw(raise);
 use DateTime;
+use DateTime::Format::Strptime;
+use Carp qw(croak);
 
 requires qw(schema default_columns);
+
+has parser => sub {
+  DateTime::Format::Strptime->new(
+    pattern   => '%m-%Y',
+    locale    => 'pt_BR',
+    on_error  => 'croak',
+  );
+};
 
 sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
   my $rs = $self->schema->resultset('Escolas');
@@ -173,6 +183,30 @@ sub payroll_monthly($self, $cod_inep, $months, $year) {
   } $months->@*;
   my @reports = map {$self->payroll($cod_inep, $_)} @dates;
   return sprintf "[%s]", join(',', @reports);
+}
+
+sub school_payroll($self, $params) {
+  croak "need date %m-%Y" unless $params->{date};
+  croak "need cod_inep" unless $params->{cod_inep};
+
+  my $rs = $self->schema->resultset('RemuneracaoMunicipal');
+  my $dt = $self->parser->parse_datetime($params->{date});
+  my ($year, $month) = ($dt->year, ucfirst($dt->month_name));
+  my $cod = $params->{cod_inep};
+
+  my $results = $rs->search_rs({ano => $year, mes => $month, cod_inep => $cod})
+  ->as_hash->get_all->each(
+    # force numeric values
+    sub {
+      $_->{salario_base} += 0;
+      $_->{salario_total} += 0;
+      $_->{salario_fundeb_max} += 0;
+      $_->{salario_fundeb_min} += 0;
+      $_->{salario_outros} += 0;
+    }
+  );
+
+  return $results;
 }
 
 1;

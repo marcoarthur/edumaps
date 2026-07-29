@@ -1,4 +1,4 @@
-package EduMaps::Siope::Scrap::SpreadSheet::Gastos;
+package EduMaps::Task::Siope::Scrap::SpreadSheet::Gastos;
 
 use Mojo::Base "Mojo::EventEmitter", -signatures, -async_await;
 use Mojo::UserAgent;
@@ -15,13 +15,13 @@ use utf8;
 
 =head1 NAME 
 
-EduMaps::Siope::Scrap::SpreadSheet::Gastos - Scrapper para captura dos dados do SIOPE FNDE
+EduMaps::Task::Siope::Scrap::SpreadSheet::Gastos - Scrapper para captura dos dados do SIOPE FNDE
 
 
 =head1 SYNOPSIS
 
   
-  my $api = EduMaps::Siope::Scrap::SpreadSheet::Gastos->new(
+  my $api = EduMaps::Task::Siope::Scrap::SpreadSheet::Gastos->new(
     cod_mun => 355091,
     captcha => $ENV{CAPTCHA_SIOPE},
     ano     => 2023

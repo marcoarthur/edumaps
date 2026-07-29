@@ -2887,6 +2887,12 @@ __PACKAGE__->might_have(
   },
 );
 
+__PACKAGE__->has_many(
+  'rank',
+  'EduMaps::Schema::Result::RankingEscola',
+  { 'foreign.id_escola' => 'self.co_entidade' },
+);
+
 __PACKAGE__->belongs_to(
   'municipio',
   'EduMaps::Schema::Result::MunicipiosSp',
