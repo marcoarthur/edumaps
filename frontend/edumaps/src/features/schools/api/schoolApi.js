@@ -29,3 +29,7 @@ export function getSchoolInfo(codInep) {
 export function getSchoolPayroll(codInep, date = "10-2025") {
   return apiClient.get(`${BASE}/${codInep}/payroll`, { date });
 }
+
+export function getSchoolPanelData(codInep) {
+  return apiClient.get(`${BASE}/${codInep}/panel/info`);
+}

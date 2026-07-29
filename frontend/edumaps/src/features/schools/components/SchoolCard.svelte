@@ -76,5 +76,12 @@
       📊 Ranking
     </a>
     <!-- Futuros links internos podem ser adicionados aqui -->
+    <a
+      href={`/escola/panel?inep=${school.codigo_inep}`}
+      class="text-brand-600 font-medium hover:underline"
+      title="Painel escola"
+    >
+     📋 Painel
+    </a>
   </div>
 </article>

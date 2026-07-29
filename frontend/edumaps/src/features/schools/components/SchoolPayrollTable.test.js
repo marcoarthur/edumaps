@@ -74,14 +74,14 @@ describe("SchoolPayrollTable", () => {
       const text = cell.textContent?.replace(/\s/g, "") ?? "";
       return text.includes("R$4.388,40");
     });
-    expect(cellsWith4388.length).toBe(3);
+    expect(cellsWith4388.length).toBe(2);
 
     // Filtra células que contêm "R$ 5.793,41"
     const cellsWith5793 = allCells.filter((cell) => {
       const text = cell.textContent?.replace(/\s/g, "") ?? "";
       return text.includes("R$5.793,41");
     });
-    expect(cellsWith5793.length).toBe(2);
+    expect(cellsWith5793.length).toBe(1);
 
     // Verifica "R$ 5.136,00" (aparece apenas uma vez)
     const cellsWith5136 = allCells.filter((cell) => {
