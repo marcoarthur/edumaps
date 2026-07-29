@@ -80,7 +80,7 @@ describe("SchoolPanel", () => {
 
     expect(screen.queryByText("Indicadores")).not.toBeInTheDocument();
     // Não deve ter o selo de ranking
-    expect(screen.queryByText(/Top \d+%/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Acima de \d+%/i)).not.toBeInTheDocument();
   });
 
   it("deve renderizar a seção de indicadores se houver indicadores", () => {
@@ -99,7 +99,7 @@ describe("SchoolPanel", () => {
     expect(screen.getByText("IDEB")).toBeInTheDocument();
     expect(screen.getByText("5.7")).toBeInTheDocument();
     expect(screen.getByText("(2023)")).toBeInTheDocument();
-    expect(screen.getByText(/Top 10% no município/i)).toBeInTheDocument();
+    expect(screen.getByText(/Acima de.*no município/i)).toBeInTheDocument();
   });
 
   it("deve exibir mensagem de carregamento quando loadingSimilarSchools for true", () => {
