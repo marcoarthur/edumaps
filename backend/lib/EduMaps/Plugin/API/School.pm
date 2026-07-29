@@ -10,6 +10,8 @@ sub register ($self, $app, @args) {
 
   my $check = [cod_inep => qr/\d{8}/];
 
+  $api->get('/:cod_inep/panel/info' =>$check)->to('school#panel_info')->name('panel_school_info');
+
   $api->get('/:cod_inep/info' => $check)->to('school#info')->name('school_info');
 
   $api->get('/:cod_inep/payroll' => $check)->to('school#payroll')->name('school_payroll');

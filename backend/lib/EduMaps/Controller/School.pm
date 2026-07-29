@@ -31,6 +31,21 @@ sub info($self){
   $self->render(json => $result);
 };
 
+sub panel_info($self){
+  my $v = $self->validation;
+  my $model = $self->instantiate_model(model => 'School');
+  my $params = {cod_inep => $self->param('cod_inep')};
+  my $result = $model->panel_info($params);
+
+  unless($result) {
+    return $self->render(
+      json => { error => $self->_not_found_msg($params) }, status => 404
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 sub payroll($self){
   my $v = $self->validation;
   $v->optional('date', 'trim')->like(qr<\d{2}[-]\d{4}>);
