@@ -166,7 +166,7 @@ sub panel_info($self, $params) {
   my $indicators = $rank->available_indicators($params->{cod_inep});
   my %values = map {
     $_->{id} => $rank->rank($params->{cod_inep}, $_->{id}, { fast => 1 });
-  } @$indicators;
+  } grep { ${$_->{available}} == 1 } @$indicators;
 
   my $in_city = EduMaps::Model::Domain::SchoolQuality->new(
     {
@@ -196,6 +196,8 @@ sub panel_info($self, $params) {
       etapas => $self->_etapas($school),
       infraestrutura => $self->_infraestrutura($school),
       matriculas => $school->{matriculas},
+      latitude => $school->{latitude},
+      longitude => $school->{longitude},
     },
     indicators => \%values,
     similar_schools => $similars->to_array,

@@ -5,6 +5,7 @@
   import SchoolInfrastructure from './InfrastructureGrid.svelte';
   import SchoolIndicators from './SchoolIndicator.svelte';
   import SimilarSchools from './SimilarSchools.svelte';
+  import SchoolMap from './SchoolMap.svelte';
 
   /**
    * @typedef {Object} Props
@@ -61,6 +62,19 @@
     <section class="flex flex-col gap-2">
       <h2 class="text-base font-bold text-gray-900 mb-2">Indicadores</h2>
       <SchoolIndicators {indicators} primaryScope="municipio" />
+    </section>
+  {/if}
+
+  {#if school.latitude && school.longitude}
+    <section class="flex flex-col gap-2">
+      <h2 class="text-base font-bold text-gray-900 mb-2">Localização</h2>
+      <SchoolMap
+        latitude={school.latitude}
+        longitude={school.longitude}
+        schoolName={school.nome}
+        height="300px"
+        similarSchools={similarSchools}
+      />
     </section>
   {/if}
 

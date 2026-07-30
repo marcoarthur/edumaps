@@ -35,6 +35,8 @@ export function transformPanelData(apiData) {
     uf: apiData.escola.uf,
     rede: apiData.escola.rede?.toLowerCase() || "municipal",
     matriculas: apiData.escola.matriculas,
+    latitude: apiData.escola.latitude ?? null,
+    longitude: apiData.escola.longitude ?? null,
     etapas: Object.fromEntries(
       etapasKeys.map((key) => [key, apiData.escola.etapas.includes(key)]),
     ),
@@ -86,6 +88,8 @@ export function transformPanelData(apiData) {
       matriculas: record.qt_matriculas || record.matriculas || 0, // pode não existir no censo
       etapas,
       indicador_principal: mainIndicator,
+      latitude: record.latitude,
+      longitude: record.longitude,
     };
   });
 

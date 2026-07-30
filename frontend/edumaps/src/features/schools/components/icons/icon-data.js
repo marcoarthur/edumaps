@@ -116,6 +116,47 @@ export const ICONS = {
     label: "Matrículas",
     svg: `<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.3"/><path d="M15.5 20c.2-2.7 1.8-5 4.5-5"/>`,
   },
+  // ---------- MARCA EDUMAPS (usado como ícone) ----------
+  edumaps: {
+    category: "brand",
+    label: "EduMaps",
+    svg: `
+    <defs>
+      <!-- Gradiente do Corpo do Pin -->
+      <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#38bdf8"/>
+        <stop offset="100%" stop-color="#1d4ed8"/>
+      </linearGradient>
+      <!-- Gradiente do Capelo -->
+      <linearGradient id="capGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24"/>
+        <stop offset="100%" stop-color="#d97706"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Sombra Projetada no Chão (opcional) -->
+    <ellipse cx="32" cy="68" rx="14" ry="3" fill="#000000" opacity="0.25"/>
+
+    <!-- Corpo do Pin de Mapa -->
+    <path d="M 32 14 C 18.7 14, 8 24.7, 8 38 C 8 52, 28 66, 32 68 C 36 66, 56 52, 56 38 C 56 24.7, 45.3 14, 32 14 Z" fill="url(#pinGrad)" stroke="#ffffff" stroke-width="2.5"/>
+
+    <!-- Livro Aberto (Vazado/Branco dentro do Pin) -->
+    <path d="M 32 35 L 20 29 C 20 29, 19 41, 27 45 C 30 46.5, 32 45.5, 32 45.5 Z" fill="#ffffff" opacity="0.95"/>
+    <path d="M 32 35 L 44 29 C 44 29, 45 41, 37 45 C 34 46.5, 32 45.5, 32 45.5 Z" fill="#cbd5e1"/>
+    <path d="M 32 35 L 32 45.5" stroke="#94a3b8" stroke-width="1"/>
+
+    <!-- Capelo (Graduation Cap) no Topo do Pin -->
+    <g transform="translate(0, 0)">
+      <!-- Losango do Capelo -->
+      <polygon points="32,2 48,10 32,18 16,10" fill="url(#capGrad)" stroke="#ffffff" stroke-width="1.5"/>
+      <!-- Base do Capelo -->
+      <path d="M 23 14.5 L 23 20 C 23 22, 41 22, 41 20 L 41 14.5 Z" fill="#b45309"/>
+      <!-- Tassel / Pompom -->
+      <path d="M 16 10 C 13 13, 12 16, 12 19" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+      <circle cx="12" cy="19" r="1.5" fill="#fef08a"/>
+    </g>
+    `,
+  },
 };
 
 export const ETAPAS_ORDER = [
