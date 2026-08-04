@@ -16,6 +16,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/payroll' => $check)->to('school#payroll')->name('school_payroll');
 
+  $api->get('/:cod_inep/payroll/last' => $check)->to('school#payroll_last')->name('school_last_payroll');
+
   $api->get('/:cod_inep/grades' => $check)->to('school#grades')->name('school_grades');
 
   $api->get('/:cod_inep/full_grades' => $check)->to('school#full_grades')->name('school_full_grades');
@@ -23,6 +25,8 @@ sub register ($self, $app, @args) {
   $api->get('/:cod_inep/professionals' => $check)->to('school#professionals')->name('school_professionals');
 
   $api->get('/search')->to('school#search')->name('school_search');
+
+  $api->get('/search/pageable')->to('school#search_pageable')->name('school_search_pageable');
 
   $api->get('/geo/search')->to('school#search_nearby')->name('school_nearby');
 

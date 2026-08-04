@@ -209,4 +209,57 @@ sub school_payroll($self, $params) {
   return $results;
 }
 
+sub payroll_dates($self, $params) {
+  croak "need cod_inep" unless $params->{cod_inep};
+  my %months = (
+      'Janeiro'   => 1,
+      'Fevereiro' => 2,
+      'Março'     => 3,
+      'Abril'     => 4,
+      'Maio'      => 5,
+      'Junho'     => 6,
+      'Julho'     => 7,
+      'Agosto'    => 8,
+      'Setembro'  => 9,
+      'Outubro'   => 10,
+      'Novembro'  => 11,
+      'Dezembro'  => 12,
+  );
+
+ return $self->schema->resultset('RemuneracaoMunicipal')
+  ->search_rs(
+    {cod_inep => $params->{cod_inep}}
+  )->columns([qw(ano mes)])->distinct
+  ->as_hash->get_all->map(
+    sub {
+      # Março pode estar em latin1 então qualquer falha se deve a ele
+      my $dt_str = sprintf "%s-%s", $months{$_->{mes}} // 3, $_->{ano};
+      $self->parser->parse_datetime($dt_str);
+    }
+  );
+}
+
+sub last_payroll_available($self, $params) {
+  croak "need cod_inep" unless $params->{cod_inep};
+  my $dates = $self->payroll_dates({ cod_inep => $params->{cod_inep} });
+  return $dates unless $dates->size > 0;
+
+  my $max = $dates->reduce(sub{$a > $b ? $a : $b});
+  return $self->schema->resultset('RemuneracaoMunicipal')->search_rs(
+    { 
+      cod_inep => $params->{cod_inep},
+      ano => $max->year, mes => ucfirst($max->month_name),
+    }
+  )->as_hash->get_all->each(
+    # force numeric values
+    sub {
+      $_->{salario_base} += 0;
+      $_->{salario_total} += 0;
+      $_->{salario_fundeb_max} += 0;
+      $_->{salario_fundeb_min} += 0;
+      $_->{salario_outros} += 0;
+    }
+  );
+}
+
 1;

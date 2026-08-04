@@ -5,13 +5,12 @@ has default_distance => 10;
 has default_limit => 10;
 
 sub _not_found_msg($self, $params) {
-  my $params_str;
-  if ( keys $params_str->%* ) {
+  if ( keys $params->%* ) {
     my $params_str = join(
       "\n",
       map { sprintf(qq/%s => %s/, $_, $params->{$_}) } keys $params->%* 
     );
-    return "Escola não encontrada com os parametros:\n" . $params_str;
+    return "Dados não encontrados com os parametros:\n" . $params_str;
   } else {
     return "Não encontrado";
   }
@@ -67,6 +66,21 @@ sub payroll($self){
   $self->render(json => $result);
 };
 
+sub payroll_last($self) {
+  my $model = $self->instantiate_model(model => 'School');
+  my $params = {
+    cod_inep => $self->param('cod_inep'),
+  };
+  my $result = $model->last_payroll_available($params);
+  unless($result->size > 0) {
+    return $self->render(
+      json => {error => $self->_not_found_msg($params)}, status => 404
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 sub grades($self){
   ...
 };
@@ -107,6 +121,25 @@ sub search($self) {
   }
 
   $self->render(json => $result->to_array);
+}
+
+sub search_pageable($self) {
+  my $v = $self->validation;
+  $v->optional($_, 'trim')->like(qr/[1-9]\d*/) for qw(page per_page);
+  $v->optional($_, 'trim')->like(qr/.{3,100}/) for qw/escola municipio/;
+  return $self->bad_req if $self->any_error;
+
+  my $params = {};
+  $params->{page}       = $self->param('page')        // 1;
+  $params->{per_page}   = $self->param('per_page')    // 10;
+  $params->{municipio}  = $self->param('municipio')   // '';
+  $params->{escola}     = $self->param('escola')      // '';
+
+  my $failed_args = $params->{escola} eq $params->{municipio} && $params->{escola} eq '';
+  return $self->bad_req if $failed_args;
+
+  my $result = $self->instantiate_model(model => 'School')->search_pageable($params);
+  $self->render(json => $result);
 }
 
 sub search_nearby($self){

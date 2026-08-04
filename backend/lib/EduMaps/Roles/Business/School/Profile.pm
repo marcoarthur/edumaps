@@ -74,9 +74,12 @@ sub info_enrollment($self, $params = {}) {
 
   $params->{"$alias.nu_ano_censo"} //= $self->default_date->year;
 
-  croak "Need school id/ids" unless grep {/co_entidade/} keys %$params;
+  croak "Need school id/ids" unless my ($key) = grep {/co_entidade/} keys %$params;
+  # put $alias prefix if not present
+  my $new_key = index($key, $alias) != 0 ? "${alias}." . $key : $key;
+  my $new_param = { $new_key => $params->{$key} };
 
-  my $results = $rs->search_rs($params)
+  my $results = $rs->search_rs($new_param)
   ->search_related('matricula')->get_all;
 
   return $results->map(
