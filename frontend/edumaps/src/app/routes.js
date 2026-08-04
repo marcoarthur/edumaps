@@ -5,6 +5,7 @@ import {
   SchoolRankingPage,
   SchoolPayrollPage,
   SchoolPanelPage,
+  SchoolSearchPageRx,
 } from "@/features/schools";
 
 export const routes = [
@@ -13,6 +14,7 @@ export const routes = [
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/escola/panel", component: SchoolPanelPage },
+  { path: "/escola/search", component: SchoolSearchPageRx },
 ];
 
 export function matchRoute(pathname) {
