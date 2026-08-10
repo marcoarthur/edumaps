@@ -9,7 +9,6 @@ import {
 } from "@/features/schools";
 
 export const routes = [
-  { path: "/busca", component: SchoolSearchPage },
   { path: "/about", component: AboutPage },
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },

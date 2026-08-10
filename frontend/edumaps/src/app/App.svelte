@@ -2,6 +2,7 @@
   // src/app/App.svelte
   import { router, link } from "./router.svelte.js";
   import { matchRoute } from "./routes.js";
+  import Toast from '@/shared/ui/components/Toast.svelte';
 
   const NAV_LINKS = [{ to: "/about", label: "Sobre o Refactor" }];
 
@@ -33,7 +34,7 @@
       </div>
     </div>
   </nav>
-
+  <Toast />
   <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
     {#if match}
       <match.component />

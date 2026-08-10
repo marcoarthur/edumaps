@@ -1,14 +1,14 @@
 <script>
   // src/features/schools/pages/SchoolSearchPageRx.svelte
-  import { onMount, onDestroy } from "svelte";
+  import { tap } from "rxjs/operators";
   import SchoolSearchForm from "../components/SchoolSearchForm.svelte";
   import SchoolList from "../components/SchoolReactiveList.svelte";
   import { createSchoolStore } from "../stores/schoolPaginationStore";
+  import { eventBus, EVENTS } from "@/shared/events";
+  import { SCHOOL_EVENTS } from "../constants/events.js";
 
-  // Instância da store reativa
   const schoolStore = createSchoolStore();
 
-  // Estados reativos com Svelte 5 Runes
   let result = $state({
     data: [],
     meta: null,
@@ -17,28 +17,48 @@
   });
   let hasSearched = $state(false);
 
-  let subscription;
+  $effect(() => {
+    let previousLoading = false;
 
-  onMount(() => {
-    // Inscreve na store do RxJS
-    subscription = schoolStore.result$.subscribe((state) => {
-      result = state;
-    });
+    const subscription = schoolStore.result$
+      .pipe(
+        tap((state) => {
+          // Detecta transição loading → não-loading
+          const wasLoading = previousLoading && !state.loading;
+          previousLoading = state.loading;
+          result = state;
+
+          if (wasLoading) {
+            notifySearchOutcome(state);
+          }
+        })
+      )
+      .subscribe();
+
+    return () => subscription.unsubscribe();
   });
 
-  onDestroy(() => {
-    if (subscription && typeof subscription.unsubscribe === 'function') {
-      subscription.unsubscribe();
+  function notifySearchOutcome(state) {
+    if (state.error) {
+      eventBus.emit(EVENTS.TOAST_ADD, { message: state.error, type: "error", duration: 5000 });
+      return;
     }
-  });
+    if (state.meta?.total_entries === undefined) {
+      console.log('⏳ meta.total_entries ainda não definido, ignorando');
+      return;
+    }
+
+    const total = state.meta.total_entries;
+    const message =
+      total === 0
+        ? "Nenhuma escola encontrada."
+        : `Busca concluída: ${total} ${total === 1 ? "escola encontrada" : "escolas encontradas"}`;
+    eventBus.emit(EVENTS.TOAST_ADD, { message, type: "info", duration: 3000 });
+  }
 
   function handleSearch(filters) {
     hasSearched = true;
-    console.log('handleSearch filters:', filters);
-    schoolStore.setSearch({
-      ...filters,
-      page: 1,
-    });
+    schoolStore.setSearch({ ...filters, page: 1 });
   }
 
   function handleClear() {
@@ -48,10 +68,16 @@
 
   function handlePageChange(newPage) {
     schoolStore.goToPage(newPage);
+    eventBus.emit(SCHOOL_EVENTS.PAGE_CHANGE, { page: newPage }, { source: "SchoolSearchPageRx" });
   }
 
   function handlePerPageChange(newPerPage) {
     schoolStore.setPerPage(newPerPage);
+    eventBus.emit(
+      SCHOOL_EVENTS.PER_PAGE_CHANGE,
+      { perPage: newPerPage },
+      { source: "SchoolSearchPageRx" }
+    );
   }
 </script>
 
@@ -61,11 +87,7 @@
     <p class="mt-1 text-sm text-gray-600">Encontre escolas pelo nome ou município.</p>
   </header>
 
-  <SchoolSearchForm
-    loading={result.loading}
-    onSearch={handleSearch}
-    onClear={handleClear}
-  />
+  <SchoolSearchForm loading={result.loading} onSearch={handleSearch} onClear={handleClear} />
 
   <SchoolList
     schools={result.data}

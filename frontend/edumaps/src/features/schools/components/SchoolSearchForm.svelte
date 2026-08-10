@@ -1,5 +1,17 @@
 <script>
   // src/features/schools/components/SchoolSearchForm.svelte
+  import { eventBus } from "@/shared/events";
+  import { SCHOOL_EVENTS } from "../constants/events.js";
+
+  /**
+   * @typedef {Object} Props
+   * @property {boolean} [loading]
+   * @property {(filters: { escola: string, municipio: string }) => void} [onSearch] -
+   *   chamado direto pelo pai (SchoolSearchPageRx) pra orquestrar a busca de fato.
+   * @property {() => void} [onClear]
+   */
+
+  /** @type {Props} */
   let { loading = false, onSearch, onClear } = $props();
 
   let nomeEscola = $state("");
@@ -12,12 +24,25 @@
   function handleSubmit(event) {
     event.preventDefault();
     if (!canSubmit) return;
-    onSearch?.({ escola: nomeEscola.trim(), municipio: municipio.trim() });
+
+    const filters = { escola: nomeEscola.trim(), municipio: municipio.trim() };
+
+    // eventBus: para quem, fora desta árvore de componentes, precisa
+    // saber que "uma busca de escola aconteceu" sem se acoplar a este
+    // formulário — ex.: o mapa recentralizando no município buscado.
+    eventBus.emit(SCHOOL_EVENTS.SEARCH, filters, { source: "SchoolSearchForm" });
+
+    // callback prop: para o pai direto orquestrar a busca (chamar a API,
+    // atualizar paginação). É uma relação 1:1 pai/filho — prop é mais
+    // simples e mais fácil de testar do que ir e voltar pelo bus pra isso.
+    onSearch?.(filters);
   }
 
   function handleClear() {
     nomeEscola = "";
     municipio = "";
+
+    eventBus.emit(SCHOOL_EVENTS.CLEAR, undefined, { source: "SchoolSearchForm" });
     onClear?.();
   }
 </script>
@@ -51,9 +76,7 @@
       />
     </div>
   </div>
-
   <p class="text-xs text-gray-500 mt-2">Mínimo de 3 caracteres em pelo menos um dos campos.</p>
-
   <div class="flex gap-3 mt-4">
     <button
       type="submit"

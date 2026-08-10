@@ -1,5 +1,7 @@
 // src/main.js
 import { mount } from "svelte";
+import { eventBus, logger } from "@/shared/events";
+import { registerToastEventBridge } from "@/shared/stores/toastEventBridge.js";
 import "./app.css";
 import App from "./app/App.svelte";
 
@@ -11,7 +13,10 @@ async function enableMocking() {
   return worker.start({ onUnhandledRequest: "bypass" });
 }
 
-await enableMocking();
+//await enableMocking();
+
+eventBus.use(logger);
+registerToastEventBridge();
 
 const app = mount(App, {
   target: document.getElementById("app"),
