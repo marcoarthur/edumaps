@@ -175,6 +175,22 @@ sub similar_cities($self) {
   $self->render( json => $result->to_array );
 }
 
+sub search_suggestions($self) {
+  my $v = $self->validation;
+
+  $v->required($_, 'trim')->like(qr/.{3,100}/) for qw/q/;
+  $v->optional('limit', 'trim')->num(1,50);
+
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'City');
+  my $params = {
+    nome_municipio => $self->param('q'), limit => $self->param('limit') // 50
+  };
+  my $result = $model->suggests($params);
+  return $self->render( json => $result );
+}
+
 1;
 
 __END__

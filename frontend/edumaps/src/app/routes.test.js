@@ -9,8 +9,8 @@ describe("matchRoute", () => {
   });
 
   it("encontra a rota /busca", () => {
-    const match = matchRoute("/busca");
-    expect(match?.path).toBe("/busca");
+    const match = matchRoute("/escola/search");
+    expect(match?.path).toBe("/escola/search");
   });
 
   it("encontra a rota /escola/ranking?inep=codigo", () => {
