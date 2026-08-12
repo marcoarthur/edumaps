@@ -56,7 +56,7 @@
 
   // Voltar para a busca
   function goBack() {
-    router.navigate('/busca');
+    router.navigate('/escola/search');
   }
 </script>
 

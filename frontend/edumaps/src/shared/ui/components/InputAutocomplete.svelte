@@ -60,6 +60,16 @@
   let error = $state(null);
   let activeIndex = $state(-1);
 
+  $effect(() => {
+    if (activeIndex >= 0) {
+      const itemId = `${listboxId}-option-${activeIndex}`;
+      const item = document.getElementById(itemId);
+      if (item) {
+        item.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  });
+
   const query$ = new Subject();
   const listboxId = `${id}-listbox`;
 
