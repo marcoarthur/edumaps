@@ -18,9 +18,10 @@ sub suggests($self, $params = {}) {
   my $limit = $params->{limit} // 50;
   delete $params->{limit};
 
-  $params->{nome_municipio} = {-ilike => "%$params->{nome_municipio}%"};
+  my $expr = q{contrib.unaccent(nome_municipio) ILIKE contrib.unaccent(?)};
+  my $search = \[$expr, $self->_wrap_percent($params->{nome_municipio})];
 
-  my $results = $rs->search_rs($params)->limit($limit)->columns($cols)
+  my $results = $rs->search_rs($search)->limit($limit)->columns($cols)
   ->order_by(['nome_municipio'])->as_hash->get_all;
 
   return $results->to_array;
