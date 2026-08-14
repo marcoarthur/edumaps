@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Carp qw(croak);
 use Mojo::JSON qw(encode_json);
 use Scalar::Util qw(weaken);
+use CHI;
 use constant {
   MSG_SENT_LIMIT => 10**3,
   COMPLETE_PERCENT => 99.9,
@@ -31,6 +32,15 @@ sub _add_helpers($self, $app) {
 
   $app->helper(
     monitor_job => \&_monitor_minion_job
+  );
+
+  $app->helper(
+    chi => sub {
+      state $chi = CHI->new(
+        driver => 'Memory',
+        global => 1,
+      );
+    }
   );
 }
 
