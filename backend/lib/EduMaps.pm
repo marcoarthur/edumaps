@@ -30,6 +30,11 @@ sub startup ($self) {
   $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch/;
 
   # ------------------------------------------------------------
+  # Handlers/Middlewares do EventBus
+  # ------------------------------------------------------------
+  $self->add_mw($_) for qw/SiopeTask EventLogger/;
+
+  # ------------------------------------------------------------
   # Custom Validations
   # ------------------------------------------------------------
   $self->plugin("EduMaps::Plugin::CustomValidations");
