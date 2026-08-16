@@ -11,7 +11,6 @@ use constant {
   DEFAULT_POLL_TIME => 2,
 };
 
-#Mojo::Pg
 has models_cache => sub { state $cache = {} };
 has mw_cache => sub { state $mw_cache = {} };
 

@@ -26,7 +26,7 @@ sub startup ($self) {
   $self->plugin(Minion => {Pg => $conf->{db_url} });
   $self->plugin('Minion::Admin');
   $self->plugin('Status');
-  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity/;
+  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity CityAnalytics/;
   $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch/;
 
   # ------------------------------------------------------------
