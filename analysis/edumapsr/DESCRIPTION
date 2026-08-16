@@ -1,0 +1,43 @@
+Package: edumapsAnalytics
+Title: Camada Analitica do EduMaps (Model-Controller-View para R)
+Version: 0.1.0
+Description: Biblioteca/aplicacao analitica do EduMaps. Separa fonte de
+    dados (DataSource), modelo semantico do dominio (Semantic Model),
+    calculo estatistico puro (Analysis), resultado intermediario
+    (AnalysisResult) e apresentacao/persistencia (View/Repository), de
+    modo que a mesma analise rode sobre Postgres, Parquet, CSV ou dados
+    em memoria sem reescrever logica estatistica.
+License: proprietary
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    ggplot2,
+    plotly,
+    jsonlite,
+    DBI,
+    stats
+Suggests:
+    testthat (>= 3.0.0),
+    RPostgres,
+    plumber,
+    devtools,
+    here
+Config/testthat/edition: 3
+Collate:
+    'utils.R'
+    'conditions.R'
+    'result-analysis-result.R'
+    'model-semantic-school-indicator-model.R'
+    'model-datasource-memory-source.R'
+    'model-datasource-postgres-source.R'
+    'analysis-histogram.R'
+    'analysis-scatter.R'
+    'analysis-boxplot.R'
+    'app-registry.R'
+    'app-controller.R'
+    'app-application.R'
+    'app-tasks.R'
+    'view-plotly.R'
+    'view-json.R'
+    'repository-postgres.R'
+Config/roxygen2/version: 8.0.0
