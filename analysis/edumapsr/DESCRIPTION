@@ -15,15 +15,16 @@ Imports:
     plotly,
     jsonlite,
     DBI,
-    stats
+    stats,
+    cluster
 Suggests:
     testthat (>= 3.0.0),
     RPostgres,
     plumber,
     devtools,
-    here
 Config/testthat/edition: 3
 Collate:
+    'config.R'
     'utils.R'
     'conditions.R'
     'result-analysis-result.R'
@@ -40,4 +41,8 @@ Collate:
     'view-plotly.R'
     'view-json.R'
     'repository-postgres.R'
+    'model-semantic-school-similarity.R'
+    'model-datasource-memory-similarity-source.R'
+    'analysis-similarity.R'
+    'repository-postgres-similarity.R'
 Config/roxygen2/version: 8.0.0

@@ -1,16 +1,24 @@
 # inst/plumber/run.R
 #
-# Sobe o pacote edumapsAnalytics como serviço HTTP persistente (systemd/
-# supervisor) — continua sendo um processo de longa duração, não um
-# `Rscript` por requisição (ver decisão de arquitetura sobre overhead de
-# inicialização do R, de uma discussão anterior).
+# Entry point do serviço HTTP da camada analítica durante desenvolvimento.
 #
-# Uso: Rscript inst/plumber/run.R
-# Requer devtools (ou pkgload) e here instalados: install.packages(c("devtools", "here"))
+# O script é executado a partir da raiz do pacote:
+#
+#   cd analysis/edumapsr
+#   Rscript inst/plumber/run.R
+#
+# Por isso os caminhos abaixo são relativos à raiz do pacote.
 
-devtools::load_all(here::here()) # carrega o pacote a partir do código-fonte em desenvolvimento
-# em produção, prefira instalar o pacote de verdade e trocar a linha
-# acima por: library(edumapsAnalytics)
+devtools::load_all(".")
 
-pr <- plumber::plumb(here::here("inst", "plumber", "endpoints.R"))
-pr$run(host = "0.0.0.0", port = as.integer(Sys.getenv("EDUMAPS_R_PORT", 8787)))
+pr <- plumber::plumb("inst/plumber/endpoint.R")
+
+pr <- plumber::pr_set_api_spec(
+  pr,
+  "inst/plumber/api.json"
+)
+
+pr$run(
+  host = "0.0.0.0",
+  port = as.integer(Sys.getenv("EDUMAPS_R_PORT", 8787))
+)
