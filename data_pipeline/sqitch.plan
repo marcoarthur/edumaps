@@ -41,3 +41,4 @@ health_check 2026-05-18T17:41:06Z Marco Arthur <arthurpbs@gmail.com> # health ch
 escolas_scores 2026-05-25T17:55:04Z Marco Arthur <arthurpbs@gmail.com> # add scores for schools a materialized view of major topics
 ranking_escolas 2026-07-26T23:26:52Z Marco Arthur <arthurpbs@gmail.com> # Sistema de ranking para escolas baseados em indicadores diversos
 event_store 2026-08-14T22:13:37Z Marco Arthur <arthurpbs@gmail.com> # Adiciona tabela event_store para telemetria e auditoria de eventos
+analytics_rede_escolas [censo_escolar_2025 ideb_notas_escolas] 2026-09-11T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # View materializada da rede de escolas por município e tipo de administração, com matrículas, professores e desempenho IDEB/SAEB
