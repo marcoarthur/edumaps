@@ -145,4 +145,28 @@ sub search_pageable($self, $params) {
   return $results;
 }
 
+sub suggests($self, $params = {}) {
+  my $rs = $self->schema->resultset('CensoEscolas');
+  my $v = $self->validation;
+
+  $v->input($params);
+  $v->required($_, 'trim')->like(qr/.{3,100}/) for qw/no_entidade/;
+  $v->optional('limit', 'trim')->num(1,50);
+
+  croak "Erro dos parametros" if $v->has_error;
+
+  my $cols = [
+    {id => 'co_entidade'}, { nome => 'no_entidade'}, {municipio => 'no_municipio'}
+  ];
+  my $limit = $params->{limit} // 50;
+  delete $params->{limit};
+
+  $params->{no_entidade} = {-ilike => "%$params->{no_entidade}%"};
+
+  my $results = $rs->search_rs($params)->limit($limit)->columns($cols)
+  ->order_by(['no_entidade', 'no_municipio'])->as_hash->get_all;
+
+  return $results->to_array;
+}
+
 1;

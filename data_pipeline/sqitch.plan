@@ -40,3 +40,6 @@ nro_etapas [censo_escolar_2025] 2026-05-18T10:48:16Z Marco Arthur <arthurpbs@gma
 health_check 2026-05-18T17:41:06Z Marco Arthur <arthurpbs@gmail.com> # health check function to visualize quickly the data into a table
 escolas_scores 2026-05-25T17:55:04Z Marco Arthur <arthurpbs@gmail.com> # add scores for schools a materialized view of major topics
 ranking_escolas 2026-07-26T23:26:52Z Marco Arthur <arthurpbs@gmail.com> # Sistema de ranking para escolas baseados em indicadores diversos
+event_store 2026-08-14T22:13:37Z Marco Arthur <arthurpbs@gmail.com> # Adiciona tabela event_store para telemetria e auditoria de eventos
+analytics_rede_escolas [censo_escolar_2025 ideb_notas_escolas] 2026-09-11T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # View materializada da rede de escolas por município e tipo de administração, com matrículas, professores e desempenho IDEB/SAEB
+rede_escolas_etapas [analytics_rede_escolas nro_etapas] 2026-09-11T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Redefine mv_rede_escolas com total/média de etapas oferecidas por rede no município

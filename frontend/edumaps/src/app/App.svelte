@@ -2,6 +2,7 @@
   // src/app/App.svelte
   import { router, link } from "./router.svelte.js";
   import { matchRoute } from "./routes.js";
+  import Toast from '@/shared/ui/components/Toast.svelte';
 
   const NAV_LINKS = [{ to: "/about", label: "Sobre o Refactor" }];
 
@@ -12,7 +13,7 @@
     }
   });
 
-  let match = $derived(matchRoute(router.path));
+  let match = $derived(matchRoute(router.path.split("?")[0]));
 
   function navLinkClass(path) {
     const state = router.path === path ? "bg-white/20" : "hover:bg-white/10";
@@ -33,7 +34,7 @@
       </div>
     </div>
   </nav>
-
+  <Toast />
   <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
     {#if match}
       <match.component />

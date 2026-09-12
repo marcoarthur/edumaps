@@ -7,7 +7,7 @@ use Carp qw(croak);
 use utf8;
 our @BUSINESS_ROLES = map {
   "EduMaps::Roles::Business::City::$_"
-} qw/Profile Finance Analytic Geo/;
+} qw/Profile Finance Analytic Geo Searching/;
 
 with @BUSINESS_ROLES;
 

@@ -34,7 +34,8 @@ sub payroll($self, $ibge_code, $date){
     }
   )->as_hash->get_all;
 
-  return $self->json->encode($payroll->to_array);
+  return $payroll;
+  #return $self->json->encode($payroll->to_array);
 }
 
 =head2 payroll_details($ibge_code,$date)

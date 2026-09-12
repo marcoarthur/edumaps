@@ -36,9 +36,11 @@ around 'new' => sub {
     bless $job, $p;
     my $roles = $roles;
 
-    my ( undef, $opts ) = pairfirst { $a eq '-opts' } @_;
-
-    $job->opts($opts);
+    my (undef, $opts);
+    if ( @_ % 2 eq 0 ) {
+      ( undef, $opts ) = pairfirst { $a eq '-opts' } @_;
+      $job->opts($opts);
+    }
 
     my @roles = keys %$roles;
 

@@ -56,7 +56,7 @@
 
   // Voltar para a busca
   function goBack() {
-    window.location.href = '/busca';
+    window.location.href = '/escola/search';
   }
 </script>
 

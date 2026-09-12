@@ -7,8 +7,9 @@ use Carp qw(croak);
 use IPC::Run;
 
 has engine       => 'Rscript';
-has default_opts => sub { [qw/--vanilla/] };
+has default_opts => sub { [qw/--vanilla --encoding=UTF-8/] };
 has [qw(paths source_file script cmd_str cmd_args script_tmp full_cmd)];
+has debug => $ENV{DEBUG_R} // 0;
 
 sub run ($self, $args) {
   $self->_set_args($args)
@@ -68,9 +69,13 @@ sub _run ($self) {
   my ($out, $err);
   my $ok = IPC::Run::run($self->full_cmd->to_array, \undef, \$out, \$err);
 
+  if ($err) {
+      warn "R STDERR: $err" if $self->debug || $ENV{DEBUG_R};
+  }
+
   # Força o unlink do arquivo temporário imediatamente após o término da execução
   if ($self->script_tmp && -e $self->script_tmp) {
-    unlink $self->script_tmp;
+    unlink $self->script_tmp unless $self->debug;
   }
 
   croak "Rscript failed: $err" unless $ok;

@@ -18,6 +18,7 @@ sub register ($self, $app, @args) {
   $api->get('/:codigo_ibge/payroll/details' => $check)->to('city#payroll_details')->name('city_payroll_details');
   $api->get('/search/:name')->to('city#search_by_name')->name('city_search_by_name');
   $api->get('/detail/:name')->to('city#detail_by_name')->name('city_detail_by_name');
+  $api->get('/suggestions')->to('city#search_suggestions')->name('city_search_suggestions');
 
   # ------------------------------------------------------------
   # Grupo /api/analytics

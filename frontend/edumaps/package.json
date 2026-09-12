@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite --host\" \"cd ../../backend && morbo --watch lib script/edumaps.pl\"",
+    "dev": "concurrently \"vite --host\" \"cd ../../backend && morbo --watch lib script/edumaps.pl\" \"cd ../../analysis/edumapsr && find R inst -type f -name '*.R' | entr -r Rscript inst/plumber/run.R\"",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",

@@ -26,6 +26,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/search')->to('school#search')->name('school_search');
 
+  $api->get('/suggestions')->to('school#search_suggestion')->name('school_search_suggestion');
+
   $api->get('/search/pageable')->to('school#search_pageable')->name('school_search_pageable');
 
   $api->get('/geo/search')->to('school#search_nearby')->name('school_nearby');

@@ -178,6 +178,8 @@ sub to_html($self, $fh = undef) {
   return $fh ? print $fh "$table" : "$table";
 }
 
+sub get_current_cols($self) { return $self->__columns; }
+
 1;
 
 __END__

@@ -3,6 +3,8 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Carp qw(croak);
 use Mojo::JSON qw(encode_json);
 use Scalar::Util qw(weaken);
+use CHI;
+use EventBus;
 use constant {
   MSG_SENT_LIMIT => 10**3,
   COMPLETE_PERCENT => 99.9,
@@ -10,6 +12,7 @@ use constant {
 };
 
 has models_cache => sub { state $cache = {} };
+has mw_cache => sub { state $mw_cache = {} };
 
 sub register ($self, $app, @args) {
   $self->_add_helpers($app);
@@ -31,6 +34,42 @@ sub _add_helpers($self, $app) {
 
   $app->helper(
     monitor_job => \&_monitor_minion_job
+  );
+
+  $app->helper(
+    chi => sub {
+      state $chi = CHI->new(
+        driver => 'Memory',
+        global => 1,
+      );
+    }
+  );
+
+  $app->helper(
+    event_bus => sub {
+      state $bus = EventBus->new;
+    }
+  );
+
+  $app->helper(
+    add_mw => sub ($c, $mw) {
+      my $class = "EduMaps::EventBus::Middleware::$mw";
+      my $mw_inst = $self->mw_cache->{$class} ||= do {
+        unless ($class->can('new')) {
+          eval "require $class" or die "Não foi possível carregar o Middleware $class: $@";
+        }
+        my $weaked = $app;
+        weaken($weaked);
+        $class->new(app => $weaked);
+      };
+      $app->event_bus->use($mw_inst->to_middleware);
+    }
+  );
+
+  $app->helper(
+    pg => sub {
+      state $pg = Mojo::Pg->new($app->config->{db_url});
+    }
   );
 }
 

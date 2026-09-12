@@ -1,0 +1,501 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EduMaps Analytics API",
+    "description": "API para execução de análises estatísticas e espaciais.",
+    "version": "1.0.0"
+  },
+
+  "paths": {
+    "/chart": {
+      "post": {
+        "summary": "Gera um gráfico analítico",
+        "description": "Executa uma análise gráfica sobre um dataset tabular e retorna a representação Plotly.",
+        "operationId": "createChart",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartRequest"
+              },
+              "example": {
+                "chart_type": "scatter",
+                "data": [
+                  {
+                    "x_value": 10,
+                    "y_value": 20
+                  },
+                  {
+                    "x_value": 15,
+                    "y_value": 27
+                  },
+                  {
+                    "x_value": 21,
+                    "y_value": 31
+                  },
+                  {
+                    "x_value": 28,
+                    "y_value": 42
+                  }
+                ],
+                "variables": {
+                  "x_label": "População",
+                  "y_label": "Indicador"
+                }
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Gráfico gerado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao gerar o gráfico"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/similarity": {
+      "post": {
+        "summary": "Calcula a similaridade entre entidades",
+        "description": "Calcula a distância e a similaridade de Gower entre todos os pares de entidades do dataset.",
+        "operationId": "calculateSimilarity",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimilarityRequest"
+              },
+
+              "examples": {
+                "schools": {
+                  "summary": "Comparação de escolas",
+                  "description": "Exemplo utilizando características numéricas, booleanas e categóricas.",
+                  "value": {
+                    "data": [
+                      {
+                        "school_id": "ESC001",
+                        "students": 420,
+                        "teachers": 28,
+                        "urban": true,
+                        "network": "municipal"
+                      },
+                      {
+                        "school_id": "ESC002",
+                        "students": 450,
+                        "teachers": 30,
+                        "urban": true,
+                        "network": "municipal"
+                      },
+                      {
+                        "school_id": "ESC003",
+                        "students": 180,
+                        "teachers": 14,
+                        "urban": false,
+                        "network": "municipal"
+                      },
+                      {
+                        "school_id": "ESC004",
+                        "students": 700,
+                        "teachers": 45,
+                        "urban": true,
+                        "network": "estadual"
+                      }
+                    ],
+                    "variables": {
+                      "entity_id": "school_id",
+                      "features": ["students", "teachers", "urban", "network"]
+                    }
+                  }
+                },
+
+                "defaults": {
+                  "summary": "Exemplo utilizando os valores padrão do modelo.",
+                  "description": "Quando variables é omitido, a coluna school_id é utilizada como identificador e todas as demais colunas são utilizadas como features.",
+                  "value": {
+                    "data": [
+                      {
+                        "school_id": "ESC001",
+                        "students": 420,
+                        "teachers": 28
+                      },
+                      {
+                        "school_id": "ESC002",
+                        "students": 450,
+                        "teachers": 30
+                      },
+                      {
+                        "school_id": "ESC003",
+                        "students": 180,
+                        "teachers": 14
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Similaridade calculada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarityResponse"
+                },
+                "example": {
+                  "analysis": "gower_similarity",
+                  "parameters": {
+                    "entity_id": "school_id",
+                    "features": ["students", "teachers", "urban", "network"]
+                  },
+                  "data": [
+                    {
+                      "entity_id_a": "ESC001",
+                      "entity_id_b": "ESC002",
+                      "distance": 0.0833,
+                      "similarity": 0.9167
+                    },
+                    {
+                      "entity_id_a": "ESC001",
+                      "entity_id_b": "ESC003",
+                      "distance": 0.5625,
+                      "similarity": 0.4375
+                    },
+                    {
+                      "entity_id_a": "ESC002",
+                      "entity_id_b": "ESC004",
+                      "distance": 0.3812,
+                      "similarity": 0.6188
+                    }
+                  ],
+                  "metrics": {
+                    "n_entities": 4,
+                    "n_features": 4,
+                    "n_pairs": 6,
+                    "mean_similarity": 0.63
+                  },
+                  "metadata": {
+                    "entity_id": "school_id",
+                    "features": ["students", "teachers", "urban", "network"]
+                  },
+                  "tables": []
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Features não encontradas: students"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao calcular similaridade"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/health": {
+      "get": {
+        "summary": "Verifica a saúde do serviço",
+        "description": "Retorna o estado atual do serviço analítico.",
+        "operationId": "health",
+
+        "responses": {
+          "200": {
+            "description": "Serviço disponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "components": {
+    "schemas": {
+      "TabularRow": {
+        "type": "object",
+        "description": "Uma linha de um dataset tabular.",
+        "additionalProperties": true
+      },
+
+      "ChartRequest": {
+        "type": "object",
+        "required": ["chart_type", "data"],
+        "properties": {
+          "chart_type": {
+            "type": "string",
+            "description": "Tipo de gráfico a ser gerado.",
+            "enum": ["histogram", "scatter", "boxplot"]
+          },
+
+          "data": {
+            "type": "array",
+            "description": "Dataset tabular utilizado pela análise.",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/TabularRow"
+            }
+          },
+
+          "variables": {
+            "type": "object",
+            "description": "Parâmetros específicos da análise gráfica.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SimilarityRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Dataset contendo uma entidade por linha.",
+            "minItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/TabularRow"
+            }
+          },
+
+          "variables": {
+            "$ref": "#/components/schemas/SimilarityVariables"
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SimilarityVariables": {
+        "type": "object",
+        "description": "Parâmetros utilizados para construir o modelo de similaridade.",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "description": "Nome da coluna que identifica unicamente cada entidade.",
+            "default": "school_id"
+          },
+
+          "features": {
+            "type": "array",
+            "description": "Colunas utilizadas como características no cálculo da similaridade de Gower. Quando omitido, todas as colunas, exceto entity_id, são utilizadas.",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SimilarityPair": {
+        "type": "object",
+        "required": ["entity_id_a", "entity_id_b", "distance", "similarity"],
+        "properties": {
+          "entity_id_a": {
+            "type": "string",
+            "description": "Identificador da primeira entidade."
+          },
+
+          "entity_id_b": {
+            "type": "string",
+            "description": "Identificador da segunda entidade."
+          },
+
+          "distance": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Distância de Gower entre as entidades."
+          },
+
+          "similarity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Similaridade entre as entidades, calculada como 1 - distance."
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SimilarityMetrics": {
+        "type": "object",
+        "required": ["n_entities", "n_features", "n_pairs", "mean_similarity"],
+        "properties": {
+          "n_entities": {
+            "type": "integer",
+            "description": "Número de entidades analisadas."
+          },
+
+          "n_features": {
+            "type": "integer",
+            "description": "Número de features utilizadas."
+          },
+
+          "n_pairs": {
+            "type": "integer",
+            "description": "Número de pares de entidades produzidos."
+          },
+
+          "mean_similarity": {
+            "type": "number",
+            "format": "double",
+            "description": "Similaridade média entre os pares."
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SimilarityMetadata": {
+        "type": "object",
+        "description": "Metadados associados ao resultado da análise.",
+        "additionalProperties": true
+      },
+
+      "SimilarityResponse": {
+        "type": "object",
+        "required": [
+          "analysis",
+          "parameters",
+          "data",
+          "metrics",
+          "metadata",
+          "tables"
+        ],
+        "properties": {
+          "analysis": {
+            "type": "string",
+            "description": "Nome da análise executada.",
+            "example": "gower_similarity"
+          },
+
+          "parameters": {
+            "$ref": "#/components/schemas/SimilarityVariables"
+          },
+
+          "data": {
+            "type": "array",
+            "description": "Pares de entidades ordenados pela similaridade decrescente.",
+            "items": {
+              "$ref": "#/components/schemas/SimilarityPair"
+            }
+          },
+
+          "metrics": {
+            "$ref": "#/components/schemas/SimilarityMetrics"
+          },
+
+          "metadata": {
+            "$ref": "#/components/schemas/SimilarityMetadata"
+          },
+
+          "tables": {
+            "type": "array",
+            "description": "Tabelas auxiliares produzidas pela análise.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensagem de erro."
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

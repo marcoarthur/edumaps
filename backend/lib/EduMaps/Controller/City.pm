@@ -6,10 +6,23 @@ has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
 has min_search_len => 4;
 has default_limit => 10;
 
-sub details($self) {
-  my $model = $self->instantiate_model(model => 'City');
-  my $details = $model->details($self->param('codigo_ibge'));
+sub details ($self) {
+  my $cod_ibge = $self->param('codigo_ibge');
+  my $model    = $self->instantiate_model(model => 'City');
+  my $details  = $model->details($cod_ibge);
+
   return $self->reply->not_found unless keys %$details;
+
+  # Dispara o evento no EventBus da aplicação
+  if ($self->app->event_bus) {
+    $self->app->event_bus->emit(
+      'city.details.requested',
+      {
+        codigo_ibge => $cod_ibge,
+        year        => $self->param('year') // 2025,
+      }, source => __PACKAGE__
+    );
+  }
 
   $self->render(json => $details);
 }
@@ -51,7 +64,7 @@ sub payroll($self) {
 
   my $model = $self->instantiate_model(model => 'City');
   my $result = $model->payroll($v->param('codigo_ibge'), $date);
-  $self->render(text => $result, format => 'json');
+  $self->render(json => $result->to_array);
 }
 
 sub overall_payroll($self) {
@@ -173,6 +186,22 @@ sub similar_cities($self) {
   );
 
   $self->render( json => $result->to_array );
+}
+
+sub search_suggestions($self) {
+  my $v = $self->validation;
+
+  $v->required($_, 'trim')->like(qr/.{3,100}/) for qw/q/;
+  $v->optional('limit', 'trim')->num(1,50);
+
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'City');
+  my $params = {
+    nome_municipio => $self->param('q'), limit => $self->param('limit') // 50
+  };
+  my $result = $model->suggests($params);
+  return $self->render( json => $result );
 }
 
 1;
