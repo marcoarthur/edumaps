@@ -1,5 +1,6 @@
 <script>
   // src/features/schools/components/SchoolSearchForm.svelte
+  import { router } from "@/app/router.svelte.js";
   import { eventBus } from "@/shared/events";
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
   import { SCHOOL_EVENTS } from "../constants/events.js";
@@ -18,6 +19,11 @@
 
   let nomeEscola = $state("");
   let municipio = $state("");
+  // Guarda o código IBGE do município escolhido no autocomplete —
+  // usado só para abrir a página de comparação de redes com o município
+  // já pré-selecionado. Texto digitado à mão (sem selecionar sugestão)
+  // não preenche este estado.
+  let selectedCityCode = $state(null);
 
   // Espelha a validação do backend (qr/.{3,100}/) só como hint de UX —
   // o servidor continua sendo a fonte de verdade da validação real.
@@ -43,9 +49,19 @@
   function handleClear() {
     nomeEscola = "";
     municipio = "";
+    selectedCityCode = null;
 
     eventBus.emit(SCHOOL_EVENTS.CLEAR, undefined, { source: "SchoolSearchForm" });
     onClear?.();
+  }
+
+  function handleSelectMunicipio(city) {
+    selectedCityCode = city?.codigo_ibge ?? null;
+  }
+
+  function handleCompareNetworks() {
+    const query = selectedCityCode ? `?codigo_ibge=${selectedCityCode}` : "";
+    router.navigate(`/municipio/compare${query}`);
   }
 </script>
 
@@ -80,6 +96,7 @@
       getOptionLabel={(city) => city.nome}
       getOptionKey={(city) => city.codigo_ibge}
       noResultsText="Nenhum município encontrado"
+      onSelect={handleSelectMunicipio}
     >
       {#snippet option(city)}
         <span>{city.nome}</span>
@@ -103,6 +120,17 @@
       class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
     >
       Limpar
+    </button>
+    <button
+      type="button"
+      onclick={handleCompareNetworks}
+      disabled={loading}
+      class="px-4 py-2 border border-brand-600 text-brand-700 text-sm font-medium rounded-md hover:bg-brand-50 transition-colors"
+      title={selectedCityCode
+        ? "Abrir comparação das redes deste município"
+        : "Abrir comparação de redes (selecione um município para pré-preenchê-lo)"}
+    >
+      Comparar Redes do Município
     </button>
   </div>
 </form>

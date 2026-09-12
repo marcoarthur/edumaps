@@ -13,7 +13,7 @@
     }
   });
 
-  let match = $derived(matchRoute(router.path));
+  let match = $derived(matchRoute(router.path.split("?")[0]));
 
   function navLinkClass(path) {
     const state = router.path === path ? "bg-white/20" : "hover:bg-white/10";

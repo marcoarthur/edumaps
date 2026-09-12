@@ -3,6 +3,7 @@ import { mount } from "svelte";
 import { eventBus, logger } from "@/shared/events";
 import { registerToastEventBridge } from "@/shared/stores/toastEventBridge.js";
 import "./app.css";
+import "@carbon/charts-svelte/styles.css";
 import App from "./app/App.svelte";
 
 async function enableMocking() {

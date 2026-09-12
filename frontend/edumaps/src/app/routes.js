@@ -1,5 +1,6 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
+import { NetworkComparePage } from "@/features/network-compare";
 import {
   SchoolSearchPage,
   SchoolRankingPage,
@@ -10,6 +11,7 @@ import {
 
 export const routes = [
   { path: "/about", component: AboutPage },
+  { path: "/municipio/compare", component: NetworkComparePage },
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/escola/panel", component: SchoolPanelPage },
