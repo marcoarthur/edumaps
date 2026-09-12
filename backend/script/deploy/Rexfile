@@ -161,9 +161,9 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
   service 'edumaps-minion' => 'restart';
 };
 
-desc "Configure and Install R edumaps package";
+desc "Configure and Install R edumaps package (edumapsr) + Plumber service";
 task deploy_analytics_dev => 'analytic.edumaps' => sub {
-  my $path =get('edumaps_dir') . '/analytics';
+  my $path = get('edumaps_dir') . '/analysis/edumapsr';
 
   # install R and all packages we need to run edumaps
   pkg $_, ensure => 'present' for (
@@ -192,10 +192,17 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
   )
   ;
 
-  # install packages globally
+  # install R dependencies required by the package
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
-  run q{Rscript -e "source('R/utils.R'); install_dependencies()"}, cwd => $path, env => $env;
-  run q{Rscript -e "source('./data-raw/indices.R'); source('./data-raw/efetividade.R')"}, cwd => "$path", env => $env;
+  run q{Rscript -e "install.packages(
+    c('plumber', 'devtools', 'ggplot2', 'plotly', 'jsonlite',
+      'DBI', 'RPostgres', 'cluster'),
+    repos='https://cloud.r-project.org',
+    Ncpus=4
+  )"}, env => $env;
+
+  # install the edumapsr package into the site library
+  run q{R CMD INSTALL .}, cwd => $path, env => $env;
 
   # create the service file
   file "/etc/systemd/system/edumaps-analytic.service",
@@ -223,7 +230,7 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
   run qq{apt-get -y update};
   pkg $_, ensure => 'present' for qw(nodejs nginx);
 
-  my $frontend_path = get('edumaps_dir') . "/frontend/map_app";
+  my $frontend_path = get('edumaps_dir') . "/frontend/edumaps";
   Rex::Logger::info("Installing frontend dependencies");
   run q{npm install}, cwd => $frontend_path;
   Rex::Logger::info("Building frontend");
@@ -252,14 +259,6 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
     }
   ;
   service 'nginx' => 'restart';
-};
-
-desc "Disabling and removing frontend vite service";
-task disable_frontend_vite => 'backend.edumaps' => sub {
-  service 'edumaps-frontend' => 'stop';
-  run q{systemctl disable edumaps-frontend.service};
-  file "/etc/systemd/system/edumaps-frontend.service", ensure => 'absent';
-  run q{systemctl daemon-reload};
 };
 
 desc "Configure and Install PostgreSQL/PostGIS/Sqitch";
@@ -418,22 +417,6 @@ task deploy_db_dev => 'database.edumaps' => sub {
   service 'postgresql' => 'restart';
 };
 
-desc "Creating analytics prediction models";
-task deploy_analytic_models => 'analytic.edumaps' => sub ($params, @rest){
-  my $model = $params->{driver} || get('default_model_conf');
-  my $path =get('edumaps_dir') . '/analytics';
-  die "Need a --driver=some/driver.yml file" unless $model;
-
-  Rex::Logger::info("Creating a model may take 5 minutes... ");
-  run qq{
-    export LC_ALL='C.UTF-8'; export LANG='C.UTF-8'; Rscript R/run_pipeline.R $model 
-  }, cwd => $path
-  ;
-
-  # restart service
-  service 'edumaps-analytic' => 'restart';
-};
-
 batch deploy => qw/prepare deploy_backend_dev deploy_db_dev deploy_frontend_dev deploy_minion_dev/;
 
 __END__
@@ -457,7 +440,7 @@ Perl backend application (Mojolicious + Minion)
 
 =item *
 
-Svelte/Vite frontend application
+Svelte/Vite frontend application (static build served by nginx)
 
 =item *
 
@@ -465,7 +448,11 @@ PostgreSQL + PostGIS + Sqitch database infrastructure
 
 =item *
 
-Systemd service definitions for backend and frontend processes
+R analytics API (edumapsr Plumber service)
+
+=item *
+
+Systemd service definitions for backend, minion and analytics processes
 
 =back
 
@@ -476,7 +463,8 @@ This means uncommitted local changes are deployed as-is.
 
 =head1 ARCHITECTURE
 
-The deployment currently assumes two hosts:
+The deployment currently assumes three hosts (LXC containers on the same
+subnet):
 
 =over 4
 
@@ -490,7 +478,9 @@ Responsible for:
 
 =item * Perl backend
 
-=item * frontend build/runtime
+=item * frontend static build/runtime (nginx)
+
+=item * Minion worker
 
 =item * systemd services
 
@@ -511,6 +501,22 @@ Responsible for:
 =item * Sqitch migrations
 
 =item * spatial datasets
+
+=back
+
+=item *
+
+C<analytic.edumaps>
+
+Responsible for:
+
+=over 2
+
+=item * R runtime (r-base)
+
+=item * edumapsr package (analysis/edumapsr)
+
+=item * Plumber API service on port 8000
 
 =back
 
@@ -579,7 +585,15 @@ services.
 
 =head2 deploy_frontend_dev
 
-Builds and deploys the Svelte/Vite frontend application.
+Builds and deploys the Svelte/Vite frontend application (C<frontend/edumaps>)
+with nginx static hosting.
+
+=back
+
+=head2 deploy_analytics_dev
+
+Installs the R runtime, the C<analysis/edumapsr> package and its dependencies,
+and configures the Plumber API service (C<EDUMAPS_R_PORT=8000>).
 
 =head2 deploy_db_dev
 

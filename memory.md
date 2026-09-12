@@ -103,6 +103,15 @@
 - **Workflow do projeto** (registrado no AGENTS.md):
   plano → execução → aprovação → validação visual → PR + merge via `gh`
   (`gh pr create --base main` ... `gh pr merge <n> --merge --delete-branch`).
+- **Autorização concedida de executar qualquer comando** neste ambiente de
+  teste, inclusive via SSH da máquina local para os containers LXC
+  (`backend.edumaps`, `database.edumaps`, `analytic.edumaps` — hosts de rede
+  `Backend`, `Database`, `Analytic`).
+- **Deploy**: Rex em `backend/script/deploy/Rexfile`, "as-is" (rsync do working
+  tree). 3 containers: Backend (Perl + Minion + nginx/frontend estático),
+  Database (PostgreSQL/PostGIS/Sqitch em `Database`), Analytic (R `edumapsr`,
+  Plumber na porta 8000 via `EDUMAPS_R_PORT`). Frontend atual: `frontend/edumaps`
+  (Svelte 5/Vite), não mais `frontend/map_app`.
 
 ## Comportamento / convenções do repo (descobertas)
 - Idioma: PT-BR (comentários, docs e mensagens).

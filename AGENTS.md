@@ -102,3 +102,12 @@ plano → execução → aprovação
    Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
 5. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
+
+## Ambiente de teste (execução)
+
+- **Autorização concedida**: executar **qualquer comando** neste ambiente de
+  teste, incluindo comandos via **SSH da máquina local** para os containers
+  LXC (`backend.edumaps`, `database.edumaps`, `analytic.edumaps` — rede LXC com
+  hosts `Backend`, `Database`, `Analytic`).
+- O deploy é "as-is" (rsync do working tree local), voltado a desenvolvimento
+  local — não produção. Sem deploy automático para produção.

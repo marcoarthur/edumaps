@@ -1,11 +1,12 @@
 [Unit]
-Description=Edumaps API analytics
+Description=Edumaps API analytics (R Plumber)
 After=network.target
 
 [Service]
 User=root
 WorkingDirectory=<%= $path %>
-ExecStart=/usr/bin/Rscript -e "plumber::plumb('R/plumber.R')$run(host='0.0.0.0', port=8000)"
+Environment=EDUMAPS_R_PORT=8000
+ExecStart=/usr/bin/Rscript inst/plumber/run.R
 Restart=always
 
 [Install]
