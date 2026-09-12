@@ -1,9 +1,111 @@
-# Memory — Sessão SchoolNetwork (backend)
+# Memory — EduMaps
 
 > Arquivo de restauração de sessão. Registrar aqui tudo que foi descoberto
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
+> As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Escopo desta sessão
+## Sessão atual — Deploy/validação dos containers após remoção do submodule (em andamento)
+
+### Objetivo desta sessão
+- Validar o deploy adaptado (Rex `backend/script/deploy/Rexfile`) após a remoção
+  do submodule `analytics`, deixando backend/frontend/analytics funcionando
+  de ponta a ponta nos containers LXC.
+
+### Estado atual (em progresso)
+- **Diagnóstico do backend FECHADO** — o deploy sobe **outra app** que não a que
+  tem `/api/network`:
+  - O serviço `edumaps-web` roda `edu_maps.pl` (app **Mojolicious::Lite** com
+    rotas inline /api/city, /api/analytics, /api/school, map_svelte, tasks OSM/
+    Siope) — **SEM `/api/network` e SEM `/api/city/suggestions`**.
+  - As rotas novas vivem na **classe `EduMaps`** (`backend/script/edumaps.pl` →
+    `Mojolicious::Commands->start_app('EduMaps')`), registradas via plugins
+    (SchoolNetwork, City c/ `/suggestions`, School, Task, Rank). É o que
+    `t/04-api/network/*` testa (`Test::Mojo->new('EduMaps')`) e o que o frontend
+    novo chama (grep do SPA: `/api/network`, `/api/city/suggestions`,
+    `/api/school/search|suggestions`, `/api/analytics/cities/search`).
+- **`backend/cpanfile` está incompleto** p/ a classe app:
+  - falta `CHI` (usado em `lib/EduMaps/Plugin/Helpers.pm:6`) → classe app NÃO
+    boots no container (`Can't locate CHI.pm`).
+  - falta `DateTime::Format::Strptime` (em
+    `lib/EduMaps/Roles/Business/School/Finance.pm:5`) → `Model::City` não
+    compila → `/api/analytics/cities/search` retorna 500
+    (`Can't locate object method "search_for_complete"`).
+  - Ambas estão instaladas local (perl do sistema); verificado também SHA do
+    container == repo p/ os plugins API.
+- Evidências: `carton exec perl edu_maps.pl routes` no container mostra a lista
+  completa de rotas do Lite (sem network); grep `api/network/:codigo_ibge` na
+  pág 404 = 0; boot do Lite loga `Error loading EduMaps::Model::City: Can't
+  locate DateTime/Format/Strptime.pm` e `✓ Loaded: Model::SchoolNetwork`.
+- 404 do `/api/network/3551702/*` no backend do container = rota inexistente
+  (não é 500 nem controller). O antigo processo (841) também não tinha network.
+
+### Decisão pendente (aguardando usuário)
+- **Trocar alvo do deploy p/ a classe app** (`script/edumaps.pl`) + adicionar
+  deps ao cpanfile + redeploy (plano proposto na sessão), **OU** registrar as
+  rotas novas no Lite `edu_maps.pl`. Recomendado e alinhado aos testes: **classe
+  app**. Observação: rotas legadas do Lite (/api/query-osm, /api/jobs/siope,
+  map_svelte) não são usadas pelo frontend novo; SPA estático é servido pelo
+  nginx (frontend deploy), não pelo backend.
+
+### Plano proposto (aguardando OK do usuário)
+1. `backend/cpanfile`: adicionar `CHI` e `DateTime::Format::Strptime`.
+2. `backend/script/deploy/Rexfile`: apontar morbo **e** worker Minion para
+   `script/edumaps.pl` (no lugar de `edu_maps.pl`).
+3. `rex -H backend.edumaps deploy_backend_dev` (roda carton install ≈ contêiner
+   reinstala deps, reescreve unit, reinicia) + restart do worker Minion.
+4. Validar no container: `/api/network/3551702/{summary,markers,schools,
+   performance}` (200), `/api/analytics/cities/search`, `/api/analytics/city/
+   3551702/details`, `/api/city/suggestions`; SPA via nginx `Host: ubatexu.lan`.
+
+### Deploy já rodado (esta sessão)
+- `rex prepare` OK (3 hosts) — rsync do working tree (preserva mtime → **morbo
+  não recarrega sozinho**; precisa `deploy_backend_dev`/restart explícito).
+- `rex -H analytic.edumaps deploy_analytics_dev` OK (~15 min): pacote R
+  `edumapsr`/`edumapsAnalytics` 0.1.0 instalado; Plumber 1.3.3;
+  **`devtools` NÃO instala** no analytic (falha systemfonts/ragg — não é mais
+  necessário em runtime). `edumaps-analytic` ACTIVE, porta 8000
+  (`EDUMAPS_R_PORT=8000`), `openapi.json` HTTP 200 (/chart, /similarity).
+- `rex -H backend.edumaps deploy_frontend_dev` OK após fix (abaixo). nginx
+  serve o SPA via `Host: ubatexu.lan` (`/municipio/compare` 200).
+- Backend `deploy_backend_dev` rodou mas ficou com 404/500 (causa acima:
+  app errada + deps faltando).
+
+### Correções locais FEITAS nesta sessão (NÃO commitadas ainda)
+- `analysis/edumapsr/inst/plumber/run.R` — reescrito: usa o pacote instalado
+  (`system.file("plumber/endpoint.R")`) com fallback `devtools::load_all`
+  (antigo morria no container por falta de devtools). scp manual p/ container.
+- `frontend/edumaps/src/shared/stores/toastStore.js` — removido import de
+  `uuid` (não instalado); usa `crypto.randomUUID?.() || Math.random().toString(36)`.
+  Build local `npm run build` OK; já replicado no container.
+- WIP pré-existente segue intacto: `backend/lib/EduMaps/EventBus/Middleware/
+  SiopeTask.pm` (1 linha); untrackeds `analysis/edumapsr/man/*.Rd`.
+
+### Commits desta sessão (na ordem)
+- `0b3bcf1` chore(deploy): adaptar Rexfile (frontend/edumaps, edumapsr,
+  deploy_analytic_models & disable_frontend_vite removidos, POD 3 hosts).
+- `0a8bb77` docs: atualizar memory + regra 5 do workflow (atualizar memory.md
+  em todo PR/merge e commitar junto).
+
+### Fatos do ambiente (descobertos/confirmados)
+- Containers: `backend.edumaps`, `database.edumaps`, `analytic.edumaps`
+  (hosts de rede `Backend`, `Database`, `analytic`). SSH OK da máquina local.
+- Backend: node 22.22.3, nginx 1.22.1; morbo :3000 (`MOJO_MODE=development`,
+  `MOJO_LISTEN=http://0.0.0.0:3000`, `MOJO_REVERSE_PROXY=1`); worker Minion
+  `perl edu_maps.pl minion worker`; perl do container 5.36, carton exec via
+  `/bin/carton`, deps em `/opt/edumaps/backend/local/lib/perl5`.
+- Analytic: R 4.2.2, serviço em `files/edumaps-analytic.service`
+  (WorkingDirectory=/opt/edumaps/analysis/edumapsr, `Rscript inst/plumber/run.R`,
+  `EDUMAPS_R_PORT=8000`).
+- `/opt/edumaps/analytics` (stale do antigo submodule) removido dos 3 containers.
+- Observado **processo R `renv-watchdog`** (10:09) no backend container —
+  provável lixo; pode ignorar por ora.
+- Rex: binary `/home/itaipu/perl5/perlbrew/perls/perl-5.42.0/bin/rex`, rodar de
+  `backend/script/deploy`. Rex `deploy_backend_dev` usa `carton install` + gera
+  unit morbo via template (paths agora p/ `script/edumaps.pl`).
+
+## Sessões anteriores — SchoolNetwork (backend)
+
+### Escopo desta sessão
 - Implementação full stack do **SchoolNetwork** (rede de escolas por município):
   backend + migration + página de comparação de redes `/municipio/compare`.
 
@@ -136,6 +238,12 @@
   Rotas em `src/app/routes.js`; `App.svelte` faz `matchRoute(router.path.split("?")[0])`.
 
 ## Pendências / fora do escopo desta sessão
+- **Deploy do backend no container bloqueado** (atual): app errada no unit
+  (`edu_maps.pl` lite no lugar de `script/edumaps.pl`) + `cpanfile` sem `CHI` e
+  `DateTime::Format::Strptime`. Plano proposto acima aguardando decisão do usuário.
+- Mudanças NÃO commitadas da sessão atual:
+  - `analysis/edumapsr/inst/plumber/run.R` (fix devtools no container)
+  - `frontend/edumaps/src/shared/stores/toastStore.js` (fix uuid → crypto.randomUUID)
 - **Hook post-commit quebrado**: `.git/hooks/post-commit` linha 32
   `GIT_DIR: unbound variable` (assinatura de shell com `set -u` sem exportar
   GIT_DIR). O commit funciona; o hook erra depois. Não consertado (não pedido).
