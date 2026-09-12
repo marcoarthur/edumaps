@@ -35,7 +35,8 @@ Resumo da rede de escolas de um município, segmentado por tipo de administraç�
 
 =item * (ArrayRef[HashRef]) - Uma entrada por rede com:
   - rede/codigo_rede: Identificação da rede
-  - total_escolas, matrículas por etapa, docentes (total/formação)
+  - total_escolas, total/média de etapas oferecidas, matrículas por etapa,
+    docentes (total/formação)
   - desempenho (IDEB/SAEB) e indicadores derivados
 
 =back
@@ -56,7 +57,7 @@ sub summary($self, $params = {}) {
   my $columns = [
     qw/
       co_municipio no_municipio sg_uf no_regiao codigo_rede rede
-      total_escolas
+      total_escolas total_etapas media_etapas
       total_matriculas matriculas_infantil matriculas_fundamental
       matriculas_fundamental_ai matriculas_fundamental_af matriculas_medio
       matriculas_profissional matriculas_eja matriculas_especial matriculas_integral

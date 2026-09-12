@@ -16,7 +16,7 @@ sub default_columns($self) {
   state $DEFAULT_COLS = [
     qw(
       co_municipio no_municipio sg_uf no_regiao rede codigo_rede
-      total_escolas total_matriculas total_docentes
+      total_escolas total_etapas media_etapas total_matriculas total_docentes
       ideb_fund_i ideb_fund_ii ideb_medio ano_ideb
     ),
   ];

@@ -38,6 +38,8 @@ subtest '[API Network] summary - contrato' => sub {
     ok(exists $rede->{rede}, 'Campo rede presente');
     ok(exists $rede->{codigo_rede}, 'Campo codigo_rede presente');
     ok(exists $rede->{total_escolas}, 'Campo total_escolas presente');
+    ok(exists $rede->{total_etapas}, 'Campo total_etapas presente');
+    ok(exists $rede->{media_etapas}, 'Campo media_etapas presente');
     ok(exists $rede->{total_matriculas}, 'Campo total_matriculas presente');
     ok(exists $rede->{total_docentes}, 'Campo total_docentes presente');
     ok(exists $rede->{ideb_fund_ii}, 'Campo ideb_fund_ii presente');
