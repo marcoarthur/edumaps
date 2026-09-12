@@ -100,3 +100,5 @@ plano → execução → aprovação
 
    Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
    Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
+5. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
+   (estado, commits, decisões, pendências) e commitar junto.
