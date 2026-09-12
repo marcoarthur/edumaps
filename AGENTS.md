@@ -78,3 +78,26 @@ Arquivos de skill em `.opencode/skills/`:
 - `use utf8;` em todos os módulos
 - `Mojo::Base -role, -signatures` para roles; `Mojo::Base 'DBIx::Class::Core'` para Results
 - PT-BR em comentários e docs; identifiers em inglês
+
+## Workflow
+
+```
+plano → execução → aprovação
+```
+
+1. **Plano**: propor o plano e alinhar decisões antes de tocar em código.
+2. **Execução**: implementar e validar (testes/lint/build) conforme as
+   convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
+3. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
+   ou a aceite explícito da implementação.
+4. **PR + merge (via `gh`)**: após a aprovação, criar o pull request para
+   `main` com a ferramenta de linha de comando do GitHub:
+
+   ```bash
+   git push -u origin <branch>
+   gh pr create --base main --head <branch> --title "<título em PT-BR>" --body "<entregas, testes, validação>"
+   gh pr merge <n> --merge --delete-branch   # merge commit (padrão do repositório)
+   ```
+
+   Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
+   Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
