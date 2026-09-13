@@ -247,7 +247,7 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
   run q{Rscript -e "install.packages(
     c('plumber', 'devtools', 'ggplot2', 'plotly', 'jsonlite',
-      'DBI', 'RPostgres', 'cluster'),
+      'DBI', 'RPostgres', 'cluster', 'dbscan', 'mclust', 'kernlab'),
     repos='https://cloud.r-project.org',
     Ncpus=4
   )"}, env => $env;
