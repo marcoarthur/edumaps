@@ -62,7 +62,7 @@ analyze_city_summary <- function(model, parameters = list()) {
     total_docentes = sum(data$qt_doc_bas, na.rm = TRUE),
     media_alunos_por_escola = round(mean(data$qt_mat_bas, na.rm = TRUE), 2),
     mediana_aluno_docente = stats::median(data$ratio_aluno_docente, na.rm = TRUE),
-    distribuicao_dependencia = table(data$dependencia)
+    distribuicao_dependencia = as.list(table(data$dependencia))
   )
 
   level_columns <- c(

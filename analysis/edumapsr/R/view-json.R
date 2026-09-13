@@ -12,6 +12,12 @@ as_json_scalar <- function(value) {
     value <- as.character(value)
   }
 
+  if (inherits(value, "table")) {
+    # Tabelas de contingência (ex.: distribuicao de dependencia) viram objetos
+    # JSON nomeados: {"Municipal": 42, "Estadual": 17} em vez de arrays.
+    return(lapply(as.list(value), as_json_scalar))
+  }
+
   if (length(value) != 1) {
     return(value)
   }
