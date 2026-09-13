@@ -97,7 +97,7 @@ function(req, res) {
 
   tryCatch(
     {
-      con <- analytics_db_connection()
+      con <- edumapsAnalytics:::analytics_db_connection()
       on.exit(DBI::dbDisconnect(con), add = TRUE)
 
       source <- postgres_entity_source(con)
@@ -154,7 +154,7 @@ function(req, res) {
 
   tryCatch(
     {
-      con <- analytics_db_connection()
+      con <- edumapsAnalytics:::analytics_db_connection()
       on.exit(DBI::dbDisconnect(con), add = TRUE)
 
       source <- postgres_source(con)
@@ -207,7 +207,7 @@ function(req, res) {
 
   tryCatch(
     {
-      con <- analytics_db_connection()
+      con <- edumapsAnalytics:::analytics_db_connection()
       on.exit(DBI::dbDisconnect(con), add = TRUE)
 
       source <- postgres_source(con)

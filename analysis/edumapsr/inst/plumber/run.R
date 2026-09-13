@@ -10,8 +10,22 @@
 # Ele prefere rodar a partir do pacote instalado (R CMD INSTALL). Em
 # desenvolvimento, quando o pacote ainda não está instalado, usa
 # devtools::load_all como fallback.
+#
+# Força locale UTF-8: em container com LANG=C, o R tenta transliterar strings
+# p/ o encoding nativo e emite warnings "cannot be translated to UTF-8".
+
+tryCatch(
+  Sys.setlocale("LC_ALL", "C.UTF-8"),
+  warning = function(w) {
+    cat(sprintf("[run.R] aviso de locale: %s\n", conditionMessage(w)))
+  }
+)
 
 if (requireNamespace("edumapsAnalytics", quietly = TRUE)) {
+  # Anexa o pacote: os handlers do endpoint.R são avaliados no ambiente de
+  # run.R (parent do Plumber), então as funções exportadas precisam estar na
+  # search path — requireNamespace sozinho não anexa.
+  library(edumapsAnalytics)
   endpoint <- system.file("plumber/endpoint.R", package = "edumapsAnalytics")
   api_spec <- system.file("plumber/api.json", package = "edumapsAnalytics")
 } else {
