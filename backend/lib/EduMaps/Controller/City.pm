@@ -1,6 +1,7 @@
 package EduMaps::Controller::City;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use DateTime;
+use utf8;
 
 has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
 has min_search_len => 4;
@@ -143,6 +144,12 @@ sub analytic_details($self) {
 }
 
 sub search_for_complete($self) {
+  my $v = $self->validation;
+  $v->required('q', 'trim')->like(qr/^[\w\sÀ-ÿ',.\-]+$/u);
+  $v->optional('limit')->num(1, 100);
+
+  return $self->bad_req if $self->any_error;
+
   my $model = $self->instantiate_model(model => 'City');
 
   $self->render(

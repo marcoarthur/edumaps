@@ -107,4 +107,8 @@ subtest 'search_for_complete: termo com caracteres especiais (URL-encoded)' => s
   }
 };
 
+subtest 'search_for_complete: sem parâmetro q retorna 400' => sub {
+  $t->get_ok('/api/analytics/cities/search')->status_is(400);
+};
+
 done_testing;
