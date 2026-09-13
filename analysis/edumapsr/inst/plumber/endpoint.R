@@ -5,6 +5,10 @@
 # A especificação OpenAPI da API está em api.json e é carregada pelo
 # entrypoint do Plumber. Este arquivo contém apenas os endpoints.
 
+# Operador null-default (rlang). Definido localmente para o runtime não
+# depender de rlang no container analytic.
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
 #* @post /chart
 function(req, res) {
   payload <- req$body
