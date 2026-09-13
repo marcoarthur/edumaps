@@ -8,6 +8,7 @@ use constant {
   DEFAULT_URL            => 'http://analytic:8000',
   DEFAULT_TIMEOUT        => 300,
   DEFAULT_SOURCE_VERSION => 'edumapsr-0.1.0',
+  DEFAULT_ENGINE         => 'pipe',
 };
 
 has [qw(url timeout source_version cache_enabled)];
@@ -22,6 +23,12 @@ sub register ($self, $app, @args) {
   $self->timeout(     $conf->{analytics_timeout}      // DEFAULT_TIMEOUT);
   $self->source_version($conf->{analytics_source_version} // DEFAULT_SOURCE_VERSION);
   $self->cache_enabled($conf->{analytics_cache_enabled} // 1);
+
+  # Motor usado pelas tasks R: 'http' (Plumber/edumapsr via Client) ou
+  # 'pipe' (legado via EduMaps::Analysis::R::Pipe — padrão, não exige o
+  # serviço analítico de pé). Feature flag: manter os dois motores.
+  my $engine = $conf->{analytics_engine} // DEFAULT_ENGINE;
+  $self->{engine} = $engine eq 'http' ? 'http' : 'pipe';
 
   $self->ua(Mojo::UserAgent->new(inactivity_timeout => $self->timeout));
 
@@ -38,6 +45,12 @@ sub register ($self, $app, @args) {
   $app->helper(
     analytics => sub {
       return $client;
+    }
+  );
+
+  $app->helper(
+    analytics_engine => sub {
+      return $self->{engine};
     }
   );
 }
@@ -97,6 +110,10 @@ Configuração (C<edu_maps.conf>):
 =item * C<analytics_source_version> - versão do pacote/scripts R; invalida o cache (default: edumapsr-0.1.0)
 
 =item * C<analytics_cache_enabled> - liga/desliga o cache compartilhado (default: 1)
+
+=item * C<analytics_engine> - motor das tasks de análise: C<http> (Plumber/
+edumapsr, via L<EduMaps::Analytics::Client>) ou C<pipe> (legado R::Pipe,
+default). Ajudante C<analytics_engine> expõe o valor à aplicação.
 
 =back
 

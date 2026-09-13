@@ -86,6 +86,9 @@ sub _apply_clustering($job, $args) {
   $v->optional('schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
   $v->optional('db_service', 'trim')->like(qr/^\w+$/);
   $v->optional('algorithm', 'trim')->in(sort keys %{ +ALGORITHM_R_FUNCTION() });
+  # features: lista de colunas usadas na clusterização (opcional; por
+  # padrão o motor R auto-detecta as colunas numéricas)
+  $v->optional('features');
 
   return $job->fail("Invalid algorithm '$algorithm'")
     unless exists ALGORITHM_R_FUNCTION->{$algorithm};
@@ -112,24 +115,54 @@ sub _apply_clustering($job, $args) {
   my $extra_args  = $ALGORITHM_R_ARGS{$algorithm}->($args);
 
   my $r_out;
-  try {
-    $r_out = $rpipe->run(
-      {
-        paths => $args->{paths} || $job->app->renderer->paths,
-        source_file => $args->{source_file} . '.R',
-        script => <<~"EOS",
-          ${r_function}(
-            con        = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
-            schema     = "$args->{schema}",
-            table_name = "$args->{table_name}",
-            id_column  = "$args->{id_column}",
-            $extra_args
-          )
-        EOS
-      }
-    );
-  } catch($err) {
-    return $job->fail("Error running R ($algorithm): $err");
+  my $engine = $job->app->analytics_engine;
+
+  # ---------------------------------------------------------------
+  # Motor HTTP: Plumber/edumapsr (POST /cluster). O serviço persiste
+  # cluster_id na staging e metadados em analytics.clustering_metadata.
+  # ---------------------------------------------------------------
+  if ($engine eq 'http') {
+    try {
+      $r_out = $job->app->analytics->run_cluster({
+        schema     => $args->{schema},
+        table_name => $args->{table_name},
+        id_column  => $args->{id_column},
+        features   => $args->{features},
+        parameters => {
+          algorithm => $algorithm,
+          (defined $args->{clusters} ? (clusters => $args->{clusters}) : ()),
+          (defined $args->{eps}      ? (eps      => $args->{eps})      : ()),
+          (defined $args->{min_pts}  ? (min_pts  => $args->{min_pts})  : ()),
+        },
+      });
+    } catch($err) {
+      return $job->fail("Error running analytics ($algorithm): $err");
+    }
+  }
+
+  # ---------------------------------------------------------------
+  # Motor legado: R::Pipe (scripts R locais via Rscript/IPC::Run)
+  # ---------------------------------------------------------------
+  else {
+    try {
+      $r_out = $rpipe->run(
+        {
+          paths => $args->{paths} || $job->app->renderer->paths,
+          source_file => $args->{source_file} . '.R',
+          script => <<~"EOS",
+            ${r_function}(
+              con        = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
+              schema     = "$args->{schema}",
+              table_name = "$args->{table_name}",
+              id_column  = "$args->{id_column}",
+              $extra_args
+            )
+          EOS
+        }
+      );
+    } catch($err) {
+      return $job->fail("Error running R ($algorithm): $err");
+    }
   }
 
   my $end = localtime;
