@@ -4,7 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Deploy/validação dos containers após remoção do submodule (em andamento)
+## Sessão atual — Deploy/validação dos containers após remoção do submodule (concluída)
+
+### Fechamento (2026-09-12)
+- **Backend do container agora roda a classe `EduMaps`** (`script/edumaps.pl`)
+  com todos os deps do `cpanfile` instalados (CHI, Strptime, RxPerl, Data::Fake,
+  PDL, PDL::Stats::Kmeans etc. via cpanm/metacpan; PDL::Stats build OK no
+  container). Units `edumaps-web`/`edumaps-minion` ativos; boot loga
+  "EduMaps inicializado com sucesso [v0.001]".
+- **DB do container atualizado**: faltava `analytics.mv_rede_escolas` (roda o
+  `sqitch deploy` no banco do container — `rex -H database.edumaps
+  deploy_db_dev`); MV populada (15.352 linhas). `/api/network/3551702/summary`
+  passou de 500 (relation não existe) → 200 JSON com dados.
+- **`/api/analytics/cities/search`**: endpoint espera param `q` (mapa
+  `term => [qw/q query/]` do Model City via ctx params). O controller não
+  validava ausência de `q` → 500 (`No value to wrap` na croak de
+  `_wrap_percent`). Corrigido com validação `required('q','trim')` + regex de
+  acentos e subteste novo (sem `q` → 400). `use utf8;` adicionado ao controller.
+- **Validação ponta a ponta (container, direto :3000 e via nginx `Host:
+  ubatexu.lan`)**: `/api/network/{summary,schools,performance,markers}` 200;
+  `/api/network/123/summary` 404 (validação ibge OK); `cities/search?q=` 200
+  (incl. acentos), sem `q` 400, `?term=` 400; `/api/city/suggestions?q=` 200;
+  `/api/analytics/city/3551702/details` 404 (dado ausente — esperado); SPA
+  nginx 200; `/analytic-api/health` e `openapi.json` 200; analytic (Plumber)
+  responde `{"status":["ok"]}`.
+- **PDL::Stats::Kmeans instalado em background no container** (logo
+  `/tmp/pdl_install.log`, PID 4113) — concluído OK (PDL-2.106 + PDL::Stats).
+- **Testes locais**: `t/04-api/{network,search-analytic,search-municipio,
+  municipio}` ok. Falhas PRÉ-EXISTENTES (verificadas com stash, fora do escopo):
+  `municipio.t` #8 OSM features (falta dado OSM) e `school/clustering.t`
+  (mensagem do controller "Dados não encontrados..." ≠ "Não encontrado").
+- **Commits nesta sessão** (branch `fix/deploy-backend-class-app` → PR):
+  `fix(backend): completa deps no cpanfile`,
+  `fix(backend): deploy usa script/edumaps.pl p/ app classe`,
+  `fix(backend): valida param q em cities/search`,
+  `fix(analysis): run.R aceita pacote instalado`,
+  `fix(frontend): remove import uuid no toastStore`.
+- **Atenção workflow**: `deploy_backend_dev` **não** roda rsync (é o `prepare`);
+  em mudanças de código rodar `rex prepare` antes para o container pegar o
+  working tree.
 
 ### Objetivo desta sessão
 - Validar o deploy adaptado (Rex `backend/script/deploy/Rexfile`) após a remoção
@@ -238,12 +276,9 @@
   Rotas em `src/app/routes.js`; `App.svelte` faz `matchRoute(router.path.split("?")[0])`.
 
 ## Pendências / fora do escopo desta sessão
-- **Deploy do backend no container bloqueado** (atual): app errada no unit
-  (`edu_maps.pl` lite no lugar de `script/edumaps.pl`) + `cpanfile` sem `CHI` e
-  `DateTime::Format::Strptime`. Plano proposto acima aguardando decisão do usuário.
+- Falhas de teste PRÉ-EXISTENTES (não são regressões): `municipio.t` #8 (OSM
+  features sem dado) e `school/clustering.t` (mensagem "Não encontrado").
 - Mudanças NÃO commitadas da sessão atual:
-  - `analysis/edumapsr/inst/plumber/run.R` (fix devtools no container)
-  - `frontend/edumaps/src/shared/stores/toastStore.js` (fix uuid → crypto.randomUUID)
 - **Hook post-commit quebrado**: `.git/hooks/post-commit` linha 32
   `GIT_DIR: unbound variable` (assinatura de shell com `set -u` sem exportar
   GIT_DIR). O commit funciona; o hook erra depois. Não consertado (não pedido).
