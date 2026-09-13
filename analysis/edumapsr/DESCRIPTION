@@ -16,10 +16,13 @@ Imports:
     jsonlite,
     DBI,
     stats,
-    cluster
+    cluster,
+    dbscan,
+    mclust,
+    kernlab,
+    RPostgres
 Suggests:
     testthat (>= 3.0.0),
-    RPostgres,
     plumber,
     devtools,
 Config/testthat/edition: 3
@@ -45,4 +48,13 @@ Collate:
     'model-datasource-memory-similarity-source.R'
     'analysis-similarity.R'
     'repository-postgres-similarity.R'
+    'model-semantic-school-cluster-model.R'
+    'model-datasource-postgres-entity-source.R'
+    'analysis-cluster.R'
+    'repository-postgres-cluster.R'
+    'model-semantic-city-school-model.R'
+    'model-datasource-postgres-city-source.R'
+    'analysis-city-summary.R'
+    'repository-postgres-city-summary.R'
+    'model-datasource-postgres-similarity-source.R'
 Config/roxygen2/version: 8.0.0
