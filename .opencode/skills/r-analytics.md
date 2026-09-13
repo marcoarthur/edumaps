@@ -29,7 +29,7 @@ library(edumapsr)
 - Armazenado em `analytics.similarity_*`
 
 ### Clusterização (K-means)
-- Função: `clusterizar_escolas()` em docs/IA/clusters.md
+- Função: `clusterizar_escolas()` em docs/archive/IA/clusters.md
 - Método: elbow/silhouette para seleção automática de k
 - Análise por grupo: composição por dependência administrativa, infra vs docentes
 
