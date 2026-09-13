@@ -8,3 +8,10 @@ EduMaps-*
 frontend/map_app/vite.config.js.timestamp*
 .build*
 *.vim
+
+# Artefatos de build/gerados
+backend/cover_db/
+analysis/edumapsr/man/*.Rd
+
+# Configuração local (não versionável)
+data_pipeline/config/local.ini
