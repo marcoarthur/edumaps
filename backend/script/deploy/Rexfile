@@ -166,6 +166,20 @@ desc "Configure and Install minion worker dedicado a fila analytics";
 task deploy_analytics_worker_dev => 'backend.edumaps' => sub {
   chomp(my $carton = run qq{which carton});
   my $path = get('edumaps_dir') . '/backend';
+
+  # libpq service file: os jobs legacy R::Pipe (EduMaps::Task::*)
+  # conectam com service='edumaps_local' — o backend também precisa.
+  file "/root/.pg_service.conf",
+    content => template(
+      'files/pg_service.conf',
+      {
+        db_pass => get('db_password'),
+        db_user => get('db_user'),
+        db_name => get('db_name'),
+      }
+    )
+  ;
+
   file "/etc/systemd/system/edumaps-minion-analytics.service",
     content => template(
       './files/edumaps-minion-analytics.service',
