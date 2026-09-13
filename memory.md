@@ -4,7 +4,72 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Ciclo de limpeza: gitignore + reorganização docs (em andamento)
+## Sessão atual — Migração das análises R::Pipe → Plumber (edumapsr), Fase 2 concluída
+
+### Fase 1 completa (commits)
+- **`d79d427` feat(analysis): endpoints plumber cluster/summary e repos** —
+  edumapsr ganhou POST `/cluster`, `/summary`, `/similarity/db` + facades e
+  repos S3 persistentes (staging cluster_id via temp table, upsert
+  `city_school_analytics`, append `similarity_pairs`). 147 testes testthat PASS.
+
+### Fase 2 completa (commits)
+- **`5f110c6` feat(backend): connector Perl <-> Plumber**:
+  - `EduMaps::Analytics::Client` — chamadas HTTP **síncronas** (`Mojo::UserAgent`
+    bloqueante), endpoints `/cluster|summary|similarity/db|chart|health`.
+  - Cache compartilhado `analytics.analysis_cache` com chave **canônica**
+    (`JSON::PP->canonical` + `Mojo::Util::sha1_hex` de `{analysis, params,
+    source_version}`), estável entre processos (hash ordering do Perl era
+    aleatória por processo!). **Escopo do cache inclui dados afetam o resultado**:
+    `/summary` keyed por `codigo_ibge+schema+parameters`; `/cluster` por
+    `schema+table_name+id_column+features+parameters` (NÃO `output_schema`).
+    Read-through p/ cluster e city_summary; similaridade (pares O(n²))
+    **nunca é cacheada**.
+  - Descobertas Mojo nesta versão (site_perl 5.42.0):
+    - `Mojo::Util::sha1_hex` existe mas NÃO está em `@EXPORT_OK` — chamar
+      **fully-qualified** (`Mojo::Util::sha1_hex(...)`), senão
+      `use Mojo::Util qw(sha1_hex)` falha em `perl -c`.
+    - `use Mojo::JSON qw(encode_json decode_json)` numa classe com
+      `Mojo::Base -base, -signatures` dispara **prototype mismatch** — usar
+      `use Mojo::JSON;` + chamadas `Mojo::JSON::encode_json(...)`.
+    - `Mojo::Server::Daemon` embutido + `ua->get(...)->result` bloqueante NÃO
+      funcionam no mesmo processo nesta versão (eventloop): para emular o
+      serviço no teste, o server roda em um **fork** (loop dedicado) e o
+      `port` chega por arquivo temp (`/tmp/user/1000/opencode/...`); polling de
+      prontidão via `IO::Socket::INET`. Test2 usa `$?` p/ o exit code → após
+      `waitpid` do filho (killed por TERM) é **obrigatório `$? = 0`**, senão o
+      teste sai com exit 15.
+  - **Plugin** `EduMaps::Plugin::Analytics` registrado no startup (`EduMaps::
+      Plugin::Helpers` + `Analytics`); helper `analytics` (client singleton com
+      `app` fraco). Config keys: `analytics_url` (default
+      `http://analytic:8000`), `analytics_timeout` (300),
+      `analytics_source_version` ('edumapsr-0.1.0'), `analytics_cache_enabled` (1).
+      **TODO**: adicioná-las ao `edu_maps.conf` (não versionado) na F6.
+  - Teste `backend/t/03-plugins/analytics.t` — **9 subtests PASS** (server fork,
+    run_cluster/summary/similarity_db/health, croak em 500, chave canônica,
+    escopo por codigo_ibge/table/features, read-through s/ DB = no-op).
+  - Verificações: `perl -c` OK nos 3 arquivos; `t/01-app/basic.t` (boot da app)
+    e `t/03-plugins` PASS.
+
+### Estado
+- F1 e F2 concluídas e commitadas em `main`.
+- **Fase 3 em aberto**: refatorar `EduMaps::Task::{Clustering,Similarity,
+  CityAnalytics}` para `analytics_engine => 'http'|'pipe'` (fallback
+  `EduMaps::Analysis::R::Pipe`), usando `c->analytics`.
+- **Fase 4**: migration sqitch `analytics_analysis_cache`
+  (deploy/revert/verify) em `data_pipeline/deploy/`.
+- **Fase 5**: rotas web `POST /api/task/{cluster,summary,similarity}`.
+- **Fase 6/7**: infra `pg_service.conf` + worker fila `analytics` + docs.
+
+### Fora de commits (segue)
+- WIP `backend/lib/EduMaps/EventBus/Middleware/SiopeTask.pm` (log info→error).
+- untrackeds: `backend/script/tasks/siope.pl`,
+  `backend/templates/osm/query/school.opq.ep`,
+  `frontend/map_app/src/lib/js/city.js`, e artefatos R CMD check
+  (`analysis/edumapsr/edumapsAnalytics.Rcheck/`,
+  `analysis/edumapsr/edumapsAnalytics_0.1.0.tar.gz`).
+- Commit: hook post-commit quebrado (`GIT_DIR: unbound variable`) — esperado.
+
+## Ciclo anterior — limpeza: gitignore + reorganização docs (concluído)
 
 ### Fechamento do ciclo anterior (2026-09-13)
 - PR #57 mergeado em `main` (commit de merge `9361604`; branch
