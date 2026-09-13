@@ -81,10 +81,21 @@
       `minion->enqueue(city_analytics => [$args])` para a fila padrão.
   - `perl -c` OK nos 4 módulos alterados.
 
+### Fase 4 completa (commits)
+- **`f195898` feat(data_pipeline): analytics.analysis_cache** — migration
+  sqitch `analytics_analysis_cache` (`deploy/revert/verify` + `sqitch.plan`,
+  dep `[schemas]`): tabela no schema `analytics` com PK `cache_key` (text,
+  sha-1 canônico do Client), `analysis`, `params` jsonb, `payload` jsonb,
+  `source_version`, `created_at`/`updated_at`/`expires_at` timestamptz;
+  índices (analysis, source_version) e parcial em expires_at. Comentários PT-BR
+  em todas as colunas. **Deployado e verificado em dev_super** (`edumaps_dev`);
+  upsert real validado em psql com o mesmo SQL do `Client::_cache_write`.
+
+### Fase 5 em aberto
+- Rotas web `POST /api/task/{cluster,summary,similarity}`.
+
 ### Estado
-- F1, F2 e F3 concluídas e commitadas em `main`.
-- **Fase 4**: migration sqitch `analytics_analysis_cache`
-  (deploy/revert/verify) em `data_pipeline/deploy/`.
+- F1, F2, F3 e F4 concluídas e commitadas em `main`.
 - **Fase 5**: rotas web `POST /api/task/{cluster,summary,similarity}`.
 - **Fase 6/7**: infra `pg_service.conf` + worker fila `analytics` + docs.
 
