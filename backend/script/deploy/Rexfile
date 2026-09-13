@@ -48,6 +48,7 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
   pkg $_, ensure => 'present' for qw<
     libpq-dev build-essential cpanminus  
     libio-socket-ssl-perl liblwp-protocol-https-perl carton
+    libblas-dev liblapack-dev gfortran
   >;
 
   my $path = get('edumaps_dir') . '/backend';
@@ -96,7 +97,7 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
         mojo_mode => get ('mode'),
         morbo_port => 3000,
         carton_path => $carton,
-        edumaps_path => path($path,'edu_maps.pl')->to_string,
+        edumaps_path => path($path,'script','edumaps.pl')->to_string,
         work_dir => $path,
       }
     ),
@@ -147,7 +148,7 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
       './files/edumaps-minion.service',
       {
         mojo_mode => get ('mode'),
-        edumaps_path => path($path,'edu_maps.pl')->to_string,
+        edumaps_path => path($path,'script','edumaps.pl')->to_string,
         work_dir => $path,
         carton_path => $carton,
       }
