@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Migração das análises R::Pipe → Plumber (edumapsr), Fase 2 concluída
+## Sessão atual — Migração das análises R::Pipe → Plumber (edumapsr), Fase 3 concluída
 
 ### Fase 1 completa (commits)
 - **`d79d427` feat(analysis): endpoints plumber cluster/summary e repos** —
@@ -50,11 +50,39 @@
   - Verificações: `perl -c` OK nos 3 arquivos; `t/01-app/basic.t` (boot da app)
     e `t/03-plugins` PASS.
 
+### Fase 3 completa (commits)
+- **`deedd23` feat(backend): tasks R com analytics_engine http|pipe**:
+  - `EduMaps::Plugin::Analytics` ganhou `DEFAULT_ENGINE ('pipe')` e nova config
+    key **`analytics_engine`** (`'http'` Plumber via Client | `'pipe'` legado),
+    exposta pelo helper `$app->analytics_engine` (lida no register, default
+    `pipe` — mantém prod e `t/05-tasks` estáveis).
+  - `EduMaps::Task::Clustering`: dispatch por engine. HTTP →
+    `$job->app->analytics->run_cluster({schema, table_name, id_column,
+    features, parameters => {algorithm, clusters, eps, min_pts}})`. Validação
+    ganhou campo opcional `features`. Pipe intacto (Rscript via R::Pipe).
+  - `EduMaps::Task::Similarity`: HTTP → `run_similarity_db` (gower), com
+    **falha explícita** p/ métricas não-gower no motor http (mensagem instrui
+    usar `pipe`); pipe mantido p/ demais métricas.
+  - `EduMaps::Task::CityAnalytics`: HTTP → `run_summary({codigo_ibge, schema,
+    parameters => {type}})`. O contrato `{meta, cluster_info|similarity_info|
+    analytics_info{r_meta}}` é preservado; `r_meta` = resposta JSON do endpoint
+    (o serviço Plumber já persiste cluster_id/summary/pairs no banco).
+  - Contrato de job preservado em todos os motores (query_args/inject_args
+    iguais; só `r_meta` muda de origem: R::Pipe → HTTP).
+  - Teste **`backend/t/05-tasks/analytics_engine.t`** — **5 subtests PASS**
+    (server-fork emulando /cluster, /summary, /similarity/db):
+    - `analytics_engine` helper reflete config; cluster via http engine
+      (r_meta.analysis = 'cluster_kmeans', run_id do endpoint); similarity
+      gower ok; similarity não-gower → job `failed` com mensagem; city_analytics
+      via http (r_meta.analysis = 'city_summary').
+    - Lição: `apply_city_analytics` enfileira na fila **'speculative'**
+      (prioridade 0), que `minion->perform_jobs` NÃO processa (só fila
+      'default') — no teste, enfileirar direto com
+      `minion->enqueue(city_analytics => [$args])` para a fila padrão.
+  - `perl -c` OK nos 4 módulos alterados.
+
 ### Estado
-- F1 e F2 concluídas e commitadas em `main`.
-- **Fase 3 em aberto**: refatorar `EduMaps::Task::{Clustering,Similarity,
-  CityAnalytics}` para `analytics_engine => 'http'|'pipe'` (fallback
-  `EduMaps::Analysis::R::Pipe`), usando `c->analytics`.
+- F1, F2 e F3 concluídas e commitadas em `main`.
 - **Fase 4**: migration sqitch `analytics_analysis_cache`
   (deploy/revert/verify) em `data_pipeline/deploy/`.
 - **Fase 5**: rotas web `POST /api/task/{cluster,summary,similarity}`.
