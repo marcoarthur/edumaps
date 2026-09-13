@@ -60,7 +60,8 @@ sub request_osm($self) {
 # POST /api/task/cluster
 #
 # Enfileira uma clusterização (R::Pipe ou Plumber/edumapsr via
-# analytics_engine). Retorna 202 + Location para polling.
+# analytics_engine) na fila dedicada 'analytics' (worker analítico separado do
+# worker geral, que roda Siope/OSM). Retorna 202 + Location para polling.
 # ---------------------------------------------------------------------------
 
 sub request_cluster($self) {
@@ -86,7 +87,9 @@ sub request_cluster($self) {
   $args{min_pts}    = $v->param('min_pts')   if defined $v->param('min_pts');
   $args{features}   = $v->param('features')  if $v->param('features');
 
-  my $job_id = $self->apply_clustering(\%args);
+  my $job_id = $self->app->minion->enqueue(
+    clusterization => [\%args] => { queue => 'analytics' }
+  );
 
   $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
   $self->render(status => 202, json => {task => 'cluster', job_id => $job_id});
@@ -95,9 +98,9 @@ sub request_cluster($self) {
 # ---------------------------------------------------------------------------
 # POST /api/task/summary
 #
-# Enfileira o resumo da cidade (city_analytics). Retorna 202 + Location.
-# Não usa apply_city_analytics (que enfileira na fila 'speculative' com
-# CHI cache) — enfileira diretamente na fila default, para o user intent.
+# Enfileira o resumo da cidade (city_analytics) na fila 'analytics'. Retorna
+# 202 + Location. Não usa apply_city_analytics (que enfileira na fila
+# 'speculative' com CHI cache) — enfileira diretamente, para o user intent.
 # ---------------------------------------------------------------------------
 
 sub request_summary($self) {
@@ -113,7 +116,9 @@ sub request_summary($self) {
   $args{analysis}    = $v->param('analysis') if $v->param('analysis');
   $args{schema}      = $v->param('schema')   if $v->param('schema');
 
-  my $job_id = $self->app->minion->enqueue(city_analytics => [\%args]);
+  my $job_id = $self->app->minion->enqueue(
+    city_analytics => [\%args] => { queue => 'analytics' }
+  );
 
   $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
   $self->render(status => 202, json => {task => 'summary', job_id => $job_id});
@@ -122,8 +127,8 @@ sub request_summary($self) {
 # ---------------------------------------------------------------------------
 # POST /api/task/similarity
 #
-# Enfileira a similaridade (R::Pipe ou Plumber/edumapsr via analytics_engine).
-# Retorna 202 + Location.
+# Enfileira a similaridade (R::Pipe ou Plumber/edumapsr via analytics_engine)
+# na fila dedicada 'analytics'. Retorna 202 + Location.
 # ---------------------------------------------------------------------------
 
 sub request_similarity($self) {
@@ -141,7 +146,9 @@ sub request_similarity($self) {
   $args{schema}     = $v->param('schema') if $v->param('schema');
   $args{metric}     = $v->param('metric') if $v->param('metric');
 
-  my $job_id = $self->apply_similarity(\%args);
+  my $job_id = $self->app->minion->enqueue(
+    similarity => [\%args] => { queue => 'analytics' }
+  );
 
   $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
   $self->render(status => 202, json => {task => 'similarity', job_id => $job_id});

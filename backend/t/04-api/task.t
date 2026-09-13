@@ -23,6 +23,8 @@ subtest 'request_cluster: enfileira e retorna 202 + Location' => sub {
   ok $json->{job_id} =~ /^\d+$/, 'job_id numérico';
   like $tx->res->headers->header('Location'), qr{^/api/task/progress\?job_id=\d+$},
     'Location p/ polling';
+  is $t->app->minion->job($json->{job_id})->info->{queue}, 'analytics',
+    'job na fila dedicada analytics';
 
   $t->app->minion->backend->remove_job($json->{job_id});
 };
@@ -53,6 +55,8 @@ subtest 'request_summary: enfileira e retorna 202 + Location' => sub {
   ok $json->{job_id} =~ /^\d+$/, 'job_id numérico';
   like $tx->res->headers->header('Location'), qr{^/api/task/progress\?job_id=\d+$},
     'Location p/ polling';
+  is $t->app->minion->job($json->{job_id})->info->{queue}, 'analytics',
+    'job na fila dedicada analytics';
 
   $t->app->minion->backend->remove_job($json->{job_id});
 };
@@ -76,6 +80,8 @@ subtest 'request_similarity: enfileira e retorna 202 + Location' => sub {
   ok $json->{job_id} =~ /^\d+$/, 'job_id numérico';
   like $tx->res->headers->header('Location'), qr{^/api/task/progress\?job_id=\d+$},
     'Location p/ polling';
+  is $t->app->minion->job($json->{job_id})->info->{queue}, 'analytics',
+    'job na fila dedicada analytics';
 
   $t->app->minion->backend->remove_job($json->{job_id});
 };
