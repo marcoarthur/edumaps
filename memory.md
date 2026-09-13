@@ -4,7 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Deploy/validação dos containers após remoção do submodule (concluída)
+## Sessão atual — Ciclo de limpeza: gitignore + reorganização docs (em andamento)
+
+### Fechamento do ciclo anterior (2026-09-13)
+- PR #57 mergeado em `main` (commit de merge `9361604`; branch
+  `fix/deploy-backend-class-app` removida local e no remote). Ciclo de deploy
+  encerrado após validação ponta a ponta nos containers.
+
+### Limpeza — `.gitignore`
+- Adicionados (artefatos de build/gerados e config local):
+  `analysis/edumapsr/man/*.Rd` (roxygen2), `backend/cover_db/` (Devel::Cover),
+  `data_pipeline/config/local.ini`.
+- Apagado `backend/t/05-tasks/edumaps-analysis/similarity.t` (0 bytes).
+- `frontend/*/node_modules` e `dist` já cobertos pelos `.gitignore` aninhados.
+
+### Limpeza — reorganização de `docs/`
+- **Estrutura nova**: `docs/archive/` (com `README.md` índice 1 linha/arquivo) e
+  `docs/new_ideas/{implementations_ideas,concepts}`. Decisões do usuário:
+  "recentes" = notas de 16-07 a 16-08; arquivar (não excluir) as datadas;
+  `nvim.md` excluído; versionar os docs (eram untrackeds).
+- **→ `new_ideas/implementations_ideas/`**: `notas_tecnicas_20` (score IQE),
+  `_24` (Painel do Diretor), `_26` (plotly/ggplot2 via Perl), `_29` (EventBus
+  frontend sem RxJS), `_32` (Stats::Model), `_34` (pré-computação especulativa).
+- **→ `new_ideas/concepts/`**: `notas_tecnicas_17` (arquiteturas maduras),
+  `_18` (similaridade por domínio).
+- **→ `archive/`**: todas as demais notas (mais de 40) + idea antigas
+  (`ideas.md`, `IA/*`, `analytics/*`), incluindo as 5 datadas
+  (`deep.md`, `system_cloud_administration.md`, `random_forest.md`,
+  `notebook-analises-censo-rankings.md`, `prompt/claude/clusterization.md`).
+- **Atenção**: recuperei via container (`backend.edumaps:/opt/edumaps/docs`)
+  7 arquivos apagados por engano do meu `rm -rf dev` (loop abortou por
+  `mv dev/prompt`): `refactor.md`, `refactor_ui.md`, `testes.md`,
+  `regressao_linear.md`, `system_cloud_administration.md`, `user_history_1.md`
+  e `prompt/claude/clusterization.md`. Todos restaurados em `archive/dev/` com
+  mtimes originais. Lição: `mv` de dir com loop tem que tolerar "dir not empty".
+- **Ajustadas** referências: `.opencode/skills/r-analytics.md`
+  (`docs/IA/clusters.md` → `docs/archive/IA/clusters.md`).
+
+## Sessão anterior — Deploy/validação dos containers após remoção do submodule (concluída)
 
 ### Fechamento (2026-09-12)
 - **Backend do container agora roda a classe `EduMaps`** (`script/edumaps.pl`)
@@ -284,10 +321,13 @@
   GIT_DIR). O commit funciona; o hook erra depois. Não consertado (não pedido).
 - Mudanças pré-existentes NÃO commitadas (mantidas fora de commits/PRs):
   - `backend/lib/EduMaps/EventBus/Middleware/SiopeTask.pm` (log info → error)
-  - untrackeds: `analysis/edumapsr/man/*.Rd`, `backend/cover_db/`,
-    `backend/script/tasks/`, `backend/t/05-tasks/edumaps-analysis/`,
-    `backend/templates/osm/query/school.opq.ep`, `data_pipeline/config/local.ini`,
-    `docs/*`, `frontend/map_app/src/lib/js/city.js`.
+  - untrackeds (fontes reais, commitar em ciclo próprio):
+    `backend/script/tasks/siope.pl`,
+    `backend/templates/osm/query/school.opq.ep`,
+    `frontend/map_app/src/lib/js/city.js`.
+  - Obs.: `analysis/edumapsr/man/*.Rd`, `backend/cover_db/` e
+    `data_pipeline/config/local.ini` agora são GITIGNORADOS; `docs/*` foi
+    versionado na reorganização (ciclo de limpeza).
 - Próximo ciclo: cleanup da suíte de testes (quando o usuário pedir).
 
 ## Comandos úteis para retomar
