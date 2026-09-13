@@ -94,9 +94,49 @@
 ### Fase 5 em aberto
 - Rotas web `POST /api/task/{cluster,summary,similarity}`.
 
+### Fase 5+6 completas (commits)
+- **`0fcc56e` feat(backend): rotas web POST /api/task/{cluster,summary,
+  similarity}**:
+  - `EduMaps::Controller::Task` ganhou `request_cluster/request_summary/
+    request_similarity` (padrão de `request_siope`: valida → enfileira →
+    202 + `Location: /api/task/progress?job_id=X`).
+  - Validações espelhadas nas tasks: cluster (table_name/id_column/schema/
+    algorithm/clusters/eps/min_pts/features), summary (codigo_ibge 7 dígitos/
+    analysis/schema), similarity (table_name/id_column/schema/metric — 5
+    métricas, inclusive aitchison/dtw).
+  - **Fila dedicada `analytics`**: rotas web enfileiram por
+    `minion->enqueue(...)` direto em `{queue => 'analytics'}` — worker
+    analítico separado do worker geral (Siope/OSM). `apply_*` seguem na fila
+    default (t/05-tasks intactos). `/summary` NÃO usa `apply_city_analytics`
+    (fila 'speculative' + CHI) por ser user intent.
+  - Teste `backend/t/04-api/task.t` — 7 subtests PASS (202+job_id+Location+
+    queue analytics p/ os 3; 400 p/ validações).
+- **`7381eef` feat(deploy): worker fila analytics + pg_service.conf +
+  config**:
+  - systemd `files/edumaps-minion-analytics.service` + task Rex
+    `deploy_analytics_worker_dev`: worker `minion worker -q analytics`.
+  - `files/pg_service.conf` (deploy em `/root/.pg_service.conf`): serviços
+    `[edumaps]` e `[edumaps_local]` — R codifica `service="edumaps_local"`
+    por default/`EDUMAPS_ANALYTICS_DB_SERVICE`; antigamente o arquivo só
+    tinha `[edumaps]` (conexão R falharia p/ `edumaps_local`).
+  - `files/Renviron` + `EDUMAPS_ANALYTICS_DB_SERVICE=edumaps_local`.
+  - **Config `analytics_*`** adicionada ao template `files/edumaps_db.conf`
+    (backend dos containers) e ao `backend/edu_maps.conf` local (não
+    versionado): `analytics_url` (`http://analytic:8000`, env-overridable
+    `ANALYTICS_URL`), `analytics_timeout` (300), `analytics_source_version`
+    ('edumapsr-0.1.0'), `analytics_cache_enabled` (1), **`analytics_engine`
+    ('pipe'** — OPCIONAL, trocar p/ 'http' p/ ativar o Plumber).
+  - Validações: Rexfile syntax OK; suite verde (t/01-app, t/03-plugins,
+    t/04-api, t/05-tasks/analytics_engine); **clustering.t (pipe) PASS** —
+    motor legado intacto após F3.
+
 ### Estado
-- F1, F2, F3 e F4 concluídas e commitadas em `main`.
-- **Fase 5**: rotas web `POST /api/task/{cluster,summary,similarity}`.
+- F1–F6 concluídas e commitadas em `main`.
+- **Aplicar no ambiente** (pendente de validação/acordo): rodar
+  `rex prepare` (rsync) + `deploy_analytics_worker_dev` (novo worker) +
+  `deploy_analytics_dev` (pg_service.conf/Renviron) no backend/analytic e, se
+  for ativar Plumber, flippar `analytics_engine: http` na config dos
+  containers.
 - **Fase 6/7**: infra `pg_service.conf` + worker fila `analytics` + docs.
 
 ### Fora de commits (segue)
