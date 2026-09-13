@@ -19,6 +19,7 @@ sub startup ($self) {
   # Helpers
   # ------------------------------------------------------------
   $self->plugin("EduMaps::Plugin::Helpers");
+  $self->plugin("EduMaps::Plugin::Analytics");
 
   # ------------------------------------------------------------
   # Plugins
