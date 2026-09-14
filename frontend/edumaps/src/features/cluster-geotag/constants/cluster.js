@@ -18,22 +18,31 @@ export const GEO_HINTS = {
   municipio: "Código do município (IBGE) com 7 dígitos (ex.: 3550308 = São Paulo)",
 };
 
-// Conjunto curado de indicadores do Censo Escolar usados como features
-// padrão da clusterização. Os rótulos são exibidos na página.
-export const DEFAULT_FEATURES = [
-  { value: "qt_comp_portatil_aluno", label: "Computadores portáteis p/ aluno" },
-  { value: "qt_desktop_aluno", label: "Desktops p/ aluno" },
-  { value: "qt_tablet_aluno", label: "Tablets p/ aluno" },
-  { value: "qt_salas_utilizadas", label: "Salas utilizadas" },
-  { value: "qt_prof_pedagogia", label: "Profissionais de pedagogia" },
-  { value: "qt_prof_gestao", label: "Profissionais de gestão" },
-  { value: "qt_prof_servicos_gerais", label: "Profissionais de serviços gerais" },
-  { value: "in_acessibilidade_rampas", label: "Acessibilidade: rampas" },
-  { value: "in_acesso_internet_computador", label: "Internet via computador" },
-  { value: "in_alimentacao", label: "Alimentação" },
-  { value: "in_biblioteca", label: "Biblioteca" },
-  { value: "in_laboratorio_informatica", label: "Laboratório de informática" },
-];
+// Rótulos amigáveis das tabelas-fonte de clean.school_indicators
+// (coluna table_name do GET /api/cluster/columns).
+export const SOURCE_LABELS = {
+  censo_escolas: "Censo Escolar",
+  censo_docentes: "Docentes (Censo)",
+  ideb_notas_escolas: "IDEB/SAEB",
+};
+
+export const SOURCE_TAG_COLORS = {
+  censo_escolas: "bg-gray-100 text-gray-600",
+  censo_docentes: "bg-emerald-50 text-emerald-700",
+  ideb_notas_escolas: "bg-sky-50 text-sky-700",
+};
+
+// Rótulo de exibição de uma feature: usa o comment do banco quando existe
+// (o metadado do censo/docentes/IDEB costuma descrever o indicador).
+export function featureLabel({ column_name, comment }) {
+  const label = (comment || "").trim();
+  return label || formatColumnName(column_name);
+}
+
+// Fallback legível para colunas sem comentário (ex.: qt_doc_bas).
+export function formatColumnName(name) {
+  return String(name).replaceAll("_", " ");
+}
 
 // Paleta por cluster_id (ordem estável, independente de quantos clusters
 // o algoritmo retornar). Índice 0 = fallback.

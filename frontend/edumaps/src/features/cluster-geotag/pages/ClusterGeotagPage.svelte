@@ -7,12 +7,17 @@
     getRegions,
     getUfs,
     getMunicipalities,
+    getPresets,
+    getColumns,
+    getYears,
     requestCluster,
     getJobProgress,
     getClusterSchools,
   } from "../api/clusterApi.js";
   import ClusterSchoolMap from "../components/ClusterSchoolMap.svelte";
-  import { ALGORITHMS, DEFAULT_FEATURES } from "../constants/cluster.js";
+  import PresetSelector from "../components/PresetSelector.svelte";
+  import FeatureSelect from "../components/FeatureSelect.svelte";
+  import { ALGORITHMS } from "../constants/cluster.js";
 
   // ---- cascata de geotag ------------------------------------------------
   let regions = $state([]);
@@ -23,12 +28,24 @@
   let codigoUf = $state("");
   let codigoIbge = $state("");
 
+  // ---- catálogo de indicadores ------------------------------------------
+  let presets = $state([]);
+  let columns = $state([]);
+  let years = $state([]);
+  let selectedPreset = $state("infraestrutura");
+  let anoIdeb = $state("");
+  let selectedFeatures = $state([]);
+
+  const currentPreset = $derived(
+    presets.find((p) => p.id === selectedPreset) ?? null,
+  );
+  const needsYear = $derived(Boolean(currentPreset?.year_filter));
+
   // ---- parâmetros da clusterização --------------------------------------
   let algorithm = $state("kmeans");
   let clusters = $state("3");
   let eps = $state("1.5");
   let minPts = $state("5");
-  let selectedFeatures = $state(DEFAULT_FEATURES.map((f) => f.value));
 
   // ---- estado de execução -----------------------------------------------
   let markers = $state([]);
@@ -81,10 +98,10 @@
     }
   }
 
-  function toggleFeature(value) {
-    selectedFeatures = selectedFeatures.includes(value)
-      ? selectedFeatures.filter((f) => f !== value)
-      : [...selectedFeatures, value];
+  function handlePresetChange(id) {
+    selectedPreset = id;
+    const preset = presets.find((p) => p.id === id);
+    if (preset) selectedFeatures = [...preset.features];
   }
 
   function apiMessage(err, fallback) {
@@ -110,6 +127,14 @@
       error = "Selecione ao menos a região para definir o recorte.";
       return;
     }
+    if (needsYear && !anoIdeb) {
+      error = `O preset "${currentPreset?.name}" exige escolher o ano IDEB/SAEB.`;
+      return;
+    }
+    if (selectedFeatures.length === 0) {
+      error = "Selecione ao menos um indicador (coluna) para clusterizar.";
+      return;
+    }
 
     loading = true;
     clustered = false;
@@ -117,10 +142,12 @@
     markers = [];
 
     const payload = {
-      table_name: "censo_escolas",
+      table_name: "school_indicators",
       id_column: "co_entidade",
       schema: "clean",
       algorithm,
+      preset: selectedPreset,
+      ano_ideb: needsYear ? Number(anoIdeb) : undefined,
       features: selectedFeatures,
       codigo_regiao: codigoRegiao || undefined,
       codigo_uf: codigoUf || undefined,
@@ -156,12 +183,38 @@
     router.navigate("/escola/search");
   }
 
+  async function loadCatalog() {
+    // Catálogo de indicadores (presets, colunas com metadado e anos).
+    // Cada um carrega independente — se um falhar, os demais seguem.
+    try {
+      presets = await getPresets();
+      const first = presets.find((p) => p.id === selectedPreset) ?? presets[0];
+      if (first) {
+        selectedPreset = first.id;
+        selectedFeatures = [...first.features];
+      }
+    } catch (err) {
+      error = apiMessage(err, "Erro ao carregar presets.");
+    }
+    try {
+      columns = await getColumns();
+    } catch (err) {
+      error = apiMessage(err, "Erro ao carregar colunas de indicadores.");
+    }
+    try {
+      years = await getYears();
+    } catch (err) {
+      error = apiMessage(err, "Erro ao carregar anos IDEB/SAEB.");
+    }
+  }
+
   onMount(async () => {
     try {
       regions = await getRegions();
     } catch (err) {
       error = apiMessage(err, "Erro ao carregar regiões.");
     }
+    await loadCatalog();
   });
 
   onDestroy(() => {
@@ -174,7 +227,7 @@
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Clusterizar escolas por geotag</h1>
       <p class="text-sm text-gray-600 mt-1">
-        Recorte uma região, UF ou município, escolha o algoritmo e veja as escolas no mapa coloridas por cluster.
+        Escolha um preset de indicadores (ou monte sua própria lista), recorte a região e veja as escolas no mapa coloridas por cluster.
       </p>
     </div>
     <button
@@ -277,16 +330,44 @@
       </button>
     </div>
 
-    <div class="mt-4">
-      <p class="block text-sm text-gray-600 mb-2">Indicadores (features)</p>
-      <div class="flex flex-wrap gap-2">
-        {#each DEFAULT_FEATURES as f}
-          <label class="flex items-center gap-1.5 text-sm cursor-pointer select-none border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50">
-            <input type="checkbox" checked={selectedFeatures.includes(f.value)} onchange={() => toggleFeature(f.value)} />
-            {f.label}
-          </label>
-        {/each}
+    <div class="mt-6">
+      <p class="block text-sm text-gray-600 mb-2">
+        Indicadores (features) — presets prontos ou seleção livre com busca
+      </p>
+
+      <div class="mb-3">
+        <PresetSelector
+        {presets}
+        bind:value={selectedPreset}
+        onchange={handlePresetChange}
+      />
       </div>
+      <div class="-mt-1 mb-3">
+        <p class="text-xs text-gray-500">
+          {currentPreset?.description
+            ? currentPreset.description
+            : "Monte sua própria lista de indicadores buscando por nome ou descrição."}
+        </p>
+        {#if needsYear}
+          <div class="mt-3">
+            <label for="ano_ideb" class="block text-sm text-gray-600 mb-1">
+              Ano IDEB/SAEB <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="ano_ideb"
+              bind:value={anoIdeb}
+              class="w-full md:w-64 border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">Selecione o ano…</option>
+              {#each years as y}
+                <option value={y.ano}>{y.ano}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
+      </div>
+
+      <FeatureSelect {columns} bind:value={selectedFeatures} disabled={loading} />
     </div>
   </div>
 

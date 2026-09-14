@@ -6,6 +6,9 @@ import {
   MUNICIPALITIES_FIXTURE,
   CLUSTER_POLYGONS_FIXTURE,
   FIXTURE_GEOTAG,
+  PRESETS_FIXTURE,
+  COLUMNS_FIXTURE,
+  YEARS_FIXTURE,
 } from "./fixtures.js";
 
 // Um único job de clusterização "mágico": qualquer POST aceito, qualquer
@@ -18,6 +21,12 @@ export const clusterGeotagHandlers = [
   http.get("/api/cluster/municipalities", () =>
     HttpResponse.json(MUNICIPALITIES_FIXTURE),
   ),
+
+  http.get("/api/cluster/presets", () => HttpResponse.json(PRESETS_FIXTURE)),
+
+  http.get("/api/cluster/columns", () => HttpResponse.json(COLUMNS_FIXTURE)),
+
+  http.get("/api/cluster/years", () => HttpResponse.json(YEARS_FIXTURE)),
 
   http.post("/api/task/cluster", () =>
     HttpResponse.json({ task: "cluster", job_id: 42 }, { status: 202 }),

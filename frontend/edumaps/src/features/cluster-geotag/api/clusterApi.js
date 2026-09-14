@@ -51,10 +51,35 @@ export function getJobProgress(jobId) {
 }
 
 /**
- * GeoJSON das escolas clusterizadas do recorte.
+ * Geojson das escolas clusterizadas do recorte.
  * @param {Object} geotag - { codigo_regiao, codigo_uf, codigo_ibge }
  * @returns {Promise<{ type: string, features: Array<object> }>}
  */
 export function getClusterSchools(geotag) {
   return apiClient.get("/api/cluster/schools", geotag);
+}
+
+/**
+ * Presets curados de indicadores.
+ * @returns {Promise<Array<{ id, name, description, year_filter, features }>>}
+ */
+export function getPresets() {
+  return apiClient.get("/api/cluster/presets");
+}
+
+/**
+ * Catálogo de colunas de clean.school_indicators com metadado (comment) —
+ * usado no autocomplete de features.
+ * @returns {Promise<Array<{ column_name, data_type, comment, table_name }>>}
+ */
+export function getColumns() {
+  return apiClient.get("/api/cluster/columns");
+}
+
+/**
+ * Anos IDEB/SAEB disponíveis (ordem decrescente).
+ * @returns {Promise<Array<{ ano: number }>>}
+ */
+export function getYears() {
+  return apiClient.get("/api/cluster/years");
 }
