@@ -1,5 +1,6 @@
 package EduMaps::Controller::Task;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
+use EduMaps::Presets;
 use DateTime;
 
 has _current_year => sub { DateTime->now->year };
@@ -101,6 +102,8 @@ sub request_cluster($self) {
   $v->optional('eps',        'trim')->num;
   $v->optional('min_pts',    'trim')->num;
   $v->optional('features');
+  $v->optional('preset',     'trim')->like(qr/^[a-zA-Z_]+$/);
+  $v->optional('ano_ideb',   'trim')->like(qr/^\d{4}$/);
 
   # Filtro por geotag (opcional): região (1-5), UF (2 dígitos) e município
   # (7 dígitos). Convertidos em `filter` para o motor R.
@@ -115,14 +118,39 @@ sub request_cluster($self) {
   }
   return $self->bad_req if $v->has_error;
 
+  # Preset curado de indicadores: resolve as features/fonte automaticamente.
+  # Presets com year_filter (ex.: desempenho) exigem o ano IDEB/SAEB.
+  # A janela de features/ano é validada de novo no job (rebuild da tabela).
+  my $preset_id = $v->param('preset');
+  my $preset;
+  if (defined $preset_id && length $preset_id) {
+    $preset = EduMaps::Presets->get($preset_id);
+    return $self->bad_req("preset '$preset_id' desconhecido") unless $preset;
+    if ($preset->{year_filter} && !defined $v->param('ano_ideb')) {
+      return $self->bad_req("preset '$preset_id' exige ano_ideb");
+    }
+  }
+
   my %args;
-  $args{table_name} = $v->param('table_name');
-  $args{id_column}  = $v->param('id_column');
-  $args{schema}     = $v->param('schema') if $v->param('schema');
-  $args{algorithm}  = $v->param('algorithm') if $v->param('algorithm');
-  $args{clusters}   = $v->param('clusters')  if defined $v->param('clusters');
-  $args{eps}        = $v->param('eps')       if defined $v->param('eps');
-  $args{min_pts}    = $v->param('min_pts')   if defined $v->param('min_pts');
+  if ($preset) {
+    # A clusterização multi-tabela roda sempre sobre a tabela denormalizada
+    # clean.school_indicators (preenchida pelo job para o ano escolhido).
+    $args{schema}     = 'clean';
+    $args{table_name} = EduMaps::Presets->INDICATORS_TABLE;
+    $args{id_column}  = 'co_entidade';
+    $args{preset_id}  = $preset->{id};
+    # features: os do preset, salvo se o usuário passou a própria lista.
+    $args{features} //= $preset->{features};
+  } else {
+    $args{table_name} = $v->param('table_name');
+    $args{id_column}  = $v->param('id_column');
+    $args{schema}     = $v->param('schema') if $v->param('schema');
+  }
+  $args{ano_ideb}  = 0 + $v->param('ano_ideb') if defined $v->param('ano_ideb');
+  $args{algorithm} = $v->param('algorithm') if $v->param('algorithm');
+  $args{clusters}  = $v->param('clusters')  if defined $v->param('clusters');
+  $args{eps}       = $v->param('eps')       if defined $v->param('eps');
+  $args{min_pts}   = $v->param('min_pts')   if defined $v->param('min_pts');
   # features é um array de colunas no JSON; param('features') colapsaria para a
   # última coluna, então lemos direto do input e repassamos o array íntegro.
   $args{features} = $input->{features} if defined $input->{features};

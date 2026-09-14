@@ -121,6 +121,78 @@ subtest 'request_cluster: body JSON sem chaves obrigatórias -> 400' => sub {
 };
 
 # ------------------------------------------------------------
+# POST /api/task/cluster — presets
+# ------------------------------------------------------------
+subtest 'request_cluster: preset desconhecido -> 400' => sub {
+  $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators',
+    id_column  => 'co_entidade',
+    preset     => 'nao_existe',
+  })->status_is(400);
+};
+
+subtest 'request_cluster: preset desempenho sem ano_ideb -> 400' => sub {
+  $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators',
+    id_column  => 'co_entidade',
+    preset     => 'desempenho',
+  })->status_is(400);
+};
+
+subtest 'request_cluster: preset docencia (sem year_filter) -> 202' => sub {
+  my $tx = $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators',
+    id_column  => 'co_entidade',
+    preset     => 'docencia',
+  })->status_is(202)->tx;
+  my $json = $tx->res->json;
+  my $args = $t->app->minion->job($json->{job_id})->args->[0];
+
+  is $args->{preset_id},  'docencia',             'preset_id no job';
+  is $args->{schema},     'clean',                'schema forçado clean';
+  is $args->{table_name}, 'school_indicators',    'table_name = school_indicators';
+  is $args->{id_column},  'co_entidade',          'id_column forçado co_entidade';
+  ok !defined $args->{ano_ideb},                   'ano_ideb ausente (year_filter=0)';
+  is $args->{features}->[0], 'prop_licenciatura', 'features vindas do preset';
+
+  $t->app->minion->backend->remove_job($json->{job_id});
+};
+
+subtest 'request_cluster: preset desempenho + ano_ideb -> 202 com args' => sub {
+  my $tx = $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators',
+    id_column  => 'co_entidade',
+    preset     => 'desempenho',
+    ano_ideb   => 2023,
+  })->status_is(202)->tx;
+  my $json = $tx->res->json;
+  my $args = $t->app->minion->job($json->{job_id})->args->[0];
+
+  is $args->{preset_id},  'desempenho',  'preset_id no job';
+  is $args->{ano_ideb},   2023,          'ano_ideb passado ao job';
+  is $args->{schema},     'clean',       'schema forçado clean';
+  is $args->{features}->[0], 'nota_media', 'features do preset';
+
+  $t->app->minion->backend->remove_job($json->{job_id});
+};
+
+subtest 'request_cluster: features explícitas sobrepõe preset' => sub {
+  my $tx = $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators',
+    id_column  => 'co_entidade',
+    preset     => 'docencia',
+    features   => ['in_biblioteca', 'in_internet'],
+  })->status_is(202)->tx;
+  my $json = $tx->res->json;
+  my $args = $t->app->minion->job($json->{job_id})->args->[0];
+
+  is $args->{features}, ['in_biblioteca', 'in_internet'],
+    'features explícitas substituem as do preset';
+
+  $t->app->minion->backend->remove_job($json->{job_id});
+};
+
+# ------------------------------------------------------------
 # GET /api/task/progress (resposta REST p/ polling não-SSE)
 # ------------------------------------------------------------
 subtest 'job_progress: REST retorna snapshot JSON do estado' => sub {

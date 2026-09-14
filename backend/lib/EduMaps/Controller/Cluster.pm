@@ -1,5 +1,22 @@
 package EduMaps::Controller::Cluster;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
+use EduMaps::Presets;
+
+sub presets($self) {
+  $self->render(json => EduMaps::Presets->presets);
+}
+
+sub columns($self) {
+  my $result = $self->instantiate_model(model => 'Cluster')->columns;
+  return $self->render(json => { error => 'Sem colunas de indicadores disponíveis' }, status => 404) unless $result->@*;
+  $self->render(json => $result);
+}
+
+sub years($self) {
+  my $result = $self->instantiate_model(model => 'Cluster')->years;
+  return $self->render(json => { error => 'Sem anos IDEB disponíveis' }, status => 404) unless $result->@*;
+  $self->render(json => $result);
+}
 
 sub schools($self) {
   my $v = $self->validation;
