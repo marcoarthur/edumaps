@@ -216,6 +216,44 @@ analyze_cluster <- function(model, parameters = list()) {
 
   x <- as.matrix(data[, features, drop = FALSE])
   rownames(x) <- entity_ids
+
+  # Robustez a dados ausentes: escolas do Censo podem não ter nota em todas
+  # as features selecionadas (NA). scale()/kmeans falham com NA/NaN no kernel,
+  # então removemos linhas incompletas e colunas sem variância, mantendo
+  # `entity_ids` e `features` alinhados ao subconjunto efetivo.
+  complete_rows <- stats::complete.cases(x)
+  if (!all(complete_rows)) {
+    warning(sprintf(
+      "Linhas sem dados completos removidas: %d de %d",
+      sum(!complete_rows), nrow(x)
+    ))
+    x <- x[complete_rows, , drop = FALSE]
+    entity_ids <- entity_ids[complete_rows]
+  }
+
+  keep_columns <- apply(x, 2L, function(col) length(unique(col)) > 1L)
+  if (!all(keep_columns)) {
+    warning(sprintf(
+      "Features sem variância removidas: %s",
+      paste(names(keep_columns)[!keep_columns], collapse = ", ")
+    ))
+    x <- x[, keep_columns, drop = FALSE]
+    features <- features[keep_columns]
+  }
+
+  if (nrow(x) < 2L) {
+    stop_invalid_dataset("cluster requer pelo menos duas entidades com dados completos nas features")
+  }
+  if (length(features) == 0L) {
+    stop_invalid_dataset("cluster requer pelo menos uma feature numérica com variância")
+  }
+  if (algorithm %in% c("kmeans", "gmm", "spectral") && parameters$clusters >= nrow(x)) {
+    stop_invalid_parameter(sprintf(
+      "clusters (%d) deve ser menor que o nº de entidades com dados completos (%d)",
+      parameters$clusters, nrow(x)
+    ))
+  }
+
   x_scaled <- scale(x)
   set.seed(42)
 

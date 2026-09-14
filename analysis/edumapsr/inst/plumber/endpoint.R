@@ -107,7 +107,8 @@ function(req, res) {
         schema = schema,
         table_name = payload$table_name,
         id_column = payload$id_column,
-        features = payload$features %||% NULL
+        features = payload$features %||% NULL,
+        filter = payload$filter %||% NULL
       )
 
       result <- run_cluster(

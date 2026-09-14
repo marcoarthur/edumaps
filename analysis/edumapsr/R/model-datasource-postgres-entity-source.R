@@ -44,11 +44,18 @@ postgres_entity_source <- function(con) {
 #' Quando `features` é `NULL`, as colunas numéricas da tabela (exceto o
 #' `id_column`) são usadas como features.
 #'
+#' O parâmetro `filter` restringe o conjunto clusterizado a um subconjunto
+#' de linhas (ex.: filtrar por geotag). Deve ser uma lista nomeada em que
+#' cada nome é uma coluna da tabela e cada valor é o literal a comparar
+#' com `=`. Colunas e valores são sempre citados via `dbQuoteIdentifier()`
+#' e `dbQuoteLiteral()` — nunca interpolação crua.
+#'
 #' @param source objeto da classe `postgres_entity_source`.
 #' @param schema nome do schema onde a tabela vive.
 #' @param table_name nome da tabela alvo.
 #' @param id_column nome da coluna de identificação da entidade.
 #' @param features vetor opcional de colunas numéricas a usar.
+#' @param filter lista nomeada opcional de colunas a filtrar (igualdade).
 #' @param ... parâmetros adicionais não utilizados.
 #'
 #' @return Objeto da classe `school_cluster_model`.
@@ -60,6 +67,7 @@ load_school_entities.postgres_entity_source <- function(
   table_name,
   id_column,
   features = NULL,
+  filter = NULL,
   ...
 ) {
   quote <- function(x) DBI::dbQuoteIdentifier(source$con, x)
@@ -95,6 +103,20 @@ load_school_entities.postgres_entity_source <- function(
     ))
   }
 
+  if (!is.null(filter)) {
+    if (!is.list(filter) || is.null(names(filter)) || any(names(filter) == "")) {
+      stop_invalid_parameter("filter deve ser uma lista nomeada de colunas a filtrar")
+    }
+
+    missing_filter <- setdiff(names(filter), names(sample))
+    if (length(missing_filter) > 0) {
+      stop_invalid_parameter(sprintf(
+        "Colunas do filtro não encontradas na tabela %s.%s: %s",
+        schema, table_name, paste(missing_filter, collapse = ", ")
+      ))
+    }
+  }
+
   columns <- c(
     quote(id_column),
     vapply(features, quote, character(1))
@@ -105,6 +127,15 @@ load_school_entities.postgres_entity_source <- function(
     paste(columns, collapse = ", "),
     qualified
   )
+
+  if (!is.null(filter) && length(filter) > 0) {
+    conditions <- unname(vapply(names(filter), function(col) {
+      column <- as.character(quote(col))
+      value <- DBI::dbQuoteLiteral(source$con, filter[[col]])
+      sprintf("%s = %s", column, value)
+    }, character(1)))
+    sql <- sprintf("%s WHERE %s", sql, paste(conditions, collapse = " AND "))
+  }
 
   data <- DBI::dbGetQuery(source$con, sql)
 

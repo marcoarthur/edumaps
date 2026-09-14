@@ -730,6 +730,14 @@
             }
           },
 
+          "filter": {
+            "type": "object",
+            "description": "Filtro de igualdade por coluna, restringindo o conjunto a clusterizar. Ex.: {\"co_regiao\": 1, \"co_uf\": 35}.",
+            "additionalProperties": {
+              "type": ["number", "string", "integer"]
+            }
+          },
+
           "parameters": {
             "$ref": "#/components/schemas/ClusterParameters"
           },

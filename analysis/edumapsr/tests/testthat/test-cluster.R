@@ -117,6 +117,50 @@ test_that("k fora do intervalo [2,10] é erro do cliente", {
   )
 })
 
+test_that("linhas com NA nas features são removidas sem quebrar kmeans", {
+  model <- fixture_cluster_model()
+  # injeta NA em 2 escolas (1 em cada feature) — como no Censo, onde nem toda
+  # escola preenche todos os campos.
+  model$data[c(1, 2), c("qt_mat_bas", "qt_doc_bas")] <- NA
+
+  expect_warning(
+    result <- analyze_cluster(model, list(algorithm = "kmeans", clusters = 4)),
+    "Linhas sem dados completos removidas: 2"
+  )
+
+  expect_equal(result$metrics$n_entities, 38)
+  expect_equal(result$metrics$n_clusters, 4)
+  expect_false(anyNA(result$data$cluster_id))
+  # entidades preservam a ordem relativa (as 2 primeiras, sem dados, saem)
+  expect_equal(
+    result$data[["co_entidade"]],
+    cluster_entity_ids(model)[-(1:2)]
+  )
+})
+
+test_that("feature sem variância é removida das features efetivas", {
+  data <- data.frame(
+    school_id = sprintf("s%02d", seq_len(20)),
+    x = runif(20),
+    y = 7,             # constante: nenhuma variância
+    z = rnorm(20)
+  )
+  model <- new_school_cluster_model(
+    data = data,
+    entity_id = "school_id",
+    features = c("x", "y", "z")
+  )
+
+  expect_warning(
+    result <- analyze_cluster(model, list(algorithm = "kmeans", clusters = 3)),
+    "Features sem variância removidas: y"
+  )
+
+  expect_equal(result$metadata$features, c("x", "z"))
+  expect_equal(result$metrics$n_features, 2)
+  expect_equal(result$metrics$n_entities, 20)
+})
+
 test_that("eps inválido é erro do cliente", {
   model <- fixture_cluster_model()
 
