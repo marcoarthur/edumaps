@@ -289,6 +289,38 @@ analyze_cluster <- function(model, parameters = list()) {
   indices <- if (length(indices) == 0) integer(0) else sort(unique(indices))
 
   n_clusters <- length(indices)
+
+  # ---- Rótulos semânticos (linguagem natural) --------------------------
+  # A análise pura não sabe o significado das features; o rótulo é derivado
+  # do conceito do preset e da polaridade de cada feature (parameters$labeling).
+  # Sem conceito (ou com nº excessivo de clusters), cai no fallback inteiro.
+  labeling <- if (is.list(parameters$labeling)) parameters$labeling else list()
+  concept <- labeling$concept
+  gender  <- if (is.null(labeling$gender)) "f" else labeling$gender
+  directions <- labeling$directions
+
+  cluster_labels_df <- data.frame(
+    cluster_id = integer(0),
+    cluster_rank = integer(0),
+    cluster_label = character(0),
+    stringsAsFactors = FALSE
+  )
+
+  if (n_clusters > 0) {
+    means <- t(vapply(indices, function(ci) {
+      colMeans(x[cluster_id == ci, , drop = FALSE])
+    }, numeric(length(features))))
+    if (length(indices) == 1) {
+      means <- matrix(means, nrow = 1, ncol = length(features))
+    }
+    rownames(means) <- as.character(indices)
+    colnames(means) <- features
+
+    scores <- .cluster_scores(means, features, directions)
+    all_ids <- sort(unique(cluster_id))
+    cluster_labels_df <- .cluster_labels(all_ids, scores, concept = concept, gender = gender)
+  }
+
   if (n_clusters == 0) {
     # dbscan pode não encontrar nenhum cluster (tudo ruído)
     clusters_df <- data.frame(
@@ -321,12 +353,18 @@ analyze_cluster <- function(model, parameters = list()) {
     }
   }
 
+  clusters_df$cluster_rank  <- cluster_labels_df$cluster_rank[match(clusters_df$cluster_id, cluster_labels_df$cluster_id)]
+  clusters_df$cluster_label <- cluster_labels_df$cluster_label[match(clusters_df$cluster_id, cluster_labels_df$cluster_id)]
+
   assignments_df <- data.frame(
     entity_id = entity_ids,
     cluster_id = cluster_id,
     stringsAsFactors = FALSE
   )
   names(assignments_df)[1] <- model$entity_id
+
+  assignments_df$cluster_label <- cluster_labels_df$cluster_label[match(assignments_df$cluster_id, cluster_labels_df$cluster_id)]
+  assignments_df$cluster_rank  <- cluster_labels_df$cluster_rank[match(assignments_df$cluster_id, cluster_labels_df$cluster_id)]
 
   noise_count <- sum(assignments_df$cluster_id == 0L, na.rm = TRUE)
 

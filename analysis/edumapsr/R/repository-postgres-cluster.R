@@ -151,14 +151,35 @@ persist_cluster.postgres_cluster_repository <- function(
     DBI::dbQuoteIdentifier(con, table_name)
   ))
 
+  # Colunas de rótulo semântico (se presentes nas atribuições), gravadas
+  # junto com o cluster_id para o frontend exibir a descrição do cluster.
+  label_cols <- intersect(c("cluster_label", "cluster_rank"), names(assignments))
+  for (col in label_cols) {
+    type <- if (identical(col, "cluster_label")) "TEXT" else "INTEGER"
+    DBI::dbExecute(con, sprintf(
+      "ALTER TABLE %s.%s ADD COLUMN IF NOT EXISTS %s %s;",
+      DBI::dbQuoteIdentifier(con, schema),
+      DBI::dbQuoteIdentifier(con, table_name),
+      DBI::dbQuoteIdentifier(con, col),
+      type
+    ))
+  }
+
+  set_parts <- c(
+    "cluster_id = temp.cluster_id",
+    if ("cluster_label" %in% label_cols) "cluster_label = temp.cluster_label",
+    if ("cluster_rank" %in% label_cols) "cluster_rank = temp.cluster_rank"
+  )
+
   rows_updated <- DBI::dbExecute(
     con,
     sprintf(
-      "UPDATE %s.%s AS t SET cluster_id = temp.cluster_id
+      "UPDATE %s.%s AS t SET %s
        FROM %s AS temp
        WHERE t.%s = temp.%s;",
       DBI::dbQuoteIdentifier(con, schema),
       DBI::dbQuoteIdentifier(con, table_name),
+      paste(set_parts, collapse = ", "),
       DBI::dbQuoteIdentifier(con, temp_table_name),
       DBI::dbQuoteIdentifier(con, id_column),
       DBI::dbQuoteIdentifier(con, id_column)
