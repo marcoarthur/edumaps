@@ -2,5 +2,10 @@
 // Barrel: cada feature registra seus próprios handlers aqui.
 import { schoolsHandlers } from "@/features/schools/mocks/handlers.js";
 import { networkCompareHandlers } from "@/features/network-compare/mocks/handlers.js";
+import { clusterGeotagHandlers } from "@/features/cluster-geotag/mocks/handlers.js";
 
-export const handlers = [...schoolsHandlers, ...networkCompareHandlers];
+export const handlers = [
+  ...schoolsHandlers,
+  ...networkCompareHandlers,
+  ...clusterGeotagHandlers,
+];
