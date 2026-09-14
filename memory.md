@@ -4,6 +4,57 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão atual — Rótulos em linguagem natural e legenda clicável nos clusters
+
+### Mergeado
+- **PR #62** (`feat/cluster-rotulos-natural`) → `main`, merge commit **`b9cd252`**,
+  merge em 2026-09-14. Commits: `4335430` (analysis), `b608d92` (backend),
+  `1e1e82c` (frontend), `4f5564b` (docs: skill frontend-svelte), `fe06dd8`
+  (docs: nota técnica 39 + regra de nota no workflow). Branch deletada; `main`
+  == `origin/main` == `b9cd252`. **Working tree limpa.**
+
+### Entregas
+- **R (edumapsr)**: módulo `R/cluster-labels.R` (`.label_scale` com escala 2→
+  baixa/alta, 3→baixa/média/alta, 4→muito baixa/baixa/alta/muito alta, 5→muito
+  baixa…muito alta, **≥6→fallback inteiro** `Cluster 1..N` 1=baixo N=alto;
+  `.cluster_scores` = média por feature min-max × polaridade; `.cluster_labels`);
+  `analyze_cluster` lê `parameters$labeling` (`concept`/`gender`/`directions`) e
+  gera `cluster_label`/`cluster_rank` em `tables$clusters` e `data`;
+  `repository-postgres-cluster.R` grava as duas colunas in-place + `extra_metrics`
+  (JSON). `DESCRIPTION` ganhou `cluster-labels.R` no `Collate`.
+- **Backend**: `Presets.pm` com `concept`/`gender`/`directions` (única negativa:
+  `prop_sem_especializacao` = −1); `request_cluster` injeta `labeling`;
+  `Task::Clustering` repassa nos `parameters`; `Model::Cluster` expõe
+  `cluster_label`/`cluster_rank` no GeoJSON + `cluster_summary` + rota
+  `GET /api/cluster/summary`.
+- **Frontend**: legenda com rótulo semântico e **clicável on/off por grupo**
+  (`aria-pressed`, `hiddenIds` = `$state(new Set())` reatribuído); popup com
+  rótulo; `ClusterSummaryTable.svelte` (rótulo + nº escolas + top indicadores);
+  `getClusterSummary()`.
+
+### Detalhes de implementação (importantes)
+- `analytics.clustering_metadata.extra_metrics` é gravado pelo R como **ARRAY**
+  `[{...}]` (não objeto) → no Perl normalizar (se ARRAY, pegar `->[0]`).
+- JSON do banco vem utf8-flagged (`pg_enable_utf8=1`); decodificar com
+  `$self->json->utf8(0)->decode(...)` (padrão do projeto — sem `utf8(0)`, "Média"
+  quebra e o rótulo cai no fallback).
+- Conceito/gênero por preset: infraestrutura "qualidade de infraestrutura" (f),
+  docência "qualidade da docência" (f), desempenho "desempenho dos alunos" (m).
+
+### Validação
+- R: `test-cluster-labels.R` (12) + `test-cluster.R` verdes (`R CMD INSTALL` OK).
+- Backend: `cluster.t` 10, `task.t` 19, `network/schools.t` 4 — verdes.
+- Frontend: cluster-geotag 7/7; suíte 123/127 (4 pré-existentes). Build OK.
+- E2E deploy (Ubatuba 3555406): infra k=3 → baixa/média/alta; desempenho
+  k=3/2023 → baixo/médio/alto; infra k=6 → `Cluster 1..6`. `/api/cluster/summary`
+  e GeoJSON com `cluster_label` OK.
+
+### Convenções novas registradas
+- **AGENTS.md Workflow passo 6**: gerar nota técnica (`notas_tecnicas_N.md` em
+  `docs/new_ideas/implementations_ideas/`) ao fim de cada ciclo (1–2 PRs, 1–2 dias).
+- **Skill `frontend-svelte`**: padrão de "marcadores acionáveis quando representam
+  grupos" (legenda clicável) + dicas de teste (polling 1500ms → `timeout: 3000`).
+
 ## Sessão atual — Presets de indicadores na clusterização (censo + docentes + IDEB)
 
 ### Mergeado
