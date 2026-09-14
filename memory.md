@@ -4,7 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Mapa de cluster por geotag (R + API + frontend)
+## Sessão atual — Fix lite app nos scripts dev/entrypoint
+
+- **Problema**: usuário reportou que a "App lite" `backend/edu_maps.pl`
+  (Mojolicious::Lite, sem `/api/network`, `/api/task/cluster` e cluster geotag)
+  subiu novamente na instância do backend. O fix anterior só corrigiu as units
+  systemd no Rexfile; **`backend/dev_run.sh` (líneas 59-60) e
+  `backend/docker-entrypoint.sh` (28,30) ainda iniciavam `edu_maps.pl`**
+  (`morbo ./edu_maps.pl` e `./edu_maps.pl minion worker`) → qualquer subida via
+  dev_run/entrypoint (manual ou Docker) voltava a expor a lite app.
+- **Verificação nos containers**: `edumaps-web` segue correto — morbo em :3000 é
+  `/opt/edumaps/backend/script/edumaps.pl` (sha256 == repo,
+  `Mojolicious::Commands->start_app('EduMaps')`); `/api/network/3551702/summary`
+  → 200; rota lite `/api/query-osm` → 404. Daemon local `127.0.0.1:3999`
+  (classe app) intacto.
+- **Fix**: `dev_run.sh` e `docker-entrypoint.sh` passam a usar
+  `script/edumaps.pl` (morbo e worker). `bash -n` OK; sincronizado também em
+  `/opt/edumaps/backend` no container.
+- **Commit**: `edbdf3d fix(backend): dev scripts sobem classe app` — direto em
+  `main` (sem PR), push para `origin/main` (a6acae7..edbdf3d) em 2026-09-14.
+- **Obs.**: `edumaps-analytic.service` apareceu **failed** no backend.edumaps —
+  ainda não investigado (usuário não pediu).
+
+## Sessão anterior — Mapa de cluster por geotag (R + API + frontend)
 
 ### Mergeado
 - **PR #60** (`feat/cluster-geotag-map`) → `main`, merge commit **`b290caa`**, merge em
