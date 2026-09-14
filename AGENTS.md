@@ -103,6 +103,11 @@ plano → execução → aprovação
    Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
 5. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
+6. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2
+   PRs, ao longo de 1–2 dias), gerar uma nota técnica em
+   `docs/new_ideas/implementations_ideas/notas_tecnicas_N.md` (próximo número
+   sequencial), documentando o que foi construído e as decisões de design
+   relevantes.
 
 ## Ambiente de teste (execução)
 
