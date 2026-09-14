@@ -92,6 +92,8 @@ sub cluster_geojson_query($self) {
         'co_entidade', co_entidade,
         'no_entidade', no_entidade,
         'cluster_id', cluster_id,
+        'cluster_label', cluster_label,
+        'cluster_rank', cluster_rank,
         'latitude', latitude,
         'longitude', longitude
       )
@@ -157,6 +159,60 @@ sub years($self) {
   };
   return [] unless $rows;
   return $rows;
+}
+
+# ---------------------------------------------------------------------------
+# Resumo semântico por cluster (rótulo em linguagem natural + indicadores).
+# Lê a execução mais recente registrada em analytics.clustering_metadata
+# (run_id ordenado desc) para a tabela denormalizada. O rótulo/rank vêm do
+# extra_metrics (JSON) gravado pelo motor R; os indicadores vêm do centroide
+# (JSON) do cluster.
+# ---------------------------------------------------------------------------
+
+sub cluster_summary($self) {
+  my $dbh = eval { $self->schema->storage->dbh } || return [];
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~'EOSQL', { Slice => {} });
+      SELECT cluster_id::int   AS cluster_id,
+             cluster_size::int AS cluster_size,
+             is_noise::int     AS is_noise,
+             centroids,
+             extra_metrics
+      FROM analytics.clustering_metadata
+      WHERE run_id = (
+        SELECT run_id
+        FROM analytics.clustering_metadata
+        WHERE target_table = 'clean.school_indicators'
+        ORDER BY run_id DESC
+        LIMIT 1
+      )
+      ORDER BY cluster_id
+      EOSQL
+  };
+  return [] unless $rows && @$rows;
+
+  my $json = $self->json;
+  my @summary;
+  for my $row (@$rows) {
+    # O banco já devolve strings utf8-flagged; usa utf8(0) (mesmo padrão de
+    # clustered_schools/Clustering.pm) para decodificar sem re-encodar.
+    my $indicators = eval { $json->utf8(0)->decode($row->{centroids} // '{}') } || {};
+    $indicators = {} unless ref $indicators eq 'HASH';
+    # extra_metrics é gravado pelo R como ARRAY de objetos ([{...}]), então
+    # normalizamos para o hashref do cluster (primeiro elemento).
+    my $extra = eval { $json->utf8(0)->decode($row->{extra_metrics} // '{}') } || {};
+    $extra = $extra->[0] if ref $extra eq 'ARRAY' && @$extra;
+    $extra = {} unless ref $extra eq 'HASH';
+    push @summary, {
+      cluster_id    => 0 + $row->{cluster_id},
+      cluster_size  => 0 + $row->{cluster_size},
+      is_noise      => $row->{is_noise} ? 1 : 0,
+      cluster_label => $extra->{cluster_label} // ('Cluster ' . $row->{cluster_id}),
+      cluster_rank  => $extra->{cluster_rank},
+      indicators    => $indicators,
+    };
+  }
+  return \@summary;
 }
 
 # ---------------------------------------------------------------------------

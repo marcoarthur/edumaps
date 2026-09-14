@@ -163,6 +163,7 @@ sub _apply_clustering($job, $args) {
           (defined $args->{clusters} ? (clusters => $args->{clusters}) : ()),
           (defined $args->{eps}      ? (eps      => $args->{eps})      : ()),
           (defined $args->{min_pts}  ? (min_pts  => $args->{min_pts})  : ()),
+          (defined $args->{labeling} ? (labeling => $args->{labeling}) : ()),
         },
       });
     } catch($err) {

@@ -36,20 +36,40 @@ export const CLUSTER_POLYGONS_FIXTURE = {
     {
       type: "Feature",
       geometry: { type: "Point", coordinates: [-67.811, -9.974] },
-      properties: { co_entidade: 12000101, no_entidade: "ESC A", cluster_id: 1, latitude: -9.974, longitude: -67.811 },
+      properties: { co_entidade: 12000101, no_entidade: "ESC A", cluster_id: 1, cluster_label: "Baixa qualidade de infraestrutura", cluster_rank: 1, latitude: -9.974, longitude: -67.811 },
     },
     {
       type: "Feature",
       geometry: { type: "Point", coordinates: [-67.823, -9.962] },
-      properties: { co_entidade: 12000102, no_entidade: "ESC B", cluster_id: 1, latitude: -9.962, longitude: -67.823 },
+      properties: { co_entidade: 12000102, no_entidade: "ESC B", cluster_id: 1, cluster_label: "Baixa qualidade de infraestrutura", cluster_rank: 1, latitude: -9.962, longitude: -67.823 },
     },
     {
       type: "Feature",
       geometry: { type: "Point", coordinates: [-68.021, -9.886] },
-      properties: { co_entidade: 12000103, no_entidade: "ESC C", cluster_id: 2, latitude: -9.886, longitude: -68.021 },
+      properties: { co_entidade: 12000103, no_entidade: "ESC C", cluster_id: 2, cluster_label: "Alta qualidade de infraestrutura", cluster_rank: 2, latitude: -9.886, longitude: -68.021 },
     },
   ],
 };
+
+// Fixture do backend GET /api/cluster/summary.
+export const CLUSTER_SUMMARY_FIXTURE = [
+  {
+    cluster_id: 1,
+    cluster_size: 2,
+    is_noise: 0,
+    cluster_label: "Baixa qualidade de infraestrutura",
+    cluster_rank: 1,
+    indicators: { in_biblioteca: 0.1, in_internet: 0.2 },
+  },
+  {
+    cluster_id: 2,
+    cluster_size: 1,
+    is_noise: 0,
+    cluster_label: "Alta qualidade de infraestrutura",
+    cluster_rank: 2,
+    indicators: { in_biblioteca: 0.9, in_internet: 0.8 },
+  },
+];
 
 // Fixture do backend GET /api/cluster/presets.
 export const PRESETS_FIXTURE = [

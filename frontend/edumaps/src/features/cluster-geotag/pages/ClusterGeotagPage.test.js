@@ -12,6 +12,7 @@ import {
   requestCluster,
   getJobProgress,
   getClusterSchools,
+  getClusterSummary,
 } from "../api/clusterApi.js";
 import {
   REGIONS_FIXTURE,
@@ -21,6 +22,7 @@ import {
   COLUMNS_FIXTURE,
   YEARS_FIXTURE,
   CLUSTER_POLYGONS_FIXTURE,
+  CLUSTER_SUMMARY_FIXTURE,
   FIXTURE_GEOTAG,
 } from "../mocks/fixtures.js";
 import { ApiError } from "@/shared/api/client.js";
@@ -35,6 +37,7 @@ vi.mock("../api/clusterApi.js", () => ({
   requestCluster: vi.fn(),
   getJobProgress: vi.fn(),
   getClusterSchools: vi.fn(),
+  getClusterSummary: vi.fn(),
 }));
 
 describe("ClusterGeotagPage", () => {
@@ -45,6 +48,7 @@ describe("ClusterGeotagPage", () => {
     getPresets.mockResolvedValue(PRESETS_FIXTURE);
     getColumns.mockResolvedValue(COLUMNS_FIXTURE);
     getYears.mockResolvedValue(YEARS_FIXTURE);
+    getClusterSummary.mockResolvedValue(CLUSTER_SUMMARY_FIXTURE);
 
     // Leaflet precisa de um container com dimensões; jsdom reporta 0x0,
     // mas o mapa ainda inicializa. Mockamos fitBounds para evitar warning.
@@ -185,15 +189,52 @@ describe("ClusterGeotagPage", () => {
       expect(requestCluster).toHaveBeenCalled();
     });
 
-    // Depois do polling, o mapa mostra os clusters com legenda
+    // Depois do polling, o mapa mostra a legenda com rótulos semânticos
+    // e a tabela de resumo dos clusters.
     await waitFor(
       () => {
         expect(getClusterSchools).toHaveBeenCalled();
-        expect(screen.getByText(/Cluster 1/)).toBeInTheDocument();
-        expect(screen.getByText(/Cluster 2/)).toBeInTheDocument();
+        expect(getClusterSummary).toHaveBeenCalled();
+        expect(screen.getByText(/Resumo dos clusters/)).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
+
+    expect(screen.getAllByText(/Baixa qualidade de infraestrutura/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Alta qualidade de infraestrutura/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("legenda alterna clusters (on/off) ao clicar", async () => {
+    getRegions.mockResolvedValue(REGIONS_FIXTURE);
+    getUfs.mockResolvedValue(UFS_FIXTURE);
+    getMunicipalities.mockResolvedValue(MUNICIPALITIES_FIXTURE);
+    requestCluster.mockResolvedValue({ task: "cluster", job_id: 42 });
+    getJobProgress.mockResolvedValue({ state: "finished", job_id: 42 });
+    getClusterSchools.mockResolvedValue(CLUSTER_POLYGONS_FIXTURE);
+
+    render(ClusterGeotagPage);
+
+    const regiao = await screen.findByLabelText("Região");
+    await fireEvent.change(regiao, { target: { value: String(FIXTURE_GEOTAG.codigo_regiao) } });
+    const uf = await screen.findByLabelText("UF");
+    await fireEvent.change(uf, { target: { value: String(FIXTURE_GEOTAG.codigo_uf) } });
+    await waitFor(() => expect(uf.value).toBe(String(FIXTURE_GEOTAG.codigo_uf)));
+
+    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+
+    // Botão da legenda (não o da tabela) — inicialmente ligado.
+    const btn = await screen.findByRole(
+      "button",
+      { name: /Baixa qualidade de infraestrutura/ },
+      { timeout: 3000 },
+    );
+    expect(btn.getAttribute("aria-pressed")).toBe("true");
+
+    await fireEvent.click(btn);
+    expect(btn.getAttribute("aria-pressed")).toBe("false");
+
+    await fireEvent.click(btn);
+    expect(btn.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("exibe erro quando a API de clusters falha", async () => {

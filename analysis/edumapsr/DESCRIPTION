@@ -50,6 +50,7 @@ Collate:
     'repository-postgres-similarity.R'
     'model-semantic-school-cluster-model.R'
     'model-datasource-postgres-entity-source.R'
+    'cluster-labels.R'
     'analysis-cluster.R'
     'repository-postgres-cluster.R'
     'model-semantic-city-school-model.R'

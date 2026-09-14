@@ -18,6 +18,12 @@ sub years($self) {
   $self->render(json => $result);
 }
 
+sub summary($self) {
+  my $result = $self->instantiate_model(model => 'Cluster')->cluster_summary;
+  return $self->render(json => { error => 'Nenhum cluster gerado ainda' }, status => 404) unless $result->@*;
+  $self->render(json => $result);
+}
+
 sub schools($self) {
   my $v = $self->validation;
   $v->optional('codigo_regiao', 'trim')->num(1, 5);

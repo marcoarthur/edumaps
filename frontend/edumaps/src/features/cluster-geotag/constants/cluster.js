@@ -62,3 +62,10 @@ export function clusterColor(clusterId) {
   const id = Number(clusterId);
   return CLUSTER_COLORS[id] ?? CLUSTER_COLORS[0];
 }
+
+// Rótulo semântico do cluster (ex.: "Alta qualidade de infraestrutura"),
+// com fallback para "Cluster N" quando o rótulo não foi gravado.
+export function clusterLabel(label, clusterId) {
+  const text = (label ?? "").trim();
+  return text || `Cluster ${clusterId}`;
+}
