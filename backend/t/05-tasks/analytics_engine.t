@@ -15,6 +15,7 @@ use open ':std', ':encoding(UTF-8)';
 # Servidor-filho emulando o Plumber (respostas fixas sem DB/R)
 # ---------------------------------------------------------------------------
 my $portfile = "/tmp/user/1000/opencode/ae-test-port.$$";
+my $lastfile = "/tmp/user/1000/opencode/ae-test-last.$$";
 my $pid;
 
 {
@@ -24,6 +25,10 @@ my $pid;
       my $path   = $tx->req->url->path;
       my $method = $tx->req->method;
       my $body   = eval { Mojo::JSON::decode_json($tx->req->body) } // {};
+
+      open my $last, '>', $lastfile or die "lastfile: $!";
+      print {$last} Mojo::JSON::encode_json($body);
+      close $last;
 
       my $json;
       if ($method eq 'POST' && $path eq '/cluster') {
@@ -89,6 +94,7 @@ END {
     $? = 0;
   }
   unlink $portfile if $portfile;
+  unlink $lastfile if $lastfile;
 }
 
 {
@@ -152,6 +158,32 @@ END {
       'resposta do Plumber propagada em r_meta';
     is $r->{cluster_info}{r_meta}{persisted}{run_id}, 'http_run_1',
       'run_id vindo do endpoint';
+
+    $t->app->minion->backend->remove_job($id);
+  };
+
+  # --- Cluster com geotag propaga filter ao endpoint http -------------------
+  subtest 'clustering com filter (geotag) repassado ao endpoint' => sub {
+    my $id = $t->app->apply_clustering({
+      id_column      => 'co_entidade',
+      table_name     => 'censo_escolas',
+      schema         => 'staging',
+      algorithm      => 'kmeans',
+      clusters       => 3,
+      filter         => { co_regiao => 1, co_uf => 35, co_municipio => 3550308 },
+    });
+    my $job = $t->app->minion->job($id);
+    $t->app->minion->perform_jobs;
+
+    is $job->info->{state}, 'finished', 'job com filter finalizado';
+
+    open my $fh, '<', $lastfile or die "lastfile: $!";
+    my $body = decode_json(do { local $/; <$fh> });
+    close $fh;
+
+    is $body->{filter}, { co_regiao => 1, co_uf => 35, co_municipio => 3550308 },
+      'filter presente no payload do POST /cluster';
+    is $body->{table_name}, 'censo_escolas', 'table_name preservado';
 
     $t->app->minion->backend->remove_job($id);
   };

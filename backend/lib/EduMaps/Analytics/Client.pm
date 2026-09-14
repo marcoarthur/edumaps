@@ -38,6 +38,7 @@ sub run_cluster ($self, $args) {
     table_name    => $args->{table_name},
     id_column     => $args->{id_column},
     features      => $args->{features},
+    filter        => $args->{filter},
     parameters    => $args->{parameters} // {},
     output_schema => $args->{output_schema},
   }, $analysis, {
@@ -47,6 +48,7 @@ sub run_cluster ($self, $args) {
       table_name => $args->{table_name},
       id_column  => $args->{id_column},
       features   => $args->{features},
+      filter     => $args->{filter},
       parameters => $args->{parameters} // {},
     },
   });
@@ -146,7 +148,14 @@ sub _post ($self, $endpoint, $body, $opts = {}) {
 
   my $res = $tx->res;
   unless ($res->is_success) {
-    my $message = eval { Mojo::JSON::decode_json($res->body)->{error} } // $res->message;
+    my $decoded = eval { Mojo::JSON::decode_json($res->body)->{error} };
+    my $message;
+    if (ref $decoded eq 'ARRAY') {
+      $message = join('; ', @$decoded);
+    }
+    else {
+      $message = $decoded // $res->message;
+    }
     croak "Analytics: $endpoint retornou " . $res->code . ": $message";
   }
 

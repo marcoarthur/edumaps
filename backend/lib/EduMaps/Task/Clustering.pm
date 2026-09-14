@@ -89,6 +89,10 @@ sub _apply_clustering($job, $args) {
   # features: lista de colunas usadas na clusterização (opcional; por
   # padrão o motor R auto-detecta as colunas numéricas)
   $v->optional('features');
+  # filter: restrição por igualdade de coluna (ex.: geotag), repassado ao
+  # motor R. Estrutura {coluna => valor escalar}, validada manualmente
+  # porque o Mojolicious::Validator não tem tipo 'hash'.
+  $v->optional('filter');
 
   return $job->fail("Invalid algorithm '$algorithm'")
     unless exists ALGORITHM_R_FUNCTION->{$algorithm};
@@ -96,6 +100,18 @@ sub _apply_clustering($job, $args) {
   ($ALGORITHM_VALIDATORS{$algorithm} // sub {})->($v);
 
   return $job->fail("Invalid arguments!") if $v->has_error;
+
+  # filter: {coluna => valor escalar} — rejeita estrutura fora desse formato
+  # antecipadamente (o motor R ainda valida as colunas na tabela).
+  if (defined $args->{filter}) {
+    return $job->fail("Invalid arguments! 'filter' must be a hash of column => scalar")
+      unless ref $args->{filter} eq 'HASH';
+    for my $col (keys %{ $args->{filter} }) {
+      my $val = $args->{filter}{$col};
+      return $job->fail("Invalid arguments! 'filter' value for '$col' must be scalar")
+        if ref $val;
+    }
+  }
 
   # Defaults gerais
   $args->{algorithm}    = $algorithm;
@@ -128,6 +144,7 @@ sub _apply_clustering($job, $args) {
         table_name => $args->{table_name},
         id_column  => $args->{id_column},
         features   => $args->{features},
+        filter     => $args->{filter},
         parameters => {
           algorithm => $algorithm,
           (defined $args->{clusters} ? (clusters => $args->{clusters}) : ()),

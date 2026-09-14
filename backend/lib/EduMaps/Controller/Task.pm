@@ -31,10 +31,28 @@ sub job_progress($self) {
 
   return $self->bad_req if $self->any_error;
 
+  my $job_id = $v->param('job_id');
+
+  # Cliente REST (polling simples — ex.: frontend Svelte /cluster/geotag)
+  # espera um JSON de estado a cada GET. O EventSource (SSE) envia o header
+  # `Accept: text/event-stream`; sem ele, respondemos o snapshot do job.
+  if (($self->req->headers->accept // '') !~ m{text/event-stream}i) {
+    my $info = $self->minion->job($job_id);
+    return $self->render(json => {error => 'job_not_found'}, status => 404) unless $info;
+
+    my $job = $info->info;
+    my %resp = (state => $job->{state});
+    if ($job->{state} eq 'failed') {
+      my $err = $job->{error} // $job->{result};
+      $resp{error} = ref $err eq 'HASH' ? ($err->{error} // Mojo::JSON::encode_json($err)) : "$err";
+    }
+    return $self->render(json => \%resp);
+  }
+
   $self->render_later;
   $self->monitor_job(
     {
-      job_id => $v->param('job_id'),
+      job_id => $job_id,
       poll_time => $self->_default_poll_time,
     }
   );
@@ -65,7 +83,16 @@ sub request_osm($self) {
 # ---------------------------------------------------------------------------
 
 sub request_cluster($self) {
-  my $v = $self->validation;
+  # O frontend envia o payload como application/json (features é um array de
+  # colunas), mas os testes/CLI usam form-urlencoded. O Mojolicious não mescla
+  # corpo JSON nos params da validação automaticamente, então normalizamos a
+  # entrada aqui: JSON ganha preferência, form entra como antes.
+  my $is_json = ($self->req->headers->content_type // '') =~ m{^application/json};
+  my $input = $is_json ? $self->req->json : $self->req->params->to_hash;
+  $input ||= {};
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
   $v->required('table_name', 'trim')->like(qr/^[a-zA-Z]\w+$/);
   $v->required('id_column',  'trim')->like(qr/^\w+$/);
   $v->optional('schema',     'trim')->like(qr/^[a-zA-Z]\w+$/);
@@ -75,7 +102,18 @@ sub request_cluster($self) {
   $v->optional('min_pts',    'trim')->num;
   $v->optional('features');
 
-  return $self->bad_req if $self->any_error;
+  # Filtro por geotag (opcional): região (1-5), UF (2 dígitos) e município
+  # (7 dígitos). Convertidos em `filter` para o motor R.
+  $v->optional('codigo_regiao', 'trim')->num(1, 5);
+  $v->optional('codigo_uf',     'trim')->like(qr/^\d{2}$/);
+  $v->optional('codigo_ibge',   'trim')->like(qr/^\d{7}$/);
+
+  if ($v->has_error) {
+    $self->app->log->debug(
+      "Validation errors: " . join(', ', map { "$_: " . join(', ', @{$v->error($_)}) } $v->failed->@*)
+    );
+  }
+  return $self->bad_req if $v->has_error;
 
   my %args;
   $args{table_name} = $v->param('table_name');
@@ -85,7 +123,17 @@ sub request_cluster($self) {
   $args{clusters}   = $v->param('clusters')  if defined $v->param('clusters');
   $args{eps}        = $v->param('eps')       if defined $v->param('eps');
   $args{min_pts}    = $v->param('min_pts')   if defined $v->param('min_pts');
-  $args{features}   = $v->param('features')  if $v->param('features');
+  # features é um array de colunas no JSON; param('features') colapsaria para a
+  # última coluna, então lemos direto do input e repassamos o array íntegro.
+  $args{features} = $input->{features} if defined $input->{features};
+
+  # Mapeamento geotag -> colunas da clean.censo_escolas (fonte padrão do
+  # pipeline). Só entra no filter se informado pelo usuário.
+  my %filter;
+  $filter{co_regiao}    = 0 + $v->param('codigo_regiao') if $v->param('codigo_regiao');
+  $filter{co_uf}        = 0 + $v->param('codigo_uf')     if $v->param('codigo_uf');
+  $filter{co_municipio} = 0 + $v->param('codigo_ibge')   if $v->param('codigo_ibge');
+  $args{filter} = \%filter if %filter;
 
   my $job_id = $self->app->minion->enqueue(
     clusterization => [\%args] => { queue => 'analytics' }
