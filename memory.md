@@ -18,6 +18,14 @@
   gitignoreou `analysis/edumapsr/edumapsAnalytics.Rcheck/` e
   `edumapsAnalytics_*.tar.gz` (artefatos de R CMD check regeneráveis, não
   voltam a sujar o status). **Working tree limpa ao fim da sessão.**
+- **Limpeza de branches obsoletas** (2026-09-14): removidas do remoto e local
+  as mergeadas `feat/presets-multitabela`, `feat/cluster-geotag-map`,
+  `feat/backend-analytics` e `dev/feat/frontend/toast`. Aprendizado: `git push
+  origin --delete` com vários refs aborta se um deles não existir (refs já
+  apagadas no PR merge ficam como "remote ref does not exist") — deletar um por
+  vez. **Remanescentes com trabalho não mergeado (NÃO apagar sem acordo)**:
+  `feat/deploy/docker` (`6c7d9ce` adapt edumaps for docker) e
+  `fix/backend/schoolgrade` (`8d98de1` School code missing in School Grade).
 
 ### Entregas
 - **db**: migration `school_indicators` (`deploy/revert/verify` + `sqitch.plan`):
