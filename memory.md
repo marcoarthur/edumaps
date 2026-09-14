@@ -4,6 +4,57 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão atual — Presets de indicadores na clusterização (censo + docentes + IDEB)
+
+### Mergeado
+- **PR #61** (`feat/presets-multitabela`) → `main`, merge commit **`cb5e8f4`**,
+  merge em 2026-09-14. Commits: `08b891e` (db), `c42b58c` (backend),
+  `779873a` (frontend). Branch deletada (remoto e local). `main` após FF =
+  `cb5e8f4`.
+
+### Entregas
+- **db**: migration `school_indicators` (`deploy/revert/verify` + `sqitch.plan`):
+  tabela denormalizada `clean.school_indicators` (censo + docentes + IDEB),
+  com `col_description` (comments PT-BR) usados no autocomplete.
+- **backend**: `EduMaps::Presets` (3 presets: infraestrutura, docência,
+  desempenho; ordem fixa `@PRESET_IDS = qw(infraestrutura docencia desempenho)`;
+  `INDICATORS_TABLE`); endpoints `GET /api/cluster/{presets,columns,years}`;
+  `request_cluster` (POST /api/task/cluster) aceita `preset`/`ano_ideb` e valida:
+  **400** p/ preset desconhecido e p/ preset `year_filter` sem `ano_ideb`; com
+  preset força `schema=clean`, `table_name=school_indicators`,
+  `id_column=co_entidade`; `Task::Clustering::_rebuild_indicators` faz
+  TRUNCATE+INSERT na tabela para o `ano_ideb` escolhido (via `Mojo::Pg`,
+  `->hash`/`->array` NÃO `->first`); `Model::Cluster` lê
+  `clean.school_indicators` (existence check + `cluster_geojson_query`).
+- **frontend**: `PresetSelector`, `FeatureSelect` (autocomplete com comments +
+  tags de fonte `SOURCE_LABELS`/`featureLabel`), seletor de ano IDEB/SAEB;
+  página cluster/geotag com preset default `infraestrutura`, guarda de ano p/
+  desempenho, payload com preset/features/ano_ideb.
+
+### Dados/descobertas
+- **IDEB**: `clean.ideb_notas_escolas` tem múltiplos rows por `(id_escola, ano)`
+  por etapa (814.448 linhas; 58.884 pares escola/ano; 84.555 escolas; 97.615 em
+  2023) → o rebuild agrega por escola com `AVG(ideb)` entre etapas. `id_escola`
+  é a coluna do IDEB (não `co_entidade`). Contagens do rebuild: total 214.192,
+  com_docentes 178.473, com_ideb_2023 **68.923**, ideb_médio 5.14, lic_media 0.796.
+- Censo escolar/docentes só têm `nu_ano_censo = 2025`; docentes join por
+  `co_entidade + nu_ano_censo`; IDEB por `i.id_escola = e.co_entidade AND i.ano = ?`.
+- **Ambiente duplo**: o container usa DB separado — `backend` conf conecta em
+  `Database` LXC (`postgresql://edumaps:change_me@Database/edumaps_dev`), que é
+  **diferente** do `edumaps_dev@ubatexu.lan` (devel). Migration aplicada via
+  `sqitch deploy db:pg://edumaps:change_me@localhost/edumaps_dev` no
+  `database.edumaps` (estava 2 changes atrás).
+- Falhas pré-existentes do frontend seguem: `paginationStore ×3` e
+  `SchoolRankingPage ×1` (rota `/escola/search` vs `/busca`). Cluster-geotag 6/6.
+
+### Validação
+- Testes backend: `cluster.t` 9, `task.t` 19, `network/schools.t` 4 — PASS.
+- E2E no deploy: jobs Minion Ubatuba 3555406 — desempenho/2023 (job 5865)
+  → rebuild 214.192 e clusters 1-5 (47/3/18/7/9 + 2 sem nota); infraestrutura
+  (job 5866) sem ano → clusters 1/3/4. GeoJSON com `cluster_id` OK.
+  `/api/cluster/presets|columns|years` OK. `edumaps-analytic.service` (backend)
+  segue failed (legado; Plumber real roda em `analytic.edumaps:8000`, ativo).
+
 ## Sessão atual — Fix lite app nos scripts dev/entrypoint
 
 - **Problema**: usuário reportou que a "App lite" `backend/edu_maps.pl`
