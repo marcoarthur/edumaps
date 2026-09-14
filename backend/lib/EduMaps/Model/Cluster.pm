@@ -16,8 +16,10 @@ EduMaps::Model::Cluster - Consultas de leitura sobre resultados de clusterizaç�
 
 Fornece a leitura GeoJSON das escolas agrupadas por um job de clusterização
 (Task::Clustering + motor R/edumapsr). O campo C<cluster_id> é gravado
-dinamicamente em C<clean.censo_escolas> pelo motor R (ALTER TABLE ADD COLUMN),
-por isso aqui a consulta é feita com SQL puro em vez do source DBIC.
+dinamicamente em C<clean.school_indicators> (tabela denormalizada de
+indicadores, populada pelo job para o ano escolhido) pelo motor R
+(ALTER TABLE ADD COLUMN + UPDATE), por isso aqui a consulta é feita com SQL
+puro em vez do source DBIC.
 
 =head1 METHODS
 
@@ -56,7 +58,7 @@ sub clustered_schools($self, $params = {}) {
     $dbh->selectall_arrayref(
       "SELECT 1 FROM information_schema.columns
          WHERE table_schema = 'clean'
-           AND table_name = 'censo_escolas'
+           AND table_name = 'school_indicators'
            AND column_name = 'cluster_id'",
     );
   } || [];
@@ -97,9 +99,64 @@ sub cluster_geojson_query($self) {
       latitude IS NOT NULL AND longitude IS NOT NULL
     )), '[]'::json)
   ) AS feature
-  FROM clean.censo_escolas
+  FROM clean.school_indicators
   WHERE __WHERE__
   EOSQL
+}
+
+# ---------------------------------------------------------------------------
+# Cascata de seleção de geotag (região → UF → município), alimentada pelos
+# valores distintos presentes em clean.censo_escolas.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Catálogo de features e anos disponíveis para clusterização. As features são
+# as colunas de clean.school_indicators (tabela denormalizada populada pelo
+# job), com o comment vindo do metadado (col_description) — usado no
+# autocomplete do frontend. table_name indica a origem do indicador.
+# ---------------------------------------------------------------------------
+
+sub columns($self) {
+  my $dbh = eval { $self->schema->storage->dbh } || return [];
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~'EOSQL', { Slice => {} });
+      SELECT c.column_name,
+             c.data_type,
+             COALESCE(
+               col_description('clean.school_indicators'::regclass, c.ordinal_position),
+               ''
+             ) AS comment,
+             CASE
+               WHEN c.column_name IN (
+                 'prop_licenciatura', 'prop_mestrado', 'prop_doutorado',
+                 'prop_efetivos', 'prop_sem_especializacao', 'qt_doc_bas'
+               ) THEN 'censo_docentes'
+               WHEN c.column_name IN (
+                 'ano_ideb', 'nota_media', 'nota_matematica', 'nota_portugues',
+                 'ideb_observado', 'aprovacao_si_4'
+               ) THEN 'ideb_notas_escolas'
+               ELSE 'censo_escolas'
+             END AS table_name
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'clean'
+        AND c.table_name = 'school_indicators'
+      ORDER BY c.ordinal_position
+    EOSQL
+  };
+  return [] unless $rows;
+  return $rows;
+}
+
+sub years($self) {
+  my $dbh = eval { $self->schema->storage->dbh } || return [];
+  my $rows = eval {
+    $dbh->selectall_arrayref(
+      'SELECT DISTINCT ano FROM clean.ideb_notas_escolas ORDER BY ano DESC',
+      { Slice => {} },
+    );
+  };
+  return [] unless $rows;
+  return $rows;
 }
 
 # ---------------------------------------------------------------------------

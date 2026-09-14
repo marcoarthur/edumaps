@@ -4,6 +4,9 @@
 #   GET /api/cluster/ufs
 #   GET /api/cluster/municipalities
 #   GET /api/cluster/schools
+#   GET /api/cluster/presets
+#   GET /api/cluster/columns
+#   GET /api/cluster/years
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -51,6 +54,47 @@ subtest 'GET /api/cluster/schools: sem codigo_* válido -> 400' => sub {
 subtest 'GET /api/cluster/schools: recorte sem cluster gerado -> 404' => sub {
   # UF 00 não existe no censo — garante 404 sem reescrever a tabela
   $t->get_ok('/api/cluster/schools' => form => {codigo_uf => '00'})->status_is(404);
+};
+
+subtest 'GET /api/cluster/presets: lista os 3 presets curados' => sub {
+  my $tx = $t->get_ok('/api/cluster/presets')->status_is(200)->tx;
+  my $json = $tx->res->json;
+  is scalar($json->@*), 3, '3 presets';
+  my %by_id = map { $_->{id} => $_ } @$json;
+  ok(defined $by_id{desempenho}, 'preset desempenho');
+  ok(defined $by_id{docencia}, 'preset docencia');
+  ok(defined $by_id{infraestrutura}, 'preset infraestrutura');
+  ok($by_id{desempenho}->{year_filter} == 1, 'desempenho exige ano');
+  ok($by_id{docencia}->{year_filter} == 0, 'docencia independente de ano');
+  is $by_id{infraestrutura}->{features}->[0], 'in_agua_potavel', 'feature de infraestrutura';
+  is $by_id{desempenho}->{features}->[0], 'nota_media', 'feature de desempenho';
+  is $by_id{docencia}->{features}->[0], 'prop_licenciatura', 'feature de docência';
+};
+
+subtest 'GET /api/cluster/columns: cataloga colunas de school_indicators' => sub {
+  my $tx = $t->get_ok('/api/cluster/columns')->status_is(200)->tx;
+  my $json = $tx->res->json;
+  ok(ref($json) eq 'ARRAY', 'Resposta é um array');
+  ok($json->@* >= 300, 'lista completa do censo + docentes + IDEB (~325)');
+  my %by_name = map { $_->{column_name} => $_ } @$json;
+  ok(defined $by_name{co_entidade}, 'co_entidade presente');
+  is $by_name{co_entidade}->{table_name}, 'censo_escolas', 'co_entidade vem do censo';
+  ok(defined $by_name{nota_media}, 'nota_media presente');
+  is $by_name{nota_media}->{table_name}, 'ideb_notas_escolas', 'nota_media vem do IDEB';
+  ok(defined $by_name{prop_licenciatura}, 'prop_licenciatura presente');
+  is $by_name{prop_licenciatura}->{table_name}, 'censo_docentes', 'prop_licenciatura vem de docentes';
+  ok(length($by_name{prop_licenciatura}->{comment}) > 0, 'comment de prop_licenciatura preenchido');
+  ok(length($by_name{ano_ideb}->{comment}) > 0, 'comment de ano_ideb preenchido');
+};
+
+subtest 'GET /api/cluster/years: anos IDEB disponíveis em ordem decrescente' => sub {
+  my $tx = $t->get_ok('/api/cluster/years')->status_is(200)->tx;
+  my $json = $tx->res->json;
+  ok(ref($json) eq 'ARRAY', 'Resposta é um array');
+  ok($json->@* >= 1, 'Ao menos 1 ano');
+  my @anos = sort { $b <=> $a } map { $_->{ano} } @$json;
+  my @payload = map { $_->{ano} } @$json;
+  is \@payload, \@anos, 'anos em ordem decrescente';
 };
 
 done_testing;

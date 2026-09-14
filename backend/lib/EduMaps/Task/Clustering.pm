@@ -2,6 +2,7 @@ package EduMaps::Task::Clustering;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Syntax::Keyword::Try;
 use EduMaps::Analysis::R::Pipe;
+use EduMaps::Presets;
 use Time::Piece;
 
 use constant {
@@ -127,6 +128,18 @@ sub _apply_clustering($job, $args) {
     $args->{$key} //= $ALGORITHM_DEFAULTS{$algorithm}{$key};
   }
 
+  # -------------------------------------------------------------------------
+  # Tabela denormalizada de indicadores (presets multi-tabela). O job
+  # materializa clean.school_indicators (TRUNCATE + INSERT) para o ano IDEB
+  # escolhido ANTES de chamar o motor R — o Plumber lê/escreve cluster_id na
+  # MESMA tabela, logo ela precisa existir com o conteúdo do ano em questão.
+  # -------------------------------------------------------------------------
+  if ($args->{table_name} eq EduMaps::Presets->INDICATORS_TABLE) {
+    $args->{schema} = 'clean';
+    my $err = _rebuild_indicators($job, $args);
+    return $job->fail("Error rebuilding clean.school_indicators: $err") if $err;
+  }
+
   my $r_function  = ALGORITHM_R_FUNCTION->{$algorithm};
   my $extra_args  = $ALGORITHM_R_ARGS{$algorithm}->($args);
 
@@ -202,6 +215,85 @@ sub _apply_clustering($job, $args) {
       }
     }
   );
+}
+
+# Preenche clean.school_indicators para o ano IDEB escolhido. Retorna undef em
+# caso de sucesso, ou a mensagem de erro. Usa o Mojo::Pg da app (mesmo banco
+# que o motor R enxerga via pg_service 'edumaps_local').
+sub _rebuild_indicators($job, $args) {
+  my $db = $job->app->pg->db;
+  my $ano_ideb = $args->{ano_ideb};
+
+  unless (defined $ano_ideb) {
+    my $row = $db->query(
+      'SELECT COALESCE(MAX(ano), 0) AS ano FROM clean.ideb_notas_escolas'
+    )->hash;
+    $ano_ideb = $row->{ano};
+  }
+
+  my $has_ano = $db->query(
+    'SELECT 1 FROM clean.ideb_notas_escolas WHERE ano = ?', $ano_ideb
+  )->hash;
+  return "ano_ideb '$ano_ideb' sem dados em clean.ideb_notas_escolas" unless $has_ano;
+
+  # Toda feature selecionada precisa existir na tabela denormalizada
+  # (valida cedo: o motor R só reclamaria depois de ler a tabela inteira).
+  for my $feature (@{ $args->{features} || [] }) {
+    return "feature '$feature' não existe em clean.school_indicators"
+      if ref $feature || !$db->query(
+        "SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'clean'
+              AND table_name = 'school_indicators'
+              AND column_name = ?",
+        $feature
+      )->hash;
+  }
+
+  eval {
+    $db->query('TRUNCATE TABLE clean.school_indicators');
+    $db->query(_indicators_build_sql(), $ano_ideb);
+    1;
+  } or return "$@";
+
+  return;
+}
+
+# INSERT multicampo que materializa censo escolar + docentes (proporções por
+# qt_doc_bas) + IDEB/SAEB agregado ao nível de escola (média entre etapas).
+# O único bind é o ano IDEB (2023 etc.).
+sub _indicators_build_sql() {
+  return <<~'EOSQL';
+    INSERT INTO clean.school_indicators
+    SELECT
+      e.*,
+      d.qt_doc_bas,
+      d.qt_doc_bas_esco_sup_grad_licen::float / NULLIF(d.qt_doc_bas, 0) AS prop_licenciatura,
+      d.qt_doc_bas_esco_sup_pos_mestra::float / NULLIF(d.qt_doc_bas, 0)  AS prop_mestrado,
+      d.qt_doc_bas_esco_sup_pos_douto::float / NULLIF(d.qt_doc_bas, 0)   AS prop_doutorado,
+      d.qt_doc_bas_vinculo_concur::float / NULLIF(d.qt_doc_bas, 0)       AS prop_efetivos,
+      d.qt_doc_bas_espec_nenhum::float / NULLIF(d.qt_doc_bas, 0)         AS prop_sem_especializacao,
+      i.ano AS ano_ideb,
+      i.nota_media,
+      i.nota_matematica,
+      i.nota_portugues,
+      i.ideb_observado,
+      i.aprovacao_si_4
+    FROM clean.censo_escolas e
+    LEFT JOIN clean.censo_docentes d
+      ON d.co_entidade = e.co_entidade AND d.nu_ano_censo = e.nu_ano_censo
+    LEFT JOIN (
+      SELECT id_escola, ano,
+             avg(nota_media)::numeric AS nota_media,
+             avg(nota_matematica)::numeric AS nota_matematica,
+             avg(nota_portugues)::numeric AS nota_portugues,
+             avg(ideb_observado)::numeric AS ideb_observado,
+             avg(aprovacao_si_4)::numeric AS aprovacao_si_4
+      FROM clean.ideb_notas_escolas
+      WHERE ano = ?
+      GROUP BY id_escola, ano
+    ) i
+      ON i.id_escola = e.co_entidade
+  EOSQL
 }
 
 1;
