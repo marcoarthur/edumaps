@@ -71,6 +71,7 @@ Arquivos de skill em `.opencode/skills/`:
 | postgres-postgis | `postgres-postgis.md` | Queries SQL, MVs, PostGIS, schema |
 | sqitch-migrations | `sqitch-migrations.md` | Criar/revisar migrations Sqitch |
 | r-analytics | `r-analytics.md` | Scripts R, edumapsr, clustering, SIOPE |
+| frontend-svelte | `frontend-svelte.md` | UI Svelte 5/Leaflet: mapas, legendas, padrões reutilizáveis |
 
 ## Code style
 
