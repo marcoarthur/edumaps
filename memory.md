@@ -11,6 +11,13 @@
   merge em 2026-09-14. Commits: `08b891e` (db), `c42b58c` (backend),
   `779873a` (frontend). Branch deletada (remoto e local). `main` após FF =
   `cb5e8f4`.
+- Fechamento: `03410cc` docs (memory), depois **`62aa757` chore: commit fontes
+  pendentes e ignora artefatos R** — commitou os pendentes antigos
+  (`EventBus/Middleware/SiopeTask.pm` info→error, `script/tasks/siope.pl`,
+  `templates/osm/query/school.opq.ep`, `map_app/src/lib/js/city.js`) e
+  gitignoreou `analysis/edumapsr/edumapsAnalytics.Rcheck/` e
+  `edumapsAnalytics_*.tar.gz` (artefatos de R CMD check regeneráveis, não
+  voltam a sujar o status). **Working tree limpa ao fim da sessão.**
 
 ### Entregas
 - **db**: migration `school_indicators` (`deploy/revert/verify` + `sqitch.plan`):
