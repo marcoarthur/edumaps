@@ -56,8 +56,8 @@ run() {
 
 # --- SERVICES ---
 
-run "minion-worker" bash -c "find . -name '*.pl' -o -name '*.pm' | entr -r ./edu_maps.pl minion worker"
-run "morbo-server" bash -c "morbo ./edu_maps.pl"
+run "minion-worker" bash -c "find . -name '*.pl' -o -name '*.pm' | entr -r ./script/edumaps.pl minion worker"
+run "morbo-server" bash -c "morbo ./script/edumaps.pl"
 run "svelte-build" bash -c "cd ../frontend/map_app && npm run dev"
 # R and plumber are memory hungry so we should running only when requested
 if [[ -v ANALYTICS && -n $ANALYTICS ]]; then

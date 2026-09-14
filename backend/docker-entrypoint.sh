@@ -25,7 +25,7 @@ cat > /opt/edumaps/backend/edu_maps.conf <<EOF
 EOF
 
 if [ "$1" = 'minion' ]; then
-    exec carton exec ./edu_maps.pl minion worker
+    exec carton exec ./script/edumaps.pl minion worker
 else
-    exec carton exec morbo edu_maps.pl
+    exec carton exec morbo script/edumaps.pl
 fi
