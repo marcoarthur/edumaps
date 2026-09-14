@@ -38,4 +38,39 @@ subtest '[API Network] schools - contrato' => sub {
   }
 };
 
+# ------------------------------------------------------------
+# GET /api/cluster/schools
+# ------------------------------------------------------------
+subtest 'GET /api/cluster/schools: retorna FeatureCollection com cluster_id' => sub {
+  # Garante a coluna (job de clusterização pode não ter rodado no dev)
+  my $dbh = $t->app->schema->storage->dbh;
+  $dbh->do('ALTER TABLE clean.censo_escolas ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
+  $dbh->do('UPDATE clean.censo_escolas SET cluster_id = 1 WHERE co_municipio = 3550308');
+
+  my $tx = $t->get_ok('/api/cluster/schools' => form => {
+    codigo_uf     => 35,
+    codigo_ibge   => 3550308,
+  })->status_is(200)->tx;
+  my $json = $tx->res->json;
+
+  is $json->{type}, 'FeatureCollection', 'É um FeatureCollection';
+  ok(ref($json->{features}) eq 'ARRAY', 'Possui array de features');
+
+  my $n = @{ $json->{features} };
+  ok($n >= 1, 'Possui ao menos 1 feature (n=' . $n . ')');
+  like $json->{features}[0]->{properties}{cluster_id} => qr/^\d+$/, 'cluster_id numérico';
+
+  $dbh->do('UPDATE clean.censo_escolas SET cluster_id = NULL WHERE co_municipio = 3550308');
+  $dbh->do('ALTER TABLE clean.censo_escolas DROP COLUMN IF EXISTS cluster_id');
+};
+
+subtest 'GET /api/cluster/schools: sem cluster_id -> 404 + erro' => sub {
+  my $dbh = $t->app->schema->storage->dbh;
+  $dbh->do('ALTER TABLE clean.censo_escolas ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
+
+  $t->get_ok('/api/cluster/schools' => form => {codigo_regiao => 1})->status_is(404);
+
+  $dbh->do('ALTER TABLE clean.censo_escolas DROP COLUMN IF EXISTS cluster_id');
+};
+
 done_testing;

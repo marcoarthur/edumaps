@@ -4,4 +4,5 @@ EDUMAPS_DBNAME=<%= $db_name %>
 EDUMAPS_USER=<%= $db_user %>
 EDUMAPS_PASSWORD=<%= $db_pass %>
 EDUMAPS_SCHEMA=<%= $db_schema %>
+EDUMAPS_ANALYTICS_DB_SERVICE=edumaps_local
 R_LIBS=/usr/local/lib/R/site-library

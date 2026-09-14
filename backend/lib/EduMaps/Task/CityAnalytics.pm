@@ -113,23 +113,45 @@ sub _apply_city_analytics ($job, $args) {
   my $cod_ibge   = $args->{codigo_ibge};
 
   my $r_out;
-  try {
-    $r_out = $rpipe->run(
-      {
-        paths       => $args->{paths} || $app->renderer->paths,
-        source_file => $args->{source_file} . '.R',
-        script      => <<~"EOS",
-        ${r_function}(
-          con           = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
-          schema        = "$args->{schema}",
-          codigo_ibge   = "$cod_ibge",
-          output_schema = "@{[ ANALYTICS_SCHEMA ]}"
-        )
-        EOS
-      }
-    );
-  } catch ($err) {
-    return $job->fail("Erro na execução do script R ($analysis) para IBGE $cod_ibge: $err");
+  my $engine = $job->app->analytics_engine;
+
+  # ---------------------------------------------------------------
+  # Motor HTTP: POST /summary (persiste em analytics.city_school_analytics)
+  # ---------------------------------------------------------------
+  if ($engine eq 'http') {
+    try {
+      $r_out = $job->app->analytics->run_summary({
+        codigo_ibge => $cod_ibge,
+        schema      => $args->{schema},
+        parameters  => { type => $analysis },
+      });
+    } catch ($err) {
+      return $job->fail("Erro na execução do serviço analítico ($analysis) para IBGE $cod_ibge: $err");
+    }
+  }
+
+  # ---------------------------------------------------------------
+  # Motor legado: R::Pipe (city_analytics.R)
+  # ---------------------------------------------------------------
+  else {
+    try {
+      $r_out = $rpipe->run(
+        {
+          paths       => $args->{paths} || $app->renderer->paths,
+          source_file => $args->{source_file} . '.R',
+          script      => <<~"EOS",
+          ${r_function}(
+            con           = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
+            schema        = "$args->{schema}",
+            codigo_ibge   = "$cod_ibge",
+            output_schema = "@{[ ANALYTICS_SCHEMA ]}"
+          )
+          EOS
+        }
+      );
+    } catch ($err) {
+      return $job->fail("Erro na execução do script R ($analysis) para IBGE $cod_ibge: $err");
+    }
   }
 
   # Atualiza o cache CHI ao finalizar o processamento com sucesso

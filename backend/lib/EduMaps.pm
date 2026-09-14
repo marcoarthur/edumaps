@@ -19,6 +19,7 @@ sub startup ($self) {
   # Helpers
   # ------------------------------------------------------------
   $self->plugin("EduMaps::Plugin::Helpers");
+  $self->plugin("EduMaps::Plugin::Analytics");
 
   # ------------------------------------------------------------
   # Plugins
@@ -44,7 +45,7 @@ sub startup ($self) {
   # ------------------------------------------------------------
   push @{$self->routes->namespaces}, 'EduMaps::Controller';
 
-  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Task Rank SchoolNetwork);
+  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Task Rank SchoolNetwork Cluster);
 
   $self->log->info("EduMaps inicializado com sucesso [v$VERSION].");
 }

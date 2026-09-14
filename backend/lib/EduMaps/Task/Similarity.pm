@@ -121,30 +121,61 @@ sub _apply_similarity($job, $args) {
   $args->{db_service} //= DB_SERVICE;
   $args->{source_file} //= $metric;
 
+  # Motor de execução. No motor HTTP (Plumber/edumapsr) apenas a métrica
+  # Gower está portada hoje (endpoint /similarity/db); as demais seguem
+  # no motor legado R::Pipe.
+  my $engine = $job->app->analytics_engine;
+  if ($engine eq 'http' && $metric ne 'gower') {
+    return $job->fail(
+      "Metric '$metric' nao suportada no motor http (somente 'gower'); use analytics_engine 'pipe'"
+    );
+  }
+
   my $r_function = METRIC_R_FUNCTION->{$metric};
   my $extra_args = $METRIC_R_ARGS{$metric}->($args);
   # separador de virgula so quando ha argumentos extras
   my $extra_args_sep = length($extra_args) ? ",\n            $extra_args" : '';
 
   my $r_out;
-  try {
-    $r_out = $rpipe->run(
-      {
-        paths => $args->{paths} || $job->app->renderer->paths,
-        source_file => $args->{source_file} . '.R',
-        script => <<~"EOS",
-          ${r_function}(
-            con           = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
-            schema        = "$args->{schema}",
-            table_name    = "$args->{table_name}",
-            id_column     = "$args->{id_column}",
-            output_schema = "@{[ ANALYTICS_SCHEMA ]}"${extra_args_sep}
-          )
-        EOS
-      }
-    );
-  } catch($err) {
-    return $job->fail("Error running R ($metric): $err");
+
+  # ---------------------------------------------------------------
+  # Motor HTTP: POST /similarity/db (somente gower)
+  # ---------------------------------------------------------------
+  if ($engine eq 'http') {
+    try {
+      $r_out = $job->app->analytics->run_similarity_db({
+        schema     => $args->{schema},
+        table_name => $args->{table_name},
+        id_column  => $args->{id_column},
+      });
+    } catch($err) {
+      return $job->fail("Error running analytics ($metric): $err");
+    }
+  }
+
+  # ---------------------------------------------------------------
+  # Motor legado: R::Pipe
+  # ---------------------------------------------------------------
+  else {
+    try {
+      $r_out = $rpipe->run(
+        {
+          paths => $args->{paths} || $job->app->renderer->paths,
+          source_file => $args->{source_file} . '.R',
+          script => <<~"EOS",
+            ${r_function}(
+              con           = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
+              schema        = "$args->{schema}",
+              table_name    = "$args->{table_name}",
+              id_column     = "$args->{id_column}",
+              output_schema = "@{[ ANALYTICS_SCHEMA ]}"${extra_args_sep}
+            )
+          EOS
+        }
+      );
+    } catch($err) {
+      return $job->fail("Error running R ($metric): $err");
+    }
   }
 
   my $end = localtime;

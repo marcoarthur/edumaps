@@ -86,6 +86,13 @@ sub _apply_clustering($job, $args) {
   $v->optional('schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
   $v->optional('db_service', 'trim')->like(qr/^\w+$/);
   $v->optional('algorithm', 'trim')->in(sort keys %{ +ALGORITHM_R_FUNCTION() });
+  # features: lista de colunas usadas na clusterização (opcional; por
+  # padrão o motor R auto-detecta as colunas numéricas)
+  $v->optional('features');
+  # filter: restrição por igualdade de coluna (ex.: geotag), repassado ao
+  # motor R. Estrutura {coluna => valor escalar}, validada manualmente
+  # porque o Mojolicious::Validator não tem tipo 'hash'.
+  $v->optional('filter');
 
   return $job->fail("Invalid algorithm '$algorithm'")
     unless exists ALGORITHM_R_FUNCTION->{$algorithm};
@@ -93,6 +100,18 @@ sub _apply_clustering($job, $args) {
   ($ALGORITHM_VALIDATORS{$algorithm} // sub {})->($v);
 
   return $job->fail("Invalid arguments!") if $v->has_error;
+
+  # filter: {coluna => valor escalar} — rejeita estrutura fora desse formato
+  # antecipadamente (o motor R ainda valida as colunas na tabela).
+  if (defined $args->{filter}) {
+    return $job->fail("Invalid arguments! 'filter' must be a hash of column => scalar")
+      unless ref $args->{filter} eq 'HASH';
+    for my $col (keys %{ $args->{filter} }) {
+      my $val = $args->{filter}{$col};
+      return $job->fail("Invalid arguments! 'filter' value for '$col' must be scalar")
+        if ref $val;
+    }
+  }
 
   # Defaults gerais
   $args->{algorithm}    = $algorithm;
@@ -112,24 +131,55 @@ sub _apply_clustering($job, $args) {
   my $extra_args  = $ALGORITHM_R_ARGS{$algorithm}->($args);
 
   my $r_out;
-  try {
-    $r_out = $rpipe->run(
-      {
-        paths => $args->{paths} || $job->app->renderer->paths,
-        source_file => $args->{source_file} . '.R',
-        script => <<~"EOS",
-          ${r_function}(
-            con        = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
-            schema     = "$args->{schema}",
-            table_name = "$args->{table_name}",
-            id_column  = "$args->{id_column}",
-            $extra_args
-          )
-        EOS
-      }
-    );
-  } catch($err) {
-    return $job->fail("Error running R ($algorithm): $err");
+  my $engine = $job->app->analytics_engine;
+
+  # ---------------------------------------------------------------
+  # Motor HTTP: Plumber/edumapsr (POST /cluster). O serviço persiste
+  # cluster_id na staging e metadados em analytics.clustering_metadata.
+  # ---------------------------------------------------------------
+  if ($engine eq 'http') {
+    try {
+      $r_out = $job->app->analytics->run_cluster({
+        schema     => $args->{schema},
+        table_name => $args->{table_name},
+        id_column  => $args->{id_column},
+        features   => $args->{features},
+        filter     => $args->{filter},
+        parameters => {
+          algorithm => $algorithm,
+          (defined $args->{clusters} ? (clusters => $args->{clusters}) : ()),
+          (defined $args->{eps}      ? (eps      => $args->{eps})      : ()),
+          (defined $args->{min_pts}  ? (min_pts  => $args->{min_pts})  : ()),
+        },
+      });
+    } catch($err) {
+      return $job->fail("Error running analytics ($algorithm): $err");
+    }
+  }
+
+  # ---------------------------------------------------------------
+  # Motor legado: R::Pipe (scripts R locais via Rscript/IPC::Run)
+  # ---------------------------------------------------------------
+  else {
+    try {
+      $r_out = $rpipe->run(
+        {
+          paths => $args->{paths} || $job->app->renderer->paths,
+          source_file => $args->{source_file} . '.R',
+          script => <<~"EOS",
+            ${r_function}(
+              con        = dbConnect(RPostgres::Postgres(), service = "$args->{db_service}"),
+              schema     = "$args->{schema}",
+              table_name = "$args->{table_name}",
+              id_column  = "$args->{id_column}",
+              $extra_args
+            )
+          EOS
+        }
+      );
+    } catch($err) {
+      return $job->fail("Error running R ($algorithm): $err");
+    }
   }
 
   my $end = localtime;

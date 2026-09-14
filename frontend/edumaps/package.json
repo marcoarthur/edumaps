@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite --host\" \"cd ../../backend && morbo --watch lib script/edumaps.pl\" \"cd ../../analysis/edumapsr && find R inst -type f -name '*.R' | entr -r Rscript inst/plumber/run.R\"",
+    "dev": "ANALYTICS_URL=http://localhost:8787 concurrently \"vite --host\" \"cd ../../backend && morbo --watch lib script/edumaps.pl\" \"cd ../../backend && perl script/edumaps.pl minion worker -q analytics\" \"cd ../../analysis/edumapsr && find R inst -type f -name '*.R' | entr -r env EDUMAPS_ANALYTICS_DB_SERVICE=edumaps Rscript inst/plumber/run.R\"",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",

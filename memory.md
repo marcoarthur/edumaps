@@ -4,7 +4,211 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Ciclo de limpeza: gitignore + reorganização docs (em andamento)
+## Sessão atual — Deploy e2e do motor http (Plumber) nos containers
+
+### Implantado e validado
+- `rex prepare` + `deploy_analytics_worker_dev` (worker fila `analytics`
+  ativo no backend) + `deploy_analytics_dev` no container analytic.
+- Primeiro `deploy_analytics_dev` falhou: `R CMD INSTALL` sem `dbscan`,
+  `mclust`, `kernlab` (deps de algoritmos de clustering). Corrigido no
+  `Rexfile` (install.packages) — commit **`4ba80e9` feat(deploy): engine
+  http padrao e deps dbscan mclust kernlab** (também flippa
+  `analytics_engine: http` no template `files/edumaps_db.conf`).
+- Container backend: `analytics_url => http://analytic:8000`, engine `http`
+  (manual na config deployada). Serviços `edumaps-web`/`edumaps-minion`/
+  `edumaps-minion-analytics` ativos.
+
+### Correções no edumapsr (deploy)
+- **`e0e9d56` fix(analysis): escopo do pacote no Plumber**:
+  - `run.R` usava só `requireNamespace` → exports NÃO estavam na search path
+    e os handlers do Plumber não achavam funções do pacote. Adicionado
+    `library(edumapsAnalytics)` no branch do pacote instalado.
+  - `analytics_db_connection()` é **interna (não exportada)** — qualificada
+    com `edumapsAnalytics:::` no `endpoint.R` (3 chamadas: /cluster,
+    /summary, /similarity/db).
+  - `Sys.setlocale("LC_ALL", "C.UTF-8")` no run.R p/ silenciar warnings
+    "cannot be translated to UTF-8" (strings marcadas como native no parse).
+    Na prática, só removeu os warnings após re-instalar o pacote com
+    `LC_ALL=C.UTF-8 R CMD INSTALL`.
+- **`d885787` fix(analysis): serializa metricas com tabelas R em JSON**:
+  - `analyze_city_summary` usava `table(data$dependencia)` em metrics; o
+    repositório `persist_city_summary` serializava `result$metrics` direto
+    com `jsonlite::toJSON` → **"No method asJSON S3 class: table"** → 500 em
+    /summary. Correção na raiz: `as.list(table(...))` (lista nomeada).
+  - `view-json.R::as_json_scalar` agora converte objects `table` em objetos
+    JSON nomeados (defesa). Sem isso os testes de `/summary` quebrariam se
+    alguma métrica voltasse a ser `table`.
+
+### E2E validado (via curl nos containers)
+- `POST http://analytic:8000/cluster` (staging.test_cluster, 500 escolas)
+  → JSON com `data`, `metrics`, `tables`; persiste `cluster_id` na tabela e
+  3 linhas em `analytics.clustering_metadata` (run_id `run_<ts>`).
+- `POST /api/task/cluster` (backend, form-encoded) → job Minion **finished**
+  (job 5858, fila `analytics`, worker dedicado). O server Plumber responde mas
+  pode levar >120 s em tabelas grandes (kmeans sobre clean.escolas inteiro
+  estourou timeout — usar tabela reduzida ou aumentar `analytics_timeout`).
+- `POST /summary` (clean.escolas 3106200, full_summary) → 200, persiste em
+  `analytics.city_school_analytics` (summary_data jsonb, distribuicao por
+  dependência como objeto).
+- `POST /similarity/db` (staging.test_cluster, k=5, gower) → 200, persiste em
+  `analytics.similarity_pairs` (append por run).
+- Limitação descoberta: `/summary` com `type=score_distributions`/
+  `school_clusters` retorna 500 ("repository espera um resultado
+  city_summary") — o repo só persiste `full_summary`; sub-análises
+  (SKIPPED) não são persistidas. Endpoint aceita, mas não persiste.
+
+### Descobertas de operação
+- Serviço `edumaps-analytic` roda `Rscript inst/plumber/run.R` com
+  `WorkingDirectory=/opt/edumaps/analysis/edumapsr` (FONTE rsyncada), NÃO o
+  pacote instalado (site-library). Depois de `R CMD INSTALL` é obrigatório
+  `systemctl stop/start` (só `restart` mantém MainPID antigo às vezes) e não
+  esconder o erro: **verificar `systemctl show ... --property=MainPID`**.
+
+## Sessão anterior — Migração das análises R::Pipe → Plumber (edumapsr), Fase 3 concluída
+
+### Fase 1 completa (commits)
+- **`d79d427` feat(analysis): endpoints plumber cluster/summary e repos** —
+  edumapsr ganhou POST `/cluster`, `/summary`, `/similarity/db` + facades e
+  repos S3 persistentes (staging cluster_id via temp table, upsert
+  `city_school_analytics`, append `similarity_pairs`). 147 testes testthat PASS.
+
+### Fase 2 completa (commits)
+- **`5f110c6` feat(backend): connector Perl <-> Plumber**:
+  - `EduMaps::Analytics::Client` — chamadas HTTP **síncronas** (`Mojo::UserAgent`
+    bloqueante), endpoints `/cluster|summary|similarity/db|chart|health`.
+  - Cache compartilhado `analytics.analysis_cache` com chave **canônica**
+    (`JSON::PP->canonical` + `Mojo::Util::sha1_hex` de `{analysis, params,
+    source_version}`), estável entre processos (hash ordering do Perl era
+    aleatória por processo!). **Escopo do cache inclui dados afetam o resultado**:
+    `/summary` keyed por `codigo_ibge+schema+parameters`; `/cluster` por
+    `schema+table_name+id_column+features+parameters` (NÃO `output_schema`).
+    Read-through p/ cluster e city_summary; similaridade (pares O(n²))
+    **nunca é cacheada**.
+  - Descobertas Mojo nesta versão (site_perl 5.42.0):
+    - `Mojo::Util::sha1_hex` existe mas NÃO está em `@EXPORT_OK` — chamar
+      **fully-qualified** (`Mojo::Util::sha1_hex(...)`), senão
+      `use Mojo::Util qw(sha1_hex)` falha em `perl -c`.
+    - `use Mojo::JSON qw(encode_json decode_json)` numa classe com
+      `Mojo::Base -base, -signatures` dispara **prototype mismatch** — usar
+      `use Mojo::JSON;` + chamadas `Mojo::JSON::encode_json(...)`.
+    - `Mojo::Server::Daemon` embutido + `ua->get(...)->result` bloqueante NÃO
+      funcionam no mesmo processo nesta versão (eventloop): para emular o
+      serviço no teste, o server roda em um **fork** (loop dedicado) e o
+      `port` chega por arquivo temp (`/tmp/user/1000/opencode/...`); polling de
+      prontidão via `IO::Socket::INET`. Test2 usa `$?` p/ o exit code → após
+      `waitpid` do filho (killed por TERM) é **obrigatório `$? = 0`**, senão o
+      teste sai com exit 15.
+  - **Plugin** `EduMaps::Plugin::Analytics` registrado no startup (`EduMaps::
+      Plugin::Helpers` + `Analytics`); helper `analytics` (client singleton com
+      `app` fraco). Config keys: `analytics_url` (default
+      `http://analytic:8000`), `analytics_timeout` (300),
+      `analytics_source_version` ('edumapsr-0.1.0'), `analytics_cache_enabled` (1).
+      **TODO**: adicioná-las ao `edu_maps.conf` (não versionado) na F6.
+  - Teste `backend/t/03-plugins/analytics.t` — **9 subtests PASS** (server fork,
+    run_cluster/summary/similarity_db/health, croak em 500, chave canônica,
+    escopo por codigo_ibge/table/features, read-through s/ DB = no-op).
+  - Verificações: `perl -c` OK nos 3 arquivos; `t/01-app/basic.t` (boot da app)
+    e `t/03-plugins` PASS.
+
+### Fase 3 completa (commits)
+- **`deedd23` feat(backend): tasks R com analytics_engine http|pipe**:
+  - `EduMaps::Plugin::Analytics` ganhou `DEFAULT_ENGINE ('pipe')` e nova config
+    key **`analytics_engine`** (`'http'` Plumber via Client | `'pipe'` legado),
+    exposta pelo helper `$app->analytics_engine` (lida no register, default
+    `pipe` — mantém prod e `t/05-tasks` estáveis).
+  - `EduMaps::Task::Clustering`: dispatch por engine. HTTP →
+    `$job->app->analytics->run_cluster({schema, table_name, id_column,
+    features, parameters => {algorithm, clusters, eps, min_pts}})`. Validação
+    ganhou campo opcional `features`. Pipe intacto (Rscript via R::Pipe).
+  - `EduMaps::Task::Similarity`: HTTP → `run_similarity_db` (gower), com
+    **falha explícita** p/ métricas não-gower no motor http (mensagem instrui
+    usar `pipe`); pipe mantido p/ demais métricas.
+  - `EduMaps::Task::CityAnalytics`: HTTP → `run_summary({codigo_ibge, schema,
+    parameters => {type}})`. O contrato `{meta, cluster_info|similarity_info|
+    analytics_info{r_meta}}` é preservado; `r_meta` = resposta JSON do endpoint
+    (o serviço Plumber já persiste cluster_id/summary/pairs no banco).
+  - Contrato de job preservado em todos os motores (query_args/inject_args
+    iguais; só `r_meta` muda de origem: R::Pipe → HTTP).
+  - Teste **`backend/t/05-tasks/analytics_engine.t`** — **5 subtests PASS**
+    (server-fork emulando /cluster, /summary, /similarity/db):
+    - `analytics_engine` helper reflete config; cluster via http engine
+      (r_meta.analysis = 'cluster_kmeans', run_id do endpoint); similarity
+      gower ok; similarity não-gower → job `failed` com mensagem; city_analytics
+      via http (r_meta.analysis = 'city_summary').
+    - Lição: `apply_city_analytics` enfileira na fila **'speculative'**
+      (prioridade 0), que `minion->perform_jobs` NÃO processa (só fila
+      'default') — no teste, enfileirar direto com
+      `minion->enqueue(city_analytics => [$args])` para a fila padrão.
+  - `perl -c` OK nos 4 módulos alterados.
+
+### Fase 4 completa (commits)
+- **`f195898` feat(data_pipeline): analytics.analysis_cache** — migration
+  sqitch `analytics_analysis_cache` (`deploy/revert/verify` + `sqitch.plan`,
+  dep `[schemas]`): tabela no schema `analytics` com PK `cache_key` (text,
+  sha-1 canônico do Client), `analysis`, `params` jsonb, `payload` jsonb,
+  `source_version`, `created_at`/`updated_at`/`expires_at` timestamptz;
+  índices (analysis, source_version) e parcial em expires_at. Comentários PT-BR
+  em todas as colunas. **Deployado e verificado em dev_super** (`edumaps_dev`);
+  upsert real validado em psql com o mesmo SQL do `Client::_cache_write`.
+
+### Fase 5 em aberto
+- Rotas web `POST /api/task/{cluster,summary,similarity}`.
+
+### Fase 5+6 completas (commits)
+- **`0fcc56e` feat(backend): rotas web POST /api/task/{cluster,summary,
+  similarity}**:
+  - `EduMaps::Controller::Task` ganhou `request_cluster/request_summary/
+    request_similarity` (padrão de `request_siope`: valida → enfileira →
+    202 + `Location: /api/task/progress?job_id=X`).
+  - Validações espelhadas nas tasks: cluster (table_name/id_column/schema/
+    algorithm/clusters/eps/min_pts/features), summary (codigo_ibge 7 dígitos/
+    analysis/schema), similarity (table_name/id_column/schema/metric — 5
+    métricas, inclusive aitchison/dtw).
+  - **Fila dedicada `analytics`**: rotas web enfileiram por
+    `minion->enqueue(...)` direto em `{queue => 'analytics'}` — worker
+    analítico separado do worker geral (Siope/OSM). `apply_*` seguem na fila
+    default (t/05-tasks intactos). `/summary` NÃO usa `apply_city_analytics`
+    (fila 'speculative' + CHI) por ser user intent.
+  - Teste `backend/t/04-api/task.t` — 7 subtests PASS (202+job_id+Location+
+    queue analytics p/ os 3; 400 p/ validações).
+- **`7381eef` feat(deploy): worker fila analytics + pg_service.conf +
+  config**:
+  - systemd `files/edumaps-minion-analytics.service` + task Rex
+    `deploy_analytics_worker_dev`: worker `minion worker -q analytics`.
+  - `files/pg_service.conf` (deploy em `/root/.pg_service.conf`): serviços
+    `[edumaps]` e `[edumaps_local]` — R codifica `service="edumaps_local"`
+    por default/`EDUMAPS_ANALYTICS_DB_SERVICE`; antigamente o arquivo só
+    tinha `[edumaps]` (conexão R falharia p/ `edumaps_local`).
+  - `files/Renviron` + `EDUMAPS_ANALYTICS_DB_SERVICE=edumaps_local`.
+  - **Config `analytics_*`** adicionada ao template `files/edumaps_db.conf`
+    (backend dos containers) e ao `backend/edu_maps.conf` local (não
+    versionado): `analytics_url` (`http://analytic:8000`, env-overridable
+    `ANALYTICS_URL`), `analytics_timeout` (300), `analytics_source_version`
+    ('edumapsr-0.1.0'), `analytics_cache_enabled` (1), **`analytics_engine`
+    ('pipe'** — OPCIONAL, trocar p/ 'http' p/ ativar o Plumber).
+  - Validações: Rexfile syntax OK; suite verde (t/01-app, t/03-plugins,
+    t/04-api, t/05-tasks/analytics_engine); **clustering.t (pipe) PASS** —
+    motor legado intacto após F3.
+
+### Estado
+- F1–F6 concluídas e commitadas em `main`.
+- **Aplicar no ambiente** (pendente de validação/acordo): rodar
+  `rex prepare` (rsync) + `deploy_analytics_worker_dev` (novo worker) +
+  `deploy_analytics_dev` (pg_service.conf/Renviron) no backend/analytic e, se
+  for ativar Plumber, flippar `analytics_engine: http` na config dos
+  containers.
+- **Fase 6/7**: infra `pg_service.conf` + worker fila `analytics` + docs.
+
+### Fora de commits (segue)
+- WIP `backend/lib/EduMaps/EventBus/Middleware/SiopeTask.pm` (log info→error).
+- untrackeds: `backend/script/tasks/siope.pl`,
+  `backend/templates/osm/query/school.opq.ep`,
+  `frontend/map_app/src/lib/js/city.js`, e artefatos R CMD check
+  (`analysis/edumapsr/edumapsAnalytics.Rcheck/`,
+  `analysis/edumapsr/edumapsAnalytics_0.1.0.tar.gz`).
+- Commit: hook post-commit quebrado (`GIT_DIR: unbound variable`) — esperado.
+
+## Ciclo anterior — limpeza: gitignore + reorganização docs (concluído)
 
 ### Fechamento do ciclo anterior (2026-09-13)
 - PR #57 mergeado em `main` (commit de merge `9361604`; branch

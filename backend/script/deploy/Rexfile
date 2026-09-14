@@ -162,6 +162,43 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
   service 'edumaps-minion' => 'restart';
 };
 
+desc "Configure and Install minion worker dedicado a fila analytics";
+task deploy_analytics_worker_dev => 'backend.edumaps' => sub {
+  chomp(my $carton = run qq{which carton});
+  my $path = get('edumaps_dir') . '/backend';
+
+  # libpq service file: os jobs legacy R::Pipe (EduMaps::Task::*)
+  # conectam com service='edumaps_local' — o backend também precisa.
+  file "/root/.pg_service.conf",
+    content => template(
+      'files/pg_service.conf',
+      {
+        db_pass => get('db_password'),
+        db_user => get('db_user'),
+        db_name => get('db_name'),
+      }
+    )
+  ;
+
+  file "/etc/systemd/system/edumaps-minion-analytics.service",
+    content => template(
+      './files/edumaps-minion-analytics.service',
+      {
+        mojo_mode => get ('mode'),
+        edumaps_path => path($path,'script','edumaps.pl')->to_string,
+        work_dir => $path,
+        carton_path => $carton,
+      }
+    ),
+    on_change => sub {
+      run q{systemctl daemon-reload};
+      run q{systemctl enable --now edumaps-minion-analytics};
+    }
+  ;
+
+  service 'edumaps-minion-analytics' => 'restart';
+};
+
 desc "Configure and Install R edumaps package (edumapsr) + Plumber service";
 task deploy_analytics_dev => 'analytic.edumaps' => sub {
   my $path = get('edumaps_dir') . '/analysis/edumapsr';
@@ -193,11 +230,24 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
   )
   ;
 
+  # libpq service file usado por RPostgres::Postgres(service = ...).
+  # As análises edumapsr e os jobs legados R::Pipe usam 'edumaps_local'.
+  file "/root/.pg_service.conf",
+    content => template(
+      'files/pg_service.conf',
+      {
+        db_pass => get('db_password'),
+        db_user => get('db_user'),
+        db_name => get('db_name'),
+      }
+    )
+  ;
+
   # install R dependencies required by the package
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
   run q{Rscript -e "install.packages(
     c('plumber', 'devtools', 'ggplot2', 'plotly', 'jsonlite',
-      'DBI', 'RPostgres', 'cluster'),
+      'DBI', 'RPostgres', 'cluster', 'dbscan', 'mclust', 'kernlab'),
     repos='https://cloud.r-project.org',
     Ncpus=4
   )"}, env => $env;
