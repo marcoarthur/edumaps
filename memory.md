@@ -4,7 +4,87 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Deploy e2e do motor http (Plumber) nos containers
+## Sessão atual — Mapa de cluster por geotag (R + API + frontend)
+
+### Mergeado
+- **PR #60** (`feat/cluster-geotag-map`) → `main`, merge commit **`b290caa`**, merge em
+  2026-09-14. Commits: `958b10e` (analysis), `877fb16` (backend), `9a224c6` (frontend).
+- Deployado (as-is) e validado nos containers: `rex prepare` + restart
+  `edumaps-web`/`edumaps-minion`/`edumaps-minion-analytics`/`edumaps-analytic` +
+  `deploy_frontend_dev`. E2E no container: POST /api/task/cluster (Ubatuba
+  3555406) → 202 → poll REST active→finished → GET /api/cluster/schools 200,
+  78 features, cluster_ids [1,2,3].
+
+### Bug de contrato: job_progress era SSE, frontend esperava JSON
+- `GET /api/task/progress` usava `monitor_job` (SSE `text/event-stream`,
+  `write_sse`) — frontends antigos (map_app) consomem via EventSource. A página
+  nova (Svelte) fazia `fetch`+`json()` e parseava a stream → "Erro ao gerar os
+  clusters." **Fix**: `Controller/Task.pm::job_progress` detecta `Accept`; sem
+  `text/event-stream` retorna **JSON** `{state, error?}` por poll (state
+  `inactive|active|finished|failed`; `failed` expõe `job.error // job.result`,
+  com suporte a hashref `{error}`). EventSource legado permanece no caminho SSE.
+  Job inexistente → 404.
+- Teste: `Minion::Job->fail` em job `inactive` retorna **undef** (backend exige
+  job `active`/dono worker). Para testar `failed` de forma determinística:
+  `worker->register` + `worker->dequeue(0, {queues=>[...]})` (in-process) e
+  depois `$job->fail(...)`. Fila descartável `zzz_progress_test` isola de
+  workers de dev ao vivo (um worker local rodando consumia os jobs dos testes e
+  marcava "Invalid arguments!").
+- No dev local existe Postgres em `localhost:5432` (DB `edumaps`, user
+  edumaps) — serviço pg `edumaps_local` do libpq. O Plumber **local** escrevia
+  nele, mas o backend lê `edumaps_dev@ubatexu.lan` (serviço `edumaps`) →
+  `cluster_id` nunca aparecia. Fix no `package.json` dev: o R sobe com
+  `EDUMAPS_ANALYTICS_DB_SERVICE=edumaps` (e `ACCEPT` prefixado com `env`, pois
+  entr executa via execvp e não passa env de outros comandos do pipe). Nos
+  containers o pg_service `edumaps_local` aponta pro Database, então não há
+  mismatch lá.
+
+### R analytics — robustez e filtro
+- `analyze_cluster` ganhou `filter` (igualdade por coluna — ex. `{co_regiao:
+  3, co_uf: 35, co_municipio: 3555406}`), suportado no api.json/endpoint.R e
+  no `Client`/`Task::Clustering` (repassado ao motor). Backend converte
+  `codigo_regiao/uf/ibge` → `co_regiao/co_uf/co_municipio`.
+- Bug NA: kmeans com 2/86 linhas NA em Ubatuba → `NA/NaN/Inf in foreign
+  function call (arg 1)`. `analyze_cluster` agora dropa linhas incompletas
+  (`complete.cases`, alinhado com entity_ids), descarta colunas com variância
+  zero e valida `nrow<2`, 0 features, `clusters >= n`. Erro do Plumber
+  mascarava detalhe: `_post` do `Analytics::Client` concatenava `ARRAY(0x...)`;
+  agora join de `ARRAY` de erros (`; `).
+
+### Deploy: pacote reinstalado no container analytic
+- `rex prepare` só rsync a **fonte**; o serviço `edumaps-analytic` roda
+  `Rscript inst/plumber/run.R` com `library(edumapsAnalytics)` → as funções vêm
+  do pacote **instalado** (site-library `/usr/local/lib/R/site-library`), que
+  estava defasado (o mesmo NA bug aparecia no container). Redeploy do código R
+  exige `R CMD INSTALL .` (env `R_LIBS` + `LC_ALL=C.UTF-8`) e `stop/start`
+  (verificar MainPID). Container volume em 8000.
+
+### Backend
+- `POST /api/task/cluster` aceita corpo `application/json` (validação
+  normalizada: `validator->validation` + `$v->input($input)`, gate `has_error`,
+  `features` lido direto do array — `param` achata arrays). Form continua
+  suportado.
+- Novas rotas `GET /api/cluster/schools|regions|ufs|municipalities`
+  (`EduMaps::Controller/Model::Cluster` + plugin API). `clustered_schools`
+  lê coluna dinâmica `cluster_id` (criada pelo R via `ADD COLUMN IF NOT
+  EXISTS`) via SQL raw + `bigquery json` → GeoJSON FeatureCollection.
+- `frontend/edumaps`: página `/cluster/geotag` (cascata região→UF→município,
+  12 indicadores default, kmeans/gmm/spectral/dbscan, polling 1.5s, mapa
+  Leaflet cor por `cluster_id`), MSW + testes. `DEFAULT_FEATURES` valida
+  contra schema — `qt_prof_docentes` não existe; usa `qt_prof_pedagogia`.
+
+### Pendências / fora do escopo (não entraram no PR)
+- `backend/lib/EduMaps/EventBus/Middleware/SiopeTask.pm` (M), untracked:
+  `analysis/edumapsr/edumapsAnalytics.Rcheck/`, `edumapsAnalytics_0.1.0.tar.gz`,
+  `backend/script/tasks/`, `backend/templates/osm/query/school.opq.ep`,
+  `frontend/map_app/src/lib/js/city.js`.
+- Check "Workers Builds: edumaps" no GitHub **falha** (Cloudflare Workers,
+  não relacionado ao repo dev) — PR #60 mergeou mesmo assim (UNSTABLE, não
+  BLOCKED; não é required).
+- Limitação legada do R: `/summary` com sub-análises (score_distributions,
+  school_clusters) aceita mas não persiste (repo só faz full_summary).
+
+## Sessão anterior — Deploy e2e do motor http (Plumber) nos containers
 
 ### Implantado e validado
 - `rex prepare` + `deploy_analytics_worker_dev` (worker fila `analytics`
