@@ -13,8 +13,10 @@
     requestCluster,
     getJobProgress,
     getClusterSchools,
+    getClusterSummary,
   } from "../api/clusterApi.js";
   import ClusterSchoolMap from "../components/ClusterSchoolMap.svelte";
+  import ClusterSummaryTable from "../components/ClusterSummaryTable.svelte";
   import PresetSelector from "../components/PresetSelector.svelte";
   import FeatureSelect from "../components/FeatureSelect.svelte";
   import { ALGORITHMS } from "../constants/cluster.js";
@@ -49,6 +51,7 @@
 
   // ---- estado de execução -----------------------------------------------
   let markers = $state([]);
+  let clusterSummary = $state([]);
   let loading = $state(false);
   let clustered = $state(false);
   let locating = $state(false);
@@ -140,6 +143,7 @@
     clustered = false;
     error = null;
     markers = [];
+    clusterSummary = [];
 
     const payload = {
       table_name: "school_indicators",
@@ -172,6 +176,12 @@
       const fc = await getClusterSchools(geotag);
       markers = fc.features ?? [];
       clustered = true;
+
+      try {
+        clusterSummary = (await getClusterSummary()) ?? [];
+      } catch (err) {
+        clusterSummary = [];
+      }
     } catch (err) {
       error = apiMessage(err, "Erro ao gerar os clusters.");
     } finally {
@@ -380,6 +390,7 @@
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-2">
     {#if clustered && markers.length > 0}
       <ClusterSchoolMap {markers} height="460px" />
+      <ClusterSummaryTable summary={clusterSummary} />
     {:else if clustered}
       <div class="text-center py-16 text-sm text-gray-500">
         Nenhuma escola com cluster gerado para este recorte.

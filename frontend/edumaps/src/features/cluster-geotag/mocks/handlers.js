@@ -5,6 +5,7 @@ import {
   UFS_FIXTURE,
   MUNICIPALITIES_FIXTURE,
   CLUSTER_POLYGONS_FIXTURE,
+  CLUSTER_SUMMARY_FIXTURE,
   FIXTURE_GEOTAG,
   PRESETS_FIXTURE,
   COLUMNS_FIXTURE,
@@ -27,6 +28,10 @@ export const clusterGeotagHandlers = [
   http.get("/api/cluster/columns", () => HttpResponse.json(COLUMNS_FIXTURE)),
 
   http.get("/api/cluster/years", () => HttpResponse.json(YEARS_FIXTURE)),
+
+  http.get("/api/cluster/summary", () =>
+    HttpResponse.json(CLUSTER_SUMMARY_FIXTURE),
+  ),
 
   http.post("/api/task/cluster", () =>
     HttpResponse.json({ task: "cluster", job_id: 42 }, { status: 202 }),

@@ -83,3 +83,12 @@ export function getColumns() {
 export function getYears() {
   return apiClient.get("/api/cluster/years");
 }
+
+/**
+ * Resumo semântico dos clusters (rótulo em linguagem natural + indicadores).
+ * @returns {Promise<Array<{ cluster_id, cluster_size, is_noise,
+ *   cluster_label, cluster_rank, indicators }>>}
+ */
+export function getClusterSummary() {
+  return apiClient.get("/api/cluster/summary");
+}
