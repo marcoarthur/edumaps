@@ -78,9 +78,10 @@
   `analysis/edumapsr/edumapsAnalytics.Rcheck/`, `edumapsAnalytics_0.1.0.tar.gz`,
   `backend/script/tasks/`, `backend/templates/osm/query/school.opq.ep`,
   `frontend/map_app/src/lib/js/city.js`.
-- Check "Workers Builds: edumaps" no GitHub **falha** (Cloudflare Workers,
-  não relacionado ao repo dev) — PR #60 mergeou mesmo assim (UNSTABLE, não
-  BLOCKED; não é required).
+- Check "Workers Builds: edumaps" no GitHub **falha** e deve ser **desconsiderado**:
+  a conta Cloudflare NÃO está configurada neste projeto (não há integração
+  real; o build é órfão). Não é required → nunca bloqueia merge (estado
+  UNSTABLE, não BLOCKED). PR #60 mergeou normalmente.
 - Limitação legada do R: `/summary` com sub-análises (score_distributions,
   school_clusters) aceita mas não persiste (repo só faz full_summary).
 
