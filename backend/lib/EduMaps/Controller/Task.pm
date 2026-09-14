@@ -141,6 +141,13 @@ sub request_cluster($self) {
     $args{preset_id}  = $preset->{id};
     # features: os do preset, salvo se o usuário passou a própria lista.
     $args{features} //= $preset->{features};
+    # Metadados de rótulo semântico (conceito + polaridade das features),
+    # consumidos pelo motor R para descrever os clusters em linguagem natural.
+    $args{labeling} = {
+      concept    => $preset->{concept},
+      gender     => $preset->{gender},
+      directions => $preset->{directions},
+    } if $preset->{concept};
   } else {
     $args{table_name} = $v->param('table_name');
     $args{id_column}  = $v->param('id_column');

@@ -14,6 +14,9 @@ sub register ($self, $app, @args) {
   $api->get('/columns')->to('cluster#columns')->name('cluster_columns');
   $api->get('/years')->to('cluster#years')->name('cluster_years');
 
+  # Resumo semântico dos clusters (rótulo em linguagem natural + indicadores)
+  $api->get('/summary')->to('cluster#summary')->name('cluster_summary');
+
   # Cascata de seleção de geotag (região → UF → município)
   $api->get('/regions')->to('cluster#regions')->name('cluster_regions');
   $api->get('/ufs')->to('cluster#ufs')->name('cluster_ufs');

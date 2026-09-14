@@ -42,11 +42,17 @@ subtest '[API Network] schools - contrato' => sub {
 # GET /api/cluster/schools
 # ------------------------------------------------------------
 subtest 'GET /api/cluster/schools: retorna FeatureCollection com cluster_id' => sub {
-  # Garante a coluna (job de clusterização pode não ter rodado no dev).
+  # Garante as colunas (job de clusterização pode não ter rodado no dev).
   # A leitura vem de clean.school_indicators (tabela denormalizada).
   my $dbh = $t->app->schema->storage->dbh;
   $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
-  $dbh->do('UPDATE clean.school_indicators SET cluster_id = 1 WHERE co_municipio = 3550308');
+  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_label TEXT');
+  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_rank INTEGER');
+  $dbh->do(q{
+    UPDATE clean.school_indicators
+       SET cluster_id = 1, cluster_label = 'Alta qualidade de infraestrutura', cluster_rank = 3
+     WHERE co_municipio = 3550308
+  });
 
   my $tx = $t->get_ok('/api/cluster/schools' => form => {
     codigo_uf     => 35,
@@ -60,18 +66,26 @@ subtest 'GET /api/cluster/schools: retorna FeatureCollection com cluster_id' => 
   my $n = @{ $json->{features} };
   ok($n >= 1, 'Possui ao menos 1 feature (n=' . $n . ')');
   like $json->{features}[0]->{properties}{cluster_id} => qr/^\d+$/, 'cluster_id numérico';
+  is $json->{features}[0]->{properties}{cluster_label}, 'Alta qualidade de infraestrutura', 'cluster_label semântico';
+  like $json->{features}[0]->{properties}{cluster_rank} => qr/^\d+$/, 'cluster_rank numérico';
 
-  $dbh->do('UPDATE clean.school_indicators SET cluster_id = NULL WHERE co_municipio = 3550308');
+  $dbh->do('UPDATE clean.school_indicators SET cluster_id = NULL, cluster_label = NULL, cluster_rank = NULL WHERE co_municipio = 3550308');
   $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_id');
+  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_label');
+  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_rank');
 };
 
 subtest 'GET /api/cluster/schools: sem cluster_id -> 404 + erro' => sub {
   my $dbh = $t->app->schema->storage->dbh;
   $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
+  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_label TEXT');
+  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_rank INTEGER');
 
   $t->get_ok('/api/cluster/schools' => form => {codigo_regiao => 1})->status_is(404);
 
   $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_id');
+  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_label');
+  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_rank');
 };
 
 done_testing;

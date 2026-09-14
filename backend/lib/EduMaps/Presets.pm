@@ -13,35 +13,72 @@ use constant {
 # aparecem no GET /api/cluster/columns. A ordem de @PRESET_IDS é a de exibição.
 my @PRESET_IDS = qw(infraestrutura docencia desempenho);
 
+# `concept` é a frase usada para descrever o cluster em linguagem natural
+# (ex.: "Alta qualidade de infraestrutura"); `gender` controla a concordância
+# do adjetivo ('f'/'m'); `directions` dá a polaridade de cada feature
+# (+1 = quanto maior melhor, -1 = quanto maior pior).
 my $PRESETS = {
   desempenho => {
     id          => 'desempenho',
     name        => 'Desempenho dos alunos',
     description => 'Proficiências SAEB, IDEB observado e aprovação (escolha o ano)',
     year_filter => 1,
+    concept     => 'desempenho dos alunos',
+    gender      => 'm',
     features    => [qw(
       nota_media nota_matematica nota_portugues ideb_observado aprovacao_si_4
     )],
+    directions  => {
+      nota_media      => 1,
+      nota_matematica => 1,
+      nota_portugues  => 1,
+      ideb_observado  => 1,
+      aprovacao_si_4  => 1,
+    },
   },
   docencia => {
     id          => 'docencia',
     name        => 'Qualidade de docência',
     description => 'Formação (licenciatura/mestrado/doutorado), efetividade e especialização dos docentes',
     year_filter => 0,
+    concept     => 'qualidade da docência',
+    gender      => 'f',
     features    => [qw(
       prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao
     )],
+    directions  => {
+      prop_licenciatura      => 1,
+      prop_mestrado          => 1,
+      prop_doutorado         => 1,
+      prop_efetivos          => 1,
+      prop_sem_especializacao => -1,
+    },
   },
   infraestrutura => {
     id          => 'infraestrutura',
     name        => 'Infraestrutura escolar',
     description => 'Água, energia, esgoto, banheiros, biblioteca, laboratórios, quadra, internet e acessibilidade',
     year_filter => 0,
+    concept     => 'qualidade de infraestrutura',
+    gender      => 'f',
     features    => [qw(
       in_agua_potavel in_energia_rede_publica in_esgoto_rede_publica in_lixo_servico_coleta
       in_banheiro in_biblioteca in_laboratorio_ciencias in_laboratorio_informatica
       in_quadra_esportes in_internet in_acessibilidade_rampas
     )],
+    directions  => {
+      in_agua_potavel           => 1,
+      in_energia_rede_publica   => 1,
+      in_esgoto_rede_publica    => 1,
+      in_lixo_servico_coleta    => 1,
+      in_banheiro               => 1,
+      in_biblioteca             => 1,
+      in_laboratorio_ciencias   => 1,
+      in_laboratorio_informatica => 1,
+      in_quadra_esportes        => 1,
+      in_internet               => 1,
+      in_acessibilidade_rampas  => 1,
+    },
   },
 };
 

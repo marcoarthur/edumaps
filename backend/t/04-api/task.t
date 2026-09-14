@@ -154,6 +154,9 @@ subtest 'request_cluster: preset docencia (sem year_filter) -> 202' => sub {
   is $args->{id_column},  'co_entidade',          'id_column forçado co_entidade';
   ok !defined $args->{ano_ideb},                   'ano_ideb ausente (year_filter=0)';
   is $args->{features}->[0], 'prop_licenciatura', 'features vindas do preset';
+  is $args->{labeling}->{concept}, 'qualidade da docência', 'labeling.concept do preset';
+  is $args->{labeling}->{gender}, 'f', 'labeling.gender';
+  is $args->{labeling}->{directions}->{prop_sem_especializacao}, -1, 'labeling.directions negativa';
 
   $t->app->minion->backend->remove_job($json->{job_id});
 };

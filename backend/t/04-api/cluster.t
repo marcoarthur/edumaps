@@ -69,6 +69,14 @@ subtest 'GET /api/cluster/presets: lista os 3 presets curados' => sub {
   is $by_id{infraestrutura}->{features}->[0], 'in_agua_potavel', 'feature de infraestrutura';
   is $by_id{desempenho}->{features}->[0], 'nota_media', 'feature de desempenho';
   is $by_id{docencia}->{features}->[0], 'prop_licenciatura', 'feature de docência';
+
+  # Metadados de rótulo semântico (conceito + gênero + polaridade)
+  is $by_id{infraestrutura}->{concept}, 'qualidade de infraestrutura', 'conceito de infraestrutura';
+  is $by_id{infraestrutura}->{gender}, 'f', 'infraestrutura feminino';
+  is $by_id{infraestrutura}->{directions}->{in_agua_potavel}, 1, 'infraestrutura: direção positiva';
+  is $by_id{docencia}->{concept}, 'qualidade da docência', 'conceito de docência';
+  is $by_id{docencia}->{directions}->{prop_sem_especializacao}, -1, 'docência: sem especialização é negativa';
+  is $by_id{desempenho}->{gender}, 'm', 'desempenho masculino';
 };
 
 subtest 'GET /api/cluster/columns: cataloga colunas de school_indicators' => sub {
@@ -95,6 +103,42 @@ subtest 'GET /api/cluster/years: anos IDEB disponíveis em ordem decrescente' =>
   my @anos = sort { $b <=> $a } map { $_->{ano} } @$json;
   my @payload = map { $_->{ano} } @$json;
   is \@payload, \@anos, 'anos em ordem decrescente';
+};
+
+subtest 'GET /api/cluster/summary: rótulo semântico do último run' => sub {
+  my $dbh = $t->app->schema->storage->dbh;
+  # A tabela de metadados é self-provisioned pelo motor R; garante existência.
+  $dbh->do(q{
+    CREATE TABLE IF NOT EXISTS analytics.clustering_metadata (
+      run_id text, algorithm text, target_table text, params_json jsonb,
+      cluster_id integer, cluster_size integer, is_noise boolean,
+      centroids text, extra_metrics text
+    )
+  });
+
+  # run_id lexicograficamente maior que "run_<epoch>" -> vira o run mais recente.
+  my $run_id = 'zzz_test_' . time;
+  $dbh->do(
+    'INSERT INTO analytics.clustering_metadata
+       (run_id, algorithm, target_table, params_json, cluster_id, cluster_size, is_noise, centroids, extra_metrics)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    undef,
+    $run_id, 'kmeans', 'clean.school_indicators', '{}', 1, 42, 0,
+    '{"in_biblioteca":0.9,"in_internet":0.8}',
+    '{"cluster_label":"Alta qualidade de infraestrutura","cluster_rank":3}',
+  );
+
+  my $tx = $t->get_ok('/api/cluster/summary')->status_is(200)->tx;
+  my $json = $tx->res->json;
+  ok(ref($json) eq 'ARRAY', 'Resposta é um array');
+  my ($row) = grep { $_->{cluster_id} == 1 } @$json;
+  ok(defined $row, 'cluster 1 presente no resumo');
+  is $row->{cluster_label}, 'Alta qualidade de infraestrutura', 'rótulo semântico';
+  is $row->{cluster_rank}, 3, 'rank do cluster';
+  is $row->{cluster_size}, 42, 'tamanho do cluster';
+  is $row->{indicators}->{in_biblioteca}, 0.9, 'indicador do centroide';
+
+  $dbh->do('DELETE FROM analytics.clustering_metadata WHERE run_id = ?', undef, $run_id);
 };
 
 done_testing;
