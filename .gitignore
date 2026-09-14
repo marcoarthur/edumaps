@@ -12,6 +12,8 @@ frontend/map_app/vite.config.js.timestamp*
 # Artefatos de build/gerados
 backend/cover_db/
 analysis/edumapsr/man/*.Rd
+analysis/edumapsr/edumapsAnalytics.Rcheck/
+analysis/edumapsr/edumapsAnalytics_*.tar.gz
 
 # Configuração local (não versionável)
 data_pipeline/config/local.ini

@@ -1,0 +1,22 @@
+% my $params = shift;
+% my $loc = "$params->{latitude}, $params->{longitude}";
+/*
+  Busca por pontos de transporte público num raio fornecido em metros
+*/
+
+[out:json][timeout:<%= $params->{timeout} // 25 %>];
+(
+  // Paradas de ônibus
+  node["highway"="bus_stop"](around:<%= $params->{raio} %>, <%= $loc %>);
+  // Estações de trem, metrô, etc.
+  node["railway"="station"](around:<%= $params->{raio} %>, <%= $loc %>);
+  node["railway"="halt"](around:<%= $params->{raio} %>, <%= $loc %>);
+  node["railway"="tram_stop"](around:<%= $params->{raio} %>, <%= $loc %>);
+  node["railway"="subway_entrance"](around:<%= $params->{raio} %>, <%= $loc %>);
+  // Outras amenidades relacionadas a transporte
+  node["amenity"="bus_station"](around:<%= $params->{raio} %>, <%= $loc %>);
+  node["amenity"="ferry_terminal"](around:<%= $params->{raio} %>, <%= $loc %>);
+);
+out body;
+>;
+out skel qt;

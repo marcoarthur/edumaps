@@ -26,7 +26,7 @@ sub _process_event ($self, $event) {
   my $year     = $payload->{year}        // $self->default_year;
 
   unless ($cod_ibge) {
-    $self->app->log->info("SiopeTask Middleware: Evento '" . $event->{type} . "' recebido sem 'codigo_ibge'");
+    $self->app->log->error("SiopeTask Middleware: Evento '" . $event->{type} . "' recebido sem 'codigo_ibge'");
     return;
   }
 
