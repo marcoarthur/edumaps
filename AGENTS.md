@@ -90,8 +90,22 @@ plano → execução → aprovação
    convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
 3. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
    ou a aceite explícito da implementação.
-4. **PR + merge (via `gh`)**: após a aprovação, criar o pull request para
-   `main` com a ferramenta de linha de comando do GitHub:
+4. **Deploy (sempre)**: todo ciclo termina com o deploy via Rex
+   (`backend/script/deploy/Rexfile`). O deploy é "as-is" — o working tree local
+   é a fonte de verdade (rsync direto). Rodar sempre a partir de
+   `backend/script/deploy`:
+
+   ```bash
+   rex prepare                                  # rsync do working tree p/ os 3 hosts
+   rex -H <host> deploy_frontend_dev            # (ou a task afetada)
+   ```
+
+   Tasks: `deploy_backend_dev`, `deploy_frontend_dev`, `deploy_minion_dev`,
+   `deploy_analytics_worker_dev`, `deploy_analytics_dev`, `deploy_db_dev`.
+   **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
+   rodar `rex prepare` antes de qualquer task de código.
+5. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
+   pull request para `main` com a ferramenta de linha de comando do GitHub:
 
    ```bash
    git push -u origin <branch>
@@ -101,9 +115,9 @@ plano → execução → aprovação
 
    Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
    Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
-5. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
+6. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
-6. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2
+7. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2
    PRs, ao longo de 1–2 dias), gerar uma nota técnica em
    `docs/new_ideas/implementations_ideas/notas_tecnicas_N.md` (próximo número
    sequencial), documentando o que foi construído e as decisões de design

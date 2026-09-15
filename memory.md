@@ -4,7 +4,43 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — Rótulos em linguagem natural e legenda clicável nos clusters
+## Sessão atual — LandPage, logo SVG e navegação
+
+### Entregue (direto em `main`, sem PR) + deploy
+- Commits: `4fbbd4d feat(frontend): landpage, logo e navegação` e
+  `8072027 docs: deploy obrigatório no workflow`.
+- **Deploy rodado** (Rex `backend/script/deploy/Rexfile`): `rex prepare` (3 hosts)
+  + `rex -H backend.edumaps deploy_frontend_dev` — OK. Validado no container:
+  `GET /` 200 e `GET /favicon.svg` 200 (build com "Ferramentas analíticas" no
+  bundle). **Fix**: `/favicon.svg` não existia (404) e era referenciado no
+  `index.html` e no `includeAssets` do PWA.
+
+### O que foi feito
+- **Logo** `src/shared/ui/components/Logo.svelte`: glifo SVG único (viewBox
+  48×48) — pin de mapa + livro aberto + três barras ascendentes (mapas,
+  educação, censo/análise). Props `size` e `variant` (`brand` azul p/ fundo
+  claro; `light` pin branco p/ o nav). Sóbrio (azul `#1e40af` + branco), sem
+  gradiente. `public/favicon.svg` = versão simplificada (pin + livro) para
+  legibilidade a 16px.
+- **LandPage** feature nova `src/features/home/` (`HomePage.svelte` + `index.js`
+  + teste): hero com logo, tagline e CTAs (Buscar escola → `/escola/search`;
+  Ver análises → `/cluster/geotag`) + 4 pilares (Mapas, Educação, Censo Escolar,
+  Ferramentas analíticas).
+- **Rotas/nav**: `routes.js` ganhou `/` → `HomePage`; removido o `$effect` de
+  redirect `/`→`/about` no `App.svelte`; `NAV_LINKS` = Home · Busca Escola ·
+  Análises · Sobre o Refactor; marca no nav com logo + "EduMaps".
+
+### Testes
+- `routes.test.js` (+2: `/` e `/cluster/geotag`) e `HomePage.test.js` (3).
+  Suíte: **129/133** (4 falhas pré-existentes: `paginationStore` ×3,
+  `SchoolRankingPage` ×1). `npm run build` OK.
+
+### Convenção nova
+- **AGENTS.md Workflow passo 4**: "Deploy (sempre)" — todo ciclo termina com o
+  deploy via Rex, rodando de `backend/script/deploy` (`rex prepare` antes de
+  qualquer task de código, pois `deploy_backend_dev` não faz rsync).
+
+## Sessão anterior — Rótulos em linguagem natural e legenda clicável nos clusters
 
 ### Mergeado
 - **PR #62** (`feat/cluster-rotulos-natural`) → `main`, merge commit **`b9cd252`**,

@@ -1,5 +1,6 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
+import HomePage from "@/features/home";
 import { NetworkComparePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/features/schools";
 
 export const routes = [
+  { path: "/", component: HomePage },
   { path: "/about", component: AboutPage },
   { path: "/municipio/compare", component: NetworkComparePage },
   { path: "/cluster/geotag", component: ClusterGeotagPage },
