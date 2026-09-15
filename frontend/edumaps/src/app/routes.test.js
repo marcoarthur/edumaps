@@ -3,9 +3,19 @@ import { describe, it, expect } from "vitest";
 import { matchRoute } from "./routes.js";
 
 describe("matchRoute", () => {
+  it("encontra a rota da landpage /", () => {
+    const match = matchRoute("/");
+    expect(match?.path).toBe("/");
+  });
+
   it("encontra a rota /about", () => {
     const match = matchRoute("/about");
     expect(match?.path).toBe("/about");
+  });
+
+  it("encontra a rota de análise de clusters /cluster/geotag", () => {
+    const match = matchRoute("/cluster/geotag");
+    expect(match?.path).toBe("/cluster/geotag");
   });
 
   it("encontra a rota /busca", () => {
