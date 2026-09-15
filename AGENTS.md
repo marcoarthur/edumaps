@@ -73,6 +73,34 @@ Arquivos de skill em `.opencode/skills/`:
 | r-analytics | `r-analytics.md` | Scripts R, edumapsr, clustering, SIOPE |
 | frontend-svelte | `frontend-svelte.md` | UI Svelte 5/Leaflet: mapas, legendas, padrões reutilizáveis |
 
+## Personas de curadoria (eduBR)
+
+O pacote `eduBR` (repo separado em `~/Projects/eduBR`) é avaliado por três
+personas cujos perfis **e memória** ficam em `docs/personas/`. Diferente das
+skills (instruções estáticas), estas personas usam um **modelo com memória**:
+registram inputs e mantêm um loop de perguntas → respostas → follow-ups.
+
+| Persona | Arquivo | Foco |
+|---------|---------|------|
+| Pesquisadora educacional | `docs/personas/pesquisadora-educacional.md` | ML p/ questões nacionais/regionais/municipais |
+| Especialista em ML | `docs/personas/especialista-ml.md` | ML clássico + modelagem avançada |
+| Gestora escolar | `docs/personas/gestora-escolar.md` | Acompanhamento da escola vs painel municipal/estadual |
+
+### Protocolo do loop (curadoria)
+
+1. **Ativar**: ler o perfil + memória da persona (`docs/personas/<slug>.md`).
+2. **Pendências**: as perguntas da rodada são as canônicas + os follow-ups abertos.
+3. **Responder**: executar o `eduBR` (via `Rscript`, `service = "edumaps"`) ou
+   ler o código/README e registrar `Pergunta → Resposta`.
+4. **Classificar**: `✓ atendido` / `lacuna` / `sugestão`.
+5. **Follow-up**: gerar a próxima pergunta e registrá-la em "Pendências".
+6. **Sugestões**: atualizar "Sugestões priorizadas" (`[alta]`/`[média]`/`[baixa]`).
+7. **Veredito**: ao zerar pendências, registrar `aprova` / `aprova com ressalvas`
+   / `reprova` com data.
+
+Cada rodada acrescenta uma entrada datada (mais recente no topo) no arquivo da
+persona e alimenta o backlog do `eduBR`.
+
 ## Code style
 
 - `use utf8;` em todos os módulos
