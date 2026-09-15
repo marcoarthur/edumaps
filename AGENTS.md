@@ -118,18 +118,28 @@ plano → execução → aprovação
    convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
 3. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
    ou a aceite explícito da implementação.
-4. **Deploy (sempre)**: todo ciclo termina com o deploy via Rex
-   (`backend/script/deploy/Rexfile`). O deploy é "as-is" — o working tree local
-   é a fonte de verdade (rsync direto). Rodar sempre a partir de
-   `backend/script/deploy`:
+4. **Deploy (sempre que houver código)**: todo ciclo que altere **artefato de
+   código** termina com o deploy via Rex (`backend/script/deploy/Rexfile`).
+   Mudanças **só de documentação** (`docs/`, `*.md` como `AGENTS.md`/`memory.md`,
+   `.opencode/`, comentários) **não deployam** — não há o que sincronizar nos
+   containers. O deploy é "as-is" — o working tree local é a fonte de verdade
+   (rsync direto). Rodar sempre a partir de `backend/script/deploy`:
 
    ```bash
    rex prepare                                  # rsync do working tree p/ os 3 hosts
    rex -H <host> deploy_frontend_dev            # (ou a task afetada)
    ```
 
-   Tasks: `deploy_backend_dev`, `deploy_frontend_dev`, `deploy_minion_dev`,
-   `deploy_analytics_worker_dev`, `deploy_analytics_dev`, `deploy_db_dev`.
+   Deploy por área alterada:
+
+   | Área alterada | Task |
+   |---------------|------|
+   | `frontend/edumaps/` | `deploy_frontend_dev` |
+   | `backend/` | `deploy_backend_dev` (+ `deploy_minion_dev` se jobs/Minion) |
+   | `analysis/edumapsr/` | `deploy_analytics_dev` |
+   | `data_pipeline/` | `deploy_db_dev` |
+   | `docs/`, `*.md`, `.opencode/` | — (sem deploy) |
+
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
 5. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
