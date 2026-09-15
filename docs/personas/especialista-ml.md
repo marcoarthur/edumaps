@@ -33,6 +33,51 @@
 
 ## Entradas
 
+### 2026-09-15 — 2ª rodada (tendência do IDEB e report)
+
+Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
+`tendencia_regiao()`) e o report de tendência por região.
+
+**M5 — a tendência é reproduzível?**
+- Resposta: `tendencia_regiao(con, etapa, rede)` devolve um
+  `eduBR_tendencia` (tibble 5×9 em `fundamental_ii`) com list-cols
+  `modelo`, `coeficientes`, `metricas`, `predicoes`. Duas execuções
+  produzem coeficientes **idênticos** (`all.equal` TRUE); motor `lm` via
+  `parsnip::linear_reg()`. O report
+  (`analysis/tendencia_ideb_regiao.Rmd`) é parametrizado (`etapa`, `rede`).
+- Status: **✓ atendido** (ressalva: é tendência linear bivariada, por design).
+- Follow-up: a persona quer covariáveis (rede, infraestrutura) — quando o
+  pacote expuser `perfil_escola()`/features, estender o report.
+
+**M6 — compor features sem baixar tudo (revisita de M1).**
+- Resposta: `consulta(ideb_regiao(con, etapa="fundamental_ii"))` é
+  `tbl_sql`; `group_by/summarise` antes do `collect` reduz **322.831 linhas
+  → 50** no banco. A fronteira lazy→collect é controlável **se** se compõe a
+  query. O risco persiste no `as_tibble()` direto (sem limite/aviso).
+- Status: **✓ parcial**.
+- Follow-up: `coletar(x, n=)`/`cabeça()` + aviso de custo quando o objeto
+  não foi filtrado/agregado.
+
+**M7 — categóricas do IDEB.**
+- Resposta: no IDEB, `rede` (`Municipal/Estadual/Federal/Privada`) e
+  `etapa` (`fundamental_i/ii`, `ensino_medio`) já vêm como texto legível —
+  não precisa de dicionário nesse fluxo. Os códigos crus
+  (`tp_dependencia`, `tp_localizacao`) seguem no Censo.
+- Status: **✓ para o IDEB** (lacuna de dicionário persiste no Censo).
+
+**M8 — `integer64` em agregações `bigint`.**
+- Resposta: `count()`/agregações que devolvem `bigint` chegam como
+  `integer64`; sem `bit64` carregado imprimem como denormal
+  (ex.: `1.6e-318` para 322.831) — risco de leitura errada.
+- Status: **sugestão**.
+- Follow-up: normalizar (`as.numeric`) nas funções de contagem ou documentar.
+
+**Observações extras da rodada.**
+- `pdflatex`/`tinytex` disponíveis: o report dá para exportar em **PDF**,
+  hoje só HTML (preferência do usuário).
+- Região derivada da UF (mapa `case_when`), então **não** resolve o join
+  escola→município por código — são lacunas distintas.
+
 ### 2026-09-15 — 1ª rodada (perguntas canônicas)
 
 **M1 — fronteira lazy → collect.**
@@ -72,10 +117,12 @@
 
 ## Pendências
 
-- [ ] Amostragem/limite na materialização (`coletar(n=)`).
+- [ ] Amostragem/limite na materialização (`coletar(n=)`) + aviso de custo.
 - [ ] Dicionário/rótulos para categóricas do Censo.
 - [ ] Reprodutibilidade dos `scores()` (documentar ou recalcular).
 - [ ] Ponto de extensão do catálogo.
+- [ ] Normalizar/avisar `integer64` em agregações (`count()`).
+- [ ] Report: export em PDF + parâmetros de recorte (UF/região).
 
 ## Sugestões priorizadas
 
@@ -83,10 +130,17 @@
 - **[alta]** `dicionario()` para as variáveis categóricas (código → rótulo).
 - **[média]** Documentar origem/fórmula dos `scores()`.
 - **[média]** `registrar_relacao()` para estender o catálogo.
+- **[média]** Expor covariáveis (via `perfil_escola()`) para ampliar a
+  tendência além do modelo bivariado.
+- **[baixa]** Normalizar `integer64` em agregações (ou avisar).
+- **[baixa]** Report: `pdf_document` + params de recorte (UF/região).
 - **[baixa]** Aviso amigável quando `escola_id` for string em coluna numérica.
 
 ## Veredito
 
-- **Aprova com ressalvas** (2026-09-15): a base preguiçosa e o `catalogo()`
-  são boa fundação para modelagem, mas faltam controle de materialização,
-  dicionário de rótulos, reprodutibilidade dos scores e extensão.
+- **Aprova com ressalvas** (2026-09-15, 2ª rodada): a fundação preguiçosa
+  mais o novo fluxo `ideb_regiao()`/`tendencia_regiao()` permitem compor,
+  modelar e reportar a tendência de forma **reproduzível** (coeficientes
+  estáveis, agregação no banco). Continuam pendentes controle de
+  materialização, dicionário do Censo, reprodutibilidade dos `scores()` e
+  ponto de extensão do catálogo.
