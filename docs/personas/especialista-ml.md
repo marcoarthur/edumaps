@@ -33,6 +33,52 @@
 
 ## Entradas
 
+### 2026-09-15 — 3ª rodada (INSE e regressão transversal)
+
+Foco: avaliar `inse()` / `ideb_inse()` / `regressao_inse()` e o report
+`analysis/regressao_inse_regiao.Rmd`.
+
+**M9 — cobertura e natureza do INSE.**
+- Resposta: `clean.inse` tem **só 2023** (`nu_ano_saeb`), 69.756 escolas,
+  `tp_tipo_rede` ∈ {1,2,3} (federal/estadual/municipal) — **sem privadas**.
+  `media_inse` sem NA (2,21–6,65). O join `ideb_inse()` devolve 97.521 linhas
+  (2023), 68.937 escolas distintas, sem `Privada`.
+- Status: **✓** com ressalva de escopo (corte 2023, só públicas).
+- Follow-up: não há série histórica de INSE → o painel INSE×IDEB depende de
+  carga de SAEBs anteriores.
+
+**M10 — reprodutibilidade da regressão transversal.**
+- Resposta: `regressao_inse(con, etapa)` devolve `eduBR_regressao_inse`; duas
+  execuções com coeficientes **idênticos** (`all.equal` TRUE). Nível escola
+  (fund. II: 31.084 escolas). Gradientes (IDEB/INSE) por região: CO 1,22 >
+  SE 1,13 > N 1,09 > S 1,03 > **NE 0,61**.
+- Status: **✓ atendido**.
+
+**M11 — vazamento/contemporaneidade.**
+- Resposta: INSE e IDEB são **do mesmo ano (2023)** → é associação
+  **contemporânea**, não uma configuração de predição (sem holdout temporal).
+  Para previsão, o correto seria INSE defasado (`t-1`) prevendo o IDEB de
+  `t`.
+- Status: **observação/sugestão**.
+- Follow-up: marcar no report/README que é associação, e prever `ideb_t` com
+  `inse_{t-1}` quando houver histórico.
+
+**M12 — cardinalidade do join (1:n por etapa).**
+- Resposta: 68.937 escolas → 97.521 linhas (~1,4/school): uma escola entra
+  uma vez por etapa do IDEB, repetindo `media_inse`. Nos modelos por
+  região×etapa isso é correto; se alguém agrupar etapas sem cuidado, duplica
+  escolas.
+- Status: **observação**.
+- Follow-up: documentar/avisar o 1:n de `ideb_inse()` (por etapa).
+
+**Observações extras da rodada.**
+- Join por `id_escola` (bigint nos dois lados) — sem o problema de tipo do
+  `co_municipio`×`codigo_ibge`; foi limpo.
+- `regressao_inse()` materializa o corte inteiro (~97 mil linhas) por não
+  haver `coletar(n=)`; aqui é necessário para o ajuste, mas reforça a
+  pendência de controle de materialização.
+- `eduBR_catalogo()` segue interno (M4) e `catalogo()` já lista `inse`.
+
 ### 2026-09-15 — 2ª rodada (tendência do IDEB e report)
 
 Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
@@ -123,6 +169,8 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [ ] Ponto de extensão do catálogo.
 - [ ] Normalizar/avisar `integer64` em agregações (`count()`).
 - [ ] Report: export em PDF + parâmetros de recorte (UF/região).
+- [ ] Série histórica de INSE (hoje só 2023) para permitir painel temporal.
+- [ ] Documentar/avisar contemporaneidade e o 1:n de `ideb_inse()` (por etapa).
 
 ## Sugestões priorizadas
 
@@ -132,15 +180,21 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - **[média]** `registrar_relacao()` para estender o catálogo.
 - **[média]** Expor covariáveis (via `perfil_escola()`) para ampliar a
   tendência além do modelo bivariado.
+- **[média]** Carregar SAEBs anteriores (INSE histórico) → painel para
+  previsão (`inse_{t-1}` → `ideb_t`).
 - **[baixa]** Normalizar `integer64` em agregações (ou avisar).
 - **[baixa]** Report: `pdf_document` + params de recorte (UF/região).
+- **[baixa]** Avisar associação contemporânea / 1:n por etapa em
+  `ideb_inse()`.
 - **[baixa]** Aviso amigável quando `escola_id` for string em coluna numérica.
 
 ## Veredito
 
-- **Aprova com ressalvas** (2026-09-15, 2ª rodada): a fundação preguiçosa
-  mais o novo fluxo `ideb_regiao()`/`tendencia_regiao()` permitem compor,
-  modelar e reportar a tendência de forma **reproduzível** (coeficientes
-  estáveis, agregação no banco). Continuam pendentes controle de
-  materialização, dicionário do Censo, reprodutibilidade dos `scores()` e
-  ponto de extensão do catálogo.
+- **Aprova com ressalvas** (2026-09-15, 3ª rodada): o fluxo de INSE
+  (`inse()`/`ideb_inse()`/`regressao_inse()`) entrega uma regressão
+  transversal **reprodutível** por região×etapa e o gradiente
+  socioeconômico fica comparável entre regiões. Ressalvas: INSE só em 2023
+  (sem painel), amostra restrita a públicas, associação contemporânea (não
+  predição) e o 1:n por etapa precisa de aviso. Pendências estruturais
+  (controle de materialização, dicionário do Censo, reprodutibilidade dos
+  `scores()`, extensão do catálogo) seguem abertas.
