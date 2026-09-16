@@ -4,7 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — pgvector (similaridade escolar) + topologia do ambiente
+## Sessão atual — fix uuid (crypto.randomUUID em contexto inseguro)
+
+- **PR #65** (`fix/uuid-contexto-inseguro`) → `main`, merge commit **`d522d10`**
+  (2026-09-16). Commit `cca4d76 fix(frontend): uuid sem contexto seguro`.
+- **Bug**: `crypto.randomUUID()` só existe em **contexto seguro** (HTTPS/
+  `localhost`); em dev por host/IP (`http://<host>:5173`) o `crypto` existe mas
+  `randomUUID` é `undefined` → `TypeError: crypto.randomUUID is not a function`
+  em `EventBus.emit` (`EventBus.js:72`).
+- **Correção**: helper `src/shared/utils/uuid.js` (nativo, sem dependência):
+  `crypto.randomUUID()` → `crypto.getRandomValues()` (UUID v4, funciona em
+  contexto inseguro) → fallback final. Usado no `EventBus.js` e no
+  `toastStore.js` (remove o `Math.random` duplicado). Teste `uuid.test.js`.
+- **Deploy** `deploy_frontend_dev`; validado no container: bundle com
+  `getRandomValues` presente; página HTTP 200. Testes shared: 30 passaram.
+- Nota: `npm run build` local conclui (`✓ built`), porém o processo do vite não
+  retorna no shell — usar o `deploy_frontend_dev` (build no container) como
+  validação real.
+
+## Sessão anterior — pgvector (similaridade escolar) + topologia do ambiente
 
 ### Topologia do ambiente (IMPORTANTE — ler antes de conectar em DB)
 - `ubatexu.lan` (192.168.0.42) é o **host** dos containers LXC; as portas do
