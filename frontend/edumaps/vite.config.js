@@ -16,7 +16,12 @@ export default defineConfig(({ mode }) => {
       svelteTesting(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["favicon.svg", "robots.txt"],
+        // SW próprio (rascunho) em `src/sw.js`; o plugin só cuida do
+        // manifest + registro. Ver src/sw.js para os serviços providos.
+        strategies: "injectManifest",
+        srcDir: "src",
+        filename: "sw.js",
+        includeAssets: ["favicon.svg"],
         manifest: {
           name: "EduMaps",
           short_name: "EduMaps",
@@ -34,19 +39,6 @@ export default defineConfig(({ mode }) => {
               sizes: "512x512",
               type: "image/png",
               purpose: "maskable",
-            },
-          ],
-        },
-        workbox: {
-          // dados de API não devem ficar em cache "stale" por padrão
-          runtimeCaching: [
-            {
-              urlPattern: /^\/api\//,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "edumaps-api",
-                expiration: { maxAgeSeconds: 300 },
-              },
             },
           ],
         },
