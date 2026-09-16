@@ -46,3 +46,4 @@ rede_escolas_etapas [analytics_rede_escolas nro_etapas] 2026-09-11T13:00:00Z Mar
 analytics_analysis_cache [schemas] 2026-09-13T10:00:00Z Marco Arthur <arthurpbs@gmail.com> # Cache compartilhado (edumapsr/Plumber) das análises R, lido/gravado pelo backend
 school_indicators [censo_escolar_2025 censo_docentes ideb_notas_escolas] 2026-09-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # Tabela denormalizada de indicadores (censo + docentes + IDEB) para clusterização multi-tabela
 school_embedding 2026-09-16T13:00:31Z Marco Arthur <arthurpbs@gmail.com> # Add pgvector extension + analytics.school_embedding (similaridade por cosseno)
+column_descriptions 2026-09-16T16:00:55Z Marco Arthur <arthurpbs@gmail.com> # Backfill de comentarios (COMMENT ON COLUMN) nas tabelas recentes
