@@ -17,9 +17,11 @@
 // para RxJS sem que nenhum componente perceba — a troca fica isolada
 // aqui dentro.
 
+import { uuid } from "@/shared/utils/uuid.js";
+
 /**
  * @typedef {Object} BusEvent
- * @property {string} id - identificador único do evento (crypto.randomUUID)
+ * @property {string} id - identificador único do evento (uuid())
  * @property {string} type
  * @property {*} payload
  * @property {number} timestamp - Date.now()
@@ -69,7 +71,7 @@ export class EventBus {
 
     /** @type {BusEvent} */
     const event = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       type,
       payload,
       timestamp: Date.now(),

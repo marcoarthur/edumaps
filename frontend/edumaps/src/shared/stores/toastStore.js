@@ -1,5 +1,6 @@
 // src/shared/stores/toastStore.js
 import { BehaviorSubject } from 'rxjs';
+import { uuid } from '@/shared/utils/uuid.js';
 
 const DEFAULT_DURATION = 4000; // ms
 
@@ -14,7 +15,7 @@ export const toast$ = toastSubject.asObservable();
  * @param {number} duration - em ms
  */
 export function addToast(message, type = 'info', duration = DEFAULT_DURATION) {
-  const id = crypto.randomUUID?.() || Math.random().toString(36);
+  const id = uuid();
   const toast = { id, message, type, duration };
 
   const current = toastSubject.getValue();
