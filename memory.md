@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão atual — autocomplete de indicadores (cluster) + build no container
+
+- **Autocomplete do cluster (`FeatureSelect`)** — commit `d8a58f7`
+  (`fix(frontend): autocomplete de indicadores do cluster`). Dois bugs:
+  1. `filtered` usava `$derived(() => {...})`: a função virava o **valor** da
+     derived (não o retorno), então `filtered.length === 0` e o dropdown nunca
+     renderizava. Corrigido para **`$derived.by(() => {...})`**.
+  2. Race `onblur` × clique: o `mousedown` na opção roubava o foco do input →
+     `blur` → `open = false` → a lista desmontava antes do `click` → `select()`
+     nunca rodava. Corrigido com `onmousedown={(e) => e.preventDefault()}` nas
+     opções.
+  Além disso: a busca exige **mínimo 2 caracteres** (com dica), `title` com o
+  `comment` (metadado do banco) e o `column_name` fica visível. Teste
+  `FeatureSelect.test.js` (5 casos). Deployado (`deploy_frontend_dev`).
+- **BUILD DO FRONTEND — rodar no container `backend.edumaps`** (via
+  `rex -H backend.edumaps deploy_frontend_dev`, que executa `npm run build` lá):
+  é **mais robusto e rápido**. O `npm run build` **local** conclui
+  (`✓ built in ~25s`), porém o processo do Vite **não retorna** no shell (fica
+  pendurado; só encerra com `timeout`). Usar o build do container como validação
+  real.
+
 ## Sessão — eduBR (pacote R): regiões, INSE e camada declarativa
 
 - **Repo** `~/Projects/eduBR` (GitHub `marcoarthur/eduBR`, repo separado do
