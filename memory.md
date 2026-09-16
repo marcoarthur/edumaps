@@ -36,8 +36,11 @@
   repontar `[edumaps]`) — ele testa manualmente.
 
 ### Entregue nesta sessão — pgvector para similaridade escolar
-- Commits (em `main`, local, **sem PR**): `b3c537a feat(db): pgvector e tabela
-  school_embedding` e `ede1ad7 feat(backend): similaridade escolar via pgvector`.
+- **PR #64** (`feat/pgvector-curadoria`) → `main`, merge commit **`a7466ad`**
+  (2026-09-16). Agrupou 10 commits: pgvector (`b3c537a` db, `ede1ad7` backend),
+  `column_descriptions` (`75e23fd` db), personas/Tech Lead/índice e memória
+  (`678b0dd`, `177901d`, `7a38724`, `783cc19`, `52ef321`, `4f21638`, `e8c28b1`).
+  Branch deletada; `main` == `origin/main` == `a7466ad`.
 - Migration `school_embedding` (`data_pipeline/deploy|revert|verify` + plan):
   `CREATE EXTENSION vector`; `analytics.school_embedding(co_entidade PK,
   embedding vector(6))`; backfill dos 6 scores de `clean.mv_escolas_scores`;
@@ -65,6 +68,12 @@
   falhou: `extension "vector" is not available` (pgvector não instalado lá). Sem
   estado parcial (transação abortada; segue undeployed). Não instalar pgvector
   no cluster antigo — o app usa o container atual.
+- Migration `column_descriptions` (`75e23fd`): 46 `COMMENT ON COLUMN` (PT-BR,
+  foco em porquê/uso) para `school_embedding`, `event_store`, `mv_escolas_scores`,
+  `censo_escolas` (geometry/nro_etapas), `school_indicators` (geometry/nro_etapas)
+  e `mv_rede_escolas` (26); `cluster_*` (runtime) via `DO` condicional
+  (`information_schema.columns`). Deploy via `rex prepare` + `deploy_db_dev`;
+  validado: 0 colunas sem descrição nas 6 tabelas.
 
 ## Sessão anterior — LandPage, logo SVG e navegação
 
