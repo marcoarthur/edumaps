@@ -4,7 +4,60 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — LandPage, logo SVG e navegação
+## Sessão atual — pgvector (similaridade escolar) + topologia do ambiente
+
+### Topologia do ambiente (IMPORTANTE — ler antes de conectar em DB)
+- `ubatexu.lan` (192.168.0.42) é o **host** dos containers LXC; as portas do
+  host fazem forward para os containers.
+- Da nossa máquina só alcançamos o **host**, nunca o container direto. O acesso
+  aos containers é via SSH pelos forwards do host (`~/.ssh/config`):
+  - `backend.edumaps` → `ubatexu.lan:2031`
+  - `database.edumaps` → `ubatexu.lan:2032`
+  - (os containers compartilham o IP do host; só mudam as portas)
+- O **banco de dados real do app roda dentro do container `database.edumaps`**.
+  O `backend.edumaps` (Perl + nginx/frontend) conecta nele via `host=Database`
+  (ver `edu_maps.conf` no container).
+- O Postgres em **`ubatexu.lan:5432` é o do HOST, NÃO o do app**. É para lá que
+  aponta o `~/.pg_service.conf` local (`[edumaps]` → host=ubatexu.lan, user
+  `devel`). Logo, **R/eduBR/testes locais NÃO batem no banco do app**.
+- Para o R/eduBR local enxergar o banco do app seria preciso um **túnel SSH**
+  pelo host, ex.:
+  `ssh -N -L 127.0.0.1:55432:localhost:5432 root@database.edumaps`
+  (serviço com host=127.0.0.1 port=55432 dbname=edumaps_dev user=edumaps
+  password=change_me). **Decisão do usuário: deixar como está** (sem túnel, sem
+  repontar `[edumaps]`) — ele testa manualmente.
+- Deploy de banco: usar `rex -H database.edumaps deploy_db_dev` (roda o sqitch
+  **dentro do container**). NÃO aplicar migration no `ubatexu.lan` (host) — foi
+  um engano inicial desta sessão.
+
+### Entregue nesta sessão — pgvector para similaridade escolar
+- Commits (em `main`, local, **sem PR**): `b3c537a feat(db): pgvector e tabela
+  school_embedding` e `ede1ad7 feat(backend): similaridade escolar via pgvector`.
+- Migration `school_embedding` (`data_pipeline/deploy|revert|verify` + plan):
+  `CREATE EXTENSION vector`; `analytics.school_embedding(co_entidade PK,
+  embedding vector(6))`; backfill dos 6 scores de `clean.mv_escolas_scores`;
+  índice HNSW `vector_cosine_ops`.
+- Backend: `Schema::Result/ResultSet::SchoolEmbedding`
+  (`similar_to($id, $limit, $municipio)`, cosseno `<=>`); `Task::SchoolEmbedding`
+  (job Minion `refresh_school_embeddings`, registrado em `EduMaps.pm` em
+  `EduMaps::Task::$_`); `School::Profile::panel_info` usa pgvector como caminho
+  principal e mantém o `find_similar_schools` (Manhattan em memória) como
+  **fallback**; teste `t/02-models/school/embedding.t` (skip se a tabela não
+  existir no ambiente).
+- Rexfile `deploy_db_dev`: pacote `postgresql-16-pgvector`.
+- Deploy: `rex prepare` + `rex -H database.edumaps deploy_db_dev` +
+  `rex -H backend.edumaps deploy_backend_dev` + restart de `edumaps-minion` e
+  `edumaps-minion-analytics`.
+- Validação no container `database.edumaps`: pgvector 0.8.6; **180.540**
+  embeddings; índice `idx_school_embedding_hnsw`; API
+  `GET /api/school/35007656/panel/info` retorna `similar_schools` via pgvector
+  (distância do 1º vizinho `0.001484` = query direta); job
+  `refresh_school_embeddings` → `finished` (`refreshed: 180540`).
+- Testes: `t/02-models/school/profile.t` OK; `searching.t` falha **idêntica sem
+  as mudanças** (pré-existente/data). O harness do repo (`Imports.pm`) exige
+  **Perl 5.38** — o container tem 5.36, então os testes rodam só localmente.
+
+## Sessão anterior — LandPage, logo SVG e navegação
 
 ### Entregue (direto em `main`, sem PR) + deploy
 - Commits: `4fbbd4d feat(frontend): landpage, logo e navegação` e
