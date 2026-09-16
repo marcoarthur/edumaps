@@ -33,6 +33,49 @@
 
 ## Entradas
 
+### 2026-09-15 — 4ª rodada (camada declarativa de regressão)
+
+Foco: avaliar o motor genérico (`especificar_regressao()`/`ler_espec()` +
+`executar_regressao()` + `coeficientes()`/`metricas()`) e o exemplo
+`analysis/regressoes_censo.{yaml,Rmd}`.
+
+**M13 — reproduzível e em escala?**
+- Resposta: mesma spec → coeficientes **idênticos** (`all.equal` TRUE). Uma
+  spec em YAML (`ideb_observado ~ nota_media`, cortes `[sg_uf, etapa]`,
+  ano 2023) gerou **81 modelos** sem loop manual, objeto `eduBR_regressoes`
+  (list-cols `modelo`/`coeficientes`/`metricas`/`predicoes` + `n`).
+- Status: **✓ atendido** — resolve a escala combinatória de recortes.
+
+**M14 — fronteira lazy→collect (revisita de M1/M6).**
+- Resposta: agora há **pushdown de colunas** — o SQL é
+  `SELECT "ideb_observado", "nota_media", "etapa" FROM clean.ideb_notas_escolas
+  WHERE ano=2023 AND sg_uf='SP'` (só o necessário). Mas continua
+  materializando o conjunto filtrado inteiro; segue **sem `coletar(n=)`**.
+- Status: **✓ parcial** (melhora de transferência; sem limite/aviso).
+
+**M15 — fonte agnóstica.**
+- Resposta: `fonte` resolve qualquer domínio do catálogo via `eduBR_tbl()`;
+  `dados=` aceita objeto eduBR (ex.: `ideb_regiao()`), permitindo compor
+  recortes antes de modelar. Boa separação acesso × modelagem.
+- Status: **✓ atendido**.
+
+**M16 — modo logístico.**
+- Resposta: o desfecho é coagido a **fator** automaticamente (evita o erro do
+  `parsnip`). Porém `broom::glance` devolve `null.deviance`/`AIC`/`BIC` e
+  **não** traz `r.squared`, AUC nem pseudo-R².
+- Status: **sugestão**.
+- Follow-up: expor métricas de classificação (AUC via `yardstick`/manual;
+  R² de McFadden) no resumo.
+
+**Observações extras da rodada.**
+- `coeficientes()`/`metricas()` achatam a list-col pedida, mas **mantêm as
+  outras** (`modelo`/`predicoes`) — ruído; poderiam devolver tabela limpa.
+- `ler_espec()` lê **uma** spec; não há `ler_especs()` para YAML com lista
+  `analises:` (o caso "muitas análises num arquivo").
+- **YAML**: `outcome: y` vira `logical TRUE` (pegadinha documentada no Rd).
+- Base remota teve picos de lentidão (~2k linhas/s); o pushdown ajuda, mas
+  não há como limitar linhas na exploração.
+
 ### 2026-09-15 — 3ª rodada (INSE e regressão transversal)
 
 Foco: avaliar `inse()` / `ideb_inse()` / `regressao_inse()` e o report
@@ -171,6 +214,9 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [ ] Report: export em PDF + parâmetros de recorte (UF/região).
 - [ ] Série histórica de INSE (hoje só 2023) para permitir painel temporal.
 - [ ] Documentar/avisar contemporaneidade e o 1:n de `ideb_inse()` (por etapa).
+- [ ] Métricas de classificação (AUC / pseudo-R²) no modo logístico.
+- [ ] `ler_especs()` para YAML com lista `analises:` (várias specs por arquivo).
+- [ ] `coeficientes()`/`metricas()` devolverem tabela limpa (sem list-cols extras).
 
 ## Sugestões priorizadas
 
@@ -182,6 +228,10 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
   tendência além do modelo bivariado.
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel para
   previsão (`inse_{t-1}` → `ideb_t`).
+- **[média]** Métricas de classificação (AUC / R² de McFadden) no modo
+  logístico.
+- **[média]** `ler_especs()` (YAML com `analises:` → lista de specs).
+- **[baixa]** `coeficientes()`/`metricas()` retornarem tabela limpa.
 - **[baixa]** Normalizar `integer64` em agregações (ou avisar).
 - **[baixa]** Report: `pdf_document` + params de recorte (UF/região).
 - **[baixa]** Avisar associação contemporânea / 1:n por etapa em
@@ -190,11 +240,11 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
-- **Aprova com ressalvas** (2026-09-15, 3ª rodada): o fluxo de INSE
-  (`inse()`/`ideb_inse()`/`regressao_inse()`) entrega uma regressão
-  transversal **reprodutível** por região×etapa e o gradiente
-  socioeconômico fica comparável entre regiões. Ressalvas: INSE só em 2023
-  (sem painel), amostra restrita a públicas, associação contemporânea (não
-  predição) e o 1:n por etapa precisa de aviso. Pendências estruturais
-  (controle de materialização, dicionário do Censo, reprodutibilidade dos
-  `scores()`, extensão do catálogo) seguem abertas.
+- **Aprova com ressalvas** (2026-09-15, 4ª rodada): a camada declarativa
+  (`especificar_regressao()`/`ler_espec()` + `executar_regressao()`) resolve
+  a **escala combinatória** de recortes de forma reproduzível, com pushdown
+  de colunas e fonte agnóstica — boa fundação para o fluxo censo/IDEB.
+  Ressalvas/abertos: falta controle de materialização (`coletar(n=)`),
+  métricas para o modo logístico, `ler_especs()` (multi-spec em YAML) e
+  helpers de saída mais limpos; o dicionário do Censo, a reprodutibilidade dos
+  `scores()` e a extensão do catálogo seguem pendentes.
