@@ -14,21 +14,26 @@
   - `backend.edumaps` → `ubatexu.lan:2031`
   - `database.edumaps` → `ubatexu.lan:2032`
   - (os containers compartilham o IP do host; só mudam as portas)
-- O **banco de dados real do app roda dentro do container `database.edumaps`**.
-  O `backend.edumaps` (Perl + nginx/frontend) conecta nele via `host=Database`
-  (ver `edu_maps.conf` no container).
-- O Postgres em **`ubatexu.lan:5432` é o do HOST, NÃO o do app**. É para lá que
-  aponta o `~/.pg_service.conf` local (`[edumaps]` → host=ubatexu.lan, user
-  `devel`). Logo, **R/eduBR/testes locais NÃO batem no banco do app**.
-- Para o R/eduBR local enxergar o banco do app seria preciso um **túnel SSH**
-  pelo host, ex.:
+- Existem **dois** clusters Postgres, ambos com `edumaps_dev` (confirmado por
+  `system_identifier` distinto):
+  - **Antigo** — `database.dev`; seu Postgres é exposto pelo host em
+    `ubatexu.lan:5432`. É para ele que aponta o `~/.pg_service.conf` local
+    (`[edumaps]` → host=ubatexu.lan, user `devel`). Logo, **R/eduBR/testes
+    locais batem nesse banco ANTIGO, não no do app**. `sqitch status` local
+    (alvo `dev_super` → ubatexu.lan) também olha esse cluster antigo.
+  - **Atual (app)** — container `database.edumaps` (IP LXC `172.19.198.3`); é o
+    que o `backend.edumaps` (Perl + nginx/frontend) usa via `host=Database`
+    (ver `edu_maps.conf` no container). Só é acessível por SSH (porta 2032).
+- **Deploy de banco:** `rex -H database.edumaps deploy_db_dev` (roda o sqitch
+  **dentro do container atual**). NÃO confundir com `sqitch deploy dev_super`
+  (roda contra `ubatexu.lan:5432` = cluster ANTIGO; lá o pgvector nem está
+  instalado e a migration fica undeployed). Foi um engano inicial desta sessão.
+- Para o R/eduBR local enxergar o banco ATUAL do app seria preciso um **túnel
+  SSH** pelo host, ex.:
   `ssh -N -L 127.0.0.1:55432:localhost:5432 root@database.edumaps`
   (serviço com host=127.0.0.1 port=55432 dbname=edumaps_dev user=edumaps
   password=change_me). **Decisão do usuário: deixar como está** (sem túnel, sem
   repontar `[edumaps]`) — ele testa manualmente.
-- Deploy de banco: usar `rex -H database.edumaps deploy_db_dev` (roda o sqitch
-  **dentro do container**). NÃO aplicar migration no `ubatexu.lan` (host) — foi
-  um engano inicial desta sessão.
 
 ### Entregue nesta sessão — pgvector para similaridade escolar
 - Commits (em `main`, local, **sem PR**): `b3c537a feat(db): pgvector e tabela
@@ -56,6 +61,10 @@
 - Testes: `t/02-models/school/profile.t` OK; `searching.t` falha **idêntica sem
   as mudanças** (pré-existente/data). O harness do repo (`Imports.pm`) exige
   **Perl 5.38** — o container tem 5.36, então os testes rodam só localmente.
+- Tentativa de `sqitch deploy dev_super` (cluster ANTIGO, `ubatexu.lan:5432`)
+  falhou: `extension "vector" is not available` (pgvector não instalado lá). Sem
+  estado parcial (transação abortada; segue undeployed). Não instalar pgvector
+  no cluster antigo — o app usa o container atual.
 
 ## Sessão anterior — LandPage, logo SVG e navegação
 
