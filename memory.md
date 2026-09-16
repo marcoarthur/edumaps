@@ -4,6 +4,46 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão — eduBR (pacote R): regiões, INSE e camada declarativa
+
+- **Repo** `~/Projects/eduBR` (GitHub `marcoarthur/eduBR`, repo separado do
+  `edumaps`). Pacote R de acesso de alto nível à base do EduMaps (objetos S3
+  + consultas `dbplyr` preguiçosas).
+- **PR #1** (`feat/edubr-analises-declarativas`) → `main`, merge commit
+  **`c7e8e80`** (2026-09-16). 10 commits (`b7f4898`..`9a498cb`): setup +
+  região/tendência + INSE + camada declarativa + sync + docs.
+  `main` == `origin/main` == `c7e8e80`; branch deletada.
+- **Setup**: `AGENTS.md` + skills `.opencode/skills/{agent-persona,r-edubr,postgres-postgis}.md`.
+  Curadoria das personas em `docs/personas/especialista-ml.md` (rodadas 2–4).
+- **Região/tendência**: `ideb_regiao()` (macrorregião derivada da UF via
+  `case_when`; helpers em `R/regiao.R`) e `tendencia_regiao()` (parsnip
+  `ideb_medio ~ ano` por região×etapa). Report
+  `analysis/tendencia_ideb_regiao.Rmd`.
+- **INSE**: `clean.inse` só tem **2023** e só **públicas** (69.756 escolas).
+  `inse()`, `ideb_inse()` (join por `id_escola` e `ano = nu_ano_saeb`) e
+  `regressao_inse()` (transversal, nível escola). Report
+  `analysis/regressao_inse_regiao.Rmd`. Gradiente (fund. II): CO 1,22 > SE 1,13
+  > N 1,09 > S 1,03 > **NE 0,61**.
+- **Camada declarativa**: `especificar_regressao()` / `ler_espec()` /
+  `ler_especs()` (YAML) + `executar_regressao(con, espec, dados = NULL)`
+  (mesma regressão para N combinações de `cuts`, com **pushdown** de colunas
+  antes do `collect`), `coeficientes()`, `metricas()` (logit: `auc` +
+  `mcfadden`) e `coletar(x, n =)` (limite + aviso de custo). Exemplo
+  `analysis/regressoes_censo.{yaml,Rmd}` (81 modelos UF×etapa em ~48 s).
+- **Sync RStudio**: `tools/sync-rstudio.sh` → `rstudio.dev:/home/rsuser/projetos/eduBR`
+  (sem `--delete`; `chown -R rsuser:rsuser`), disparado por
+  `.git/hooks/post-commit` (symlink para o script). Hook é **local** —
+  reinstalar após clonar: `ln -sf ../../tools/sync-rstudio.sh .git/hooks/post-commit`.
+- **Dados**: `clean.ideb_notas_escolas` tem `sg_uf`, `co_municipio`, `etapa`,
+  `rede`; IDEB↔censo/scores casam por `id_escola == co_entidade`. Base remota
+  (`ubatexu.lan:5432`, cluster **ANTIGO**) com picos de lentidão (~2k linhas/s),
+  daí o pushdown de colunas.
+- **Validação**: `devtools::test()` 0 fail / 0 warn; `R CMD check` 0/0/0.
+- **Pendências** (backlog em `docs/personas/especialista-ml.md`): dicionário do
+  Censo, reprodutibilidade dos `scores()`, `as_sf()`/PostGIS,
+  `registrar_relacao()`, INSE histórico p/ painel, PDF nos reports, join
+  escola→município por código.
+
 ## Sessão atual — sw.js (PWA app shell offline)
 
 - **PR #66** (`feat/sw-app-shell`) → `main`, merge commit **`9fb0d9c`**
