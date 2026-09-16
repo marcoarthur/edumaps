@@ -366,6 +366,7 @@ task deploy_db_dev => 'database.edumaps' => sub {
     "postgresql-client-$pg_version",
     "postgresql-$pg_version-postgis-3",
     "postgresql-$pg_version-postgis-3-scripts",
+    "postgresql-$pg_version-pgvector",
   );
 
   #

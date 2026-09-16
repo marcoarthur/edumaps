@@ -1,6 +1,7 @@
 package EduMaps::Roles::Business::School::Profile;
 use Mojo::Base -role, -signatures;
 use DateTime;
+use Mojo::Collection qw(c);
 use EduMaps::Model::Rank::School;
 use EduMaps::Model::Domain::SchoolQuality;
 use Carp qw(croak);
@@ -177,17 +178,50 @@ sub panel_info($self, $params) {
       geo_tag => $school->{co_municipio}
     }
   );
-  my $similars = $in_city->find_similar_schools($school, 3)->each(
-    # inclui as matriculas nos dados do censo das escolas similares
-    sub {
-      my @params = (
-        { co_entidade => $_->{record}{co_entidade} },
-        { columns => [ {matriculas => \join('+', @fields)} ] },
-      );
-      my $mat = $self->schema->resultset('CensoMatriculas');
-      $_->{record}{matriculas} = $mat->search_rs(@params)->as_hash->first->{matriculas};
-    }
-  );
+
+  # Similaridade via pgvector (índice HNSW, cosseno): top-k calculado no banco,
+  # sem trazer todas as escolas do município para o Perl. Se a tabela/embedding
+  # não estiver disponível (deploy parcial), cai no método antigo em memória.
+  my $mat = $self->schema->resultset('CensoMatriculas');
+  my $attach_matriculas = sub ($record) {
+    $record->{matriculas} = $mat->search_rs(
+      { co_entidade => $record->{co_entidade} },
+      { columns => [ {matriculas => \join('+', @fields)} ] },
+    )->as_hash->first->{matriculas};
+    return $record;
+  };
+
+  my $neighbors = eval {
+    $self->schema->resultset('SchoolEmbedding')
+      ->similar_to($school->{co_entidade}, 3, $school->{co_municipio});
+  };
+
+  my $similars;
+
+  if ($neighbors && @$neighbors) {
+    my %distance = map { $_->{co_entidade} => $_->{distance} } @$neighbors;
+    my @ids = map { $_->{co_entidade} } @$neighbors;
+
+    my $records = $self->schema->resultset('CensoEscolas')
+      ->search_rs({ 'me.co_entidade' => { -in => \@ids } })
+      ->as_hash->get_all;
+    my %by_id = map { $_->{co_entidade} => $_ } @$records;
+
+    $similars = c(
+      map {
+        my $record = $by_id{$_};
+        next unless $record;
+        $attach_matriculas->($record);
+        +{ record => $record, distance => $distance{$_} };
+      } @ids
+    );
+  }
+  else {
+    $similars = $in_city->find_similar_schools($school, 3)->each(
+      # inclui as matriculas nos dados do censo das escolas similares
+      sub { $attach_matriculas->($_->{record}) }
+    );
+  }
 
   return {
     escola => {

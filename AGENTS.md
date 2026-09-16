@@ -73,6 +73,53 @@ Arquivos de skill em `.opencode/skills/`:
 | r-analytics | `r-analytics.md` | Scripts R, edumapsr, clustering, SIOPE |
 | frontend-svelte | `frontend-svelte.md` | UI Svelte 5/Leaflet: mapas, legendas, padrões reutilizáveis |
 
+## Personas de curadoria
+
+Arquivos de perfil **e memória** em `docs/personas/`. Diferente das skills
+(instruções estáticas), as personas usam um **modelo com memória**: registram
+inputs e mantêm um loop de perguntas → respostas → follow-ups.
+
+Três personas avaliam o pacote `eduBR` (repo separado em `~/Projects/eduBR`):
+
+| Persona | Arquivo | Foco |
+|---------|---------|------|
+| Pesquisadora educacional | `docs/personas/pesquisadora-educacional.md` | ML p/ questões nacionais/regionais/municipais |
+| Especialista em ML | `docs/personas/especialista-ml.md` | ML clássico + modelagem avançada |
+| Gestora escolar | `docs/personas/gestora-escolar.md` | Acompanhamento da escola vs painel municipal/estadual |
+
+Uma quarta persona atua sobre **todo o projeto** (não só o `eduBR`):
+
+| Persona | Arquivo | Foco |
+|---------|---------|------|
+| Tech Lead | `docs/personas/tech-lead.md` | Organiza o acervo (`docs/` + Zotero) e propõe direções/oportunidades técnicas |
+
+### Protocolo do loop (curadoria eduBR)
+
+1. **Ativar**: ler o perfil + memória da persona (`docs/personas/<slug>.md`).
+2. **Pendências**: as perguntas da rodada são as canônicas + os follow-ups abertos.
+3. **Responder**: executar o `eduBR` (via `Rscript`, `service = "edumaps"`) ou
+   ler o código/README e registrar `Pergunta → Resposta`.
+4. **Classificar**: `✓ atendido` / `lacuna` / `sugestão`.
+5. **Follow-up**: gerar a próxima pergunta e registrá-la em "Pendências".
+6. **Sugestões**: atualizar "Sugestões priorizadas" (`[alta]`/`[média]`/`[baixa]`).
+7. **Veredito**: ao zerar pendências, registrar `aprova` / `aprova com ressalvas`
+   / `reprova` com data.
+
+Cada rodada acrescenta uma entrada datada (mais recente no topo) no arquivo da
+persona e alimenta o backlog do `eduBR`.
+
+### Loop do Tech Lead (acervo do projeto)
+
+1. **Ativar**: ler `docs/personas/tech-lead.md` + o mapa `docs/indice.md`.
+2. **Inventariar**: varrer `docs/` e a coleção Zotero `EduMaps`
+   (`~/Code/perl/DBIX/zotero.sqlite`, **read-only**).
+3. **Diferenciar**: apontar duplicatas, órfãos, lacunas e artefatos desatualizados.
+4. **Priorizar**: direções `[alta]`/`[média]`/`[baixa]` **com rastro** à fonte
+   (`Z:<itemID>` ou caminho em `docs/`).
+5. **Atualizar** `docs/indice.md` e registrar a passada (entrada datada) em
+   `tech-lead.md`.
+6. **Veredito** por passada.
+
 ## Code style
 
 - `use utf8;` em todos os módulos
@@ -90,18 +137,28 @@ plano → execução → aprovação
    convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
 3. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
    ou a aceite explícito da implementação.
-4. **Deploy (sempre)**: todo ciclo termina com o deploy via Rex
-   (`backend/script/deploy/Rexfile`). O deploy é "as-is" — o working tree local
-   é a fonte de verdade (rsync direto). Rodar sempre a partir de
-   `backend/script/deploy`:
+4. **Deploy (sempre que houver código)**: todo ciclo que altere **artefato de
+   código** termina com o deploy via Rex (`backend/script/deploy/Rexfile`).
+   Mudanças **só de documentação** (`docs/`, `*.md` como `AGENTS.md`/`memory.md`,
+   `.opencode/`, comentários) **não deployam** — não há o que sincronizar nos
+   containers. O deploy é "as-is" — o working tree local é a fonte de verdade
+   (rsync direto). Rodar sempre a partir de `backend/script/deploy`:
 
    ```bash
    rex prepare                                  # rsync do working tree p/ os 3 hosts
    rex -H <host> deploy_frontend_dev            # (ou a task afetada)
    ```
 
-   Tasks: `deploy_backend_dev`, `deploy_frontend_dev`, `deploy_minion_dev`,
-   `deploy_analytics_worker_dev`, `deploy_analytics_dev`, `deploy_db_dev`.
+   Deploy por área alterada:
+
+   | Área alterada | Task |
+   |---------------|------|
+   | `frontend/edumaps/` | `deploy_frontend_dev` |
+   | `backend/` | `deploy_backend_dev` (+ `deploy_minion_dev` se jobs/Minion) |
+   | `analysis/edumapsr/` | `deploy_analytics_dev` |
+   | `data_pipeline/` | `deploy_db_dev` |
+   | `docs/`, `*.md`, `.opencode/` | — (sem deploy) |
+
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
 5. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
