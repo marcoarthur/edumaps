@@ -73,12 +73,13 @@ Arquivos de skill em `.opencode/skills/`:
 | r-analytics | `r-analytics.md` | Scripts R, edumapsr, clustering, SIOPE |
 | frontend-svelte | `frontend-svelte.md` | UI Svelte 5/Leaflet: mapas, legendas, padrões reutilizáveis |
 
-## Personas de curadoria (eduBR)
+## Personas de curadoria
 
-O pacote `eduBR` (repo separado em `~/Projects/eduBR`) é avaliado por três
-personas cujos perfis **e memória** ficam em `docs/personas/`. Diferente das
-skills (instruções estáticas), estas personas usam um **modelo com memória**:
-registram inputs e mantêm um loop de perguntas → respostas → follow-ups.
+Arquivos de perfil **e memória** em `docs/personas/`. Diferente das skills
+(instruções estáticas), as personas usam um **modelo com memória**: registram
+inputs e mantêm um loop de perguntas → respostas → follow-ups.
+
+Três personas avaliam o pacote `eduBR` (repo separado em `~/Projects/eduBR`):
 
 | Persona | Arquivo | Foco |
 |---------|---------|------|
@@ -86,7 +87,13 @@ registram inputs e mantêm um loop de perguntas → respostas → follow-ups.
 | Especialista em ML | `docs/personas/especialista-ml.md` | ML clássico + modelagem avançada |
 | Gestora escolar | `docs/personas/gestora-escolar.md` | Acompanhamento da escola vs painel municipal/estadual |
 
-### Protocolo do loop (curadoria)
+Uma quarta persona atua sobre **todo o projeto** (não só o `eduBR`):
+
+| Persona | Arquivo | Foco |
+|---------|---------|------|
+| Tech Lead | `docs/personas/tech-lead.md` | Organiza o acervo (`docs/` + Zotero) e propõe direções/oportunidades técnicas |
+
+### Protocolo do loop (curadoria eduBR)
 
 1. **Ativar**: ler o perfil + memória da persona (`docs/personas/<slug>.md`).
 2. **Pendências**: as perguntas da rodada são as canônicas + os follow-ups abertos.
@@ -100,6 +107,18 @@ registram inputs e mantêm um loop de perguntas → respostas → follow-ups.
 
 Cada rodada acrescenta uma entrada datada (mais recente no topo) no arquivo da
 persona e alimenta o backlog do `eduBR`.
+
+### Loop do Tech Lead (acervo do projeto)
+
+1. **Ativar**: ler `docs/personas/tech-lead.md` + o mapa `docs/indice.md`.
+2. **Inventariar**: varrer `docs/` e a coleção Zotero `EduMaps`
+   (`~/Code/perl/DBIX/zotero.sqlite`, **read-only**).
+3. **Diferenciar**: apontar duplicatas, órfãos, lacunas e artefatos desatualizados.
+4. **Priorizar**: direções `[alta]`/`[média]`/`[baixa]` **com rastro** à fonte
+   (`Z:<itemID>` ou caminho em `docs/`).
+5. **Atualizar** `docs/indice.md` e registrar a passada (entrada datada) em
+   `tech-lead.md`.
+6. **Veredito** por passada.
 
 ## Code style
 
