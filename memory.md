@@ -4,7 +4,30 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — fix uuid (crypto.randomUUID em contexto inseguro)
+## Sessão atual — sw.js (PWA app shell offline)
+
+- **PR #66** (`feat/sw-app-shell`) → `main`, merge commit **`9fb0d9c`**
+  (2026-09-16). Commit `548bf7e feat(frontend): sw.js basico app shell offline`.
+- **Contexto**: o frontend não tinha service worker próprio (só o `sw.js`
+  opaco gerado pelo Workbox em `generateSW`).
+- **`src/sw.js`** (novo, vanilla, sem Workbox em runtime): app shell offline —
+  `install` precacheia shell + assets com hash injetados (`self.__WB_MANIFEST`
+  → `.url`) + `skipWaiting`; `activate` limpa caches + `clients.claim`; `fetch`
+  navegação network-first com fallback offline, `/api/` network-only, estáticos
+  stale-while-revalidate.
+- **`vite.config.js`**: `VitePWA` de `generateSW` → **`injectManifest`**
+  (`srcDir: "src"`, `filename: "sw.js"`); removido o `runtimeCaching` do `/api/`
+  e o `robots.txt` inexistente do `includeAssets`.
+- **Deploy/validação**: `npm run build` gera `dist/sw.js` (nosso código, 7
+  entradas de precache); `deploy_frontend_dev`; no container `/sw.js` 200 e
+  `registerSW.js` 200.
+- **Pendências**: ícones `public/icons/icon-*.png` e `robots.txt` inexistentes —
+  PWA ainda não instalável.
+- Nota: no build, `injectManifest` exige o ponto de injeção
+  `self.__WB_MANIFEST` no sw de origem (erro "Unable to find a place to inject
+  the manifest" se faltar).
+
+## Sessão anterior — fix uuid (crypto.randomUUID em contexto inseguro)
 
 - **PR #65** (`fix/uuid-contexto-inseguro`) → `main`, merge commit **`d522d10`**
   (2026-09-16). Commit `cca4d76 fix(frontend): uuid sem contexto seguro`.
