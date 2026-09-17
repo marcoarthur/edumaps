@@ -11,6 +11,7 @@
   let school = $state(null);
   let indicators = $state([]);
   let similarSchools = $state([]);
+  let desempenho = $state([]);
   let loading = $state(true);
   let error = $state(null);
   let loadingSimilar = $state(false); // já vem junto na mesma requisição
@@ -25,10 +26,12 @@
       school = transformed.school;
       indicators = transformed.indicators;
       similarSchools = transformed.similarSchools;
+      desempenho = transformed.desempenho;
     } catch (err) {
       school = null;
       indicators = [];
       similarSchools = [];
+      desempenho = [];
       error = err instanceof ApiError ? err.message : 'Erro ao carregar dados da escola.';
     } finally {
       loading = false;
@@ -89,6 +92,7 @@
       {school}
       {indicators}
       {similarSchools}
+      {desempenho}
       loadingSimilarSchools={loadingSimilar}
       onSelectSimilarSchool={handleSelectSimilarSchool}
     />

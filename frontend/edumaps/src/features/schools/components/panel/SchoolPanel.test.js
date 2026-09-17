@@ -3,6 +3,15 @@ import { render, screen, fireEvent } from "@testing-library/svelte";
 import { describe, it, expect, vi } from "vitest";
 import SchoolPanel from "./SchoolPanel.svelte";
 
+// O motor do @carbon depende de APIs SVG que o jsdom não implementa; usamos o
+// mesmo stub dos testes de charts para validar a fiação.
+vi.mock("@carbon/charts-svelte", async () => {
+  const stub = (
+    await import("@/features/network-compare/__tests__/CarbonChartStub.svelte")
+  ).default;
+  return { LineChart: stub };
+});
+
 describe("SchoolPanel", () => {
   // Dados no formato do contrato da API (português)
   const mockSchool = {
@@ -170,5 +179,37 @@ describe("SchoolPanel", () => {
     await fireEvent.click(card);
 
     expect(onSelectMock).toHaveBeenCalledWith("1");
+  });
+
+  it("deve renderizar a seção Desempenho abaixo de Escolas semelhantes", () => {
+    const desempenho = [
+      { ano: 2021, etapa: "fundamental_ii", ideb_observado: 5.2 },
+      { ano: 2023, etapa: "fundamental_ii", ideb_observado: 4.8 },
+    ];
+    render(SchoolPanel, {
+      school: mockSchool,
+      indicators: [],
+      similarSchools: [],
+      desempenho,
+    });
+
+    const headers = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((h) => h.textContent.trim());
+    expect(headers).toContain("Desempenho");
+    expect(headers.indexOf("Desempenho")).toBeGreaterThan(
+      headers.indexOf("Escolas semelhantes"),
+    );
+  });
+
+  it("não deve renderizar a seção Desempenho sem histórico", () => {
+    render(SchoolPanel, {
+      school: mockSchool,
+      indicators: [],
+      similarSchools: [],
+      desempenho: [],
+    });
+
+    expect(screen.queryByText("Desempenho")).not.toBeInTheDocument();
   });
 });
