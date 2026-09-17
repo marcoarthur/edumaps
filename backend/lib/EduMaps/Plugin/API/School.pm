@@ -18,6 +18,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/payroll/last' => $check)->to('school#payroll_last')->name('school_last_payroll');
 
+  $api->get('/:cod_inep/finance' => $check)->to('school#finance')->name('school_finance');
+
   $api->get('/:cod_inep/grades' => $check)->to('school#grades')->name('school_grades');
 
   $api->get('/:cod_inep/full_grades' => $check)->to('school#full_grades')->name('school_full_grades');

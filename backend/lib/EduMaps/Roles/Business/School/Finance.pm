@@ -239,6 +239,65 @@ sub payroll_dates($self, $params) {
   );
 }
 
+sub financial_summary($self, $params) {
+  croak "need cod_inep" unless $params->{cod_inep};
+
+  my $cod = $params->{cod_inep};
+  my $dbh = $self->schema->storage->dbh;
+
+  my ($nome) = $dbh->selectrow_array(
+    'SELECT escola FROM clean.escolas WHERE codigo_inep = ? LIMIT 1',
+    undef, $cod,
+  );
+
+  # O mês é texto em PT ("Janeiro".."Dezembro"), com um caso conhecido de
+  # latin1 ("Março"). Derivamos o número pelo prefixo (robusto a encoding)
+  # apenas para ordenar a linha do tempo.
+  my @month_whens = map {
+    sprintf "        WHEN mes LIKE '%s%%' THEN %d", $_->[0], $_->[1]
+  } (
+    ['Jan', 1], ['Fev', 2], ['Mar', 3], ['Abr', 4], ['Mai', 5], ['Jun', 6],
+    ['Jul', 7], ['Ago', 8], ['Set', 9], ['Out', 10], ['Nov', 11], ['Dez', 12],
+  );
+
+  my $month_case = join "\n",
+    '      CASE',
+    @month_whens,
+    '        ELSE 0',
+    '      END';
+
+  my $series = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod);
+    SELECT
+      ano,
+      mes,
+      $month_case AS mes_num,
+      COALESCE(SUM(salario_total), 0)::float AS total_salario,
+      COUNT(DISTINCT cpf)::int               AS total_profissionais
+    FROM clean.remuneracao_municipal
+    WHERE cod_inep = ?
+    GROUP BY ano, mes
+    ORDER BY ano, mes_num
+  SQL
+
+  my $categorias = $dbh->selectall_arrayref(<<~'SQL', { Slice => {} }, $cod);
+    SELECT
+      categoria,
+      tipo,
+      COALESCE(SUM(salario_total), 0)::float AS total_salario,
+      COUNT(DISTINCT cpf)::int               AS total_profissionais
+    FROM clean.remuneracao_municipal
+    WHERE cod_inep = ?
+    GROUP BY categoria, tipo
+    ORDER BY total_salario DESC
+  SQL
+
+  return {
+    escola     => { codigo_inep => $cod, nome => $nome },
+    series     => $series     // [],
+    categorias => $categorias // [],
+  };
+}
+
 sub last_payroll_available($self, $params) {
   croak "need cod_inep" unless $params->{cod_inep};
   my $dates = $self->payroll_dates({ cod_inep => $params->{cod_inep} });
