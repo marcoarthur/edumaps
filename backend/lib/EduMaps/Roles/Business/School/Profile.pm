@@ -223,6 +223,14 @@ sub panel_info($self, $params) {
     );
   }
 
+  # Série histórica de desempenho (IDEB/SAEB por etapa e ano). Fonte única:
+  # clean.ideb_notas_escolas — NÃO usar clean.inep / clean.inep_notas_desagregadas
+  # (deprecated).
+  my $desempenho = $self->schema->resultset('IdebNotasEscolas')
+    ->search_rs({ id_escola => $school->{co_entidade} })
+    ->order_by([{ -asc => 'etapa' }, { -asc => 'ano' }])
+    ->as_hash->get_all->to_array;
+
   return {
     escola => {
       id_escola => $school->{co_entidade},
@@ -238,6 +246,7 @@ sub panel_info($self, $params) {
     },
     indicators => \%values,
     similar_schools => $similars->to_array,
+    desempenho => $desempenho,
   };
 }
 
