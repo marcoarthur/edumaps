@@ -93,5 +93,14 @@ export function transformPanelData(apiData) {
     };
   });
 
-  return { school, indicators, similarSchools };
+  // 4. Série de desempenho (IDEB observado por etapa/ano). Vem só quando a
+  //    escola tem histórico em clean.ideb_notas_escolas.
+  const desempenho = (apiData.desempenho || []).map((row) => ({
+    ano: Number(row.ano),
+    etapa: row.etapa,
+    ideb_observado:
+      row.ideb_observado == null ? null : Number(row.ideb_observado),
+  }));
+
+  return { school, indicators, similarSchools, desempenho };
 }

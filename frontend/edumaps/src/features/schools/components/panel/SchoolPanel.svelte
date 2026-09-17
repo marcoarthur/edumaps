@@ -5,6 +5,7 @@
   import SchoolInfrastructure from './InfrastructureGrid.svelte';
   import SchoolIndicators from './SchoolIndicator.svelte';
   import SimilarSchools from './SimilarSchools.svelte';
+  import SchoolPerformance from './SchoolPerformance.svelte';
   import SchoolMap from './SchoolMap.svelte';
 
   /**
@@ -23,6 +24,7 @@
    * Campos internos de `school` mantidos em português: contrato da API.
    * @property {Array} [indicators] - saída de rank() para os indicadores exibidos
    * @property {Array} [similarSchools] - saída do endpoint de escolas semelhantes
+   * @property {Array} [desempenho] - série histórica de IDEB { ano, etapa, ideb_observado }
    * @property {boolean} [loadingSimilarSchools]
    * @property {(schoolId: number) => void} [onSelectSimilarSchool]
    */
@@ -32,6 +34,7 @@
     school,
     indicators = [],
     similarSchools = [],
+    desempenho = [],
     loadingSimilarSchools = false,
     onSelectSimilarSchool = () => {},
   } = $props();
@@ -86,4 +89,11 @@
       <SimilarSchools schools={similarSchools} onSelect={onSelectSimilarSchool} />
     {/if}
   </section>
+
+  {#if desempenho.length > 0}
+    <section class="flex flex-col gap-2">
+      <h2 class="text-base font-bold text-gray-900 mb-2">Desempenho</h2>
+      <SchoolPerformance {desempenho} />
+    </section>
+  {/if}
 </div>
