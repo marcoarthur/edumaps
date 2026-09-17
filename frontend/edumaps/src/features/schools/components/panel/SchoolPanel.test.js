@@ -212,4 +212,18 @@ describe("SchoolPanel", () => {
 
     expect(screen.queryByText("Desempenho")).not.toBeInTheDocument();
   });
+
+  it("tem link para o painel financeiro da escola", () => {
+    render(SchoolPanel, {
+      school: mockSchool,
+      indicators: [],
+      similarSchools: [],
+    });
+
+    const link = screen.getByRole("link", { name: /painel financeiro/i });
+    expect(link).toHaveAttribute(
+      "href",
+      `/escola/financeiro?inep=${mockSchool.id_escola}`,
+    );
+  });
 });

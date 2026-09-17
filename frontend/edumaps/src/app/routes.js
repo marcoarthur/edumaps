@@ -7,6 +7,7 @@ import {
   SchoolSearchPage,
   SchoolRankingPage,
   SchoolPayrollPage,
+  SchoolFinancePage,
   SchoolPanelPage,
   SchoolSearchPageRx,
 } from "@/features/schools";
@@ -18,6 +19,7 @@ export const routes = [
   { path: "/cluster/geotag", component: ClusterGeotagPage },
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },
+  { path: "/escola/financeiro", component: SchoolFinancePage },
   { path: "/escola/panel", component: SchoolPanelPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];

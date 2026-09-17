@@ -48,7 +48,15 @@
         {school.municipio} · {school.uf} · INEP {school.id_escola}
       </p>
     </div>
-    <SchoolSummary network={school.rede} enrollments={school.matriculas} />
+    <div class="flex items-center gap-3">
+      <SchoolSummary network={school.rede} enrollments={school.matriculas} />
+      <a
+        href={`/escola/financeiro?inep=${school.id_escola}`}
+        class="px-3 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+      >
+        Painel financeiro →
+      </a>
+    </div>
   </header>
 
   <section class="flex flex-col gap-2">
