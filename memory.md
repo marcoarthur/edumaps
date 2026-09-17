@@ -4,7 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — autocomplete de indicadores (cluster) + build no container
+## Sessão atual — seção Desempenho (IDEB) no painel da escola
+
+- **PR #69** (`feat/desempenho-painel-escola`) → `main`, merge commit **`2803421`**
+  (2026-09-17). Commits `606a66e` (backend) e `6661691` (frontend).
+- **O quê**: nova seção **"Desempenho"** no painel da escola, **abaixo de
+  "Escolas semelhantes"**, só quando a escola tem histórico. Um `LineChart`
+  (Carbon) com **uma linha por etapa** (`Fundamental I/II`, `Ensino Médio`),
+  x = ano, y = **IDEB observado**.
+- **Backend**: `School::Profile::panel_info` ganhou o campo `desempenho` lido de
+  **`clean.ideb_notas_escolas`** (`IdebNotasEscolas`), ordenado por etapa/ano.
+  **NÃO** usar `clean.inep` / `clean.inep_notas_desagregadas` (deprecated).
+  Nota: as rotas `/grades` e `/full_grades` do controller são stubs vazios.
+- **Frontend**: `transformPanelData.js` normaliza `desempenho`; `SchoolPanelPage`
+  repassa; `SchoolPanel` renderiza a seção; novo `SchoolPerformance.svelte`.
+- **Dados**: etapas em `clean.ideb_notas_escolas` = `fundamental_i` (2005–2023),
+  `fundamental_ii` (2005–2023), `ensino_medio` (2017–2023).
+- **Testes**: `SchoolPerformance` (2), `SchoolPanel` (+2), `transformPanelData`
+  (2) — 13/13. Deploy backend + frontend; E2E `GET /api/school/35011162/panel/info`
+  com `desempenho` (13 itens).
+
+## Sessão anterior — autocomplete de indicadores (cluster) + build no container
 
 - **Autocomplete do cluster (`FeatureSelect`)** — commit `d8a58f7`
   (`fix(frontend): autocomplete de indicadores do cluster`). Dois bugs:
