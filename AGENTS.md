@@ -44,6 +44,18 @@ Muitos testes em `t/05-tasks` e `analysis/` dependem de serviços externos
 (R, schema staging, jobs agendados) e são **previamente falhos** — não são
 regressões.
 
+## Running tests (frontend)
+
+**SEMPRE rodar no container `backend.edumaps` — NUNCA na máquina local:**
+
+```bash
+ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'
+# feature isolada:
+ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src/features/<feature>'
+```
+
+O build do frontend também roda no container (`rex -H backend.edumaps deploy_frontend_dev`).
+
 ## Database
 
 - Alvo dev: `edumaps_dev` em `ubatexu.lan` (user: `devel`, pass: `senhaboa123`)

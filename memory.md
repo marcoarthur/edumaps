@@ -4,6 +4,13 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+> **Convenções duráveis (valem para toda sessão)**:
+> - **Testes de frontend** (`vitest` / `npm run test:run`): rodar **SOMENTE no
+>   container** `backend.edumaps` — **NUNCA na máquina local**:
+>   `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'`
+>   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
+>   `deploy_frontend_dev`).
+
 ## Sessão atual — seção Desempenho (IDEB) no painel da escola
 
 - **PR #69** (`feat/desempenho-painel-escola`) → `main`, merge commit **`2803421`**
