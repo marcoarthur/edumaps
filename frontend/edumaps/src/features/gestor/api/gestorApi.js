@@ -14,3 +14,13 @@ const BASE = "/api/gestor";
 export function getGestorPanel(codInep) {
   return apiClient.get(`${BASE}/${codInep}/painel`);
 }
+
+/**
+ * Busca de escolas similares (porte, localização, INSE e etapas) via pgvector.
+ * @param {string|number} codInep
+ * @param {{scope?: 'municipio'|'estado'|'regiao', limit?: number}} [opts]
+ * @returns {Promise<{escola_alvo: object, scope: string, limit: number, similares: Array}>}
+ */
+export function getSchoolSimilares(codInep, { scope = "municipio", limit = 10 } = {}) {
+  return apiClient.get(`${BASE}/${codInep}/similares`, { scope, limit });
+}

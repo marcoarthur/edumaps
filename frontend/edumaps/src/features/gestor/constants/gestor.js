@@ -28,3 +28,10 @@ export function etapaColorScale(items = []) {
     items.map((it) => [it.label, ETAPA_COLORS[it.key] ?? "#64748b"]),
   );
 }
+
+/** Escopos da busca de escolas similares (mais próximo por padrão). */
+export const SCOPE_OPTIONS = [
+  { value: "municipio", label: "Município" },
+  { value: "estado", label: "Estado" },
+  { value: "regiao", label: "Região" },
+];

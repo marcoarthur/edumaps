@@ -9,6 +9,7 @@ use Role::Tiny::With;
 # CensoDocentes) e a Model::Base — sem alterar módulos pré-existentes.
 
 with 'EduMaps::Roles::Business::Gestor::Overview';
+with 'EduMaps::Roles::Business::Gestor::SimilarSchools';
 
 sub panel($self, $params = {}) {
   return $self->overview($params);

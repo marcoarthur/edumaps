@@ -89,4 +89,11 @@ describe("GestorPanel", () => {
     expect(screen.getByText("Biblioteca")).toBeInTheDocument();
     expect(screen.getAllByRole("img").length).toBeGreaterThan(0);
   });
+
+  it("inclui a seção de escolas similares no painel", () => {
+    render(GestorPanel, { props: PROPS });
+
+    expect(screen.getAllByText("Escolas similares").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: /Buscar escolas similares/ })).toBeInTheDocument();
+  });
 });

@@ -5,6 +5,7 @@
   import TeachersSection from "./TeachersSection.svelte";
   import EquipmentSection from "./EquipmentSection.svelte";
   import StatusGrid from "./StatusGrid.svelte";
+  import SimilarSchoolsSearch from "./SimilarSchoolsSearch.svelte";
   import { resumoCards, formatInt } from "../utils/transformGestorData.js";
 
   /**
@@ -41,6 +42,7 @@
     { href: "#infraestrutura", label: "Infraestrutura" },
     { href: "#equipamentos", label: "Equipamentos" },
     { href: "#acessibilidade", label: "Acessibilidade" },
+    { href: "#escolas-similares", label: "Escolas similares" },
   ];
 </script>
 
@@ -146,4 +148,6 @@
       <StatusGrid items={acessibilidade} />
     </div>
   </section>
+
+  <SimilarSchoolsSearch {inep} />
 </div>
