@@ -11,6 +11,16 @@
 >   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
 >   `deploy_frontend_dev`).
 
+> **Pendências / correções futuras (backlog técnico)**:
+> - **[alta] Bug latente em `Roles::Business::School::Profile#info_enrollment`**:
+>   o campo `deficiencia_basica` soma `qt_mat_bas_d + qt_mat_bas_dm + qt_mat_bas_dv`
+>   como "deficiência", mas essas colunas são **TURNO** (`d`=Diurno, `dm`=Matutino,
+>   `dv`=Vespertino, `n`=Noturno) — os comentários do loader (`Deficiência – …`)
+>   estão errados (validado: `d+n=bas` e `dm+dv=d` em ~178,7 mil linhas).
+>   **Fix futuro**: trocar pela fonte correta de deficiência (ex.: `qt_mat_esp*`)
+>   e/ou renomear o campo; decidir se mantém compatibilidade do contrato da API.
+>   **Deixado fora do escopo** do Painel do Gestor (`overview` usa turno correto).
+
 ## Sessão atual — Painel do Gestor (`/gestor/painel`)
 
 - **PR #71** (`feat/painel-gestor`) → `main`, merge commit **`82ccb80`**.
