@@ -13,6 +13,8 @@
 
 ## Sessão atual — Painel do Gestor (`/gestor/painel`)
 
+- **PR #71** (`feat/painel-gestor`) → `main`, merge commit **`82ccb80`**.
+  Commits `9e743d4` (backend), `63dc345` (frontend), `45c9d96` (memória).
 - **O quê**: nova rota **`/gestor/painel?inep=…`** com **API isolada**
   `GET /api/gestor/:cod_inep/painel`. Raio-x da escola para leitura em ~2 min:
   matrículas por **etapa, turno, modalidade e faixa etária**; salas; docentes
