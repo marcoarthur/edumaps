@@ -33,6 +33,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/escola/financeiro");
   });
 
+  it("encontra a rota do painel do gestor /gestor/painel", () => {
+    const match = matchRoute("/gestor/painel");
+    expect(match?.path).toBe("/gestor/painel");
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });
