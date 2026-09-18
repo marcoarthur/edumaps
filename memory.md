@@ -13,6 +13,9 @@
 
 ## Sessão atual — Painel Financeiro da escola (folha/remuneração)
 
+- **PR #70** (`feat/painel-financeiro-escola`) → `main`, merge commit **`99c0573`**
+  (2026-09-17). Commits `ec525fe` (backend), `3964643` (frontend), `8cc5663`
+  (docs regra), `692a3ca` (memória).
 - **O quê**: nova **página separada** `/escola/financeiro` (look-and-feel do
   painel), linkada do `SchoolPanel` ("Painel financeiro →"). Mostra: custo total
   mensal (LineChart), profissionais por mês (LineChart), custo por categoria
