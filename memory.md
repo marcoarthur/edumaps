@@ -10,6 +10,14 @@
 >   `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'`
 >   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
 >   `deploy_frontend_dev`).
+> - **Componente com LeafletMap em teste (jsdom)**: NUNCA instanciar o
+>   `LeafletMap` real — usar o stub `features/<feature>/components/__tests__/LeafletMapStub.svelte`
+>   (importa o `provideMapContext` real de `features/map/context.js` e injeta
+>   `{map:null, ready:false}`, assim os filhos como `SimilarMarkers` não tocam
+>   Leaflet). Padrão em `SimilarSchoolsSearch.test.js`.
+> - **`curl` no container via nginx**: o fallback SPA depende do `server_name`;
+>   `curl http://localhost/...` (Host localhost) devolve 404 mesmo para rotas
+>   válidas. Usar `-H "Host: ubatexu.lan"`.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - **[alta] Bug latente em `Roles::Business::School::Profile#info_enrollment`**:
@@ -21,7 +29,45 @@
 >   e/ou renomear o campo; decidir se mantém compatibilidade do contrato da API.
 >   **Deixado fora do escopo** do Painel do Gestor (`overview` usa turno correto).
 
-## Sessão atual — Painel do Gestor (`/gestor/painel`)
+## Sessão atual — Busca por escolas similares no painel do gestor
+
+- **PR #72** (`feat/escolas-similares`) → `main`, merge commit **`5e55dfa`**
+  (2026-09-18). Commits `e85a8d5` (backend), `bf8f9c5` (frontend), `5f3ba49`
+  (docs: nota técnica 40).
+- **Backend**: rota **`GET /api/gestor/:cod_inep/similares`** — nova role
+  `Roles::Business::Gestor::SimilarSchools` (`similar_schools`, SQL raw via
+  `dbh_do`, `$FEATURE_VECTOR`). Similaridade = cosseno pgvector (`<=>`) **on-the-fly**
+  (sem migration), **10 dims**: porte (ordinal 0..1 das 6 categorias de
+  `clean.escolas.porte_escola`), localização (urbana 1/rural 0 via
+  `tp_localizacao`), INSE (`media_inse_alvo/10`; **0 quando o alvo não tem INSE** =
+  comparação neutra), 7 etapas one-hot (`in_comum_creche/pre/fund_ai/fund_af/
+  medio_medio`, `in_eja`, `in_profissionalizante`). Escopo município/estado/região
+  (default município); limit clamp 1..50 (default 10); 404 para INEP inválido.
+- **Armadilhas SQL (validado na prática)**:
+  - `ARRAY[...]::vector` quebra com NULLs → `COALESCE` nos flags de etapa;
+  - `ROUND((1 - (v <=> v))::numeric, 4)` no SQL dá "syntax error at or near AS" →
+    arredondar no Perl (`sprintf('%.4f', ...)`), sem cast no SQL;
+  - **`CASE WHEN ? IS NULL`** falha em prepared statement server-side
+    ("could not determine data type of parameter $1") → cast explícito
+    `?::numeric IS NULL`;
+  - clamp: `$limit = 10 if $limit < 1 || $limit > 50` trocava `999` por 10 (deveria
+    ser 50) → corrigido para `$limit = 1 if $limit < 1; $limit = 50 if $limit > 50`.
+- **Frontend**: `SimilarSchoolsSearch.svelte` (dropdown `SCOPE_OPTIONS` + botão
+  Buscar + `LeafletMap` + `SimilarMarkers` — alvo azul `#2563eb`, similares laranja
+  `#f97316` — + tabela com links `/escola/panel?inep=`); seção `#escolas-similares`
+  no `GestorPanel`; `getSchoolSimilares(codInep, {scope, limit})` em `gestorApi.js`.
+  INSE ausente na UI → "—" e texto "INSE ausente é ignorado na comparação".
+- **Testes**: backend `prove -l t/04-api/gestor/` (painel+similares) 10 PASS;
+  frontend gestor 20 PASS no container. `t/04-api/gestor/similares.t` skip local
+  (cluster antigo sem pgvector) — happy path só no container app.
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev`.
+- **E2E (container, `-H "Host: ubatexu.lan"`)**: município/estado/região corretos;
+  região multi-UF (AM/PA/RR); similaridades 0.8381..0.9921; clamp 999→50, 0→1;
+  SPA `/gestor/painel` 200.
+- Dados úteis: `clean.inse` cobre só ~39% (69.756) das escolas; INSE ausente no alvo
+  neutraliza a dimensão (não cobra das candidatas).
+
+## Sessão anterior — Painel do Gestor (`/gestor/painel`)
 
 - **PR #71** (`feat/painel-gestor`) → `main`, merge commit **`82ccb80`**.
   Commits `9e743d4` (backend), `63dc345` (frontend), `45c9d96` (memória).
