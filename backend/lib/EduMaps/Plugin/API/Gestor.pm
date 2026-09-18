@@ -13,6 +13,7 @@ sub register($self, $app, @args) {
   my $check = [cod_inep => qr/\d{8}/];
 
   $api->get('/:cod_inep/painel' => $check)->to('gestor#panel')->name('gestor_panel');
+  $api->get('/:cod_inep/similares' => $check)->to('gestor#similares')->name('gestor_similares');
 }
 
 1;

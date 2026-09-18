@@ -19,6 +19,25 @@ sub panel($self) {
   $self->render(json => $result);
 }
 
+sub similares($self) {
+  my $cod_inep = $self->param('cod_inep');
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $result = $model->similar_schools({
+    cod_inep => $cod_inep,
+    scope    => $self->param('scope'),
+    limit    => $self->param('limit'),
+  });
+
+  unless ($result) {
+    return $self->render(
+      json => { error => "Escola não encontrada para o INEP $cod_inep" },
+      status => 404,
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 1;
 
 =head1 NAME
