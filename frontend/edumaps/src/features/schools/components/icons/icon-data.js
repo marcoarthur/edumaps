@@ -116,6 +116,28 @@ export const ICONS = {
     label: "Matrículas",
     svg: `<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.3"/><path d="M15.5 20c.2-2.7 1.8-5 4.5-5"/>`,
   },
+
+  // ---------------- FINANCEIRO (categorias profissionais) ----------------
+  docente: {
+    category: "finance",
+    label: "Docente",
+    svg: `<circle cx="12" cy="7.5" r="3.2"/><path d="M5 20.5c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M9 3.4 12 2l3 1.4"/>`,
+  },
+  administrativo: {
+    category: "finance",
+    label: "Administrativo",
+    svg: `<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12.5h18"/>`,
+  },
+  multimeios: {
+    category: "finance",
+    label: "Multimeios e infraestrutura",
+    svg: `<rect x="3" y="4" width="18" height="11" rx="1.5"/><path d="M8 19h8"/><path d="M12 15v4"/>`,
+  },
+  outros_profissionais: {
+    category: "finance",
+    label: "Outros profissionais",
+    svg: `<circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/>`,
+  },
   // ---------- MARCA EDUMAPS (usado como ícone) ----------
   edumaps: {
     category: "brand",

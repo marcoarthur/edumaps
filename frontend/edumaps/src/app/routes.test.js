@@ -28,6 +28,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/escola/ranking");
   });
 
+  it("encontra a rota do painel financeiro /escola/financeiro", () => {
+    const match = matchRoute("/escola/financeiro");
+    expect(match?.path).toBe("/escola/financeiro");
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });

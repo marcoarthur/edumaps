@@ -16,6 +16,7 @@
 
   async function loadPayroll() {
     const cod_inep = getQueryParam("inep");
+    const date = getQueryParam("date");
     if (!cod_inep) {
       error = "Código INEP não informado na URL (?inep=XXXXXXXX).";
       loading = false;
@@ -25,7 +26,7 @@
     loading = true;
     error = null;
     try {
-      const data = await getSchoolPayroll(cod_inep);
+      const data = await getSchoolPayroll(cod_inep, date || undefined);
       payrollData = data;
       if (data.length > 0) {
         schoolName = data[0].escola || `Escola ${cod_inep}`;

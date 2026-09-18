@@ -35,6 +35,18 @@ export function getSchoolPanelData(codInep) {
 }
 
 /**
+ * Resumo financeiro da escola (custos/profissionais ao longo do tempo +
+ * custos por categoria). Fonte: clean.remuneracao_municipal.
+ * @param {string|number} codInep
+ * @returns {Promise<{ escola: { codigo_inep, nome },
+ *   series: Array<{ ano, mes, mes_num, total_salario, total_profissionais }>,
+ *   categorias: Array<{ categoria, tipo, total_salario, total_profissionais }> }>}
+ */
+export function getSchoolFinance(codInep) {
+  return apiClient.get(`${BASE}/${codInep}/finance`);
+}
+
+/**
  * Busca paginada de escolas com suporte a paginação server‑side.
  *
  * O endpoint retorna a estrutura:

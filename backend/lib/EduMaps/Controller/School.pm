@@ -81,6 +81,14 @@ sub payroll_last($self) {
   $self->render(json => $result);
 }
 
+sub finance($self) {
+  my $model = $self->instantiate_model(model => 'School');
+  my $result = $model->financial_summary({ cod_inep => $self->param('cod_inep') });
+
+  # Sem histórico financeiro é um estado válido (a página mostra "sem dados").
+  $self->render(json => $result);
+}
+
 sub grades($self){
   ...
 };

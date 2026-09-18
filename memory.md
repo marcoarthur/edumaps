@@ -4,7 +4,43 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão atual — seção Desempenho (IDEB) no painel da escola
+> **Convenções duráveis (valem para toda sessão)**:
+> - **Testes de frontend** (`vitest` / `npm run test:run`): rodar **SOMENTE no
+>   container** `backend.edumaps` — **NUNCA na máquina local**:
+>   `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'`
+>   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
+>   `deploy_frontend_dev`).
+
+## Sessão atual — Painel Financeiro da escola (folha/remuneração)
+
+- **O quê**: nova **página separada** `/escola/financeiro` (look-and-feel do
+  painel), linkada do `SchoolPanel` ("Painel financeiro →"). Mostra: custo total
+  mensal (LineChart), profissionais por mês (LineChart), custo por categoria
+  (DonutChart + lista com **ícones**), e um dropdown de competência que leva à
+  folha completa (`/escola/payroll?inep=…&date=MM-YYYY`). **Sem nomes** de
+  profissionais no painel (só na folha/detalhes).
+- **Fonte**: `clean.remuneracao_municipal` (~30,9M linhas, índice por `cod_inep`).
+  `categoria` = texto longo; `tipo` = 2 valores (com encoding zoado); `mes` =
+  nome PT ("Janeiro"…"Dezembro", "Março" corrompido).
+- **Backend**: `GET /api/school/:cod_inep/finance` (`Finance::financial_summary`)
+  devolve `escola`, `series` (por ano/mes, com `mes_num` derivado por LIKE de
+  prefixo p/ ordenar) e `categorias` (agregado do período todo). Registrado em
+  `Plugin::API::School` + `Controller::School#finance`.
+- **Frontend**: `schoolApi.getSchoolFinance`; `constants/finance.js` (buckets
+  curados Docentes/Administrativo/Alimentação/Multimeios + fallback, com ícones
+  novos em `icon-data.js` categoria `finance`); `utils/transformFinanceData.js`
+  (puro, testado); `components/panel/SchoolFinance.svelte`;
+  `pages/SchoolFinancePage.svelte`; rota em `routes.js`/`schools/index.js`.
+  `SchoolPayrollPage` passou a aceitar `?date=`.
+- **Bugs corrigidos**: (1) `map { ... } LIST, 'x'` em Perl engolia os itens
+  seguintes na LIST (`$_->[0]` em string → 500); corrigido guardando o `map` num
+  array. (2) rodei `vitest` local indevidamente — corrigido (regra acima).
+- **Validação**: `GET /api/school/11000040/finance` → 200 (12 competências,
+  2 categorias); SPA `/escola/financeiro` 200; bundle com "Painel Financeiro".
+  Testes de frontend **no container**: 25/25.
+- **Commits**: `ec525fe` (backend), `3964643` (frontend), `8cc5663` (docs regra).
+
+## Sessão anterior — seção Desempenho (IDEB) no painel da escola
 
 - **PR #69** (`feat/desempenho-painel-escola`) → `main`, merge commit **`2803421`**
   (2026-09-17). Commits `606a66e` (backend) e `6661691` (frontend).
