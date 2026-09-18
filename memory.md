@@ -11,7 +11,40 @@
 >   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
 >   `deploy_frontend_dev`).
 
-## Sessão atual — Painel Financeiro da escola (folha/remuneração)
+## Sessão atual — Painel do Gestor (`/gestor/painel`)
+
+- **O quê**: nova rota **`/gestor/painel?inep=…`** com **API isolada**
+  `GET /api/gestor/:cod_inep/painel`. Raio-x da escola para leitura em ~2 min:
+  matrículas por **etapa, turno, modalidade e faixa etária**; salas; docentes
+  por **formação, vínculo e disciplina**; **infraestrutura**, **equipamentos**
+  e **acessibilidade**.
+- **Arquitetura isolada** (sem tocar em módulos pré-existentes além dos pontos
+  de integração): `Roles::Business::Gestor::Overview` (lógica), `Model::Gestor`,
+  `Controller::Gestor`, `Plugin::API::Gestor` (path `/api/gestor`); registrado
+  com **1 linha** em `EduMaps.pm`. Reusa os ResultSets genéricos `CensoEscolas`,
+  `CensoMatriculas`, `CensoDocentes` e a `Model::Base`/`Controller::Base`.
+- **Descoberta importante (dados)**: as colunas `qt_mat_bas_d / _dm / _dv / _n`
+  são **TURNO** (Diurno / Matutino / Vespertino / Noturno), **não deficiência** —
+  os comentários do loader (`Deficiência – …`) estão errados. Confirmado em
+  todas as ~178,7 mil linhas: `d + n = bas` e `dm + dv = d`. `qt_mat_bas_int`
+  (integral) e `qt_mat_bas_ead` são dimensões à parte. **Atenção**: o
+  `Profile.pm` (pré-existente) soma `d+dm+dv` como "deficiência" — bug latente,
+  não mexido nesta sessão.
+- **Limitação "turmas"**: o Censo agregado **não** traz o número de turmas.
+  Usamos **salas de aula utilizadas** como referência e expomos `turmas.nota`
+  explicando. `alunos_por_sala = matrículas / salas_utilizadas`.
+- **Frontend**: feature nova `features/gestor/` (api, constants, utils puros,
+  componentes, ícones). Ícones reaproveitam o acervo de `features/schools` e
+  acrescentam novos (turno, modalidade, faixa etária, formação, vínculo,
+  equipamentos, acessibilidade). Único módulo pré-existente alterado:
+  `app/routes.js` (rota nova) e `routes.test.js`.
+- **Testes**: backend `prove -l t/04-api/gestor/painel.t` → 6/6; frontend **no
+  container** → 19/19 (`transformGestorData`, `GestorPanel`, `gestorApi`,
+  `routes`).
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev`. E2E:
+  `/api/gestor/11000040/painel` 200; SPA `/gestor/painel` 200; bundle OK.
+
+## Sessão anterior — Painel Financeiro da escola (folha/remuneração)
 
 - **PR #70** (`feat/painel-financeiro-escola`) → `main`, merge commit **`99c0573`**
   (2026-09-17). Commits `ec525fe` (backend), `3964643` (frontend), `8cc5663`
