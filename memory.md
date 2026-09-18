@@ -29,6 +29,53 @@
 >   e/ou renomear o campo; decidir se mantém compatibilidade do contrato da API.
 >   **Deixado fora do escopo** do Painel do Gestor (`overview` usa turno correto).
 
+## Sessão — eduBR: random forest p/ classificar desempenho (fund. I/II)
+
+- **Repo** `~/Projects/eduBR`; **PR #2** (`feat/edubr-random-forest-desempenho`)
+  → `main`, merge commit **`cdd741f`** (2026-09-18). Dois commits: `b070451`
+  `feat(edubr): random forest p/ desempenho` + `02e3878`
+  `docs(edubr): report RF de desempenho (fund I/II)`. `main` == `origin/main`.
+- **Modelo**: classificar **escolas públicas** (fund. I/II) em
+  **alto/médio/baixo** pelos **terços globais** de `nota_media` (SAEB
+  matemática+português, IDEB 2023) com **Random Forest (ranger)** sobre a MV
+  `analytics.escola_features` (`analytics.prepare_school_data()`: censo 2025 ×
+  nota 2023 → **associativa/diagnóstica**, não previsão). Referências:
+  `~/Documents/Notas/pesquisa.md` (Fusco et al. 2025; Cechinel et al. 2026,
+  *Scientific Reports* — RF + importância p/ reduzir dimensão).
+- **`R/desempenho.R`**: `features_escola()` (lazy; `tp_dependencia ∈ {1,2,3}`),
+  `classificar_desempenho()` (tercis por etapa → fator ordenado `baixo/medio/alto`),
+  `limites_desempenho()` (vetor simples se 1 grupo, senão lista nomeada).
+- **`R/floresta.R`**: `dividir_dados()` (estratificado), `treinar_floresta()`
+  (ranger `classification+probability+importance="permutation"`; **exclusão
+  padrão inclui identificadores espaciais** `sg_uf/uf/co_municipio/...` — UF
+  é rótulo de agregação, nunca preditor — pegadinha corrigida no meio da
+  rodada), `importancia_floresta()`, `predizer_floresta()`
+  (`nivel_pred` + `p_<classe>`), `metricas_floresta()` (acuracia, F1/AUC macro
+  por postos/Wilcoxon, `baseline_acerto`; attrs `confusao`/`f1_classe`/
+  `auc_classe`). `ranger` em **Suggests** (não usar `vip`: só instala no
+  container; daria NOTA no check).
+- **Resultados reais**: tercis fund. I = 5,42/6,26; fund. II = 4,72/5,33.
+  Com acc. 0.594/0.566 vs baseline 0.333; AUC macro 0.78/0.76; **top-15
+  features preserva desempenho** (0.575/0.541); variante **sem INSE** cai
+  ~0.05 (NSE domina, mas sobra sinal estrutural). N da base: 41.229 (fund. I)
+  e 31.078 (fund. II) públicas com nota.
+- **Report**: `analysis/classificacao_desempenho_rf.Rmd` (pipeline por etapa,
+  confusão, importância top-20, perfil por nível, % por UF via
+  `clean.ideb_notas_escolas.id_escola == co_entidade`). Snapshot de dados em
+  `analysis/capturar_dados_rf.R` → `analysis/dados_classificados_rf.rds`
+  (`analysis/*.rds` e `tests/testthat/_problems/` gitignored).
+- **Execução/testes SEMPRE no container `rstudio.dev` (rsuser)** — nunca
+  local. Suite verde (só smoke requer `EDUBR_SMOKE=1`, que também passa);
+  `devtools::check()` 0/0/0. Sync via `tools/sync-rstudio.sh` (post-commit).
+- **Limites do container**: enlace c/ `Database` intermitente (pulls grandes
+  às vezes morrem sem rastro) → **snapshot RDS**; treino com base completa
+  estoura memória (**OOM `Killed`**, host ~8 GB) → **amostra estratificada de
+  15k escolas/etapa** (`n_amostra`), `num.threads = 2`, `trees = 250`; render
+  em background (`nohup /tmp/render_rf.sh`, log em `/tmp/render_rf.log`).
+  knitr não renderiza ggplot dentro de listas de `map()` → `|> lapply(print)`.
+- **Pendências**: `analytics.view_escolas_ml` é o caminho futuro p/ previsão
+  (forecasting) — report documenta que a análise atual é associativa.
+
 ## Sessão atual — Busca por escolas similares no painel do gestor
 
 - **PR #72** (`feat/escolas-similares`) → `main`, merge commit **`5e55dfa`**
