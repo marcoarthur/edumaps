@@ -3,6 +3,7 @@ import AboutPage from "@/features/about";
 import HomePage from "@/features/home";
 import { NetworkComparePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
+import { GestorPanelPage } from "@/features/gestor";
 import {
   SchoolSearchPage,
   SchoolRankingPage,
@@ -21,6 +22,7 @@ export const routes = [
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/escola/financeiro", component: SchoolFinancePage },
   { path: "/escola/panel", component: SchoolPanelPage },
+  { path: "/gestor/painel", component: GestorPanelPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
 
