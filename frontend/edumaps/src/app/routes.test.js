@@ -38,6 +38,21 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/gestor/painel");
   });
 
+  it("encontra a rota de pesquisas do gestor /gestor/pesquisas", () => {
+    const match = matchRoute("/gestor/pesquisas");
+    expect(match?.path).toBe("/gestor/pesquisas");
+  });
+
+  it("encontra a rota de nova pesquisa /gestor/pesquisas/nova", () => {
+    const match = matchRoute("/gestor/pesquisas/nova");
+    expect(match?.path).toBe("/gestor/pesquisas/nova");
+  });
+
+  it("encontra a rota de edição /gestor/pesquisas/editar", () => {
+    const match = matchRoute("/gestor/pesquisas/editar");
+    expect(match?.path).toBe("/gestor/pesquisas/editar");
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });

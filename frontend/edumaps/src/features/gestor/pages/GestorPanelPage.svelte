@@ -50,13 +50,23 @@
         Raio-x da escola em poucos minutos.
       </p>
     </div>
-    <button
-      type="button"
-      onclick={goBack}
-      class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
-    >
-      ← Voltar
-    </button>
+    <div class="flex items-center gap-2">
+      {#if inep}
+        <a
+          href={`/gestor/pesquisas?inep=${inep}`}
+          class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+        >
+          📋 Pesquisas da comunidade
+        </a>
+      {/if}
+      <button
+        type="button"
+        onclick={goBack}
+        class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+      >
+        ← Voltar
+      </button>
+    </div>
   </header>
 
   {#if loading}
