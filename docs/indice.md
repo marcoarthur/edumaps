@@ -8,7 +8,7 @@
 >
 > **Convenção de rastreio**: item Zotero = `Z:<itemID>` (ex.: `Z:11766`).
 > **Status**: 🟢 ativo · 🟡 parcial · 🔴 arquivado/superado.
-> Atualizado pelo Tech Lead a cada passada (última: 2026-09-16).
+> Atualizado pelo Tech Lead a cada passada (última: 2026-09-19).
 
 ## Legenda das fontes Zotero
 
@@ -72,6 +72,14 @@
 - 🟢 Notas `Relatórios` (Z:11591, Z:11887, Z:12069, Z:12155, Z:12329) — relatórios de commits/refatoração.
 
 ---
+
+## 11. Clientes / apresentação
+- 🟢 `docs/clients/gestor/potencial.md` — doc de potencial para **gestor público**
+  (linguagem simples, sem monetização).
+- 🟢 `docs/clients/privado/setor.md` — doc de potencial para **investidor de rede
+  privada/edtech** (ênfase financeira, faixas de receita ilustrativas).
+- 🟢 `docs/clients/Makefile` — `make pdf` (pandoc + weasyprint) para os dois.
+  PDFs são artefatos locais (gitignore).
 
 ## Duplicatas (mesmo tema nos dois acervos)
 | Tema | `docs/` | Zotero |
