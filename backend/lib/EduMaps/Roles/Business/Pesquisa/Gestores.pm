@@ -1,22 +1,29 @@
 package EduMaps::Roles::Business::Pesquisa::Gestores;
 use Mojo::Base -role, -signatures;
 use utf8;
+use Digest::SHA qw(hmac_sha256_hex);
 
-# Gestores escolares: cadastro/upsert por e-mail (sem login no projeto ainda).
+# Gestores escolares: cadastro/upsert por e-mail + login (fase 2).
 # LGPD: o CPF é armazenado, mas NUNCA é devolvido completo — apenas mascarado.
+# Senha: nunca em claro — hash HMAC-SHA256(senha, salt) no formato "<salt_hex>:<hmac_hex>".
+# Sessão: token bearer aleatório (uuid) em clean.sessoes, com expiração.
 
 requires qw(schema);
 
 sub upsert_gestor ($self, $params = {}) {
+  # senha vem crua; o hash é calculado aqui (nunca vaza para o SQL).
+  my $senha_hash = $params->{senha} ? $self->_hash_senha($params->{senha}) : undef;
+
   my $sql = <<~'SQL';
-    INSERT INTO clean.gestores (cod_inep, nome, email, telefone, cargo, cpf)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO clean.gestores (cod_inep, nome, email, telefone, cargo, cpf, senha_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (email) DO UPDATE SET
       cod_inep   = EXCLUDED.cod_inep,
       nome       = EXCLUDED.nome,
       telefone   = EXCLUDED.telefone,
       cargo      = EXCLUDED.cargo,
       cpf        = COALESCE(EXCLUDED.cpf, clean.gestores.cpf),
+      senha_hash = COALESCE(EXCLUDED.senha_hash, clean.gestores.senha_hash),
       updated_at = NOW()
     RETURNING id, cod_inep, nome, email, telefone, cargo, cpf
   SQL
@@ -29,6 +36,7 @@ sub upsert_gestor ($self, $params = {}) {
     $params->{telefone} // undef,
     $params->{cargo}    // undef,
     $params->{cpf}      // undef,
+    $senha_hash,
   ) or return;
 
   return {
@@ -49,6 +57,70 @@ sub gestor_for_id ($self, $id) {
     'SELECT id, cod_inep, nome, email FROM clean.gestores WHERE id = ?',
     $id + 0,
   );
+}
+
+# ---------------------------------------------------------------
+# login / sessão
+# ---------------------------------------------------------------
+
+sub login_gestor ($self, $email, $senha) {
+  my $g = $self->_row(
+    'SELECT id, cod_inep, nome, email, senha_hash FROM clean.gestores WHERE email = ?',
+    $email,
+  );
+
+  return undef unless $g && $g->{senha_hash} && $self->_verify_senha($senha, $g->{senha_hash});
+
+  # limpa sessões expiradas do gestor numa passada barata
+  $self->_rows(
+    'DELETE FROM clean.sessoes WHERE gestor_id = ? AND expires_at < NOW()',
+    $g->{id} + 0,
+  );
+
+  my $row = $self->_row(
+    'INSERT INTO clean.sessoes (gestor_id, token, expires_at)
+     VALUES (?, gen_random_uuid()::text, NOW() + interval \'30 days\')
+     RETURNING token, expires_at',
+    $g->{id} + 0,
+  ) or return;
+
+  return {
+    token     => $row->{token},
+    expira_em => $row->{expires_at},
+    gestor    => {
+      id       => $g->{id} + 0,
+      cod_inep => $g->{cod_inep} + 0,
+      nome     => $g->{nome},
+      email    => $g->{email},
+    },
+  };
+}
+
+sub sessao_valida ($self, $token) {
+  return unless defined $token && length($token) <= 64;
+  return $self->_row(
+    'SELECT g.id, g.cod_inep, g.nome, g.email
+     FROM   clean.sessoes s
+     JOIN   clean.gestores g ON g.id = s.gestor_id
+     WHERE  s.token = ? AND s.expires_at > NOW()',
+    $token,
+  );
+}
+
+sub logout_gestor ($self, $token) {
+  $self->_rows('DELETE FROM clean.sessoes WHERE token = ?', $token);
+  return 1;
+}
+
+sub _hash_senha ($self, $senha) {
+  my $salt = $self->_row('SELECT gen_random_uuid() AS u')->{u} // '';
+  $salt =~ s/-//g;
+  return $salt . ':' . hmac_sha256_hex($senha, $salt);
+}
+
+sub _verify_senha ($self, $senha, $stored) {
+  return unless $stored =~ /^([0-9a-f]{32}):([0-9a-f]{64})$/;
+  return hmac_sha256_hex($senha, $1) eq $2;
 }
 
 sub _mask_cpf ($self, $cpf) {

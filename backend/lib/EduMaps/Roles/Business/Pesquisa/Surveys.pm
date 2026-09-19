@@ -30,7 +30,7 @@ sub create_survey ($self, $params = {}) {
 
 sub survey_detail ($self, $id) {
   my $survey = $self->_row(
-    'SELECT s.id, s.cod_inep, s.gestor_id, s.titulo, s.descricao, s.status,
+    'SELECT s.id, s.cod_inep, s.gestor_id, s.titulo, s.descricao, s.status, s.token,
             s.created_at, s.updated_at,
             g.nome AS gestor_nome, g.email AS gestor_email
      FROM clean.gestor_pesquisas s
@@ -62,6 +62,7 @@ sub survey_detail ($self, $id) {
   $survey->{id}        = $survey->{id} + 0;
   $survey->{cod_inep}  = $survey->{cod_inep} + 0;
   $survey->{gestor_id} = $survey->{gestor_id} + 0;
+  $survey->{token}     = $survey->{token};
   $survey->{perguntas} = \@out;
   $survey->{gestor} = {
     nome  => $survey->{gestor_nome},
@@ -73,7 +74,7 @@ sub survey_detail ($self, $id) {
 
 sub list_surveys ($self, $cod_inep) {
   my $rows = $self->_rows(
-    'SELECT s.id, s.cod_inep, s.gestor_id, s.titulo, s.status,
+    'SELECT s.id, s.cod_inep, s.gestor_id, s.titulo, s.status, s.token,
             s.created_at, s.updated_at, g.nome AS gestor_nome,
             COUNT(p.id) AS n_perguntas
      FROM   clean.gestor_pesquisas s
@@ -93,6 +94,7 @@ sub list_surveys ($self, $cod_inep) {
       gestor_id  => $r->{gestor_id} + 0,
       titulo     => $r->{titulo},
       status     => $r->{status},
+      token      => $r->{token},
       gestor     => { nome => $r->{gestor_nome} },
       n_perguntas => $r->{n_perguntas} + 0,
       created_at => $r->{created_at},

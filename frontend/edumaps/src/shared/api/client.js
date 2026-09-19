@@ -1,6 +1,18 @@
 // src/shared/api/client.js
 const DEFAULT_HEADERS = { "Content-Type": "application/json" };
 
+// Token de sessão do gestor (login, fase 2). Toda requisição autenticada leva
+// "Authorization: Bearer <token>"; rotas públicas simplesmente o ignoram.
+let bearerToken = null;
+
+export function setApiToken(token) {
+  bearerToken = token ?? null;
+}
+
+export function getApiToken() {
+  return bearerToken;
+}
+
 export class ApiError extends Error {
   constructor(message, { status, url } = {}) {
     super(message);
@@ -21,9 +33,11 @@ async function request(path, { method = "GET", params, body, headers } = {}) {
     }
   }
 
+  const authHeaders = bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {};
+
   const response = await fetch(url.pathname + url.search, {
     method,
-    headers: { ...DEFAULT_HEADERS, ...headers },
+    headers: { ...DEFAULT_HEADERS, ...authHeaders, ...headers },
     body: body ? JSON.stringify(body) : undefined,
   });
 
