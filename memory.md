@@ -36,6 +36,35 @@
 >   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
 >   (decisão tomada na rodada; reavaliar se virar padrão).
 
+## Sessão atual — Documentos de potencial (gestor público + investidor privado)
+
+- **Repo** `edumaps`; docs-only (sem deploy). Branch `docs/clients-apresentacao`.
+- **Entregáveis** (novos, em `docs/clients/`):
+  - `docs/clients/gestor/potencial.md` — apresenta o EduMaps ao **gestor público**
+    em linguagem simples, **sem monetizar a relação** (zero preço/cobrança):
+    intro do setor, o que é a plataforma, **dores → soluções** (tabela), cenário
+    de uma semana, privacidade/LGPD, como começar (piloto).
+  - `docs/clients/privado/setor.md` — apresenta o EduMaps a um **investidor de
+    rede privada/edtech** com ênfase **financeira**: intro do setor, capital de
+    dados, segmentos-alvo, **modelos de receita com faixas ilustrativas**
+    (SaaS rede privada R$ 1,2k–4,8k/escola/ano; licença municipal R$ 30k–120k/ano;
+    projeto estadual/federal R$ 200k–500k; API R$ 20k–80k; impl 15–30%), economia
+    da unidade (margem SaaS 70–80%; B2G 50–65%), riscos/mitigação, go-to-market
+    em 4 fases e o que o aporte habilita. Valores marcados como "exemplo ilustrativo".
+  - `docs/clients/Makefile` — `make pdf` gera ambos os PDFs via
+    `pandoc --pdf-engine=weasyprint --toc` (`.gitignore` com `*.pdf`; PDFs são
+    artefatos locais, não commitados).
+- **Decisões do usuário**: caminho padronizado **`docs/clients/`** (plural) nos
+  dois; entregar **md + script de PDF**; profundidade financeira = **faixas ilustrativas**.
+- **Fatos do setor usados (fontes citadas nos docs)**: Censo Escolar 2025 →
+  46,0 M de matrículas e queda de ~1 M em 1 ano (2024→2025); Censo 2024 → 179,3 mil
+  escolas e rede privada ~20% das matrículas (+1% vs pública caindo); Fundeb
+  ~R$ 341 bi (2025) → ~R$ 370 bi (2026) com complementação da União ~R$ 69 bi
+  (Portaria Interministerial MEC/MF 14/2025, FNDE). VALIDADO via websearch —
+  não inventar números do setor sem fonte.
+- **Validação local**: `make pdf` OK (gestor 5 pág., setor 8 pág., TOC+tables).
+- `docs/indice.md` ganhou seção "Clientes / apresentação".
+
 ## Sessão atual — Pesquisas do gestor (fase 2: link público + login + resultados)
 
 - **Repo** `edumaps`; branch `feat/pesquisas-gestor-fase2`; commits:
