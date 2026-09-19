@@ -36,7 +36,53 @@
 >   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
 >   (decisão tomada na rodada; reavaliar se virar padrão).
 
-## Sessão atual — Pesquisas do gestor (fase 1: cadastro + criação/gestão)
+## Sessão atual — Pesquisas do gestor (fase 2: link público + login + resultados)
+
+- **Repo** `edumaps`; branch `feat/pesquisas-gestor-fase2`; commits:
+  `7c17a06` (data_pipeline: migração `gestor_respostas`), `6fdd9d5` (backend:
+  coleta pública/login/resultados), `ff00633` (frontend fase 2), `14b683f`
+  (fix backend: `/publica/` sem token → 404 em vez de 500). **PR #75** →
+  `main` (merge commit), memory+nota técnica em commit de docs. Números:
+  backend 12/12 PASS; frontend novo 53 PASS; suite completa 230/234 (4 falhas
+  pré-existentes).
+- **Escopo fase 2** (decisões do usuário): link público **`/p/<token-uuid>`**
+  (UUID aleatório por pesquisa — impede enumeração por id); bloqueio leve
+  "já respondeu" por dispositivo (`edumaps_dispositivo_id` em localStorage +
+  UNIQUE no servidor, 409); **login do gestor** (`POST /api/gestor/login`,
+  `GET /me`, `POST /logout`; senha no `POST /perfil` 6..64, hash
+  HMAC-SHA256+salt em `clean.gestores.senha_hash`); sessão bearer em
+  `clean.sessoes` (expira 30 dias); escrever/publicar **não** exigem login;
+  **resultados exigem sessão do gestor da mesma escola** (403 se `cod_inep`
+  diverge); gráficos em **SVG puro** (componente `OpcaoBars`, sem charts lib).
+- **Schema**: nova migração `gestor_respostas [gestor_pesquisas]`
+  (`token` uuid, `senha_hash`, `clean.sessoes`, `clean.gestor_pesquisas_respostas`
+  + `_itens`). Aplicada em `database.edumaps` via `deploy_db_dev` e local
+  via psql manual (sqitch registry local desyncado — passada manual como na
+  fase 1).
+- **Backend**: `Roles/Business/Pesquisa/Respostas.pm` (novo) — `survey_for_public`,
+  `register_answer` (valida por pergunta: exatamente uma opção p/ unica/dropdown,
+  texto 1..500, UNIQUE dispositivo → 409 `already_answered`), `survey_results`
+  (contagem/pct + textos livres). `Gestores.pm` ganhou login/me/logout/sessão.
+  `Controller/Pesquisa.pm`: `_require_gestor` (under bearer; **retorna 0** após
+  render de 401), `publica_form/publica_resposta`, `resultados` (403 por escola),
+  `_valid_public_token` (guarda contra `qr` injetado por Mojolicious no segmento
+  vazio → "Cannot bind a reference").
+- **Frontend**: `routes.js` agora faz match segmento a segmento (`matchRoute`
+  retorna `{path, component, params}`); `App.svelte` renderiza `/p/:token` sem
+  nav/Toast (full-bleed) e injeta os params. `client.js` ganhou
+  `setApiToken/getApiToken` (injeta `Authorization: Bearer` em toda request).
+  Feature `resposta/` (página pública) + `GestorLoginCard` + `OpcaoBars` +
+  `GestorPesquisasResultadosPage` (login se 401, "Sair", volta à lista).
+  `GestorPesquisasPage`: "Copiar link" + "Resultados" para publicadas.
+  MSW com auth exigida (`Authorization: Bearer 88888888-…`).
+- **E2E (container)**: fluxo completo passou — perfil→login(ok/401)→
+  create(`perguntas:[]`)/PUT/finalizar→publica form→resposta(ok/409)→
+  resultados(401/200)→logout invalida `/me`. `/p/<uuid>` servido pelo nginx
+  (fallback SPA 200). Deploy: `rex prepare` + `deploy_db_dev` +
+  `deploy_backend_dev` + `deploy_frontend_dev`.
+- **Nota técnica**: `docs/new_ideas/implementations_ideas/notas_tecnicas_43.md`.
+
+## Sessão anterior — Pesquisas do gestor (fase 1: cadastro + criação/gestão)
 
 - **Repo** `edumaps`; **PR #74** (`feat/gestor-pesquisas`) → `main`, merge commit
   **`1235494`** (2026-09-19). Commit único `67ba676` (33 files, +2877). `main` ==
