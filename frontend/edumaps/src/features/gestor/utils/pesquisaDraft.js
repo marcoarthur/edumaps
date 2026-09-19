@@ -32,6 +32,7 @@ export function surveyToDraft(survey) {
     titulo: survey.titulo ?? "",
     descricao: survey.descricao ?? "",
     status: survey.status ?? "rascunho",
+    token: survey.token ?? null,
     perguntas: (survey.perguntas ?? []).map((p) => ({
       id: String(p.id),
       texto: p.texto,

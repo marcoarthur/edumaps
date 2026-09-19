@@ -47,6 +47,7 @@
   let gestorTelefone = $state(initialGestor?.telefone ?? "");
   let gestorCargo = $state(initialGestor?.cargo ?? "");
   let gestorCpf = $state("");
+  let gestorSenha = $state("");
   let salvandoGestor = $state(false);
   let gestorErro = $state(null);
 
@@ -100,15 +101,18 @@
 
   // ---- gestor -----------------------------------------------------------
   function gestorValido() {
+    const senhaOk = gestorSenha.trim().length >= LIMITS.SENHA_MIN;
     return (
       gestorNome.trim().length >= LIMITS.NOME_MIN &&
+      senhaOk &&
       /^\S+@\S+\.\S+$/.test(gestorEmail.trim())
     );
   }
 
   async function saveGestor() {
     if (!gestorValido()) {
-      gestorErro = "Informe um nome e um e-mail válidos.";
+      gestorErro =
+        "Informe nome, e-mail e uma senha com pelo menos " + LIMITS.SENHA_MIN + " caracteres.";
       return;
     }
     salvandoGestor = true;
@@ -118,6 +122,7 @@
         cod_inep: inep,
         nome: gestorNome.trim(),
         email: gestorEmail.trim(),
+        senha: gestorSenha,
       };
       if (gestorTelefone.trim()) payload.telefone = gestorTelefone.trim();
       if (gestorCargo.trim()) payload.cargo = gestorCargo.trim();
@@ -127,6 +132,7 @@
         payload.cpf = gestorCpf.replace(/\D/g, "");
       }
       gestor = await upsertGestor(payload);
+      gestorSenha = "";
       setGestorSession(inep, gestor);
       goToKey("info");
       addToast("Dados salvos. Vamos montar sua pesquisa!", "success");
@@ -137,6 +143,21 @@
           : "Não foi possível salvar seus dados.";
     } finally {
       salvandoGestor = false;
+    }
+  }
+
+  // ---- link público (publicada) -----------------------------------------
+  let linkPublico = $derived(
+    draft?.token ? `${window.location.origin}/p/${draft.token}` : null,
+  );
+
+  async function copiarLink() {
+    if (!linkPublico) return;
+    try {
+      await navigator.clipboard.writeText(linkPublico);
+      addToast("Link de resposta copiado! Compartilhe com a comunidade.", "success");
+    } catch {
+      addToast("Não foi possível copiar o link.", "error");
     }
   }
 
@@ -244,10 +265,43 @@
     <div class="rounded-md bg-green-50 border border-green-200 text-green-800 text-sm p-4">
       <p class="font-semibold">Pesquisa publicada!</p>
       <p class="mt-1 text-xs">
-        A comunidade já pode responder. Edição e coleta de respostas serão
-        liberadas na próxima fase.
+        A comunidade já pode responder. Compartilhe o link por WhatsApp ou
+        cartaz impresso — quem abrir responde sem precisar de conta.
       </p>
     </div>
+
+    {#if linkPublico}
+      <div
+        class="rounded-md border border-gray-200 bg-gray-50 p-4"
+        data-testid="link-publico"
+      >
+        <p class="text-sm font-medium text-gray-700">Link de resposta</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            readonly
+            value={linkPublico}
+            aria-label="Link público de resposta"
+            class="flex-1 min-w-[220px] h-9 px-3 rounded-md border border-gray-300 bg-white text-xs text-gray-600 focus:outline-none"
+          />
+          <button
+            type="button"
+            onclick={copiarLink}
+            class="px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Copiar link
+          </button>
+        </div>
+        <a
+          href={linkPublico}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-2 inline-block text-xs text-blue-600 hover:underline"
+        >
+          Abrir em nova aba →
+        </a>
+      </div>
+    {/if}
+
     <div class="flex justify-center">
       <PhoneMockup titulo={draft.titulo} descricao={draft.descricao} perguntas={draft.perguntas} />
     </div>
@@ -321,14 +375,26 @@
             />
           </label>
           <label class="block sm:col-span-2">
-            <span class="block text-sm font-medium text-gray-700">
-              CPF (opcional, usado só para fins de controle — é mascarado)
-            </span>
+            <span class="block text-sm font-medium text-gray-700">CPF (opcional, usado só para fins de controle — é mascarado)</span>
             <input
               type="text"
               inputmode="numeric"
               bind:value={gestorCpf}
               placeholder="000.000.000-00"
+              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </label>
+          <label class="block sm:col-span-2">
+            <span class="block text-sm font-medium text-gray-700">
+              Senha (mínimo {LIMITS.SENHA_MIN} caracteres) — para ver os resultados depois
+            </span>
+            <input
+              type="password"
+              autocomplete="new-password"
+              minlength={LIMITS.SENHA_MIN}
+              maxlength={LIMITS.SENHA_MAX}
+              bind:value={gestorSenha}
+              placeholder="Crie uma senha"
               class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>

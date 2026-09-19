@@ -21,6 +21,11 @@
 </script>
 
 <div class="min-h-screen flex flex-col">
+  {#if match?.path === "/p/:token"}
+    {#if match}
+      <match.component token={match.params.token} />
+    {/if}
+  {:else}
   <nav class="bg-brand-700 text-white shadow-sm">
     <div class="max-w-5xl mx-auto px-6 py-4 flex items-center gap-6">
       <a href="/" use:link class="flex items-center gap-2" aria-label="EduMaps — início">
@@ -39,9 +44,10 @@
   <Toast />
   <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
     {#if match}
-      <match.component />
+      <match.component {...(match.params ?? {})} />
     {:else}
       <p class="text-gray-500">Página não encontrada.</p>
     {/if}
   </main>
+  {/if}
 </div>

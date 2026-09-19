@@ -55,6 +55,17 @@
     gestor = null;
   }
 
+  async function copiarLink(s) {
+    if (!s.token) return;
+    const url = `${window.location.origin}/p/${s.token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      addToast("Link de resposta copiado!", "success");
+    } catch {
+      addToast("Não foi possível copiar o link.", "error");
+    }
+  }
+
   const statusBadge = {
     rascunho: "bg-amber-100 text-amber-800",
     publicada: "bg-green-100 text-green-800",
@@ -176,6 +187,20 @@
               >
                 {deleting === s.id ? "Excluindo…" : "Excluir"}
               </button>
+            {:else}
+              <button
+                type="button"
+                onclick={() => copiarLink(s)}
+                class="px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200 transition-colors"
+              >
+                Copiar link
+              </button>
+              <a
+                href={`/gestor/pesquisas/resultados?pesquisa=${s.id}&inep=${inep}`}
+                class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Resultados
+              </a>
             {/if}
           </div>
         </li>

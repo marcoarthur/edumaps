@@ -1,7 +1,8 @@
 // src/features/gestor/components/survey/SurveyWizard.test.js
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import SurveyWizard from "./SurveyWizard.svelte";
+import { addToast } from "@/shared/stores/toastStore.js";
 import {
   upsertGestor,
   createPesquisa,
@@ -19,6 +20,10 @@ vi.mock("../../api/gestorPesquisasApi.js", () => ({
 vi.mock("@/shared/stores/toastStore.js", () => ({
   addToast: vi.fn(),
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 const GESTOR = {
   id: 7,
@@ -67,6 +72,9 @@ describe("SurveyWizard — nova pesquisa sem gestor salvo", () => {
     await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
       target: { value: "marina@edu.gov.br" },
     });
+    await fireEvent.input(screen.getByPlaceholderText("Crie uma senha"), {
+      target: { value: "senha123" },
+    });
     await fireEvent.click(screen.getByRole("button", { name: "Salvar e começar" }));
 
     await waitFor(() => expect(upsertGestor).toHaveBeenCalled());
@@ -74,13 +82,14 @@ describe("SurveyWizard — nova pesquisa sem gestor salvo", () => {
       cod_inep: "11000040",
       nome: "Marina Souza",
       email: "marina@edu.gov.br",
+      senha: "senha123",
     });
     expect(
       screen.getByRole("heading", { name: "Dados da pesquisa" }),
     ).toBeInTheDocument();
   });
 
-  it("mantém o botão desabilitado com nome curto", async () => {
+  it("mantém o botão desabilitado com nome curto ou senha curta", async () => {
     render(SurveyWizard, { props: { inep: "11000040" } });
     await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
       target: { value: "M" },
@@ -88,9 +97,28 @@ describe("SurveyWizard — nova pesquisa sem gestor salvo", () => {
     await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
       target: { value: "marina@edu.gov.br" },
     });
+    await fireEvent.input(screen.getByPlaceholderText("Crie uma senha"), {
+      target: { value: "123" },
+    });
     expect(
       screen.getByRole("button", { name: "Salvar e começar" }).hasAttribute("disabled"),
     ).toBe(true);
+  });
+
+  it("avisa quando a senha está faltando", async () => {
+    render(SurveyWizard, { props: { inep: "11000040" } });
+    await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
+      target: { value: "Marina Souza" },
+    });
+    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
+      target: { value: "marina@edu.gov.br" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Salvar e começar" }));
+
+    expect(
+      screen.getByText(/Informe nome, e-mail e uma senha/),
+    ).toBeInTheDocument();
+    expect(upsertGestor).not.toHaveBeenCalled();
   });
 });
 
@@ -198,5 +226,41 @@ describe("SurveyWizard — leitura de pesquisa já publicada", () => {
 
     expect(screen.getByText(/Pesquisa publicada!/)).toBeInTheDocument();
     expect(screen.queryByText("+ Adicionar pergunta")).not.toBeInTheDocument();
+  });
+
+  it("mostra o link público e copia ao clicar", async () => {
+    const published = serverSurvey({
+      id: 5,
+      titulo: "Com clima",
+      perguntas: [{ texto: "Q?", tipo: "texto" }],
+    });
+    published.status = "publicada";
+    published.token = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(SurveyWizard, {
+      props: { inep: "11000040", initialSurvey: published },
+    });
+
+    const linkInput = screen.getByLabelText("Link público de resposta");
+    expect(linkInput.value).toBe(
+      `${window.location.origin}/p/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee`,
+    );
+
+    await fireEvent.click(screen.getByRole("button", { name: "Copiar link" }));
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/p/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee`,
+      ),
+    );
+    expect(addToast).toHaveBeenCalledWith(
+      "Link de resposta copiado! Compartilhe com a comunidade.",
+      "success",
+    );
   });
 });
