@@ -28,6 +28,84 @@
 >   **Fix futuro**: trocar pela fonte correta de deficiência (ex.: `qt_mat_esp*`)
 >   e/ou renomear o campo; decidir se mantém compatibilidade do contrato da API.
 >   **Deixado fora do escopo** do Painel do Gestor (`overview` usa turno correto).
+> - **[média] `gestor_pesquisas`**: o upsert de gestor (`POST /perfil`) retorna
+>   `created_at`/`updated_at` `null` (não fazemos RETURNING dos timestamps) —
+>   cosmético, o frontend não consome; validar com integridade referencial se
+>   vier a ser usado.
+> - **[baixa] E2E API**: `?inep=abc` devolve 400 (formato inválido) no endpoint
+>   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
+>   (decisão tomada na rodada; reavaliar se virar padrão).
+
+## Sessão atual — Pesquisas do gestor (fase 1: cadastro + criação/gestão)
+
+- **Repo** `edumaps`; **PR #74** (`feat/gestor-pesquisas`) → `main`, merge commit
+  **`1235494`** (2026-09-19). Commit único `67ba676` (33 files, +2877). `main` ==
+  `origin/main`. **Migração Sqitch** `gestor_pesquisas [schemas]` aplicada nos
+  dois alvos: `database.edumaps` (containers, via `rex deploy_db_dev`) e local
+  (`ubatexu.lan/edumaps_dev`, via psql manual — o alvo `dev_super` NÃO tem
+  pgvector e não consegue deploiar a cadeia completa).
+- **Escopo fase 1** (decisões do usuário): apenas criação/gestão; identidade
+  anônima `?inep=` (sem login); autosave no servidor (debounce 600ms, sem botão
+  salvar); 1 gestor = 1 escola (`cod_inep`); nome/e-mail obrigatórios (e-mail
+  identifica a sessão → upsert), telefone/cargo/CPF opcionais; **LGPD: CPF
+  sempre mascarado na API** (`***.***.***-123`, `cpf_masc`); sessão via
+  localStorage (`edumaps_gestor_<inep>`). Coleta de respostas, login e
+  gráficos → **fase 2**.
+- **Schema**: `clean.gestores`, `clean.gestor_pesquisas`,
+  `clean.gestor_pesquisas_perguntas` (FK cascade; `opcoes` JSONB; `id` de opção
+  preservado do uuid do wizard; `status` com CHECK `rascunho|publicada|arquivada`).
+- **Backend** `Plugin/API/Pesquisa.pm` (base `/api/gestor/pesquisas`):
+  `POST /perfil` (upsert por e-mail), `GET /` (`?inep=`), `POST /` (cria
+  **rascunho com 0 perguntas** — autosave ao digitar o título), `GET|PUT|DELETE
+  /:id`, `POST /:id/finalizar`. Regras: `publicada` é **read-only** (PUT/DELETE →
+  409); `finalizar` exige ≥1 pergunta; `_survey_payload` valida 0..30 no
+  create/update; formato inválido de `inep` → 400 (decidido). Model compõe
+  Roles `Gestores` + `Surveys` (Role::Tiny, SQL raw via `dbh_do`).
+- **Armadilhas de implementação no backend**:
+  - Mojolicious 9.49 **não tem check `length`** — validar tamanho com
+    `size(min, max)` (built-ins: `equal_to/in/like/num/size/upload`).
+  - `txn_do` retorna o valor da **última expressão do bloco**; um `for (...)`
+    como última expressão devolve falsy → `update_survey` dá resultado próprio
+    (re-registra o survey e relê o detail) em vez de depender do retorno.
+  - `survey_detail` monta `gestor` (nome/email) **antes** de remover os campos
+    do hash (senão sumiam do join).
+  - DELETE 204 exige `render(status => 204, text => '')` (senão "Could not
+    render a response").
+- **Frontend** (pastas em `features/gestor/`):
+  - `pages/GestorPesquisasPage.svelte` (`/gestor/pesquisas?inep=` — lista por
+    status, excluir rascunho com `confirm`, banner do gestor/sessão) e
+    `pages/GestorPesquisasWizardPage.svelte` (nova/editar; `readonly` se
+    `publicada`).
+  - `components/survey/{SurveyWizard,StepsIndicator,PhoneMockup,QuestionEditor}.svelte`
+    — wizard: passo gestor → dados → **1 pergunta por tela** → revisão/finalizar;
+    preview em moldura de celular; autosave `PUT`/`POST`; `beforeunload` flush.
+  - `utils/pesquisaDraft.js` (modelo local: `emptyDraft/newPergunta/
+    surveyToDraft/draftToPayload/perguntaErros/tituloValido/
+    draftValidoParaFinalizar`) e `utils/gestorSession.js` (localStorage);
+    `constants/pesquisas.js` (ANSWER_TYPES, LIMITS); `api/gestorPesquisasApi.js`;
+    `mocks/{handlers,fixtures}.js` registrados no barrel `src/mocks/handlers.js`.
+  - `apiClient` ganhou `put`/`delete` (`src/shared/api/client.js`).
+  - **Pitfalls do wizard (Svelte 5)**: `stepKeys` é `$derived` — navegar por
+    chave (`goToKey('info'/'revisao'/'q<n>')` com `tick()` após `push`) em vez
+    de índices; `addPergunta` usa `tick().then()` porque o derivado ainda não
+    recompilou ao setar `step`.
+  - **`questionIndex`/`QuestionEditor` mutam o objeto `pergunta` do
+    `$state` do rascunho** (não copiar — Svelte 5 rastreia a mutação).
+- **Testes**: backend `prove -l t/04-api/pesquisa.t` **8/8 PASS** (local; push
+  de fixtures via SQL manual no `ubatexu` porque o cluster local não tem
+  pgvector). Frontend `vitest src/features/gestor` **49/49 PASS** (container);
+  as 4 falhas de `paginationStore`/`SchoolRankingPage` na suite completa são
+  **pré-existentes** (confirmado stashando minhas mudanças no container).
+  Testing-library: usar `getByRole('heading', …)` quando o passo aparece no
+  StepsIndicator E no `<h2>` (multi-match); resetar mocks manuais entre testes
+  (`vi.clearAllMocks()` — vitest não limpa `vi.fn()` por padrão).
+- **Deploy**: `rex prepare` (rsync) + `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_frontend_dev`. E2E via curl **dentro do container**
+  (`ssh root@backend.edumaps 'curl -H "Host: ubatexu.lan" http://127.0.0.1:3000/...'`
+  — `:3000`/morbo não é exposto ao host; `backend.edumaps` vindo do host não
+  resolve). Fluxo completo validado e **dados de teste removidos** (psql no
+  `database.edumaps` user `edumaps`). O container roda **Perl 5.36** (testes
+  backend rodam só local, precisam de 5.38+ p/ `feature ':5.38'`).
 
 ## Sessão — eduBR: random forest p/ classificar desempenho (fund. I/II)
 
