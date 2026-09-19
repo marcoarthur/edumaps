@@ -181,13 +181,17 @@ sub _require_gestor($self) {
 # ---------------------------------------------------------------
 
 sub publica_form($self) {
+  return $self->_render_not_found('Pesquisa não encontrada ou não publicada')
+    unless my $token = $self->_valid_public_token;
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  my $survey = $model->survey_for_public($self->param('token'));
+  my $survey = $model->survey_for_public($token);
   return $self->_render_not_found('Pesquisa não encontrada ou não publicada') unless $survey;
   $self->render(json => $survey);
 }
 
 sub publica_resposta($self) {
+  return $self->_render_not_found('Pesquisa não encontrada ou não publicada')
+    unless my $token = $self->_valid_public_token;
   my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
 
   my $v = $self->app->validator->validation;
@@ -201,7 +205,7 @@ sub publica_resposta($self) {
 
   my $model = $self->instantiate_model(model => 'Pesquisa');
   my $result = $model->register_answer(
-    $self->param('token'),
+    $token,
     $v->param('identificador_dispositivo'),
     $respostas,
   );
@@ -246,6 +250,15 @@ sub _input ($self) {
     $input = $self->req->params->to_hash;
   }
   return $input || {};
+}
+
+# Participant token: plain 36-char UUID. O placeholder da rota aceita
+# segmento vazio (Mojolicious injeta o próprio qr de requirements como
+# capture), o que quebraria a query com "Cannot bind a reference".
+sub _valid_public_token ($self) {
+  my $token = $self->param('token');
+  return unless defined $token && !ref $token && $token =~ /^[0-9a-fA-F-]{36}$/;
+  return $token;
 }
 
 sub _render_validation ($self, $v) {

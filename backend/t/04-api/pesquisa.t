@@ -289,6 +289,8 @@ subtest 'link público: formulário' => sub {
 
   # token inexistente/malformado
   $t->get_ok('/api/gestor/pesquisas/publica/nao-existe-um-token-uuid')->status_is(404);
+  # segmento vazio não pode estourar 500 (Mojolicious injeta o qr no capture)
+  $t->get_ok('/api/gestor/pesquisas/publica/')->status_is(404)->json_has('/error');
 };
 
 subtest 'link público: registro de resposta' => sub {
