@@ -1,14 +1,10 @@
 # t/04-api/pesquisa.t
-# Testes da API de pesquisas do gestor (fase 1):
-#   POST   /api/gestor/pesquisas/perfil        (upsert gestor por e-mail)
-#   GET    /api/gestor/pesquisas?inep=          (lista pesquisas da escola)
-#   POST   /api/gestor/pesquisas                (cria rascunho)
-#   GET    /api/gestor/pesquisas/:id            (detalhe)
-#   PUT    /api/gestor/pesquisas/:id            (autosave — substitui perguntas)
-#   POST   /api/gestor/pesquisas/:id/finalizar  (publica)
-#   DELETE /api/gestor/pesquisas/:id            (só rascunho)
-# Cadeia gestor_pesquisas só existe onde a migration sqitch foi aplicada
-# (container); localmente (cluster antigo) é pulada.
+# Testes da API de pesquisas do gestor.
+#   Fase 1: perfil (upsert gestor por e-mail), CRUD, finalizar.
+#   Fase 2: login do gestor (sessão), link público de resposta (token) e
+#           resultados (somente gestor da escola).
+# A cadeia só existe onde a migration sqitch foi aplicada (container);
+# localmente (cluster antigo, sem pgvector) ela é pulada.
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -23,13 +19,23 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
 );
 
 my $INEP  = '99999999';
-my $EMAIL = sprintf 'teste.pesquisa.%d@edumaps.test', $$;
 my $CPF   = sprintf('1234567%04d', $$ % 10000);
+my $EMAIL = sprintf 'teste.pesquisa.%d@edumaps.test', $$;
+
+my $gestor_id;
+my $gestor_token;
+my $pesquisa_id;
+my $TOKEN;
+my $TOKEN_RASCUNHO;
+
+my $SENHA  = 'senha123';
+my $SENHA2 = 'senha456';
 
 sub seed_gestor {
   my $json = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => $INEP, nome => 'Gestor Teste', email => $EMAIL,
     telefone => '(11) 99999-0000', cargo => 'Diretora', cpf => $CPF,
+    senha => $SENHA,
   })->status_is(200)->tx->res->json;
   return $json;
 }
@@ -48,9 +54,6 @@ my $perguntas_validas = [
   { texto => 'Tem alguma sugestão?', tipo => 'texto', obrigatoria => 0, opcoes => undef },
 ];
 
-my $gestor_id;
-my $pesquisa_id;
-
 END {
   return if !$has_tables;
   my $dbh = $t->app->schema->storage->dbh;
@@ -67,7 +70,7 @@ END {
 }
 
 subtest 'perfil: upsert do gestor por e-mail' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   my $first = seed_gestor();
@@ -80,7 +83,7 @@ subtest 'perfil: upsert do gestor por e-mail' => sub {
   is $first->{cod_inep}, $INEP, 'cod_inep vinculado';
 
   my $again = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
-    cod_inep => $INEP, nome => 'Gestor Teste Atualizada', email => $EMAIL,
+    cod_inep => $INEP, nome => 'Gestor Teste Atualizada', email => $EMAIL, senha => $SENHA2,
   })->status_is(200)->tx->res->json;
   is $again->{id}, $gestor_id, 'mesmo e-mail reutiliza o gestor (upsert)';
   is $again->{nome}, 'Gestor Teste Atualizada', 'nome atualizado';
@@ -89,16 +92,47 @@ subtest 'perfil: upsert do gestor por e-mail' => sub {
 };
 
 subtest 'perfil: validações' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   $t->post_ok('/api/gestor/pesquisas/perfil', json => {
-    cod_inep => 'abc', nome => 'G', email => 'x', cpf => '123',
+    cod_inep => 'abc', nome => 'G', email => 'x', cpf => '123', senha => 'x',
+  })->status_is(400)->json_has('/error');
+
+  $t->post_ok('/api/gestor/pesquisas/perfil', json => {
+    cod_inep => $INEP, nome => 'Sem Senha', email => 'semsenha@edumaps.test',
   })->status_is(400)->json_has('/error');
 };
 
+subtest 'login do gestor' => sub {
+  plan skip_all => 'clean.sessoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  # senha alterada para $SENHA2 no upsert — testa as duas credenciais.
+  $t->post_ok('/api/gestor/login', json => {
+    email => $EMAIL, senha => $SENHA,
+  })->status_is(401)->json_has('/error');
+
+  my $ok = $t->post_ok('/api/gestor/login', json => {
+    email => $EMAIL, senha => $SENHA2,
+  })->status_is(200)->tx->res->json;
+
+  $gestor_token = $ok->{token};
+  ok $gestor_token, 'login devolve token de sessão';
+  is $ok->{gestor}->{email}, $EMAIL, 'login devolve o gestor';
+  is $ok->{gestor}->{cod_inep}, $INEP, 'login devolve a escola do gestor';
+
+  my $me = $t->get_ok('/api/gestor/me', { Authorization => "Bearer $gestor_token" })
+    ->status_is(200)->tx->res->json;
+  is $me->{email}, $EMAIL, '/me valida a sessão';
+
+  $t->get_ok('/api/gestor/me')->status_is(401)->json_has('/error');
+  $t->get_ok('/api/gestor/me', { Authorization => 'Bearer token-invalido' })
+    ->status_is(401)->json_has('/error');
+};
+
 subtest 'criação de pesquisa (rascunho)' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   my $survey = $t->post_ok('/api/gestor/pesquisas', json => {
@@ -113,6 +147,7 @@ subtest 'criação de pesquisa (rascunho)' => sub {
   is $survey->{status}, 'rascunho', 'nasce como rascunho';
   is $survey->{cod_inep}, $INEP, 'cod_inep herdado do gestor';
   is scalar(@{ $survey->{perguntas} }), 3, '3 perguntas persistidas';
+  ok $survey->{token}, 'pesquisa ganha token público ao nascer';
 
   my ($multi) = grep { $_->{tipo} eq 'multipla' } @{ $survey->{perguntas} };
   is +($multi->{opcoes}->[0]{id}), 'c', 'opções mantêm id do cliente';
@@ -120,10 +155,17 @@ subtest 'criação de pesquisa (rascunho)' => sub {
   is +($unica->{obrigatoria}), 1, 'pergunta obrigatória marcada';
   my ($texto) = grep { $_->{tipo} eq 'texto' } @{ $survey->{perguntas} };
   ok !defined($texto->{opcoes}), 'texto livre não tem opções';
+
+  # rascunho de 0 perguntas (autosave) continua aceito
+  my $empty = $t->post_ok('/api/gestor/pesquisas', json => {
+    gestor_id => $gestor_id, titulo => 'Rascunho sem perguntas',
+    perguntas => [],
+  })->status_is(201)->tx->res->json;
+  $TOKEN_RASCUNHO = $empty->{token};
 };
 
 subtest 'criação: validações de perguntas' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   $t->post_ok('/api/gestor/pesquisas', json => {
@@ -148,7 +190,7 @@ subtest 'criação: validações de perguntas' => sub {
 };
 
 subtest 'lista por escola (?inep=)' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   my $list = $t->get_ok("/api/gestor/pesquisas?inep=$INEP")
@@ -158,12 +200,13 @@ subtest 'lista por escola (?inep=)' => sub {
   ok $mine, 'pesquisa aparece na lista da escola';
   is +($mine->{gestor}->{nome} // ''), 'Gestor Teste Atualizada', 'lista traz nome do gestor';
   is $mine->{n_perguntas}, 3, 'contagem de perguntas na lista';
+  ok $mine->{token}, 'lista também traz o token público';
 
   $t->get_ok('/api/gestor/pesquisas')->status_is(400);
 };
 
 subtest 'detalhe, edição (autosave) e finalização' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   my $detail = $t->get_ok("/api/gestor/pesquisas/$pesquisa_id")
@@ -174,22 +217,27 @@ subtest 'detalhe, edição (autosave) e finalização' => sub {
   my $updated = $t->put_ok("/api/gestor/pesquisas/$pesquisa_id", json => {
     titulo => 'Pesquisa de clima escolar (2026)',
     descricao => 'Revisada.',
-    perguntas => [ {
-      texto => 'O projeto político pedagógico atende a comunidade?',
-      tipo => 'unica', obrigatoria => 1,
-      opcoes => [ { id => 'a', label => 'Sim' }, { id => 'b', label => 'Não' } ],
-    } ],
+    perguntas => [
+      {
+        texto => 'O projeto político pedagógico atende a comunidade?',
+        tipo => 'unica', obrigatoria => 1,
+        opcoes => [ { id => 'a', label => 'Sim' }, { id => 'b', label => 'Não' } ],
+      },
+      { texto => 'Tem alguma sugestão?', tipo => 'texto', obrigatoria => 0, opcoes => undef },
+    ],
   })->status_is(200)->tx->res->json;
   is $updated->{titulo}, 'Pesquisa de clima escolar (2026)', 'título editado';
-  is scalar(@{ $updated->{perguntas} }), 1, 'autosave substitui as perguntas';
+  is scalar(@{ $updated->{perguntas} }), 2, 'autosave substitui as perguntas';
 
   my $finalized = $t->post_ok("/api/gestor/pesquisas/$pesquisa_id/finalizar")
     ->status_is(200)->tx->res->json;
   is $finalized->{status}, 'publicada', 'finalizar publica a pesquisa';
+  $TOKEN = $finalized->{token};
+  ok $TOKEN, 'publicada mantém o token para o link de resposta';
 };
 
 subtest 'pesquisa publicada é read-only' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
   $t->put_ok("/api/gestor/pesquisas/$pesquisa_id", json => {
@@ -207,8 +255,10 @@ subtest 'pesquisa publicada é read-only' => sub {
 };
 
 subtest 'exclusão de rascunho' => sub {
-  plan skip_all => 'clean.gestor_pesquisas ausente (migration gestor_pesquisas nao aplicada)'
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
+
+  $t->delete_ok("/api/gestor/pesquisas/$pesquisa_id")->status_is(409); # já publicada
 
   my $draft = $t->post_ok('/api/gestor/pesquisas', json => {
     gestor_id => $gestor_id, titulo => 'Rascunho para excluir',
@@ -217,6 +267,118 @@ subtest 'exclusão de rascunho' => sub {
 
   $t->delete_ok("/api/gestor/pesquisas/$draft->{id}")->status_is(204);
   $t->get_ok("/api/gestor/pesquisas/$draft->{id}")->status_is(404);
+};
+
+subtest 'link público: formulário' => sub {
+  plan skip_all => 'clean.gestor_pesquisas_respostas ausente (migration nao aplicada)'
+    unless $t->app->schema->storage->dbh->selectrow_array("SELECT to_regclass('clean.gestor_pesquisas_respostas')");
+
+  # rascunho não abre para a comunidade
+  $t->get_ok("/api/gestor/pesquisas/publica/$TOKEN_RASCUNHO")
+    ->status_is(404)->json_has('/error');
+
+  # publicada sim
+  my $form = $t->get_ok("/api/gestor/pesquisas/publica/$TOKEN")
+    ->status_is(200)->tx->res->json;
+  is $form->{titulo}, 'Pesquisa de clima escolar (2026)', 'form traz o título';
+  is scalar(@{ $form->{perguntas} }), 2, 'form traz as perguntas';
+  ok !exists($form->{gestor}), 'form não expõe o gestor';
+  ok !exists($form->{token}), 'form não devolve o token no corpo';
+  my ($opcoes) = grep { ref $_->{opcoes} eq 'ARRAY' } @{ $form->{perguntas} };
+  is scalar(@{ $opcoes->{opcoes} }), 2, 'opções disponíveis no form';
+
+  # token inexistente/malformado
+  $t->get_ok('/api/gestor/pesquisas/publica/nao-existe-um-token-uuid')->status_is(404);
+};
+
+subtest 'link público: registro de resposta' => sub {
+  plan skip_all => 'clean.gestor_pesquisas_respostas ausente (migration nao aplicada)'
+    unless $t->app->schema->storage->dbh->selectrow_array("SELECT to_regclass('clean.gestor_pesquisas_respostas')");
+
+  my ($unica, $texto) = @{ $t->get_ok("/api/gestor/pesquisas/publica/$TOKEN")->status_is(200)->tx->res->json->{perguntas} };
+  $unica = $unica // $texto; # segurança
+
+  # resposta completa válida (2 perguntas → 3 itens: unica=1 + texto=1)
+  my $resp = $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    respostas => [
+      { pergunta_id => $unica->{id}, opcao_id => ['b'] },
+      { pergunta_id => $texto->{id}, valor_texto => 'Gostaria de mais oficinas.' },
+    ],
+  })->status_is(201)->tx->res->json;
+  ok $resp->{ok}, 'resposta registrada';
+
+  # mesmo dispositivo não responde de novo
+  $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    respostas => [ { pergunta_id => $unica->{id}, opcao_id => ['a'] } ],
+  })->status_is(409)->json_has('/error');
+
+  # opção inexistente
+  my $outro = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => $outro,
+    respostas => [
+      { pergunta_id => $unica->{id}, opcao_id => ['opcao_nao_existe'] },
+      { pergunta_id => $texto->{id}, valor_texto => 'x' },
+    ],
+  })->status_is(400)->json_has('/error');
+
+  # pergunta obrigatória sem resposta
+  $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => $outro,
+    respostas => [ { pergunta_id => $texto->{id}, valor_texto => 'só a livre' } ],
+  })->status_is(400)->json_has('/error');
+
+  # texto muito longo
+  $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => $outro,
+    respostas => [
+      { pergunta_id => $unica->{id}, opcao_id => ['a'] },
+      { pergunta_id => $texto->{id}, valor_texto => 'x' x 501 },
+    ],
+  })->status_is(400)->json_has('/error');
+
+  # unica com múltiplas opções
+  $t->post_ok("/api/gestor/pesquisas/publica/$TOKEN/resposta", json => {
+    identificador_dispositivo => $outro,
+    respostas => [
+      { pergunta_id => $unica->{id}, opcao_id => ['a', 'b'] },
+      { pergunta_id => $texto->{id}, valor_texto => 'x' },
+    ],
+  })->status_is(400)->json_has('/error');
+};
+
+subtest 'resultados: exigem login do gestor da escola' => sub {
+  plan skip_all => 'clean.gestor_pesquisas_respostas ausente (migration nao aplicada)'
+    unless $t->app->schema->storage->dbh->selectrow_array("SELECT to_regclass('clean.gestor_pesquisas_respostas')");
+
+  # sem sessão
+  $t->get_ok("/api/gestor/pesquisas/$pesquisa_id/resultados")->status_is(401)->json_has('/error');
+
+  # gestor de outra escola não vê
+  my $outra = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
+    cod_inep => '11111111', nome => 'Outra Escola', email => "outra.$EMAIL",
+    senha => $SENHA2,
+  })->status_is(200)->tx->res->json;
+  my $outra_login = $t->post_ok('/api/gestor/login', json => {
+    email => "outra.$EMAIL", senha => $SENHA2,
+  })->status_is(200)->tx->res->json;
+  $t->get_ok("/api/gestor/pesquisas/$pesquisa_id/resultados",
+      { Authorization => "Bearer $outra_login->{token}" })
+    ->status_is(403)->json_has('/error');
+
+  # gestor dono da escola
+  my $res = $t->get_ok("/api/gestor/pesquisas/$pesquisa_id/resultados",
+      { Authorization => "Bearer $gestor_token" })
+    ->status_is(200)->tx->res->json;
+  is $res->{n_respostas}, 1, 'conta as respostas válidas';
+  my ($u) = grep { $_->{tipo} eq 'unica' } @{ $res->{perguntas} };
+  my ($b) = grep { $_->{id} eq 'b' } @{ $u->{opcoes} };
+  is $b->{count}, 1, 'agrega por opção';
+  my ($tx) = grep { $_->{tipo} eq 'texto' } @{ $res->{perguntas} };
+  is scalar(@{ $tx->{respostas_texto} }), 1, 'respostas livres listadas';
+  is $tx->{respostas_texto}->[0]{texto}, 'Gostaria de mais oficinas.', 'texto preservado';
 };
 
 done_testing();

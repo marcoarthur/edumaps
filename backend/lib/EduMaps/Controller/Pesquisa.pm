@@ -21,6 +21,7 @@ sub perfil($self) {
   $v->optional('telefone', 'trim')->size(8, 20);
   $v->optional('cargo',    'trim')->size(3, 60);
   $v->optional('cpf',      'trim')->size(11, 11)->like(qr/^\d{11}$/);
+  $v->required('senha',    'trim')->size(6, 64);
   return $self->_render_validation($v) if $v->has_error;
 
   my $model   = $self->instantiate_model(model => 'Pesquisa');
@@ -31,6 +32,7 @@ sub perfil($self) {
     telefone => $v->param('telefone'),
     cargo    => $v->param('cargo'),
     cpf      => $v->param('cpf'),
+    senha    => $v->param('senha'),
   });
 
   return $self->_render_not_found("Gestor não pôde ser salvo") unless $gestor;
@@ -129,6 +131,109 @@ sub destroy($self) {
 }
 
 # ---------------------------------------------------------------
+# fase 2 — autenticação do gestor
+# ---------------------------------------------------------------
+
+sub login($self) {
+  my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('email', 'trim')->like(EMAIL_RE);
+  $v->required('senha', 'trim')->size(6, 64);
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $sessao = $model->login_gestor($v->param('email'), $v->param('senha'));
+  return $self->render(json => { error => 'E-mail ou senha inválidos' }, status => 401) unless $sessao;
+  $self->render(json => $sessao);
+}
+
+sub me($self) {
+  $self->render(json => $self->stash('gestor'));
+}
+
+sub logout($self) {
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  $model->logout_gestor($self->stash('gestor_token'));
+  $self->render(status => 204, text => '');
+}
+
+# Gatilho dos under() autenticados: valida o Bearer token e injeta o gestor no stash.
+sub _require_gestor($self) {
+  my $auth  = $self->req->headers->authorization // '';
+  my ($token) = $auth =~ /^Bearer\s+(\S+)$/;
+
+  my $gestor = $token
+    ? $self->instantiate_model(model => 'Pesquisa')->sessao_valida($token)
+    : undef;
+
+  if (!$gestor) {
+    $self->_render_unauthorized;
+    return 0;   # render já feito — quebra a cadeia do under
+  }
+
+  $self->stash(gestor => $gestor, gestor_token => $token);
+  return 1;
+}
+
+# ---------------------------------------------------------------
+# fase 2 — link público de resposta
+# ---------------------------------------------------------------
+
+sub publica_form($self) {
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $survey = $model->survey_for_public($self->param('token'));
+  return $self->_render_not_found('Pesquisa não encontrada ou não publicada') unless $survey;
+  $self->render(json => $survey);
+}
+
+sub publica_resposta($self) {
+  my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('identificador_dispositivo', 'trim')->like(qr/^[0-9a-fA-F-]{32,36}$/);
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $respostas = $input->{respostas};
+  return $self->render(json => { error => 'respostas deve ser uma lista' }, status => 400)
+    unless ref $respostas eq 'ARRAY' && @$respostas >= 0;
+
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $result = $model->register_answer(
+    $self->param('token'),
+    $v->param('identificador_dispositivo'),
+    $respostas,
+  );
+
+  return $self->render(status => 201, json => { ok => 1, id => $result->{id} }) if $result->{ok};
+
+  if ($result->{error} eq 'already_answered') {
+    return $self->render(json => { error => 'Você já respondeu esta pesquisa neste dispositivo.' }, status => 409);
+  }
+  if ($result->{error} eq 'validation') {
+    return $self->render(json => { error => $result->{detalhe} || 'Resposta inválida' }, status => 400);
+  }
+  return $self->_render_not_found('Pesquisa não encontrada ou não está mais aberta');
+}
+
+# ---------------------------------------------------------------
+# fase 2 — resultados (exige sessão do gestor da escola)
+# ---------------------------------------------------------------
+
+sub resultados($self) {
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $state = $model->survey_state($self->param('id'));
+  return $self->_render_not_found('Pesquisa não encontrada') unless $state;
+
+  my $gestor = $self->stash('gestor');
+  return $self->render(json => { error => 'Só o gestor da escola vê os resultados.' }, status => 403)
+    unless ($gestor->{cod_inep} || 0) == $state->{cod_inep};
+
+  $self->render(json => $model->survey_results($self->param('id')));
+}
+
+# ---------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------
 
@@ -155,6 +260,10 @@ sub _render_not_found ($self, $msg) {
 
 sub _render_conflict ($self, $msg) {
   $self->render(json => { error => $msg }, status => 409);
+}
+
+sub _render_unauthorized ($self) {
+  $self->render(json => { error => 'Faça login como gestor.' }, status => 401);
 }
 
 # Valida e normaliza o array de perguntas. Retorna {error => msg} ou
