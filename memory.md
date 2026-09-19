@@ -42,9 +42,9 @@
   `7c17a06` (data_pipeline: migração `gestor_respostas`), `6fdd9d5` (backend:
   coleta pública/login/resultados), `ff00633` (frontend fase 2), `14b683f`
   (fix backend: `/publica/` sem token → 404 em vez de 500). **PR #75** →
-  `main` (merge commit), memory+nota técnica em commit de docs. Números:
-  backend 12/12 PASS; frontend novo 53 PASS; suite completa 230/234 (4 falhas
-  pré-existentes).
+  `main`, merge commit **`837c573`** (2026-09-19). `main` == `origin/main`.
+  memory+nota técnica no commit `52553be`. Números: backend 12/12 PASS;
+  frontend novo 53 PASS; suite completa 230/234 (4 falhas pré-existentes).
 - **Escopo fase 2** (decisões do usuário): link público **`/p/<token-uuid>`**
   (UUID aleatório por pesquisa — impede enumeração por id); bloqueio leve
   "já respondeu" por dispositivo (`edumaps_dispositivo_id` em localStorage +
