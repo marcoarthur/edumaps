@@ -44,6 +44,8 @@ export const LIMITS = {
   TELEFONE_MAX: 20,
   CARGO_MIN: 3,
   CARGO_MAX: 60,
+  SENHA_MIN: 6,
+  SENHA_MAX: 64,
 };
 
 export function isOpcaoType(tipo) {

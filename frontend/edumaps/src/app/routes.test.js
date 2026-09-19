@@ -53,6 +53,18 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/gestor/pesquisas/editar");
   });
 
+  it("captura o token na rota dinâmica /p/:token", () => {
+    const match = matchRoute("/p/9f8f36e2-1234-4abc-8def-000000000000");
+    expect(match?.path).toBe("/p/:token");
+    expect(match?.params.token).toBe("9f8f36e2-1234-4abc-8def-000000000000");
+  });
+
+  it("não casa /p sem token nem token extra em outra rota", () => {
+    expect(matchRoute("/p")).toBeNull();
+    expect(matchRoute("/p/a/b")).toBeNull();
+    expect(matchRoute("/escola/search/1")).toBeNull();
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });
