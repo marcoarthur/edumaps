@@ -18,6 +18,12 @@
 > - **`curl` no container via nginx**: o fallback SPA depende do `server_name`;
 >   `curl http://localhost/...` (Host localhost) devolve 404 mesmo para rotas
 >   válidas. Usar `-H "Host: ubatexu.lan"`.
+> - **Constraints de rota no Mojolicious**: passar hashref depois do path
+>   (`$r->get('/:x' => {x => qr/\d+/})`) vira **defaults**, não constraint — a
+>   rota casa qualquer valor. Use **arrayref**: `$r->get('/:x' => [x => qr/\d+/])`.
+> - **Validação (Mojolicious::Validator)**: `$v->error($campo)` devolve
+>   `[$check, $result, @args]`; `->[0]` é o **nome do check** (`like`, `size`…),
+>   não mensagem. Mapear para texto legível antes de renderizar.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - **[alta] Bug latente em `Roles::Business::School::Profile#info_enrollment`**:
@@ -36,7 +42,38 @@
 >   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
 >   (decisão tomada na rodada; reavaliar se virar padrão).
 
-## Sessão atual — Pesquisas do gestor (fase 2: link público + login + resultados)
+## Sessão — Reuniões e atas do gestor (agenda, contatos e anexos)
+
+- **Repo** `edumaps`; branch `feat/reunioes-gestor` (a partir de `origin/main`);
+  commits `196497d` (data_pipeline), `6bc6d4f` (backend), `0974a5a` (frontend).
+  **PR #77** → `main`, merge commit **`fde99b2`** (2026-09-20). `main` == `origin/main`.
+- **Entregas**:
+  - data_pipeline: `gestor_reunioes` (contato_grupos, contatos, reunioes,
+    reunioes_participantes, reuniao_anexos) e `gestor_reunioes_grupos_folha`
+    (origem folha/manual, `gestor_id` opcional).
+  - backend: módulo Reuniões & Atas (CRUD de contatos/grupos, agenda, ata e
+    anexos em `upload_dir`), `perfil_escola`/`transferencia` (gestor responsável
+    pela agenda = criador da 1ª reunião), auto-cadastro governado (409 para
+    e-mail novo em escola com agenda) e task `GruposFolha` (seed idempotente).
+  - frontend: páginas de contatos e reuniões (lista com filtros, wizard de 4
+    passos, detalhe com ata/anexos), `apiClient.upload/download` (multipart +
+    blob) e link "Reuniões da escola" no painel do gestor.
+- **Decisões**:
+  - Rotas novas usam **arrayref** de constraints — hashref vira defaults (ver
+    convenção durável); foi a causa do 401 em `/api/gestor/pesquisas`.
+  - `QUANDO_RE` aceita `[ T]` (o `buildReuniaoPayload` do frontend envia espaço).
+  - `_render_validation` (Gestor e Pesquisa) mapeia o check para mensagem PT-BR
+    (antes expunha `like`/`size`); correção do "❌ like" no botão "Agendar".
+  - Edição preenche o `datetime-local` com `T` (formato válido do input).
+- **Testes**: backend `prove -rl t/04-api/pesquisa.t t/04-api/gestor/` (46 ok);
+  frontend (container) `npx vitest run src/features/gestor` (94 ok); smoke real
+  `POST /api/gestor/:inep/reunioes` com data do frontend → 201.
+- **Deploy**: `deploy_frontend_dev` + `deploy_backend_dev` (dev).
+- **Pendências**: `_reuniao_validation` calcula `$input->{__duracao}`/`__aviso`
+  que o controller ignora (código morto; default aplicado no model). O diretório
+  `docs/clients/` do branch `docs/clients-apresentacao` ficou fora deste PR.
+
+## Sessão — Pesquisas do gestor (fase 2: link público + login + resultados)
 
 - **Repo** `edumaps`; branch `feat/pesquisas-gestor-fase2`; commits:
   `7c17a06` (data_pipeline: migração `gestor_respostas`), `6fdd9d5` (backend:
