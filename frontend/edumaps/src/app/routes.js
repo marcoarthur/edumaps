@@ -9,6 +9,10 @@ import {
   GestorPesquisasPage,
   GestorPesquisasWizardPage,
   GestorPesquisasResultadosPage,
+  GestorContatosPage,
+  GestorReunioesPage,
+  GestorReunioesWizardPage,
+  GestorReuniaoDetailPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -33,6 +37,11 @@ export const routes = [
   { path: "/gestor/pesquisas/nova", component: GestorPesquisasWizardPage },
   { path: "/gestor/pesquisas/editar", component: GestorPesquisasWizardPage },
   { path: "/gestor/pesquisas/resultados", component: GestorPesquisasResultadosPage },
+  { path: "/gestor/contatos", component: GestorContatosPage },
+  { path: "/gestor/reunioes", component: GestorReunioesPage },
+  { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },
+  { path: "/gestor/reunioes/:id", component: GestorReuniaoDetailPage },
+  { path: "/gestor/reunioes/:id/editar", component: GestorReunioesWizardPage },
   { path: "/p/:token", component: PublicaRespostaPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
