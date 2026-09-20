@@ -11,6 +11,7 @@ frontend/map_app/vite.config.js.timestamp*
 
 # Artefatos de build/gerados
 backend/cover_db/
+backend/var/
 analysis/edumapsr/man/*.Rd
 analysis/edumapsr/edumapsAnalytics.Rcheck/
 analysis/edumapsr/edumapsAnalytics_*.tar.gz

@@ -10,6 +10,7 @@ use Role::Tiny::With;
 
 with 'EduMaps::Roles::Business::Gestor::Overview';
 with 'EduMaps::Roles::Business::Gestor::SimilarSchools';
+with 'EduMaps::Roles::Business::Gestor::Reunioes';
 
 sub panel($self, $params = {}) {
   return $self->overview($params);

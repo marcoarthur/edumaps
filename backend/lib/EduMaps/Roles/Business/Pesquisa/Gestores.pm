@@ -60,6 +60,36 @@ sub gestor_for_id ($self, $id) {
 }
 
 # ---------------------------------------------------------------
+# regras do auto-cadastro governado (Plano A)
+# ---------------------------------------------------------------
+
+# A escola precisa existir (tabela curada ou censo mais recente).
+sub escola_existe ($self, $cod_inep) {
+  return $self->_row(
+    'SELECT 1
+     WHERE EXISTS (SELECT 1 FROM clean.escolas      WHERE codigo_inep = ?)
+        OR EXISTS (SELECT 1 FROM clean.censo_escolas WHERE co_entidade = ?)
+     LIMIT 1',
+    $cod_inep + 0, $cod_inep + 0,
+  ) ? 1 : 0;
+}
+
+sub gestor_email_existe ($self, $email) {
+  return $self->_row(
+    'SELECT 1 FROM clean.gestores WHERE lower(email) = lower(?) LIMIT 1',
+    $email,
+  ) ? 1 : 0;
+}
+
+# A escola já tem agenda (primeira reunião criada por um gestor)?
+sub escola_tem_agenda ($self, $cod_inep) {
+  return $self->_row(
+    'SELECT 1 FROM clean.reunioes WHERE cod_inep = ? AND gestor_id IS NOT NULL LIMIT 1',
+    $cod_inep + 0,
+  ) ? 1 : 0;
+}
+
+# ---------------------------------------------------------------
 # login / sessão
 # ---------------------------------------------------------------
 
