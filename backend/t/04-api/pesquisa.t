@@ -31,6 +31,21 @@ my $TOKEN_RASCUNHO;
 my $SENHA  = 'senha123';
 my $SENHA2 = 'senha456';
 
+# Self-signup governado exige escola existente e bloqueia novo e-mail em escola
+# com agenda (409); garante INEPs de teste e remove sobras da base compartilhada.
+my $OUTRA_INEP = '11111111';
+if ($has_tables) {
+  my $dbh = $t->app->schema->storage->dbh;
+  for my $inep ($INEP, $OUTRA_INEP) {
+    $dbh->do('DELETE FROM clean.contato_grupos WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('DELETE FROM clean.contatos WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('DELETE FROM clean.reunioes WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('INSERT INTO clean.escolas (codigo_inep, escola) VALUES (?, ?)
+              ON CONFLICT (codigo_inep) DO NOTHING',
+      {}, $inep, 'Escola de teste da API de pesquisas');
+  }
+}
+
 sub seed_gestor {
   my $json = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => $INEP, nome => 'Gestor Teste', email => $EMAIL,
@@ -66,7 +81,14 @@ END {
             WHERE gestor_id IN (SELECT id FROM clean.gestores WHERE email = ?)",
            {}, $EMAIL);
   $dbh->do('DELETE FROM clean.gestores WHERE email = ?', {}, $EMAIL);
+  $dbh->do('DELETE FROM clean.gestores WHERE email = ?', {}, "outra.$EMAIL");
   $dbh->do('DELETE FROM clean.gestores WHERE cpf = ?', {}, $CPF);
+  for my $inep ($INEP, $OUTRA_INEP) {
+    $dbh->do('DELETE FROM clean.contato_grupos WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('DELETE FROM clean.contatos WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('DELETE FROM clean.reunioes WHERE cod_inep = ?', {}, $inep);
+    $dbh->do('DELETE FROM clean.escolas WHERE codigo_inep = ?', {}, $inep);
+  }
 }
 
 subtest 'perfil: upsert do gestor por e-mail' => sub {
@@ -95,13 +117,16 @@ subtest 'perfil: validações' => sub {
   plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;
 
-  $t->post_ok('/api/gestor/pesquisas/perfil', json => {
+  my $err1 = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => 'abc', nome => 'G', email => 'x', cpf => '123', senha => 'x',
-  })->status_is(400)->json_has('/error');
+  })->status_is(400)->tx->res->json;
+  unlike $err1->{error}, qr/^(?:like|size|required|num)$/,
+    'erro de validação traz mensagem amigável, não o nome do check';
 
-  $t->post_ok('/api/gestor/pesquisas/perfil', json => {
+  my $err2 = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => $INEP, nome => 'Sem Senha', email => 'semsenha@edumaps.test',
-  })->status_is(400)->json_has('/error');
+  })->status_is(400)->tx->res->json;
+  like $err2->{error}, qr/obrigat/i, 'campo obrigatório ausente tem mensagem clara';
 };
 
 subtest 'login do gestor' => sub {

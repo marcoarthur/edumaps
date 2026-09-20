@@ -25,6 +25,21 @@ sub perfil($self) {
   return $self->_render_validation($v) if $v->has_error;
 
   my $model   = $self->instantiate_model(model => 'Pesquisa');
+
+  # Escola precisa existir no cadastro (censo ou tabela curada).
+  return $self->_render_not_found('Escola não encontrada para este INEP')
+    unless $model->escola_existe($v->param('cod_inep'));
+
+  # Se o e-mail é novo (não existe na base) e a escola já tem um gestor
+  # responsável pela agenda (reunião criada), bloqueia o cadastro.
+  if (!$model->gestor_email_existe(lc $v->param('email'))
+      && $model->escola_tem_agenda($v->param('cod_inep'))) {
+    return $self->render(
+      json => { error => 'Esta escola já tem um gestor responsável pela agenda das reuniões. Use o e-mail já cadastrado ou peça a quem gerencia a agenda para transferir o acesso.' },
+      status => 409,
+    );
+  }
+
   my $gestor  = $model->upsert_gestor({
     cod_inep => $v->param('cod_inep'),
     nome     => $v->param('nome'),
@@ -264,7 +279,34 @@ sub _valid_public_token ($self) {
 sub _render_validation ($self, $v) {
   my @failed = $v->failed->@*;
   $self->app->log->debug('Pesquisa validation errors: ' . join(', ', map { "$_: " . join(', ', @{$v->error($_)}) } @failed));
-  $self->render(json => { error => $v->error($failed[0])->[0] || 'Parâmetros inválidos' }, status => 400);
+  $self->render(json => { error => $self->_validation_message($v, $failed[0]) }, status => 400);
+}
+
+# Rótulos amigáveis por campo (o nome do check sozinho — ex.: "like" — não
+# diz nada ao usuário).
+my %CAMPO_LABEL = (
+  cod_inep   => 'código INEP',
+  inep       => 'código INEP',
+  nome       => 'nome',
+  email      => 'e-mail',
+  telefone   => 'telefone',
+  cargo      => 'cargo',
+  cpf        => 'CPF',
+  senha      => 'senha',
+  gestor_id  => 'gestor',
+  titulo     => 'título',
+  descricao  => 'descrição',
+  identificador_dispositivo => 'identificador do dispositivo',
+);
+
+sub _validation_message ($self, $v, $field) {
+  my ($check) = @{ $v->error($field) // [] };
+  my $label = $CAMPO_LABEL{$field} // $field;
+  return 'Campo obrigatório.' if ($check // '') eq 'required';
+  return "O campo $label está inválido." if ($check // '') eq 'like';
+  return "O campo $label está fora do tamanho permitido." if ($check // '') eq 'size';
+  return "O campo $label deve ser numérico." if ($check // '') eq 'num';
+  return "O campo $label é inválido.";
 }
 
 sub _render_not_found ($self, $msg) {
