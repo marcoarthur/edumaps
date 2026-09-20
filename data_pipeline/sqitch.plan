@@ -49,3 +49,5 @@ school_embedding 2026-09-16T13:00:31Z Marco Arthur <arthurpbs@gmail.com> # Add p
 column_descriptions 2026-09-16T16:00:55Z Marco Arthur <arthurpbs@gmail.com> # Backfill de comentarios (COMMENT ON COLUMN) nas tabelas recentes
 gestor_pesquisas [schemas] 2026-09-19T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Pesquisas do gestor: cadastro de gestores e criacao de pesquisas (wizard + autosave)
 gestor_respostas [gestor_pesquisas] 2026-09-19T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2: token publico, login do gestor (sessoes), respostas da comunidade e resultados
+gestor_reunioes [gestor_respostas] 2026-09-20T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Reuniões e atas do gestor: contatos, grupos (drag-and-drop), agenda e anexos (pauta/ata)
+gestor_reunioes_grupos_folha [gestor_reunioes] 2026-09-20T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Grupos pre-listados pela folha (contato_grupos.gestor_id opcional + origem folha/manual)
