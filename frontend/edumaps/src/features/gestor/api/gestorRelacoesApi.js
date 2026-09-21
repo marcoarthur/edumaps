@@ -13,6 +13,14 @@ export function getRelacoes(inep, filtros = {}) {
   return apiClient.get(BASE(inep), filtros);
 }
 
+/**
+ * Agenda institucional (visão temporal derivada).
+ * @returns {Promise<{de,ate,total,vencidas,itens:Array,sem_prazo:Array}>}
+ */
+export function getAgenda(inep, { de = "", ate = "" } = {}) {
+  return apiClient.get(`${BASE(inep)}/agenda`, { de, ate });
+}
+
 // ---------------------------------------------------------------------------
 // taxonomia (categorias de eixo entidade|finalidade)
 // ---------------------------------------------------------------------------
