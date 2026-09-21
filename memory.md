@@ -34,6 +34,13 @@
 > - **Código de município NÃO é o prefixo do `cod_inep`**: usar a fonte oficial
 >   (`clean.censo_escolas.co_municipio` 7→6 dígitos; fallback nome+UF em
 >   `raw.br_municipios_2024`).
+> - **Content-type de xlsx não contém "excel"**: é
+>   `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — validar
+>   por `excel|spreadsheetml|officedocument|octet-stream`.
+> - **Contagem "distinta" no painel financeiro**: `remuneracao_municipal` tem uma
+>   linha por servidor **por competência**; a competência mais recente pode ter
+>   poucos servidores. Para "quantos profissionais a escola tem", usar
+>   `COUNT(DISTINCT cpf)` no total — não o número da última competência.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
@@ -85,6 +92,23 @@
   post-commit falhou uma vez (`code 255`) — re-sync manual confirmou.
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
+
+## Sessão — Financeiro: card de profissionais (total distinto)
+
+- **Repo** `edumaps`; branch `fix/financeiro-total-profissionais` (a partir de
+  `origin/main`); commit `5c66d01`. **PR #89** → `main`, merge commit
+  **`177409a`** (2026-09-21). `main` == `origin/main`.
+- **Investigação (não era bug de parsing)**: a escola `35268800` tem 45
+  registros / 5 CPFs distintos / 14 competências; o CSV do xlsx e o banco batem
+  linha a linha. O "1" era o card **"Profissionais"**, que exibia a
+  **competência mais recente** (Out/2024 tem 1 servidor), com rótulo ambíguo.
+- **Fix**: backend expõe `total_profissionais` (`COUNT(DISTINCT cpf)` na escola,
+  todos os meses); o card vira **"Profissionais (total)"** e a competência mais
+  recente vira nota secundária.
+- **Testes**: backend `prove -rl t/04-api/gestor/finance_siope.t t/04-api/gestor/
+  t/04-api/pesquisa.t` (68 ok); frontend `SchoolFinancePage.test.js` (5 ok);
+  suite 301 ok (4 falhas pré-existentes). Endpoint real: `total_profissionais: 5`.
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev`.
 
 ## Sessão — Fix: download do SIOPE + monitor de job que falha
 
