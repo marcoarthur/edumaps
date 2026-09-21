@@ -40,8 +40,8 @@
 - **Repo** `~/Projects/eduBR`; branch **`feat/edubr-perfil-gestor`**; commits
   `7e13343` `feat(edubr): perfil modal de diretores (censo_gestor)`,
   `2ec38b7` `docs(edubr): report de perfil modal de diretores` e `589d582`
-  `docs(edubr): skill com perfil de gestores`. **PR #3 criado** (2026-09-21),
-  aguardando aprovação/merge. `main` local == branch apontando p/ PR.
+  `docs(edubr): skill com perfil de gestores`. **PR #3 merged** (2026-09-21,
+  merge commit **`2d57181`**); `main` == `origin/main`.
 - **Fonte**: `~/Documents/Notas/gestor_edumaps_perfil.md` é **referência à
   parte** — decidido: nossos números primeiro, literatura não é assertada.
   Decisões do usuário: só análise no eduBR (sem API/UI); unidade **gestor**
