@@ -21,6 +21,11 @@ export function getAgenda(inep, { de = "", ate = "" } = {}) {
   return apiClient.get(`${BASE(inep)}/agenda`, { de, ate });
 }
 
+/** Indicadores gerenciais derivados (resumo, por grupo, sem atividade, tempo). */
+export function getIndicadores(inep) {
+  return apiClient.get(`${BASE(inep)}/indicadores`);
+}
+
 // ---------------------------------------------------------------------------
 // taxonomia (categorias de eixo entidade|finalidade)
 // ---------------------------------------------------------------------------
@@ -111,4 +116,20 @@ export function downloadDocumento(inep, relacaoId, documentoId) {
 
 export function deleteDocumento(inep, relacaoId, documentoId) {
   return apiClient.delete(`${BASE(inep)}/${relacaoId}/documentos/${documentoId}`);
+}
+
+// ---------------------------------------------------------------------------
+// tarefas (checklist da relação)
+// ---------------------------------------------------------------------------
+
+export function createTarefa(inep, relacaoId, tarefa) {
+  return apiClient.post(`${BASE(inep)}/${relacaoId}/tarefas`, tarefa);
+}
+
+export function updateTarefa(inep, relacaoId, tarefaId, tarefa) {
+  return apiClient.put(`${BASE(inep)}/${relacaoId}/tarefas/${tarefaId}`, tarefa);
+}
+
+export function deleteTarefa(inep, relacaoId, tarefaId) {
+  return apiClient.delete(`${BASE(inep)}/${relacaoId}/tarefas/${tarefaId}`);
 }

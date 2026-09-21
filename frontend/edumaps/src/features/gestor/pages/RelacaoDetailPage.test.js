@@ -45,4 +45,20 @@ describe("RelacaoDetailPage", () => {
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Interação registrada.", "success"));
     expect(await screen.findByText("Ligação de cobrança")).toBeInTheDocument();
   });
+
+  it("lista e adiciona tarefas", async () => {
+    window.history.replaceState({}, "", "/gestor/relacoes/1");
+    render(RelacaoDetailPage);
+    await screen.findByText("Conserto do telhado da quadra");
+
+    expect(screen.getByText("Protocolar ofício do telhado")).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByPlaceholderText("Ex.: Protocolar ofício"), {
+      target: { value: "Enviar e-mail de cobrança" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "+ Adicionar" }));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith("Tarefa adicionada.", "success"));
+    expect(await screen.findByText("Enviar e-mail de cobrança")).toBeInTheDocument();
+  });
 });

@@ -6,6 +6,7 @@
   import {
     getRelacoes,
     getAgenda,
+    getIndicadores,
     createCategoria,
     deleteCategoria,
     createEntidade,
@@ -36,6 +37,7 @@
   const ABAS = [
     { key: "relacoes", label: "Relações" },
     { key: "agenda", label: "Agenda" },
+    { key: "indicadores", label: "Indicadores" },
     { key: "entidades", label: "Entidades externas" },
   ];
 
@@ -55,6 +57,7 @@
   let agenda = $state(null);
   let agendaFiltros = $state({ de: "", ate: "" });
   let carregandoAgenda = $state(false);
+  let indicadores = $state(null);
 
   const MESES = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -120,6 +123,11 @@
       entidades = data.entidades;
       relacoes = data.relacoes;
       await carregarAgenda();
+      try {
+        indicadores = await getIndicadores(me.cod_inep);
+      } catch {
+        indicadores = null;
+      }
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar as relações.");
       if (msg) error = msg;
@@ -494,6 +502,78 @@
               {/each}
             </ul>
           </div>
+        {/if}
+      </section>
+
+    {:else if aba === "indicadores"}
+      <section class="space-y-4">
+        {#if indicadores}
+          {@const r = indicadores.resumo}
+          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Relações abertas</p>
+              <p class="text-2xl font-bold text-gray-900">{r.relacoes_abertas}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Vencidas</p>
+              <p class="text-2xl font-bold text-red-600">{r.vencidas}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Concluídas</p>
+              <p class="text-2xl font-bold text-green-600">{r.concluidas}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Entidades externas</p>
+              <p class="text-2xl font-bold text-gray-900">{r.entidades}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Tarefas pendentes</p>
+              <p class="text-2xl font-bold text-gray-900">{r.tarefas_pendentes}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Tarefas vencidas</p>
+              <p class="text-2xl font-bold text-red-600">{r.tarefas_vencidas}</p>
+            </div>
+            <div class="rounded-card border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Tempo médio até 1ª interação</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {indicadores.tempo_medio_primeira_interacao_dias ?? "—"}{#if indicadores.tempo_medio_primeira_interacao_dias !== null && indicadores.tempo_medio_primeira_interacao_dias !== undefined}<span class="text-sm font-normal text-gray-500"> dias</span>{/if}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-card border border-gray-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-gray-900">Demandas por grupo</h3>
+            <ul class="mt-2 space-y-1">
+              {#each indicadores.por_grupo as g (g.grupo)}
+                <li class="flex items-center justify-between text-sm">
+                  <span class="text-gray-700">{g.grupo}</span>
+                  <span class="text-gray-500">{g.total} total{#if g.vencidas} · <span class="text-red-600">{g.vencidas} vencida(s)</span>{/if}</span>
+                </li>
+              {:else}
+                <li class="text-sm text-gray-400">Sem dados.</li>
+              {/each}
+            </ul>
+          </div>
+
+          <div class="rounded-card border border-gray-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-gray-900">Relações sem atividade recente (60 dias)</h3>
+            <ul class="mt-2 divide-y divide-gray-100">
+              {#each indicadores.sem_atividade as s (s.id)}
+                <li class="flex items-center justify-between gap-2 py-2">
+                  <div class="min-w-0">
+                    <a href={`/gestor/relacoes/${s.id}`} class="text-sm text-blue-600 hover:underline truncate">{s.assunto}</a>
+                    <p class="text-xs text-gray-500">{s.entidade_nome}{#if s.ultima_interacao} · última {fmtData(s.ultima_interacao)}{/if}</p>
+                  </div>
+                  <span class="text-xs text-gray-400">{s.prazo ? `até ${fmtData(s.prazo)}` : "sem prazo"}</span>
+                </li>
+              {:else}
+                <li class="py-2 text-sm text-gray-400">Nenhuma relação parada.</li>
+              {/each}
+            </ul>
+          </div>
+        {:else}
+          <p class="rounded-card border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">Indicadores indisponíveis.</p>
         {/if}
       </section>
 

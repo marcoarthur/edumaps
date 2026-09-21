@@ -11,6 +11,9 @@
     uploadDocumento,
     downloadDocumento,
     deleteDocumento,
+    createTarefa,
+    updateTarefa,
+    deleteTarefa,
   } from "../api/gestorRelacoesApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
@@ -39,10 +42,12 @@
   let relacao = $state(null);
   let interacoes = $state([]);
   let documentos = $state([]);
+  let tarefas = $state([]);
 
   let interForm = $state(null);
   let docForm = $state({ tipo: "", data: "", referencia: "", arquivo: null });
   let enviandoDoc = $state(false);
+  let tarefaForm = $state({ descricao: "", responsavel: "", prazo: "" });
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && err.status === 401) {
@@ -64,6 +69,7 @@
       relacao = det;
       interacoes = det.interacoes ?? [];
       documentos = det.documentos ?? [];
+      tarefas = det.tarefas ?? [];
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar a relação.");
       if (msg) error = msg;
@@ -190,6 +196,53 @@
     return `${dia}/${m}/${a}`;
   }
 
+  // ------------------------------- tarefas ---------------------------------
+  async function adicionarTarefa() {
+    if (!tarefaForm.descricao.trim()) {
+      addToast("Descreva a tarefa.", "warning");
+      return;
+    }
+    try {
+      const t = await createTarefa(inep, relacaoId, {
+        descricao: tarefaForm.descricao.trim(),
+        responsavel: tarefaForm.responsavel.trim() || null,
+        prazo: tarefaForm.prazo || null,
+      });
+      tarefas = [...tarefas, t];
+      tarefaForm = { descricao: "", responsavel: "", prazo: "" };
+      addToast("Tarefa adicionada.", "success");
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível adicionar a tarefa.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
+  async function alternarTarefa(t) {
+    const status = t.status === "concluida" ? "pendente" : "concluida";
+    try {
+      const atual = await updateTarefa(inep, relacaoId, t.id, {
+        descricao: t.descricao, responsavel: t.responsavel, prazo: t.prazo, status,
+      });
+      const idx = tarefas.findIndex((x) => x.id === t.id);
+      if (idx !== -1) tarefas[idx] = atual;
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível atualizar a tarefa.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
+  async function excluirTarefa(t) {
+    if (!window.confirm("Excluir esta tarefa?")) return;
+    try {
+      await deleteTarefa(inep, relacaoId, t.id);
+      tarefas = tarefas.filter((x) => x.id !== t.id);
+      addToast("Tarefa excluída.", "success");
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível excluir a tarefa.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
   async function sair() {
     try {
       await logoutGestor();
@@ -307,6 +360,41 @@
           <li class="p-6 text-center text-sm text-gray-400">Nenhuma interação registrada.</li>
         {/each}
       </ol>
+    </section>
+
+    <!-- tarefas (checklist) -->
+    <section class="space-y-3">
+      <h2 class="text-sm font-semibold text-gray-900">Tarefas</h2>
+      <div class="rounded-card border border-gray-200 bg-white p-3 space-y-2">
+        <div class="grid gap-2 sm:grid-cols-3">
+          <label class="text-xs text-gray-600 sm:col-span-2"><span class="block">Descrição</span>
+            <input bind:value={tarefaForm.descricao} maxlength="300" placeholder="Ex.: Protocolar ofício" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+          <label class="text-xs text-gray-600"><span class="block">Prazo</span>
+            <input type="date" bind:value={tarefaForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input bind:value={tarefaForm.responsavel} placeholder="Responsável" class="flex-1 h-9 px-2 rounded-md border border-gray-300 text-sm" />
+          <button type="button" onclick={adicionarTarefa} class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">+ Adicionar</button>
+        </div>
+      </div>
+
+      <ul class="rounded-card bg-white border border-gray-200 shadow-card divide-y divide-gray-100">
+        {#each tarefas as t (t.id)}
+          <li class="flex items-center gap-3 p-3">
+            <input type="checkbox" checked={t.status === "concluida"} onchange={() => alternarTarefa(t)} class="accent-blue-600" />
+            <div class="min-w-0 flex-1">
+              <p class={`text-sm ${t.status === "concluida" ? "line-through text-gray-400" : "text-gray-800"}`}>{t.descricao}</p>
+              <p class="text-xs text-gray-500">
+                {#if t.responsavel}{t.responsavel}{/if}
+                {#if t.prazo}· até {fmtData(t.prazo)}{/if}
+              </p>
+            </div>
+            <button type="button" onclick={() => excluirTarefa(t)} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 shrink-0">✕</button>
+          </li>
+        {:else}
+          <li class="p-6 text-center text-sm text-gray-400">Nenhuma tarefa.</li>
+        {/each}
+      </ul>
     </section>
 
     <!-- documentos -->

@@ -69,4 +69,15 @@ describe("RelacoesPage", () => {
     expect(screen.getByText("Sem prazo definido")).toBeInTheDocument();
     expect(screen.getByText("vencida")).toBeInTheDocument();
   });
+
+  it("mostra os indicadores gerenciais", async () => {
+    render(RelacoesPage);
+    await screen.findByText("Conserto do telhado da quadra");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Indicadores" }));
+
+    expect(await screen.findByText("Relações abertas")).toBeInTheDocument();
+    expect(screen.getByText("Demandas por grupo")).toBeInTheDocument();
+    expect(screen.getByText("Órgãos públicos")).toBeInTheDocument();
+  });
 });

@@ -8,6 +8,8 @@ import {
   RELACOES_RELACOES,
   INTERACOES_RELACAO,
   DOCUMENTOS_RELACAO,
+  TAREFAS_RELACAO,
+  INDICADORES_RELACOES,
   INEP_RELACOES,
 } from "./relacoesFixtures.js";
 import { SESSION_TOKEN } from "./fixtures.js";
@@ -34,8 +36,9 @@ function stateFor(inep) {
         ...r,
         interacoes: r.id === 1 ? clone(INTERACOES_RELACAO) : [],
         documentos: r.id === 1 ? clone(DOCUMENTOS_RELACAO) : [],
+        tarefas: r.id === 1 ? clone(TAREFAS_RELACAO) : [],
       })),
-      proximos: { categoria: 100, entidade: 100, relacao: 500, interacao: 100, documento: 100 },
+      proximos: { categoria: 100, entidade: 100, relacao: 500, interacao: 100, documento: 100, tarefa: 100 },
     });
   }
   return mem.get(inep);
@@ -49,7 +52,7 @@ function entTipo(estab, id) {
 }
 
 function relacaoOut(estab, r) {
-  const { interacoes, documentos, ...rest } = r;
+  const { interacoes, documentos, tarefas, ...rest } = r;
   return {
     ...rest,
     entidade_nome: entNome(estab, r.entidade_id),
@@ -279,6 +282,20 @@ export const gestorRelacoesHandlers = [
     });
   }),
 
+  http.get(`${BASE}/indicadores`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    if (params.cod_inep !== INEP_RELACOES) {
+      return HttpResponse.json({
+        resumo: { relacoes_abertas: 0, vencidas: 0, concluidas: 0, entidades: 0, tarefas_pendentes: 0, tarefas_vencidas: 0 },
+        por_grupo: [],
+        sem_atividade: [],
+        tempo_medio_primeira_interacao_dias: null,
+      });
+    }
+    return HttpResponse.json(clone(INDICADORES_RELACOES));
+  }),
+
   http.get(`${BASE}/:id`, ({ request, params }) => {
     const denied = okAuth(request);
     if (denied) return denied;
@@ -289,7 +306,62 @@ export const gestorRelacoesHandlers = [
       ...relacaoOut(estab, rel),
       interacoes: rel.interacoes ?? [],
       documentos: rel.documentos ?? [],
+      tarefas: rel.tarefas ?? [],
     });
+  }),
+
+  // ------------------------------ tarefas ---------------------------------
+  http.post(`${BASE}/:id/tarefas`, async ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const body = await request.json();
+    if (!body.descricao || !body.descricao.trim()) {
+      return HttpResponse.json({ error: "Descreva a tarefa." }, { status: 400 });
+    }
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (!rel) return HttpResponse.json({ error: "Relação não encontrada" }, { status: 404 });
+    const tarefa = {
+      id: estab.proximos.tarefa++,
+      descricao: body.descricao,
+      responsavel: body.responsavel ?? null,
+      prazo: body.prazo ?? null,
+      status: body.status ?? "pendente",
+      concluida_em: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    rel.tarefas = [...(rel.tarefas ?? []), tarefa];
+    return HttpResponse.json(tarefa, { status: 201 });
+  }),
+
+  http.put(`${BASE}/:id/tarefas/:tarefa_id`, async ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const body = await request.json();
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    const tarefa = (rel?.tarefas ?? []).find((t) => t.id === Number(params.tarefa_id));
+    if (!tarefa) return HttpResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
+    const status = body.status ?? "pendente";
+    Object.assign(tarefa, {
+      descricao: body.descricao,
+      responsavel: body.responsavel ?? null,
+      prazo: body.prazo ?? null,
+      status,
+      concluida_em: status === "concluida" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    });
+    return HttpResponse.json(tarefa);
+  }),
+
+  http.delete(`${BASE}/:id/tarefas/:tarefa_id`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (rel) rel.tarefas = (rel.tarefas ?? []).filter((t) => t.id !== Number(params.tarefa_id));
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // --------------------------- interações ---------------------------------
