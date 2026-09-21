@@ -82,9 +82,18 @@
 </script>
 
 <div class="space-y-6">
-  <header>
-    <h1 class="text-2xl font-bold text-gray-900">Busca de Escolas</h1>
-    <p class="mt-1 text-sm text-gray-600">Encontre escolas pelo nome ou município.</p>
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Busca de Escolas</h1>
+      <p class="mt-1 text-sm text-gray-600">Encontre escolas pelo nome ou município.</p>
+    </div>
+    <a
+      href="/gestor"
+      class="px-4 py-2 rounded-md bg-emerald-50 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 transition-colors"
+      title="Acesse o painel do gestor da sua escola"
+    >
+      Você é o gestor?
+    </a>
   </header>
 
   <SchoolSearchForm loading={result.loading} onSearch={handleSearch} onClear={handleClear} />

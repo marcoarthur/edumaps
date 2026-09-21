@@ -71,12 +71,23 @@
         <p class="text-gray-600 text-sm mt-1">{school.nome} · INEP {school.id_escola}</p>
       {/if}
     </div>
-    <button
-      onclick={goBack}
-      class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
-    >
-      ← Voltar para busca
-    </button>
+    <div class="flex items-center gap-2">
+      {#if inep}
+        <a
+          href={`/gestor?inep=${inep}`}
+          class="px-4 py-2 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded-md hover:bg-emerald-100 transition-colors"
+          title="Acesse o painel do gestor desta escola"
+        >
+          Você é o gestor?
+        </a>
+      {/if}
+      <button
+        onclick={goBack}
+        class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+      >
+        ← Voltar para busca
+      </button>
+    </div>
   </header>
 
   {#if loading}

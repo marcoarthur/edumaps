@@ -83,5 +83,12 @@
     >
      📋 Painel
     </a>
+    <a
+      href={`/gestor?inep=${school.codigo_inep}&modo=cadastro`}
+      class="text-emerald-700 font-semibold hover:underline"
+      title="Cadastre-se como gestor desta escola"
+    >
+      Você é o gestor?
+    </a>
   </div>
 </article>

@@ -5,6 +5,7 @@ import { NetworkComparePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { PublicaRespostaPage } from "@/features/resposta";
 import {
+  GestorAcessoPage,
   GestorPanelPage,
   GestorPesquisasPage,
   GestorPesquisasWizardPage,
@@ -35,6 +36,7 @@ export const routes = [
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/escola/financeiro", component: SchoolFinancePage },
   { path: "/escola/panel", component: SchoolPanelPage },
+  { path: "/gestor", component: GestorAcessoPage },
   { path: "/gestor/painel", component: GestorPanelPage },
   { path: "/gestor/pesquisas", component: GestorPesquisasPage },
   { path: "/gestor/pesquisas/nova", component: GestorPesquisasWizardPage },

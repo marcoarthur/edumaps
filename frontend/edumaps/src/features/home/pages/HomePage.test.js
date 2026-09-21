@@ -11,13 +11,14 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
   });
 
-  it("apresenta os quatro pilares do projeto", () => {
+  it("apresenta os pilares do projeto", () => {
     render(HomePage);
     for (const title of [
       /^mapas$/i,
       /^educação$/i,
       /^censo escolar$/i,
       /ferramentas analíticas/i,
+      /gestão escolar/i,
     ]) {
       expect(
         screen.getByRole("heading", { level: 2, name: title }),
@@ -25,7 +26,7 @@ describe("HomePage", () => {
     }
   });
 
-  it("oferece os atalhos para busca de escolas e para análises", () => {
+  it("oferece os atalhos para busca, análises e área do gestor", () => {
     render(HomePage);
     expect(screen.getByRole("link", { name: /buscar escola/i })).toHaveAttribute(
       "href",
@@ -34,6 +35,10 @@ describe("HomePage", () => {
     expect(screen.getByRole("link", { name: /ver análises/i })).toHaveAttribute(
       "href",
       "/cluster/geotag",
+    );
+    expect(screen.getByRole("link", { name: /sou gestor/i })).toHaveAttribute(
+      "href",
+      "/gestor",
     );
   });
 });

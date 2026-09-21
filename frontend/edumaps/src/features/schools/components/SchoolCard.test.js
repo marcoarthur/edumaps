@@ -39,4 +39,12 @@ describe("SchoolCard", () => {
     render(SchoolCard, { props: { school: { ...school, telefone: null } } });
     expect(screen.getByText("Telefone não informado")).toBeInTheDocument();
   });
+
+  it("oferece o acesso do gestor com o INEP da escola", () => {
+    render(SchoolCard, { props: { school } });
+    expect(screen.getByRole("link", { name: /você é o gestor\?/i })).toHaveAttribute(
+      "href",
+      "/gestor?inep=35123456&modo=cadastro",
+    );
+  });
 });
