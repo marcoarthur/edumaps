@@ -379,6 +379,14 @@ sub financial_summary($self, $params) {
     ORDER BY total_salario DESC
   SQL
 
+  # Total de profissionais distintos da escola (todos os meses/anos) — o card
+  # do painel usa este total; a competência mais recente pode ter 1 servidor e
+  # parecer que a escola só tem 1.
+  my ($total_profissionais) = $dbh->selectrow_array(
+    'SELECT COUNT(DISTINCT cpf)::int FROM clean.remuneracao_municipal WHERE cod_inep = ?',
+    undef, $cod,
+  );
+
   my $siope = $self->siope_status($cod);
 
   return {
@@ -388,6 +396,7 @@ sub financial_summary($self, $params) {
       dependencia_administrativa => $siope->{rede},
       cod_municipio              => $siope->{cod_municipio},
     },
+    total_profissionais => ($total_profissionais // 0) + 0,
     series     => $series     // [],
     categorias => $categorias // [],
     siope      => {

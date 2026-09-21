@@ -31,7 +31,10 @@ const FINANCE_MUNICIPAL = {
     dependencia_administrativa: "Municipal",
     cod_municipio: "350517",
   },
-  series: [],
+  total_profissionais: 5,
+  series: [
+    { ano: 2024, mes: "Outubro", mes_num: 10, total_profissionais: 1, total_salario: 18988.13 },
+  ],
   categorias: [],
   siope: {
     habilitado: 1,
@@ -67,6 +70,14 @@ describe("SchoolFinancePage — SIOPE", () => {
     expect(screen.queryByRole("option", { name: "2024" })).toBeNull();
   });
 
+  it("mostra o total de profissionais distintos, não só a última competência", async () => {
+    render(SchoolFinancePage);
+    await screen.findByText(/Profissionais \(total\)/);
+    // total distinto = 5 (a última competência tem só 1)
+    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getByText(/Competência mais recente/)).toBeInTheDocument();
+  });
+
   it("dispara a busca e recarrega ao concluir", async () => {
     mocks.watchJobProgress.mockImplementation((_jobId, { onDone }) => {
       onDone?.();
@@ -91,7 +102,8 @@ describe("SchoolFinancePage — SIOPE", () => {
     });
 
     render(SchoolFinancePage);
-    await screen.findByText(/Sem dados financeiros/);
+    // painel renderiza (tem série), mas sem o card do SIOPE
+    await screen.findByText(/Profissionais \(total\)/);
     expect(screen.queryByText(/Dados do SIOPE/)).toBeNull();
   });
 
@@ -99,7 +111,7 @@ describe("SchoolFinancePage — SIOPE", () => {
     mocks.fetchMe.mockRejectedValue(new Error("401"));
 
     render(SchoolFinancePage);
-    await screen.findByText(/Sem dados financeiros/);
+    await screen.findByText(/Profissionais \(total\)/);
     expect(screen.queryByText(/Dados do SIOPE/)).toBeNull();
   });
 });

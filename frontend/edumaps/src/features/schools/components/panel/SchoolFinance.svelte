@@ -20,12 +20,13 @@
    * @typedef {Object} Props
    * @property {string|number} inep
    * @property {{ nome?: string }|null} [escola]
+   * @property {number} [totalProfissionais] total de profissionais distintos (todos os meses)
    * @property {Array<{ ano, mes, mes_num, total_salario, total_profissionais }>} [series]
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    */
 
   /** @type {Props} */
-  let { inep, escola = null, series = [], categorias = [] } = $props();
+  let { inep, escola = null, totalProfissionais = 0, series = [], categorias = [] } = $props();
 
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
@@ -94,11 +95,12 @@
       </p>
     </div>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
-      <p class="text-xs text-gray-500">
-        Profissionais ({stats.lastPeriod ?? "—"})
-      </p>
+      <p class="text-xs text-gray-500">Profissionais (total)</p>
       <p class="text-xl font-bold text-gray-900 mt-1">
-        {formatInt(stats.lastProfessionals)}
+        {formatInt(totalProfissionais)}
+      </p>
+      <p class="text-xs text-gray-400 mt-0.5">
+        Competência mais recente ({stats.lastPeriod ?? "—"}): {formatInt(stats.lastProfessionals)}
       </p>
     </div>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
