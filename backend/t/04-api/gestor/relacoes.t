@@ -6,6 +6,7 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use DateTime;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -180,6 +181,45 @@ subtest 'regras: entidade com relação, ownership e validação' => sub {
   # limpeza de relação libera a entidade
   $t->delete_ok("/api/gestor/$INEP/relacoes/$rel_id", $auth->())->status_is(204);
   $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent_id", $auth->())->status_is(204);
+};
+
+subtest 'agenda: visão temporal derivada (com e sem prazo)' => sub {
+  plan skip_all => 'clean.relacoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $hoje  = DateTime->today(time_zone => 'local');
+  my $futuro = $hoje->clone->add(days => 10)->ymd;
+
+  my $ent = $t->post_ok("/api/gestor/$INEP/relacoes/entidades", $auth->(), json => {
+    nome => 'Agenda Escola',
+  })->status_is(201)->tx->res->json;
+
+  my $futura = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Reunião futura', prazo => $futuro, prioridade => 'media',
+  })->status_is(201)->tx->res->json;
+  my $vencida = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Cobrança atrasada', prazo => '2020-01-01', prioridade => 'alta',
+  })->status_is(201)->tx->res->json;
+  my $sem_prazo = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Sem prazo', proxima_acao => 'Definir data',
+  })->status_is(201)->tx->res->json;
+
+  my $ag = $t->get_ok("/api/gestor/$INEP/relacoes/agenda", $auth->())
+    ->status_is(200)->tx->res->json;
+  is scalar(@{ $ag->{itens} }), 2, 'duas relações com prazo';
+  is $ag->{itens}[0]{assunto}, 'Cobrança atrasada', 'ordenado por prazo (vencida primeiro)';
+  is $ag->{itens}[0]{vencida}, 1, 'vencida marcada';
+  is scalar(@{ $ag->{sem_prazo} }), 1, 'uma sem prazo';
+  is $ag->{sem_prazo}[0]{assunto}, 'Sem prazo', 'sem prazo listada à parte';
+  cmp_ok $ag->{vencidas}, '>=', 1, 'contagem de vencidas';
+
+  my $recorte = $t->get_ok("/api/gestor/$INEP/relacoes/agenda?de=$futuro", $auth->())
+    ->status_is(200)->tx->res->json;
+  is scalar(@{ $recorte->{itens} }), 1, 'recorte por data exclui a vencida';
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$_->{id}", $auth->())->status_is(204)
+    for ($futura, $vencida, $sem_prazo);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
 };
 
 done_testing;

@@ -123,6 +123,8 @@ sub register($self, $app, @args) {
     ->to('gestor#relacoes_entidade_destroy')->name('gestor_relacoes_entidade_destroy');
 
   $auth->post('/:cod_inep/relacoes' => $check)->to('gestor#relacoes_create')->name('gestor_relacoes_create');
+  # agenda (visão temporal derivada) antes de /:id para ganhar na especificidade.
+  $auth->get('/:cod_inep/relacoes/agenda' => $check)->to('gestor#relacoes_agenda')->name('gestor_relacoes_agenda');
   $auth->get('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_show')->name('gestor_relacoes_show');
   $auth->put('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_update')->name('gestor_relacoes_update');
   $auth->delete('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_destroy')->name('gestor_relacoes_destroy');
