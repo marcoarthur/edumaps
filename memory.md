@@ -81,6 +81,38 @@
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
 
+## Sessão — Buscar dados do SIOPE pelo Painel Financeiro
+
+- **Repo** `edumaps`; branch `feat/financeiro-siope` (a partir de `origin/main`);
+  commits `ef38fa0` (backend), `468ba80` (frontend), `cd04f9a` (docs). **PR #86**
+  → `main`, merge commit **`630c627`** (2026-09-21). `main` == `origin/main`.
+- **Contexto**: a task `query_siope` (Minion) já baixa a planilha do FNDE e
+  popula `clean.remuneracao_municipal`; testada em `t/05-tasks/siope.t`.
+- **Entregas**:
+  - backend: `School::Finance#siope_status`/`siope_disponivel` (rede com fallback
+    no censo `tp_dependencia=3`; município = prefixo de 6 dígitos do INEP; anos
+    já baixados **por município**) e `financial_summary` com `escola.
+    dependencia_administrativa`, `escola.cod_municipio` e bloco `siope`.
+    Novo `POST /api/gestor/:cod_inep/financeiro/siope` (auth do gestor; 422 se
+    não municipal; 400 fora de 2020..atual; 409 se o ano já existe) → enfileira
+    `get_siope` → 202 + `Location`.
+  - frontend: card **SIOPE** no `SchoolFinancePage` (só gestor autenticado da
+    escola municipal): drop list 2020..atual menos já baixados + botão, com
+    **progresso via SSE** (`EventSource` + snapshot final no `onerror`) e recarga
+    ao concluir. `schoolApi`: `requestSchoolSiope`, `watchJobProgress`.
+  - docs: `docs/funcionalidades/analise/financeiro.md` atualizado (novo passo do
+    workflow).
+- **Decisões**: endpoint school-scoped sob a auth do gestor · SSE · faixa
+  2020..atual · exclusão por município · card oculto para não-logado.
+- **Armadilha**: o SSE do `monitor_job` **não emite falha** (só progresso) —
+  ao fechar o stream, o frontend lê o snapshot (`GET /api/task/progress`) para
+  decidir sucesso/erro.
+- **Testes**: backend `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (68 ok;
+  novo `finance_siope.t`); frontend `SchoolFinancePage.test.js` (4 ok); suite
+  completa 300 ok (4 falhas pré-existentes). Smoke real: `siope.habilitado=1`,
+  POST → 202, progresso `active`, sem sessão → 401.
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev` (sem migração).
+
 ## Sessão — Catálogo de Funcionalidades (`docs/funcionalidades/`)
 
 - **Repo** `edumaps`; branch `docs/funcionalidades` (a partir de `origin/main`);
