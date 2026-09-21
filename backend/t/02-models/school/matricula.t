@@ -52,6 +52,18 @@ $tag <listagem de matriculas>
             field "15-17" => number_ge(0); 
             field "18+"   => number_ge(0); 
           };
+          field esp_cc_total => number_ge(0);
+          field esp_ce_total => number_ge(0);
+          field turno => hash {
+            field diurno     => number_ge(0);
+            field matutino   => number_ge(0);
+            field vespertino => number_ge(0);
+            field noturno    => number_ge(0);
+            field integral   => number_ge(0);
+            etc();
+          };
+          # bug corrigido: deficiencia_basica somava TURNO (qt_mat_bas_d/dm/dv)
+          field deficiencia_basica => DNE();
           etc();
         },
         'Summario básico das matriculas',

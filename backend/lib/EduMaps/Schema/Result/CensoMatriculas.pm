@@ -1040,28 +1040,28 @@ Idade 18+ anos (ref. 31/03)
   data_type: 'integer'
   is_nullable: 1
 
-Deficiência – Deficiência
+Diurno
 
 =head2 qt_mat_bas_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Deficiência – Deficiência múltipla
+Matutino
 
 =head2 qt_mat_bas_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Deficiência – Deficiência visual
+Vespertino
 
 =head2 qt_mat_bas_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Deficiência – Não se aplica
+Noturno
 
 =head2 qt_mat_bas_ead
 
@@ -1075,168 +1075,168 @@ Educação básica – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Creche – Deficiência
+Creche – Diurno
 
 =head2 qt_mat_inf_cre_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Creche – Deficiência múltipla
+Creche – Matutino
 
 =head2 qt_mat_inf_cre_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Creche – Deficiência visual
+Creche – Vespertino
 
 =head2 qt_mat_inf_cre_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Creche – Não se aplica
+Creche – Noturno
 
 =head2 qt_mat_inf_pre_d
 
   data_type: 'integer'
   is_nullable: 1
 
-Pré‑escola – Deficiência
+Pré‑escola – Diurno
 
 =head2 qt_mat_inf_pre_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Pré‑escola – Deficiência múltipla
+Pré‑escola – Matutino
 
 =head2 qt_mat_inf_pre_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Pré‑escola – Deficiência visual
+Pré‑escola – Vespertino
 
 =head2 qt_mat_inf_pre_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Pré‑escola – Não se aplica
+Pré‑escola – Noturno
 
 =head2 qt_mat_fund_d
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental – Deficiência
+Fundamental – Diurno
 
 =head2 qt_mat_fund_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental – Deficiência múltipla
+Fundamental – Matutino
 
 =head2 qt_mat_fund_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental – Deficiência visual
+Fundamental – Vespertino
 
 =head2 qt_mat_fund_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental – Não se aplica
+Fundamental – Noturno
 
 =head2 qt_mat_fund_ai_d
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos iniciais – Deficiência
+Fundamental anos iniciais – Diurno
 
 =head2 qt_mat_fund_ai_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos iniciais – Deficiência múltipla
+Fundamental anos iniciais – Matutino
 
 =head2 qt_mat_fund_ai_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos iniciais – Deficiência visual
+Fundamental anos iniciais – Vespertino
 
 =head2 qt_mat_fund_ai_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos iniciais – Não se aplica
+Fundamental anos iniciais – Noturno
 
 =head2 qt_mat_fund_af_d
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos finais – Deficiência
+Fundamental anos finais – Diurno
 
 =head2 qt_mat_fund_af_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos finais – Deficiência múltipla
+Fundamental anos finais – Matutino
 
 =head2 qt_mat_fund_af_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos finais – Deficiência visual
+Fundamental anos finais – Vespertino
 
 =head2 qt_mat_fund_af_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Fundamental anos finais – Não se aplica
+Fundamental anos finais – Noturno
 
 =head2 qt_mat_med_d
 
   data_type: 'integer'
   is_nullable: 1
 
-Ensino médio – Deficiência
+Ensino médio – Diurno
 
 =head2 qt_mat_med_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Ensino médio – Deficiência múltipla
+Ensino médio – Matutino
 
 =head2 qt_mat_med_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Ensino médio – Deficiência visual
+Ensino médio – Vespertino
 
 =head2 qt_mat_med_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Ensino médio – Não se aplica
+Ensino médio – Noturno
 
 =head2 qt_mat_med_ead
 
@@ -1250,28 +1250,28 @@ Ensino médio – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Profissional – Deficiência
+Profissional – Diurno
 
 =head2 qt_mat_prof_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional – Deficiência múltipla
+Profissional – Matutino
 
 =head2 qt_mat_prof_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional – Deficiência visual
+Profissional – Vespertino
 
 =head2 qt_mat_prof_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional – Não se aplica
+Profissional – Noturno
 
 =head2 qt_mat_prof_ead
 
@@ -1285,28 +1285,28 @@ Profissional – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Profissional técnica – Deficiência
+Profissional técnica – Diurno
 
 =head2 qt_mat_prof_tec_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional técnica – Deficiência múltipla
+Profissional técnica – Matutino
 
 =head2 qt_mat_prof_tec_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional técnica – Deficiência visual
+Profissional técnica – Vespertino
 
 =head2 qt_mat_prof_tec_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Profissional técnica – Não se aplica
+Profissional técnica – Noturno
 
 =head2 qt_mat_prof_tec_ead
 
@@ -1320,28 +1320,28 @@ Profissional técnica – EAD
   data_type: 'integer'
   is_nullable: 1
 
-EJA – Deficiência
+EJA – Diurno
 
 =head2 qt_mat_eja_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA – Deficiência múltipla
+EJA – Matutino
 
 =head2 qt_mat_eja_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA – Deficiência visual
+EJA – Vespertino
 
 =head2 qt_mat_eja_n
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA – Não se aplica
+EJA – Noturno
 
 =head2 qt_mat_eja_ead
 
@@ -1355,28 +1355,28 @@ EJA – EAD
   data_type: 'integer'
   is_nullable: 1
 
-EJA fundamental – Deficiência
+EJA fundamental – Diurno
 
 =head2 qt_mat_eja_fund_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA fundamental – Deficiência múltipla
+EJA fundamental – Matutino
 
 =head2 qt_mat_eja_fund_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA fundamental – Deficiência visual
+EJA fundamental – Vespertino
 
 =head2 qt_mat_eja_fund_n
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA fundamental – Não se aplica
+EJA fundamental – Noturno
 
 =head2 qt_mat_eja_fund_ead
 
@@ -1390,28 +1390,28 @@ EJA fundamental – EAD
   data_type: 'integer'
   is_nullable: 1
 
-EJA médio – Deficiência
+EJA médio – Diurno
 
 =head2 qt_mat_eja_med_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA médio – Deficiência múltipla
+EJA médio – Matutino
 
 =head2 qt_mat_eja_med_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA médio – Deficiência visual
+EJA médio – Vespertino
 
 =head2 qt_mat_eja_med_n
 
   data_type: 'integer'
   is_nullable: 1
 
-EJA médio – Não se aplica
+EJA médio – Noturno
 
 =head2 qt_mat_eja_med_ead
 
@@ -1425,28 +1425,28 @@ EJA médio – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Educação especial – Deficiência
+Educação especial – Diurno
 
 =head2 qt_mat_esp_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Educação especial – Deficiência múltipla
+Educação especial – Matutino
 
 =head2 qt_mat_esp_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Educação especial – Deficiência visual
+Educação especial – Vespertino
 
 =head2 qt_mat_esp_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Educação especial – Não se aplica
+Educação especial – Noturno
 
 =head2 qt_mat_esp_ead
 
@@ -1460,28 +1460,28 @@ Educação especial – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Classe comum – Deficiência
+Classe comum – Diurno
 
 =head2 qt_mat_esp_cc_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe comum – Deficiência múltipla
+Classe comum – Matutino
 
 =head2 qt_mat_esp_cc_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe comum – Deficiência visual
+Classe comum – Vespertino
 
 =head2 qt_mat_esp_cc_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe comum – Não se aplica
+Classe comum – Noturno
 
 =head2 qt_mat_esp_cc_ead
 
@@ -1495,28 +1495,28 @@ Classe comum – EAD
   data_type: 'integer'
   is_nullable: 1
 
-Classe exclusiva – Deficiência
+Classe exclusiva – Diurno
 
 =head2 qt_mat_esp_ce_dm
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe exclusiva – Deficiência múltipla
+Classe exclusiva – Matutino
 
 =head2 qt_mat_esp_ce_dv
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe exclusiva – Deficiência visual
+Classe exclusiva – Vespertino
 
 =head2 qt_mat_esp_ce_n
 
   data_type: 'integer'
   is_nullable: 1
 
-Classe exclusiva – Não se aplica
+Classe exclusiva – Noturno
 
 =head2 qt_mat_esp_ce_ead
 

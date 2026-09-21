@@ -57,11 +57,16 @@ sub perfil($self) {
 sub index($self) {
   my $v = $self->app->validator->validation;
   $v->input($self->req->params->to_hash || {});
-  $v->required('inep', 'trim')->like(qr/^\d{8}$/);
+  $v->required('inep', 'trim');
   return $self->_render_validation($v) if $v->has_error;
 
+  # Formato inválido segue o padrão do projeto p/ codigo_ibge: 404 (não 400).
+  my $inep = $v->param('inep');
+  return $self->_render_not_found('Escola não encontrada para este INEP')
+    unless $inep =~ /^\d{8}$/;
+
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  $self->render(json => $model->list_surveys($v->param('inep')));
+  $self->render(json => $model->list_surveys($inep));
 }
 
 sub create($self) {

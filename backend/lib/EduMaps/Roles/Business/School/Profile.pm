@@ -100,14 +100,18 @@ sub info_enrollment($self, $params = {}) {
         fundamental_ai => $mat->qt_mat_fund_ai // 0,
         fundamental_af => $mat->qt_mat_fund_af // 0,
 
-        # Inclusão (alunos com deficiência)
-        deficiencia_basica => ($mat->qt_mat_bas_d // 0) +
-        ($mat->qt_mat_bas_dm // 0) +
-        ($mat->qt_mat_bas_dv // 0),
-
-        # Alunos com deficiência em classes comuns vs exclusivas
+        # Inclusão (educação especial — alunos com deficiência)
         esp_cc_total => $mat->qt_mat_esp_cc // 0,
         esp_ce_total => $mat->qt_mat_esp_ce // 0,
+
+        # Turno (as colunas qt_mat_*_d/dm/dv/n são Diurno/Matutino/Vespertino/Noturno)
+        turno => {
+          diurno     => $mat->qt_mat_bas_d // 0,
+          matutino   => $mat->qt_mat_bas_dm // 0,
+          vespertino => $mat->qt_mat_bas_dv // 0,
+          noturno    => $mat->qt_mat_bas_n // 0,
+          integral   => $mat->qt_mat_bas_int // 0,
+        },
 
         # Demografia
         sexo => {
