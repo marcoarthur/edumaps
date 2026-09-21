@@ -35,6 +35,33 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — Relações Institucionais: Etapa 4 (interações + documentos)
+
+- **Repo** `edumaps`; branch `feat/relacoes-gestao` (a partir de `origin/main`);
+  commits `aa3e788` (data_pipeline), `083f368` (backend), `8c5c2c7` (frontend).
+  **PR #82** → `main`, merge commit **`2cbbb90`** (2026-09-21). `main` == `origin/main`.
+- **Entregas**:
+  - data_pipeline: `relacoes_gestao` — `relacoes_interacoes` (timeline:
+    data/canal/participante/assunto/descrição/resultado) e `relacoes_documentos`
+    (tipo/data/referência + arquivo no `upload_dir`), FK `relacoes` `ON DELETE
+    CASCADE`.
+  - backend: CRUD de interações e documentos (upload/download/delete) por
+    relação; `relacao_detail` devolve `interacoes` e `documentos`; excluir a
+    relação remove os arquivos do disco. Rotas `.../relacoes/:id/interacoes[/:interacao_id]`
+    e `.../relacoes/:id/documentos[/:documento_id]` (constraints arrayref).
+  - frontend: `RelacaoDetailPage.svelte` em `/gestor/relacoes/:id` (resumo,
+    timeline de interações, documentos anexar/baixar/remover) + link "Abrir" na
+    lista.
+- **Armadilha**: um `}` sobrando no `.svelte` só apareceu no `vite build` (o
+  build/deploy é a validação real do frontend).
+- **Testes**: backend `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (61 ok);
+  frontend (container) `npx vitest run src/features/gestor` (115 ok); suite
+  completa 287 ok (4 falhas pré-existentes). Smoke real: interação 201,
+  documento anexado, detalhe com `interacoes`/`documentos`.
+- **Deploy**: migração em `ubatexu.lan` + `Database` (verify ok);
+  `deploy_backend_dev` + `deploy_frontend_dev`.
+- **Pendência/próxima etapa**: Etapa 5 (tarefas + indicadores/rede).
+
 ## Sessão — Relações Institucionais: Etapa 3 (Agenda institucional)
 
 - **Repo** `edumaps`; branch `feat/relacoes-agenda` (a partir de `origin/main`);
