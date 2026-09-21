@@ -82,6 +82,16 @@ describe("SchoolSearchPageRx", () => {
     ).toBeInTheDocument();
   });
 
+  it("oferece o acesso do gestor no cabeçalho da seção", () => {
+    schoolApi.searchPaginatedSchools.mockReturnValue(of({ data: [], meta: null }));
+    render(SchoolSearchPage);
+
+    expect(screen.getByRole("link", { name: /você é o gestor\?/i })).toHaveAttribute(
+      "href",
+      "/gestor",
+    );
+  });
+
   it("deve realizar uma busca com sucesso e renderizar os cards e paginação", async () => {
     schoolApi.searchPaginatedSchools.mockReturnValue(
       of({

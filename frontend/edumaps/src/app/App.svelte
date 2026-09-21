@@ -9,6 +9,7 @@
     { to: "/", label: "Home" },
     { to: "/escola/search", label: "Busca Escola" },
     { to: "/cluster/geotag", label: "Análises" },
+    { to: "/gestor", label: "Gestor" },
     { to: "/about", label: "Sobre o Refactor" },
   ];
 

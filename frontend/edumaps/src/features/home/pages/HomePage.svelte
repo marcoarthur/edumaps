@@ -2,8 +2,9 @@
   // src/features/home/pages/HomePage.svelte
   //
   // LandPage do EduMaps: apresenta o contexto do projeto — mapas, educação,
-  // Censo Escolar e ferramentas analíticas — e encaminha para as duas entradas
-  // principais da plataforma (busca de escolas e análise de clusters).
+  // Censo Escolar, ferramentas analíticas e gestão escolar — e encaminha para
+  // as entradas principais da plataforma (busca de escolas, análise de clusters
+  // e área do gestor).
   import { router } from "@/app/router.svelte.js";
   import Logo from "@/shared/ui/components/Logo.svelte";
 
@@ -28,6 +29,11 @@
       description:
         "Ranking, escolas semelhantes e agrupamento (clusters) descritos em linguagem natural.",
     },
+    {
+      title: "Gestão escolar",
+      description:
+        "Painel do gestor: pesquisas com a comunidade, reuniões e atas, inventário e relações institucionais da escola.",
+    },
   ];
 
   function go(event, path) {
@@ -43,8 +49,9 @@
     </div>
     <h1 class="text-4xl font-bold text-gray-900">EduMaps</h1>
     <p class="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-      Mapeamento e análise das escolas públicas brasileiras: geolocalização,
-      indicadores educacionais e ferramentas analíticas em uma só plataforma.
+      Mapeamento, análise e gestão das escolas públicas brasileiras:
+      geolocalização, indicadores educacionais e ferramentas analíticas em uma só
+      plataforma.
     </p>
     <div class="flex flex-wrap justify-center gap-3 pt-2">
       <a
@@ -60,6 +67,13 @@
         class="px-5 py-2.5 rounded-md border border-gray-300 text-gray-800 font-medium hover:bg-gray-100 transition-colors"
       >
         Ver análises
+      </a>
+      <a
+        href="/gestor"
+        onclick={(event) => go(event, "/gestor")}
+        class="px-5 py-2.5 rounded-md border border-brand-700 text-brand-700 font-medium hover:bg-brand-50 transition-colors"
+      >
+        Sou gestor
       </a>
     </div>
   </header>

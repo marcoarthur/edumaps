@@ -6,8 +6,13 @@
   import { ApiError } from "@/shared/api/client.js";
   import { LIMITS } from "../../constants/pesquisas.js";
 
-  /** @type {{onLogin: (sessao:object) => void, mensagem?: string|null}} */
-  let { onLogin, mensagem = null } = $props();
+  /** @type {{onLogin: (sessao:object) => void, mensagem?: string|null, titulo?: string, descricao?: string}} */
+  let {
+    onLogin,
+    mensagem = null,
+    titulo = "Entrar para ver resultados",
+    descricao = "Use o e-mail e a senha cadastrados ao montar a pesquisa.",
+  } = $props();
 
   let email = $state("");
   let senha = $state("");
@@ -42,10 +47,8 @@
 
 <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 max-w-md mx-auto">
   <header class="mb-4">
-    <h2 class="text-lg font-bold text-gray-900">Entrar para ver resultados</h2>
-    <p class="mt-1 text-sm text-gray-600">
-      Use o e-mail e a senha cadastrados ao montar a pesquisa.
-    </p>
+    <h2 class="text-lg font-bold text-gray-900">{titulo}</h2>
+    <p class="mt-1 text-sm text-gray-600">{descricao}</p>
   </header>
 
   {#if mensagem}
