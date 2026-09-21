@@ -86,6 +86,30 @@
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
 
+## Sessão — Fix: download do SIOPE + monitor de job que falha
+
+- **Repo** `edumaps`; branch `fix/siope-download-e-monitor` (a partir de
+  `origin/main`); commits `8ceb6a2` (backend), `8021302` (frontend/docs).
+  **PR #88** → `main`, merge commit **`efd3961`** (2026-09-21). `main` == `origin/main`.
+- **Bug 1 — download (`Gastos.pm`)**: o FNDE responde com
+  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; o teste
+  `/excel/i` **não casava** → corpo descartado → `xlsx2csv_fast` morria com
+  `Cannot open /tmp/<mun>_<ano>.xlsx.Planilha.csv`. Fix: aceitar
+  `excel|spreadsheetml|officedocument|octet-stream`. (O fix do município do PR
+  #87 estava certo; o download é que estava quebrado.)
+- **Bug 2 — monitor (`Plugin::Helpers#_monitor_minion_job`)**: só encerrava o
+  stream em `finished`; em `failed` o SSE ficava pendurado e a UI em
+  "Enfileirando… (0%)". Fix: encerra em `finished` **e** `failed`, não emite
+  progresso no estado terminal e sintetiza `result` de erro no `on_finish`.
+- **Frontend** (`watchJobProgress`): guarda contra `onerror` duplicado e lê o
+  snapshot final (`GET /api/task/progress`) para decidir sucesso/erro.
+- **Validação**: scraper real → **Caçapava 350850/2026 = 5152 linhas**,
+  **Taubaté 355410/2026 = 17753**; SSE de job failed encerra de imediato;
+  `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t t/01-app/helpers.t` (70 ok);
+  `SchoolFinancePage.test.js` (4 ok). Nota: o subteste SSE de `t/05-tasks/
+  siope.t` **já falhava no HEAD** (job rápido + sem worker local) — não é regressão.
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev`.
+
 ## Sessão — Fix: município correto no SIOPE (bug do código do INEP)
 
 - **Repo** `edumaps`; branch `fix/siope-codigo-municipio` (a partir de
