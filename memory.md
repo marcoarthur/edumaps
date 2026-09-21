@@ -35,6 +35,30 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — Relações Institucionais: Etapa 5 (tarefas + indicadores)
+
+- **Repo** `edumaps`; branch `feat/relacoes-tarefas` (a partir de `origin/main`);
+  commits `f06d2b8` (data_pipeline), `5f8ce06` (backend), `5760c1f` (frontend).
+  **PR #83** → `main`, merge commit **`0226819`** (2026-09-21). `main` == `origin/main`.
+- **Entregas**:
+  - data_pipeline: `relacoes_tarefas` (checklist por relação: descrição,
+    responsável, prazo, status `pendente|concluida`, `concluida_em`; FK CASCADE).
+  - backend: CRUD de tarefas por relação (o detalhe passa a incluir `tarefas`);
+    `GET /relacoes/indicadores` (derivado, sem tabela) com resumo, demandas por
+    grupo, relações sem atividade (60 dias) e tempo médio até a 1ª interação.
+  - frontend: checklist de tarefas no detalhe e aba **Indicadores** em
+    `/gestor/relacoes`.
+- **Fora do escopo (documentado)**: **grafo institucional cross-escola**
+  ("fornecedores atendem várias escolas") — exige política de
+  agregação/anonimização entre escolas; os indicadores entregues são por escola.
+- **Testes**: backend `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (63 ok);
+  frontend (container) `npx vitest run src/features/gestor` (118 ok); suite
+  completa 290 ok (4 falhas pré-existentes). Smoke real: tarefa 201, indicadores
+  `abertas=1`/`vencidas=1`/`tarefas_pendentes=1`.
+- **Deploy**: migração em `ubatexu.lan` + `Database` (verify ok);
+  `deploy_backend_dev` + `deploy_frontend_dev`.
+- **Status do módulo de Relações Institucionais**: Etapas 1–5 concluídas.
+
 ## Sessão — Relações Institucionais: Etapa 4 (interações + documentos)
 
 - **Repo** `edumaps`; branch `feat/relacoes-gestao` (a partir de `origin/main`);
