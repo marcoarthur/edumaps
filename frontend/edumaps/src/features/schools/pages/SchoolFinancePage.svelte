@@ -17,6 +17,7 @@
   let escola = $state(null);
   let series = $state([]);
   let categorias = $state([]);
+  let totalProfissionais = $state(0);
   let loading = $state(true);
   let error = $state(null);
 
@@ -49,6 +50,7 @@
       escola = data.escola ?? null;
       series = data.series ?? [];
       categorias = data.categorias ?? [];
+      totalProfissionais = data.total_profissionais ?? 0;
       siope = data.siope ?? null;
       anoSelecionado = anosDisponiveis.at(-1) ?? null;
     } catch (err) {
@@ -223,7 +225,7 @@
         </p>
       </div>
     {:else}
-      <SchoolFinance {inep} {escola} {series} {categorias} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} />
     {/if}
   {/if}
 </div>

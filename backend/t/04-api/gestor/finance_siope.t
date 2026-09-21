@@ -84,6 +84,7 @@ subtest 'finance: metadados do SIOPE (municipal x estadual)' => sub {
   is $mun->{siope}{cod_municipio}, $MUN, 'código do município derivado do INEP';
   is $mun->{siope}{ano_inicial}, 2020, 'faixa inicia em 2020';
   is $mun->{escola}{dependencia_administrativa}, 'Municipal', 'rede na resposta';
+  ok exists $mun->{total_profissionais}, 'resposta traz o total de profissionais distintos';
 
   my $est = $t->get_ok("/api/school/$INEP_EST/finance")
     ->status_is(200)->tx->res->json;
