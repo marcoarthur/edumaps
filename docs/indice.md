@@ -71,6 +71,12 @@
 - 🟢 Z:11110 `Backlog dos Assuntos diários` · Z:11558 `Gemini e DeepSeek Backlogs` · Z:9347 `Lessons Learned (Technical)` · Z:10466 `Sandbox - EDA notas vs etapas` · Z:9998 `Estudos e Pesquisas` (INEP/FUNDEB).
 - 🟢 Notas `Relatórios` (Z:11591, Z:11887, Z:12069, Z:12155, Z:12329) — relatórios de commits/refatoração.
 
+## 11. Funcionalidades (catálogo)
+- 🟢 `docs/funcionalidades/` — catálogo de **funcionalidades** de alto nível,
+  por módulo (`busca`, `analise`, `gestor`, `comunidade`, `plataforma`) +
+  índice/síntese em `docs/funcionalidades/README.md`. Mantido no Workflow
+  (passo "Documentação funcional").
+
 ---
 
 ## Duplicatas (mesmo tema nos dois acervos)

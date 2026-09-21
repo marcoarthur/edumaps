@@ -132,6 +132,28 @@ persona e alimenta o backlog do `eduBR`.
    `tech-lead.md`.
 6. **Veredito** por passada.
 
+## Documentação funcional (`docs/funcionalidades/`)
+
+Catálogo central das **funcionalidades** do EduMaps, em markdown, de **alto
+nível** (capacidades de negócio — não rotas, arquivos ou funções). Serve para
+sintetizar o produto (PDF, wiki, apresentações) e entender rapidamente o que a
+plataforma faz.
+
+- **Estrutura**: um arquivo por **capacidade**, agrupado por módulo —
+  `busca/`, `analise/`, `gestor/`, `comunidade/`, `plataforma/`.
+- **Índice/síntese**: `docs/funcionalidades/README.md` (tabela Módulo ·
+  Capacidade · resumo · status).
+- **Template**: `docs/funcionalidades/_template.md` (copie para criar uma nova
+  capacidade).
+- **Front-matter YAML**: `titulo`, `modulo`, `status`, `audiencia`,
+  `relacionadas` — facilita gerar outros formatos.
+- **Status**: 🟢 ativo · 🟡 parcial · ⚪ planejado · 🔴 descontinuado.
+- **Regra de manutenção**: mudou uma funcionalidade ou nasceu uma nova →
+  atualize o arquivo da capacidade e o `README.md` (passo 3 do Workflow).
+- **Anti-padrão**: não documentar implementação (rotas, classes, funções). Escreva
+  a capacidade, ex.: "Sistema pode gerir o processo de compra via cadastro de
+  fornecedores e iterações com o parceiro fornecedor."
+
 ## Code style
 
 - `use utf8;` em todos os módulos
@@ -147,9 +169,15 @@ plano → execução → aprovação
 1. **Plano**: propor o plano e alinhar decisões antes de tocar em código.
 2. **Execução**: implementar e validar (testes/lint/build) conforme as
    convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
-3. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
+3. **Documentação funcional**: sempre que uma **funcionalidade mudar** ou uma
+   **nova for criada**, atualizar o arquivo da capacidade em
+   `docs/funcionalidades/<módulo>/` e o índice `docs/funcionalidades/README.md`
+   (ver seção "Documentação funcional" abaixo). Alto nível: descreva a
+   **capacidade de negócio**, não rotas/arquivos/funções. Mudanças só de
+   documentação não deployam.
+4. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
    ou a aceite explícito da implementação.
-4. **Deploy (sempre que houver código)**: todo ciclo que altere **artefato de
+5. **Deploy (sempre que houver código)**: todo ciclo que altere **artefato de
    código** termina com o deploy via Rex (`backend/script/deploy/Rexfile`).
    Mudanças **só de documentação** (`docs/`, `*.md` como `AGENTS.md`/`memory.md`,
    `.opencode/`, comentários) **não deployam** — não há o que sincronizar nos
@@ -173,7 +201,7 @@ plano → execução → aprovação
 
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
-5. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
+6. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
    pull request para `main` com a ferramenta de linha de comando do GitHub:
 
    ```bash
@@ -184,9 +212,9 @@ plano → execução → aprovação
 
    Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
    Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
-6. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
+7. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
-7. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2
+8. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2
    PRs, ao longo de 1–2 dias), gerar uma nota técnica em
    `docs/new_ideas/implementations_ideas/notas_tecnicas_N.md` (próximo número
    sequencial), documentando o que foi construído e as decisões de design
