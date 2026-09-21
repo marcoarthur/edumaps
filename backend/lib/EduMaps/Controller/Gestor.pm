@@ -1270,7 +1270,82 @@ sub relacoes_documento_delete($self) {
   $self->render(status => 204, text => '');
 }
 
+# --- tarefas (checklist) ---------------------------------------------------
+
+sub relacoes_tarefa_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Relação não encontrada') unless $model->relacao_state($id, $cod_inep);
+
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_tarefa_validation($input) or return;
+
+  my $tarefa = $self->_guard_api(sub {
+    $model->create_tarefa_relacao($id, $cod_inep, $self->stash('gestor')->{id}, {
+      descricao   => $v->param('descricao'),
+      responsavel => $self->_blank($v->param('responsavel')),
+      prazo       => $self->_blank($v->param('prazo')),
+      status      => $self->_blank($v->param('status')),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Tarefa não pôde ser criada') unless $tarefa;
+  $self->render(status => 201, json => $tarefa);
+}
+
+sub relacoes_tarefa_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id, $tid) = ($self->param('cod_inep'), $self->param('id'), $self->param('tarefa_id'));
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_tarefa_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $tarefa = $self->_guard_api(sub {
+    $model->update_tarefa_relacao($tid, $id, $cod_inep, {
+      descricao   => $v->param('descricao'),
+      responsavel => $self->_blank($v->param('responsavel')),
+      prazo       => $self->_blank($v->param('prazo')),
+      status      => $self->_blank($v->param('status')),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Tarefa não encontrada') unless $tarefa;
+  $self->render(json => $tarefa);
+}
+
+sub relacoes_tarefa_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id, $tid) = ($self->param('cod_inep'), $self->param('id'), $self->param('tarefa_id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Tarefa não encontrada')
+    unless $model->delete_tarefa_relacao($tid, $id, $cod_inep);
+  $self->render(status => 204, text => '');
+}
+
+# --- indicadores (visão gerencial derivada) --------------------------------
+
+sub relacoes_indicadores($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  $self->render(json => $model->indicadores_relacoes($self->param('cod_inep')));
+}
+
 # --- validação das relações ------------------------------------------------
+
+sub _tarefa_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('descricao', 'trim')->size(1, 300);
+  $v->optional('responsavel', 'trim')->size(1, 120);
+  $v->optional('prazo', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('status', 'trim')->like(qr/^(?:pendente|concluida)$/);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $v;
+}
 
 sub _interacao_validation($self, $input) {
   my $v = $self->app->validator->validation;
