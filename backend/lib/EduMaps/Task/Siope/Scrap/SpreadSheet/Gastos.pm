@@ -159,7 +159,8 @@ async sub get_data_p($self) {
     Mojo::Exception->throw($err_msg);
   }
 
-  unless ( (my $content = $tx->result->headers->content_type) =~ /excel/i ) {
+  unless ( (my $content = $tx->result->headers->content_type) =~
+           m{excel|spreadsheetml|officedocument|application/x-msexcel|octet-stream}i ) {
     Mojo::Exception->throw(
       sprintf("Erro API não retornou um arquivo excel (content-type: %s)", $content)
     );

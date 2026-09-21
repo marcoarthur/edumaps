@@ -25,7 +25,8 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode contextualizar os recursos frente à rede e ao desempenho.
 - Sistema pode buscar, sob demanda e em segundo plano, os dados do **SIOPE**
   (remuneração municipal) de um ano que ainda não está disponível — para escolas
-  da rede municipal, a partir do painel financeiro.
+  da rede municipal, a partir do painel financeiro. O progresso é acompanhado em
+  tempo real, inclusive quando a busca falha.
 - Sistema pode apoiar a prestação de contas e o planejamento orçamentário.
 
 ## Valor

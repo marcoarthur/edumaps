@@ -24,6 +24,8 @@ $tag <monitoramento de Minion::Job>
   my $mock_job = Test2::Mock->new(
     class => 'Minion::Job',
     override => [
+      # $loop_count é avançado pelo on_progress (1 leitura de info por poll).
+      # loop_count 1 -> active 40%, 2 -> active 50%, 3+ -> finished 100%
       info => sub {
         if ($loop_count == 1) {
           return { id => 123, state => 'active', notes => { progress => { percent => 40 } } };
@@ -44,8 +46,7 @@ $tag <monitoramento de Minion::Job>
     class => 'Minion',
     override => [
       job => sub ($, $id) {
-        return $id == 123 ? bless({}, 'Minion::Job') : undef;
-      }
+        return $id == 123 ? bless({}, 'Minion::Job') : undef;      }
     ]
   );
 

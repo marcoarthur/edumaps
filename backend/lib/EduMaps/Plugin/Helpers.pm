@@ -76,17 +76,24 @@ sub _add_helpers($self, $app) {
 sub _monitor_minion_job($c, $args) {
   my $watch = $c->minion->job($args->{job_id});
   return unless $watch;
-  return if $watch->info->{state} eq 'finished';
+  return if $watch->info->{state} =~ /^(?:finished|failed)$/;
   my $finish_cb = $args->{on_finish};
   my $weaked = $c;
   weaken($weaked);
   my $monitor;
 
-  # remove monitor e chama callback passando resultado
+  # remove monitor e chama callback passando resultado (em job failed o
+  # `result` é vazio e o erro fica em `error` — sintetiza um result de erro)
   $c->on(
     finish => sub {
       Mojo::IOLoop->remove($monitor) if $monitor;
-      $finish_cb->($watch->info->{result}) if $finish_cb;
+      return unless $finish_cb;
+      my $info = $watch->info;
+      my $result = $info->{result};
+      if (!defined $result && ($info->{state} // '') eq 'failed') {
+        $result = { error => $info->{error} // 'job failed' };
+      }
+      $finish_cb->($result);
     }
   );
 
@@ -111,9 +118,16 @@ sub _monitor_minion_job($c, $args) {
         $current_info->{id}, $state, ($progress->{percent} // 0)
       );
 
-      $args->{on_progress}->({type => 'progress', text => encode_json($progress)});
+      my $terminal = $state =~ /^(?:finished|failed)$/;
 
-      $weaked->finish if ($watch->info->{state} eq 'finished' or $progress->{percent} >= COMPLETE_PERCENT);
+      # Emite progresso enquanto o job roda; em estado terminal apenas encerra
+      # o stream (finished E failed) — antes só encerrava em finished,
+      # deixando o cliente SSE pendurado quando o job falhava.
+      $args->{on_progress}->({type => 'progress', text => encode_json($progress)})
+        unless $terminal;
+
+      $weaked->finish if $terminal;
+      $weaked->finish if $progress->{percent} >= COMPLETE_PERCENT;
       $weaked->finish if $msg_count++ >= MSG_SENT_LIMIT;
     }
   );
