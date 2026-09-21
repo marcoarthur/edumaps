@@ -242,7 +242,8 @@ sub payroll_dates($self, $params) {
 # ---------------------------------------------------------------------------
 # SIOPE (remuneração municipal): rede da escola, município e anos já baixados.
 # Só a rede municipal tem dados (o SIOPE é o agregado do município). A unidade
-# do download é o código antigo do IBGE (6 dígitos) = prefixo do cod_inep.
+# do download é o código antigo do IBGE (6 dígitos) do MUNICÍPIO da escola —
+# não o prefixo do cod_inep.
 # ---------------------------------------------------------------------------
 
 sub _rede_escola($self, $cod_inep) {
@@ -270,18 +271,49 @@ sub _siope_anos_presentes($self, $cod_municipio) {
   return [ map { $_->[0] + 0 } @$rows ];
 }
 
+# Código antigo do IBGE (6 dígitos) do município da escola. NÃO é o prefixo do
+# cod_inep (ex.: INEP 51065592 é de Cuiabá, cujo código antigo é 510340).
+# Fonte primária: clean.censo_escolas.co_municipio (7 dígitos) -> 6 dígitos.
+# Fallback: nome+UF da escola curada mapeados em raw.br_municipios_2024.
+sub _cod_municipio_escola($self, $cod_inep) {
+  my $dbh = $self->schema->storage->dbh;
+
+  my ($co_mun) = $dbh->selectrow_array(
+    'SELECT co_municipio FROM clean.censo_escolas WHERE co_entidade = ? LIMIT 1',
+    undef, $cod_inep,
+  );
+  return substr("$co_mun", 0, 6) if defined $co_mun;
+
+  my ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT municipio, uf FROM clean.escolas WHERE codigo_inep = ? LIMIT 1',
+    undef, $cod_inep,
+  );
+  return undef unless defined $nome && defined $uf;
+
+  my $cd = eval {
+    my ($v) = $dbh->selectrow_array(
+      'SELECT cd_mun FROM raw.br_municipios_2024
+       WHERE nm_mun ILIKE ? AND sigla_uf = ? LIMIT 1',
+      undef, $nome, $uf,
+    );
+    $v;
+  };
+  return defined $cd ? substr("$cd", 0, 6) : undef;
+}
+
 # Metadados do SIOPE para uma escola (usado pelo painel financeiro).
 sub siope_status($self, $cod_inep) {
   my $rede          = $self->_rede_escola($cod_inep);
-  my $cod_municipio = substr($cod_inep, 0, 6);
+  my $cod_municipio = $self->_cod_municipio_escola($cod_inep);
   my $eh_municipal  = defined $rede && $rede =~ /municipal/i;
+  my $pode          = $eh_municipal && defined $cod_municipio;
 
   return {
     escola_existe  => defined $rede ? 1 : 0,
     rede           => $rede,
-    habilitado     => $eh_municipal ? 1 : 0,
+    habilitado     => $pode ? 1 : 0,
     cod_municipio  => $cod_municipio,
-    anos_presentes => $eh_municipal ? $self->_siope_anos_presentes($cod_municipio) : [],
+    anos_presentes => $pode ? $self->_siope_anos_presentes($cod_municipio) : [],
   };
 }
 

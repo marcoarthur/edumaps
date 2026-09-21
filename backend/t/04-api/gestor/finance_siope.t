@@ -17,9 +17,10 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.remuneracao_municipal')"
 );
 
-my $INEP_MUN = '77777750';   # municipal
-my $INEP_EST = '66666640';   # estadual
-my $MUN      = substr($INEP_MUN, 0, 6);  # código antigo do município
+my $INEP_MUN = '77770050';   # municipal (prefixo 777700 != município)
+my $INEP_EST = '66660040';   # estadual
+my $CO_MUN   = '7777775';    # código IBGE (7 dígitos) do município
+my $MUN      = '777777';     # código antigo (6 dígitos) usado no SIOPE
 my $SENHA    = 'senha123';
 my $EMAIL    = sprintf 'fin.a.%d@edumaps.test', $$;
 my $OEMAIL   = sprintf 'fin.b.%d@edumaps.test', $$;
@@ -33,8 +34,8 @@ if ($has_tables) {
   for my $inep ($INEP_MUN, $INEP_EST) {
     $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ? AND nu_ano_censo = 2025', {}, $inep);
   }
-  $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia)
-            VALUES (2025, ?, ?, 3)', {}, $INEP_MUN, 'Escola Municipal SIOPE');
+  $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio)
+            VALUES (2025, ?, ?, 3, ?)', {}, $INEP_MUN, 'Escola Municipal SIOPE', $CO_MUN);
   $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia)
             VALUES (2025, ?, ?, 2)', {}, $INEP_EST, 'Escola Estadual SIOPE');
 }
