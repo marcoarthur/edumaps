@@ -122,3 +122,43 @@ export const DOCUMENTOS_RELACAO = [
     created_at: "2026-09-15T10:00:00",
   },
 ];
+
+export const TAREFAS_RELACAO = [
+  {
+    id: 1,
+    descricao: "Protocolar ofício do telhado",
+    responsavel: "Secretaria",
+    prazo: "2026-10-01",
+    status: "pendente",
+    concluida_em: null,
+    created_at: "2026-09-15T10:00:00",
+    updated_at: "2026-09-15T10:00:00",
+  },
+];
+
+export const INDICADORES_RELACOES = {
+  resumo: {
+    relacoes_abertas: 2,
+    vencidas: 1,
+    concluidas: 0,
+    entidades: 2,
+    tarefas_pendentes: 1,
+    tarefas_vencidas: 0,
+  },
+  por_grupo: [
+    { grupo: "Órgãos públicos", total: 1, vencidas: 1 },
+    { grupo: "Fornecedores", total: 1, vencidas: 0 },
+  ],
+  sem_atividade: [
+    {
+      id: 2,
+      assunto: "Contrato de merenda 2026",
+      entidade_nome: "Alimenta Merenda LTDA",
+      status: "em_andamento",
+      prioridade: "media",
+      prazo: null,
+      ultima_interacao: null,
+    },
+  ],
+  tempo_medio_primeira_interacao_dias: 3,
+};

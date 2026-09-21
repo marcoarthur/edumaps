@@ -301,4 +301,65 @@ subtest 'documentos: upload, download, extensão e exclusão' => sub {
   $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
 };
 
+subtest 'tarefas: checklist da relação' => sub {
+  plan skip_all => 'clean.relacoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $ent = $t->post_ok("/api/gestor/$INEP/relacoes/entidades", $auth->(), json => {
+    nome => 'Tarefas Escola',
+  })->status_is(201)->tx->res->json;
+  my $rel = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Relação com tarefas',
+  })->status_is(201)->tx->res->json;
+
+  my $tarefa = $t->post_ok("/api/gestor/$INEP/relacoes/$rel->{id}/tarefas", $auth->(), json => {
+    descricao => 'Protocolar ofício', responsavel => 'Secretaria', prazo => '2026-10-01',
+  })->status_is(201)->tx->res->json;
+  is $tarefa->{status}, 'pendente', 'tarefa nasce pendente';
+  ok !defined $tarefa->{concluida_em}, 'sem data de conclusão ainda';
+
+  my $det = $t->get_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())
+    ->status_is(200)->tx->res->json;
+  is scalar(@{ $det->{tarefas} }), 1, 'detalhe traz as tarefas';
+
+  my $done = $t->put_ok("/api/gestor/$INEP/relacoes/$rel->{id}/tarefas/$tarefa->{id}", $auth->(), json => {
+    descricao => 'Protocolar ofício', status => 'concluida',
+  })->status_is(200)->tx->res->json;
+  is $done->{status}, 'concluida', 'tarefa concluída';
+  ok defined $done->{concluida_em}, 'data de conclusão preenchida';
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}/tarefas/$tarefa->{id}", $auth->())
+    ->status_is(204);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())->status_is(204);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
+};
+
+subtest 'indicadores: resumo derivado' => sub {
+  plan skip_all => 'clean.relacoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $ent = $t->post_ok("/api/gestor/$INEP/relacoes/entidades", $auth->(), json => {
+    nome => 'Indicadores Escola', tipo => 'Órgãos públicos',
+  })->status_is(201)->tx->res->json;
+  my $rel = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Demanda vencida', prazo => '2020-01-01', prioridade => 'alta',
+  })->status_is(201)->tx->res->json;
+  my $tarefa = $t->post_ok("/api/gestor/$INEP/relacoes/$rel->{id}/tarefas", $auth->(), json => {
+    descricao => 'Tarefa pendente', prazo => '2020-01-01',
+  })->status_is(201)->tx->res->json;
+
+  my $ind = $t->get_ok("/api/gestor/$INEP/relacoes/indicadores", $auth->())
+    ->status_is(200)->tx->res->json;
+  cmp_ok $ind->{resumo}{relacoes_abertas}, '>=', 1, 'conta relações abertas';
+  cmp_ok $ind->{resumo}{vencidas}, '>=', 1, 'conta vencidas';
+  cmp_ok $ind->{resumo}{tarefas_pendentes}, '>=', 1, 'conta tarefas pendentes';
+  cmp_ok $ind->{resumo}{tarefas_vencidas}, '>=', 1, 'conta tarefas vencidas';
+  ok scalar(grep { $_->{grupo} eq 'Órgãos públicos' } @{ $ind->{por_grupo} }), 'agrupa por grupo';
+  ok scalar(grep { $_->{id} == $rel->{id} } @{ $ind->{sem_atividade} }), 'relação sem atividade listada';
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}/tarefas/$tarefa->{id}", $auth->())->status_is(204);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())->status_is(204);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
+};
+
 done_testing;

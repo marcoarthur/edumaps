@@ -123,8 +123,9 @@ sub register($self, $app, @args) {
     ->to('gestor#relacoes_entidade_destroy')->name('gestor_relacoes_entidade_destroy');
 
   $auth->post('/:cod_inep/relacoes' => $check)->to('gestor#relacoes_create')->name('gestor_relacoes_create');
-  # agenda (visão temporal derivada) antes de /:id para ganhar na especificidade.
+  # agenda e indicadores (derivados) antes de /:id para ganhar na especificidade.
   $auth->get('/:cod_inep/relacoes/agenda' => $check)->to('gestor#relacoes_agenda')->name('gestor_relacoes_agenda');
+  $auth->get('/:cod_inep/relacoes/indicadores' => $check)->to('gestor#relacoes_indicadores')->name('gestor_relacoes_indicadores');
   $auth->get('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_show')->name('gestor_relacoes_show');
   $auth->put('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_update')->name('gestor_relacoes_update');
   $auth->delete('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_destroy')->name('gestor_relacoes_destroy');
@@ -146,6 +147,15 @@ sub register($self, $app, @args) {
     ->to('gestor#relacoes_documento_get')->name('gestor_relacoes_documento_get');
   $auth->delete('/:cod_inep/relacoes/:id/documentos/:documento_id' => $doc_check)
     ->to('gestor#relacoes_documento_delete')->name('gestor_relacoes_documento_delete');
+
+  # tarefas (checklist da relação).
+  my $tarefa_check = [ @$check, id => qr/\d+/, tarefa_id => qr/\d+/ ];
+  $auth->post('/:cod_inep/relacoes/:id/tarefas' => $id_check)
+    ->to('gestor#relacoes_tarefa_create')->name('gestor_relacoes_tarefa_create');
+  $auth->put('/:cod_inep/relacoes/:id/tarefas/:tarefa_id' => $tarefa_check)
+    ->to('gestor#relacoes_tarefa_update')->name('gestor_relacoes_tarefa_update');
+  $auth->delete('/:cod_inep/relacoes/:id/tarefas/:tarefa_id' => $tarefa_check)
+    ->to('gestor#relacoes_tarefa_destroy')->name('gestor_relacoes_tarefa_destroy');
 }
 
 1;

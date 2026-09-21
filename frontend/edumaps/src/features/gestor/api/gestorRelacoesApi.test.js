@@ -7,11 +7,14 @@ import { INEP_RELACOES } from "../mocks/relacoesFixtures.js";
 import {
   getRelacoes,
   getAgenda,
+  getIndicadores,
   getRelacao,
   createCategoria,
   createEntidade,
   createRelacao,
   createInteracao,
+  createTarefa,
+  updateTarefa,
   uploadDocumento,
   downloadDocumento,
   updateRelacao,
@@ -105,5 +108,18 @@ describe("gestorRelacoesApi", () => {
     const { blob, filename } = await downloadDocumento(INEP_RELACOES, 1, up.id);
     expect(filename).toBe("oficio.pdf");
     expect(await blob.text()).toBe("conteudo-do-documento-mock");
+  });
+
+  it("monta os indicadores e gerencia tarefas", async () => {
+    const ind = await getIndicadores(INEP_RELACOES);
+    expect(ind.resumo.relacoes_abertas).toBeGreaterThan(0);
+    expect(ind.por_grupo.length).toBeGreaterThan(0);
+
+    const t = await createTarefa(INEP_RELACOES, 1, { descricao: "Protocolar ofício", prazo: "2026-10-01" });
+    expect(t.status).toBe("pendente");
+
+    const done = await updateTarefa(INEP_RELACOES, 1, t.id, { descricao: "Protocolar ofício", status: "concluida" });
+    expect(done.status).toBe("concluida");
+    expect(done.concluida_em).toBeTruthy();
   });
 });

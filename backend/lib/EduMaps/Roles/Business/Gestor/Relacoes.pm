@@ -296,6 +296,7 @@ sub relacao_detail ($self, $id, $cod_inep) {
   my $out = $self->_relacao_out($r);
   $out->{interacoes} = $self->list_interacoes_relacao($id + 0, $cod_inep);
   $out->{documentos} = $self->list_documentos_relacao($id + 0, $cod_inep);
+  $out->{tarefas}    = $self->list_tarefas_relacao($id + 0, $cod_inep);
   return $out;
 }
 
@@ -452,6 +453,177 @@ sub documentos_relacao_caminhos ($self, $relacao_id, $cod_inep) {
      WHERE  d.relacao_id = ? AND r.cod_inep = ?',
     $relacao_id + 0, $cod_inep + 0,
   );
+}
+
+# ---------------------------------------------------------------------------
+# tarefas (checklist da relação)
+# ---------------------------------------------------------------------------
+
+sub list_tarefas_relacao ($self, $relacao_id, $cod_inep) {
+  my $rows = $self->_rows(
+    'SELECT t.id, t.descricao, t.responsavel, t.prazo, t.status, t.concluida_em,
+            t.created_at, t.updated_at
+     FROM   clean.relacoes_tarefas t
+     JOIN   clean.relacoes r ON r.id = t.relacao_id
+     WHERE  t.relacao_id = ? AND r.cod_inep = ?
+     ORDER  BY (t.status = \'concluida\'), t.prazo NULLS LAST, t.id',
+    $relacao_id + 0, $cod_inep + 0,
+  );
+  return [ map { $self->_tarefa_out($_) } @$rows ];
+}
+
+sub create_tarefa_relacao ($self, $relacao_id, $cod_inep, $gestor_id, $params = {}) {
+  my $row = $self->_row(
+    'INSERT INTO clean.relacoes_tarefas (relacao_id, gestor_id, descricao, responsavel, prazo, status)
+     SELECT ?, ?, ?, ?, ?, ?
+     WHERE EXISTS (SELECT 1 FROM clean.relacoes WHERE id = ? AND cod_inep = ?)
+     RETURNING id',
+    $relacao_id + 0, $self->_gestor_bind($gestor_id),
+    $params->{descricao}, $params->{responsavel}, $params->{prazo},
+    $params->{status} // 'pendente',
+    $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_tarefa_row($row->{id}, $relacao_id, $cod_inep);
+}
+
+sub update_tarefa_relacao ($self, $id, $relacao_id, $cod_inep, $params = {}) {
+  my $status = $params->{status} // 'pendente';
+  my $row = $self->_row(
+    'UPDATE clean.relacoes_tarefas t
+     SET    descricao = ?, responsavel = ?, prazo = ?, status = ?,
+            concluida_em = CASE WHEN ? = \'concluida\' THEN COALESCE(t.concluida_em, NOW()) ELSE NULL END,
+            updated_at = NOW()
+     FROM   clean.relacoes r
+     WHERE  t.id = ? AND t.relacao_id = ? AND r.id = t.relacao_id AND r.cod_inep = ?
+     RETURNING t.id',
+    $params->{descricao}, $params->{responsavel}, $params->{prazo}, $status, $status,
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_tarefa_row($row->{id}, $relacao_id, $cod_inep);
+}
+
+sub delete_tarefa_relacao ($self, $id, $relacao_id, $cod_inep) {
+  return $self->_row(
+    'DELETE FROM clean.relacoes_tarefas t
+     USING  clean.relacoes r
+     WHERE  t.id = ? AND t.relacao_id = ? AND r.id = t.relacao_id AND r.cod_inep = ?
+     RETURNING t.id',
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) ? 1 : undef;
+}
+
+sub _tarefa_row ($self, $id, $relacao_id, $cod_inep) {
+  my $r = $self->_row(
+    'SELECT t.id, t.descricao, t.responsavel, t.prazo, t.status, t.concluida_em,
+            t.created_at, t.updated_at
+     FROM   clean.relacoes_tarefas t
+     JOIN   clean.relacoes r ON r.id = t.relacao_id
+     WHERE  t.id = ? AND t.relacao_id = ? AND r.cod_inep = ?',
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_tarefa_out($r);
+}
+
+sub _tarefa_out ($self, $r) {
+  return {
+    id           => $r->{id} + 0,
+    descricao    => $r->{descricao},
+    responsavel  => $r->{responsavel},
+    prazo        => $r->{prazo},
+    status       => $r->{status},
+    concluida_em => $r->{concluida_em},
+    created_at   => $r->{created_at},
+    updated_at   => $r->{updated_at},
+  };
+}
+
+# ---------------------------------------------------------------------------
+# indicadores (derivados de relacoes/interacoes/tarefas — sem tabela nova)
+# ---------------------------------------------------------------------------
+
+sub indicadores_relacoes ($self, $cod_inep) {
+  my $inep = $cod_inep + 0;
+
+  my $resumo = $self->_row(
+    'SELECT
+       COUNT(*) FILTER (WHERE status NOT IN (\'concluida\', \'cancelada\')) AS abertas,
+       COUNT(*) FILTER (WHERE prazo < CURRENT_DATE
+                          AND status NOT IN (\'concluida\', \'cancelada\')) AS vencidas,
+       COUNT(*) FILTER (WHERE status = \'concluida\') AS concluidas
+     FROM clean.relacoes WHERE cod_inep = ?',
+    $inep,
+  ) // {};
+
+  my $entidades = $self->_row(
+    'SELECT COUNT(*) AS n FROM clean.relacoes_entidades WHERE cod_inep = ?', $inep,
+  )->{n};
+
+  my $tarefas = $self->_row(
+    'SELECT
+       COUNT(*) FILTER (WHERE t.status = \'pendente\') AS pendentes,
+       COUNT(*) FILTER (WHERE t.status = \'pendente\' AND t.prazo < CURRENT_DATE) AS vencidas
+     FROM clean.relacoes_tarefas t
+     JOIN clean.relacoes r ON r.id = t.relacao_id
+     WHERE r.cod_inep = ?',
+    $inep,
+  ) // {};
+
+  my $por_grupo = $self->_rows(
+    'SELECT COALESCE(e.tipo, \'Sem grupo\') AS grupo,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE r.prazo < CURRENT_DATE
+                               AND r.status NOT IN (\'concluida\', \'cancelada\')) AS vencidas
+     FROM   clean.relacoes r
+     JOIN   clean.relacoes_entidades e ON e.id = r.entidade_id
+     WHERE  r.cod_inep = ?
+     GROUP  BY 1
+     ORDER  BY total DESC, grupo',
+    $inep,
+  );
+
+  my $sem_atividade = $self->_rows(
+    'SELECT r.id, r.assunto, e.nome AS entidade_nome, r.status, r.prioridade, r.prazo,
+            MAX(i.data) AS ultima_interacao
+     FROM   clean.relacoes r
+     JOIN   clean.relacoes_entidades e ON e.id = r.entidade_id
+     LEFT JOIN clean.relacoes_interacoes i ON i.relacao_id = r.id
+     WHERE  r.cod_inep = ? AND r.status NOT IN (\'concluida\', \'cancelada\')
+     GROUP  BY r.id, e.nome
+     HAVING MAX(i.data) IS NULL OR MAX(i.data) < CURRENT_DATE - INTERVAL \'60 days\'
+     ORDER  BY MAX(i.data) NULLS FIRST, r.prazo NULLS LAST
+     LIMIT  10',
+    $inep,
+  );
+
+  my $tempo = $self->_row(
+    'SELECT ROUND(AVG(f.first_dia - r.created_at::date)) AS dias
+     FROM   clean.relacoes r
+     JOIN  (SELECT relacao_id, MIN(data) AS first_dia
+            FROM clean.relacoes_interacoes GROUP BY relacao_id) f ON f.relacao_id = r.id
+     WHERE  r.cod_inep = ?',
+    $inep,
+  ) // {};
+
+  return {
+    resumo => {
+      relacoes_abertas    => ($resumo->{abertas} // 0) + 0,
+      vencidas            => ($resumo->{vencidas} // 0) + 0,
+      concluidas          => ($resumo->{concluidas} // 0) + 0,
+      entidades           => ($entidades // 0) + 0,
+      tarefas_pendentes   => ($tarefas->{pendentes} // 0) + 0,
+      tarefas_vencidas    => ($tarefas->{vencidas} // 0) + 0,
+    },
+    por_grupo => [ map {
+      { grupo => $_->{grupo}, total => $_->{total} + 0, vencidas => $_->{vencidas} + 0 }
+    } @$por_grupo ],
+    sem_atividade => [ map {
+      { id => $_->{id} + 0, assunto => $_->{assunto}, entidade_nome => $_->{entidade_nome},
+        status => $_->{status}, prioridade => $_->{prioridade}, prazo => $_->{prazo},
+        ultima_interacao => $_->{ultima_interacao} }
+    } @$sem_atividade ],
+    tempo_medio_primeira_interacao_dias =>
+      defined $tempo->{dias} ? $tempo->{dias} + 0 : undef,
+  };
 }
 sub create_relacao ($self, $cod_inep, $gestor_id, $params = {}) {
   my $row = $self->_row(
