@@ -35,6 +35,27 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — Relações Institucionais: Etapa 3 (Agenda institucional)
+
+- **Repo** `edumaps`; branch `feat/relacoes-agenda` (a partir de `origin/main`);
+  commits `5475720` (backend), `c2ab6e0` (frontend). **PR #81** → `main`, merge
+  commit **`cfb31ae`** (2026-09-21). `main` == `origin/main`.
+- **Sem tabela nova**: a agenda é **derivada** de `clean.relacoes`.
+- **backend**: `agenda_relacoes` — relações abertas com prazo e/ou próxima ação,
+  ordenadas por prazo, recorte `de`/`ate`, separação das **sem prazo** e contagem
+  de **vencidas**. Rota `GET /api/gestor/:cod_inep/relacoes/agenda` (literal
+  antes de `/:id`).
+- **frontend**: aba **Agenda** em `/gestor/relacoes` — agrupamento por mês,
+  destaque de vencidas, recorte por data e seção "Sem prazo definido";
+  `getAgenda` + handler MSW.
+- **Testes**: backend `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (59 ok);
+  frontend (container) `npx vitest run src/features/gestor` (111 ok); suite
+  completa 283 ok (4 falhas pré-existentes). Smoke real: `total=2`,
+  `vencidas=1`, 1 com prazo e 1 sem prazo.
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev` (sem migração).
+- **Pendências/próximas etapas**: Etapa 4 (interações + documentos/anexos) e
+  Etapa 5 (tarefas + indicadores/rede).
+
 ## Sessão — Relações Institucionais da escola (entidades + relações, MVP)
 
 - **Repo** `edumaps`; branch `feat/relacoes-gestor` (a partir de `origin/main`);
