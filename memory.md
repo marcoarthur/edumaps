@@ -24,6 +24,11 @@
 > - **Validação (Mojolicious::Validator)**: `$v->error($campo)` devolve
 >   `[$check, $result, @args]`; `->[0]` é o **nome do check** (`like`, `size`…),
 >   não mensagem. Mapear para texto legível antes de renderizar.
+> - **Dois bancos em dev**: o backend em container usa `Database` (LXC, user
+>   `edumaps`/`change_me`, `ssh root@database.edumaps`); os testes locais (`t/`)
+>   usam `ubatexu.lan` (user `devel`/`senhaboa123`). Migrações manuais precisam
+>   ser aplicadas nos **dois**. `num` do Validator só aceita inteiro — decimais
+>   exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar vírgula.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - **[alta] Bug latente em `Roles::Business::School::Profile#info_enrollment`**:
@@ -41,6 +46,44 @@
 > - **[baixa] E2E API**: `?inep=abc` devolve 400 (formato inválido) no endpoint
 >   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
 >   (decisão tomada na rodada; reavaliar se virar padrão).
+
+## Sessão — Painel de Inventário Escolar (recursos e serviços)
+
+- **Repo** `edumaps`; branch `feat/inventario-escolar` (a partir de `origin/main`);
+  commits `eb574c7` (data_pipeline), `331a236` (backend), `a547c20` (frontend).
+  **PR #78** → `main`, merge commit **`dc16c3c`** (2026-09-20). `main` == `origin/main`.
+- **Decisões do usuário**: baseline **derivado do Censo ao vivo** (nunca copiado
+  no banco); itens/serviços **unificados** (tipo vem da categoria); **semear a
+  taxonomia do Censo** (9 categorias); **importar do Censo**; **anexos no v1**
+  (vários por item); obrigatórios `nome`+`categoria` (`quantidade`/`valor`
+  opcionais); **qualquer gestor** edita; sem catálogo global (por escola).
+- **Entregas**:
+  - data_pipeline: `inventario_categorias` (tipo recurso/servico, origem
+    censo/manual, UNIQUE `cod_inep+tipo+lower(nome)`), `inventario_fornecedores`,
+    `inventario_itens` (recursos e serviços, `atributos jsonb` + GIN,
+    `censo_ref` UNIQUE parcial p/ import idempotente) e `inventario_anexos`
+    (vários por item).
+  - backend: `Roles::Business::Gestor::Inventario` — `inventario_censo` (lê
+    `clean.censo_escolas`, 6 grupos), `sincronizar_categorias_censo` (lazy),
+    `importar_censo` (idempotente por `censo_ref`), CRUD de
+    categorias/itens/fornecedores e anexos. Rotas
+    `/api/gestor/:cod_inep/inventario[/...]` (constraints arrayref).
+  - frontend: `/gestor/inventario` (abas Do Censo/Recursos/Serviços/
+    Fornecedores, modais, atributos livres chave-valor, anexos) + link no painel.
+- **Técnica de flexibilidade**: nenhuma coluna nova para criar categoria/item —
+  categorias livres + `atributos jsonb`; arquivos de anexo em `upload_dir`.
+- **Armadilhas**: (1) colisão de métodos de role — `registrar_anexo`/`anexo_row`
+  do Inventário colidiam com Reuniões (Role::Tiny mantém o da **primeira** role);
+  renomeados para `registrar_anexo_item`/`anexo_item_row`/etc. (2) `$anexo_check`
+  com arrayref aninhado quebra constraints (deve ser lista plana). (3) `num` só
+  inteiro (ver convenção). (4) backend de container usa banco `Database` (ver
+  convenção) — migração aplicada em `ubatexu.lan` **e** `Database`.
+- **Testes**: backend `prove -rl t/04-api/pesquisa.t t/04-api/gestor/` (53 ok);
+  frontend (container) `npx vitest run src/features/gestor` (102 ok); smoke real
+  `GET /inventario` (9 categorias + baseline), `POST /importar-censo` → 39 itens,
+  reimport → 0.
+- **Deploy**: migração em `ubatexu.lan` + `Database`; `deploy_backend_dev` +
+  `deploy_frontend_dev`.
 
 ## Sessão — Reuniões e atas do gestor (agenda, contatos e anexos)
 
