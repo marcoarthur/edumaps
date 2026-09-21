@@ -13,6 +13,9 @@ use open ':std', ':encoding(UTF-8)';
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
 
+my $UPLOAD_DIR = "/tmp/edumaps_relacoes_test_$$";
+$t->app->config->{upload_dir} = $UPLOAD_DIR;
+
 my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.relacoes')"
 );
@@ -46,6 +49,7 @@ END {
     $dbh->do('DELETE FROM clean.relacoes_categorias WHERE cod_inep = ?', {}, $inep);
     $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ? AND nu_ano_censo = 2025', {}, $inep);
   }
+  system('rm', '-rf', $UPLOAD_DIR);
 }
 
 my $auth = sub { { Authorization => "Bearer $token" } };
@@ -219,6 +223,81 @@ subtest 'agenda: visão temporal derivada (com e sem prazo)' => sub {
 
   $t->delete_ok("/api/gestor/$INEP/relacoes/$_->{id}", $auth->())->status_is(204)
     for ($futura, $vencida, $sem_prazo);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
+};
+
+subtest 'interações: timeline CRUD no detalhe' => sub {
+  plan skip_all => 'clean.relacoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $ent = $t->post_ok("/api/gestor/$INEP/relacoes/entidades", $auth->(), json => {
+    nome => 'Interações Escola',
+  })->status_is(201)->tx->res->json;
+  my $rel = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Relação com timeline',
+  })->status_is(201)->tx->res->json;
+
+  my $inter = $t->post_ok("/api/gestor/$INEP/relacoes/$rel->{id}/interacoes", $auth->(), json => {
+    data => '2026-09-15', canal => 'reunião', participante => 'Secretaria de Obras',
+    assunto => 'Reunião inicial', resultado => 'Enviar ofício com o pedido',
+  })->status_is(201)->tx->res->json;
+  is $inter->{canal}, 'reunião', 'interação criada';
+
+  my $det = $t->get_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())
+    ->status_is(200)->tx->res->json;
+  is scalar(@{ $det->{interacoes} }), 1, 'detalhe traz a timeline';
+  is $det->{interacoes}[0]{resultado}, 'Enviar ofício com o pedido', 'resultado na timeline';
+
+  my $upd = $t->put_ok("/api/gestor/$INEP/relacoes/$rel->{id}/interacoes/$inter->{id}", $auth->(), json => {
+    assunto => 'Reunião inicial (revisada)', resultado => 'Ofício enviado',
+  })->status_is(200)->tx->res->json;
+  is $upd->{resultado}, 'Ofício enviado', 'interação atualizada';
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}/interacoes/$inter->{id}", $auth->())
+    ->status_is(204);
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())->status_is(204);
+  $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
+};
+
+subtest 'documentos: upload, download, extensão e exclusão' => sub {
+  plan skip_all => 'clean.relacoes ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $ent = $t->post_ok("/api/gestor/$INEP/relacoes/entidades", $auth->(), json => {
+    nome => 'Documentos Escola',
+  })->status_is(201)->tx->res->json;
+  my $rel = $t->post_ok("/api/gestor/$INEP/relacoes", $auth->(), json => {
+    entidade_id => $ent->{id}, assunto => 'Relação com documentos',
+  })->status_is(201)->tx->res->json;
+
+  my $up = $t->post_ok("/api/gestor/$INEP/relacoes/$rel->{id}/documentos",
+    { Authorization => "Bearer $token" },
+    form => {
+      arquivo   => { content => '%PDF-1.4 ofício', filename => 'oficio.pdf' },
+      referencia => 'OF-123',
+    })->status_is(201)->tx->res->json;
+  my ($doc) = @{ $up->{documentos} };
+  is $doc->{nome_original}, 'oficio.pdf', 'documento registrado';
+  is $doc->{referencia}, 'OF-123', 'referência preservada';
+  is $doc->{mime}, 'application/pdf', 'mime inferido';
+
+  my $det = $t->get_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())
+    ->status_is(200)->tx->res->json;
+  is scalar(@{ $det->{documentos} }), 1, 'detalhe traz os documentos';
+
+  $t->get_ok("/api/gestor/$INEP/relacoes/$rel->{id}/documentos/$doc->{id}", $auth->())
+    ->status_is(200)->content_is('%PDF-1.4 ofício');
+
+  $t->post_ok("/api/gestor/$INEP/relacoes/$rel->{id}/documentos",
+    { Authorization => "Bearer $token" },
+    form => { arquivo => { content => 'MZ', filename => 'malicioso.exe' } })
+    ->status_is(400)->json_has('/error');
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}/documentos/$doc->{id}", $auth->())
+    ->status_is(204);
+
+  $t->delete_ok("/api/gestor/$INEP/relacoes/$rel->{id}", $auth->())->status_is(204);
   $t->delete_ok("/api/gestor/$INEP/relacoes/entidades/$ent->{id}", $auth->())->status_is(204);
 };
 

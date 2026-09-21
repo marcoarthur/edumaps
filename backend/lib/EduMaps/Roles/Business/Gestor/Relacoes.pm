@@ -293,7 +293,165 @@ sub agenda_relacoes ($self, $cod_inep, $filtros = {}) {
 sub relacao_detail ($self, $id, $cod_inep) {
   my $r = $self->_row($self->_relacao_select . ' WHERE r.id = ? AND r.cod_inep = ?',
     $id + 0, $cod_inep + 0) or return;
-  return $self->_relacao_out($r);
+  my $out = $self->_relacao_out($r);
+  $out->{interacoes} = $self->list_interacoes_relacao($id + 0, $cod_inep);
+  $out->{documentos} = $self->list_documentos_relacao($id + 0, $cod_inep);
+  return $out;
+}
+
+sub relacao_state ($self, $id, $cod_inep) {
+  return $self->_row(
+    'SELECT id, cod_inep FROM clean.relacoes WHERE id = ? AND cod_inep = ?',
+    $id + 0, $cod_inep + 0,
+  );
+}
+
+# ---------------------------------------------------------------------------
+# interações (timeline da relação)
+# ---------------------------------------------------------------------------
+
+sub list_interacoes_relacao ($self, $relacao_id, $cod_inep) {
+  my $rows = $self->_rows(
+    'SELECT i.id, i.data, i.canal, i.participante, i.assunto, i.descricao,
+            i.resultado, i.created_at, i.updated_at
+     FROM   clean.relacoes_interacoes i
+     JOIN   clean.relacoes r ON r.id = i.relacao_id
+     WHERE  i.relacao_id = ? AND r.cod_inep = ?
+     ORDER  BY i.data DESC NULLS LAST, i.id DESC',
+    $relacao_id + 0, $cod_inep + 0,
+  );
+  return [ map { $self->_interacao_out($_) } @$rows ];
+}
+
+sub create_interacao_relacao ($self, $relacao_id, $cod_inep, $gestor_id, $params = {}) {
+  my $row = $self->_row(
+    'INSERT INTO clean.relacoes_interacoes
+       (relacao_id, gestor_id, data, canal, participante, assunto, descricao, resultado)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?
+     WHERE EXISTS (SELECT 1 FROM clean.relacoes WHERE id = ? AND cod_inep = ?)
+     RETURNING id',
+    $relacao_id + 0, $self->_gestor_bind($gestor_id),
+    $params->{data}, $params->{canal}, $params->{participante},
+    $params->{assunto}, $params->{descricao}, $params->{resultado},
+    $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_interacao_row($row->{id}, $relacao_id, $cod_inep);
+}
+
+sub update_interacao_relacao ($self, $id, $relacao_id, $cod_inep, $params = {}) {
+  my $row = $self->_row(
+    'UPDATE clean.relacoes_interacoes i
+     SET    data = ?, canal = ?, participante = ?, assunto = ?, descricao = ?,
+            resultado = ?, updated_at = NOW()
+     FROM   clean.relacoes r
+     WHERE  i.id = ? AND i.relacao_id = ? AND r.id = i.relacao_id AND r.cod_inep = ?
+     RETURNING i.id',
+    $params->{data}, $params->{canal}, $params->{participante},
+    $params->{assunto}, $params->{descricao}, $params->{resultado},
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_interacao_row($row->{id}, $relacao_id, $cod_inep);
+}
+
+sub delete_interacao_relacao ($self, $id, $relacao_id, $cod_inep) {
+  return $self->_row(
+    'DELETE FROM clean.relacoes_interacoes i
+     USING  clean.relacoes r
+     WHERE  i.id = ? AND i.relacao_id = ? AND r.id = i.relacao_id AND r.cod_inep = ?
+     RETURNING i.id',
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) ? 1 : undef;
+}
+
+sub _interacao_row ($self, $id, $relacao_id, $cod_inep) {
+  my $r = $self->_row(
+    'SELECT i.id, i.data, i.canal, i.participante, i.assunto, i.descricao,
+            i.resultado, i.created_at, i.updated_at
+     FROM   clean.relacoes_interacoes i
+     JOIN   clean.relacoes r ON r.id = i.relacao_id
+     WHERE  i.id = ? AND i.relacao_id = ? AND r.cod_inep = ?',
+    $id + 0, $relacao_id + 0, $cod_inep + 0,
+  ) or return;
+  return $self->_interacao_out($r);
+}
+
+sub _interacao_out ($self, $r) {
+  return {
+    id           => $r->{id} + 0,
+    data         => $r->{data},
+    canal        => $r->{canal},
+    participante => $r->{participante},
+    assunto      => $r->{assunto},
+    descricao    => $r->{descricao},
+    resultado    => $r->{resultado},
+    created_at   => $r->{created_at},
+    updated_at   => $r->{updated_at},
+  };
+}
+
+# ---------------------------------------------------------------------------
+# documentos (anexos da relação; arquivo físico no upload_dir)
+# ---------------------------------------------------------------------------
+
+sub list_documentos_relacao ($self, $relacao_id, $cod_inep) {
+  my $rows = $self->_rows(
+    'SELECT d.id, d.tipo, d.data, d.referencia, d.nome_original, d.mime,
+            d.tamanho, d.created_at
+     FROM   clean.relacoes_documentos d
+     JOIN   clean.relacoes r ON r.id = d.relacao_id
+     WHERE  d.relacao_id = ? AND r.cod_inep = ?
+     ORDER  BY d.created_at DESC, d.id DESC',
+    $relacao_id + 0, $cod_inep + 0,
+  );
+  return [ map {
+    { id => $_->{id} + 0, tipo => $_->{tipo}, data => $_->{data},
+      referencia => $_->{referencia}, nome_original => $_->{nome_original},
+      mime => $_->{mime}, tamanho => $_->{tamanho} + 0, created_at => $_->{created_at} }
+  } @$rows ];
+}
+
+sub registrar_documento_relacao ($self, $relacao_id, $cod_inep, $gestor_id, $info = {}) {
+  return unless $self->relacao_state($relacao_id, $cod_inep);
+  my $row = $self->_row(
+    'INSERT INTO clean.relacoes_documentos
+       (relacao_id, gestor_id, tipo, data, referencia, nome_original, caminho, mime, tamanho)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     RETURNING id',
+    $relacao_id + 0, $self->_gestor_bind($gestor_id),
+    $info->{tipo}, $info->{data}, $info->{referencia},
+    $info->{nome_original}, $info->{caminho}, $info->{mime}, $info->{tamanho} + 0,
+  ) or return;
+  return { id => $row->{id} + 0, documentos => $self->list_documentos_relacao($relacao_id, $cod_inep) };
+}
+
+sub documento_relacao_row ($self, $relacao_id, $cod_inep, $documento_id) {
+  return $self->_row(
+    'SELECT d.id, d.nome_original, d.caminho, d.mime, d.tamanho
+     FROM   clean.relacoes_documentos d
+     JOIN   clean.relacoes r ON r.id = d.relacao_id
+     WHERE  d.id = ? AND d.relacao_id = ? AND r.cod_inep = ?',
+    $documento_id + 0, $relacao_id + 0, $cod_inep + 0,
+  );
+}
+
+sub delete_documento_relacao ($self, $relacao_id, $cod_inep, $documento_id) {
+  return $self->_row(
+    'DELETE FROM clean.relacoes_documentos d
+     USING  clean.relacoes r
+     WHERE  d.id = ? AND d.relacao_id = ? AND r.id = d.relacao_id AND r.cod_inep = ?
+     RETURNING d.caminho',
+    $documento_id + 0, $relacao_id + 0, $cod_inep + 0,
+  );
+}
+
+sub documentos_relacao_caminhos ($self, $relacao_id, $cod_inep) {
+  return $self->_rows(
+    'SELECT d.caminho
+     FROM   clean.relacoes_documentos d
+     JOIN   clean.relacoes r ON r.id = d.relacao_id
+     WHERE  d.relacao_id = ? AND r.cod_inep = ?',
+    $relacao_id + 0, $cod_inep + 0,
+  );
 }
 sub create_relacao ($self, $cod_inep, $gestor_id, $params = {}) {
   my $row = $self->_row(

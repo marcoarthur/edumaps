@@ -6,6 +6,8 @@ import {
   CATEGORIAS_RELACOES,
   ENTIDADES_RELACOES,
   RELACOES_RELACOES,
+  INTERACOES_RELACAO,
+  DOCUMENTOS_RELACAO,
   INEP_RELACOES,
 } from "./relacoesFixtures.js";
 import { SESSION_TOKEN } from "./fixtures.js";
@@ -28,8 +30,12 @@ function stateFor(inep) {
     mem.set(inep, {
       categorias: clone(CATEGORIAS_RELACOES),
       entidades: clone(ENTIDADES_RELACOES),
-      relacoes: clone(RELACOES_RELACOES),
-      proximos: { categoria: 100, entidade: 100, relacao: 500 },
+      relacoes: clone(RELACOES_RELACOES).map((r) => ({
+        ...r,
+        interacoes: r.id === 1 ? clone(INTERACOES_RELACAO) : [],
+        documentos: r.id === 1 ? clone(DOCUMENTOS_RELACAO) : [],
+      })),
+      proximos: { categoria: 100, entidade: 100, relacao: 500, interacao: 100, documento: 100 },
     });
   }
   return mem.get(inep);
@@ -43,8 +49,9 @@ function entTipo(estab, id) {
 }
 
 function relacaoOut(estab, r) {
+  const { interacoes, documentos, ...rest } = r;
   return {
-    ...r,
+    ...rest,
     entidade_nome: entNome(estab, r.entidade_id),
     entidade_tipo: entTipo(estab, r.entidade_id),
   };
@@ -278,7 +285,123 @@ export const gestorRelacoesHandlers = [
     const estab = stateFor(params.cod_inep);
     const rel = estab.relacoes.find((r) => r.id === Number(params.id));
     if (!rel) return HttpResponse.json({ error: "Relação não encontrada" }, { status: 404 });
-    return HttpResponse.json(relacaoOut(estab, rel));
+    return HttpResponse.json({
+      ...relacaoOut(estab, rel),
+      interacoes: rel.interacoes ?? [],
+      documentos: rel.documentos ?? [],
+    });
+  }),
+
+  // --------------------------- interações ---------------------------------
+  http.post(`${BASE}/:id/interacoes`, async ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const body = await request.json();
+    if (!body.assunto || !body.assunto.trim()) {
+      return HttpResponse.json({ error: "Informe o assunto da interação." }, { status: 400 });
+    }
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (!rel) return HttpResponse.json({ error: "Relação não encontrada" }, { status: 404 });
+    const inter = {
+      id: estab.proximos.interacao++,
+      data: body.data ?? null,
+      canal: body.canal ?? null,
+      participante: body.participante ?? null,
+      assunto: body.assunto,
+      descricao: body.descricao ?? null,
+      resultado: body.resultado ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    rel.interacoes = [...(rel.interacoes ?? []), inter];
+    return HttpResponse.json(inter, { status: 201 });
+  }),
+
+  http.put(`${BASE}/:id/interacoes/:interacao_id`, async ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const body = await request.json();
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    const inter = (rel?.interacoes ?? []).find((i) => i.id === Number(params.interacao_id));
+    if (!inter) return HttpResponse.json({ error: "Interação não encontrada" }, { status: 404 });
+    Object.assign(inter, {
+      data: body.data ?? null,
+      canal: body.canal ?? null,
+      participante: body.participante ?? null,
+      assunto: body.assunto,
+      descricao: body.descricao ?? null,
+      resultado: body.resultado ?? null,
+      updated_at: new Date().toISOString(),
+    });
+    return HttpResponse.json(inter);
+  }),
+
+  http.delete(`${BASE}/:id/interacoes/:interacao_id`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (rel) rel.interacoes = (rel.interacoes ?? []).filter((i) => i.id !== Number(params.interacao_id));
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // --------------------------- documentos ---------------------------------
+  http.post(`${BASE}/:id/documentos`, async ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (!rel) return HttpResponse.json({ error: "Relação não encontrada" }, { status: 404 });
+
+    const form = await request.formData();
+    const arquivo = form.get("arquivo");
+    const nomePart = form.get("_original_nome");
+    const file = typeof arquivo === "string" ? null : arquivo;
+    const nome = (nomePart?.toString() || file?.name || file?.filename || "").split("\\").pop().split("/").pop();
+    if (!file || !nome) {
+      return HttpResponse.json({ error: 'O documento é obrigatório (campo "arquivo").' }, { status: 400 });
+    }
+    const ext = (nome.split(".").pop() ?? "").toLowerCase();
+    const permitidas = ["pdf", "docx", "xlsx", "png", "jpg", "jpeg", "txt"];
+    if (!permitidas.includes(ext)) {
+      return HttpResponse.json({ error: "Extensão não permitida. Use PDF, DOCX, XLSX, PNG, JPG ou TXT." }, { status: 400 });
+    }
+    const doc = {
+      id: estab.proximos.documento++,
+      tipo: form.get("tipo")?.toString() || null,
+      data: form.get("data")?.toString() || null,
+      referencia: form.get("referencia")?.toString() || null,
+      nome_original: nome,
+      mime: "application/octet-stream",
+      tamanho: file.size ?? 0,
+      created_at: new Date().toISOString(),
+    };
+    rel.documentos = [doc, ...(rel.documentos ?? [])];
+    return HttpResponse.json({ id: doc.id, documentos: rel.documentos }, { status: 201 });
+  }),
+
+  http.get(`${BASE}/:id/documentos/:documento_id`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    const doc = (rel?.documentos ?? []).find((d) => d.id === Number(params.documento_id));
+    if (!doc) return HttpResponse.json({ error: "Documento não encontrado" }, { status: 404 });
+    return new HttpResponse("conteudo-do-documento-mock", {
+      status: 200,
+      headers: { "Content-Disposition": `attachment; filename="${doc.nome_original}"` },
+    });
+  }),
+
+  http.delete(`${BASE}/:id/documentos/:documento_id`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const rel = estab.relacoes.find((r) => r.id === Number(params.id));
+    if (rel) rel.documentos = (rel.documentos ?? []).filter((d) => d.id !== Number(params.documento_id));
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.put(`${BASE}/:id`, async ({ request, params }) => {

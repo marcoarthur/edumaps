@@ -413,6 +413,7 @@
               <div class="flex items-center gap-1">
                 <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_STATUS_BADGE[r.status] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_STATUS_LABELS[r.status] ?? r.status}</span>
                 <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_PRIORIDADE_BADGE[r.prioridade] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade}</span>
+                <a href={`/gestor/relacoes/${r.id}`} class="px-3 py-1.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100">Abrir</a>
                 <button type="button" onclick={() => abrirRelacao(r)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
                 <button type="button" onclick={() => excluirRelacao(r)} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
               </div>

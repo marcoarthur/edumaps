@@ -94,3 +94,31 @@ export const RELACOES_RELACOES = [
     updated_at: "2026-09-20T10:00:00",
   },
 ];
+
+// Interações e documentos da relação 1 (timeline do detalhe).
+export const INTERACOES_RELACAO = [
+  {
+    id: 1,
+    data: "2026-09-15",
+    canal: "reunião",
+    participante: "Secretaria de Obras",
+    assunto: "Reunião inicial",
+    descricao: "Apresentamos o problema do telhado.",
+    resultado: "Enviar ofício com o pedido",
+    created_at: "2026-09-15T10:00:00",
+    updated_at: "2026-09-15T10:00:00",
+  },
+];
+
+export const DOCUMENTOS_RELACAO = [
+  {
+    id: 1,
+    tipo: "ofício",
+    data: "2026-09-15",
+    referencia: "OF-123",
+    nome_original: "oficio-telhado.pdf",
+    mime: "application/pdf",
+    tamanho: 1234,
+    created_at: "2026-09-15T10:00:00",
+  },
+];
