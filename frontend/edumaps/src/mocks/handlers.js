@@ -6,6 +6,7 @@ import { clusterGeotagHandlers } from "@/features/cluster-geotag/mocks/handlers.
 import { gestorPesquisasHandlers } from "@/features/gestor/mocks/handlers.js";
 import { gestorReunioesHandlers } from "@/features/gestor/mocks/reunioesHandlers.js";
 import { gestorInventarioHandlers } from "@/features/gestor/mocks/inventarioHandlers.js";
+import { gestorRelacoesHandlers } from "@/features/gestor/mocks/relacoesHandlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -14,4 +15,5 @@ export const handlers = [
   ...gestorPesquisasHandlers,
   ...gestorReunioesHandlers,
   ...gestorInventarioHandlers,
+  ...gestorRelacoesHandlers,
 ];

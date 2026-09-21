@@ -70,6 +70,12 @@
         >
           📦 Inventário
         </a>
+        <a
+          href="/gestor/relacoes"
+          class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+        >
+          🤝 Relações
+        </a>
       {/if}
       <button
         type="button"
