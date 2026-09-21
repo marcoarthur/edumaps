@@ -941,6 +941,272 @@ sub _dec($self, $value) {
 }
 
 # ---------------------------------------------------------------------------
+# relações institucionais (entidades externas + relações)
+# ---------------------------------------------------------------------------
+
+sub relacoes_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $inep  = $self->param('cod_inep');
+  $model->sincronizar_categorias_padrao($inep);
+  $self->render(json => {
+    categorias => $model->list_relacoes_categorias($inep),
+    entidades  => $model->list_entidades($inep),
+    relacoes   => $model->list_relacoes($inep, {
+      entidade_id => $self->param('entidade_id'),
+      finalidade  => $self->param('finalidade'),
+      status      => $self->param('status'),
+      prioridade  => $self->param('prioridade'),
+      vencidas    => $self->param('vencidas'),
+      q           => $self->param('q'),
+    }),
+  });
+}
+
+# --- categorias ------------------------------------------------------------
+
+sub relacoes_categoria_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_relacao_categoria_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $cat = $self->_guard_api(sub {
+    $model->create_relacoes_categoria($self->param('cod_inep'), $self->stash('gestor')->{id}, {
+      eixo => $v->param('eixo'), nome => $v->param('nome'),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não pôde ser criada') unless $cat;
+  $self->render(status => 201, json => $cat);
+}
+
+sub relacoes_categoria_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_relacao_categoria_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $cat = $self->_guard_api(sub {
+    $model->update_relacoes_categoria($self->param('id'), $self->param('cod_inep'), {
+      eixo => $v->param('eixo'), nome => $v->param('nome'),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não encontrada') unless $cat;
+  $self->render(json => $cat);
+}
+
+sub relacoes_categoria_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ok = $self->_guard_api(sub {
+    $model->delete_relacoes_categoria($self->param('id'), $self->param('cod_inep'));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não encontrada') unless $ok;
+  $self->render(status => 204, text => '');
+}
+
+# --- entidades externas ----------------------------------------------------
+
+sub relacoes_entidade_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  $self->render(json => $model->list_entidades($self->param('cod_inep'), {
+    tipo => $self->param('tipo'),
+    q    => $self->param('q'),
+  }));
+}
+
+sub relacoes_entidade_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ent = $model->entidade_detail($self->param('id'), $self->param('cod_inep'));
+  return $self->_render_not_found('Entidade não encontrada') unless $ent;
+  $self->render(json => $ent);
+}
+
+sub relacoes_entidade_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_entidade_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ent = $self->_guard_api(sub {
+    $model->create_entidade($self->param('cod_inep'), $self->stash('gestor')->{id},
+      $self->_entidade_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Entidade não pôde ser criada') unless $ent;
+  $self->render(status => 201, json => $ent);
+}
+
+sub relacoes_entidade_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_entidade_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ent = $self->_guard_api(sub {
+    $model->update_entidade($self->param('id'), $self->param('cod_inep'),
+      $self->_entidade_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Entidade não encontrada') unless $ent;
+  $self->render(json => $ent);
+}
+
+sub relacoes_entidade_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ok = $self->_guard_api(sub {
+    $model->delete_entidade($self->param('id'), $self->param('cod_inep'));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Entidade não encontrada') unless $ok;
+  $self->render(status => 204, text => '');
+}
+
+# --- relações --------------------------------------------------------------
+
+sub relacoes_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $rel = $model->relacao_detail($self->param('id'), $self->param('cod_inep'));
+  return $self->_render_not_found('Relação não encontrada') unless $rel;
+  $self->render(json => $rel);
+}
+
+sub relacoes_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_relacao_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Entidade não encontrada para esta escola')
+    unless $model->entidade_state($v->param('entidade_id'), $self->param('cod_inep'));
+
+  my $rel = $self->_guard_api(sub {
+    $model->create_relacao($self->param('cod_inep'), $self->stash('gestor')->{id},
+      $self->_relacao_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Relação não pôde ser criada') unless $rel;
+  $self->render(status => 201, json => $rel);
+}
+
+sub relacoes_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_relacao_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Entidade não encontrada para esta escola')
+    unless $model->entidade_state($v->param('entidade_id'), $self->param('cod_inep'));
+
+  my $rel = $self->_guard_api(sub {
+    $model->update_relacao($self->param('id'), $self->param('cod_inep'),
+      $self->_relacao_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Relação não encontrada') unless $rel;
+  $self->render(json => $rel);
+}
+
+sub relacoes_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Relação não encontrada')
+    unless $model->delete_relacao($self->param('id'), $self->param('cod_inep'));
+  $self->render(status => 204, text => '');
+}
+
+# --- validação das relações ------------------------------------------------
+
+sub _relacao_categoria_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('eixo', 'trim')->like(qr/^(?:entidade|finalidade)$/);
+  $v->required('nome', 'trim')->size(1, 80);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $v;
+}
+
+sub _entidade_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('nome', 'trim')->size(1, 120);
+  $v->optional('tipo', 'trim')->size(1, 60);
+  $v->optional('identificador', 'trim')->size(1, 40);
+  $v->optional('responsavel_externo', 'trim')->size(1, 120);
+  $v->optional('email', 'trim')->like(EMAIL_RE);
+  $v->optional('telefone', 'trim')->size(8, 20);
+  $v->optional('site', 'trim')->size(1, 300);
+  $v->optional('endereco', 'trim')->size(0, 200);
+  $v->optional('observacoes', 'trim')->size(0, 2000);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $self->_check_atributos($input) ? $v : undef;
+}
+
+sub _relacao_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('entidade_id', 'trim')->num;
+  $v->required('assunto', 'trim')->size(1, 160);
+  $v->optional('finalidade', 'trim')->size(1, 60);
+  $v->optional('descricao', 'trim')->size(0, 2000);
+  $v->optional('status', 'trim')->like(qr/^(?:aberta|em_andamento|aguardando|concluida|cancelada)$/);
+  $v->optional('prioridade', 'trim')->like(qr/^(?:baixa|media|alta|urgente)$/);
+  $v->optional('responsavel_interno', 'trim')->size(1, 120);
+  $v->optional('inicio', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('proxima_acao', 'trim')->size(0, 300);
+  $v->optional('prazo', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $self->_check_atributos($input) ? $v : undef;
+}
+
+sub _entidade_params($self, $v, $input) {
+  return {
+    tipo                => $self->_blank($v->param('tipo')),
+    nome                => $v->param('nome'),
+    identificador       => $self->_blank($v->param('identificador')),
+    responsavel_externo => $self->_blank($v->param('responsavel_externo')),
+    email               => $self->_blank($v->param('email')),
+    telefone            => $self->_blank($v->param('telefone')),
+    site                => $self->_blank($v->param('site')),
+    endereco            => $self->_blank($v->param('endereco')),
+    observacoes         => $self->_blank($v->param('observacoes')),
+    atributos           => $input->{atributos},
+  };
+}
+
+sub _relacao_params($self, $v, $input) {
+  return {
+    entidade_id         => $v->param('entidade_id'),
+    finalidade          => $self->_blank($v->param('finalidade')),
+    assunto             => $v->param('assunto'),
+    descricao           => $self->_blank($v->param('descricao')),
+    status              => $self->_blank($v->param('status')) // 'aberta',
+    prioridade          => $self->_blank($v->param('prioridade')) // 'media',
+    responsavel_interno => $self->_blank($v->param('responsavel_interno')),
+    inicio              => $self->_blank($v->param('inicio')),
+    proxima_acao        => $self->_blank($v->param('proxima_acao')),
+    prazo               => $self->_blank($v->param('prazo')),
+    atributos           => $input->{atributos},
+  };
+}
+
+# ---------------------------------------------------------------------------
 # helpers de renderização / guarda de erros de banco
 # ---------------------------------------------------------------------------
 
@@ -994,6 +1260,18 @@ sub _render_db_error($self, $err) {
   }
   if ($err =~ /(?:invalid input syntax for type numeric)/) {
     return $self->render(json => { error => 'Quantidade ou valor inválido.' }, status => 400);
+  }
+  if ($err =~ /uq_relacoes_categorias_inep_eixo_nome/) {
+    return $self->render(json => { error => 'Já existe uma categoria com este nome para este eixo.' }, status => 409);
+  }
+  if ($err =~ /uq_relacoes_entidades_inep_nome/) {
+    return $self->render(json => { error => 'Já existe uma entidade com este nome nesta escola.' }, status => 409);
+  }
+  if ($err =~ /relacoes_entidade_id_fkey/) {
+    return $self->render(json => { error => 'Não é possível excluir: a entidade tem relações registradas.' }, status => 409);
+  }
+  if ($err =~ /(?:invalid input syntax for type date)/) {
+    return $self->render(json => { error => 'Data inválida.' }, status => 400);
   }
   $self->render(status => 500, json => { error => 'Erro interno ao salvar.' });
 }

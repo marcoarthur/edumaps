@@ -100,6 +100,32 @@ sub register($self, $app, @args) {
     ->to('gestor#inventario_anexo_get')->name('gestor_inventario_anexo_get');
   $auth->delete('/:cod_inep/inventario/itens/:id/anexos/:anexo_id' => $anexo_check)
     ->to('gestor#inventario_anexo_delete')->name('gestor_inventario_anexo_delete');
+
+  # --- relações institucionais (entidades externas + relações) ------------
+  $auth->get('/:cod_inep/relacoes' => $check)->to('gestor#relacoes_index')->name('gestor_relacoes');
+
+  $auth->post('/:cod_inep/relacoes/categorias' => $check)
+    ->to('gestor#relacoes_categoria_create')->name('gestor_relacoes_categoria_create');
+  $auth->put('/:cod_inep/relacoes/categorias/:id' => $id_check)
+    ->to('gestor#relacoes_categoria_update')->name('gestor_relacoes_categoria_update');
+  $auth->delete('/:cod_inep/relacoes/categorias/:id' => $id_check)
+    ->to('gestor#relacoes_categoria_destroy')->name('gestor_relacoes_categoria_destroy');
+
+  $auth->get('/:cod_inep/relacoes/entidades' => $check)
+    ->to('gestor#relacoes_entidade_index')->name('gestor_relacoes_entidades');
+  $auth->post('/:cod_inep/relacoes/entidades' => $check)
+    ->to('gestor#relacoes_entidade_create')->name('gestor_relacoes_entidade_create');
+  $auth->get('/:cod_inep/relacoes/entidades/:id' => $id_check)
+    ->to('gestor#relacoes_entidade_show')->name('gestor_relacoes_entidade');
+  $auth->put('/:cod_inep/relacoes/entidades/:id' => $id_check)
+    ->to('gestor#relacoes_entidade_update')->name('gestor_relacoes_entidade_update');
+  $auth->delete('/:cod_inep/relacoes/entidades/:id' => $id_check)
+    ->to('gestor#relacoes_entidade_destroy')->name('gestor_relacoes_entidade_destroy');
+
+  $auth->post('/:cod_inep/relacoes' => $check)->to('gestor#relacoes_create')->name('gestor_relacoes_create');
+  $auth->get('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_show')->name('gestor_relacoes_show');
+  $auth->put('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_update')->name('gestor_relacoes_update');
+  $auth->delete('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_destroy')->name('gestor_relacoes_destroy');
 }
 
 1;
