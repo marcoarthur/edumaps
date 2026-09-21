@@ -582,6 +582,365 @@ sub _participant_ids($self, $input) {
 }
 
 # ---------------------------------------------------------------------------
+# inventário escolar (recursos e serviços)
+# ---------------------------------------------------------------------------
+
+sub inventario_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $inep  = $self->param('cod_inep');
+  $model->sincronizar_categorias_censo($inep);
+  my $censo = $model->inventario_censo($inep, $self->param('ano'));
+  $self->render(json => {
+    ano          => $censo ? $censo->{ano} : ($self->param('ano') ? $self->param('ano') + 0 : 2025),
+    censo        => $censo,
+    categorias   => $model->list_categorias($inep),
+    fornecedores => $model->list_fornecedores($inep),
+    itens        => $model->list_itens($inep),
+  });
+}
+
+sub inventario_itens_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  $self->render(json => $model->list_itens($self->param('cod_inep'), {
+    tipo         => $self->param('tipo'),
+    categoria_id => $self->param('categoria_id'),
+    q            => $self->param('q'),
+  }));
+}
+
+sub inventario_importar_censo($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res = $self->_guard_api(sub {
+    $model->importar_censo($self->param('cod_inep'), $self->stash('gestor')->{id}, $self->param('ano'));
+  });
+  return if $self->stash('guard_rendered');
+  $self->render(json => $res);
+}
+
+# --- categorias ------------------------------------------------------------
+
+sub inventario_categoria_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_categoria_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $cat = $self->_guard_api(sub {
+    $model->create_categoria($self->param('cod_inep'), $self->stash('gestor')->{id}, {
+      tipo => $v->param('tipo'), nome => $v->param('nome'),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não pôde ser criada') unless $cat;
+  $self->render(status => 201, json => $cat);
+}
+
+sub inventario_categoria_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_categoria_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $cat = $self->_guard_api(sub {
+    $model->update_categoria($self->param('id'), $self->param('cod_inep'), {
+      tipo => $v->param('tipo'), nome => $v->param('nome'),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não encontrada') unless $cat;
+  $self->render(json => $cat);
+}
+
+sub inventario_categoria_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ok = $self->_guard_api(sub {
+    $model->delete_categoria($self->param('id'), $self->param('cod_inep'));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Categoria não encontrada') unless $ok;
+  $self->render(status => 204, text => '');
+}
+
+# --- fornecedores ----------------------------------------------------------
+
+sub inventario_fornecedor_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_fornecedor_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $f = $self->_guard_api(sub {
+    $model->create_fornecedor($self->param('cod_inep'), $self->stash('gestor')->{id},
+      $self->_fornecedor_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Fornecedor não pôde ser criado') unless $f;
+  $self->render(status => 201, json => $f);
+}
+
+sub inventario_fornecedor_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_fornecedor_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $f = $self->_guard_api(sub {
+    $model->update_fornecedor($self->param('id'), $self->param('cod_inep'),
+      $self->_fornecedor_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Fornecedor não encontrado') unless $f;
+  $self->render(json => $f);
+}
+
+sub inventario_fornecedor_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $ok = $self->_guard_api(sub {
+    $model->delete_fornecedor($self->param('id'), $self->param('cod_inep'));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Fornecedor não encontrado') unless $ok;
+  $self->render(status => 204, text => '');
+}
+
+# --- itens -----------------------------------------------------------------
+
+sub inventario_item_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $item = $model->item_detail($self->param('id'), $self->param('cod_inep'));
+  return $self->_render_not_found('Item não encontrado') unless $item;
+  $self->render(json => $item);
+}
+
+sub inventario_item_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_item_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $item = $self->_guard_api(sub {
+    $model->create_item($self->param('cod_inep'), $self->stash('gestor')->{id},
+      $self->_item_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Item não pôde ser criado') unless $item;
+  $self->render(status => 201, json => $item);
+}
+
+sub inventario_item_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_item_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $item = $self->_guard_api(sub {
+    $model->update_item($self->param('id'), $self->param('cod_inep'),
+      $self->_item_params($v, $input));
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Item não encontrado') unless $item;
+  $self->render(json => $item);
+}
+
+sub inventario_item_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $caminhos = $model->item_anexos_caminhos($id, $cod_inep);
+
+  my $ok = $self->_guard_api(sub { $model->delete_item($id, $cod_inep) });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Item não encontrado') unless $ok;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  unlink "$base/$_->{caminho}" for @$caminhos;
+  $self->render(status => 204, text => '');
+}
+
+# --- anexos ----------------------------------------------------------------
+
+sub inventario_anexo_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Item não encontrado') unless $model->item_state($id, $cod_inep);
+
+  my $upload = $self->req->upload('arquivo');
+  return $self->render(json => { error => 'O anexo é obrigatório (campo "arquivo").' }, status => 400)
+    unless $upload && $upload->size;
+
+  return $self->render(json => { error => 'O arquivo não pode passar de 10 MB.' }, status => 400)
+    if $upload->size > $model->max_upload_bytes;
+
+  my ($nome, $dot, $ext) = $upload->filename =~ /^(.*)(\.)([^.\/]+)$/;
+  $ext = lc($ext // '');
+  my $mime = $model->ext_mime->{$ext};
+  return $self->render(
+    json => { error => 'Extensão não permitida. Use PDF, DOCX, XLSX, PNG, JPG ou TXT.' },
+    status => 400,
+  ) unless $mime;
+
+  my $uuid = Mojo::Util::sha1_hex(join('|', time, $$, rand, $upload->filename, $id));
+  my $rel  = qq{$cod_inep/inventario/$id/$uuid.$ext};
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$rel";
+
+  eval { make_path("$base/$cod_inep/inventario/$id"); 1 }
+    or return $self->render(json => { error => 'Não foi possível preparar o armazenamento.' }, status => 500);
+
+  $upload->move_to($abs)
+    or return $self->render(json => { error => 'Não foi possível salvar o arquivo.' }, status => 500);
+
+  my $res = $model->registrar_anexo_item($id, $cod_inep, {
+    nome_original => $upload->filename,
+    caminho       => $rel,
+    mime          => $mime,
+    tamanho       => $upload->size,
+  });
+  if (!$res) {
+    unlink $abs;
+    return $self->_render_conflict('Item inexistente — anexo descartado');
+  }
+  $self->render(status => 201, json => $res);
+}
+
+sub inventario_anexo_get($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $row = $model->anexo_item_row($self->param('id'), $self->param('cod_inep'), $self->param('anexo_id'));
+  return $self->_render_not_found('Anexo não encontrado') unless $row;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$row->{caminho}";
+  return $self->_render_not_found('Arquivo não encontrado no servidor') unless -f $abs;
+
+  $self->reply->file($abs, { filename => $row->{nome_original} });
+}
+
+sub inventario_anexo_delete($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $row = $model->delete_anexo_item($self->param('id'), $self->param('cod_inep'), $self->param('anexo_id'));
+  return $self->_render_not_found('Anexo não encontrado') unless $row;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$row->{caminho}";
+  unlink $abs if -f $abs;
+  $self->render(status => 204, text => '');
+}
+
+# --- validação do inventário ----------------------------------------------
+
+sub _categoria_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('tipo', 'trim')->like(qr/^(?:recurso|servico)$/);
+  $v->required('nome', 'trim')->size(1, 80);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $v;
+}
+
+sub _fornecedor_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('nome', 'trim')->size(1, 120);
+  $v->optional('tipo_servico', 'trim')->size(1, 60);
+  $v->optional('email', 'trim')->like(EMAIL_RE);
+  $v->optional('telefone', 'trim')->size(8, 20);
+  $v->optional('site', 'trim')->size(1, 300);
+  $v->optional('documento', 'trim')->size(1, 40);
+  $v->optional('observacoes', 'trim')->size(0, 2000);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $self->_check_atributos($input) ? $v : undef;
+}
+
+sub _item_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('categoria_id', 'trim')->num;
+  $v->required('nome', 'trim')->size(1, 120);
+  $v->optional('fornecedor_id', 'trim')->num;
+  $v->optional('descricao', 'trim')->size(0, 2000);
+  $v->optional('quantidade', 'trim')->like(qr/^\d+(?:[.,]\d{1,3})?$/);
+  $v->optional('unidade', 'trim')->size(1, 30);
+  $v->optional('estado', 'trim')->size(1, 40);
+  $v->optional('identificador', 'trim')->size(1, 120);
+  $v->optional('periodicidade', 'trim')->size(1, 40);
+  $v->optional('valor', 'trim')->like(qr/^\d+(?:[.,]\d{1,2})?$/);
+  $v->optional('data_aquisicao', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $self->_check_atributos($input) ? $v : undef;
+}
+
+sub _check_atributos($self, $input) {
+  my $atributos = $input->{atributos};
+  return 1 if !defined $atributos;
+  if (ref $atributos ne 'HASH') {
+    $self->render(json => { error => 'O campo atributos deve ser um objeto.' }, status => 400);
+    return 0;
+  }
+  return 1;
+}
+
+sub _fornecedor_params($self, $v, $input) {
+  return {
+    nome         => $v->param('nome'),
+    tipo_servico => $self->_blank($v->param('tipo_servico')),
+    email        => $self->_blank($v->param('email')),
+    telefone     => $self->_blank($v->param('telefone')),
+    site         => $self->_blank($v->param('site')),
+    documento    => $self->_blank($v->param('documento')),
+    observacoes  => $self->_blank($v->param('observacoes')),
+    atributos    => $input->{atributos},
+  };
+}
+
+sub _item_params($self, $v, $input) {
+  return {
+    categoria_id   => $v->param('categoria_id'),
+    fornecedor_id  => $self->_blank($v->param('fornecedor_id')),
+    nome           => $v->param('nome'),
+    descricao      => $self->_blank($v->param('descricao')),
+    quantidade     => $self->_dec($v->param('quantidade')),
+    unidade        => $self->_blank($v->param('unidade')),
+    estado         => $self->_blank($v->param('estado')),
+    identificador  => $self->_blank($v->param('identificador')),
+    periodicidade  => $self->_blank($v->param('periodicidade')),
+    valor          => $self->_dec($v->param('valor')),
+    data_aquisicao => $self->_blank($v->param('data_aquisicao')),
+    atributos      => $input->{atributos},
+  };
+}
+
+sub _blank($self, $value) {
+  return undef if !defined $value || $value eq '';
+  return $value;
+}
+
+# Normaliza decimal digitado com vírgula (pt-BR) para o ponto do Postgres.
+sub _dec($self, $value) {
+  my $v = $self->_blank($value);
+  return undef unless defined $v;
+  $v =~ s/,/./;
+  return $v;
+}
+
+# ---------------------------------------------------------------------------
 # helpers de renderização / guarda de erros de banco
 # ---------------------------------------------------------------------------
 
@@ -620,6 +979,21 @@ sub _render_db_error($self, $err) {
   }
   if ($err =~ /(?:invalid input syntax for type timestamp|date\/time field value out of range)/) {
     return $self->render(json => { error => 'A data e a hora da reunião são inválidas.' }, status => 400);
+  }
+  if ($err =~ /uq_inventario_categorias_inep_tipo_nome/) {
+    return $self->render(json => { error => 'Já existe uma categoria com este nome para este tipo.' }, status => 409);
+  }
+  if ($err =~ /uq_inventario_fornecedores_inep_nome/) {
+    return $self->render(json => { error => 'Já existe um fornecedor com este nome nesta escola.' }, status => 409);
+  }
+  if ($err =~ /inventario_itens_categoria_id_fkey/) {
+    return $self->render(json => { error => 'Não é possível excluir: a categoria tem itens no inventário.' }, status => 409);
+  }
+  if ($err =~ /inventario_itens_fornecedor_id_fkey/) {
+    return $self->render(json => { error => 'Fornecedor não pertence a esta escola.' }, status => 400);
+  }
+  if ($err =~ /(?:invalid input syntax for type numeric)/) {
+    return $self->render(json => { error => 'Quantidade ou valor inválido.' }, status => 400);
   }
   $self->render(status => 500, json => { error => 'Erro interno ao salvar.' });
 }

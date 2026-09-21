@@ -60,6 +60,46 @@ sub register($self, $app, @args) {
     ->to('gestor#reunioes_anexos')->name('gestor_reunioes_anexos');
   $auth->get('/:cod_inep/reunioes/:id/anexos/:tipo' => [ @$check, @$tipo ])
     ->to('gestor#reunioes_anexo_get')->name('gestor_reunioes_anexo_get');
+
+  # --- inventário escolar (recursos e serviços) ---------------------------
+  my $id_check    = [ @$check, @$rid ];
+  my $anexo_check = [ @$check, anexo_id => qr/\d+/ ];
+
+  $auth->get('/:cod_inep/inventario' => $check)->to('gestor#inventario_index')->name('gestor_inventario');
+  $auth->post('/:cod_inep/inventario/importar-censo' => $check)
+    ->to('gestor#inventario_importar_censo')->name('gestor_inventario_importar_censo');
+
+  $auth->post('/:cod_inep/inventario/categorias' => $check)
+    ->to('gestor#inventario_categoria_create')->name('gestor_inventario_categoria_create');
+  $auth->put('/:cod_inep/inventario/categorias/:id' => $id_check)
+    ->to('gestor#inventario_categoria_update')->name('gestor_inventario_categoria_update');
+  $auth->delete('/:cod_inep/inventario/categorias/:id' => $id_check)
+    ->to('gestor#inventario_categoria_destroy')->name('gestor_inventario_categoria_destroy');
+
+  $auth->post('/:cod_inep/inventario/fornecedores' => $check)
+    ->to('gestor#inventario_fornecedor_create')->name('gestor_inventario_fornecedor_create');
+  $auth->put('/:cod_inep/inventario/fornecedores/:id' => $id_check)
+    ->to('gestor#inventario_fornecedor_update')->name('gestor_inventario_fornecedor_update');
+  $auth->delete('/:cod_inep/inventario/fornecedores/:id' => $id_check)
+    ->to('gestor#inventario_fornecedor_destroy')->name('gestor_inventario_fornecedor_destroy');
+
+  $auth->get('/:cod_inep/inventario/itens' => $check)
+    ->to('gestor#inventario_itens_index')->name('gestor_inventario_itens');
+  $auth->post('/:cod_inep/inventario/itens' => $check)
+    ->to('gestor#inventario_item_create')->name('gestor_inventario_item_create');
+  $auth->get('/:cod_inep/inventario/itens/:id' => $id_check)
+    ->to('gestor#inventario_item_show')->name('gestor_inventario_item');
+  $auth->put('/:cod_inep/inventario/itens/:id' => $id_check)
+    ->to('gestor#inventario_item_update')->name('gestor_inventario_item_update');
+  $auth->delete('/:cod_inep/inventario/itens/:id' => $id_check)
+    ->to('gestor#inventario_item_destroy')->name('gestor_inventario_item_destroy');
+
+  $auth->post('/:cod_inep/inventario/itens/:id/anexos' => $id_check)
+    ->to('gestor#inventario_anexo_create')->name('gestor_inventario_anexo_create');
+  $auth->get('/:cod_inep/inventario/itens/:id/anexos/:anexo_id' => $anexo_check)
+    ->to('gestor#inventario_anexo_get')->name('gestor_inventario_anexo_get');
+  $auth->delete('/:cod_inep/inventario/itens/:id/anexos/:anexo_id' => $anexo_check)
+    ->to('gestor#inventario_anexo_delete')->name('gestor_inventario_anexo_delete');
 }
 
 1;
