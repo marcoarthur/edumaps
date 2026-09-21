@@ -31,21 +31,38 @@
 >   exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar vírgula.
 
 > **Pendências / correções futuras (backlog técnico)**:
-> - **[alta] Bug latente em `Roles::Business::School::Profile#info_enrollment`**:
->   o campo `deficiencia_basica` soma `qt_mat_bas_d + qt_mat_bas_dm + qt_mat_bas_dv`
->   como "deficiência", mas essas colunas são **TURNO** (`d`=Diurno, `dm`=Matutino,
->   `dv`=Vespertino, `n`=Noturno) — os comentários do loader (`Deficiência – …`)
->   estão errados (validado: `d+n=bas` e `dm+dv=d` em ~178,7 mil linhas).
->   **Fix futuro**: trocar pela fonte correta de deficiência (ex.: `qt_mat_esp*`)
->   e/ou renomear o campo; decidir se mantém compatibilidade do contrato da API.
->   **Deixado fora do escopo** do Painel do Gestor (`overview` usa turno correto).
-> - **[média] `gestor_pesquisas`**: o upsert de gestor (`POST /perfil`) retorna
->   `created_at`/`updated_at` `null` (não fazemos RETURNING dos timestamps) —
->   cosmético, o frontend não consome; validar com integridade referencial se
->   vier a ser usado.
-> - **[baixa] E2E API**: `?inep=abc` devolve 400 (formato inválido) no endpoint
->   de pesquisas — padrão do projeto p/ `codigo_ibge` é 404; não tratamos
->   (decisão tomada na rodada; reavaliar se virar padrão).
+> - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
+>   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
+>   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
+
+## Sessão — Limpeza do backlog técnico (turno, timestamps, 404)
+
+- **Repo** `edumaps`; branch `fix/backlog-tecnico` (a partir de `origin/main`);
+  commits `87f0d27` (data_pipeline), `80c7eea` (backend). **PR #79** → `main`,
+  merge commit **`f8c3312`** (2026-09-20). `main` == `origin/main`.
+- **[alta] `info_enrollment` somava TURNO como deficiência**:
+  `deficiencia_basica` = `qt_mat_bas_d + dm + dv`, mas `_d/_dm/_dv/_n` são
+  **Diurno/Matutino/Vespertino/Noturno** (validado: `dm+dv=d` e `d+n=total` em
+  **100%** das linhas; `avg(d/bas)=0,934`, `avg(esp/bas)=0,056`). Removido o
+  campo e adicionado o bloco **`turno`** (diurno/matutino/vespertino/noturno/
+  integral). Educação especial fica em `especial`/`esp_cc_total`/`esp_ce_total`
+  (`qt_mat_esp*`). `info_enrollment` **não é exposta por controller** — só o
+  teste `t/02-models/school/matricula.t` a usa.
+- **Comentários das 60 colunas de turno** estavam rotulados como "Deficiência"
+  pelo loader. Nova migração **`censo_turno_comments`** (60 `COMMENT ON COLUMN`)
+  + POD de `Schema/Result/CensoMatriculas.pm` (replace global).
+- **[média] `upsert_gestor`**: `RETURNING` agora inclui `created_at, updated_at`.
+- **[baixa] `Pesquisa#index`**: `?inep` ausente → 400; formato inválido → 404
+  (padrão do projeto p/ `codigo_ibge`, via constraint de rota).
+- **Correção de registro**: a observação do PR #78 sobre `scores_view.sql`/
+  `badge_functions.sql` usarem `in_in_*` era **falsa** (usam
+  `in_material_ped_*`); corrigida no corpo do PR #78.
+- **Testes**: `prove -vl t/02-models/school/matricula.t t/04-api/pesquisa.t`
+  (PASS; novos asserts de `turno`/`DNE`/timestamps/404) e
+  `prove -rl t/04-api/gestor/` (41 ok). Smoke real: `?inep=abc`→404, sem
+  `inep`→400, `POST /perfil` com timestamps.
+- **Deploy**: migração em `ubatexu.lan` + `Database` (verify ok);
+  `deploy_backend_dev` (sem frontend).
 
 ## Sessão — Painel de Inventário Escolar (recursos e serviços)
 
