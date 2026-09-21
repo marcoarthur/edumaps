@@ -35,6 +35,52 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — eduBR: perfil modal de diretores (censo_gestor)
+
+- **Repo** `~/Projects/eduBR`; branch **`feat/edubr-perfil-gestor`**; commits
+  `7e13343` `feat(edubr): perfil modal de diretores (censo_gestor)`,
+  `2ec38b7` `docs(edubr): report de perfil modal de diretores` e `589d582`
+  `docs(edubr): skill com perfil de gestores`. **PR #3 criado** (2026-09-21),
+  aguardando aprovação/merge. `main` local == branch apontando p/ PR.
+- **Fonte**: `~/Documents/Notas/gestor_edumaps_perfil.md` é **referência à
+  parte** — decidido: nossos números primeiro, literatura não é assertada.
+  Decisões do usuário: só análise no eduBR (sem API/UI); unidade **gestor**
+  (principal) + **escola** (sensibilidade); base válida por dimensão (cor/raça
+  "não declarada" fora do denominador; vínculo só públicas; escola privada sem
+  forma de acesso público); Brasil/rede/região/UF.
+- **`R/gestor.R`**: `censo_gestor()` (catálogo +`clean.censo_gestor`),
+  `gestores()` (lazy; filtra/rotula no SQL via `eduBR_case_when_lookup` —
+  `case_when` a partir de vetor nomeado; **evitar** indexação R e `.env$fn()`
+  dentro de `filter`/`mutate` em tbl dbplyr), `perfil_gestor()` (9 dimensões;
+  materializa e agrega **em R**; retorna `$proporcoes`/`$modal` com
+  Herfindahl/`$n`; `composicao=FALSE` marca categorias fora da composição do
+  modal).
+- **Pegadinhas da rodada**: colunas reais de `clean.censo_gestor`/`censo_escolas`
+  são **minúsculas** (`tp_dependencia`, `no_municipio`), não o `UPPER_CASE` do
+  deplay `.sql` (desatualizado); `dplyr::select(tbl, "co_entidade")` sem
+  `all_of()` gera NOTE no check; lint non-ASCII no código → escapar literais
+  com `\uXXXX` (comentários ficam UTF-8); fixture de teste precisa de TODAS as
+  colunas de contagem das dimensões testadas; `.env$fn()` dentro de `filter`
+  não traduz (pré-computar o valor).
+- **Números reais (2025)**: 190.641 diretores / 180.540 escolas. Feminino em
+  todas (municipal 82,1%, privada 83,9%, estadual 65,6%); **federal 73,7%
+  masculino**. Cor/raça modal branca em todas; municipal na borda (45,6%).
+  Acesso ao cargo separa redes: proprietário/sócio privada 52,1%, eleição
+  federal 81,6%, municipal processo seletivo 33,8% + indicação 32,9% + eleição
+  15,2%, estadual três vias ≈ 20–26%. Formação continuada em gestão 7,2%
+  (federal) a 27,0% (municipal). Sensibilidade gestor→escola: **zero** trocas
+  de categoria modal (só variação ≤3,3pp).
+- **Report**: `analysis/perfil_gestor.Rmd` renderizado no container
+  `rstudio.dev` (html ~9MB, gitignored); snapshot `analysis/capturar_gestor.R`
+  → `analysis/dados_gestores.rds` (180.540 linhas × 77 col). Render exige
+  `devtools::load_all()` (a cópia instalada do eduBR no container é
+  desatualizada e `install_local` não funciona).
+- **Testes/check**: `devtools::test()` 282 ok (+1 skip smoke) e
+  `devtools::check()` **0/0/0**, no container. Após o 2º commit o rsync
+  post-commit falhou uma vez (`code 255`) — re-sync manual confirmou.
+- **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
+  este memory).
+
 ## Sessão — Relações Institucionais: Etapa 5 (tarefas + indicadores)
 
 - **Repo** `edumaps`; branch `feat/relacoes-tarefas` (a partir de `origin/main`);
