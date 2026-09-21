@@ -54,3 +54,4 @@ gestor_reunioes_grupos_folha [gestor_reunioes] 2026-09-20T13:00:00Z Marco Arthur
 inventario_escolar [gestor_reunioes] 2026-09-20T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Inventario escolar: categorias/itens/fornecedores/anexos por escola, baseline lido do Censo e importavel
 censo_turno_comments [matriculas_censo_2025] 2026-09-20T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # Corrige comentarios das colunas de turno (_d/_dm/_dv/_n) do censo de matriculas, rotuladas por engano como deficiencia
 relacoes_escolar [gestor_reunioes] 2026-09-20T17:00:00Z Marco Arthur <arthurpbs@gmail.com> # Relacoes institucionais da escola: entidades externas, relacoes (assunto/responsavel/proxima acao/prazo) e taxonomia editavel
+relacoes_gestao [relacoes_escolar] 2026-09-20T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Gestao das relacoes: historico de interacoes (timeline) e documentos/anexos por relacao
