@@ -239,6 +239,62 @@ sub payroll_dates($self, $params) {
   );
 }
 
+# ---------------------------------------------------------------------------
+# SIOPE (remuneração municipal): rede da escola, município e anos já baixados.
+# Só a rede municipal tem dados (o SIOPE é o agregado do município). A unidade
+# do download é o código antigo do IBGE (6 dígitos) = prefixo do cod_inep.
+# ---------------------------------------------------------------------------
+
+sub _rede_escola($self, $cod_inep) {
+  my $dbh = $self->schema->storage->dbh;
+  my ($rede) = $dbh->selectrow_array(
+    'SELECT dependencia_administrativa FROM clean.escolas WHERE codigo_inep = ? LIMIT 1',
+    undef, $cod_inep,
+  );
+  return $rede if defined $rede;
+
+  my ($tp) = $dbh->selectrow_array(
+    'SELECT tp_dependencia FROM clean.censo_escolas WHERE co_entidade = ? LIMIT 1',
+    undef, $cod_inep,
+  );
+  return undef unless defined $tp;
+  return { 1 => 'Federal', 2 => 'Estadual', 3 => 'Municipal', 4 => 'Privada' }->{$tp};
+}
+
+sub _siope_anos_presentes($self, $cod_municipio) {
+  my $rows = $self->schema->storage->dbh->selectall_arrayref(
+    'SELECT DISTINCT ano FROM clean.remuneracao_municipal
+     WHERE cod_municipio::text = ? ORDER BY ano',
+    undef, $cod_municipio,
+  );
+  return [ map { $_->[0] + 0 } @$rows ];
+}
+
+# Metadados do SIOPE para uma escola (usado pelo painel financeiro).
+sub siope_status($self, $cod_inep) {
+  my $rede          = $self->_rede_escola($cod_inep);
+  my $cod_municipio = substr($cod_inep, 0, 6);
+  my $eh_municipal  = defined $rede && $rede =~ /municipal/i;
+
+  return {
+    escola_existe  => defined $rede ? 1 : 0,
+    rede           => $rede,
+    habilitado     => $eh_municipal ? 1 : 0,
+    cod_municipio  => $cod_municipio,
+    anos_presentes => $eh_municipal ? $self->_siope_anos_presentes($cod_municipio) : [],
+  };
+}
+
+# Pode enfileirar o download do SIOPE para a escola/ano? (regras de negócio)
+sub siope_disponivel($self, $cod_inep, $ano) {
+  my $st = $self->siope_status($cod_inep);
+  return { error => 'escola_inexistente' } unless $st->{escola_existe};
+  return { error => 'nao_municipal' }     unless $st->{habilitado};
+  return { error => 'ano_existente' }
+    if grep { $_ == $ano } @{ $st->{anos_presentes} };
+  return { ok => 1, cod_municipio => $st->{cod_municipio} };
+}
+
 sub financial_summary($self, $params) {
   croak "need cod_inep" unless $params->{cod_inep};
 
@@ -291,10 +347,24 @@ sub financial_summary($self, $params) {
     ORDER BY total_salario DESC
   SQL
 
+  my $siope = $self->siope_status($cod);
+
   return {
-    escola     => { codigo_inep => $cod, nome => $nome },
+    escola     => {
+      codigo_inep                => $cod,
+      nome                       => $nome,
+      dependencia_administrativa => $siope->{rede},
+      cod_municipio              => $siope->{cod_municipio},
+    },
     series     => $series     // [],
     categorias => $categorias // [],
+    siope      => {
+      habilitado     => $siope->{habilitado},
+      cod_municipio  => $siope->{cod_municipio},
+      ano_inicial    => 2020,
+      ano_atual      => DateTime->now->year,
+      anos_presentes => $siope->{anos_presentes},
+    },
   };
 }
 

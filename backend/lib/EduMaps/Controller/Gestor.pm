@@ -3,6 +3,7 @@ use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 
 use File::Path qw(make_path);
+use DateTime;
 
 # API do painel do gestor escolar (/api/gestor/...) + módulo Reuniões e Atas
 # (contatos, grupos por drag-and-drop, agendamento com atas e anexos).
@@ -1443,6 +1444,38 @@ sub _relacao_params($self, $v, $input) {
     prazo               => $self->_blank($v->param('prazo')),
     atributos           => $input->{atributos},
   };
+}
+
+# ---------------------------------------------------------------------------
+# financeiro — busca assíncrona dos dados do SIOPE (remuneração municipal)
+# ---------------------------------------------------------------------------
+
+sub finance_siope($self) {
+  return unless $self->_gestor_inep_ok;
+  my $cod_inep = $self->param('cod_inep');
+
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('ano', 'trim')->in(2020 .. DateTime->now->year);
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $ano   = $v->param('ano');
+  my $model = $self->instantiate_model(model => 'School');
+  my $st    = $model->siope_disponivel($cod_inep, $ano);
+
+  if ($st->{error}) {
+    return $self->_render_not_found('Escola não encontrada para este INEP')
+      if $st->{error} eq 'escola_inexistente';
+    return $self->render(json => { error => 'O SIOPE só possui dados da rede municipal.' }, status => 422)
+      if $st->{error} eq 'nao_municipal';
+    return $self->_render_conflict('Os dados do SIOPE para este ano já foram baixados.')
+      if $st->{error} eq 'ano_existente';
+  }
+
+  my $job_id = $self->get_siope($st->{cod_municipio}, $ano);
+  $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
+  $self->render(status => 202, json => { task => 'query_siope', job_id => $job_id, ano => $ano + 0 });
 }
 
 # ---------------------------------------------------------------------------
