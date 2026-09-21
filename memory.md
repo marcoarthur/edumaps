@@ -81,6 +81,32 @@
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
 
+## Sessão — Catálogo de Funcionalidades (`docs/funcionalidades/`)
+
+- **Repo** `edumaps`; branch `docs/funcionalidades` (a partir de `origin/main`);
+  commit `2fde95e`. **PR #85** → `main`, merge commit **`a154a1b`** (2026-09-21).
+  `main` == `origin/main`.
+- **Objetivo**: ponto central de documentação **funcional** em markdown, de alto
+  nível (capacidades de negócio, sem rotas/arquivos/funções), para síntese
+  (PDF/wiki) e para o Workflow manter atualizado a cada mudança.
+- **Entregas**:
+  - `docs/funcionalidades/`: `README.md` (índice/síntese), `_template.md`
+    (front-matter YAML: `titulo`, `modulo`, `status`, `audiencia`,
+    `relacionadas`) e **20 capacidades** por módulo:
+    - `busca/`: escolas🟢, similaridade🟢, analises⚪, pessoas⚪;
+    - `analise/`: painel-escola, ranking, clusters, rede-municipal, financeiro,
+      folha-pagamento (🟢);
+    - `gestor/`: acesso, painel, pesquisas, reunioes-atas, contatos-grupos,
+      inventario, relacoes-institucionais (🟢);
+    - `comunidade/`: resposta-pesquisa🟢;
+    - `plataforma/`: fontes-de-dados🟢, privacidade-lgpd🟢.
+  - `AGENTS.md`: novo passo **3. Documentação funcional** (após a Execução; passos
+    seguintes renumerados 4–8) + seção "Documentação funcional" com estrutura,
+    template, status e anti-padrão.
+  - `docs/indice.md`: seção "11. Funcionalidades (catálogo)".
+- **Status**: 🟢 ativo · 🟡 parcial · ⚪ planejado · 🔴 descontinuado.
+- **Escopo**: docs-only (`docs/`, `AGENTS.md`) → **sem deploy**.
+
 ## Sessão — Landpage e acessos ao Painel do Gestor
 
 - **Repo** `edumaps`; branch `feat/landpage-gestor` (a partir de `origin/main`);
