@@ -35,6 +35,45 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — Relações Institucionais da escola (entidades + relações, MVP)
+
+- **Repo** `edumaps`; branch `feat/relacoes-gestor` (a partir de `origin/main`);
+  commits `dfed292` (data_pipeline), `27629a6` (backend), `31db7bc` (frontend).
+  **PR #80** → `main`, merge commit **`2c2b54b`** (2026-09-20). `main` == `origin/main`.
+- **Fonte**: `~/Documents/Notas/gestor_relacoes.md` (discussão de categorias,
+  taxonomias e operações). **Decisões do usuário**: MVP = Etapas 1+2; taxonomia
+  editável semeada; responsável interno em texto livre; fornecedores separados do
+  inventário; anexos só na Etapa 4; status/prioridade enums fixos; painel
+  "Relações da escola" em `/gestor/relacoes` com link "🤝 Relações".
+- **Entregas**:
+  - data_pipeline: `relacoes_categorias` (eixo `entidade|finalidade`, origem
+    `padrao|manual`, UNIQUE `cod_inep+eixo+lower(nome)`), `relacoes_entidades`
+    (atores externos + `atributos jsonb`) e `relacoes` (centro: entidade →
+    assunto/finalidade/responsável/próxima ação/prazo; `status` e `prioridade`
+    com CHECK; FK entidade `ON DELETE RESTRICT`).
+  - backend: `Roles::Business::Gestor::Relacoes` — `sincronizar_categorias_padrao`
+    (7 grupos + 10 finalidades), CRUD de categorias/entidades/relações e filtros
+    (`status`, `prioridade`, `vencidas`, `entidade_id`, `q`); `vencida` derivado.
+    Rotas `/api/gestor/:cod_inep/relacoes[/...]` (constraints arrayref).
+  - frontend: `/gestor/relacoes` (abas Relações/Entidades externas, filtros,
+    badges, destaque de vencidas, modais) + link no painel.
+- **Armadilha (Role::Tiny "last wins" é falso na prática)**: `list_categorias`/
+  `create_categoria`/`update_categoria`/`delete_categoria` do módulo Relações
+  colidiam com `Inventario.pm` (composto **antes**) e as chamadas caíam na versão
+  do inventário. Renomeados para `*_relacoes_categoria(s)`. **Ao compor várias
+  roles no mesmo Model, use nomes de método únicos por módulo** — ou confira qual
+  role vence. (O mesmo vale para helpers `_rows/_row/_txn`/`_encode_atributos`:
+  manter cópias idênticas.)
+- **Não é CRM**: o centro é a relação; sem leads/oportunidades/pipeline.
+- **Testes**: backend `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (58 ok);
+  frontend (container) `npx vitest run src/features/gestor` (109 ok); suite
+  completa 281 ok (4 falhas pré-existentes). Smoke real: 17 categorias, entidade
+  e relação criadas (201).
+- **Deploy**: migração em `ubatexu.lan` + `Database` (verify ok);
+  `deploy_backend_dev` + `deploy_frontend_dev`.
+- **Pendências/próximas etapas**: Etapa 3 (Agenda institucional), Etapa 4
+  (interações + documentos/anexos), Etapa 5 (tarefas + indicadores/grafo da rede).
+
 ## Sessão — Limpeza do backlog técnico (turno, timestamps, 404)
 
 - **Repo** `edumaps`; branch `fix/backlog-tecnico` (a partir de `origin/main`);
