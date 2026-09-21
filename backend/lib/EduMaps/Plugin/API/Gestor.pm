@@ -156,6 +156,10 @@ sub register($self, $app, @args) {
     ->to('gestor#relacoes_tarefa_update')->name('gestor_relacoes_tarefa_update');
   $auth->delete('/:cod_inep/relacoes/:id/tarefas/:tarefa_id' => $tarefa_check)
     ->to('gestor#relacoes_tarefa_destroy')->name('gestor_relacoes_tarefa_destroy');
+
+  # --- financeiro: download assíncrono dos dados do SIOPE (rede municipal) --
+  $auth->post('/:cod_inep/financeiro/siope' => $check)
+    ->to('gestor#finance_siope')->name('gestor_financeiro_siope');
 }
 
 1;
