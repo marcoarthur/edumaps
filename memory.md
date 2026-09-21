@@ -29,6 +29,11 @@
 >   usam `ubatexu.lan` (user `devel`/`senhaboa123`). Migrações manuais precisam
 >   ser aplicadas nos **dois**. `num` do Validator só aceita inteiro — decimais
 >   exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar vírgula.
+> - **`$_[0]` em `map` dentro de sub com `-signatures`**: lê o `@_` da sub, não o
+>   `$_` da lista. Usar `$_->[0]` (ex.: `map { $_->[0] + 0 } @$rows`).
+> - **Código de município NÃO é o prefixo do `cod_inep`**: usar a fonte oficial
+>   (`clean.censo_escolas.co_municipio` 7→6 dígitos; fallback nome+UF em
+>   `raw.br_municipios_2024`).
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
@@ -80,6 +85,25 @@
   post-commit falhou uma vez (`code 255`) — re-sync manual confirmou.
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
+
+## Sessão — Fix: município correto no SIOPE (bug do código do INEP)
+
+- **Repo** `edumaps`; branch `fix/siope-codigo-municipio` (a partir de
+  `origin/main`); commit `275d503`. **PR #87** → `main`, merge commit
+  **`0f221e8`** (2026-09-21). `main` == `origin/main`.
+- **Bug (reportado no teste manual de Cuiabá)**: o código do município do SIOPE
+  era `substr(cod_inep,0,6)`. **O prefixo do INEP NÃO é o código do município**
+  (ex.: INEP `51065592` é de Cuiabá, código antigo `510340`; o job recebia
+  `510655` → "Cannot open /tmp/510655_2026.xlsx.Planilha.csv"). Confirmado no
+  censo: `co_municipio=5103403` → `510340`, INEP prefixo `510655`.
+- **Fix**: `_cod_municipio_escola` deriva de **`clean.censo_escolas.co_municipio`**
+  (7→6 dígitos), com fallback nome+UF em `raw.br_municipios_2024`; `habilitado`
+  exige município derivável. Também corrigido `map { $_->[0] }` em sub com
+  assinatura (o `$_[0]` lia o `@_` da sub — `anos_presentes` vinha com lixo).
+- **Verificação**: `51065592`→`510340`; `35051780`→`355030`; privada→`habilitado=0`;
+  job real `["510340",2024]`. Teste cobre **prefixo ≠ município**.
+- **Testes**: `prove -rl t/04-api/gestor/ t/04-api/pesquisa.t` (68 ok).
+- **Deploy**: `deploy_backend_dev` (sem migração/frontend).
 
 ## Sessão — Buscar dados do SIOPE pelo Painel Financeiro
 
