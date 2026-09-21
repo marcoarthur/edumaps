@@ -65,10 +65,50 @@ export function createRelacao(inep, relacao) {
   return apiClient.post(BASE(inep), relacao);
 }
 
+/** Detalhe da relação (inclui interações e documentos). */
+export function getRelacao(inep, id) {
+  return apiClient.get(`${BASE(inep)}/${id}`);
+}
+
 export function updateRelacao(inep, id, relacao) {
   return apiClient.put(`${BASE(inep)}/${id}`, relacao);
 }
 
 export function deleteRelacao(inep, id) {
   return apiClient.delete(`${BASE(inep)}/${id}`);
+}
+
+// ---------------------------------------------------------------------------
+// interações (timeline) e documentos (anexos) da relação
+// ---------------------------------------------------------------------------
+
+export function createInteracao(inep, relacaoId, interacao) {
+  return apiClient.post(`${BASE(inep)}/${relacaoId}/interacoes`, interacao);
+}
+
+export function updateInteracao(inep, relacaoId, interacaoId, interacao) {
+  return apiClient.put(`${BASE(inep)}/${relacaoId}/interacoes/${interacaoId}`, interacao);
+}
+
+export function deleteInteracao(inep, relacaoId, interacaoId) {
+  return apiClient.delete(`${BASE(inep)}/${relacaoId}/interacoes/${interacaoId}`);
+}
+
+export function uploadDocumento(inep, relacaoId, { arquivo, tipo, data, referencia }) {
+  const form = new FormData();
+  form.append("arquivo", arquivo, arquivo.name);
+  form.append("_original_nome", arquivo.name);
+  if (tipo) form.append("tipo", tipo);
+  if (data) form.append("data", data);
+  if (referencia) form.append("referencia", referencia);
+  return apiClient.upload(`${BASE(inep)}/${relacaoId}/documentos`, form);
+}
+
+/** @returns {Promise<{blob: Blob, filename: string}>} */
+export function downloadDocumento(inep, relacaoId, documentoId) {
+  return apiClient.download(`${BASE(inep)}/${relacaoId}/documentos/${documentoId}`);
+}
+
+export function deleteDocumento(inep, relacaoId, documentoId) {
+  return apiClient.delete(`${BASE(inep)}/${relacaoId}/documentos/${documentoId}`);
 }

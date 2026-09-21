@@ -71,3 +71,22 @@ export const RELACAO_LIMITS = {
   ASSUNTO_MAX: 160,
   DESCRICAO_MAX: 2000,
 };
+
+export const INTERACAO_CANAIS = [
+  "reunião",
+  "e-mail",
+  "telefone",
+  "ofício",
+  "whatsapp",
+  "visita",
+  "outro",
+];
+
+export const DOCUMENTO_TIPOS = [
+  "ofício",
+  "contrato",
+  "nota fiscal",
+  "ata",
+  "foto",
+  "outro",
+];

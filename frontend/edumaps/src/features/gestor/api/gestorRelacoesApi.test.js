@@ -7,9 +7,13 @@ import { INEP_RELACOES } from "../mocks/relacoesFixtures.js";
 import {
   getRelacoes,
   getAgenda,
+  getRelacao,
   createCategoria,
   createEntidade,
   createRelacao,
+  createInteracao,
+  uploadDocumento,
+  downloadDocumento,
   updateRelacao,
   deleteEntidade,
 } from "./gestorRelacoesApi.js";
@@ -77,5 +81,29 @@ describe("gestorRelacoesApi", () => {
     const ent = await createEntidade(INEP_RELACOES, { nome: "Entidade com relação" });
     await createRelacao(INEP_RELACOES, { entidade_id: ent.id, assunto: "Pendência" });
     await expect(deleteEntidade(INEP_RELACOES, ent.id)).rejects.toThrow(/relações/i);
+  });
+
+  it("carrega o detalhe com timeline e documentos", async () => {
+    const det = await getRelacao(INEP_RELACOES, 1);
+    expect(det.assunto).toContain("telhado");
+    expect(det.interacoes.length).toBeGreaterThan(0);
+    expect(det.documentos.length).toBeGreaterThan(0);
+  });
+
+  it("registra interação e anexa documento", async () => {
+    const inter = await createInteracao(INEP_RELACOES, 1, {
+      assunto: "Ligação de cobrança",
+      canal: "telefone",
+    });
+    expect(inter.id).toBeTruthy();
+
+    const file = new File(["%PDF-1.4 ofício"], "oficio.pdf", { type: "application/pdf" });
+    const up = await uploadDocumento(INEP_RELACOES, 1, { arquivo: file, referencia: "OF-9" });
+    expect(up.documentos[0].nome_original).toBe("oficio.pdf");
+    expect(up.documentos[0].referencia).toBe("OF-9");
+
+    const { blob, filename } = await downloadDocumento(INEP_RELACOES, 1, up.id);
+    expect(filename).toBe("oficio.pdf");
+    expect(await blob.text()).toBe("conteudo-do-documento-mock");
   });
 });
