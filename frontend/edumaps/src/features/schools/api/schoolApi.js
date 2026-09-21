@@ -71,17 +71,10 @@ export function getJobProgress(jobId) {
  * @returns {() => void} função para cancelar
  */
 export function watchJobProgress(jobId, { onProgress, onDone, onError } = {}) {
+  let encerrado = false;
   const source = new EventSource(`/api/task/progress?job_id=${jobId}`);
 
-  source.onmessage = (event) => {
-    try {
-      onProgress?.(JSON.parse(event.data));
-    } catch {
-      // evento sem JSON — ignora
-    }
-  };
-
-  source.onerror = async () => {
+  const finalizar = async () => {
     source.close();
     try {
       const snap = await getJobProgress(jobId);
@@ -95,7 +88,24 @@ export function watchJobProgress(jobId, { onProgress, onDone, onError } = {}) {
     }
   };
 
-  return () => source.close();
+  source.onmessage = (event) => {
+    try {
+      onProgress?.(JSON.parse(event.data));
+    } catch {
+      // evento sem JSON — ignora
+    }
+  };
+
+  source.onerror = () => {
+    if (encerrado) return;
+    encerrado = true;
+    finalizar();
+  };
+
+  return () => {
+    encerrado = true;
+    source.close();
+  };
 }
 
 /**

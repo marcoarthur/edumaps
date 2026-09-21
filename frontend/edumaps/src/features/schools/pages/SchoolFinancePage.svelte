@@ -98,8 +98,7 @@
           buscando = false;
           progresso = null;
           erroSiope = msg;
-        },
-      });
+        },      });
     } catch (err) {
       buscando = false;
       progresso = null;
