@@ -103,6 +103,8 @@ subtest 'perfil: upsert do gestor por e-mail' => sub {
   is +($first->{cpf_masc} // ''), '***.***.***-' . substr($CPF, -3), 'CPF devolvido mascarado (LGPD)';
   ok !exists($first->{cpf}), 'CPF completo nunca aparece na resposta';
   is $first->{cod_inep}, $INEP, 'cod_inep vinculado';
+  ok defined $first->{created_at}, 'created_at preenchido no upsert';
+  ok defined $first->{updated_at}, 'updated_at preenchido no upsert';
 
   my $again = $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => $INEP, nome => 'Gestor Teste Atualizada', email => $EMAIL, senha => $SENHA2,
@@ -228,6 +230,8 @@ subtest 'lista por escola (?inep=)' => sub {
   ok $mine->{token}, 'lista também traz o token público';
 
   $t->get_ok('/api/gestor/pesquisas')->status_is(400);
+  # formato inválido segue o padrão do projeto (codigo_ibge): 404, não 400
+  $t->get_ok('/api/gestor/pesquisas?inep=abc')->status_is(404)->json_has('/error');
 };
 
 subtest 'detalhe, edição (autosave) e finalização' => sub {

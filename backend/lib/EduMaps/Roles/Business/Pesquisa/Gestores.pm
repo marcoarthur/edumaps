@@ -25,7 +25,7 @@ sub upsert_gestor ($self, $params = {}) {
       cpf        = COALESCE(EXCLUDED.cpf, clean.gestores.cpf),
       senha_hash = COALESCE(EXCLUDED.senha_hash, clean.gestores.senha_hash),
       updated_at = NOW()
-    RETURNING id, cod_inep, nome, email, telefone, cargo, cpf
+    RETURNING id, cod_inep, nome, email, telefone, cargo, cpf, created_at, updated_at
   SQL
 
   my $row = $self->_row(
