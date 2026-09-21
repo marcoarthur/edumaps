@@ -1126,13 +1126,167 @@ sub relacoes_update($self) {
 
 sub relacoes_destroy($self) {
   return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
   my $model = $self->instantiate_model(model => 'Gestor');
+  my $caminhos = $model->documentos_relacao_caminhos($id, $cod_inep);
   return $self->_render_not_found('Relação não encontrada')
-    unless $model->delete_relacao($self->param('id'), $self->param('cod_inep'));
+    unless $model->delete_relacao($id, $cod_inep);
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  unlink "$base/$_->{caminho}" for @$caminhos;
+  $self->render(status => 204, text => '');
+}
+
+# --- interações (timeline da relação) --------------------------------------
+
+sub relacoes_interacao_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Relação não encontrada') unless $model->relacao_state($id, $cod_inep);
+
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_interacao_validation($input) or return;
+
+  my $inter = $self->_guard_api(sub {
+    $model->create_interacao_relacao($id, $cod_inep, $self->stash('gestor')->{id}, {
+      data         => $self->_blank($v->param('data')),
+      canal        => $self->_blank($v->param('canal')),
+      participante => $self->_blank($v->param('participante')),
+      assunto      => $v->param('assunto'),
+      descricao    => $self->_blank($v->param('descricao')),
+      resultado    => $self->_blank($v->param('resultado')),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Interação não pôde ser criada') unless $inter;
+  $self->render(status => 201, json => $inter);
+}
+
+sub relacoes_interacao_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id, $iid) = ($self->param('cod_inep'), $self->param('id'), $self->param('interacao_id'));
+  my $input = $self->_input or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $v = $self->_interacao_validation($input) or return;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $inter = $self->_guard_api(sub {
+    $model->update_interacao_relacao($iid, $id, $cod_inep, {
+      data         => $self->_blank($v->param('data')),
+      canal        => $self->_blank($v->param('canal')),
+      participante => $self->_blank($v->param('participante')),
+      assunto      => $v->param('assunto'),
+      descricao    => $self->_blank($v->param('descricao')),
+      resultado    => $self->_blank($v->param('resultado')),
+    });
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Interação não encontrada') unless $inter;
+  $self->render(json => $inter);
+}
+
+sub relacoes_interacao_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id, $iid) = ($self->param('cod_inep'), $self->param('id'), $self->param('interacao_id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Interação não encontrada')
+    unless $model->delete_interacao_relacao($iid, $id, $cod_inep);
+  $self->render(status => 204, text => '');
+}
+
+# --- documentos (anexos da relação) ----------------------------------------
+
+sub relacoes_documento_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id) = ($self->param('cod_inep'), $self->param('id'));
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Relação não encontrada') unless $model->relacao_state($id, $cod_inep);
+
+  my $upload = $self->req->upload('arquivo');
+  return $self->render(json => { error => 'O documento é obrigatório (campo "arquivo").' }, status => 400)
+    unless $upload && $upload->size;
+
+  return $self->render(json => { error => 'O arquivo não pode passar de 10 MB.' }, status => 400)
+    if $upload->size > $model->max_upload_bytes;
+
+  my ($nome, $dot, $ext) = $upload->filename =~ /^(.*)(\.)([^.\/]+)$/;
+  $ext = lc($ext // '');
+  my $mime = $model->ext_mime->{$ext};
+  return $self->render(
+    json => { error => 'Extensão não permitida. Use PDF, DOCX, XLSX, PNG, JPG ou TXT.' },
+    status => 400,
+  ) unless $mime;
+
+  my $uuid = Mojo::Util::sha1_hex(join('|', time, $$, rand, $upload->filename, $id));
+  my $rel  = qq{$cod_inep/relacoes/$id/$uuid.$ext};
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$rel";
+
+  eval { make_path("$base/$cod_inep/relacoes/$id"); 1 }
+    or return $self->render(json => { error => 'Não foi possível preparar o armazenamento.' }, status => 500);
+
+  $upload->move_to($abs)
+    or return $self->render(json => { error => 'Não foi possível salvar o arquivo.' }, status => 500);
+
+  my $res = $model->registrar_documento_relacao($id, $cod_inep, $self->stash('gestor')->{id}, {
+    tipo          => $self->_blank($self->param('tipo')),
+    data          => $self->_blank($self->param('data')),
+    referencia    => $self->_blank($self->param('referencia')),
+    nome_original => $upload->filename,
+    caminho       => $rel,
+    mime          => $mime,
+    tamanho       => $upload->size,
+  });
+  if (!$res) {
+    unlink $abs;
+    return $self->_render_conflict('Relação inexistente — documento descartado');
+  }
+  $self->render(status => 201, json => $res);
+}
+
+sub relacoes_documento_get($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $row = $model->documento_relacao_row(
+    $self->param('id'), $self->param('cod_inep'), $self->param('documento_id'));
+  return $self->_render_not_found('Documento não encontrado') unless $row;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$row->{caminho}";
+  return $self->_render_not_found('Arquivo não encontrado no servidor') unless -f $abs;
+
+  $self->reply->file($abs, { filename => $row->{nome_original} });
+}
+
+sub relacoes_documento_delete($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $row = $model->delete_documento_relacao(
+    $self->param('id'), $self->param('cod_inep'), $self->param('documento_id'));
+  return $self->_render_not_found('Documento não encontrado') unless $row;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$row->{caminho}";
+  unlink $abs if -f $abs;
   $self->render(status => 204, text => '');
 }
 
 # --- validação das relações ------------------------------------------------
+
+sub _interacao_validation($self, $input) {
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('assunto', 'trim')->size(1, 160);
+  $v->optional('data', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('canal', 'trim')->size(1, 40);
+  $v->optional('participante', 'trim')->size(1, 120);
+  $v->optional('descricao', 'trim')->size(0, 2000);
+  $v->optional('resultado', 'trim')->size(0, 2000);
+  if ($v->has_error) {
+    $self->_render_validation($v);
+    return;
+  }
+  return $v;
+}
 
 sub _relacao_categoria_validation($self, $input) {
   my $v = $self->app->validator->validation;

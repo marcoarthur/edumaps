@@ -128,6 +128,24 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_show')->name('gestor_relacoes_show');
   $auth->put('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_update')->name('gestor_relacoes_update');
   $auth->delete('/:cod_inep/relacoes/:id' => $id_check)->to('gestor#relacoes_destroy')->name('gestor_relacoes_destroy');
+
+  # gestão da relação: interações (timeline) e documentos (anexos).
+  my $inter_check = [ @$check, id => qr/\d+/, interacao_id => qr/\d+/ ];
+  my $doc_check   = [ @$check, id => qr/\d+/, documento_id => qr/\d+/ ];
+
+  $auth->post('/:cod_inep/relacoes/:id/interacoes' => $id_check)
+    ->to('gestor#relacoes_interacao_create')->name('gestor_relacoes_interacao_create');
+  $auth->put('/:cod_inep/relacoes/:id/interacoes/:interacao_id' => $inter_check)
+    ->to('gestor#relacoes_interacao_update')->name('gestor_relacoes_interacao_update');
+  $auth->delete('/:cod_inep/relacoes/:id/interacoes/:interacao_id' => $inter_check)
+    ->to('gestor#relacoes_interacao_destroy')->name('gestor_relacoes_interacao_destroy');
+
+  $auth->post('/:cod_inep/relacoes/:id/documentos' => $id_check)
+    ->to('gestor#relacoes_documento_create')->name('gestor_relacoes_documento_create');
+  $auth->get('/:cod_inep/relacoes/:id/documentos/:documento_id' => $doc_check)
+    ->to('gestor#relacoes_documento_get')->name('gestor_relacoes_documento_get');
+  $auth->delete('/:cod_inep/relacoes/:id/documentos/:documento_id' => $doc_check)
+    ->to('gestor#relacoes_documento_delete')->name('gestor_relacoes_documento_delete');
 }
 
 1;
