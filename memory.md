@@ -81,6 +81,29 @@
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
 
+## Sessão — Landpage e acessos ao Painel do Gestor
+
+- **Repo** `edumaps`; branch `feat/landpage-gestor` (a partir de `origin/main`);
+  commit `18b8d94` (frontend). **PR #84** → `main`, merge commit **`29c72f1`**
+  (2026-09-21). `main` == `origin/main`.
+- **Objetivo**: refletir a maturidade (busca + análise **+ gestão**) na landpage
+  e no banner, com fluxo natural de cadastro/login do gestor a partir da escola.
+- **Entregas (só frontend)**:
+  - Landpage: pilar **"Gestão escolar"** + CTA **"Sou gestor"** → `/gestor`.
+  - Banner (`app/App.svelte`): link **"Gestor"**.
+  - **Nova página `/gestor`** (`GestorAcessoPage.svelte`): abas **Já tenho conta**
+    (reusa `GestorLoginCard`, agora com props `titulo`/`descricao`) e **Criar
+    conta** (INEP pré-preenchível, nome, e-mail, senha + telefone/cargo); já
+    logado → atalho ao painel + Sair; login/cadastro → `/gestor/painel?inep=`
+    (cadastro faz auto-login).
+  - **"Você é o gestor?"** no card da escola (`?inep=&modo=cadastro`), no painel
+    público da escola e no cabeçalho da busca.
+- **Decisão**: **sem validação de titularidade**; reusa `POST /perfil`, `/login`,
+  `/me` (nenhuma alteração de backend).
+- **Testes**: 5 arquivos → 30 ok; suite completa **296 ok** (4 falhas
+  pré-existentes). Build ok (`deploy_frontend_dev`).
+- **Deploy**: `deploy_frontend_dev` (sem migração/backend).
+
 ## Sessão — Relações Institucionais: Etapa 5 (tarefas + indicadores)
 
 - **Repo** `edumaps`; branch `feat/relacoes-tarefas` (a partir de `origin/main`);
