@@ -253,12 +253,48 @@ sub list_relacoes ($self, $cod_inep, $filtros = {}) {
   return [ map { $self->_relacao_out($_) } @{ $self->_rows($sql, @binds) } ];
 }
 
+# Agenda institucional: visão temporal derivada de clean.relacoes (sem tabela
+# nova). Lista as relações abertas com prazo e/ou próxima ação, ordenadas por
+# prazo; separa as sem prazo definido e conta as vencidas.
+sub agenda_relacoes ($self, $cod_inep, $filtros = {}) {
+  my @where = ('r.cod_inep = ?');
+  my @binds = ($cod_inep + 0);
+
+  push @where, 'r.status NOT IN (\'concluida\', \'cancelada\')'
+    unless $filtros->{incluir_encerradas};
+  push @where, '(r.prazo IS NOT NULL OR r.proxima_acao IS NOT NULL)';
+
+  if (my $de = $filtros->{de}) {
+    push @where, 'r.prazo >= ?::date';
+    push @binds, $de;
+  }
+  if (my $ate = $filtros->{ate}) {
+    push @where, 'r.prazo <= ?::date';
+    push @binds, $ate;
+  }
+
+  my $sql = $self->_relacao_select . ' WHERE ' . join(' AND ', @where)
+    . ' ORDER BY r.prazo NULLS LAST, r.prioridade DESC, r.id DESC LIMIT 500';
+
+  my @out = map { $self->_relacao_out($_) } @{ $self->_rows($sql, @binds) };
+  my @com_prazo = grep { $_->{prazo} } @out;
+  my @sem_prazo = grep { !$_->{prazo} } @out;
+
+  return {
+    de        => $filtros->{de},
+    ate       => $filtros->{ate},
+    total     => scalar(@out),
+    vencidas  => scalar(grep { $_->{vencida} } @out),
+    itens     => \@com_prazo,
+    sem_prazo => \@sem_prazo,
+  };
+}
+
 sub relacao_detail ($self, $id, $cod_inep) {
   my $r = $self->_row($self->_relacao_select . ' WHERE r.id = ? AND r.cod_inep = ?',
     $id + 0, $cod_inep + 0) or return;
   return $self->_relacao_out($r);
 }
-
 sub create_relacao ($self, $cod_inep, $gestor_id, $params = {}) {
   my $row = $self->_row(
     'INSERT INTO clean.relacoes

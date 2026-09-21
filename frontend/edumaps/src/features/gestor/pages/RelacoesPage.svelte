@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import {
     getRelacoes,
+    getAgenda,
     createCategoria,
     deleteCategoria,
     createEntidade,
@@ -34,6 +35,7 @@
 
   const ABAS = [
     { key: "relacoes", label: "Relações" },
+    { key: "agenda", label: "Agenda" },
     { key: "entidades", label: "Entidades externas" },
   ];
 
@@ -49,6 +51,30 @@
   let relacoes = $state([]);
 
   let filtros = $state({ q: "", status: "", prioridade: "" });
+
+  let agenda = $state(null);
+  let agendaFiltros = $state({ de: "", ate: "" });
+  let carregandoAgenda = $state(false);
+
+  const MESES = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+  ];
+
+  function mesLabel(ym) {
+    const [ano, mes] = ym.split("-");
+    return `${MESES[Number(mes) - 1]} de ${ano}`;
+  }
+
+  const agendaGrupos = $derived.by(() => {
+    const mapa = new Map();
+    for (const r of agenda?.itens ?? []) {
+      const ym = r.prazo.slice(0, 7);
+      if (!mapa.has(ym)) mapa.set(ym, []);
+      mapa.get(ym).push(r);
+    }
+    return [...mapa.entries()].map(([ym, itens]) => ({ ym, label: mesLabel(ym), itens }));
+  });
 
   let entForm = $state(null);
   let relForm = $state(null);
@@ -93,11 +119,25 @@
       categorias = data.categorias;
       entidades = data.entidades;
       relacoes = data.relacoes;
+      await carregarAgenda();
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar as relações.");
       if (msg) error = msg;
     } finally {
       carregando = false;
+    }
+  }
+
+  async function carregarAgenda() {
+    if (!inep) return;
+    carregandoAgenda = true;
+    try {
+      agenda = await getAgenda(inep, agendaFiltros);
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível carregar a agenda.");
+      if (msg) addToast(msg, "error");
+    } finally {
+      carregandoAgenda = false;
     }
   }
 
@@ -383,6 +423,77 @@
             </p>
           {/each}
         </div>
+      </section>
+
+    {:else if aba === "agenda"}
+      <section class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="text-xs text-gray-600">
+              <span class="mr-1">De</span>
+              <input type="date" bind:value={agendaFiltros.de} onchange={carregarAgenda} class="h-9 px-2 rounded-md border border-gray-300 text-sm" />
+            </label>
+            <label class="text-xs text-gray-600">
+              <span class="mr-1">Até</span>
+              <input type="date" bind:value={agendaFiltros.ate} onchange={carregarAgenda} class="h-9 px-2 rounded-md border border-gray-300 text-sm" />
+            </label>
+            <button type="button" onclick={carregarAgenda} class="h-9 px-3 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Atualizar</button>
+          </div>
+          <p class="text-xs text-gray-500">
+            {#if carregandoAgenda}carregando…{:else}{agenda?.total ?? 0} obrigação(ões) · <span class="text-red-600 font-medium">{agenda?.vencidas ?? 0} vencida(s)</span>{/if}
+          </p>
+        </div>
+
+        {#each agendaGrupos as grupo (grupo.ym)}
+          <div class="rounded-card bg-white border border-gray-200 shadow-card p-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">{grupo.label}</h3>
+            <ul class="mt-2 divide-y divide-gray-100">
+              {#each grupo.itens as r (r.id)}
+                <li class={`flex flex-wrap items-start justify-between gap-2 py-2 ${r.vencida ? "bg-red-50/40 -mx-3 px-3" : ""}`}>
+                  <div class="flex items-start gap-3 min-w-0">
+                    <span class="mt-0.5 shrink-0 rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">{fmtData(r.prazo).slice(0, 5)}</span>
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-gray-800 truncate">
+                        {r.assunto}
+                        {#if r.vencida}<span class="ml-2 text-[10px] uppercase text-red-600 font-semibold">vencida</span>{/if}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        {r.entidade_nome}{#if r.finalidade} · {r.finalidade}{/if}
+                        {#if r.proxima_acao} · {r.proxima_acao}{/if}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_STATUS_BADGE[r.status] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_STATUS_LABELS[r.status] ?? r.status}</span>
+                    <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_PRIORIDADE_BADGE[r.prioridade] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade}</span>
+                    <button type="button" onclick={() => abrirRelacao(r)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {:else}
+          <p class="rounded-card border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+            Nenhuma obrigação com prazo no período.
+          </p>
+        {/each}
+
+        {#if (agenda?.sem_prazo ?? []).length}
+          <div class="rounded-card bg-white border border-gray-200 shadow-card p-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Sem prazo definido</h3>
+            <ul class="mt-2 divide-y divide-gray-100">
+              {#each agenda.sem_prazo as r (r.id)}
+                <li class="flex flex-wrap items-start justify-between gap-2 py-2">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{r.assunto}</p>
+                    <p class="text-xs text-gray-500">{r.entidade_nome}{#if r.proxima_acao} · {r.proxima_acao}{/if}</p>
+                  </div>
+                  <button type="button" onclick={() => abrirRelacao(r)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
       </section>
 
     {:else}

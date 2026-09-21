@@ -1070,6 +1070,16 @@ sub relacoes_entidade_destroy($self) {
 
 # --- relações --------------------------------------------------------------
 
+sub relacoes_agenda($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  $self->render(json => $model->agenda_relacoes($self->param('cod_inep'), {
+    de                 => $self->param('de'),
+    ate                => $self->param('ate'),
+    incluir_encerradas => $self->param('incluir_encerradas'),
+  }));
+}
+
 sub relacoes_show($self) {
   return unless $self->_gestor_inep_ok;
   my $model = $self->instantiate_model(model => 'Gestor');

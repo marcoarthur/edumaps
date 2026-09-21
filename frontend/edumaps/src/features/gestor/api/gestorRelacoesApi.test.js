@@ -6,6 +6,7 @@ import { SESSION_TOKEN } from "../mocks/fixtures.js";
 import { INEP_RELACOES } from "../mocks/relacoesFixtures.js";
 import {
   getRelacoes,
+  getAgenda,
   createCategoria,
   createEntidade,
   createRelacao,
@@ -37,6 +38,14 @@ describe("gestorRelacoesApi", () => {
 
     const abertas = await getRelacoes(INEP_RELACOES, { status: "aberta" });
     expect(abertas.relacoes.every((r) => r.status === "aberta")).toBe(true);
+  });
+
+  it("monta a agenda institucional (com e sem prazo)", async () => {
+    const ag = await getAgenda(INEP_RELACOES);
+    expect(ag.itens).toHaveLength(1);
+    expect(ag.itens[0].vencida).toBe(1);
+    expect(ag.sem_prazo).toHaveLength(1);
+    expect(ag.vencidas).toBe(1);
   });
 
   it("cria categoria, entidade e relação end to end", async () => {

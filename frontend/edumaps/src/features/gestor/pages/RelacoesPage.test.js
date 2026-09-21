@@ -58,4 +58,15 @@ describe("RelacoesPage", () => {
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Relação registrada.", "success"));
     expect(await screen.findByText("Reunião sobre merenda")).toBeInTheDocument();
   });
+
+  it("mostra a agenda agrupada por mês e a seção sem prazo", async () => {
+    render(RelacoesPage);
+    await screen.findByText("Conserto do telhado da quadra");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Agenda" }));
+
+    expect(await screen.findByText("janeiro de 2020")).toBeInTheDocument();
+    expect(screen.getByText("Sem prazo definido")).toBeInTheDocument();
+    expect(screen.getByText("vencida")).toBeInTheDocument();
+  });
 });

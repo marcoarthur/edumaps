@@ -246,6 +246,32 @@ export const gestorRelacoesHandlers = [
     return HttpResponse.json(relacaoOut(estab, rel), { status: 201 });
   }),
 
+  http.get(`${BASE}/agenda`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const url = new URL(request.url);
+    const de = url.searchParams.get("de");
+    const ate = url.searchParams.get("ate");
+
+    let lista = estab.relacoes
+      .map((r) => relacaoOut(estab, r))
+      .filter((r) => !["concluida", "cancelada"].includes(r.status))
+      .filter((r) => r.prazo || r.proxima_acao);
+    if (de) lista = lista.filter((r) => r.prazo && r.prazo >= de);
+    if (ate) lista = lista.filter((r) => r.prazo && r.prazo <= ate);
+    lista.sort((a, b) => (a.prazo ?? "9999") .localeCompare(b.prazo ?? "9999"));
+
+    return HttpResponse.json({
+      de,
+      ate,
+      total: lista.length,
+      vencidas: lista.filter((r) => r.vencida).length,
+      itens: lista.filter((r) => r.prazo),
+      sem_prazo: lista.filter((r) => !r.prazo),
+    });
+  }),
+
   http.get(`${BASE}/:id`, ({ request, params }) => {
     const denied = okAuth(request);
     if (denied) return denied;
