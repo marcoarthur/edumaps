@@ -5,6 +5,7 @@ import { networkCompareHandlers } from "@/features/network-compare/mocks/handler
 import { clusterGeotagHandlers } from "@/features/cluster-geotag/mocks/handlers.js";
 import { gestorPesquisasHandlers } from "@/features/gestor/mocks/handlers.js";
 import { gestorReunioesHandlers } from "@/features/gestor/mocks/reunioesHandlers.js";
+import { gestorInventarioHandlers } from "@/features/gestor/mocks/inventarioHandlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -12,4 +13,5 @@ export const handlers = [
   ...clusterGeotagHandlers,
   ...gestorPesquisasHandlers,
   ...gestorReunioesHandlers,
+  ...gestorInventarioHandlers,
 ];

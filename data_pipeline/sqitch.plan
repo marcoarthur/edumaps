@@ -51,3 +51,4 @@ gestor_pesquisas [schemas] 2026-09-19T12:00:00Z Marco Arthur <arthurpbs@gmail.co
 gestor_respostas [gestor_pesquisas] 2026-09-19T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2: token publico, login do gestor (sessoes), respostas da comunidade e resultados
 gestor_reunioes [gestor_respostas] 2026-09-20T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Reuniões e atas do gestor: contatos, grupos (drag-and-drop), agenda e anexos (pauta/ata)
 gestor_reunioes_grupos_folha [gestor_reunioes] 2026-09-20T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Grupos pre-listados pela folha (contato_grupos.gestor_id opcional + origem folha/manual)
+inventario_escolar [gestor_reunioes] 2026-09-20T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Inventario escolar: categorias/itens/fornecedores/anexos por escola, baseline lido do Censo e importavel

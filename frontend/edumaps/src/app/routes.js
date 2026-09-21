@@ -13,6 +13,7 @@ import {
   GestorReunioesPage,
   GestorReunioesWizardPage,
   GestorReuniaoDetailPage,
+  GestorInventarioPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -42,6 +43,7 @@ export const routes = [
   { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },
   { path: "/gestor/reunioes/:id", component: GestorReuniaoDetailPage },
   { path: "/gestor/reunioes/:id/editar", component: GestorReunioesWizardPage },
+  { path: "/gestor/inventario", component: GestorInventarioPage },
   { path: "/p/:token", component: PublicaRespostaPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
