@@ -46,6 +46,58 @@ export function getSchoolFinance(codInep) {
   return apiClient.get(`${BASE}/${codInep}/finance`);
 }
 
+// ---------------------------------------------------------------------------
+// SIOPE (remuneração municipal) — disparo assíncrono pelo painel financeiro
+// ---------------------------------------------------------------------------
+
+/**
+ * Enfileira o download do SIOPE para a escola/ano (exige sessão do gestor).
+ * @returns {Promise<{ task: string, job_id: number, ano: number }>}
+ */
+export function requestSchoolSiope(codInep, ano) {
+  return apiClient.post(`/api/gestor/${codInep}/financeiro/siope`, { ano });
+}
+
+/** Snapshot do job (polling simples). @returns {Promise<{state, error?}>} */
+export function getJobProgress(jobId) {
+  return apiClient.get("/api/task/progress", { job_id: jobId });
+}
+
+/**
+ * Acompanha o job por SSE (Server-Sent Events) e, ao encerrar o stream, lê o
+ * snapshot final (o SSE não emite falha) para decidir sucesso/erro.
+ * @param {string|number} jobId
+ * @param {{ onProgress?: (p:object)=>void, onDone?: ()=>void, onError?: (msg:string)=>void }} handlers
+ * @returns {() => void} função para cancelar
+ */
+export function watchJobProgress(jobId, { onProgress, onDone, onError } = {}) {
+  const source = new EventSource(`/api/task/progress?job_id=${jobId}`);
+
+  source.onmessage = (event) => {
+    try {
+      onProgress?.(JSON.parse(event.data));
+    } catch {
+      // evento sem JSON — ignora
+    }
+  };
+
+  source.onerror = async () => {
+    source.close();
+    try {
+      const snap = await getJobProgress(jobId);
+      if (snap.state === "failed") {
+        onError?.(snap.error || "Falha ao baixar os dados do SIOPE.");
+      } else {
+        onDone?.();
+      }
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : "Falha ao acompanhar o job.");
+    }
+  };
+
+  return () => source.close();
+}
+
 /**
  * Busca paginada de escolas com suporte a paginação server‑side.
  *
