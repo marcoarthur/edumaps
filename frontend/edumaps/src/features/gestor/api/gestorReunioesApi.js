@@ -36,6 +36,15 @@ export function importContatos(inep, contatos) {
   return apiClient.post(`${BASE(inep)}/contatos/import`, { contatos });
 }
 
+/**
+ * Importa os profissionais da folha de pagamento como contatos (nome + cargo),
+ * vinculados aos grupos pré-listados da folha. Idempotente.
+ * @returns {Promise<{n_inseridos:number, n_grupos:number}>}
+ */
+export function importarContatosFolha(inep) {
+  return apiClient.post(`${BASE(inep)}/contatos/importar-folha`);
+}
+
 /** @returns {Promise<Array>} [{id, nome, n_contatos, created_at}] */
 export function listGrupos(inep) {
   return apiClient.get(`${BASE(inep)}/grupos`);

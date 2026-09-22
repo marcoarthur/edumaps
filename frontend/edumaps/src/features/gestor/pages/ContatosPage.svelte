@@ -9,6 +9,7 @@
     updateContato,
     deleteContato,
     importContatos,
+    importarContatosFolha,
     listGrupos,
     createGrupo,
     deleteGrupo,
@@ -169,6 +170,26 @@
     }
   }
 
+  // Importa os profissionais da folha de pagamento como contatos (nome + cargo).
+  async function importarDaFolha() {
+    resultadoImport = null;
+    try {
+      const res = await importarContatosFolha(inep);
+      const [c, g] = await Promise.all([listContatos(inep), listGrupos(inep)]);
+      contatos = c;
+      grupos = g;
+      addToast(
+        res.n_inseridos > 0
+          ? `${res.n_inseridos} contato(s) importado(s) da folha.`
+          : "Nenhum contato novo na folha (já importados).",
+        res.n_inseridos > 0 ? "success" : "warning",
+      );
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível importar da folha.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
   async function criarGrupo() {
     if (!novoGrupo.trim()) return;
     try {
@@ -282,6 +303,22 @@
             {resultadoImport.n_inseridos} inseridos, {resultadoImport.n_pulados} pulados.
           </p>
         {/if}
+
+        <!-- importar da folha de pagamento -->
+        <div class="pt-2 border-t border-gray-100 space-y-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Da folha de pagamento
+          </h3>
+          <p class="text-xs text-gray-500">
+            Traz os profissionais da folha da escola como contatos (nome e cargo),
+            organizados nos grupos da folha. Não repete quem já está na agenda.
+          </p>
+          <button
+            type="button"
+            onclick={importarDaFolha}
+            class="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+          >Importar da folha</button>
+        </div>
 
         <!-- grupos -->
         <div class="pt-2 border-t border-gray-100 space-y-2">

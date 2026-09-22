@@ -35,6 +35,7 @@ sub register($self, $app, @args) {
   $auth->post('/:cod_inep/contatos' => $check)->to('gestor#contatos_create')->name('gestor_contatos_create');
   # import ANTES de /:id para ganhar na especificidade.
   $auth->post('/:cod_inep/contatos/import' => $check)->to('gestor#contatos_import')->name('gestor_contatos_import');
+  $auth->post('/:cod_inep/contatos/importar-folha' => $check)->to('gestor#contatos_importar_folha')->name('gestor_contatos_importar_folha');
   $auth->put('/:cod_inep/contatos/:id' => $check)->to('gestor#contatos_update')->name('gestor_contatos_update');
   $auth->delete('/:cod_inep/contatos/:id' => $check)->to('gestor#contatos_destroy')->name('gestor_contatos_destroy');
 
