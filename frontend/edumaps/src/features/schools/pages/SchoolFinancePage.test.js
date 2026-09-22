@@ -89,7 +89,7 @@ describe("SchoolFinancePage — SIOPE", () => {
 
     render(SchoolFinancePage);
     expect(
-      await screen.findByText(/Folha da Secretaria municipal/),
+      await screen.findByText(/Painel da rede municipal — não desta escola/),
     ).toBeInTheDocument();
   });
 

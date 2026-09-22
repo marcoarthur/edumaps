@@ -24,8 +24,10 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode apresentar o resumo financeiro da educação por escola/município
   (custo por competência, total de profissionais distintos e custo por categoria).
 - Quando o SIOPE de um município não detalha a folha por escola, o sistema pode
-  apresentar o **agregado da Secretaria municipal**, com aviso de que o valor é
-  da rede (não só da unidade).
+  apresentar o **agregado da Secretaria municipal**, claramente **escopado como
+  rede municipal** (não como se fosse da unidade), com aviso de que os números
+  não permitem identificar quem atua na escola. A folha detalhada (nomes) fica
+  indisponível nesse caso.
 - Sistema pode contextualizar os recursos frente à rede e ao desempenho.
 - Sistema pode buscar, sob demanda e em segundo plano, os dados do **SIOPE**
   (remuneração municipal) de um ano que ainda não está disponível — para escolas
