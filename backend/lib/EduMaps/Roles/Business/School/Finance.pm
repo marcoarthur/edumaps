@@ -354,7 +354,25 @@ sub financial_summary($self, $params) {
     '        ELSE 0',
     '      END';
 
-  my $series = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod);
+  # A folha pode estar na própria escola OU agregada no município (código
+  # 99999999 = "SEC MUN DE EDUC ..."), quando o SIOPE não declara por escola.
+  # Tenta a escola; se não houver, cai para o agregado do município.
+  my ($tem_escola) = $dbh->selectrow_array(
+    'SELECT 1 FROM clean.remuneracao_municipal WHERE cod_inep = ? LIMIT 1',
+    undef, $cod,
+  );
+
+  my $cod_municipio = $self->_cod_municipio_escola($cod);
+  my $origem = 'escola';
+  my $where  = 'cod_inep = ?';
+  my @bind   = ($cod);
+  if (!$tem_escola && defined $cod_municipio) {
+    $where = 'cod_municipio::text = ?';
+    @bind  = ($cod_municipio);
+    $origem = 'secretaria';
+  }
+
+  my $series = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, @bind);
     SELECT
       ano,
       mes,
@@ -362,29 +380,29 @@ sub financial_summary($self, $params) {
       COALESCE(SUM(salario_total), 0)::float AS total_salario,
       COUNT(DISTINCT cpf)::int               AS total_profissionais
     FROM clean.remuneracao_municipal
-    WHERE cod_inep = ?
+    WHERE $where
     GROUP BY ano, mes
     ORDER BY ano, mes_num
   SQL
 
-  my $categorias = $dbh->selectall_arrayref(<<~'SQL', { Slice => {} }, $cod);
+  my $categorias = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, @bind);
     SELECT
       categoria,
       tipo,
       COALESCE(SUM(salario_total), 0)::float AS total_salario,
       COUNT(DISTINCT cpf)::int               AS total_profissionais
     FROM clean.remuneracao_municipal
-    WHERE cod_inep = ?
+    WHERE $where
     GROUP BY categoria, tipo
     ORDER BY total_salario DESC
   SQL
 
-  # Total de profissionais distintos da escola (todos os meses/anos) — o card
-  # do painel usa este total; a competência mais recente pode ter 1 servidor e
-  # parecer que a escola só tem 1.
+  # Total de profissionais distintos (todos os meses/anos) — o card do painel
+  # usa este total; a competência mais recente pode ter 1 servidor e parecer
+  # que a escola só tem 1.
   my ($total_profissionais) = $dbh->selectrow_array(
-    'SELECT COUNT(DISTINCT cpf)::int FROM clean.remuneracao_municipal WHERE cod_inep = ?',
-    undef, $cod,
+    "SELECT COUNT(DISTINCT cpf)::int FROM clean.remuneracao_municipal WHERE $where",
+    undef, @bind,
   );
 
   my $siope = $self->siope_status($cod);
@@ -396,6 +414,12 @@ sub financial_summary($self, $params) {
       dependencia_administrativa => $siope->{rede},
       cod_municipio              => $siope->{cod_municipio},
     },
+    # origem: 'escola' (folha da própria unidade) ou 'secretaria' (agregado do
+    # município — o SIOPE não declara por escola em parte das cidades).
+    origem     => $origem,
+    rotulo_origem => $origem eq 'secretaria'
+      ? 'Folha da Secretaria municipal (o SIOPE não detalha por escola neste município)'
+      : undef,
     total_profissionais => ($total_profissionais // 0) + 0,
     series     => $series     // [],
     categorias => $categorias // [],
