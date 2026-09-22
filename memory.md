@@ -41,6 +41,10 @@
 >   linha por servidor **por competência**; a competência mais recente pode ter
 >   poucos servidores. Para "quantos profissionais a escola tem", usar
 >   `COUNT(DISTINCT cpf)` no total — não o número da última competência.
+> - **SIOPE nem sempre detalha por escola**: em ~3819 municípios a folha vem
+>   agregada sob `cod_inep=99999999` (`"SEC MUN DE EDUC ..."`). Para achar a folha
+>   de uma escola, tentar `cod_inep`; se vazio, cair para `cod_municipio`
+>   (agregado da Secretaria) e sinalizar a origem.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
@@ -92,6 +96,29 @@
   post-commit falhou uma vez (`code 255`) — re-sync manual confirmou.
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
+
+## Sessão — Financeiro: agregado da Secretaria (SIOPE sem folha por escola)
+
+- **Repo** `edumaps`; branch `fix/financeiro-agregado-secretaria` (a partir de
+  `origin/main`); commit `938ad32`. **PR #91** → `main`, merge commit
+  **`fefa1a8`** (2026-09-22). `main` == `origin/main`.
+- **Diagnóstico (não era bug do EduMaps)**: em Taubaté e **~3819 municípios**, o
+  SIOPE **não detalha a folha por escola** — o FNDE entrega tudo sob
+  `cod_inep=99999999` / `"SEC MUN DE EDUC ..."` (a Secretaria). Confirmado no
+  xlsx bruto (todas as linhas com `99999999`; num município que declara por
+  escola, como 353650, vem 1 cod_inep por unidade). Os dados existem; o painel
+  busca pela escola real e ficava vazio.
+- **Fix**: `financial_summary` tenta a escola; se vazia, cai para o **agregado
+  do município** (`cod_municipio`) e devolve `origem` (`escola`|`secretaria`) +
+  `rotulo_origem`. Frontend mostra aviso destacado quando `origem=secretaria`.
+- **Validado no real**: escola sem folha própria → `origem=secretaria`, 12
+  competências, 3.632 profissionais.
+- **Testes**: backend `prove -rl t/04-api/school/ t/04-api/gestor/` (novo
+  `finance_secretaria.t`); frontend `SchoolFinancePage.test.js` 6 ok; suite 303
+  ok (4 pré-existentes). **Nota**: `t/04-api/school/clustering.t` falha no HEAD
+  (depende de R/serviço) e `search_paginated.t` é flaky de performance — não são
+  regressões.
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev`.
 
 ## Sessão — Importar contatos da folha de pagamento
 
