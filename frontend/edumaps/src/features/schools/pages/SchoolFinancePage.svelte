@@ -18,6 +18,8 @@
   let series = $state([]);
   let categorias = $state([]);
   let totalProfissionais = $state(0);
+  let origem = $state("escola");
+  let rotuloOrigem = $state(null);
   let loading = $state(true);
   let error = $state(null);
 
@@ -51,6 +53,8 @@
       series = data.series ?? [];
       categorias = data.categorias ?? [];
       totalProfissionais = data.total_profissionais ?? 0;
+      origem = data.origem ?? "escola";
+      rotuloOrigem = data.rotulo_origem ?? null;
       siope = data.siope ?? null;
       anoSelecionado = anosDisponiveis.at(-1) ?? null;
     } catch (err) {
@@ -218,6 +222,13 @@
       </section>
     {/if}
 
+    {#if origem === "secretaria" && rotuloOrigem}
+      <div class="rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm p-4">
+        {rotuloOrigem}. Os valores abaixo são o total da rede municipal, não
+        apenas desta unidade.
+      </div>
+    {/if}
+
     {#if series.length === 0}
       <div class="bg-white border border-gray-200 rounded-card shadow-card p-8 text-center">
         <p class="text-gray-500">
@@ -225,7 +236,7 @@
         </p>
       </div>
     {:else}
-      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} />
     {/if}
   {/if}
 </div>

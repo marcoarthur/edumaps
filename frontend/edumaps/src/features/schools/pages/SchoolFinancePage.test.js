@@ -32,6 +32,7 @@ const FINANCE_MUNICIPAL = {
     cod_municipio: "350517",
   },
   total_profissionais: 5,
+  origem: "escola",
   series: [
     { ano: 2024, mes: "Outubro", mes_num: 10, total_profissionais: 1, total_salario: 18988.13 },
   ],
@@ -76,6 +77,20 @@ describe("SchoolFinancePage — SIOPE", () => {
     // total distinto = 5 (a última competência tem só 1)
     expect(screen.getByText("5")).toBeInTheDocument();
     expect(screen.getByText(/Competência mais recente/)).toBeInTheDocument();
+  });
+
+  it("avisa quando os dados vêm do agregado da Secretaria", async () => {
+    mocks.getSchoolFinance.mockResolvedValue({
+      ...FINANCE_MUNICIPAL,
+      origem: "secretaria",
+      rotulo_origem:
+        "Folha da Secretaria municipal (o SIOPE não detalha por escola neste município)",
+    });
+
+    render(SchoolFinancePage);
+    expect(
+      await screen.findByText(/Folha da Secretaria municipal/),
+    ).toBeInTheDocument();
   });
 
   it("dispara a busca e recarrega ao concluir", async () => {
