@@ -222,13 +222,6 @@
       </section>
     {/if}
 
-    {#if origem === "secretaria" && rotuloOrigem}
-      <div class="rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm p-4">
-        {rotuloOrigem}. Os valores abaixo são o total da rede municipal, não
-        apenas desta unidade.
-      </div>
-    {/if}
-
     {#if series.length === 0}
       <div class="bg-white border border-gray-200 rounded-card shadow-card p-8 text-center">
         <p class="text-gray-500">

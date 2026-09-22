@@ -52,4 +52,26 @@ describe("SchoolFinance", () => {
       "/escola/payroll?inep=12345678&date=12-2025",
     );
   });
+
+  it("escopa como rede municipal quando a origem é a Secretaria", () => {
+    render(SchoolFinance, {
+      props: {
+        inep: "12345678",
+        series: SERIES,
+        categorias: CATEGORIAS,
+        totalProfissionais: 3632,
+        origem: "secretaria",
+      },
+    });
+
+    expect(screen.getByText(/Painel da rede municipal — não desta escola/)).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) =>
+        el?.tagName === "H2" && /Categorias profissionais/.test(el.textContent) &&
+        /rede municipal/.test(el.textContent),
+      ),
+    ).toBeInTheDocument();
+    // a folha detalhada (nomes) fica indisponível no agregado
+    expect(screen.getByRole("button", { name: /ver folha completa/i })).toBeDisabled();
+  });
 });

@@ -26,7 +26,13 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, series = [], categorias = [] } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [] } = $props();
+
+  // Quando o SIOPE não detalha a folha por escola (origem='secretaria'), todo o
+  // painel é escopado como REDE MUNICIPAL — nunca como se fosse da unidade.
+  const ehRede = $derived(origem === "secretaria");
+  const escopo = $derived(ehRede ? "rede municipal" : "escola");
+  const escopoTitulo = $derived(ehRede ? "Rede municipal (Secretaria)" : "");
 
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
@@ -44,7 +50,7 @@
   });
 
   const costOptions = $derived({
-    title: "Custo total mensal",
+    title: `Custo total mensal${ehRede ? " — rede municipal" : ""}`,
     axes: {
       left: { mapsTo: "value", title: "R$" },
       bottom: { mapsTo: "key", scaleType: "labels", title: "Mês" },
@@ -56,7 +62,7 @@
   });
 
   const professionalOptions = $derived({
-    title: "Profissionais por mês",
+    title: `Profissionais por mês${ehRede ? " — rede municipal" : ""}`,
     axes: {
       left: { mapsTo: "value", title: "Profissionais" },
       bottom: { mapsTo: "key", scaleType: "labels", title: "Mês" },
@@ -72,7 +78,7 @@
   );
 
   const categoryOptions = $derived({
-    title: "Custo por categoria",
+    title: `Custo por categoria${ehRede ? " — rede municipal" : ""}`,
     donut: { center: { label: "Total", number: formatBRLCompact(stats.totalCusto) } },
     data: { groupMapsTo: "group" },
     color: { scale: categoryColorScale },
@@ -86,16 +92,32 @@
 </script>
 
 <div class="space-y-6">
+  {#if ehRede}
+    <div class="rounded-md bg-amber-50 border border-amber-300 text-amber-900 text-sm p-4">
+      <p class="font-semibold">Painel da rede municipal — não desta escola</p>
+      <p class="mt-1">
+        O SIOPE não detalha a folha por escola neste município; os dados vêm
+        agregados na Secretaria municipal. Os números abaixo são o
+        <strong>total da rede</strong> e <strong>não permitem identificar</strong>
+        quem atua nesta unidade.
+      </p>
+    </div>
+  {/if}
+
   <!-- Totais -->
   <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
-      <p class="text-xs text-gray-500">Custo total (período)</p>
+      <p class="text-xs text-gray-500">
+        Custo total (período){#if ehRede} · {escopoTitulo}{/if}
+      </p>
       <p class="text-xl font-bold text-gray-900 mt-1">
         {formatBRL(stats.totalCusto)}
       </p>
     </div>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
-      <p class="text-xs text-gray-500">Profissionais (total)</p>
+      <p class="text-xs text-gray-500">
+        Profissionais (total){#if ehRede} · {escopoTitulo}{/if}
+      </p>
       <p class="text-xl font-bold text-gray-900 mt-1">
         {formatInt(totalProfissionais)}
       </p>
@@ -140,7 +162,7 @@
 
       <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
         <h2 class="text-base font-bold text-gray-900 mb-3">
-          Categorias profissionais
+          Categorias profissionais{#if ehRede} — rede municipal{/if}
         </h2>
         <ul class="flex flex-col gap-3">
           {#each buckets as b (b.bucket.id)}
@@ -171,7 +193,7 @@
   >
     <div>
       <label for="competencia" class="block text-sm text-gray-600 mb-1">
-        Ver folha completa (detalhes)
+        Ver folha completa (detalhes){#if ehRede} — rede municipal{/if}
       </label>
       <select
         id="competencia"
@@ -186,14 +208,20 @@
     <button
       type="button"
       onclick={verFolhaCompleta}
-      disabled={!selectedPeriod}
+      disabled={!selectedPeriod || ehRede}
+      title={ehRede ? "A folha detalhada (nomes) só existe quando o SIOPE detalha por escola" : ""}
       class="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
     >
       Ver folha completa →
     </button>
     <p class="text-xs text-gray-400 basis-full">
-      {escola?.nome ?? ""} — a folha lista os profissionais (nomes) apenas na
-      página de detalhes.
+      {#if ehRede}
+        A folha detalhada (nomes dos profissionais) não está disponível: neste
+        município o SIOPE não detalha por escola.
+      {:else}
+        {escola?.nome ?? ""} — a folha lista os profissionais (nomes) apenas na
+        página de detalhes.
+      {/if}
     </p>
   </section>
 </div>
