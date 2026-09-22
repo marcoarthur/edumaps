@@ -44,7 +44,9 @@
 > - **SIOPE nem sempre detalha por escola**: em ~3819 municípios a folha vem
 >   agregada sob `cod_inep=99999999` (`"SEC MUN DE EDUC ..."`). Para achar a folha
 >   de uma escola, tentar `cod_inep`; se vazio, cair para `cod_municipio`
->   (agregado da Secretaria) e sinalizar a origem.
+>   (agregado da Secretaria) e sinalizar a origem. **Ao exibir o agregado, escopar
+>   como "rede municipal"** (nunca como se fosse da unidade) e não oferecer a
+>   folha detalhada por nomes.
 
 > **Pendências / correções futuras (backlog técnico)**:
 > - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
@@ -96,6 +98,22 @@
   post-commit falhou uma vez (`code 255`) — re-sync manual confirmou.
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
+
+## Sessão — Financeiro: escopo de rede no agregado da Secretaria
+
+- **Repo** `edumaps`; branch `fix/financeiro-escopo-rede` (a partir de
+  `origin/main`); commit `598aa9a`. **PR #92** → `main`, merge commit
+  **`bf54363`** (2026-09-22). `main` == `origin/main`.
+- **Motivação**: exibir o agregado da Secretaria como se fosse da escola é
+  **misleading** (não dá para saber quem atua na unidade). Mantém o dado, mas
+  escopado.
+- **Mudanças (frontend/docs)**: aviso **"Painel da rede municipal — não desta
+  escola"**; títulos/cards com sufixo "Rede municipal (Secretaria)"; **"Ver
+  folha completa"** (nomes) **desabilitado** no agregado. `origem=escola` segue
+  sem escopo de rede.
+- **Testes**: `SchoolFinance.test.js` + `SchoolFinancePage.test.js` 10 ok; suite
+  304 ok (4 pré-existentes).
+- **Deploy**: `deploy_frontend_dev`.
 
 ## Sessão — Financeiro: agregado da Secretaria (SIOPE sem folha por escola)
 
