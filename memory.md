@@ -93,6 +93,26 @@
 - **Repo `edumaps`**: sem mudanças de código neste ciclo (só docs: NOTA 51,
   este memory).
 
+## Sessão — Importar contatos da folha de pagamento
+
+- **Repo** `edumaps`; branch `fix/importar-contatos-folha` (a partir de
+  `origin/main`); commit `850f15e`. **PR #90** → `main`, merge commit
+  **`2febbc9`** (2026-09-21). `main` == `origin/main`.
+- **Bug**: a folha criava apenas **grupos** (`origem='folha'`) — rótulos vazios —
+  sem importar as pessoas. Na agenda/wizard os grupos apareciam **todos vazios**;
+  o import de contatos da folha nunca existiu (só colagem manual).
+- **Fix**: `Gestor::Reunioes#importar_contatos_folha` cria os profissionais de
+  `clean.remuneracao_municipal` como **contatos** (nome + cargo), vinculados ao
+  grupo `folha` (Professores/Administrativos/Outros via `_grupo_para_categoria`),
+  **idempotente** (pula mesmo nome+grupo). Rota
+  `POST /api/gestor/:cod_inep/contatos/importar-folha` + botão **"Importar da
+  folha"** na agenda.
+- **Validação**: container (escola `35245239`, 206 registros de folha) → **21
+  contatos** importados; 2ª rodada `n_inseridos=0`; backend 71 ok (novo
+  `contatos_folha.t`); frontend `ContatosPage.test.js` 4 ok; suite 302 ok
+  (4 pré-existentes).
+- **Deploy**: `deploy_backend_dev` + `deploy_frontend_dev`.
+
 ## Sessão — Financeiro: card de profissionais (total distinto)
 
 - **Repo** `edumaps`; branch `fix/financeiro-total-profissionais` (a partir de
