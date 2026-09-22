@@ -216,6 +216,19 @@ sub contatos_import($self) {
   $self->render(status => 201, json => $result);
 }
 
+# Importa os profissionais da folha de pagamento como contatos da escola
+# (nome + cargo), vinculados aos grupos pré-listados da folha.
+sub contatos_importar_folha($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $result = $self->_guard_api(sub {
+    $model->importar_contatos_folha($self->param('cod_inep'), $self->stash('gestor')->{id});
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Nenhum contato importado') unless $result;
+  $self->render(status => 201, json => $result);
+}
+
 sub _contato_validation($self, $input) {
   my $v = $self->app->validator->validation;
   $v->input($input);

@@ -263,6 +263,58 @@ sub sincronizar_grupos_folha ($self, $cod_inep) {
   return \@nomes;
 }
 
+# Importa os profissionais da folha de pagamento como CONTATOS da escola,
+# vinculados aos grupos 'folha' correspondentes. A folha não traz e-mail/telefone
+# (só nome + categoria), então o contato nasce com nome + cargo. Idempotente:
+# não recria quem já existe na escola com o mesmo nome e grupo.
+sub importar_contatos_folha ($self, $cod_inep, $gestor_id) {
+  # garante os grupos 'folha' antes de vincular
+  $self->sincronizar_grupos_folha($cod_inep);
+
+  my $rows = $self->_rows(
+    'SELECT DISTINCT nome_profissional AS nome, categoria
+     FROM   clean.remuneracao_municipal
+     WHERE  cod_inep = ? AND nome_profissional IS NOT NULL',
+    $cod_inep + 0,
+  );
+
+  my %grupo_id = map { $_->{nome} => $_->{id} }
+    grep { $_->{origem} eq 'folha' }
+    @{ $self->list_grupos($cod_inep) };
+
+  my $n_inseridos = 0;
+  $self->schema->storage->txn_do(sub {
+    for my $r (@$rows) {
+      my $nome  = $r->{nome};
+      my $grupo = $self->_grupo_para_categoria(undef, $r->{categoria});
+      my $gid   = $grupo_id{$grupo};
+
+      # já existe um contato com este nome e grupo nesta escola? pula.
+      my $existe = $self->_row(
+        'SELECT 1 FROM clean.contatos
+         WHERE cod_inep = ?
+           AND lower(nome) = lower(?)
+           AND grupo_id IS NOT DISTINCT FROM ?
+         LIMIT 1',
+        $cod_inep + 0, $nome, $gid,
+      );
+      next if $existe;
+
+      $self->_row(
+        'INSERT INTO clean.contatos (cod_inep, gestor_id, nome, cargo, grupo_id)
+         VALUES (?, ?, ?, ?, ?)
+         RETURNING id',
+        $cod_inep + 0, $gestor_id + 0, $nome, $r->{categoria}, $gid,
+      ) and $n_inseridos++;
+    }
+  });
+
+  return {
+    n_inseridos => $n_inseridos,
+    n_grupos    => scalar(keys %grupo_id),
+  };
+}
+
 sub update_grupo ($self, $id, $cod_inep, $nome) {
   my $row = $self->_row(
     'UPDATE clean.contato_grupos SET nome = ?

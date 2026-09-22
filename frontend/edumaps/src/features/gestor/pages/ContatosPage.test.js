@@ -69,4 +69,19 @@ describe("ContatosPage", () => {
     );
     expect(await screen.findByText("Novato")).toBeInTheDocument();
   });
+
+  it("importa os profissionais da folha como contatos", async () => {
+    render(ContatosPage);
+    await screen.findByText("Ana Professora");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Importar da folha" }));
+
+    await waitFor(() =>
+      expect(addToast).toHaveBeenCalledWith(
+        expect.stringMatching(/importado\(s\) da folha/),
+        "success",
+      ),
+    );
+    expect(await screen.findByText("Servidor da Folha A")).toBeInTheDocument();
+  });
 });

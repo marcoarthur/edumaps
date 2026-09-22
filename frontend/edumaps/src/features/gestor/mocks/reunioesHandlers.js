@@ -139,6 +139,32 @@ export const gestorReunioesHandlers = [
     return HttpResponse.json({ n_inseridos: nInseridos, n_pulados: 0 });
   }),
 
+  // importa profissionais da folha como contatos (nome + cargo) nos grupos folha
+  http.post(`${BASE}/contatos/importar-folha`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    const estab = stateFor(params.cod_inep);
+    const grupo = estab.grupos.find((g) => g.origem === "folha") ?? estab.grupos[0];
+    const nomes = ["Servidor da Folha A", "Servidor da Folha B"];
+    let nInseridos = 0;
+    for (const nome of nomes) {
+      if (estab.contatos.some((c) => c.nome === nome)) continue;
+      estab.contatos.push({
+        id: estab.proximos.contato++,
+        nome,
+        email: null,
+        telefone: null,
+        cargo: "Profissional do magistério",
+        grupo_id: grupo?.id ?? null,
+        grupo_nome: grupo?.nome ?? null,
+        updated_at: new Date().toISOString(),
+      });
+      if (grupo) grupo.n_contatos += 1;
+      nInseridos += 1;
+    }
+    return HttpResponse.json({ n_inseridos: nInseridos, n_grupos: grupo ? 1 : 0 }, { status: 201 });
+  }),
+
   // ----------------------------- grupos ------------------------------------
   http.get(`${BASE}/grupos`, ({ request, params }) => {
     const denied = okAuth(request);

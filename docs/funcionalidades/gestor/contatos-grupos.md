@@ -24,7 +24,9 @@ Gestores escolares.
 - Sistema pode cadastrar contatos com e-mail, telefone e cargo.
 - Sistema pode organizar contatos em grupos.
 - Sistema pode importar contatos em lote a partir de texto colado.
-- Sistema pode pré-listar grupos sugeridos a partir da folha de pagamento.
+- Sistema pode importar os profissionais da folha de pagamento como contatos
+  (nome e cargo), organizados nos grupos da folha, sem repetir quem já está na
+  agenda.
 
 ## Valor
 
