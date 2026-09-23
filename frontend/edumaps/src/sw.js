@@ -19,16 +19,32 @@
 // Injetado pelo build (Workbox precache manifest): [{ url, revision }, ...].
 const INJECTED_MANIFEST = self.__WB_MANIFEST || [];
 
-const CACHE_VERSION = "edumaps-v1";
-const APP_SHELL = ["/", "/index.html", "/favicon.svg", "/manifest.webmanifest"];
+const CACHE_VERSION = "edumaps-v2";
+// App shell mínimo offline. Não incluímos /sw.js, /registerSW.js nem
+// /manifest.webmanifest: esses são servidos sempre pela rede (ver `fetch`).
+const APP_SHELL = ["/", "/favicon.svg"];
+
+// Normaliza para caminho absoluto ("favicon.svg" -> "/favicon.svg") para que
+// a deduplicação funcione: o APP_SHELL usa caminhos absolutos e o manifest
+// injetado usa relativos — sem normalizar, Cache.addAll recebe a mesma URL
+// duas vezes e falha com "duplicate requests".
+const toAbsolute = (u) => {
+  try {
+    return new URL(u, self.location.origin).pathname;
+  } catch {
+    return u;
+  }
+};
 
 const PRECACHE = [
-  ...new Set([
-    ...APP_SHELL,
-    ...INJECTED_MANIFEST.map((entry) =>
-      typeof entry === "string" ? entry : entry.url
-    ),
-  ]),
+  ...new Set(
+    [
+      ...APP_SHELL,
+      ...INJECTED_MANIFEST.map((entry) =>
+        typeof entry === "string" ? entry : entry.url
+      ),
+    ].map(toAbsolute)
+  ),
 ];
 
 self.addEventListener("install", (event) => {
@@ -71,6 +87,17 @@ self.addEventListener("fetch", (event) => {
 
   // API: sempre rede (sem cache).
   if (url.pathname.startsWith("/api/")) return;
+
+  // Arquivos de controle do PWA: NUNCA servir do cache, senão o service worker
+  // antigo se perpetua (stale-while-revalidate no próprio sw.js) e o app fica
+  // preso numa versão antiga do bundle.
+  if (
+    url.pathname === "/sw.js" ||
+    url.pathname === "/registerSW.js" ||
+    url.pathname === "/manifest.webmanifest"
+  ) {
+    return;
+  }
 
   // Estáticos same-origin: stale-while-revalidate.
   if (url.origin === self.location.origin) {
