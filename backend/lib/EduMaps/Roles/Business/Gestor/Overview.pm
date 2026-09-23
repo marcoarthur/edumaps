@@ -203,6 +203,7 @@ sub overview($self, $params = {}) {
       nome        => $censo->{no_entidade},
       municipio   => $censo->{no_municipio},
       uf          => $censo->{sg_uf},
+      cod_municipio => $censo->{co_municipio} + 0,
       rede        => $REDE{ $censo->{tp_dependencia} // 0 } // 'Não informada',
       localizacao => $LOCALIZACAO{ $censo->{tp_localizacao} // 0 },
       ano_censo   => $ano + 0,
@@ -282,7 +283,7 @@ sub _censo($self, $inep, $ano) {
   my @device_cols = map { ($_->{in}, $_->{qty}) } @DISPOSITIVOS;
 
   my @cols = (
-    qw(co_entidade nu_ano_censo no_entidade no_municipio sg_uf
+    qw(co_entidade nu_ano_censo no_entidade no_municipio sg_uf co_municipio
        tp_dependencia tp_localizacao
        qt_salas_utilizadas qt_salas_utilizadas_dentro qt_salas_utilizadas_fora
        qt_salas_utiliza_climatizadas qt_salas_utilizadas_acessiveis

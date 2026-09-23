@@ -1,0 +1,491 @@
+# Dicionário do Assistente do Censo
+#
+# Glossário curado para o tradutor NL->SQL do chat do gestor. Autores do
+# domínio (gestão municipal / rede) traduzem o vocabulário educacional para
+# colunas das tabelas do Censo Escolar e indicadores do EduMaps.
+#
+# NÃO aparecem aqui tabelas sensíveis ou internas (gestores, sessoes,
+# contatos, relacoes, inventario, gestor_pesquisas, minion, event_store).
+# A whitelist de tabelas expostas ao modelo vive neste arquivo.
+#
+# - `colunas` especifica, por tabela, as colunas relevantes e suas
+#   descrições. "colunas: '*' significa todas as colunas da tabela (com
+#   comentário extraído do banco). Tabelas com '*' ficam de fora quando a
+#   carga completa for grande demais para o prompt.
+# - `ocultar` lista padrões de nome de coluna que NUNCA voltam na resposta
+#   (PII): colunas que casem são removidas do resultado antes de entregar.
+# - `conexoes` orienta joins entre tabelas (os elos do schema).
+# - `termos` mapeia vocabulário educacional comum para colunas concretas.
+# - `codificacoes` documenta enums (tp_*) usados nas tabelas.
+
+tabelas:
+  clean.censo_escolas:
+    descricao: "Escolas do Censo Escolar (uma linha por escola/ano). Identidade, localização, infraestrutura, recursos, oferta de etapas/modalidades e perfil de profissionais."
+    chave: co_entidade
+  clean.censo_matriculas:
+    descricao: "Matrículas do Censo Escolar por escola/ano, detalhadas por etapa do censo (infantil, fundamental, médio, EJA, especial, profissional), sexo, cor/raça, faixa etária, turno e transporte escolar."
+    chave: co_entidade
+  clean.censo_docentes:
+    descricao: "Docentes do Censo Escolar por escola/ano: quantidade por etapa, formação/escolaridade, vínculo, disciplinas lecionadas e especializações (incluindo Libras)."
+    chave: co_entidade
+  clean.censo_gestor:
+    descricao: "Gestores escolares do Censo Escolar por escola/ano: perfil (sexo, idade, cor/raça), escolaridade, vínculo, critério de acesso ao cargo e formação continuada."
+    chave: co_entidade
+  clean.ideb_notas_escolas:
+    descricao: "IDEB/SAEB por escola/ano/etapa (formato longo). Inclui aprovação, notas de proficiência (matemática/português) e IDEB observado/projetado."
+    chave: id_escola
+  clean.inep:
+    descricao: "Série histórica wide (2005-2023) dos indicadores INEP por escola: fluxo, notas e IDEB observado/projetado. Colunas seguem o padrão vl_nota_matematica_<ano>, vl_nota_portugues_<ano>, vl_nota_media_<ano>, vl_observado_<ano>, vl_projecao_<ano>, vl_aprovacao_<ano>_1..4; os anos pares não existem (aplicações ímpares)."
+    chave: id_escola
+  clean.inep_notas_desagregadas:
+    descricao: "Notas SAEB/Prova Brasil (matemática, português, média) por escola/ano, formato longo 2005-2023."
+    chave: id_escola
+  clean.inse:
+    descricao: "Índice de Nível Socioeconômico (INSE, SAEB 2023) por escola: média 0-10, classificação Nível I-VIII e percentuais de alunos por nível."
+    chave: id_escola
+  clean.school_indicators:
+    descricao: "Espelho de censo_escolas com indicadores calculados: proporções de docência (licenciatura, mestrado, efetivos), nota SAEB/IDEB médios, nº de etapas, cluster. Preferir aqui quando a pergunta pede indicador já calculado."
+    chave: co_entidade
+  clean.remuneracao_municipal:
+    descricao: "Remuneração mensal de profissionais da educação do município (SIOPE, por profissional/ano/mês). SEMPRE agregar (categoria, rede, cargo); nunca retornar linhas individuais."
+    chave: cod_municipio
+  clean.populacao_municipal:
+    descricao: "População estimada por município (IBGE) com faixas etárias e totais consolidados."
+    chave: codigo_ibge
+  clean.dados_ibge:
+    descricao: "PIB municipal (SIDRA/IBGE): total e valor adicionado por setor com participações percentuais."
+    chave: codigo_ibge
+  analytics.mv_municipios_consolidado:
+    descricao: "Visão consolidada por município: dados educacionais, IDEB/SAEB, demografia e PIB. Para perguntas comparando municípios/UF."
+    chave: co_municipio
+  analytics.mv_rede_escolas:
+    descricao: "Rede de escolas por município e dependência administrativa (federal, estadual, municipal, privada): matrículas, docentes, etapas e desempenho."
+    chave: co_municipio
+
+colunas:
+  clean.censo_escolas:
+    co_entidade: "Código INEP único da escola (identificador principal)"
+    nu_ano_censo: "Ano de referência do censo (ex.: 2025)"
+    no_entidade: "Nome oficial da escola"
+    no_regiao: "Região (Norte, Nordeste, Sudeste, Sul, Centro-Oeste)"
+    sg_uf: "Sigla da UF"
+    no_uf: "Nome da UF"
+    co_municipio: "Código IBGE do município (7 dígitos)"
+    no_municipio: "Nome do município"
+    no_microrregiao: "Microrregião IBGE"
+    no_mesorregiao: "Mesorregião IBGE"
+    tp_dependencia: "Dependência administrativa (ver codificações)"
+    tp_categoria_escola_privada: "Categoria da escola privada (ver codificações)"
+    tp_localizacao: "1=Urbana, 2=Rural"
+    tp_localizacao_diferenciada: "1=Assentamento, 2=Terra Indígena, 3=Quilombo, 4=Área remanescente de quilombos, etc."
+    tp_situacao_funcionamento: "1=Ativa, 2=Paralisada, 3=Extinta"
+    latitude: "Latitude (graus decimais)"
+    longitude: "Longitude (graus decimais)"
+    in_agua_potavel: "Há água potável?"
+    in_agua_rede_publica: "Abastecimento de água via rede pública"
+    in_energia_rede_publica: "Energia elétrica via rede pública"
+    in_energia_inexistente: "Sem energia elétrica"
+    in_esgoto_rede_publica: "Esgoto via rede pública"
+    in_esgoto_inexistente: "Sem esgotamento sanitário"
+    in_lixo_servico_coleta: "Coleta de lixo por serviço público"
+    in_banheiro: "Possui banheiro"
+    in_banheiro_pne: "Banheiro acessível a PcD"
+    in_biblioteca: "Possui biblioteca"
+    in_laboratorio_ciencias: "Possui laboratório de ciências"
+    in_laboratorio_informatica: "Possui laboratório de informática"
+    in_quadra_esportes: "Possui quadra de esportes"
+    in_quadra_esportes_coberta: "Quadra coberta"
+    in_parque_infantil: "Possui parque infantil"
+    in_refeitorio: "Possui refeitório"
+    in_cozinha: "Possui cozinha"
+    in_sala_atendimento_especial: "Possui sala de atendimento especial"
+    in_acessibilidade_corrimao: "Acessibilidade: corrimão"
+    in_acessibilidade_elevador: "Acessibilidade: elevador"
+    in_acessibilidade_pisos_tateis: "Acessibilidade: pisos táteis"
+    in_acessibilidade_rampas: "Acessibilidade: rampas"
+    in_acessibilidade_sinal_sonoro: "Acessibilidade: sinal sonoro"
+    in_acessibilidade_sinal_tatil: "Acessibilidade: sinal tátil"
+    in_acessibilidade_sinal_visual: "Acessibilidade: sinal visual"
+    in_acessibilidade_inexistente: "Sem recursos de acessibilidade"
+    in_computador: "Dispõe de computadores"
+    in_internet: "Acesso à internet"
+    in_internet_alunos: "Internet para atividades dos alunos"
+    in_banda_larga: "Conexão de banda larga"
+    qt_prof_trad_libras: "Tradutores/intérpretes de Libras (profissionais)"
+    qt_prof_revisor_braille: "Revisores de Braille"
+    in_material_ped_multimidia: "Materiais pedagógicos multimídia"
+    in_material_ped_bil_surdos: "Materiais pedagógicos bilíngues para surdos"
+    in_educacao_indigena: "Oferece educação indígena específica"
+    in_material_ped_indigena: "Materiais pedagógicos indígena"
+    in_material_ped_quilombola: "Materiais pedagógicos quilombola"
+    in_material_ped_campo: "Materiais pedagógicos educação do campo"
+    in_material_ped_edu_esp: "Materiais pedagógicos educação especial"
+    in_regular: "Oferece ensino regular"
+    in_eja: "Oferece Educação de Jovens e Adultos (EJA)"
+    in_profissionalizante: "Oferece educação profissional"
+    in_comum_creche: "Oferece creche (regular)"
+    in_comum_pre: "Oferece pré-escola (regular)"
+    in_comum_fund_ai: "Oferece ensino fundamental anos iniciais (regular)"
+    in_comum_fund_af: "Oferece ensino fundamental anos finais (regular)"
+    in_comum_medio_medio: "Oferece ensino médio (regular)"
+    in_esp_exclusiva_creche: "Creche em educação especial exclusiva"
+    in_esp_exclusiva_fund_ai: "Fundamental anos iniciais em educação especial exclusiva"
+    in_especial_exclusiva: "Oferece educação especial exclusiva"
+    tp_aee: "Tipo de Atendimento Educacional Especializado (ver codificações)"
+    tp_atividade_complementar: "1=Meio período, 2=Período integral, 3=Ambas"
+    nro_etapas: "Quantidade de etapas/modalidades oferecidas"
+    nro_participacoes_exame: "Número de exames nacionais já realizados"
+    cluster_id: "Cluster atribuído à escola na última clusterização"
+  clean.censo_matriculas:
+    nu_ano_censo: "Ano do censo"
+    co_entidade: "Código INEP da escola (igual ao da clean.censo_escolas)"
+    qt_mat_bas: "Total de matrículas na educação básica"
+    qt_mat_inf: "Matrículas na educação infantil"
+    qt_mat_inf_cre: "Matrículas em creche"
+    qt_mat_inf_pre: "Matrículas na pré-escola"
+    qt_mat_fund: "Matrículas no ensino fundamental"
+    qt_mat_fund_ai: "Matrículas nos anos iniciais do fundamental"
+    qt_mat_fund_af: "Matrículas nos anos finais do fundamental"
+    qt_mat_med: "Matrículas no ensino médio"
+    qt_mat_med_prop: "Matrículas no ensino médio (proposta pedagógica)"
+    qt_mat_med_nm: "Matrículas no ensino médio normal/magistério"
+    qt_mat_eja: "Matrículas na EJA"
+    qt_mat_eja_fund: "Matrículas na EJA fundamental"
+    qt_mat_eja_med: "Matrículas na EJA médio"
+    qt_mat_prof: "Matrículas na educação profissional"
+    qt_mat_esp: "Matrículas na educação especial"
+    qt_mat_esp_cc: "Educação especial em classes comuns (inclusão)"
+    qt_mat_esp_ce: "Educação especial em classes exclusivas (AEE)"
+    qt_mat_bas_fem: "Matrículas do sexo feminino"
+    qt_mat_bas_masc: "Matrículas do sexo masculino"
+    qt_mat_bas_branca: "Matrículas de cor/raça branca"
+    qt_mat_bas_preta: "Matrículas de cor/raça preta"
+    qt_mat_bas_parda: "Matrículas de cor/raça parda"
+    qt_mat_bas_amarela: "Matrículas de cor/raça amarela"
+    qt_mat_bas_indigena: "Matrículas de cor/raça indígena"
+    qt_mat_bas_0_3: "Matrículas de 0 a 3 anos"
+    qt_mat_bas_4_5: "Matrículas de 4 a 5 anos"
+    qt_mat_bas_6_10: "Matrículas de 6 a 10 anos"
+    qt_mat_bas_11_14: "Matrículas de 11 a 14 anos"
+    qt_mat_bas_15_17: "Matrículas de 15 a 17 anos"
+    qt_mat_bas_18_mais: "Matrículas de 18 anos ou mais"
+    qt_mat_bas_int: "Matrículas em período integral"
+    qt_mat_bas_libras: "Matrículas na educação básica com Libras"
+    qt_transp_publico: "Alunos que utilizam transporte público"
+    qt_transp_resp_mun: "Alunos com transporte sob responsabilidade municipal"
+  clean.censo_docentes:
+    nu_ano_censo: "Ano do censo"
+    co_entidade: "Código INEP da escola (igual ao da clean.censo_escolas)"
+    qt_doc_bas: "Total de docentes na educação básica"
+    qt_doc_inf: "Docentes na educação infantil"
+    qt_doc_fund: "Docentes no ensino fundamental"
+    qt_doc_fund_ai: "Docentes nos anos iniciais do fundamental"
+    qt_doc_fund_af: "Docentes nos anos finais do fundamental"
+    qt_doc_med: "Docentes no ensino médio"
+    qt_doc_eja: "Docentes na EJA"
+    qt_doc_prof: "Docentes na educação profissional"
+    qt_doc_esp: "Docentes na educação especial"
+    qt_doc_bas_fem: "Docentes do sexo feminino"
+    qt_doc_bas_masc: "Docentes do sexo masculino"
+    qt_doc_bas_branca: "Docentes de cor/raça branca"
+    qt_doc_bas_preta: "Docentes de cor/raça preta"
+    qt_doc_bas_parda: "Docentes de cor/raça parda"
+    qt_doc_bas_amarela: "Docentes de cor/raça amarela"
+    qt_doc_bas_indigena: "Docentes de cor/raça indígena"
+    qt_doc_bas_pcd: "Docentes com deficiência"
+    qt_doc_bas_esco_sup_grad: "Docentes com ensino superior (graduação)"
+    qt_doc_bas_esco_sup_grad_licen: "Docentes com licenciatura"
+    qt_doc_bas_esco_sup_pos_mestra: "Docentes com mestrado"
+    qt_doc_bas_esco_sup_pos_douto: "Docentes com doutorado"
+    qt_doc_bas_vinculo_concur: "Docentes concursados/efetivos"
+    qt_doc_bas_vinculo_contra: "Docentes contratados temporariamente"
+    qt_doc_bas_docente: "Docentes em regência de classe (função docente)"
+    qt_doc_bas_tradutor_libras: "Docentes tradutores/intérpretes de Libras"
+    qt_doc_bas_disc_libras: "Docentes que lecionam Libras"
+    qt_doc_bas_espec_bil_surdos: "Docentes com especialização em bilinguismo para surdos"
+    qt_doc_bas_espec_ed_especial: "Docentes com especialização em educação especial"
+    qt_doc_bas_libras: "Docentes com proficiência em Libras"
+  clean.censo_gestor:
+    nu_ano_censo: "Ano do censo escolar"
+    co_entidade: "Código INEP da escola"
+    qt_gest_bas: "Total de gestores escolares"
+    qt_gest_bas_fem: "Gestores do sexo feminino"
+    qt_gest_bas_masc: "Gestores do sexo masculino"
+    qt_gest_bas_30_39: "Gestores de 30 a 39 anos"
+    qt_gest_bas_60_mais: "Gestores de 60 anos ou mais"
+    qt_gest_bas_esco_sup_grad: "Gestores com ensino superior (graduação)"
+    qt_gest_bas_esco_sup_pos_espec: "Gestores com especialização"
+    qt_gest_bas_vinculo_concur: "Gestores concursados/efetivos"
+    qt_gest_bas_vinculo_contra: "Gestores com contrato temporário"
+    qt_gest_bas_diretor: "Gestores no cargo de diretor"
+    qt_gest_bas_acesso_cargo_conca: "Critério de acesso: concurso público"
+    qt_gest_bas_acesso_cargo_eleic: "Critério de acesso: processo eleitoral com comunidade"
+    qt_gest_bas_espec_gestao: "Formação continuada em gestão escolar (>=80h)"
+    qt_gest_bas_espec_dir_adolesc: "Formação continuada em direitos de criança e adolescente"
+  clean.inep:
+    id_escola: "Código INEP da escola"
+    sg_uf: "Sigla da UF"
+    codigo_ibge: "Código IBGE do município (7 dígitos)"
+    no_municipio: "Nome do município"
+    no_escola: "Nome da escola"
+    rede: "Rede de ensino (texto): Municipal, Estadual, Federal, Privada"
+    vl_nota_matematica_2023: "Proficiência média em Matemática (SAEB 2023)"
+    vl_nota_portugues_2023: "Proficiência média em Língua Portuguesa (SAEB 2023)"
+    vl_nota_media_2023: "Média das notas (SAEB 2023)"
+    vl_observado_2023: "IDEB observado em 2023"
+    vl_observado_2021: "IDEB observado em 2021"
+    vl_projecao_2023: "Meta IDEB projetada para 2023"
+  clean.school_indicators:
+    co_entidade: "Código INEP da escola"
+    no_entidade: "Nome da escola"
+    co_municipio: "Código IBGE do município"
+    no_municipio: "Nome do município"
+    tp_dependencia: "Dependência administrativa (ver codificações)"
+    nu_ano_censo: "Ano do censo"
+    qt_doc_bas: "Total de docentes na educação básica"
+    prop_licenciatura: "Proporção de docentes com licenciatura"
+    prop_mestrado: "Proporção de docentes com mestrado"
+    prop_doutorado: "Proporção de docentes com doutorado"
+    prop_efetivos: "Proporção de docentes concursados/efetivos"
+    nota_matematica: "Proficiência média em Matemática (SAEB), média entre etapas"
+    nota_portugues: "Proficiência média em Língua Portuguesa (SAEB), média entre etapas"
+    nota_media: "Média das proficiências (SAEB)"
+    ideb_observado: "IDEB observado (média entre etapas)"
+    aprovacao_si_4: "Taxa de aprovação ajustada (0-1)"
+    nro_etapas: "Quantidade de etapas oferecidas"
+    cluster_id: "Cluster atribuído à escola"
+    cluster_label: "Rótulo semântico do cluster"
+    cluster_rank: "Posição do cluster por score (1=pior, N=melhor)"
+  clean.remuneracao_municipal:
+    categoria: "Categoria do profissional (detalhada)"
+    tipo: "Categoria tipificada (ex.: Professor, Coordenador)"
+    ano: "Ano do pagamento"
+    mes: "Mês do pagamento"
+    cod_municipio: "Código IBGE do município (formato antigo 6 dígitos)"
+    cod_inep: "Código INEP da escola"
+    escola: "Nome da escola"
+    rede: "Rede de ensino"
+    carga_horaria: "Carga horária semanal"
+    situacao: "Situação de contrato"
+    segmento_ensino: "Segmento de ensino onde atua"
+    salario_base: "Salário base"
+    salario_fundeb_max: "Salário com 70% do Fundeb"
+    salario_fundeb_min: "Salário com 30% do Fundeb"
+    salario_total: "Salário total do mês"
+  clean.ideb_notas_escolas:
+    id_escola: "Código INEP da escola"
+    sg_uf: "Sigla da UF"
+    co_municipio: "Código IBGE do município"
+    no_municipio: "Nome do município"
+    no_escola: "Nome da escola"
+    rede: "Rede (Municipal, Estadual, Privada, Federal)"
+    ano: "Ano dos dados"
+    etapa: "fundamental_ii ou ensino_medio"
+    aprovacao_si_4: "Taxa de aprovação ajustada (0-1)"
+    nota_matematica: "Proficiência em Matemática (escala SAEB)"
+    nota_portugues: "Proficiência em Língua Portuguesa (escala SAEB)"
+    nota_media: "Média das proficiências"
+    ideb_observado: "IDEB observado"
+    ideb_projecao: "Meta IDEB projetada"
+  clean.inep_notas_desagregadas:
+    id_escola: "Código INEP da escola"
+    no_escola: "Nome da escola"
+    codigo_ibge: "Código IBGE do município (7 dígitos)"
+    no_municipio: "Nome do município"
+    sg_uf: "Sigla da UF"
+    rede: "Rede: Pública Federal, Pública Estadual, Pública Municipal, Privada"
+    ano: "Ano da prova SAEB/Prova Brasil (2005-2023, anos ímpares)"
+    nota_mat: "Nota padronizada em Matemática (escala SAEB 0-500)"
+    nota_por: "Nota padronizada em Língua Portuguesa (escala SAEB 0-500)"
+    nota_media: "Média simples das notas (mat+por)/2"
+  clean.inse:
+    nu_ano_saeb: "Ano do SAEB (2023)"
+    co_uf: "Código da UF (IBGE)"
+    sg_uf: "Sigla da UF"
+    co_municipio: "Código do município (IBGE, 7 dígitos)"
+    no_municipio: "Nome do município"
+    id_escola: "Código INEP da escola"
+    no_escola: "Nome da escola"
+    tp_tipo_rede: "1=Federal, 2=Estadual, 3=Municipal, 4=Privada"
+    qtd_alunos_inse: "Alunos com INSE calculado"
+    media_inse: "Média do INSE (0 a 10)"
+    inse_classificacao: "Nível I (menor) a Nível VIII (maior)"
+    pc_nivel_1: "Percentual de alunos no Nível I (muito baixo)"
+    pc_nivel_8: "Percentual de alunos no Nível VIII (muito alto)"
+  clean.populacao_municipal:
+    nome_municipio: "Nome do município"
+    codigo_ibge: "Código IBGE do município (7 dígitos)"
+    populacao_estimada: "População estimada"
+    pop_0_a_14: "População de 0 a 14 anos"
+    pop_15_a_24: "População de 15 a 24 anos"
+    pop_25_a_59: "População de 25 a 59 anos"
+    pop_60_mais: "População de 60 anos ou mais"
+  clean.dados_ibge:
+    codigo_ibge: "Código IBGE do município (7 dígitos)"
+    ano: "Ano dos dados"
+    pib_total: "PIB municipal (reais)"
+    industria_percent: "Participação da indústria no PIB"
+    agro_percent: "Participação da agropecuária no PIB"
+    governo_percent: "Participação da administração pública no PIB"
+    servicos_percent: "Participação de serviços no PIB"
+  analytics.mv_municipios_consolidado:
+    codigo_ibge: "Código IBGE do município"
+    no_municipio: "Nome do município"
+    sg_uf: "Sigla da UF"
+    populacao: "População municipal"
+    pib_municipal: "PIB do município"
+  analytics.mv_rede_escolas:
+    co_municipio: "Código IBGE do município"
+    no_municipio: "Nome do município"
+    sg_uf: "Sigla da UF"
+    dependencia: "Dependência administrativa (Federal, Estadual, Municipal, Privada)"
+    qt_escolas: "Quantidade de escolas na rede"
+    qt_matriculas: "Matrículas na rede"
+    qt_docentes: "Docentes na rede"
+    nota_media: "Média de proficiência (SAEB) na rede"
+
+conexoes:
+  - "Escola nos censos: unir clean.censo_escolas com clean.censo_matriculas/censo_docentes/censo_gestor/school_indicators por co_entidade E nu_ano_censo."
+  - "Escola nas avaliações: clean.ideb_notas_escolas, clean.inep, clean.inep_notas_desagregadas e clean.inse usam id_escola, que é o mesmo código INEP = co_entidade do censo."
+  - "Município: filtrar/agregar por co_municipio (código IBGE 7 dígitos) presente em censo_escolas, ideb_notas_escolas, inse e school_indicators; no_municipio para rótulos."
+  - "Consolidado municipal: analytics.mv_municipios_consolidado e analytics.mv_rede_escolas por co_municipio; use-os para comparar municípios/UF sem joins pesados."
+  - "Demografia/PIB: clean.populacao_municipal e clean.dados_ibge por codigo_ibge; clean.municipios_sp tem geometria e nomes regionais (SP)."
+  - "Remuneração: clean.remuneracao_municipal por cod_municipio (6 dígitos, formato antigo) e ano/mês; SEMPRE agregar por categoria/rede; nunca expor o profissional."
+  - "Quando a pergunta pedir indicador já calculado (licenciatura, efetivos, nota média, IDEB, cluster), preferir clean.school_indicators."
+
+termos:
+  libras:
+    descricao: "Educação/atendimento em Libras (alunos surdos)"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_bas_libras (matrículas com Libras)"
+      - "clean.censo_escolas.qt_prof_trad_libras (tradutores/intérpretes)"
+      - "clean.censo_escolas.in_material_ped_bil_surdos (materiais bilíngues)"
+      - "clean.censo_docentes.qt_doc_bas_libras (docentes com proficiência)"
+      - "clean.censo_docentes.qt_doc_bas_tradutor_libras (docentes intérpretes)"
+      - "clean.censo_docentes.qt_doc_bas_disc_libras (docentes que lecionam Libras)"
+      - "clean.censo_docentes.qt_doc_bas_espec_bil_surdos (docentes com especialização bilíngue)"
+  acessibilidade:
+    descricao: "Infraestrutura acessível na escola (PcD)"
+    colunas:
+      - "clean.censo_escolas.in_acessibilidade_rampas"
+      - "clean.censo_escolas.in_acessibilidade_elevador"
+      - "clean.censo_escolas.in_acessibilidade_corrimao"
+      - "clean.censo_escolas.in_acessibilidade_pisos_tateis"
+      - "clean.censo_escolas.in_acessibilidade_sinal_visual (sinalização visual/braille)"
+      - "clean.censo_escolas.in_acessibilidade_sinal_sonoro"
+      - "clean.censo_escolas.in_acessibilidade_sinal_tatil"
+      - "clean.censo_escolas.in_banheiro_pne (banheiro acessível)"
+      - "clean.censo_escolas.in_acessibilidade_inexistente (sem recursos de acessibilidade)"
+  educacao_especial:
+    descricao: "Educação especial/inclusiva e Atendimento Educacional Especializado (AEE)"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_esp (matrículas na educação especial)"
+      - "clean.censo_matriculas.qt_mat_esp_cc (inclusão em classes comuns)"
+      - "clean.censo_matriculas.qt_mat_esp_ce (classes exclusivas/AEE)"
+      - "clean.censo_escolas.tp_aee (tipo de AEE)"
+      - "clean.censo_escolas.in_sala_atendimento_especial (sala de atendimento)"
+      - "clean.censo_escolas.in_especial_exclusiva (educação especial exclusiva)"
+      - "clean.censo_docentes.qt_doc_esp (docentes na educação especial)"
+      - "clean.censo_escolas.qt_prof_revisor_braille"
+  eja:
+    descricao: "Educação de Jovens e Adultos"
+    colunas:
+      - "clean.censo_escolas.in_eja (oferta de EJA)"
+      - "clean.censo_matriculas.qt_mat_eja / qt_mat_eja_fund / qt_mat_eja_med (matrículas EJA)"
+      - "clean.censo_docentes.qt_doc_eja (docentes EJA)"
+  transporte_escolar:
+    descricao: "Transporte escolar / alunos atendidos"
+    colunas:
+      - "clean.censo_matriculas.qt_transp_publico (alunos com transporte público)"
+      - "clean.censo_matriculas.qt_transp_resp_mun (responsabilidade municipal)"
+      - "clean.censo_matriculas.qt_transp_resp_est (responsabilidade estadual)"
+  rural:
+    descricao: "Escolas/matrículas em área rural"
+    colunas:
+      - "clean.censo_escolas.tp_localizacao (1=Urbana, 2=Rural)"
+      - "clean.censo_matriculas.qt_mat_zr_rur (matrículas em zona rural)"
+      - "clean.censo_matriculas.qt_mat_zr_urb (matrículas em zona urbana)"
+  cor_raca:
+    descricao: "Composição por raça/cor de alunos e docentes"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_bas_branca/preta/parda/amarela/indigena (alunos)"
+      - "clean.censo_docentes.qt_doc_bas_branca/preta/parda/amarela/indigena (docentes)"
+  sexo:
+    descricao: "Composição por sexo de alunos, docentes e gestores"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_bas_fem/masc (alunos)"
+      - "clean.censo_docentes.qt_doc_bas_fem/masc (docentes)"
+      - "clean.censo_gestor.qt_gest_bas_fem/masc (gestores)"
+  tempo_integral:
+    descricao: "Matrículas em tempo integral"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_bas_int (total)"
+      - "clean.censo_matriculas.qt_mat_inf_int / qt_mat_fund_int / qt_mat_med_int (por etapa)"
+      - "clean.censo_escolas.tp_atividade_complementar"
+  docencia_disciplina:
+    descricao: "Docentes por disciplina lecionada"
+    colunas:
+      - "clean.censo_docentes.qt_doc_bas_disc_matematica/linguagem etc."
+      - "clean.censo_docentes.qt_doc_bas_disc_libras (Libras)"
+      - "clean.censo_docentes.qt_doc_bas_disc_lingua_indig (língua indígena)"
+  formacao_docente:
+    descricao: "Formação/escolaridade dos docentes"
+    colunas:
+      - "clean.censo_docentes.qt_doc_bas_esco_sup_grad (graduação)"
+      - "clean.censo_docentes.qt_doc_bas_esco_sup_grad_licen (licenciatura)"
+      - "clean.censo_docentes.qt_doc_bas_esco_sup_pos_mestra (mestrado)"
+      - "clean.censo_docentes.qt_doc_bas_esco_sup_pos_douto (doutorado)"
+      - "clean.school_indicators.prop_licenciatura / prop_mestrado / prop_doutorado / prop_efetivos"
+  ideb:
+    descricao: "IDEB e proficiência SAEB por escola"
+    colunas:
+      - "clean.ideb_notas_escolas.ideb_observado / ideb_projecao / nota_matematica / nota_portugues"
+      - "clean.inep.vl_observado_* / vl_nota_media_* (série wide por ano)"
+      - "clean.inep_notas_desagregadas.nota_mat / nota_por / nota_media (longa)"
+      - "clean.school_indicators.ideb_observado / nota_media (média entre etapas)"
+  inse:
+    descricao: "Nível socioeconômico dos alunos (SAEB)"
+    colunas:
+      - "clean.inse.media_inse (0-10)"
+      - "clean.inse.inse_classificacao (Níveis I-VIII)"
+      - "clean.inse.pc_nivel_1 .. pc_nivel_8 (percentuais por nível)"
+  remuneracao:
+    descricao: "Salário dos profissionais da educação (SIOPE) - sempre agregar"
+    colunas:
+      - "clean.remuneracao_municipal.categoria / tipo / rede / situacao / segmento_ensino"
+      - "clean.remuneracao_municipal.salario_base / salario_fundeb_min / salario_fundeb_max / salario_total"
+      - "clean.remuneracao_municipal.carga_horaria"
+  pcd:
+    descricao: "Alunos/docentes com deficiência"
+    colunas:
+      - "clean.censo_matriculas.qt_mat_esp (deficiência/TEA/superdotação no censo)"
+      - "clean.censo_docentes.qt_doc_bas_pcd (docentes com deficiência)"
+      - "clean.censo_escolas.in_reserva_pcd (reserva de vagas para PcD)"
+  creche_e_infantil:
+    descricao: "Educação infantil (creche e pré-escola)"
+    colunas:
+      - "clean.censo_escolas.in_comum_creche / in_comum_pre"
+      - "clean.censo_matriculas.qt_mat_inf_cre / qt_mat_inf_pre"
+      - "clean.censo_docentes.qt_doc_inf_cre / qt_doc_inf_pre"
+
+ocultar:
+  - "cpf"
+  - "nome_profissional"
+  - "^nome_gestor"
+  - "email"
+  - "senha"
+  - "token"
+  - "nu_telefone"
+  - "^ds_endereco"
+  - "^nu_endereco"
+  - "co_cep"
+
+codificacoes:
+  tp_dependencia: "1=Federal, 2=Estadual, 3=Municipal, 4=Privada"
+  tp_categoria_escola_privada: "1=Particular, 2=Comunitária, 3=Confessional, 4=Filantrópica"
+  tp_localizacao: "1=Urbana, 2=Rural"
+  tp_situacao_funcionamento: "1=Ativa, 2=Paralisada, 3=Extinta"
+  tp_aee: "1=Sala multifuncional, 2=Outras salas, 3=Canto de atividades, 4=Itinerância, 5=Classe hospitalar, 8=Não se aplica"
+  rede_texto: "ideb/inep: Municipal, Estadual, Federal, Privada. inep_notas: Pública Municipal, Pública Estadual, Pública Federal, Privada. inse (tp_tipo_rede): 1=Federal, 2=Estadual, 3=Municipal, 4=Privada."
+  in_indicadores: "Todas as colunas prefixadas com 'in_' são binárias: 0=Não, 1=Sim."
+  etapa_ideb: "clean.ideb_notas_escolas.etapa: fundamental_ii ou ensino_medio."

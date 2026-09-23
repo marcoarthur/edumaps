@@ -5,4 +5,27 @@ EDUMAPS_USER=<%= $db_user %>
 EDUMAPS_PASSWORD=<%= $db_pass %>
 EDUMAPS_SCHEMA=<%= $db_schema %>
 EDUMAPS_ANALYTICS_DB_SERVICE=edumaps_local
+# Fuso horário: sem TZ, o R chama `timedatectl` via D-Bus no LXC, que fica
+# pendurado ~26s ("Failed to query server: Connection timed out") a cada
+# Sys.timezone() — inclusive na conexão do banco. Fixar TZ elimina o atraso.
+TZ=America/Sao_Paulo
+
+# Locale UTF-8: sem isso o R assume ANSI_X3.4-1968 (C/ASCII) e strings dos
+# prompts/ferramentas com acentos (PT-BR) geram warnings de conversão e podem
+# ser corrompidas no envio ao provedor de LLM.
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+
+# Conexão do assistente NL/SQL do censo (edumapsr /ask) — role somente-leitura.
+EDUMAPS_CHAT_DB_SERVICE=edumaps_leitor
+# Motor de linguagem do assistente: 'groq' (nuvem, recomendado), 'gemini'
+# (provider nativo do ellmer), 'ollama' (local) ou 'openai'. URL/modelo
+# configuráveis por env. A chave de API (EDUMAPS_LLM_API_KEY) NUNCA é
+# versionada: entra no deploy via env
+# (rex prepare com EDUMAPS_LLM_API_KEY=<chave>) e fica só no .Renviron do
+# container.
+EDUMAPS_LLM_PROVIDER=<%= $llm_provider %>
+EDUMAPS_LLM_MODEL=<%= $llm_model %>
+EDUMAPS_LLM_URL=<%= $llm_url %>
+EDUMAPS_LLM_API_KEY=<%= $llm_api_key %>
 R_LIBS=/usr/local/lib/R/site-library

@@ -259,6 +259,38 @@ function(req, res) {
   )
 }
 
+#* @post /ask
+function(req, res) {
+  payload <- req$body
+
+  tryCatch(
+    ask_censo(
+      pergunta = payload$pergunta %||% NULL,
+      contexto = payload$contexto %||% list()
+    ),
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e), tipo = "invalid_request")
+    },
+    chat_provider_error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] provedor LLM indisponível em /ask: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 502
+      list(error = "Falha ao conversar com o modelo de linguagem", tipo = "provider")
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /ask: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao processar a pergunta", tipo = "internal")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")

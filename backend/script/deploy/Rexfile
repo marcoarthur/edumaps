@@ -7,6 +7,10 @@ set edumaps_dir => '/opt/edumaps';
 set local_dir => path("../../../")->realpath;
 set mode => 'development';
 set db_password => $ENV{EDUMAPS_DB_PASS} || 'change_me';
+set llm_api_key => $ENV{EDUMAPS_LLM_API_KEY} || '';
+set llm_provider => $ENV{EDUMAPS_LLM_PROVIDER} || 'gemini';
+set llm_model => $ENV{EDUMAPS_LLM_MODEL} || 'gemini-flash-lite-latest';
+set llm_url => $ENV{EDUMAPS_LLM_URL} || 'https://generativelanguage.googleapis.com/v1beta/';
 set db_user => $ENV{EDUMAPS_DB_USER} || 'edumaps';
 set db_name => $ENV{EDUMAPS_DB_NAME} || 'edumaps_dev';
 set frontend_server_name => 'ubatexu.lan bore.pub *.shares.zrok.io *.ngrok-free.dev';
@@ -203,6 +207,15 @@ desc "Configure and Install R edumaps package (edumapsr) + Plumber service";
 task deploy_analytics_dev => 'analytic.edumaps' => sub {
   my $path = get('edumaps_dir') . '/analysis/edumapsr';
 
+  # Preserva a chave do LLM já existente quando EDUMAPS_LLM_API_KEY não vem
+  # no ambiente (evita apagar a chave do .Renviron num `rex prepare`).
+  my $llm_api_key = get('llm_api_key');
+  if (!length $llm_api_key && is_file("$path/.Renviron")) {
+    my ($linha) = grep { /^EDUMAPS_LLM_API_KEY=/ } split /\n/, cat("$path/.Renviron");
+    ($llm_api_key) = $linha =~ /^EDUMAPS_LLM_API_KEY=(.*)$/ if $linha;
+    $llm_api_key //= '';
+  }
+
   # install R and all packages we need to run edumaps
   pkg $_, ensure => 'present' for (
     qw/
@@ -226,6 +239,10 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
       db_host => get('db_host') || 'Database',
       db_schema => get('db_schema') || 'clean',
       db_port => get('db_port') || 5432,
+      llm_api_key => $llm_api_key,
+      llm_provider => get('llm_provider'),
+      llm_model => get('llm_model'),
+      llm_url => get('llm_url'),
     }
   )
   ;
@@ -243,17 +260,40 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
     )
   ;
 
-  # install R dependencies required by the package
+  # install R dependencies required by the package — SÓ quando faltar algum pacote
+  # (devtools NÃO entra: é fallback de desenvolvimento do run.R; no servidor o
+  #  pacote é instalado via R CMD INSTALL, então devtools nunca é necessário)
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
-  run q{Rscript -e "install.packages(
-    c('plumber', 'devtools', 'ggplot2', 'plotly', 'jsonlite',
-      'DBI', 'RPostgres', 'cluster', 'dbscan', 'mclust', 'kernlab'),
-    repos='https://cloud.r-project.org',
-    Ncpus=4
-  )"}, env => $env;
+  # ellmer: agente LLM do assistente NL/SQL (chartml opcional, não usado).
+  my $deps = q{'plumber','ggplot2','plotly','jsonlite',
+      'DBI','RPostgres','cluster','dbscan','mclust','kernlab',
+      'ellmer','yaml'};
 
-  # install the edumapsr package into the site library
-  run q{R CMD INSTALL .}, cwd => $path, env => $env;
+  run qq{
+    set -e
+    MISSING=\$(Rscript -e "p <- c($deps); cat(paste(p[!sapply(p, requireNamespace, quietly=TRUE)], collapse=','))")
+    if [ -n "\$MISSING" ]; then
+      echo "Instalando dependências R faltantes: \$MISSING"
+      Rscript -e "install.packages(c($deps), repos='https://cloud.r-project.org', Ncpus=4)"
+    else
+      echo "Dependências R já instaladas — pulando install.packages"
+    fi
+  };
+
+  # instala o edumapsr na site-library APENAS quando o código mudar
+  # (marcador hashado dos fontes do package; evita recompilar todo deploy)
+  my $marker = "/root/.edumapsr_md5";
+  run qq{
+    HASH=\$(cd $path && find DESCRIPTION NAMESPACE R inst src -type f -print0 2>/dev/null | sort -z | xargs -0 md5sum | md5sum | cut -d' ' -f1)
+    LAST=\$(cat $marker 2>/dev/null || true)
+    if [ "\$HASH" != "\$LAST" ]; then
+      echo "Código do edumapsr mudou — reinstalando o package"
+      R CMD INSTALL . || exit 1
+      printf '%s\n' "\$HASH" > $marker
+    else
+      echo "edumapsr inalterado — pulando R CMD INSTALL"
+    fi
+  }, cwd => $path, env => $env;
 
   # create the service file
   file "/etc/systemd/system/edumaps-analytic.service",
@@ -309,6 +349,12 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
       run q{nginx -t};
     }
   ;
+
+  # O site 'default' do Debian é default_server e capturaria requisições de
+  # hosts não listados no server_name (retornando 404 nas rotas /api/). É
+  # removido sempre, para o EduMaps ser o default_server.
+  run q{rm -f /etc/nginx/sites-enabled/default};
+  run q{nginx -t};
   service 'nginx' => 'restart';
 };
 
@@ -464,12 +510,46 @@ task deploy_db_dev => 'database.edumaps' => sub {
   }, cwd => "$repo_path/data_pipeline";
 
   #
+  # 7b. assistente NL/SQL: ativa LOGIN da role somente-leitura (criada na
+  # migration edumaps_leitor_role). A senha NÃO fica em migration (convenção:
+  # credenciais fora do repositório) — é parametrizada aqui como as demais.
+  #
+  run qq{
+    sudo -u postgres psql -d $db_name -c "
+    ALTER ROLE edumaps_leitor WITH LOGIN PASSWORD '$db_pass';
+    "
+  };
+
+  #
   # 8. restart postgresql
   #
   service 'postgresql' => 'restart';
 };
 
 batch deploy => qw/prepare deploy_backend_dev deploy_db_dev deploy_frontend_dev deploy_minion_dev/;
+
+desc "Install Ollama and pull the default LLM model (assistente NL/SQL do censo)";
+task setup_ollama => 'analytic.edumaps' => sub {
+  my $model = $ENV{EDUMAPS_OLLAMA_MODEL} || 'qwen2.5:3b';
+
+  pkg $_, ensure => 'present' for qw<curl zstd>;
+
+  run q{test -x /usr/local/bin/ollama || curl -fsSL https://ollama.com/install.sh | sh},
+    auto_die => 0;
+
+  # O dicionário do censo no prompt ultrapassa 4k tokens: sem um contexto
+  # maior o modelo perde o começo (regras + contexto do gestor) e parodia
+  # um chatbot genérico. 16384 sopesa o uso de RAM do host com o tamanho
+  # real do system prompt (~8k tokens).
+  run q{systemctl status ollama >/dev/null 2>&1 && mkdir -p /etc/systemd/system/ollama.service.d};
+  file "/etc/systemd/system/ollama.service.d/override.conf",
+    content => "[Service]\nEnvironment=\"OLLAMA_CONTEXT_LENGTH=16384\"\n";
+
+  run q{systemctl daemon-reload && systemctl restart ollama};
+  run qq{ollama pull $model}, auto_die => 0;
+
+  run q{sleep 3 && curl -s http://localhost:11434/api/tags | head -c 400};
+};
 
 __END__
 

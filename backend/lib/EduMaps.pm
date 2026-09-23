@@ -27,7 +27,7 @@ sub startup ($self) {
   $self->plugin(Minion => {Pg => $conf->{db_url} });
   $self->plugin('Minion::Admin');
   $self->plugin('Status');
-  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity SchoolEmbedding CityAnalytics GruposFolha/;
+  $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity SchoolEmbedding CityAnalytics GruposFolha Chat/;
   $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch/;
 
   # ------------------------------------------------------------
@@ -45,7 +45,7 @@ sub startup ($self) {
   # ------------------------------------------------------------
   push @{$self->routes->namespaces}, 'EduMaps::Controller';
 
-  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Gestor Task Rank SchoolNetwork Cluster Pesquisa);
+  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Gestor Task Rank SchoolNetwork Cluster Pesquisa Chat);
 
   $self->log->info("EduMaps inicializado com sucesso [v$VERSION].");
 }

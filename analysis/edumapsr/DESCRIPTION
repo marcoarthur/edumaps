@@ -20,7 +20,9 @@ Imports:
     dbscan,
     mclust,
     kernlab,
-    RPostgres
+    RPostgres,
+    ellmer,
+    yaml
 Suggests:
     testthat (>= 3.0.0),
     plumber,
@@ -58,4 +60,7 @@ Collate:
     'analysis-city-summary.R'
     'repository-postgres-city-summary.R'
     'model-datasource-postgres-similarity-source.R'
+    'chat-dictionary.R'
+    'chat-plotly.R'
+    'chat-translate.R'
 Config/roxygen2/version: 8.0.0

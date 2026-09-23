@@ -4,6 +4,7 @@ use EduMaps::Analytics::Client;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 use Mojo::JSON;
+use Mojo::Util;
 use IO::Socket::INET;
 use Time::HiRes qw(sleep);
 use utf8;
@@ -48,6 +49,18 @@ my $pid;
       elsif ($method eq 'POST' && $path eq '/similarity/db') {
         $code = 200;
         $json = { analysis => 'gower_similarity', data => [], metrics => { n_pairs => 1 } };
+      }
+      elsif ($method eq 'POST' && $path eq '/ask') {
+        $code = 200;
+        $json = {
+          resposta => "Escolas ativas: 10",
+          sql      => 'SELECT count(*) FROM clean.censo_escolas WHERE co_municipio = 3550308',
+          origem   => ['clean.censo_escolas'],
+          linhas   => 1,
+          colunas  => 1,
+          resultado => { n => 10 },
+          chart    => {},
+        };
       }
       elsif ($method eq 'GET' && $path eq '/health') {
         $code = 200;
@@ -214,6 +227,35 @@ subtest 'cache do cluster é escopado por table/schema/features' => sub {
 
   ok $k_t1 ne $k_t2, 'table_name diferente => chaves diferentes';
   ok $k_t1 ne $k_f2, 'features diferentes => chaves diferentes';
+};
+
+subtest 'run_chat chama POST /ask e devolve a resposta estruturada' => sub {
+  my $result = $make_client->()->run_chat({
+    pergunta => 'Quantas escolas ativas?',
+    contexto => { cod_municipio => '3550308' },
+  });
+
+  is $result->{resposta}, 'Escolas ativas: 10', 'resposta retornada';
+  like $result->{sql}, qr/co_municipio = 3550308/, 'sql retornado';
+  is $result->{linhas}, 1, 'linhas retornadas';
+  is $result->{cache_hit}, Mojo::JSON::false, 'sem cache, cache_hit é false';
+};
+
+subtest 'cache do chat é escopado por pergunta e contexto' => sub {
+  my $c = $make_client->( { source_version => 'v1' } );
+
+  my $k_a = $c->_cache_key('chat_' . Mojo::Util::sha1_hex('q1'), {
+    pergunta => 'q1', contexto => { cod_municipio => '3550308' },
+  });
+  my $k_b = $c->_cache_key('chat_' . Mojo::Util::sha1_hex('q2'), {
+    pergunta => 'q2', contexto => { cod_municipio => '3550308' },
+  });
+  my $k_c = $c->_cache_key('chat_' . Mojo::Util::sha1_hex('q1'), {
+    pergunta => 'q1', contexto => { cod_municipio => '3509502' },
+  });
+
+  ok $k_a ne $k_b, 'pergunta diferente => chaves diferentes';
+  ok $k_a ne $k_c, 'contexto diferente => chaves diferentes';
 };
 
 subtest 'com cache habilitado mas sem app/pg, o ciclo HTTP segue intacto' => sub {

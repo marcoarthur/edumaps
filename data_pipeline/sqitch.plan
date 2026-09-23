@@ -56,3 +56,4 @@ censo_turno_comments [matriculas_censo_2025] 2026-09-20T16:00:00Z Marco Arthur <
 relacoes_escolar [gestor_reunioes] 2026-09-20T17:00:00Z Marco Arthur <arthurpbs@gmail.com> # Relacoes institucionais da escola: entidades externas, relacoes (assunto/responsavel/proxima acao/prazo) e taxonomia editavel
 relacoes_gestao [relacoes_escolar] 2026-09-20T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Gestao das relacoes: historico de interacoes (timeline) e documentos/anexos por relacao
 relacoes_tarefas [relacoes_gestao] 2026-09-20T19:00:00Z Marco Arthur <arthurpbs@gmail.com> # Tarefas (checklist) das relacoes institucionais; indicadores sao derivados
+edumaps_leitor_role [schemas] 2026-09-22T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Role somente-leitura (SELECT clean/analytics, read-only) p/ o assistente NL/SQL do censo
