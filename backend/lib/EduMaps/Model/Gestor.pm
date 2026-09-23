@@ -13,6 +13,7 @@ with 'EduMaps::Roles::Business::Gestor::SimilarSchools';
 with 'EduMaps::Roles::Business::Gestor::Reunioes';
 with 'EduMaps::Roles::Business::Gestor::Inventario';
 with 'EduMaps::Roles::Business::Gestor::Relacoes';
+with 'EduMaps::Roles::Business::Gestor::DocumentosEscolares';
 
 sub panel($self, $params = {}) {
   return $self->overview($params);

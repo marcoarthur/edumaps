@@ -1492,6 +1492,278 @@ sub finance_siope($self) {
 }
 
 # ---------------------------------------------------------------------------
+# documentos e planos escolares (pastas, versões, tags, auditoria)
+# ---------------------------------------------------------------------------
+
+sub documentos_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  $self->render(json => $model->doc_arvore($self->param('cod_inep') + 0));
+}
+
+sub documentos_auditoria_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $limite = $self->param('limite') // 30;
+  $limite = 100 if $limite > 100;
+  my $rows = $model->auditoria_recente($self->param('cod_inep') + 0, $limite + 0);
+  $self->render(json => { auditoria => $rows });
+}
+
+sub documentos_pasta_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $input) = ($self->param('cod_inep') + 0, $self->_input);
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('nome', 'trim')->size(1, 200);
+  $v->optional('pasta_pai_id')->num;
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $pai = (($input->{pasta_pai_id} // '') =~ /^\d+$/) ? $input->{pasta_pai_id} + 0 : undef;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  return $self->_render_not_found('Pasta pai não encontrada')
+    if defined $pai && !$model->pasta_existe($cod_inep, $pai);
+
+  my $res;
+  my $ok = eval { $res = $model->criar_pasta($cod_inep, $self->stash('gestor')->{id}, $input->{nome}, $pai); 1 };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  $self->render(status => 201, json => $res);
+}
+
+sub documentos_pasta_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $id, $input) = ($self->param('cod_inep') + 0, $self->param('id'), $self->_input);
+
+  my $nome = $input->{nome};
+  if (defined $nome) {
+    (my $clean = $nome) =~ s/^\s+|\s+$//g;
+    return $self->render(json => { error => 'O nome da pasta deve ter de 1 a 200 caracteres.' }, status => 400)
+      if !length $clean || length($clean) > 200;
+    $nome = $clean;
+  }
+
+  my $novo_pai = undef;
+  if (exists $input->{pasta_pai_id}) {
+    my $v = $input->{pasta_pai_id};
+    if (defined $v && length $v) {
+      return $self->render(json => { error => 'A pasta de destino é inválida.' }, status => 400)
+        unless $v =~ /^\d+$/;
+      $novo_pai = $v + 0;
+    }
+  }
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res;
+  my $ok = eval {
+    $res = $model->atualizar_pasta($cod_inep, $self->stash('gestor')->{id}, $id, {
+      nome         => $nome,
+      pasta_pai_id => $novo_pai,
+    });
+    1;
+  };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  return $self->_render_not_found('Pasta não encontrada') unless $res;
+  return $self->_render_conflict('A pasta não pode ser movida para dentro dela mesma.')
+    if $res->{erro} && $res->{erro} eq 'ciclo';
+  return $self->_render_not_found('Pasta pai não encontrada.')
+    if $res->{erro} && $res->{erro} eq 'pasta_nao_encontrada';
+  $self->render(json => $res);
+}
+
+sub documentos_pasta_delete($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res;
+  my $ok = eval {
+    $res = $model->excluir_pasta(
+      $self->param('cod_inep') + 0, $self->stash('gestor')->{id}, $self->param('id'));
+    1;
+  };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  return $self->_render_not_found('Pasta não encontrada') unless $res;
+  return $self->_render_conflict('A pasta não está vazia. Remova os arquivos e subpastas antes de excluí-la.')
+    if $res->{erro} && $res->{erro} eq 'pasta_nao_vazia';
+  $self->render(status => 204, text => '');
+}
+
+sub documentos_upload($self) {
+  return unless $self->_gestor_inep_ok;
+  my $cod_inep = $self->param('cod_inep') + 0;
+  my $model = $self->instantiate_model(model => 'Gestor');
+
+  my $upload = $self->req->upload('arquivo');
+  return $self->render(json => { error => 'O arquivo é obrigatório (campo "arquivo").' }, status => 400)
+    unless $upload && $upload->size;
+  return $self->render(json => { error => 'O arquivo não pode passar de 10 MB.' }, status => 400)
+    if $upload->size > $model->max_upload_bytes;
+
+  my ($nome, $dot, $ext) = $upload->filename =~ /^(.*)(\.)([^.\/]+)$/;
+  $ext = lc($ext // '');
+  my $mime = $model->ext_mime->{$ext};
+  return $self->render(
+    json => { error => 'Extensão não permitida. Use PDF, DOCX, XLSX, PNG, JPG ou TXT.' },
+    status => 400,
+  ) unless $mime;
+
+  my $pasta_raw = $self->param('pasta_id');
+  my $pasta_id  = (defined $pasta_raw && $pasta_raw =~ /^\d+$/) ? $pasta_raw + 0 : undef;
+  return $self->_render_not_found('Pasta não encontrada')
+    if defined $pasta_id && !$model->pasta_existe($cod_inep, $pasta_id);
+
+  my @tags = $model->normalize_tags($self->req->params->every_param('tags'));
+
+  my $arquivo = $upload->filename;
+  my $uuid = Mojo::Util::sha1_hex(join('|', time, $$, rand, $arquivo, $pasta_id // ''));
+  my $rel  = qq{$cod_inep/documentos/$uuid.$ext};
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$rel";
+
+  eval { make_path("$base/$cod_inep/documentos"); 1 }
+    or return $self->render(json => { error => 'Não foi possível preparar o armazenamento.' }, status => 500);
+
+  my $sha1 = Mojo::Util::sha1_hex($upload->asset->slurp);
+
+  $upload->move_to($abs)
+    or return $self->render(json => { error => 'Não foi possível salvar o arquivo.' }, status => 500);
+
+  my $res;
+  my $ok = eval {
+    $res = $model->subir_documento($cod_inep, $self->stash('gestor')->{id}, {
+      pasta_id      => $pasta_id,
+      nome          => $arquivo,
+      caminho       => $rel,
+      nome_original => $arquivo,
+      mime          => $mime,
+      tamanho       => $upload->size,
+      sha1          => $sha1,
+    });
+    1;
+  };
+  if (!$ok) {
+    unlink $abs;
+    $self->_render_db_error($@ || '');
+    return;
+  }
+  $res->{tags} = @tags ? $model->setar_tags($cod_inep, $self->stash('gestor')->{id}, $res->{documento_id}, \@tags) : [];
+
+  $self->render(status => 201, json => $res);
+}
+
+sub documentos_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $input) = ($self->param('cod_inep') + 0, $self->_input);
+
+  my $nome = $input->{nome};
+  if (defined $nome) {
+    (my $clean = $nome) =~ s/^\s+|\s+$//g;
+    return $self->render(json => { error => 'O nome do documento deve ter de 1 a 200 caracteres.' }, status => 400)
+      if !length $clean || length($clean) > 200;
+    $nome = $clean;
+  }
+
+  my $novo_pai = undef;
+  if (exists $input->{pasta_id}) {
+    my $v = $input->{pasta_id};
+    if (defined $v && length $v) {
+      return $self->render(json => { error => 'A pasta de destino é inválida.' }, status => 400)
+        unless $v =~ /^\d+$/;
+      $novo_pai = $v + 0;
+    }
+  }
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res;
+  my $ok = eval {
+    $res = $model->atualizar_documento($cod_inep, $self->stash('gestor')->{id}, $self->param('id'), {
+      nome     => $nome,
+      pasta_id => $novo_pai,
+    });
+    1;
+  };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  return $self->_render_not_found('Documento não encontrado') unless $res;
+  return $self->_render_not_found('Pasta não encontrada.')
+    if $res->{erro} && $res->{erro} eq 'pasta_nao_encontrada';
+  $self->render(json => $res);
+}
+
+sub documentos_tags_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my ($cod_inep, $input) = ($self->param('cod_inep') + 0, $self->_input);
+
+  my $tags = $input->{tags};
+  return $self->render(json => { error => 'O campo tags é obrigatório.' }, status => 400)
+    unless ref $tags eq 'ARRAY';
+
+  my @tags;
+  for my $t (@$tags) {
+    next unless defined $t;
+    (my $clean = $t) =~ s/^\s+|\s+$//g;
+    return $self->render(json => { error => 'Cada tag tem no máximo 40 caracteres.' }, status => 400)
+      if length($clean) > 40;
+    push @tags, $clean if length $clean;
+  }
+  return $self->render(json => { error => 'Limite de 20 tags por documento.' }, status => 400)
+    if @tags > 20;
+
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res;
+  my $ok = eval {
+    $res = $model->setar_tags($cod_inep, $self->stash('gestor')->{id}, $self->param('id'), \@tags);
+    1;
+  };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  return $self->_render_not_found('Documento não encontrado') unless $res;
+  $self->render(json => { tags => $res });
+}
+
+sub documentos_versoes_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $versoes = $model->doc_versoes($self->param('cod_inep') + 0, $self->param('id'));
+  $self->render(json => { versoes => $versoes });
+}
+
+sub documentos_historico_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $historico = $model->doc_auditoria($self->param('cod_inep') + 0, $self->param('id'));
+  $self->render(json => { historico => $historico });
+}
+
+sub documentos_download($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $row = $model->doc_download_row(
+    $self->param('cod_inep') + 0, $self->param('id'), $self->param('versao'));
+  return $self->_render_not_found('Documento não encontrado') unless $row;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  my $abs  = "$base/$row->{caminho}";
+  return $self->_render_not_found('Arquivo não encontrado no servidor') unless -f $abs;
+
+  $self->reply->file($abs, { filename => $row->{nome_original} });
+}
+
+sub documentos_delete($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Gestor');
+  my $res;
+  my $ok = eval {
+    $res = $model->excluir_documento(
+      $self->param('cod_inep') + 0, $self->stash('gestor')->{id}, $self->param('id'));
+    1;
+  };
+  if (!$ok) { $self->_render_db_error($@ || ''); return; }
+  return $self->_render_not_found('Documento não encontrado') unless $res;
+
+  my $base = $self->app->config->{upload_dir} // './var/uploads';
+  unlink "$base/$_" for @{ $res->{caminhos} };
+  $self->render(status => 204, text => '');
+}
+
+# ---------------------------------------------------------------------------
 # helpers de renderização / guarda de erros de banco
 # ---------------------------------------------------------------------------
 
@@ -1555,6 +1827,12 @@ sub _render_db_error($self, $err) {
   if ($err =~ /relacoes_entidade_id_fkey/) {
     return $self->render(json => { error => 'Não é possível excluir: a entidade tem relações registradas.' }, status => 409);
   }
+  if ($err =~ /uq_pastas_escolares_inep_pai_nome/) {
+    return $self->render(json => { error => 'Já existe uma pasta com este nome neste local.' }, status => 409);
+  }
+  if ($err =~ /uq_escola_documentos_inep_pasta_nome/) {
+    return $self->render(json => { error => 'Já existe um documento com este nome nesta pasta.' }, status => 409);
+  }
   if ($err =~ /(?:invalid input syntax for type date)/) {
     return $self->render(json => { error => 'Data inválida.' }, status => 400);
   }
@@ -1577,6 +1855,10 @@ my %CAMPO_LABEL = (
   telefone     => 'telefone',
   cargo        => 'cargo',
   grupo_id     => 'grupo',
+  pasta_pai_id => 'pasta',
+  pasta_id     => 'pasta',
+  tags         => 'tags',
+  versao       => 'versão',
   duracao_min  => 'duração',
   onde_label   => 'local',
   onde_link    => 'link',
