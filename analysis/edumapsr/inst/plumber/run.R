@@ -14,12 +14,13 @@
 # Força locale UTF-8: em container com LANG=C, o R tenta transliterar strings
 # p/ o encoding nativo e emite warnings "cannot be translated to UTF-8".
 
-tryCatch(
-  Sys.setlocale("LC_ALL", "C.UTF-8"),
-  warning = function(w) {
-    cat(sprintf("[run.R] aviso de locale: %s\n", conditionMessage(w)))
-  }
-)
+for (.loc in c("C.UTF-8", "C.utf8", "en_US.UTF-8", "pt_BR.UTF-8")) {
+  ok <- tryCatch({
+    Sys.setlocale("LC_ALL", .loc)
+    TRUE
+  }, warning = function(w) FALSE, error = function(e) FALSE)
+  if (ok) break
+}
 
 if (requireNamespace("edumapsAnalytics", quietly = TRUE)) {
   # Anexa o pacote: os handlers do endpoint.R são avaliados no ambiente de

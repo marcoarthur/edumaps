@@ -451,6 +451,93 @@
       }
     },
 
+    "/ask": {
+      "post": {
+        "summary": "Pergunta ao Assistente do Censo (NL -> SQL)",
+        "description": "Recebe uma pergunta em linguagem natural do gestor sobre a base do Censo Escolar, traduz para SQL, executa (somente leitura, escopo do município do gestor) e responde em markdown com resultado e, opcionalmente, uma especificação Plotly.",
+        "operationId": "askCenso",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              },
+              "example": {
+                "pergunta": "Quais escolas municipais oferecem ensino em Libras na minha região?",
+                "contexto": {
+                  "cod_municipio": 3550308,
+                  "cod_inep": 35002929,
+                  "nome_escola": "EMEF Exemplo",
+                  "nome_municipio": "São Paulo",
+                  "sg_uf": "SP"
+                }
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Resposta gerada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskResponse"
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "A pergunta é obrigatória.",
+                  "tipo": "invalid_request"
+                }
+              }
+            }
+          },
+
+          "502": {
+            "description": "Modelo de linguagem indisponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Falha ao conversar com o modelo de linguagem",
+                  "tipo": "provider"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao processar a pergunta",
+                  "tipo": "internal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/health": {
       "get": {
         "summary": "Verifica a saúde do serviço",
@@ -1004,6 +1091,130 @@
         "additionalProperties": false
       },
 
+      "AskContexto": {
+        "type": "object",
+        "description": "Contexto do gestor que faz a pergunta. Orientado a valores; pode virão ou omitidos casos não resolvidos.",
+        "properties": {
+          "cod_municipio": {
+            "type": "integer",
+            "description": "Código IBGE do município (7 dígitos)."
+          },
+          "cod_inep": {
+            "type": "integer",
+            "description": "Código INEP da escola do gestor."
+          },
+          "nome_escola": {
+            "type": "string"
+          },
+          "nome_municipio": {
+            "type": "string"
+          },
+          "sg_uf": {
+            "type": "string",
+            "description": "Sigla da UF."
+          }
+        },
+        "additionalProperties": true
+      },
+
+      "AskRequest": {
+        "type": "object",
+        "required": ["pergunta"],
+        "properties": {
+          "pergunta": {
+            "type": "string",
+            "description": "Pergunta em linguagem natural do gestor (até 500 caracteres).",
+            "minLength": 1,
+            "maxLength": 500
+          },
+
+          "contexto": {
+            "$ref": "#/components/schemas/AskContexto"
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "AskChart": {
+        "type": "object",
+        "nullable": true,
+        "description": "Especificação Plotly de um gráfico sugerido. Presente apenas quando a pergunta pede visualização.",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": ["barra", "linha", "pizza"]
+          },
+          "x": {
+            "type": "string"
+          },
+          "y": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "dados": {
+            "type": "object",
+            "description": "JSON {data, layout} aceito diretamente pelo config do Plotly.js.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "AskResponse": {
+        "type": "object",
+        "required": [
+          "resposta",
+          "sql",
+          "origem",
+          "linhas",
+          "colunas",
+          "resultado",
+          "chart"
+        ],
+        "properties": {
+          "resposta": {
+            "type": "string",
+            "description": "Resposta em markdown, orientada ao contexto do gestor."
+          },
+
+          "sql": {
+            "type": "string",
+            "description": "SQL efetivamente executado."
+          },
+
+          "origen": {
+            "type": "string",
+            "description": "Origem dos dados usada na resposta."
+          },
+
+          "linhas": {
+            "type": "integer",
+            "description": "Número de linhas retornadas."
+          },
+
+          "colunas": {
+            "type": "array",
+            "description": "Nomes das colunas retornadas.",
+            "items": {
+              "type": "string"
+            }
+          },
+
+          "resultado": {
+            "type": "object",
+            "description": "Resultado agregado (métricas) da consulta.",
+            "additionalProperties": true
+          },
+
+          "chart": {
+            "$ref": "#/components/schemas/AskChart"
+          }
+        },
+        "additionalProperties": false
+      },
+
       "ErrorResponse": {
         "type": "object",
         "required": ["error"],
@@ -1011,6 +1222,11 @@
           "error": {
             "type": "string",
             "description": "Mensagem de erro."
+          },
+
+          "tipo": {
+            "type": "string",
+            "description": "Categoria do erro: invalid_request, provider ou internal."
           }
         },
         "additionalProperties": false
