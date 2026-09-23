@@ -1517,7 +1517,8 @@ sub documentos_pasta_create($self) {
   my $v = $self->app->validator->validation;
   $v->input($input);
   $v->required('nome', 'trim')->size(1, 200);
-  $v->optional('pasta_pai_id')->num;
+  # '' (string vazia) = raiz; optional só ignora undef
+  $v->optional('pasta_pai_id')->like(qr/^\d*$/);
   return $self->_render_validation($v) if $v->has_error;
 
   my $pai = (($input->{pasta_pai_id} // '') =~ /^\d+$/) ? $input->{pasta_pai_id} + 0 : undef;

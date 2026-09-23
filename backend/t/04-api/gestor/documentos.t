@@ -112,6 +112,12 @@ subtest 'pastas: criar, duplicata (409), renomear, mover, ciclo (409), excluir c
   ok $raiz->{id} > 0, 'pasta criada';
   ok !defined $raiz->{pasta_pai_id}, 'pasta na raiz';
 
+  # regressão: criar na raiz com pasta_pai_id '' (o frontend envia vazio)
+  my $raiz_vazia = $t->post_ok("/api/gestor/$INEP/documentos/pastas", $auth->(), json => {
+    nome => 'Raiz explicita', pasta_pai_id => '',
+  })->status_is(201)->tx->res->json;
+  ok !defined $raiz_vazia->{pasta_pai_id}, 'pasta_pai_id vazio = raiz';
+
   # irmãos
   my $externo = $t->post_ok("/api/gestor/$INEP/documentos/pastas", $auth->(), json => {
     nome => 'Geral',
