@@ -27,6 +27,9 @@ subtest 'GET /api/gestor/:inep/painel: 200 com todas as seções' => sub {
   is $json->{escola}{id_escola}, $INEP, 'id da escola';
   ok defined $json->{escola}{nome}, 'nome presente';
   is $json->{escola}{rede}, 'Municipal', 'rede traduzida';
+  ok defined $json->{escola}{municipio}, 'município presente';
+  ok defined $json->{escola}{uf}, 'uf presente';
+  ok defined $json->{escola}{cod_municipio}, 'cod_municipio presente (contexto do chat)';
 
   ok ref($json->{resumo}) eq 'HASH', 'resumo';
   ok ref($json->{matriculas}{por_etapa}) eq 'ARRAY', 'matriculas.por_etapa';

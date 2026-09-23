@@ -17,8 +17,9 @@ has ua => sub {
 # compartilhado. Similaridade (gower_similarity) retorna O(n²) pares e
 # NUNCA entra no cache — só é persistida em analytics.similarity_pairs.
 my %CACHEABLE_PREFIX = (
-  cluster_     => 1,
-  city_summary => 1,
+  cluster_      => 1,
+  city_summary  => 1,
+  chat_         => 1,
 );
 
 sub new ($class, %args) {
@@ -97,6 +98,27 @@ sub run_chart ($self, $args) {
 
 sub health ($self) {
   $self->_post('health', undef, { get => 1 });
+}
+
+# Assistente do Censo (NL->SQL). A resposta é cacheável: a mesma pergunta no
+# mesmo contexto (município/escola) devolve sempre a mesma payload — o cache
+# também serve de fallback quando o provedor de LLM está lento/indisponível.
+# A chave inclui `pergunta` + `contexto` (canonicalizados) + source_version,
+# então perguntas/contextos diferentes não colidem.
+sub run_chat ($self, $args) {
+  my $pergunta = $args->{pergunta};
+  my $contexto = $args->{contexto} // {};
+
+  $self->_run('ask', {
+    pergunta => $pergunta,
+    contexto => $contexto,
+  }, 'chat_' . Mojo::Util::sha1_hex($pergunta), {
+    cacheable    => 1,
+    cache_params => {
+      pergunta => $pergunta,
+      contexto => $contexto,
+    },
+  });
 }
 
 sub flush_cache ($self, $analysis, $params) {
