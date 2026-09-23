@@ -52,6 +52,54 @@
 > - _(vazio no momento — os 3 itens anteriores foram resolvidos no PR #79,
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
+> - **Upload multipart em testes (vitest+MSW+jsdom)**: o `File` do jsdom, ao
+>   cruzar para o `fetch` do undici interceptado pelo MSW, perde o nome e vira
+>   `filename="blob"` (a extensão falha a validação). Convenção do repo: anexar
+>   um campo extra `_original_nome=file.name` no FormData e o handler MSW ler
+>   `form.get("_original_nome")` como nome (ver `uploadAnexo` de reunioes/inventario).
+
+## Sessão — Documentos e planos escolares (gestor, fase 1)
+
+- **Branch** `feat/gestor-documentos` (PR a abrir). Repositório de documentos e
+  planos da escola em pastas/subpastas, upload versionado (mesmo nome+média =
+  nova versão), tags livres e auditoria de toda mudança.
+- **Backend**: 3 commits em `main` — `feat(data_pipeline)` (migration
+  `gestor_documentos` com `clean.pastas_escolares`, `escola_documentos`,
+  `escola_documentos_versoes`, `escola_documentos_auditoria` + índices/constraint
+  únicos `uq_pastas_escolares_inep_pai_nome`/`uq_escola_documentos_inep_pasta_nome`
+  → 409), `feat(backend)` (role `DocumentosEscolares.pm` com `normalize_tags`
+  público; `Model/Gestor.pm`; `Controller/Gestor.pm` com 12 handlers e eval guard
+  em toda mutação + `%CAMPO_LABEL` + mapeamentos de violação única em
+  `_render_db_error`; `Plugin/API/Gestor.pm` com PATCH nas atualizações e rotas
+  literais antes de `/:id`). `subir_documento` devolve `pasta_id`.
+- **Frontend**: `feat(frontend)` commitado (`a02abbb`) — `api/gestorDocumentosApi.js`,
+  `api/gestorDocumentosApi.test.js`, `pages/DocumentosPage.svelte` + teste,
+  `components/documentos/{DocumentosArvore,TagEditor,VersoesModal,HistoricoModal}.svelte`,
+  `constants/documentos.js`, `mocks/documentos{Fixtures,Handlers}.js`; rota
+  `/gestor/documentos`, botão no `GestorPanelPage`, `apiClient.patch` adicionado,
+  handlers registrados em `src/mocks/handlers.js`.
+- **Bugs encontrados e corrigidos**: rotas de documento montavam duplo
+  `/documentos/documentos/:id` (BASE já termina em `/documentos`) — corrigido
+  para `${BASE(inep)}/${id}`; `#each` de documentos sem `id` na chave (duplicado
+  `docundefined`); pastas não expandiam porque `abertas` capturava valor inicial
+  vazio — refatorado para "recolhidas" (raiz aberta por padrão); MSW rejeitava
+  upload vindo do jsdom (nome "blob") — campo `_original_nome` (convenção do repo).
+- **Migração aplicada nos DOIS bancos**: `ubatexu.lan` manualmente (psql — sqitch
+  falha no extension `vector` local) e no container via `rex -H database.edumaps
+  deploy_db_dev` (lá o pgvector existe e o sqitch deploy roda normalmente).
+- **nginx**: `client_max_body_size 12m;` no `edumaps-frontend-nginx.conf`
+  (commit `d4d5773`) + deploy feito.
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev` +
+  `deploy_db_dev` (database.edumaps). E2E via curl no container verde (perfil,
+  login, GET árvore, criar pasta, duplicada 409, upload 201, download v1, tags,
+  histórico, auditoria, delete doc/pasta 204). Gestores e dados e2e temporários
+  removidos do container DB.
+- **Testes**: backend `prove -l t/04-api/gestor/` (10 arquivos, 67 testes) verde;
+  frontend 14/14 novos verdes; suíte completa 327/331 (4 falhas pré-existentes e
+  não relacionadas: `paginationStore.test.js` espera `q:''` fixo e
+  `SchoolRankingPage.test.js` "Voltar para busca").
+- **Docs**: `docs/funcionalidades/gestor/documentos-planos.md` (capacidade nova)
+  + índice `README.md`.
 
 ## Sessão — Assistente do Censo (chat NL/SQL)
 
