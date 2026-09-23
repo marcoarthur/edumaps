@@ -101,6 +101,12 @@
   `SchoolRankingPage.test.js` "Voltar para busca").
 - **Docs**: `docs/funcionalidades/gestor/documentos-planos.md` (capacidade nova)
   + índice `README.md`.
+- **Hotfix pós-#94**: criar pasta na raiz falhava 400 — o frontend envia
+  `pasta_pai_id: ""` e o Validator (`optional` só ignora `undef`) reprovava o
+  `num`. Na criação trocado para `like(qr/^\d*$/)` ('' = raiz; upload/update já
+  normalizavam). Regressão em `documentos.t` + validação curl no container com o
+  INEP real (`52094618`, payload `""` → 201; pasta criada e removida). Fix
+  `55c38e3`, **PR #95**.
 
 ## Sessão — Assistente do Censo (chat NL/SQL)
 
