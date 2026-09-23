@@ -161,6 +161,37 @@ sub register($self, $app, @args) {
   # --- financeiro: download assíncrono dos dados do SIOPE (rede municipal) --
   $auth->post('/:cod_inep/financeiro/siope' => $check)
     ->to('gestor#finance_siope')->name('gestor_financeiro_siope');
+
+  # --- documentos e planos escolares (pastas, versões, tags, auditoria) -----
+  my $doc_id_check = [ @$check, id => qr/\d+/ ];
+
+  $auth->get('/:cod_inep/documentos' => $check)
+    ->to('gestor#documentos_index')->name('gestor_documentos');
+  # literal antes de /:id para ganhar na especificidade.
+  $auth->get('/:cod_inep/documentos/auditoria' => $check)
+    ->to('gestor#documentos_auditoria_index')->name('gestor_documentos_auditoria');
+
+  $auth->post('/:cod_inep/documentos/pastas' => $check)
+    ->to('gestor#documentos_pasta_create')->name('gestor_documentos_pasta_create');
+  $auth->patch('/:cod_inep/documentos/pastas/:id' => $doc_id_check)
+    ->to('gestor#documentos_pasta_update')->name('gestor_documentos_pasta_update');
+  $auth->delete('/:cod_inep/documentos/pastas/:id' => $doc_id_check)
+    ->to('gestor#documentos_pasta_delete')->name('gestor_documentos_pasta_delete');
+
+  $auth->post('/:cod_inep/documentos' => $check)
+    ->to('gestor#documentos_upload')->name('gestor_documentos_upload');
+  $auth->patch('/:cod_inep/documentos/:id' => $doc_id_check)
+    ->to('gestor#documentos_update')->name('gestor_documentos_update');
+  $auth->put('/:cod_inep/documentos/:id/tags' => $doc_id_check)
+    ->to('gestor#documentos_tags_update')->name('gestor_documentos_tags');
+  $auth->delete('/:cod_inep/documentos/:id' => $doc_id_check)
+    ->to('gestor#documentos_delete')->name('gestor_documentos_delete');
+  $auth->get('/:cod_inep/documentos/:id/versoes' => $doc_id_check)
+    ->to('gestor#documentos_versoes_index')->name('gestor_documentos_versoes');
+  $auth->get('/:cod_inep/documentos/:id/historico' => $doc_id_check)
+    ->to('gestor#documentos_historico_index')->name('gestor_documentos_historico');
+  $auth->get('/:cod_inep/documentos/:id/download' => $doc_id_check)
+    ->to('gestor#documentos_download')->name('gestor_documentos_download');
 }
 
 1;

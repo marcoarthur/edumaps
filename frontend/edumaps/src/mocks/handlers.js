@@ -7,6 +7,7 @@ import { gestorPesquisasHandlers } from "@/features/gestor/mocks/handlers.js";
 import { gestorReunioesHandlers } from "@/features/gestor/mocks/reunioesHandlers.js";
 import { gestorInventarioHandlers } from "@/features/gestor/mocks/inventarioHandlers.js";
 import { gestorRelacoesHandlers } from "@/features/gestor/mocks/relacoesHandlers.js";
+import { gestorDocumentosHandlers } from "@/features/gestor/mocks/documentosHandlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -16,4 +17,5 @@ export const handlers = [
   ...gestorReunioesHandlers,
   ...gestorInventarioHandlers,
   ...gestorRelacoesHandlers,
+  ...gestorDocumentosHandlers,
 ];

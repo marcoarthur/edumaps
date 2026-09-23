@@ -11,3 +11,4 @@ export { default as GestorReuniaoDetailPage } from "./pages/ReuniaoDetailPage.sv
 export { default as GestorInventarioPage } from "./pages/InventarioPage.svelte";
 export { default as GestorRelacoesPage } from "./pages/RelacoesPage.svelte";
 export { default as GestorRelacaoDetailPage } from "./pages/RelacaoDetailPage.svelte";
+export { default as GestorDocumentosPage } from "./pages/DocumentosPage.svelte";
