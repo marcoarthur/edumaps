@@ -18,6 +18,7 @@ import {
   GestorInventarioPage,
   GestorRelacoesPage,
   GestorRelacaoDetailPage,
+  GestorDocumentosPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -52,6 +53,7 @@ export const routes = [
   { path: "/gestor/inventario", component: GestorInventarioPage },
   { path: "/gestor/relacoes", component: GestorRelacoesPage },
   { path: "/gestor/relacoes/:id", component: GestorRelacaoDetailPage },
+  { path: "/gestor/documentos", component: GestorDocumentosPage },
   { path: "/p/:token", component: PublicaRespostaPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
