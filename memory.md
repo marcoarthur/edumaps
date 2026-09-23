@@ -60,7 +60,8 @@
 
 ## Sessão — Documentos e planos escolares (gestor, fase 1)
 
-- **Branch** `feat/gestor-documentos` (PR a abrir). Repositório de documentos e
+- **PR #94 merged** (`feat/gestor-documentos` → `main`, merge `d57cab0`).
+  Repositório de documentos e
   planos da escola em pastas/subpastas, upload versionado (mesmo nome+média =
   nova versão), tags livres e auditoria de toda mudança.
 - **Backend**: 3 commits em `main` — `feat(data_pipeline)` (migration
