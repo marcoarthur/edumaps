@@ -53,6 +53,36 @@
 >   2026-09-20: `info_enrollment` somava turno como deficiência; timestamps
 >   `null` no upsert de gestor; `?inep=abc` devolvia 400 em vez de 404.)_
 
+## Sessão — Assistente do Censo (chat NL/SQL)
+
+- **Branch** `feat/assistente-censo` (PR a abrir). Feature de chat em linguagem
+  natural sobre o Censo: `POST /api/chat/ask` → job Minion (fila `analytics`) →
+  Plumber `POST /ask` (edumapsr) → LLM.
+- **Backend**: `EduMaps::Controller::Chat` + `Plugin::API::Chat` +
+  `Task::Chat`. O **contexto do gestor vem aninhado** em `contexto` no JSON; o
+  controller lê o objeto aninhado com fallback na raiz (o bug de contexto vazio
+  era o controller lendo campos na raiz). `GET /api/chat/progress` devolve o
+  `result` do job quando `finished`.
+- **Analysis**: `R/chat-translate.R`, `chat-dictionary.R`, `chat-plotly.R` e
+  `inst/chat/dicionario.yml`. Provider nativo Gemini (`gemini-flash-lite-latest`),
+  engine de 1 turno p/ TPM baixo (Groq). `chat_redact` remove PII **e colunas
+  geométricas** (`pq_geometry`), que quebravam a serialização (`No method asJSON
+  S3 class: pq_geometry` → 500).
+- **DB**: role `edumaps_leitor` (somente leitura) via sqitch
+  `edumaps_leitor_role`. `pg_service.conf` com `[edumaps_leitor]`.
+- **Frontend**: feature `src/features/chat/` (rota `/chat/censo`), Svelte 5.
+  Pré-preenche o escopo com a escola do gestor logado (`/me` → `/painel`); o
+  painel passou a expor `cod_municipio`. Aviso quando a sessão expira (401).
+- **PWA/nginx**: SW normaliza o precache (evita `addAll` duplicado), **não
+  cacheia** `sw.js`/`registerSW.js`/`manifest.webmanifest`, `CACHE_VERSION` v2.
+  nginx: `default_server` (hosts fora do `server_name` davam 404 em `/api/`),
+  MIME `application/manifest+json`, `index.html` com `no-cache`, ícones PWA.
+- **Deploy**: `EDUMAPS_LLM_PROVIDER/MODEL/URL/API_KEY` por env (chave preservada
+  quando ausente). `TZ` + `LANG/LC_ALL=C.UTF-8` no `.Renviron`.
+- **Testes**: `t/04-api/chat.t`, `t/03-plugins/analytics.t`,
+  `t/04-api/gestor/painel.t`; frontend `ChatPage.test.js` + integração (8 no
+  total). Frontend verde; backend preso ao perl 5.38 ausente no container.
+
 ## Sessão — eduBR: perfil modal de diretores (censo_gestor)
 
 - **Repo** `~/Projects/eduBR`; branch **`feat/edubr-perfil-gestor`**; commits

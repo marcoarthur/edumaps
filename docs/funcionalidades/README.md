@@ -48,6 +48,7 @@
 | [Comparação de redes](analise/rede-municipal.md) | Comparar as redes (federal, estadual, municipal, privada) de um município. | 🟢 |
 | [Painel financeiro](analise/financeiro.md) | Acompanhar recursos e gastos da educação. | 🟢 |
 | [Folha de pagamento](analise/folha-pagamento.md) | Ler a remuneração e o perfil dos profissionais. | 🟢 |
+| [Assistente do Censo](analise/assistente-censo.md) | Perguntar em linguagem natural e receber números do Censo no escopo da escola. | 🟢 |
 
 ### gestor
 | Capacidade | Resumo | Status |
