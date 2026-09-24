@@ -51,7 +51,6 @@ describe("createPaginationStore", () => {
     expect(mockFetchFn).toHaveBeenCalledWith({
       page: 1,
       per_page: 10,
-      q: "",
     });
 
     sub.unsubscribe();
@@ -98,7 +97,6 @@ describe("createPaginationStore", () => {
     expect(mockFetchFn).toHaveBeenLastCalledWith({
       page: 4,
       per_page: 10,
-      q: "",
     });
 
     sub.unsubscribe();
@@ -124,7 +122,6 @@ describe("createPaginationStore", () => {
     expect(store.getCurrentParams()).toEqual({
       page: 1,
       per_page: 25,
-      q: "",
     });
 
     vi.advanceTimersByTime(300);
@@ -132,7 +129,6 @@ describe("createPaginationStore", () => {
     expect(mockFetchFn).toHaveBeenLastCalledWith({
       page: 1,
       per_page: 25,
-      q: "",
     });
 
     sub.unsubscribe();
