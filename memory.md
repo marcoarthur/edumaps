@@ -57,6 +57,63 @@
 >   `filename="blob"` (a extensão falha a validação). Convenção do repo: anexar
 >   um campo extra `_original_nome=file.name` no FormData e o handler MSW ler
 >   `form.get("_original_nome")` como nome (ver `uploadAnexo` de reunioes/inventario).
+> - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
+>   sessão "Correções latentes (backlog Alta)" abaixo.)_
+
+## Sessão — Correções latentes (backlog Alta)
+
+- **PR #96** (`fix/alta-backend-summary-stubs`) e **PR #97**
+  (`fix/alta-frontend-pwa-tests`) → `main` (merges `ecc57b5`/`d0c3ad8`,
+  2026-09-24). Ciclo de correções latentes do backlog técnico.
+- **`/summary` rejeita sub-análise não suportada (400 explícito)**:
+  `Controller/Task.pm::request_summary` valida `analysis` (`full_summary | score_distribution | school_clusters`); se ≠ `full_summary` → **400** com
+  `"Sub-análise '...' não suportada: o motor R ainda não persiste esse recorte.
+  Use 'full_summary'."` (antes aceitava o param e o R falhava/500). Regressão em
+  `t/04-api/task.t` (subtest novo). **Decisão do usuário**: 400 explícito em vez
+  de perseguir suporte do motor R agora.
+- **Rotas stub → 501 explícito**: `School.pm::grades`/`full_grades` retornam
+  501 `"Não implementado: métricas de notas ainda não estão disponíveis."`
+  (antes `...` = 500 silencioso). **Decisão do usuário**: marcar 501 em vez de
+  código vazio.
+- **Stubs de `CensoEscolas.pm` com `die` explícito**: `with_critical_infra_highlight`,
+  `with_vulnerability_score`, `with_highlight_badges`, `with_extra_activities_score`
+  agora `die "…ainda não implementado"` (antes `...;`/`{}` silencioso). Sem
+  consumidores no frontend.
+- **Código morto removido**: `_reuniao_validation` não seta mais
+  `$input->{__duracao}`/`__aviso` (controller ignora; default no model). As
+  validações de `duracao_min` (15–480) e `aviso_metodo` (`AVISOS`) foram
+  mantidas.
+- **`Profile.pm` NÃO precisou de mudança**: verificado — a soma de deficiência
+  já usa `qt_mat_esp`/`esp_cc_total`/`esp_ce_total` (não `d+dm+dv`) e turno usa
+  `qt_mat_bas_d/dm/dv/n/int`; o "bug latente" da memória era **informação
+  desatualizada** (já corrigido antes). Só a memória foi atualizada.
+- **Testes backend corrigidos (2 flakies reais)**:
+  - `t/04-api/school/clustering.t`: regex `/error` de "Não encontrado" →
+    `qr/n[aã]o encontrad[oa]s/i` (mensagem real com "parametros").
+  - `t/02-models/school/searching.t`: `telefone`/`whatsapp` agora `E()` (exist)
+    nos subtestes EMEF e Ubatuba — escolas sem telefone cadastrado no Censo são
+    válidas; antes `L()`/`match` falhavam por dado, não por código.
+  - Verificado **não**-regressões: `task.t`, `reunioes.t`, `rank.t` (flaky de
+    performance 3.7s>2.5s quando MV `ranking_escola` vazia → cálculo ao vivo;
+    passa em re-execução), `osm.t` (falha por serviço externo Overpass 504 —
+    não é bug). `.test_info.*.json` criado por backup de teste → remover.
+- **Testes frontend corrigidos (4)**: `paginationStore.test.js` (3: não esperar
+  mais `q:""`, store omite query vazia — convenção de `memory.md` já documentava)
+  e `SchoolRankingPage.test.js` (rota real `/escola/search`, não `/busca`).
+  Suíte completa no container: **62 arquivos / 331 testes verdes**.
+- **PWA instalável**: falta era só o **ícone 180 (apple-touch-icon)** +
+  `robots.txt` (512/192/maskable já existiam). Gerado
+  `public/icons/icon-180.png` (placeholder a partir do 512), `robots.txt`
+  (`User-agent: * / Allow: /`), `<link rel="apple-touch-icon">` no `index.html`
+  e entrada `180x180` no `manifest` do VitePWA. **Decisão do usuário**: PNG
+  placeholder simples.
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev`
+  (atenção: `prepare` rsync do working tree da branch ativa — rodar
+  `deploy_backend_dev` com a branch backend no checkout, ou a última rodada
+  sobrescreve os arquivos de backend com a versão da base). Smoke no container:
+  `/grades`/`/full_grades` → **501**, `/api/task/summary` com
+  `analysis=score_distribution` → **400 + mensagem**, `/icons/icon-180.png` e
+  `/robots.txt` → **200**.
 
 ## Sessão — Documentos e planos escolares (gestor, fase 1)
 
