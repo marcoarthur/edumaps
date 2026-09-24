@@ -152,6 +152,6 @@ describe("SchoolRankingPage", () => {
       name: /Voltar para busca/i,
     });
     await fireEvent.click(backButton);
-    expect(router.navigate).toHaveBeenCalledWith("/busca");
+    expect(router.navigate).toHaveBeenCalledWith("/escola/search");
   });
 });
