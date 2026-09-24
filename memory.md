@@ -60,6 +60,29 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — Testes e2e via browser real (CDP, plugin opencode-chrome-devtools)
+
+- **Plugin instalado** (2026-09-24): `opencode-chrome-devtools@1.0.4` no config
+  **global** `~/.config/opencode/opencode.jsonc` (`"plugin": ["opencode-chrome-devtools"]`)
+  + `~/.config/opencode/node_modules`. Ferramentas: `browser_list`,
+  `browser_navigate`, `browser_snapshot`, `browser_click`, `browser_fill`,
+  `browser_eval`, `browser_screenshot`. Skill nova `.opencode/skills/browser-automation.md`.
+- **Chrome >= 136 ignora `--remote-debugging-port` no profile padrão** —
+  exige `--user-data-dir` dedicado. Instância usada:
+  `setsid nohup /opt/google/chrome/chrome --remote-debugging-port=9222
+  --user-data-dir=/tmp/edumaps-cdp ...` (porta 9222, `http://127.0.0.1:9222`).
+- **Docs**: runbook em `docs/e2e/README.md`; inventário/cobertura das 26 rotas
+  em `docs/e2e/cobertura.md` (executar contra todas as features da SPA, exceto
+  páginas só-documentação/solo-backend; atualizar PASS/FAIL a cada rodada).
+  Seções novas no `AGENTS.md` (tests e2e + skill table).
+- **Nuance Svelte 5/Svelte (runes)**: `browser_snapshot` costuma vir vazio
+  (`RootWebArea` só) — usar `browser_eval`. Preencher inputs exige **setter
+  nativo** do prototype + `input` event (Svelte runes não captura `el.value=x`
+  simples); clicar botões funciona com `.click()`.
+- **Validado (PASS, 2026-09-24)**: `/escola/search` (município=Ubatuba → cards
+  com INEP/telefone/Painel) e `/escola/panel?inep=35245239` (matrículas,
+  etapas, infraestrutura). Rastro em `docs/e2e/cobertura.md` (itens 4 e 5).
+
 ## Sessão — Correções latentes (backlog Alta)
 
 - **PR #96** (`fix/alta-backend-summary-stubs`) e **PR #97**

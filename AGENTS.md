@@ -56,6 +56,19 @@ ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src
 
 O build do frontend também roda no container (`rex -H backend.edumaps deploy_frontend_dev`).
 
+## Running tests (frontend e2e — browser real via CDP)
+
+Testes de integração/e2e da SPA rodam num **Chrome visível** (sem headless)
+via plugin `opencode-chrome-devtools` (CDP), alvo `http://ubatexu.lan:8080`.
+
+- **Cobertura**: todas as features da SPA, **exceto páginas unicamente de
+  documentação ou solo-backend** (ver `docs/e2e/cobertura.md`).
+- **Runbook**: setup do Chrome, fluxo padrão e nuances — `docs/e2e/README.md`.
+- **Registro**: a cada rodada, atualizar `docs/e2e/cobertura.md` (PASS/FAIL +
+  data).
+- O plugin usa Chrome com `--remote-debugging-port=9222` e `--user-data-dir`
+  dedicado (Chrome >=136 ignora a porta no profile padrão).
+
 ## Database
 
 - Alvo dev: `edumaps_dev` em `ubatexu.lan` (user: `devel`, pass: `senhaboa123`)
@@ -79,6 +92,7 @@ Arquivos de skill em `.opencode/skills/`:
 | Skill | Arquivo | Quando usar |
 |-------|---------|-------------|
 | agent-persona | `agent-persona.md` | Sempre (persona e anti-padrões) |
+| browser-automation | `browser-automation.md` | Testes e2e da SPA em Chrome real via CDP (runbook em `docs/e2e/`) |
 | perl-mojolicious | `perl-mojolicious.md` | Código backend Perl/DBIC/Mojolicious |
 | postgres-postgis | `postgres-postgis.md` | Queries SQL, MVs, PostGIS, schema |
 | sqitch-migrations | `sqitch-migrations.md` | Criar/revisar migrations Sqitch |
