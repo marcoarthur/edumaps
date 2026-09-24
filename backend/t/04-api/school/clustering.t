@@ -31,7 +31,7 @@ $tag: <rota web para clustering e validacao de parametros de request>
   # valid but not found
   $t->get_ok("$path?codigo_ibge=9999999")
   ->status_is(404)
-  ->json_like('/error' => qr/Não encontrado/);
+  ->json_like('/error' => qr/n[aã]o encontrad[oa]s/i);
 
   # valid and ok
   $t->get_ok("$path?codigo_ibge=2104073")

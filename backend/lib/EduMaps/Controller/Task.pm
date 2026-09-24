@@ -194,6 +194,14 @@ sub request_summary($self) {
 
   return $self->bad_req if $self->any_error;
 
+  my $analysis = $v->param('analysis') // 'full_summary';
+  if ($analysis ne 'full_summary') {
+    return $self->render(
+      json  => { error => "Sub-análise '$analysis' não suportada: o motor R ainda não persiste esse recorte. Use 'full_summary'." },
+      status => 400,
+    );
+  }
+
   my %args;
   $args{codigo_ibge} = $v->param('codigo_ibge');
   $args{analysis}    = $v->param('analysis') if $v->param('analysis');

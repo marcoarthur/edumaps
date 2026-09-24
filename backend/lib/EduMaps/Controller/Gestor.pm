@@ -548,8 +548,6 @@ sub _reuniao_validation($self, $input) {
       $self->render(json => { error => 'A duração deve ser de 15 a 480 minutos.' }, status => 400);
       return;
     }
-  } else {
-    $duracao = 60;
   }
 
   my $aviso = $v->param('aviso_metodo') // 'todos';
@@ -558,8 +556,6 @@ sub _reuniao_validation($self, $input) {
     return;
   }
 
-  $input->{__duracao} = $duracao;
-  $input->{__aviso}   = $aviso;
   return $v;
 }
 

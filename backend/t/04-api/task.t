@@ -249,6 +249,20 @@ subtest 'request_summary: codigo_ibge inválido -> 400' => sub {
   $t->post_ok('/api/task/summary' => form => {codigo_ibge => 'abc'})->status_is(400);
 };
 
+subtest 'request_summary: sub-análise não suportada -> 400 explícito' => sub {
+  $t->post_ok('/api/task/summary' => form => {
+    codigo_ibge => '3550308',
+    analysis    => 'score_distribution',
+  })->status_is(400)
+    ->json_has('/error', 'mensagem de erro explicita');
+
+  $t->post_ok('/api/task/summary' => form => {
+    codigo_ibge => '3550308',
+    analysis    => 'school_clusters',
+  })->status_is(400)
+    ->json_has('/error', 'mensagem de erro explicita');
+};
+
 # ------------------------------------------------------------
 # POST /api/task/similarity
 # ------------------------------------------------------------
