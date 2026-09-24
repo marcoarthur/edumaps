@@ -307,22 +307,22 @@ sub with_all_scores($self) {
   );
 }
 
-#TODO:
+# TODO: não implementado — método mantém a superfície documentada,
+# mas falha de forma explícita (501 na camada HTTP) em vez de 500 silencioso/ambíguo.
 sub with_critical_infra_highlight($self) {
-  ...;
-};
+  die "CensoEscolas::with_critical_infra_highlight ainda não implementado";
+}
 
-#TODO:
 sub with_vulnerability_score($self) {
-  ...;
+  die "CensoEscolas::with_vulnerability_score ainda não implementado";
 }
 
-#TODO
 sub with_highlight_badges($self) {
+  die "CensoEscolas::with_highlight_badges ainda não implementado";
 }
 
-#TODO
 sub with_extra_activities_score($self) {
+  die "CensoEscolas::with_extra_activities_score ainda não implementado";
 }
 
 sub _compute_score($self, $name, $weights) {

@@ -89,12 +89,12 @@ sub finance($self) {
   $self->render(json => $result);
 }
 
-sub grades($self){
-  ...
-};
+sub grades($self) {
+  $self->render(json => { error => 'Não implementado: métricas de notas ainda não estão disponíveis.' }, status => 501);
+}
 
-sub full_grades($self){
-  ...
+sub full_grades($self) {
+  $self->render(json => { error => 'Não implementado: métricas de notas ainda não estão disponíveis.' }, status => 501);
 }
 
 sub professionals($self){
