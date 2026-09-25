@@ -60,6 +60,28 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — Admin de instalação via config (bootstrap provisório), PR #99 (2026-09-25)
+
+- **Mecanismo provisório** para bootstrap de admin no deploy: credenciais admin
+  (email + senha) em texto plano no `edu_maps.conf` (bloco `admin`), lidas
+  pelo backend no login. Se batem, materializa/garante gestor em
+  `clean.gestores` com **INEP reservado 0** e `access_role='admin'`, emite
+  sessão normal.
+- **Rexfile adaptado**: settings `admin_email` / `admin_password` a partir de
+  `$ENV{EDUMAPS_ADMIN_EMAIL}` / `$ENV{EDUMAPS_ADMIN_PASSWORD}`; passados ao
+  template `edumaps_db.conf` que gera o `edu_maps.conf` no container (só emite
+  bloco admin quando ambos definidos).
+- **Config local** (`backend/edu_maps.conf`, gitignored): bloco admin com
+  fallback `$ENV{...} // default` para dev local.
+- **Teste novo**: `t/04-api/admin/bootstrap.t` (4 testes — login admin 200,
+  senha errada 401, `/me` expõe access_role, `/api/admin/config/tree` 200).
+- **Validado no container** (backend.edumaps): login admin → 200 + token +
+  gestor (cod_inep=0, access_role=admin); painel `/api/admin/config/tree` → 200.
+- **Registrado como PROVISÓRIO** — nota técnica 63 documenta a necessidade de
+  substituir por gestão própria de administradores (cadastro, listagem,
+  revogação, MFA) em ciclo futuro. Backlog: único issue aberto segue **#1
+  (GH Actions)**.
+
 ## Sessão — Painel de Configuração (admin), PR #98 (2026-09-25)
 
 - **Entregue e mergeado** o Painel de Configuração da plataforma (admin):
