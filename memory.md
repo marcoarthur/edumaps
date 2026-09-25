@@ -60,6 +60,40 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — Painel de Configuração (admin), PR #98 (2026-09-25)
+
+- **Entregue e mergeado** o Painel de Configuração da plataforma (admin):
+  migrações `app_config` (schema + tabela `items`; secrets via
+  `pgp_sym_encrypt/decrypt`) e `gestor_access_role` (`clean.gestores.access_role`),
+  API admin (`/_require_admin`: 401 sem sessão / 403 sem papel admin; login/me
+  agora expõem `access_role`), model `AppConfig` (secret do tipo `secret`
+  mascara como `{set:0/1}`; cifra no banco, nunca no JSON), rota SPA `/config`
+  (árvore Sistema/Integrações/Aparência/Comportamento/Outros + editor), e o
+  Assistente do Censo passa a ler a config global da instalação.
+- **Master key**: `EDUMAPS_CONFIG_MASTER_KEY` injetada no Rexfile + systemd
+  (`edumaps-web/minion/minion-analytics`). **Nunca commitar.** Chave atual (dev)
+  está em `/tmp/edumaps_master_key.txt`.
+- **R**: `chat_config(override)` agora recalcula `engine` pelo `cfg$provider`
+  pós-override (bug: usava a env em vez do provider efetivo); `chat_db_connection(cfg)`.
+  Cache do `run_chat` inclui `config_version` (hash da config LLM) — troca de
+  provedor/chave invalida o cache sem vazar a chave.
+- **Dois bancos em dev**: o banco do container `database.edumaps` difere do
+  `ubatexu.lan` (testes locais). Migrações manuais foram aplicadas **nos dois**
+  (container via `ssh root@database.edumaps`, `sudo -u postgres psql -d edumaps_dev`).
+  O gestor-teste do container (`marina.e2e@edu.gov.br`, INEP 11000040) foi
+  promovido a `admin` na validação e revertido depois.
+- **Validação e2e real** (Chrome CDP, PASS 2026-09-25): `/config` com sessão
+  admin (token injetado no `localStorage` `edumaps_gestor_token`) → árvore +
+  editor; chave salva e confirmada **cifrada** no banco (descriptografável com a
+  master key). Fluxo completo da API admin validado no container (tree → show →
+  validate → put). Registrado em `docs/e2e/cobertura.md` (item 27, 🟢).
+- **Testes novos**: backend `t/02-models/app-config.t` + `t/04-api/admin/config.t`
+  (13 ok), R `test-config.R` (15 ok, novo), rota SPA `/config` (15+5 ok). Suíte
+  frontend completa: 63 files/337 testes (1 erro pré-existente @carbon/charts).
+- **Ciclo completo**: build OK → deploy Rex `prepare` + backend/minion/frontend/
+  analytics → PR #98 mergeado → `main` sincronizado. Backlog: único issue aberto
+  segue **#1 (GH Actions)**.
+
 ## Sessão — Backlog GitHub: limpeza de issues
 
 - **10 issues fechados** (2026-09-25) via `gh issue close --comment`, com
