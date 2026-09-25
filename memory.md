@@ -60,6 +60,26 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — Backlog GitHub: limpeza de issues
+
+- **10 issues fechados** (2026-09-25) via `gh issue close --comment`, com
+  referência ao commit/PR de implementação no `main`:
+  - **#50** endpoint similares (`ede1ad7`/`e85a8d5`/`bf8f9c5`, PR #72);
+  - **#51** UI seleção/lista similares (`bf8f9c5`);
+  - **#52** mapa Leaflet similares (`bf8f9c5`, `ec95bba`);
+  - **#35** download SIOPE (`ef38fa0`, `275d503` — `script/tasks/siope.pl` +
+    middleware `SiopeTask` à la Minion);
+  - **#33** dados IBGE estruturados (`7e1e21c` tabela `dados_ibge`; `766eef3`
+    model `DadosIbge`);
+  - **#14** testes organizados (backend t/02-models, t/04-api, t/05-tasks;
+    frontend vitest; e2e CDP em `docs/e2e/`);
+  - **#42**, **#45**, **#53**, **#23** fechados como **defasados**
+    (epics/fora do escopo atual, após decisão explícita do usuário).
+- **#1 (Create GH Actions) mantido ABERTO** a pedido do usuário — `deploy` atual
+  é via Rex (as-is), sem `.github/workflows`; check "Workers Builds" é órfão.
+  Pendência de infra genuína a rastrear.
+- Resta **#1** como único issue aberto no backlog.
+
 ## Sessão — Testes e2e via browser real (CDP, plugin opencode-chrome-devtools)
 
 - **Plugin instalado** (2026-09-24): `opencode-chrome-devtools@1.0.4` no config
