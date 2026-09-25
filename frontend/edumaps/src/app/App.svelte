@@ -10,6 +10,7 @@
     { to: "/escola/search", label: "Busca Escola" },
     { to: "/cluster/geotag", label: "Análises" },
     { to: "/chat/censo", label: "Assistente do Censo" },
+    { to: "/config", label: "Configurações" },
     { to: "/gestor", label: "Gestor" },
     { to: "/about", label: "Sobre o Refactor" },
   ];

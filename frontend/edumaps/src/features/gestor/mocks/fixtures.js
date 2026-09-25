@@ -112,6 +112,7 @@ export const SESSION_GESTOR = {
   cod_inep: 11000040,
   nome: "Marina Souza",
   email: "marina@edu.gov.br",
+  access_role: "admin",
 };
 
 export const SESSION_TOKEN = "88888888-9999-4aaa-8bbb-cccccccccccc";
