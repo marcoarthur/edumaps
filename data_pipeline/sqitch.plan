@@ -59,3 +59,5 @@ relacoes_tarefas [relacoes_gestao] 2026-09-20T19:00:00Z Marco Arthur <arthurpbs@
 edumaps_leitor_role [schemas] 2026-09-22T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Role somente-leitura (SELECT clean/analytics, read-only) p/ o assistente NL/SQL do censo
 
 gestor_documentos [gestor_respostas] 2026-09-23T10:00:00Z Marco Arthur <arthurpbs@gmail.com> # Documentos e planos escolares: pastas, arquivos, versoes, tags livres e auditoria de mudancas
+app_config [schemas] 2026-09-25T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Configuracao global da plataforma (Painel de Configuracao): schema app_config + tabela items com secrets cifrados via pgcrypto
+gestor_access_role [gestor_respostas] 2026-09-25T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Papel do gestor na plataforma: access_role (gestor|admin) para o painel administrativo

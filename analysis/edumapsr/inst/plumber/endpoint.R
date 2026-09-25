@@ -266,7 +266,8 @@ function(req, res) {
   tryCatch(
     ask_censo(
       pergunta = payload$pergunta %||% NULL,
-      contexto = payload$contexto %||% list()
+      contexto = payload$contexto %||% list(),
+      config   = payload$config %||% NULL
     ),
     edumaps_client_error = function(e) {
       res$status <- 400

@@ -72,3 +72,4 @@
 |------------|--------|--------|
 | [Fontes de dados](plataforma/fontes-de-dados.md) | Censo Escolar, IDEB/SAEB, SIOPE e IBGE sustentam os indicadores. | 🟢 |
 | [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais e princípios de privacidade. | 🟢 |
+| [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje a chave do Assistente do Censo. | 🟡 |

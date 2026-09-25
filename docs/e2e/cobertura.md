@@ -36,6 +36,7 @@ Fluxos e2e da SPA EduMaps em `http://ubatexu.lan:8080`. Para **cada feature**:
 | 24 | `/gestor/relacoes/:id` | gestor | Detalhe: interações + tarefas + documentos | Sim | ⚪ |
 | 25 | `/gestor/documentos?inep=...` | gestor | Login → árvore de pastas + upload versionado + auditoria | Sim | ⚪ |
 | 26 | `/p/:token` | resposta | Carregar formulário público (sem navbar) → validar → enviar | Não (público) | ⚪ |
+| 27 | `/config` | config | Login admin → árvore de categorias + editor da chave do Assistente do Censo (salvar/validar) | Sim (admin) | 🟢 2026-09-25 |
 
 ## Ordem sugerida de execução
 

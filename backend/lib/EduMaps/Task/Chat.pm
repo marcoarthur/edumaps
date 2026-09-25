@@ -33,11 +33,16 @@ sub _chat_ask ($job, $args) {
 
   $job->progress(5, 'Consultando o assistente...');
 
+  # Config global do Assistente (Painel de Configuração) — apenas campos
+  # definidos são enviados; os demais usam os defaults do R.
+  my $config = $job->app->model('AppConfig')->chat_llm_config || {};
+
   my $result;
   try {
     $result = $job->app->analytics->run_chat({
       pergunta => $pergunta,
       contexto => $contexto,
+      config   => $config,
     });
   } catch ($err) {
     $job->app->log->error("Falha no Assistente do Censo: $err");

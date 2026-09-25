@@ -38,6 +38,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/gestor/painel");
   });
 
+  it("encontra a rota do painel de configuração /config", () => {
+    const match = matchRoute("/config");
+    expect(match?.path).toBe("/config");
+  });
+
   it("encontra a rota de acesso do gestor /gestor", () => {
     const match = matchRoute("/gestor");
     expect(match?.path).toBe("/gestor");

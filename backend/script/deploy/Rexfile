@@ -8,6 +8,7 @@ set local_dir => path("../../../")->realpath;
 set mode => 'development';
 set db_password => $ENV{EDUMAPS_DB_PASS} || 'change_me';
 set llm_api_key => $ENV{EDUMAPS_LLM_API_KEY} || '';
+set config_master_key => $ENV{EDUMAPS_CONFIG_MASTER_KEY} || '';
 set llm_provider => $ENV{EDUMAPS_LLM_PROVIDER} || 'gemini';
 set llm_model => $ENV{EDUMAPS_LLM_MODEL} || 'gemini-flash-lite-latest';
 set llm_url => $ENV{EDUMAPS_LLM_URL} || 'https://generativelanguage.googleapis.com/v1beta/';

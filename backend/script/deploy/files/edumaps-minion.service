@@ -7,6 +7,7 @@ Type=simple
 User=root
 WorkingDirectory=<%= $work_dir %>
 Environment=MOJO_MODE=<%= $mojo_mode %>
+Environment=EDUMAPS_CONFIG_MASTER_KEY=<%= $config_master_key %>
 ExecStart=<%= $carton_path || '/usr/local/bin/carton' %> exec -- perl <%= $edumaps_path %> minion worker
 Restart=on-failure
 RestartSec=5
