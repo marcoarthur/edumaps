@@ -127,6 +127,48 @@ sub login_gestor ($self, $email, $senha) {
   };
 }
 
+# ---------------------------------------------------------------
+# admin de instalação via config (PROVISÓRIO)
+# ---------------------------------------------------------------
+# MECANISMO PROVISÓRIO (migrar p/ gestão própria de administradores):
+# credenciais admin em texto plano no edu_maps.conf (bloco `admin`), apenas
+# para bootstrap do operador no deploy. O controller de login confere o
+# usuário/senha contra o config ANTES de chamar isto; batendo, o gestor admin
+# é materializado em clean.gestores (INEP reservado 0 + access_role='admin') e
+# a sessão segue o fluxo normal. Planejar substituição por CADASTRO de admin
+# gerenciado.
+
+sub login_admin_config ($self, $email, $senha) {
+  return unless defined $email && defined $senha;
+
+  my $row = $self->_row(
+    'SELECT id FROM clean.gestores WHERE email = ?',
+    $email,
+  );
+
+  my $id;
+  if ($row) {
+    $id = $row->{id} + 0;
+  } else {
+    my $new = $self->_row(
+      'INSERT INTO clean.gestores (cod_inep, nome, email, senha_hash, access_role)
+       VALUES (0, ?, ?, ?, ?)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id',
+      'Administrador da Instalação',
+      $email,
+      $self->_hash_senha($senha),
+      'admin',
+    ) or return;
+    $id = $new->{id} + 0;
+  }
+
+  # garante papel admin (idempotente em análises de repetidas logins)
+  $self->_rows('UPDATE clean.gestores SET access_role = ? WHERE id = ?', 'admin', $id);
+
+  return $self->login_gestor($email, $senha);
+}
+
 sub sessao_valida ($self, $token) {
   return unless defined $token && length($token) <= 64;
   return $self->_row(

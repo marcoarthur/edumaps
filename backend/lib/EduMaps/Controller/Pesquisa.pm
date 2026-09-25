@@ -164,6 +164,18 @@ sub login($self) {
 
   my $model = $self->instantiate_model(model => 'Pesquisa');
   my $sessao = $model->login_gestor($v->param('email'), $v->param('senha'));
+
+  # PROVISÓRIO — admin de instalação em texto plano no edu_maps.conf (bloco
+  # `admin`), p/ bootstrap do operador no deploy. Conferência falha rápido e
+  # só bate se BOTH email+senha conferirem; as credenciais NUNCA são logadas.
+  unless ($sessao) {
+    my $admin = $self->app->config->{admin} || {};
+    if (($admin->{email} // '') eq $v->param('email')
+      && ($admin->{senha} // '') eq $v->param('senha')) {
+      $sessao = $model->login_admin_config($v->param('email'), $v->param('senha'));
+    }
+  }
+
   return $self->render(json => { error => 'E-mail ou senha inválidos' }, status => 401) unless $sessao;
   $self->render(json => $sessao);
 }
