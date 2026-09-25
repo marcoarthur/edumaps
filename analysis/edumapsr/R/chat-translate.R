@@ -387,13 +387,15 @@ chat_translate_mock <- function(pergunta, contexto, con, cfg) {
 #' @param pergunta texto da pergunta do gestor (máx. 500 caracteres).
 #' @param contexto lista opcional com cod_municipio, cod_inep, nome_escola,
 #'   nome_municipio e/ou sg_uf (escopo do gestor).
+#' @param config lista opcional do Painel de Configuração superpondo o
+#'   `chat_config()` (api_key/provider/model/url globais da instalação).
 #'
 #' @return Lista com: resposta (markdown), sql (última consulta), origem
 #'   (tabelas usadas), linhas, colunas, resultado (linhas redigidas/limitadas)
 #'   e chart (especificação plotly `{data, layout}`) ou NULL.
 #'
 #' @export
-ask_censo <- function(pergunta, contexto = NULL) {
+ask_censo <- function(pergunta, contexto = NULL, config = NULL) {
   if (is.null(pergunta) || !is.character(pergunta) || !nzchar(trimws(pergunta))) {
     chat_invalid("A pergunta é obrigatória.", "invalid_pergunta")
   }
@@ -402,8 +404,8 @@ ask_censo <- function(pergunta, contexto = NULL) {
     chat_invalid("A pergunta não pode passar de 500 caracteres.", "invalid_pergunta")
   }
 
-  cfg <- chat_config()
-  con <- chat_db_connection()
+  cfg <- chat_config(override = config)
+  con <- chat_db_connection(cfg)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   glossario <- chat_glossary()

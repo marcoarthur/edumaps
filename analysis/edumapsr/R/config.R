@@ -45,12 +45,22 @@ analytics_db_connection <- function() {
 #' A conexão de chat usa um serviço PostgreSQL dedicado e somente-leitura
 #' (role `edumaps_leitor`), garantido no banco e não apenas por convenção.
 #'
+#' `override` (opcional) permite sobrepor campos a partir do Painel de
+#' Configuração: o backend lê a AppConfig global e injeta `{api_key, provider,
+#' model, url}` no payload de `/ask`. Campos de `override` presentes e não
+#' vazios têm prioridade; os demais permanecem nos valores de ambiente
+#' (`EDUMAPS_LLM_*`), de modo que uma instalação sem Painel de Configuração
+#' configurado continua funcionando como antes.
+#'
+#' @param override lista opcional com zero ou mais de `api_key`, `provider`,
+#'   `model`, `url`.
+#'
 #' @return Lista com as configurações do chat.
 #'
 #' @keywords internal
-chat_config <- function() {
+chat_config <- function(override = NULL) {
   provider <- Sys.getenv("EDUMAPS_LLM_PROVIDER", "ollama")
-  list(
+  cfg <- list(
     db_service = Sys.getenv("EDUMAPS_CHAT_DB_SERVICE", "edumaps_leitor"),
     provider = provider,
     model = Sys.getenv(
@@ -81,6 +91,25 @@ chat_config <- function() {
       if (identical(provider, "groq")) "single" else "tool"
     )
   )
+
+  if (is.list(override) && length(override)) {
+    for (n in intersect(names(override), names(cfg))) {
+      val <- override[[n]]
+      if (!is.null(val) && !identical(val, "")) cfg[[n]] <- val
+    }
+    # engine é derivado do provider efetivo — recalcula se o override mudou o
+    # provider (compara contra cfg$provider já sobreposto, não a env).
+    if (!is.null(override[["provider"]]) &&
+        !identical(override[["provider"]], "") &&
+        identical(override[["provider"]], cfg$provider)) {
+      cfg$engine <- Sys.getenv(
+        "EDUMAPS_CHAT_ENGINE",
+        if (identical(cfg$provider, "groq")) "single" else "tool"
+      )
+    }
+  }
+
+  cfg
 }
 
 #' Open the chat read-only database connection
@@ -93,11 +122,11 @@ chat_config <- function() {
 #' @return A DBI database connection (read-only).
 #'
 #' @keywords internal
-chat_db_connection <- function() {
-  config <- chat_config()
+chat_db_connection <- function(cfg = NULL) {
+  if (is.null(cfg)) cfg <- chat_config()
 
   DBI::dbConnect(
     RPostgres::Postgres(),
-    service = config$db_service
+    service = cfg$db_service
   )
 }
