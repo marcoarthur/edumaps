@@ -98,7 +98,7 @@ Arquivos de skill em `.opencode/skills/`:
 | sqitch-migrations | `sqitch-migrations.md` | Criar/revisar migrations Sqitch |
 | r-analytics | `r-analytics.md` | Scripts R, edumapsr, clustering, SIOPE |
 | frontend-svelte | `frontend-svelte.md` | UI Svelte 5/Leaflet: mapas, legendas, padrões reutilizáveis |
-| edumaps-requirements | `edumaps-requirements.md` | Engenharia de requisitos: entrevista, formalização (RF) e issue no GitHub |
+| edumaps-requirements | `edumaps-requirements.md` | Engenharia de requisitos: entrevista, formalização (RF) e issue no GitHub — apenas no **modo planning** (não no modo build) |
 
 ## Personas de curadoria
 
