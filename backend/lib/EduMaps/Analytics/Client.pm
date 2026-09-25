@@ -103,20 +103,27 @@ sub health ($self) {
 # Assistente do Censo (NL->SQL). A resposta é cacheável: a mesma pergunta no
 # mesmo contexto (município/escola) devolve sempre a mesma payload — o cache
 # também serve de fallback quando o provedor de LLM está lento/indisponível.
-# A chave inclui `pergunta` + `contexto` (canonicalizados) + source_version,
-# então perguntas/contextos diferentes não colidem.
+# A chave inclui `pergunta` + `contexto` (canonicalizados) + `config_version`
+# (hash da config LLM efetiva) + source_version, então perguntas/contextos
+# diferentes não colidem e uma troca de provedor/chave invalida o cache.
+# A `config` (com api_key) vai apenas no body para o R — nunca vira chave.
 sub run_chat ($self, $args) {
   my $pergunta = $args->{pergunta};
   my $contexto = $args->{contexto} // {};
+  my $config   = $args->{config}   // {};
+
+  my $config_version = Mojo::Util::sha1_hex(JSON::PP->new->canonical->encode($config));
 
   $self->_run('ask', {
     pergunta => $pergunta,
     contexto => $contexto,
+    config   => $config,
   }, 'chat_' . Mojo::Util::sha1_hex($pergunta), {
     cacheable    => 1,
     cache_params => {
-      pergunta => $pergunta,
-      contexto => $contexto,
+      pergunta       => $pergunta,
+      contexto       => $contexto,
+      config_version => $config_version,
     },
   });
 }

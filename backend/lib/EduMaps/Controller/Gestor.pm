@@ -85,6 +85,33 @@ sub _require_gestor($self) {
   return 1;
 }
 
+# Gatilho dos under() administrativos: sessão de gestor válida + papel admin
+# (access_role = 'admin' em clean.gestores) — Painel de Configuração.
+sub _require_admin($self) {
+  my $auth  = $self->req->headers->authorization // '';
+  my ($token) = $auth =~ /^Bearer\s+(\S+)$/;
+
+  my $gestor = $token
+    ? $self->instantiate_model(model => 'Pesquisa')->sessao_valida($token)
+    : undef;
+
+  if (!$gestor) {
+    $self->_render_unauthorized;
+    return 0;
+  }
+
+  if (($gestor->{access_role} // '') ne 'admin') {
+    $self->render(
+      json => { error => 'Acesso restrito a administradores da instalação.' },
+      status => 403,
+    );
+    return 0;
+  }
+
+  $self->stash(gestor => $gestor, gestor_token => $token);
+  return 1;
+}
+
 # Garante que o cod_inep da rota é o da escola logada (403 caso contrário).
 sub _gestor_inep_ok($self) {
   my $gestor = $self->stash('gestor');

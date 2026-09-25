@@ -95,7 +95,7 @@ sub escola_tem_agenda ($self, $cod_inep) {
 
 sub login_gestor ($self, $email, $senha) {
   my $g = $self->_row(
-    'SELECT id, cod_inep, nome, email, senha_hash FROM clean.gestores WHERE email = ?',
+    'SELECT id, cod_inep, nome, email, senha_hash, access_role FROM clean.gestores WHERE email = ?',
     $email,
   );
 
@@ -118,10 +118,11 @@ sub login_gestor ($self, $email, $senha) {
     token     => $row->{token},
     expira_em => $row->{expires_at},
     gestor    => {
-      id       => $g->{id} + 0,
-      cod_inep => $g->{cod_inep} + 0,
-      nome     => $g->{nome},
-      email    => $g->{email},
+      id          => $g->{id} + 0,
+      cod_inep    => $g->{cod_inep} + 0,
+      nome        => $g->{nome},
+      email       => $g->{email},
+      access_role => $g->{access_role} // 'gestor',
     },
   };
 }
@@ -129,7 +130,7 @@ sub login_gestor ($self, $email, $senha) {
 sub sessao_valida ($self, $token) {
   return unless defined $token && length($token) <= 64;
   return $self->_row(
-    'SELECT g.id, g.cod_inep, g.nome, g.email
+    'SELECT g.id, g.cod_inep, g.nome, g.email, g.access_role
      FROM   clean.sessoes s
      JOIN   clean.gestores g ON g.id = s.gestor_id
      WHERE  s.token = ? AND s.expires_at > NOW()',
