@@ -32,3 +32,8 @@
 .leaflet-popup-content-wrapper {
   border-radius: 0.5rem;
 }
+
+/* Utility classes for calc heights */
+.hChatHistorico {
+  height: calc(100vh - 200px);
+}

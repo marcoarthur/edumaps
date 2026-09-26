@@ -3,7 +3,7 @@ import AboutPage from "@/features/about";
 import HomePage from "@/features/home";
 import { NetworkComparePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
-import { ChatPage } from "@/features/chat";
+import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage } from "@/features/config";
 import { PublicaRespostaPage } from "@/features/resposta";
 import {
@@ -46,6 +46,7 @@ export const routes = [
   { path: "/gestor/pesquisas/editar", component: GestorPesquisasWizardPage },
   { path: "/gestor/pesquisas/resultados", component: GestorPesquisasResultadosPage },
   { path: "/chat/censo", component: ChatPage },
+  { path: "/chat/historico", component: ChatHistoricoPage },
   { path: "/config", component: ConfigPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/reunioes", component: GestorReunioesPage },

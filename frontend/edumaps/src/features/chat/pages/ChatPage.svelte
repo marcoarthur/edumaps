@@ -6,6 +6,8 @@
   import { fetchMe } from "@/features/gestor/api/gestorPesquisasApi.js";
   import { getGestorPanel } from "@/features/gestor/api/gestorApi.js";
   import { askChat, getChatProgress, extractSql, extractResposta, extractResultado, extractOrigem, extractMeta } from "../api/chatApi.js";
+  import { saveConversa } from "../api/chatApi.js";
+  import { router } from "@/app/router.svelte.js";
   import ChatHistory from "../components/ChatHistory.svelte";
   import ChatInput from "../components/ChatInput.svelte";
 
@@ -15,6 +17,12 @@
   let error = $state(null);
   let abortController = null;
   let cancelled = false;
+
+  // ---- modal de salvar conversa -------------------------------------------
+  let showSaveModal = $state(false);
+  let saveTitle = $state("");
+  let saving = $state(false);
+  let saveError = $state(null);
 
   // ---- contexto do gestor --------------------------------------------------
   let contexto = $state({
@@ -161,6 +169,34 @@
     error = null;
   }
 
+  // ---- salvar conversa -----------------------------------------------------
+  function openSaveModal() {
+    saveTitle = "";
+    saveError = null;
+    showSaveModal = true;
+  }
+
+  async function handleSave() {
+    if (messages.length === 0) return;
+    saving = true;
+    saveError = null;
+    try {
+      await saveConversa({
+        titulo: saveTitle.trim() || undefined,
+        messages: messages.map(m => ({ role: m.role, content: m.content, meta: m.meta })),
+      });
+      showSaveModal = false;
+    } catch (err) {
+      saveError = err instanceof ApiError ? err.message : "Falha ao salvar conversa";
+    } finally {
+      saving = false;
+    }
+  }
+
+  function goToHistorico() {
+    router.navigate("/chat/historico");
+  }
+
   onDestroy(() => {
     cancelled = true;
     if (abortController) abortController.abort();
@@ -178,13 +214,28 @@
           Censo Escolar automaticamente.
         </p>
       </div>
-      <button
-        onclick={clearChat}
-        disabled={messages.length === 0}
-        class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 disabled:opacity-50 transition-colors"
-      >
-        Limpar conversa
-      </button>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button
+          onclick={clearChat}
+          disabled={messages.length === 0}
+          class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 disabled:opacity-50 transition-colors"
+        >
+          Limpar conversa
+        </button>
+        <button
+          onclick={openSaveModal}
+          disabled={messages.length === 0}
+          class="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          Salvar conversa
+        </button>
+        <button
+          onclick={goToHistorico}
+          class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
+        >
+          Buscar conversas anteriores
+        </button>
+      </div>
     </div>
 
     {#if error}
@@ -198,6 +249,48 @@
       <div class="mt-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md p-3 flex items-center justify-between gap-3">
         <span>Sua sessão expirou. <a href="/gestor" class="underline font-medium">Entre novamente</a> para o assistente usar os dados da sua escola automaticamente.</span>
         <button onclick={() => (sessaoExpirada = false)} class="text-amber-600 hover:text-amber-800 font-bold text-lg leading-none" aria-label="Fechar aviso">×</button>
+      </div>
+    {/if}
+
+    {#if showSaveModal}
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div class="flex items-center justify-between p-4 border-b">
+            <h2 id="save-modal-title" class="text-lg font-semibold text-gray-900">Salvar conversa</h2>
+            <button onclick={() => (showSaveModal = false)} class="text-gray-400 hover:text-gray-600 text-2xl leading-none" aria-label="Fechar">×</button>
+          </div>
+          <div class="p-4 space-y-4">
+            <p class="text-sm text-gray-600">Dê um título opcional para facilitar a busca posterior.</p>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Título (opcional)</span>
+              <input
+                type="text"
+                bind:value={saveTitle}
+                placeholder="Ex: Consulta sobre escolas em SP"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxlength="100"
+              />
+            </label>
+            {#if saveError}
+              <p class="text-sm text-red-600">{saveError}</p>
+            {/if}
+          </div>
+          <div class="flex justify-end gap-2 p-4 border-t">
+            <button
+              onclick={() => (showSaveModal = false)}
+              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onclick={handleSave}
+              disabled={saving}
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
       </div>
     {/if}
 

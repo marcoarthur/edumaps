@@ -49,6 +49,96 @@ export function getChatProgressStream(jobId) {
 }
 
 /**
+ * Salva a conversa atual do gestor logado.
+ * @param {Object} payload
+ * @param {string} [payload.titulo] - Título opcional para a conversa
+ * @param {Array} payload.messages - Array de mensagens { role, content, meta }
+ * @returns {Promise<{ id: number }>}
+ */
+export function saveConversa(payload) {
+  return apiClient.post("/api/chat/conversas", payload);
+}
+
+/**
+ * Lista conversas do gestor logado (paginado).
+ * @param {Object} params
+ * @param {number} [params.page=1]
+ * @param {number} [params.per_page=20]
+ * @param {string} [params.from] - Data inicial (YYYY-MM-DD)
+ * @param {string} [params.to] - Data final (YYYY-MM-DD)
+ * @returns {Promise<{ items: Array, page: number, per_page: number, total: number, total_pages: number }>}
+ */
+export function listConversas(params = {}) {
+  return apiClient.get("/api/chat/conversas", params);
+}
+
+/**
+ * Obtém detalhes de uma conversa específica.
+ * @param {string|number} id
+ * @returns {Promise<{ id, titulo, created_at, updated_at, messages: Array }>}
+ */
+export function getConversa(id) {
+  return apiClient.get(`/api/chat/conversas/${id}`);
+}
+
+/**
+ * Exclui uma conversa do gestor logado.
+ * @param {string|number} id
+ * @returns {Promise<void>}
+ */
+export function deleteConversa(id) {
+  return apiClient.delete(`/api/chat/conversas/${id}`);
+}
+
+/**
+ * Busca full-text no conteúdo das mensagens.
+ * @param {Object} params
+ * @param {string} params.q - Termo de busca
+ * @param {number} [params.page=1]
+ * @param {number} [params.per_page=20]
+ * @returns {Promise<{ items: Array, page: number, per_page: number, total: number, total_pages: number }>}
+ */
+export function searchConversas(params) {
+  return apiClient.get("/api/chat/conversas/search", params);
+}
+
+/**
+ * Obtém dias com conversas no intervalo para o calendário.
+ * @param {Object} params
+ * @param {string} params.from - Data inicial (YYYY-MM-DD)
+ * @param {string} params.to - Data final (YYYY-MM-DD)
+ * @returns {Promise<{ [date: string]: number }>}
+ */
+export function getCalendar(params) {
+  return apiClient.get("/api/chat/conversas/calendar", params);
+}
+
+/**
+ * Exporta conversas selecionadas ou todas para Markdown.
+ * @param {Object} params
+ * @param {Array<number>} [params.ids] - IDs das conversas a exportar
+ * @param {boolean} [params.all] - Se true, exporta todas
+ * @returns {Promise<Blob>} - Blob do arquivo .md
+ */
+export function exportConversas(params) {
+  const url = new URL("/api/chat/conversas/export", window.location.origin);
+  if (params.ids) {
+    params.ids.forEach(id => url.searchParams.append("ids[]", id));
+  }
+  if (params.all) {
+    url.searchParams.set("all", "1");
+  }
+  return fetch(url.toString(), {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "text/markdown" },
+  }).then(r => {
+    if (!r.ok) throw new Error("Falha ao exportar");
+    return r.blob();
+  });
+}
+
+/**
  * Extrai o SQL do payload final do job (se houver).
  * @param {object} jobResult
  * @returns {string|null}

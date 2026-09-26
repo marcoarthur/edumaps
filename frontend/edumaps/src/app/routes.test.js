@@ -43,6 +43,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/config");
   });
 
+  it("encontra a rota do histórico de chat /chat/historico", () => {
+    const match = matchRoute("/chat/historico");
+    expect(match?.path).toBe("/chat/historico");
+  });
+
   it("encontra a rota de acesso do gestor /gestor", () => {
     const match = matchRoute("/gestor");
     expect(match?.path).toBe("/gestor");
