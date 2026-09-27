@@ -4,6 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+> ## ▶ RETOMADA — ponto de partida (2026-09-27)
+>
+> Sessão encerrada enquanto o **ambiente era refeito** (perlbrew + Docker, com
+> `ubatexu.lan` fora do ar). Nada foi validado nem implantado. Ao voltar, ler
+> nesta ordem:
+>
+> 1. **Bloco "Ambiente"** logo abaixo — o que falta nesta máquina (Perl,
+>    banco, containers, hook de deploy desativado).
+> 2. **Bloco "Pendências do histórico de conversas"** — 6 itens do commit
+>    `9fd4a0e`, todos **ainda não verificados**. O de maior risco é o
+>    **double-encoding do `meta` jsonb**.
+> 3. **Sessão "Histórico de conversas do Assistente do Censo"** — o que foi
+>    entregue e o que faltou (deploy, teste de frontend, doc funcional, nota
+>    técnica).
+> 4. Reativar o hook: `mv .git/hooks/post-commit.sample .git/hooks/post-commit`
+>    (só depois de corrigir a linha 32 — ver bloco "Ambiente").
+>
+> **Commits locais não pushados** (2, ambos docs-only, `main` ahead 2):
+> `096ca8f` (memória do histórico de conversas) e `5151aa4` (hook desativado).
+> **Backlog no GitHub**: issue **#1** (GH Actions) aberta por decisão do
+> usuário; PR **#76** (docs de clientes) aberto, **110 commits atrás** e com
+> conflito em `memory.md` — resolver com rebase quando der.
+
 > **Convenções duráveis (valem para toda sessão)**:
 > - **Testes de frontend** (`vitest` / `npm run test:run`): rodar **SOMENTE no
 >   container** `backend.edumaps` — **NUNCA na máquina local**:
