@@ -60,6 +60,98 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+> **Ambiente (2026-09-27 — máquina NOVA, em preparação)**:
+> - Repositório agora em **`/home/itaipu/Code/Data/leaflet`** (o caminho
+>   `/home/itaipu/Projects/leaflet` que aparece em alguns `@INC` é resíduo da
+>   máquina antiga — ignore).
+> - **Perl**: só o do sistema (**5.40.1**) e **sem** `Mojolicious`,
+>   `DBIx::Class`, `DBD::Pg`, `Test2::V1` → `prove` nem compila
+>   (`Can't locate Test2/V1.pm`). O usuário está **restaurando o perlbrew** com
+>   todos os módulos; até lá **não dá para rodar testes de backend**.
+> - **`ubatexu.lan` está INACESSÍVEL** (ping, 5432 e SSH 2031/2032 dão
+>   timeout) → sem banco, sem containers, sem `psql` local. O ambiente de teste
+>   vai passar a ser **Docker**.
+> - **`gh` instalado** (2.101.0, autenticado como `marcoarthur`, git via ssh,
+>   scopes `repo`/`read:org`/`read:project`) — o passo de PR+merge do workflow
+>   volta a ser possível.
+
+> **Pendências do histórico de conversas (commit `9fd4a0e`, 2026-09-25)** —
+> **todas à espera de validação** quando o ambiente voltar:
+> - **`meta` jsonb provavelmente duplamente encodado** (double-encoding):
+>   `Chat::Conversas#save_conversa` faz `encode_json($meta)` e passa a
+>   **string** para `add_to_mensagens`, mas
+>   `ChatMensagem` **não declara `is_json`** (e o projeto não usa `is_json` em
+>   lugar nenhum — os outros jsonb vão por SQL raw). O PG faz cast
+>   text→jsonb e grava um **JSON escalar** (`"{...}"`), então
+>   `get_conversa` devolve `meta` como **string**, não objeto — quebrando o
+>   contrato que o frontend espera. **Conferir com o ambiente restaurado.**
+> - **Frontend sem teste nem MSW**: o commit `9fd4a0e` adicionou
+>   `ChatHistoricoPage` + 4 componentes + 5 funções de API **sem** nenhum
+>   `*.test.js` e **sem** handlers em `src/mocks/handlers.js` (só o
+>   `routes.test.js` +5). Viola a convenção do repo (toda feature entra com
+>   teste + mock).
+> - **`per_page` sem clamp** em `list_conversas` (o `num` só garante inteiro):
+>   `?per_page=100000` passa. `search_conversas` tem guarda de `> 0`, o
+>   `list` não. Padronizar um clamp (1..100) como no resto da API.
+> - **`/conversas/:id` inválido → 400**, enquanto a convenção do projeto para
+>   identificador malformado é **404** (ver `codigo_ibge`). Uniformizar.
+> - **`save_conversa` devolve só `{id}`** mas o comentário do handler promete
+>   `{ id, created_at }` — doc × código divergentes.
+> - **SQL fora do padrão do projeto**: `search_conversas`,
+>   `calendar_conversas` e `export_conversas` usam
+>   `$self->schema->storage->dbh` (DBI cru) com `LIMIT ?/OFFSET ?` sem tipo,
+>   enquanto as demais roles usam `dbh_do` (Mojo::Pg). Funciona, mas é
+>   divergente — e `LIMIT ?` com parâmetro não tipado é exatamente o cenário
+>   que já mordeu em `CASE WHEN ? IS NULL` (ver convenção de prepared
+>   statement).
+
+## Sessão — Histórico de conversas do Assistente do Censo (commit `9fd4a0e`, 2026-09-25)
+
+> ⚠️ **Sessão registrada a posteriori** (2026-09-27), reconstruída por leitura
+> do diff. O commit foi direto na `main`, **sem PR** e **sem deploy
+> documentado**; nada pôde ser validado porque o ambiente já estava fora do ar
+> (ver bloco "Ambiente" acima). Tudo abaixo é **código entregue**, não
+> **comportamento verificado**.
+
+- **O quê**: o gestor passa a poder **salvar** a conversa do chat (perguntas +
+  respostas), **listar/buscar** o histórico com full-text, navegar por
+  **calendário** e **exportar para Markdown**. Tudo escopado no gestor logado.
+- **data_pipeline** — `chat_conversas [gestor_pesquisas]` (`sqitch.plan`,
+  2026-09-25T18:00:00Z): `clean.chat_conversas` (id, `gestor_id` FK
+  `clean.gestores` `ON DELETE CASCADE`, `titulo` opcional, `created_at`,
+  `updated_at`) e `clean.chat_mensagens` (id, `conversa_id` FK cascade, `role`
+  com CHECK `user|assistant`, `content`, `meta` jsonb, `created_at`) + 2
+  índices GIN de `to_tsvector('portuguese', …)` (título e conteúdo), 2 B-tree
+  (listagem e mensagens) e trigger `tg_chat_conversas_updated_at`. `verify.sql`
+  confere 2 tabelas, 4 índices, o trigger e as 2 FKs.
+- **backend**:
+  - `Roles/Business/Chat/Conversas.pm` (232 linhas): `save_conversa`,
+    `list_conversas`, `get_conversa`, `delete_conversa`, `search_conversas`
+    (CTE com `plainto_tsquery` + `ts_headline` para o snippet),
+    `calendar_conversas` (dias com contagem) e `export_conversas` (Markdown).
+  - `Model/Chat/Conversas.pm` (compõe a role), `Schema/Result/ChatConversa.pm`
+    e `ChatMensagem.pm` (**sem** `is_json` no `meta` — ver pendência).
+  - `Controller/Chat.pm` ganhou os 7 handlers; o `export` responde
+    `text/markdown` com `Content-Disposition: conversas-<data>.md`.
+  - `Plugin/API/Chat.pm`: as rotas novas ficam **sob um `under` que reusa
+    `pesquisa#_require_gestor`** (o mesmo guard de sessão das pesquisas) —
+    assim o histórico herda a autenticação já testada. Ordem correta:
+    `calendar`/`search`/`export` (literais) **antes** de `:id`.
+- **frontend**: rota `/chat/historico` (`ChatHistoricoPage`: busca, filtro por
+  período, calendário, seleção para export, exclusão) + componentes
+  `ChatCalendar`, `ChatConversaList`, `ChatConversaItem`, `ChatExportModal`;
+  `chatApi.js` ganhou 5 funções; `ChatPage.svelte` ganhou os botões
+  **"Salvar conversa"** (modal de título opcional), **"Buscar conversas
+  anteriores"** e manteve "Limpar conversa"; uma classe utilitária
+  `.hChatHistorico` no `app.css`.
+- **Testes**: `t/04-api/chat/conversas.t` — 10 subtests (save 201, save sem
+  mensagens 400, list, show, search, calendar, export, delete, 401 sem token,
+  403 gestor comum) com guarda `plan skip_all` quando
+  `clean.chat_conversas` não existe, e **limpeza dos dados no `END`**.
+- **Não feito** (lacunas do ciclo, ver pendências acima): deploy, validação,
+  teste/MSW de frontend, `docs/funcionalidades/analise/assistente-censo.md`
+  (que descreve o chat mas **não** o histórico) e nota técnica.
+
 ## Sessão — Admin de instalação via config (bootstrap provisório), PR #99 (2026-09-25)
 
 - **Mecanismo provisório** para bootstrap de admin no deploy: credenciais admin
