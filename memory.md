@@ -74,6 +74,14 @@
 > - **`gh` instalado** (2.101.0, autenticado como `marcoarthur`, git via ssh,
 >   scopes `repo`/`read:org`/`read:project`) — o passo de PR+merge do workflow
 >   volta a ser possível.
+> - **Hook de auto-deploy DESATIVADO** (`.git/hooks/post-commit` →
+>   `post-commit.sample`): ele roda `rex prepare` + tasks por área, mas está
+>   **quebrado** — com `set -euo pipefail` e `$GIT_DIR` não exportado para
+>   hooks, ele **aborta na linha 32** (antes do `run_task prepare`). Bug
+>   questoado: o `9fd4a0e` provavelmente **nunca foi deployado** pelo hook.
+>   Correção: `"$GIT_DIR"` → `"$(git rev-parse --git-dir)"`. Reativar
+>   (`mv .git/hooks/post-commit.sample .git/hooks/post-commit`) só quando o
+>   `ubatexu.lan` voltar, senão todo commit quebra no `rex prepare`.
 
 > **Pendências do histórico de conversas (commit `9fd4a0e`, 2026-09-25)** —
 > **todas à espera de validação** quando o ambiente voltar:
