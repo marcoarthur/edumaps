@@ -1,0 +1,45 @@
+# Suíte de testes do frontend Svelte (vitest + jsdom + MSW).
+#
+# Os testes da SPA são auto-suficientes: os mocks de API vêm do MSW
+# (src/mocks/server.js) e não precisam de banco nem de serviços externos —
+# por isso o job é só `npm ci` + `npx vitest run`. Mesma imagem do ambiente de
+# dev (`node:22-slim`), sem dependência do backend.
+
+name: frontend-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: vitest (jsdom + MSW)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: node 22 + cache do npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/edumaps/package-lock.json
+
+      - name: dependências
+        working-directory: frontend/edumaps
+        run: npm ci --no-audit --no-fund
+
+      - name: suíte de testes
+        working-directory: frontend/edumaps
+        run: npx vitest run
