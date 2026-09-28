@@ -122,6 +122,15 @@ sub save_conversa ($self) {
   my $valid_msgs = 0;
   for my $msg (@$messages) {
     next unless ref $msg eq 'HASH';
+
+    # `meta` é um objeto livre (o frontend envia {timestamp, sql, resultado,
+    # origem}). Texto solto, array ou número não têm onde ser gravados: o
+    # Postgres recusaria com "invalid input syntax for type json" e a
+    # requisição estoura em 500 com a página de erro em HTML.
+    my $meta = $msg->{meta};
+    return $self->render(json => { error => 'meta deve ser um objeto JSON' }, status => 400)
+      if defined $meta && ref $meta ne 'HASH';
+
     my $role = $msg->{role} // '';
     my $content = $msg->{content} // '';
     $valid_msgs++ if $role =~ /^(user|assistant)$/ && length($content);

@@ -1,7 +1,6 @@
 package EduMaps::Roles::Business::Chat::Conversas;
 use Mojo::Base -role, -signatures;
 use utf8;
-use Mojo::JSON qw(encode_json decode_json);
 
 requires 'schema';
 
@@ -21,12 +20,12 @@ sub save_conversa ($self, $gestor_id, $args) {
   });
 
   for my $msg (@$messages) {
-    my $meta = $msg->{meta};
-    $meta = encode_json($meta) if ref $meta eq 'HASH';
     $conv->add_to_mensagens({
       role    => $msg->{role},
       content => $msg->{content},
-      meta    => $meta,
+      # O `meta` é jsonb: a serialização é do ChatMensagem (ver o inflate/deflate
+      # da coluna), a role entrega a estrutura.
+      meta    => $msg->{meta},
     });
   }
 
