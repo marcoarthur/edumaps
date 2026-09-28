@@ -115,7 +115,7 @@ load_school_profile <- function(source, ...) {
 #' com os 9 indicadores do perfil.
 #'
 #' @keywords internal
-.profile_pop_body <- function(schema_q, include_inactive) {
+.profile_pop_body <- function(schema_q, include_inactive, ano_expr = "$2", where_extra = "") {
   inactive <- if (include_inactive) "" else "AND e.tp_situacao_funcionamento = 1"
   exprs <- .profile_indicator_exprs()
   ind_sql <- paste0(
@@ -137,25 +137,27 @@ load_school_profile <- function(source, ...) {
       %s
     FROM %s.censo_escolas e
     LEFT JOIN %s.censo_docentes d
-      ON d.co_entidade = e.co_entidade AND d.nu_ano_censo = e.nu_ano_censo
+      ON d.co_entidade = e.co_entidade AND d.nu_ano_censo = %s
     LEFT JOIN %s.censo_matriculas m
-      ON m.co_entidade = e.co_entidade AND m.nu_ano_censo = e.nu_ano_censo
-    LEFT JOIN LATERAL (
-      SELECT i.ideb_observado, i.nota_media
+      ON m.co_entidade = e.co_entidade AND m.nu_ano_censo = %s
+    LEFT JOIN (
+      SELECT DISTINCT ON (i.id_escola)
+        i.id_escola, i.ideb_observado, i.nota_media
       FROM %s.ideb_notas_escolas i
-      WHERE i.id_escola = e.co_entidade
-      ORDER BY i.ano DESC, i.nota_media DESC
-      LIMIT 1
-    ) i ON TRUE
+      WHERE i.ano = (SELECT max(ano) FROM %s.ideb_notas_escolas)
+      ORDER BY i.id_escola, i.nota_media DESC
+    ) i ON i.id_escola = e.co_entidade
     LEFT JOIN %s.inse s
       ON s.id_escola = e.co_entidade
      AND s.nu_ano_saeb = (SELECT max(nu_ano_saeb) FROM %s.inse)
-    WHERE e.nu_ano_censo = (SELECT max(nu_ano_censo) FROM %s.censo_escolas)
+    WHERE e.nu_ano_censo = %s
+      %s
       %s
   ",
     ind_sql,
-    schema_q, schema_q, schema_q, schema_q, schema_q, schema_q, schema_q,
-    inactive
+    schema_q, schema_q, ano_expr, schema_q, ano_expr, schema_q, schema_q, schema_q, schema_q, ano_expr,
+    inactive,
+    where_extra
   )
 }
 
@@ -197,13 +199,21 @@ load_school_profile <- function(source, ...) {
   include_inactive,
   cluster_cte = NULL,
   cluster_select = "",
-  cluster_cross = ""
+  cluster_cross = "",
+  ano_expr = "$2"
 ) {
-  pop_body <- .profile_pop_body(schema_q, include_inactive)
+  pop_body <- .profile_pop_body(schema_q, include_inactive, ano_expr)
   inds <- PROFILE_INDICATORS
+
+  # `sprintf` com um argumento `NULL` devolve `character(0)`; coagimos para
+  # string vazia para que a query sem cluster continue válida.
+  cluster_cte <- cluster_cte %||% ""
+  cluster_select <- cluster_select %||% ""
+  cluster_cross <- cluster_cross %||% ""
 
   esc_cols <- paste0(sprintf("s.%s AS esc_%s", inds, inds), collapse = ",\n      ")
   agg_cols <- .profile_avg_cols()
+  outer_agg_cols <- paste0(sprintf("a.%s", inds), collapse = ",\n  ")
 
   city_filter <- "co_municipio = (SELECT max(co_municipio) FROM school)"
   rede_filter <- "tp_dependencia = (SELECT max(tp_dependencia) FROM school)"
@@ -237,9 +247,9 @@ ORDER BY a.scope
 ",
     pop_body,
     scope_union,
-    cluster_cte %||% "",
+    cluster_cte,
     esc_cols,
-    agg_cols,
+    outer_agg_cols,
     cluster_select,
     cluster_cross
   )
@@ -304,8 +314,11 @@ schema_q_plain <- function(con, schema_q) {
 #' município no Censo mais recente.
 #'
 #' @keywords internal
-.school_profile_municipio_frame <- function(con, schema_q, co_municipio, include_inactive) {
-  pop_body <- .profile_pop_body(schema_q, include_inactive)
+.school_profile_municipio_frame <- function(con, schema_q, co_municipio, include_inactive, ano) {
+  pop_body <- .profile_pop_body(
+    schema_q, include_inactive,
+    ano_expr = "$2", where_extra = "AND e.co_municipio = $1"
+  )
   inds <- PROFILE_INDICATORS
 
   sql <- sprintf(
@@ -313,7 +326,7 @@ schema_q_plain <- function(con, schema_q) {
 WITH pop AS MATERIALIZED (
 %s
 )
-SELECT p.co_entidade, p.no_entidade,
+SELECT p.co_entidade::text AS co_entidade, p.no_entidade,
        p.ideb_observado,
        %s
 FROM pop p
@@ -323,7 +336,7 @@ WHERE p.co_municipio = $1
     paste0(sprintf("p.%s", inds), collapse = ",\n       ")
   )
 
-  DBI::dbGetQuery(con, sql, params = list(co_municipio))
+  DBI::dbGetQuery(con, sql, params = list(co_municipio, ano))
 }
 
 #' Cluster fallback (kmeans restrito ao município)
@@ -334,13 +347,32 @@ WHERE p.co_municipio = $1
 #' convenção legada (set.seed(42), nstart=25, scale()).
 #'
 #' @keywords internal
+#' Indicadores que a própria escola tem preenchidos (features do fallback)
+#'
+#' Usa apenas as dimensões não-NA da escola alvo: assim ela nunca é
+#' excluída do kmeans/Gower por faltar um indicador (ex.: IDEB de escola
+#' nova), e o cluster/peers ficam no subespaço em que há dado.
+#'
+#' @keywords internal
+.profile_target_features <- function(frame, co_entidade) {
+  inds <- PROFILE_INDICATORS
+  srow <- frame[as.character(frame$co_entidade) == as.character(co_entidade), , drop = FALSE]
+  if (nrow(srow) == 0) {
+    return(inds)
+  }
+  vals <- suppressWarnings(as.numeric(srow[1, inds]))
+  feats <- inds[!is.na(vals)]
+  if (length(feats) == 0) inds else feats
+}
+
 .school_profile_fallback_cluster <- function(
   frame,
   co_entidade,
   clusters = 4
 ) {
   inds <- PROFILE_INDICATORS
-  valid <- frame[stats::complete.cases(frame[inds]), , drop = FALSE]
+  feats <- .profile_target_features(frame, co_entidade)
+  valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
   school_row <- valid[as.character(valid$co_entidade) == as.character(co_entidade), , drop = FALSE]
 
   if (nrow(valid) < 2 || nrow(school_row) == 0) {
@@ -348,7 +380,12 @@ WHERE p.co_municipio = $1
       "[school_profile] fallback kmeans degradado: município sem dados suficientes (n=%d) para a escola %s",
       nrow(valid), co_entidade
     ))
-    school_val <- if (nrow(school_row) == 0) rep(NA_real_, length(inds)) else as.numeric(school_row[1, inds])
+    srow_any <- frame[as.character(frame$co_entidade) == as.character(co_entidade), , drop = FALSE]
+    school_val <- if (nrow(srow_any) == 0) {
+      rep(NA_real_, length(inds))
+    } else {
+      suppressWarnings(as.numeric(srow_any[1, inds]))
+    }
     stats <- lapply(seq_along(inds), function(k) {
       list(
         p25 = school_val[k], p50 = school_val[k],
@@ -361,14 +398,14 @@ WHERE p.co_municipio = $1
       cluster_label = "Sem cluster (dados insuficientes)",
       cluster_source = "fallback_kmeans",
       cluster_scope = "municipio",
-      cluster_size = nrow(school_row),
-      cluster_n = nrow(school_row),
+      cluster_size = max(1L, nrow(srow_any)),
+      cluster_n = max(1L, nrow(srow_any)),
       stats = stats
     ))
   }
 
   k_eff <- max(2L, min(as.integer(clusters), floor(nrow(valid) / 2)))
-  x <- as.matrix(valid[inds])
+  x <- as.matrix(valid[feats])
   x_scaled <- scale(x)
 
   set.seed(42)
@@ -380,7 +417,10 @@ WHERE p.co_municipio = $1
   members <- valid[valid$cluster_id == sid, , drop = FALSE]
 
   stats <- lapply(inds, function(col) {
-    v <- as.numeric(members[[col]])
+    v <- suppressWarnings(as.numeric(members[[col]]))
+    if (all(is.na(v))) {
+      return(list(p25 = NA_real_, p50 = NA_real_, p75 = NA_real_, media = NA_real_))
+    }
     list(
       p25 = as.numeric(stats::quantile(v, 0.25, na.rm = TRUE)),
       p50 = as.numeric(stats::quantile(v, 0.50, na.rm = TRUE)),
@@ -391,14 +431,18 @@ WHERE p.co_municipio = $1
   names(stats) <- inds
 
   means <- do.call(rbind, lapply(sort(unique(fit$cluster)), function(ci) {
-    colMeans(valid[fit$cluster == ci, inds, drop = FALSE], na.rm = TRUE)
+    colMeans(valid[fit$cluster == ci, feats, drop = FALSE], na.rm = TRUE)
   }))
   rownames(means) <- as.character(sort(unique(fit$cluster)))
-  scores <- .cluster_scores(means, inds)
+  scores <- .cluster_scores(means, feats)
   labels <- .cluster_labels(fit$cluster, scores, concept = "perfil escolar", gender = "f")
 
-  label <- labels$cluster_label[labels$cluster_id == sid]
-  if (length(label) == 0 || is.na(label)) label <- sprintf("Cluster %d", sid)
+  label <- unique(labels$cluster_label[labels$cluster_id == sid])
+  if (length(label) == 0 || is.na(label[1])) {
+    label <- sprintf("Cluster %d", sid)
+  } else {
+    label <- label[1]
+  }
 
   list(
     cluster_id = sid,
@@ -426,7 +470,8 @@ WHERE p.co_municipio = $1
   max_schools = 300
 ) {
   inds <- PROFILE_INDICATORS
-  valid <- frame[stats::complete.cases(frame[inds]), , drop = FALSE]
+  feats <- .profile_target_features(frame, co_entidade)
+  valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
   if (nrow(valid) < 2) {
     return(data.frame(
       co_entidade = character(0), no_entidade = character(0),
@@ -453,7 +498,7 @@ WHERE p.co_municipio = $1
   m <- new_school_similarity_model(
     data = pool,
     entity_id = "co_entidade",
-    features = inds
+    features = feats
   )
   res <- analyze_gower_similarity(m, list())
   pairs <- res$data
@@ -537,6 +582,23 @@ load_school_profile.postgres_source <- function(
   quote_ident <- function(x) DBI::dbQuoteIdentifier(con, x)
   schema_q <- quote_ident(schema)
 
+  # Ano do censo resolvido UMA vez, por uma tabela cuja PK tem
+  # `nu_ano_censo` como primeira coluna (scan de índice, não seq scan).
+  # Sem isso, o `max(nu_ano_censo)` sobre `censo_escolas` (sem índice)
+  # domina o tempo da requisição.
+  ano_row <- DBI::dbGetQuery(
+    con,
+    sprintf("SELECT max(nu_ano_censo) AS nu_ano_censo FROM %s.censo_matriculas", schema_q)
+  )
+  ano <- if (nrow(ano_row) == 0 || is.na(ano_row$nu_ano_censo[1])) {
+    NA_integer_
+  } else {
+    as.integer(ano_row$nu_ano_censo[1])
+  }
+  if (is.na(ano)) {
+    stop_invalid_dataset("Nenhum ano de censo disponível para montar o perfil")
+  }
+
   persisted <- .school_profile_persisted_cluster(con, schema_q, co_entidade)
 
   cluster_cte <- cluster_select <- cluster_cross <- NULL
@@ -548,6 +610,9 @@ clus_stats AS (
     (SELECT si.cluster_id FROM %s.school_indicators si
        WHERE si.co_entidade = $1
        ORDER BY si.nu_ano_censo DESC LIMIT 1) AS cluster_id,
+    (SELECT si.cluster_label FROM %s.school_indicators si
+       WHERE si.co_entidade = $1
+       ORDER BY si.nu_ano_censo DESC LIMIT 1) AS cluster_label,
     count(*) AS cluster_n,
     %s
   FROM pop p
@@ -556,7 +621,7 @@ clus_stats AS (
                             WHERE si2.co_entidade = $1
                             ORDER BY si2.nu_ano_censo DESC LIMIT 1)
 )",
-      schema_q, .profile_cluster_stat_cols(), schema_q, schema_q
+      schema_q, schema_q, .profile_cluster_stat_cols(), schema_q, schema_q
     )
     inds <- PROFILE_INDICATORS
     stat_cols <- unlist(lapply(inds, function(ind) {
@@ -566,20 +631,21 @@ clus_stats AS (
       )
     }))
     cluster_select <- paste0(
-      ",\n  c.cluster_id, c.cluster_n,\n  ",
+      ",\n  c.cluster_id, c.cluster_label, c.cluster_n,\n  ",
       paste0(stat_cols, collapse = ",\n  ")
     )
-    cluster_cross <- "CROSS JOIN clus_stats"
+    cluster_cross <- "CROSS JOIN clus_stats c"
   }
 
   sql <- .profile_query_sql(
     schema_q, include_inactive,
     cluster_cte = cluster_cte,
     cluster_select = cluster_select,
-    cluster_cross = cluster_cross
+    cluster_cross = cluster_cross,
+    ano_expr = "$2"
   )
 
-  rows <- DBI::dbGetQuery(con, sql, params = list(co_entidade))
+  rows <- DBI::dbGetQuery(con, sql, params = list(co_entidade, ano))
 
   if (nrow(rows) == 0) {
     stop_invalid_dataset(sprintf("Escola não encontrada: %s", co_entidade))
@@ -597,20 +663,8 @@ clus_stats AS (
     nu_ano_censo = NA_integer_
   )
 
-  # nu_ano_censo é resolvido explicitamente (não vem na query principal)
-  ano_row <- DBI::dbGetQuery(
-    con,
-    sprintf(
-      "SELECT max(nu_ano_censo) AS nu_ano_censo FROM %s.censo_escolas WHERE co_entidade = $1",
-      schema_q
-    ),
-    params = list(co_entidade)
-  )
-  school_meta$nu_ano_censo <- if (nrow(ano_row) == 0 || is.na(ano_row$nu_ano_censo[1])) {
-    NA_integer_
-  } else {
-    as.integer(ano_row$nu_ano_censo[1])
-  }
+  # nu_ano_censo resolvido no início da função (query independente)
+  school_meta$nu_ano_censo <- ano
 
   scope_values <- function(scope_name) {
     r <- rows[rows$scope == scope_name, , drop = FALSE]
@@ -648,14 +702,14 @@ clus_stats AS (
     long$cluster_n <- as.integer(first$cluster_n)
     cluster_block <- list(
       cluster_id = as.integer(first$cluster_id),
-      cluster_label = NA_character_,
+      cluster_label = as.character(first$cluster_label),
       cluster_source = "persisted",
       cluster_scope = "tabela_school_indicators",
       cluster_size = as.integer(first$cluster_n)
     )
   } else {
     muni_frame <- .school_profile_municipio_frame(
-      con, schema_q, first$co_municipio, include_inactive
+      con, schema_q, first$co_municipio, include_inactive, ano
     )
     fc <- .school_profile_fallback_cluster(muni_frame, co_entidade, clusters = clusters)
     for (ind in inds) {
@@ -703,7 +757,7 @@ clus_stats AS (
            FROM analytics.similarity_pairs sp
            LEFT JOIN %s.censo_escolas e
              ON e.co_entidade = CASE WHEN sp.entity_1 = $1 THEN sp.entity_2 ELSE sp.entity_1 END
-            AND e.nu_ano_censo = (SELECT max(nu_ano_censo) FROM %s.censo_escolas)
+            AND e.nu_ano_censo = $3
            LEFT JOIN LATERAL (
              SELECT i.ideb_observado
              FROM %s.ideb_notas_escolas i
@@ -715,9 +769,9 @@ clus_stats AS (
              AND sp.distance <= $2
            ORDER BY sp.similarity DESC
            LIMIT 10",
-          schema_q, schema_q, schema_q
+          schema_q, schema_q
         ),
-        params = list(co_entidade, similarity_threshold)
+        params = list(co_entidade, similarity_threshold, ano)
       ),
       error = function(e) data.frame()
     )
@@ -736,7 +790,7 @@ clus_stats AS (
   if (!exists("peers") || nrow(peers) == 0) {
     if (!exists("muni_frame")) {
       muni_frame <- .school_profile_municipio_frame(
-        con, schema_q, first$co_municipio, include_inactive
+        con, schema_q, first$co_municipio, include_inactive, ano
       )
     }
     peers <- .school_profile_fallback_peers(
