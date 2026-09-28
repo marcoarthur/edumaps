@@ -182,6 +182,13 @@ ciclo; commit do fix segue via PR + merge. Chrome CDP reiniciado em
 **PR #104 mergeado em `main`** (`dfcdd2b`). Nota técnica:
 `docs/new_ideas/implementations_ideas/notas_tecnicas_68.md`.
 
+**Notificações de ciclo (`tools/notify`, commit `54bc13a`)**: implementado
+push para o developer via Telegram (Bot API grátis) + reforço em bloqueios
+comentando no PR/issue via `gh` (GitHub mobile). Triggers no `AGENTS.md`
+passo 9 (stage/blocked/done). **Pendência**: usuário ainda **não tem bot do
+Telegram configurado** — setup em `tools/notify/README.md` (@BotFather →
+token → chat_id → `.env`). Enquanto isso o `notify.sh` degrada calado.
+
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
 Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
