@@ -153,7 +153,10 @@ Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
 deploy_backend_dev` (serviço reiniciado, exit 0).
 
 **Fase 1 entregue na branch `ci/backend-tests`** (3 commits + 1 fix de
-workflow), **PR #102 aberto**:
+workflow), **PR #102 mergeado** (`d4344dd`, merge commit em 2026-09-28) —
+**workflow `backend-tests` VERDE no primeiro run de verdade** (a suíte do PR
+rodou inteira no runner: build da imagem, espelho, deploy das 64 migrations,
+deps via `apt`+`sudo cpanm` e `prove -r -l t/` com exit 0):
 
 | Commit | Mudança |
 |--------|---------|
@@ -198,11 +201,15 @@ compartilhado (atraso de migration no DB compartilhado — passa no Docker local
 
 **Primeiro run do workflow (PR #102) falhou em 8s** — `actions/setup-perl`
 irresolvível ("repository not found"). Corrigido trocando por `apt` +
-`sudo cpanm`; re-run **em andamento** (aguardando veredito).
+`sudo cpanm`; **re-run VERDE** (um run intermediário foi cancelado pelo
+concurrency ao re-pushar, sem falha). Deploy da Fase 1 feito (`rex prepare` +
+`deploy_backend_dev`).
 
-**Pendências Fase 2/3**: frontend CI (vitest + MSW, sem DB); decisão do
-Cloudflare Workers (config vs. desconectar — o check está vermelho em todo PR;
-a proposta ficou para a Fase 3).
+**Pendências Fase 2/3**: frontend CI (vitest + MSW, sem DB — o frontend já
+tem vitest 4 + jsdom + MSW 2 configurados, `src/mocks/server.js`, 62 arquivos
+de teste; falta só o workflow com `actions/setup-node`, que existe neste
+mirror); decisão do Cloudflare Workers (config vs. desconectar — o check está
+vermelho em todo PR; a proposta ficou para a Fase 3).
 
 ## Sessão — merge dos PRs abertos (2026-09-28)
 
