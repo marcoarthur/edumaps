@@ -142,6 +142,68 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
+
+Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
+(192.168.0.42) ressobeu e os aliases SSH do `~/.ssh/config` funcionam
+(`backend.edumaps` = porta 2031, `database.edumaps` = 2032, `analytic.edumaps` =
+2033). O `rex` **foi instalado nesta máquina** (cpanm; precisou de
+`XML::Parser`, que exige o header `expat.h`). O **deploy saiu**: `rex prepare`
+(rsync do working tree nos 3 hosts) + `rex -H backend.edumaps
+deploy_backend_dev` (serviço reiniciado, exit 0).
+
+**Fase 1 entregue na branch `ci/backend-tests`** (3 commits + 1 fix de
+workflow), **PR #102 aberto**:
+
+| Commit | Mudança |
+|--------|---------|
+| `feat(db): fixtures de CI + espelho HTTPS local` | `db/fixtures/`: 12 CSVs (headers verbatim IBGE/INEP, 18 municípios, 182 escolas) + `BR_Municipios_2024.zip` + `countries.geo.json` + `gerar.py` + `gerar_zip_municipios.sh` + `fix-manifest.json` + `mirror_countries.py` (espelho HTTPS com `Range`/206) + `ci_db.sh` (sobe/derruba o banco de CI: imagem, rede, espelho, `sqitch deploy`) + `README.md` |
+| `test(backend): suíte adaptada ao fixture de CI` | `t/lib/CI.pm` (guardas `skip_r`/`skip_network`/`skip_staging`/`skip_fixtures`, no-op em dev); 17 testes pulam com motivo; `t/ci/edu_maps.conf` (config por env); correções de testes latentes: `grades.t` (`_escolas_notas_na_forma`, sem INEP fixo), `rank.t` modelo+API (`rede => 'Estadual'` + desempate por `id_escola`), `cluster.t`/`clustering.t` (`city_id_with_grades` por `clean.inep.vl_observado_2023` — o que o clustering lê de verdade), `Utils.pm` (`_distintos` deduplica amostras); `cpanfile` declara `DBD::Pg` |
+| `feat(backend): workflow roda suíte no banco de fixtures` | `.github/workflows/backend-tests.yml` |
+
+**Fatos duros aprendidos** (não repetir):
+
+- **A migration `raw_countries` lê `/vsicurl` do `cdn.jsdelivr.net`** e não pode
+  mudar (checksum Sqitch). O CDN (Cloudflare) responde chunked sem
+  `Content-Length`; o callback de escrita do `/vsicurl` recusa e o GDAL reporta
+  *unable to connect to data source* mesmo com HTTP 200. Nenhuma knob do GDAL
+  resolve (GDAL_HTTP_HEADERS idem). Solução: espelho HTTPS local com CA própria,
+  `--network-alias cdn.jsdelivr.net` na rede Docker, e `CURL_CA_BUNDLE` no
+  container do Postgres. O espelho precisa responder `Range` (206 +
+  `Content-Range`), senão o GDAL aborta com "Range downloading not supported!",
+  e `Content-Length`/`Connection: close` (framing HTTP/1.0).
+- Os 12 `COPY` das migrations leem caminhos **fixos** `/data/*.csv`; o CI monta
+  `db/fixtures:/data:ro`. `BR_Municipios_2024.zip` também é `/data/`-local
+  (`raw_municipios_sp` já apontava para ele). Só `raw_countries` precisa de rede.
+- **`clean.school_indicators` nasce vazia**: é o job de análise (R) que a
+  popula, não migration. Por isso a suíte de CI pula os testes que a exigem.
+- **`actions/setup-perl` e `perl-actions/setup-perl` não existem** (404 até na
+  API do GitHub deste mirror). Instalar deps do backend com `sudo cpanm
+  --notest --installdeps .` (perl 5.38 do runner serve: sem pins de versão no
+  repo).
+- **Três INEPs de testes são inalcançáveis no fixture**: `23027010` (ausente de
+  todas as fontes), `33064164`/`33069395` (só no IDEB do Rio) — resolvido
+  test-side (`_escolas_notas_na_forma`), não no fixture.
+- Cluster: `simple_cluster_school` lê `clean.inep` com `vl_observado_2023 IS
+  NOT NULL` (não `clean.ideb_notas_escolas`); o helper de teste tem de casar com
+  essa tabela. `clean.censo_escolas.co_municipio` é varchar vs
+  `codigo_ibge` integer — CAST.
+
+**Validação**: suíte completa contra o banco de fixture recriado do zero
+(`ci_db.sh up`): **PASS** (71 arquivos, 302 testes, exit 0; 17 skips com
+`# SKIP CI/fixtures: <motivo>`). Cluster tests ×8 estáveis. Em dev (sem
+`EDUMAPS_FIXTURES`, Docker local com dados reais): guardas são no-op e os 5
+arquivos com lógica nova passam. `t/dbic/base.t` falhou contra o `ubatexu.lan`
+compartilhado (atraso de migration no DB compartilhado — passa no Docker local).
+
+**Primeiro run do workflow (PR #102) falhou em 8s** — `actions/setup-perl`
+irresolvível ("repository not found"). Corrigido trocando por `apt` +
+`sudo cpanm`; re-run **em andamento** (aguardando veredito).
+
+**Pendências Fase 2/3**: frontend CI (vitest + MSW, sem DB); decisão do
+Cloudflare Workers (config vs. desconectar — o check está vermelho em todo PR;
+a proposta ficou para a Fase 3).
+
 ## Sessão — merge dos PRs abertos (2026-09-28)
 
 Os três PRs abertos foram mergeados em `main` por instrução do usuário
