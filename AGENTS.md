@@ -264,6 +264,19 @@ plano → execução → aprovação
    `docs/new_ideas/implementations_ideas/notas_tecnicas_N.md` (próximo número
    sequencial), documentando o que foi construído e as decisões de design
    relevantes.
+9. **Notificar (push)**: avisar o developer sobre o andamento via
+   `tools/notify/notify.sh` (Telegram; em bloqueios também comenta no
+   PR/issue via `gh` → GitHub mobile). Disparar **sempre**:
+
+   | Momento | Comando |
+   |---------|---------|
+   | fim de **etapa/fase** em implementação longa | `tools/notify/notify.sh --event stage --title "Etapa N/M pronta" --msg "..."` |
+   | **bloqueio** esperando permissão do developer | `tools/notify/notify.sh --event blocked --title "..." --msg "..."` |
+   | **fim de ciclo** (após merge + memory + nota técnica) | `tools/notify/notify.sh --event done --title "Ciclo concluído" --msg "PR #N mergeado"` |
+
+   O script degrada em silêncio se não configurado (setup em
+   `tools/notify/README.md`) — nunca bloqueia o ciclo. Sem `tools/` no
+   deploy: scripts locais.
 
 ## Ambiente de teste (execução)
 
