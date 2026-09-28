@@ -211,6 +211,36 @@ de teste; falta só o workflow com `actions/setup-node`, que existe neste
 mirror); decisão do Cloudflare Workers (config vs. desconectar — o check está
 vermelho em todo PR; a proposta ficou para a Fase 3).
 
+## Sessão — CI Fase 2/3: frontend no CI e a decisão do Cloudflare (2026-09-28)
+
+**Fase 2 mergeda** (PR **#103**, `ci/frontend-tests` → `80bd7e1`):
+`feat(frontend): workflow CI roda vitest no PR` (`.github/workflows/
+frontend-tests.yml` — `actions/setup-node@v4` node 22 + cache npm → `npm ci`
+→ `npx vitest run`; sem DB, mocks vêm do MSW) e `fix(frontend): polyfill SVG
+transform no setup vitest`. **Workflow `frontend-tests` VERDE** no primeiro
+run do PR (62 arquivos / 337 testes, exit 0). Deploy feito: `rex prepare` +
+`deploy_frontend_dev` (nginx reiniciado, exit 0). **Nota técnica 67**.
+
+Fato duro de Fase 2: o `@carbon/charts` lê `el.transform.baseVal.
+consolidate()` ao aplicar zoom/pan; o jsdom não implementa
+`SVGElement.transform` e o acesso estourava a cada frame de animação. Todos os
+337 testes passavam **mas o vitest saía com exit 1** (unhandled error) — falso
+negativo que derrubaria o CI. Polyfill em `src/vitest-setup.js` (padrão de
+`consolidate()` → `null` = matriz identidade).
+
+**Fase 3 — decisão documentada (recomendação: desconectar)**: o check
+"Workers Builds: edumaps" (app Cloudflare Workers and Pages) falha em todo PR.
+Fatos: **não há `wrangler.toml`, código de worker nem diretório `workers/` em
+todo o histórico do repo**; o service `edumaps` na dashboard CF (conta
+`07f55e66...`) é órfão; o check **não é required** (nunca bloqueou merge —
+#60, #100-103 mergearam normalmente). Remover a integração **não é possível
+via `gh`** (o endpoint de installation exige JWT do app; token de usuário →
+401) — é ação de UI do admin: Settings → Integrations → GitHub Apps →
+Cloudflare Workers and Pages → remover do repositório. Alternativas
+descartadas: `wrangler.toml` falso para "passar" o check (CI fictício,
+pior que ruído) e manter como está (ruído permanente na lista de checks, que
+agora tem checks reais verdes). Sem código → sem PR/deploy para a Fase 3.
+
 ## Sessão — merge dos PRs abertos (2026-09-28)
 
 Os três PRs abertos foram mergeados em `main` por instrução do usuário
