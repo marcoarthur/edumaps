@@ -4,25 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-> ## ▶ RETOMADA — ponto de partida (2026-09-27)
+> ## ▶ RETOMADA — ponto de partida (2026-09-27, atualizado)
 >
-> Sessão encerrada enquanto o **ambiente era refeito** (perlbrew + Docker, com
-> `ubatexu.lan` fora do ar). Nada foi validado nem implantado. Ao voltar, ler
-> nesta ordem:
+> Ambiente **refeito e validado**: perlbrew restaurado, banco em Docker
+> (PG16 + PostGIS 3.5 + pgvector 0.8.6) com as **58 migrations aplicadas**
+> (exit 0) e a suíte de backend rodando (**345 testes, 57 arquivos**).
+> O commit `9fd4a0e` foi **verificado**: 1 das 6 pendências foi corrigida
+> (o `meta` jsonb), as outras 5 seguem abertas. Ver bloco "Ambiente" e a
+> sessão "Verificação do histórico de conversas" abaixo.
 >
-> 1. **Bloco "Ambiente"** logo abaixo — o que falta nesta máquina (Perl,
->    banco, containers, hook de deploy desativado).
-> 2. **Bloco "Pendências do histórico de conversas"** — 6 itens do commit
->    `9fd4a0e`, todos **ainda não verificados**. O de maior risco é o
->    **double-encoding do `meta` jsonb**.
-> 3. **Sessão "Histórico de conversas do Assistente do Censo"** — o que foi
->    entregue e o que faltou (deploy, teste de frontend, doc funcional, nota
->    técnica).
-> 4. Reativar o hook: `mv .git/hooks/post-commit.sample .git/hooks/post-commit`
+> **O que ainda trava o ambiente**: `ubatexu.lan` e `backend.edumaps`
+> continuam **fora do ar**, então o **deploy (Rex) segue impossível** e o hook
+> de auto-deploy continua desativado. Testes de frontend também dependem do
+> container `backend.edumaps`.
+>
+> Ao voltar, ler nesta ordem:
+>
+> 1. **Bloco "Ambiente"** logo abaixo — o que foi resolvido e o que falta.
+> 2. **Bloco "Pendências do histórico de conversas"** — 5 itens do commit
+>    `9fd4a0e` ainda **não verificados**.
+> 3. Reativar o hook: `mv .git/hooks/post-commit.sample .git/hooks/post-commit`
 >    (só depois de corrigir a linha 32 — ver bloco "Ambiente").
 >
-> **Commits locais não pushados** (2, ambos docs-only, `main` ahead 2):
-> `096ca8f` (memória do histórico de conversas) e `5151aa4` (hook desativado).
 > **Backlog no GitHub**: issue **#1** (GH Actions) aberta por decisão do
 > usuário; PR **#76** (docs de clientes) aberto, **110 commits atrás** e com
 > conflito em `memory.md` — resolver com rebase quando der.
@@ -57,6 +60,23 @@
 > - **Código de município NÃO é o prefixo do `cod_inep`**: usar a fonte oficial
 >   (`clean.censo_escolas.co_municipio` 7→6 dígitos; fallback nome+UF em
 >   `raw.br_municipios_2024`).
+> - **Coluna `jsonb` no DBIC deste projeto**: o DBIx::Class 0.0828 **não tem
+>   inflator json/jsonb** (só DateTime/File) e `is_json` não existe — sem
+>   tratamento, `$obj->coluna_jsonb` sai como **string**, e uma API que
+>   `render(json => ...)` devolve string onde o frontend espera objeto (falha
+>   silenciosa: some o metadado, sem erro). Usar `inflate_column` com
+>   `inflate` **e** `deflate` (sem o deflate o DBIC estoura *"No deflator
+>   found"* toda vez que a coluna recebe uma ref):
+>   `use Mojo::Base 'DBIx::Class::Core', 'DBIx::Class::InflateColumn', -signatures;`
+>   (via `load_components` o C3 resolve o nome do componente **relativo** ao
+>   pacote da classe e quebra). Ver `Schema/Result/ChatMensagem.pm`.
+> - **Validação de jsonb na entrada**: um `meta` que não é objeto (texto
+>   solto, array, número) não tem tradução para jsonb — o Postgres recusa com
+>   `invalid input syntax for type json` e a requisição estoura em **500 com a
+>   página de erro HTML**. Validar no controller e devolver **400**.
+> - **Teste que pega "a conversa mais recente"**: se outro subtest faz POST no
+>   mesmo recurso, a ordenação (`created_at DESC`) passa a devolver outro
+>   registro e o teste mede a coisa errada. Usar o **id devolvido no POST**.
 > - **Content-type de xlsx não contém "excel"**: é
 >   `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — validar
 >   por `excel|spreadsheetml|officedocument|octet-stream`.
@@ -83,17 +103,41 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
-> **Ambiente (2026-09-27 — máquina NOVA, em preparação)**:
+> **Ambiente (2026-09-27 — resolvido; ver o que ainda falta)**:
 > - Repositório agora em **`/home/itaipu/Code/Data/leaflet`** (o caminho
 >   `/home/itaipu/Projects/leaflet` que aparece em alguns `@INC` é resíduo da
 >   máquina antiga — ignore).
-> - **Perl**: só o do sistema (**5.40.1**) e **sem** `Mojolicious`,
->   `DBIx::Class`, `DBD::Pg`, `Test2::V1` → `prove` nem compila
->   (`Can't locate Test2/V1.pm`). O usuário está **restaurando o perlbrew** com
->   todos os módulos; até lá **não dá para rodar testes de backend**.
-> - **`ubatexu.lan` está INACESSÍVEL** (ping, 5432 e SSH 2031/2032 dão
->   timeout) → sem banco, sem containers, sem `psql` local. O ambiente de teste
->   vai passar a ser **Docker**.
+> - **Perl**: restaurado via **perlbrew 5.44.0** (o do sistema, 5.40.1, segue
+>   sem `Mojolicious`/`DBIx::Class`/`DBD::Pg`). `prove`/`mojo` resolvem para o
+>   perlbrew, que tem `DBIx::Class 0.082844`. Faltavam 4 deps de teste, instaladas
+>   com `cpanm` (instalado junto): **`strictures`**, **`EventBus`**,
+>   **`Text::Table`** e `App::cpanminus`. Sem elas 23 arquivos de teste nem
+>   compilavam (0 testes, wstat 512) — instalar essas 4 levou a suíte de **281
+>   para 344 testes**.
+> - **Banco em Docker** (funcionando): serviço `db` em `pgvector/pgvector:pg16-bookworm`
+>   + `postgresql-16-postgis-3` + `postgresql-16-ogr-fdw`, exposto em
+>   **`127.0.0.1:5432`** (só loopback, para o `prove -l` da máquina alcançar).
+>   `sqitch deploy` completo: **exit 0**, `clean.escolas` com 158.182 linhas.
+>   Os testes locais rodam com `EDUMAPS_DB_HOST=127.0.0.1` e **`env -u PERL5LIB`**
+>   (o `PERL5LIB` do shell ainda aponta pra `/home/itaipu/Projects/leaflet/lib`).
+> - **`/vsicurl` da migration `raw_countries` (GDAL × Cloudflare)**: o
+>   `cdn.jsdelivr.net` responde `Transfer-Encoding: chunked` sem `Content-Length`
+>   conforme o edge, e o callback de escrita do `vsicurl` **recusa corpo chunked**
+>   → `unable to connect to data source` **com HTTP 200 no log do curl** (o
+>   sintoma engana). Nenhuma knob do GDAL resolveu de forma confiável
+>   (`GDAL_HTTP_VERSION`, `GDAL_HTTP_HEADERS`, `CPL_VSIL_CURL_*`: chegou a passar
+>   3/3 e depois 0/6 na mesma sessão). **Solução adotada**: espelho HTTPS
+>   **local e transitivo** dentro do container (nginx em 443 + CA própria +
+>   `127.0.0.1 cdn.jsdelivr.net` no `/etc/hosts`), montado por `docker exec`.
+>   Some quando o container é recriado — só é preciso ao criar o banco do zero.
+>   **Não** alterar as migrations (checksum quebra em ambiente já implantado).
+> - **Trocar a base da imagem do `db` exige recriar o cluster**: `pgdata` é do
+>   uid 999 (não apagável sem root — usar `docker run --rm -v ./pgdata:/data …
+>   rm -rf /data/*`) e um cluster initdb em bullseye (collation 2.31) faz o
+>   Postgres recusar `CREATE DATABASE` no bookworm (2.36).
+> - **Deploy ainda IMPOSSÍVEL**: `ubatexu.lan` e `backend.edumaps` continuam sem
+>   resposta. Nenhum ciclo com código pode fechar o passo de deploy até a rede
+>   voltar — e é por isso que o hook segue desligado.
 > - **`gh` instalado** (2.101.0, autenticado como `marcoarthur`, git via ssh,
 >   scopes `repo`/`read:org`/`read:project`) — o passo de PR+merge do workflow
 >   volta a ser possível.
@@ -101,26 +145,38 @@
 >   `post-commit.sample`): ele roda `rex prepare` + tasks por área, mas está
 >   **quebrado** — com `set -euo pipefail` e `$GIT_DIR` não exportado para
 >   hooks, ele **aborta na linha 32** (antes do `run_task prepare`). Bug
->   questoado: o `9fd4a0e` provavelmente **nunca foi deployado** pelo hook.
+>   questionado: o `9fd4a0e` provavelmente **nunca foi deployado** pelo hook.
 >   Correção: `"$GIT_DIR"` → `"$(git rev-parse --git-dir)"`. Reativar
 >   (`mv .git/hooks/post-commit.sample .git/hooks/post-commit`) só quando o
 >   `ubatexu.lan` voltar, senão todo commit quebra no `rex prepare`.
+>
+> **Suíte de backend — linha de base (2026-09-27)**: 57 arquivos / 345 testes,
+> **9 arquivos com falha, todas pré-existentes** (não são regressão):
+> `City.t` (contrato de retorno), `domain/quality.t` e `indicators/quality.t`
+> (`ige: score <= 1`), `indicators_quality.t` (R::Pipe), `analytics.t` (serviço
+> de analytics), `municipio.t` (`clean.osm_landuse` **vazia** — depende de
+> ingestão OSM), `network/schools.t` (404 em `/api/cluster/schools`),
+> `dbic/inject*.t` (worker Minion).
 
-> **Pendências do histórico de conversas (commit `9fd4a0e`, 2026-09-25)** —
-> **todas à espera de validação** quando o ambiente voltar:
-> - **`meta` jsonb provavelmente duplamente encodado** (double-encoding):
->   `Chat::Conversas#save_conversa` faz `encode_json($meta)` e passa a
->   **string** para `add_to_mensagens`, mas
->   `ChatMensagem` **não declara `is_json`** (e o projeto não usa `is_json` em
->   lugar nenhum — os outros jsonb vão por SQL raw). O PG faz cast
->   text→jsonb e grava um **JSON escalar** (`"{...}"`), então
->   `get_conversa` devolve `meta` como **string**, não objeto — quebrando o
->   contrato que o frontend espera. **Conferir com o ambiente restaurado.**
+> **Pendências do histórico de conversas (commit `9fd4a0e`)** — 1 de 6
+> resolvida, as outras 5 **ainda não verificadas**:
+> - ~~**`meta` jsonb~~ — **RESOLVIDO e corrigido** (2026-09-27). A hipótese
+>   original estava **errada na causa**: o banco grava **objeto** jsonb
+>   correto (`jsonb_typeof(meta) = 'object'`) — o cast text→jsonb do PG faz
+>   parse do JSON, não cria escalar. O defeito era **só na leitura**: o
+>   DBIx::Class 0.0828 **não tem inflator json/jsonb** (só DateTime/File) e o
+>   projeto não usava `is_json` em lugar nenhum, então `$m->meta` saía como
+>   **texto** e a API devolvia uma **string** onde o contrato — e o
+>   `ChatMessage.svelte`, que lê `meta.timestamp`/`meta.sql`/`meta.origem` —
+>   espera objeto. Corrigido com `inflate_column` em `ChatMensagem` (veja a
+>   convenção nova abaixo). **Lição: `jsonb` no DBIC deste projeto precisa de
+>   inflate/deflate explícito; o default devolve string.**
 > - **Frontend sem teste nem MSW**: o commit `9fd4a0e` adicionou
 >   `ChatHistoricoPage` + 4 componentes + 5 funções de API **sem** nenhum
 >   `*.test.js` e **sem** handlers em `src/mocks/handlers.js` (só o
 >   `routes.test.js` +5). Viola a convenção do repo (toda feature entra com
->   teste + mock).
+>   teste + mock). **Agora é a pendência de maior risco**: nada exercita a
+>   página de histórico na SPA.
 > - **`per_page` sem clamp** em `list_conversas` (o `num` só garante inteiro):
 >   `?per_page=100000` passa. `search_conversas` tem guarda de `> 0`, o
 >   `list` não. Padronizar um clamp (1..100) como no resto da API.
@@ -135,6 +191,69 @@
 >   divergente — e `LIMIT ?` com parâmetro não tipado é exatamente o cenário
 >   que já mordeu em `CASE WHEN ? IS NULL` (ver convenção de prepared
 >   statement).
+> - **Latente, mesma classe do bug do `meta`**: `OsmLanduse.tags` é `jsonb` e
+>   também sai como string. Hoje não tem efeito — `City/Profile.pm` não expõe
+>   `tags` — mas é a mesma armadilha esperando alguém ler a coluna.
+
+## Sessão — Verificação do histórico de conversas e correção do `meta` (2026-09-27)
+
+**Objetivo**: validar o commit `9fd4a0e` com um ambiente de teste funcionando.
+**Resultado**: ambiente refeito (ver bloco "Ambiente") e **1 bug real corrigido**,
+com teste. 5 das 6 pendências continuam abertas.
+
+### Bugs encontrados (ambos confirmados contra o banco, não por leitura)
+
+**1. `meta` jsonb saía como string na API** (o de maior risco da lista, e a
+hipótese original estava errada na causa). Detalhado no bloco "Pendências":
+o banco está correto, o defeito era só a leitura. Impacto real hoje é
+**latente** — `getConversa(id)` existe em `chatApi.js` mas **nenhum código do
+frontend chama** (a página de histórico só lista, busca, apaga e exporta), então
+a falha apareceria no dia em que alguém ligar "abrir conversa salva", e
+sumiria a metainformação (timestamp, SQL, prévia do resultado, tabelas) sem
+nenhum erro na tela.
+
+**2. `POST /api/chat/conversas` com `meta` inválido devolvia 500.** `meta` fora de
+objeto (texto solto, array) não tem tradução para jsonb; o Postgres recusava e a
+resposta era **500 com a página de erro em HTML de desenvolvimento** — vazamento
+de página de debug, e não o 400 que o resto da API usa. Um número era aceito
+(201) e gravado como escalar jsonb silenciosamente.
+
+### O que mudou
+
+- `Schema/Result/ChatMensagem.pm` — `inflate_column` em `meta` (inflate +
+  deflate). Ver convenção durável acima.
+- `Roles/Business/Chat/Conversas.pm` — `save_conversa` parou de fazer
+  `encode_json` à mão; a serialização passou a ser da coluna. O import de
+  `Mojo::JSON` ficou sem uso e saiu.
+- `Controller/Chat.pm` — valida `meta` e devolve 400
+  `{"error":"meta deve ser um objeto JSON"}`.
+- `t/04-api/chat/conversas.t` — subtest novo para o `meta` inválido (3 formatos)
+  + asserções de forma no detalhe. 10 → **11 subtests, todos passando**.
+
+**Efeito colateral de contrato**: `meta` enviado como *string* JSON passou a dar
+400 (antes 201). O frontend manda objeto, e aceitar a string era justamente o
+que produzia o escalar jsonb silencioso.
+
+**Ganho no teste**: o subtest de detalhe pegava "a conversa mais recente da
+lista"; com o subtest novo fazendo POST no mesmo recurso, a ordenação passou a
+devolver outro registro e o teste media a coisa errada. Passou a usar o id
+devolvido no POST.
+
+### Verificação
+
+- `conversas.t`: 11/11 PASS.
+- Suíte completa (57 arquivos, **345 testes**): os **mesmos 9 arquivos** falhando
+  com as **mesmas contagens** de antes da mudança — nenhuma regressão.
+- Sondas descartáveis (fora do repo) gravaram e releram o `meta`: banco `object`,
+  API devolvendo `HASH`.
+
+### Não feito (e por quê)
+
+- **Deploy**: impossível — `ubatexu.lan` e `backend.edumaps` sem resposta. O PR
+  foi aberto sem o passo de deploy do workflow, e o hook segue desligado.
+- **Teste de frontend**: precisa do container `backend.edumaps`. Continua sendo
+  a pendência de maior risco (a página de histórico não tem teste nem MSW).
+- **`OsmLanduse.tags`**: mesma classe de bug, sem efeito hoje — não tocado.
 
 ## Sessão — Histórico de conversas do Assistente do Censo (commit `9fd4a0e`, 2026-09-25)
 
