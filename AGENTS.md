@@ -46,15 +46,30 @@ regressões.
 
 ## Running tests (frontend)
 
-**SEMPRE rodar no container `backend.edumaps` — NUNCA na máquina local:**
+**Onde rodar depende da máquina:**
 
-```bash
-ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'
-# feature isolada:
-ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src/features/<feature>'
-```
+- **No host `ubaxala`** (a máquina local) o ambiente de teste é
+  **preferencialmente Docker**. Não há `node` no host, então build e `vitest`
+  vão no container, com o repositório montado:
 
-O build do frontend também roda no container (`rex -H backend.edumaps deploy_frontend_dev`).
+  ```bash
+  sg docker -c 'docker run --rm -v "$PWD/frontend/edumaps:/src" -w /src node:22-slim \
+    sh -c "npm ci --no-audit --no-fund && npx vitest run"'
+  # feature isolada: troque por `npx vitest run src/features/<feature>`
+  ```
+
+  O `sg docker` é necessário porque o `sudo` pediria senha.
+
+- **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+  `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**:
+
+  ```bash
+  ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'
+  # feature isolada:
+  ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src/features/<feature>'
+  ```
+
+O build do frontend segue pelo container (`rex -H backend.edumaps deploy_frontend_dev`).
 
 ## Running tests (frontend e2e — browser real via CDP)
 

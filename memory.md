@@ -5,11 +5,27 @@
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
 > **Convenções duráveis (valem para toda sessão)**:
-> - **Testes de frontend** (`vitest` / `npm run test:run`): rodar **SOMENTE no
->   container** `backend.edumaps` — **NUNCA na máquina local**:
->   `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'`
->   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
->   `deploy_frontend_dev`).
+> - **Onde rodar os testes depende da máquina** (2026-09-28, por indicação do
+>   usuário):
+>   - **No host `ubaxala`** (a máquina local, `127.0.1.1` — onde a sessão está
+>     rodando) o ambiente de teste é **preferencialmente Docker**. Subir o que
+>     for preciso com `docker compose`/`docker run` e rodar ali, em vez de
+>     depender dos containers LXC. Vale para o Postgres (`docker-compose.yml`,
+>     publicado no loopback), para o build e o `vitest` do frontend
+>     (`node:22-slim` com o repositório montado) e para o e2e (SPA em build de
+>     produção servido por nginx, Chrome via CDP). O `docker` precisa de
+>     `sg docker -c '...'` — o `sudo` pediria senha.
+>   - **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+>     `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**
+>     (`192.168.0.42`): `rex prepare` + a task da área, e os testes de frontend
+>     por `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run
+>     test:run'`. Nada de ambiente local aí.
+>   Ou seja: **Docker é o padrão no `ubaxala`; o deploy é o padrão no resto.**
+> - **Testes de frontend** (`vitest` / `npm run test:run`): ver a regra acima
+>   sobre onde rodar. Em `ubaxala`, dentro do container:
+>   `docker run --rm -v "$PWD/frontend/edumaps:/src" -w /src node:22-slim sh -c
+>   "npm ci --no-audit --no-fund && npx vitest run"`. Não há `node` no host —
+>   o build da SPA também vai no container.
 > - **Componente com LeafletMap em teste (jsdom)**: NUNCA instanciar o
 >   `LeafletMap` real — usar o stub `features/<feature>/components/__tests__/LeafletMapStub.svelte`
 >   (importa o `provideMapContext` real de `features/map/context.js` e injeta
@@ -27,8 +43,12 @@
 > - **Dois bancos em dev**: o backend em container usa `Database` (LXC, user
 >   `edumaps`/`change_me`, `ssh root@database.edumaps`); os testes locais (`t/`)
 >   usam `ubatexu.lan` (user `devel`/`senhaboa123`). Migrações manuais precisam
->   ser aplicadas nos **dois**. `num` do Validator só aceita inteiro — decimais
->   exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar vírgula.
+>   ser aplicadas nos **dois**. No `ubaxala` há ainda um **terceiro**, o Postgres
+>   do `docker-compose.yml` (PostGIS 3 + pgvector, `127.0.0.1:5432`), que é o
+>   preferencial para teste local — apontar o backend para ele com
+>   `EDUMAPS_DB_HOST=127.0.0.1 EDUMAPS_DB_PORT=5432`. `num` do Validator só
+>   aceita inteiro — decimais exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar
+>   vírgula.
 > - **`$_[0]` em `map` dentro de sub com `-signatures`**: lê o `@_` da sub, não o
 >   `$_` da lista. Usar `$_->[0]` (ex.: `map { $_->[0] + 0 } @$rows`).
 > - **Código de município NÃO é o prefixo do `cod_inep`**: usar a fonte oficial
