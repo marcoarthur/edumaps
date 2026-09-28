@@ -2550,6 +2550,13 @@ devolvido no POST.
   Database (PostgreSQL/PostGIS/Sqitch em `Database`), Analytic (R `edumapsr`,
   Plumber na porta 8000 via `EDUMAPS_R_PORT`). Frontend atual: `frontend/edumaps`
   (Svelte 5/Vite), não mais `frontend/map_app`.
+- **Regra — rebuild dos containers Docker (somente no host `ubaxala`)**: sempre
+  que houver merge em `main`, **rebuildar os containers Docker locais**
+  (`docker compose up -d --build` no repo raiz) para sincronizar o ambiente
+  local com o código novo. **Aplica-se APENAS ao `ubaxala`** (Stack Docker
+  local: `db`/`sqitch`/`backend`/`frontend`/`minion`); nos demais hosts
+  (`backend.edumaps`, `database.edumaps`, `analytic.edumaps`) essa regra
+  **não se aplica** — lá o sync é via Rex (`rex prepare` + task de deploy).
 
 ## Comportamento / convenções do repo (descobertas)
 - Idioma: PT-BR (comentários, docs e mensagens).
