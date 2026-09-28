@@ -18,3 +18,9 @@ analysis/edumapsr/edumapsAnalytics_*.tar.gz
 
 # Configuração local (não versionável)
 data_pipeline/config/local.ini
+
+# Ambiente Docker de desenvolvimento
+.env
+pgdata/
+# symlink para os CSVs do Censo/IDEB ( datasets -> ~/Data/edumaps_data )
+datasets

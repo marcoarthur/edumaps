@@ -11,6 +11,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    # Exposto só no loopback: os testes de backend rodam na máquina (prove -l)
+    # e não há razão para o Postgres ficar acessível pela rede.
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
       - ./datasets:/data
