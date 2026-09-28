@@ -216,6 +216,14 @@ token → chat_id → `.env`). Enquanto isso o `notify.sh` degrada calado.
   legado** (não a SPA `frontend/edumaps`) — o compose está desatualizado nesse
   ponto; a SPA atual é servida pelo nginx e2e (:8080). Pendência: alinhar
   `frontend/Dockerfile` + nginx p/ a SPA atual se o compose for o alvo.
+- **RESOLVIDO (commit `3a86822`)**: `frontend/Dockerfile` agora builda a SPA
+  `edumaps` (npm ci + vite build, espelhando o `deploy_frontend_dev` do Rex);
+  `frontend/nginx.conf` replicou o nginx real (PWA manifest, `sw.js` no-cache,
+  assets imutáveis, `/api/` proxied p/ `backend:3000`, `client_max_body_size
+  12m`; `/analytic-api/` comentado — sem serviço `analytic` no compose).
+  Containers e2e legados removidos (8080-8084); o `frontend` do compose agora
+  serve a SPA em :8080. Validado: index 200, bundle `index-CWm3qagX.js` (OSM
+  presente, CARTO ausente), manifest/SW 200, API via proxy 200.
 
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
