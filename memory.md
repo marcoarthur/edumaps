@@ -6,12 +6,16 @@
 
 > ## ▶ RETOMADA — ponto de partida (2026-09-27, atualizado)
 >
+> **PR #100 aberto** (`fix/chat-meta-jsonb` → `main`): a correção do `meta`
+> do histórico de conversas. **Aguardando review/merge.** Não mergeado.
+>
 > Ambiente **refeito e validado**: perlbrew restaurado, banco em Docker
 > (PG16 + PostGIS 3.5 + pgvector 0.8.6) com as **58 migrations aplicadas**
 > (exit 0) e a suíte de backend rodando (**345 testes, 57 arquivos**).
 > O commit `9fd4a0e` foi **verificado**: 1 das 6 pendências foi corrigida
 > (o `meta` jsonb), as outras 5 seguem abertas. Ver bloco "Ambiente" e a
 > sessão "Verificação do histórico de conversas" abaixo.
+> Nota técnica do ciclo: `docs/new_ideas/implementations_ideas/notas_tecnicas_64.md`.
 >
 > **O que ainda trava o ambiente**: `ubatexu.lan` e `backend.edumaps`
 > continuam **fora do ar**, então o **deploy (Rex) segue impossível** e o hook
