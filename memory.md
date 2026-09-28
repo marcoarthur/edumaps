@@ -241,6 +241,12 @@ descartadas: `wrangler.toml` falso para "passar" o check (CI fictício,
 pior que ruído) e manter como está (ruído permanente na lista de checks, que
 agora tem checks reais verdes). Sem código → sem PR/deploy para a Fase 3.
 
+**Status final**: issue **#1 "Create GH Actions" FECHADA** (2026-09-28, por
+instrução do usuário). Comentário de fechamento registra as Fases 1/2
+mergeadas e a pendência operacional (remover o app Cloudflare via UI) como
+não-bloqueante. Estado: `main` = `4aad876`, sincronizada com o remoto,
+working tree limpo.
+
 ## Sessão — merge dos PRs abertos (2026-09-28)
 
 Os três PRs abertos foram mergeados em `main` por instrução do usuário
