@@ -188,6 +188,9 @@ comentando no PR/issue via `gh` (GitHub mobile). Triggers no `AGENTS.md`
 passo 9 (stage/blocked/done). **Pendência**: usuário ainda **não tem bot do
 Telegram configurado** — setup em `tools/notify/README.md` (@BotFather →
 token → chat_id → `.env`). Enquanto isso o `notify.sh` degrada calado.
+**STATUS 2026-09-28 (após): ativado** — usuário preencheu
+`tools/notify/.env` (token + chat_id) e o push real validado
+(`notify.sh --event stage` → Telegram `ok:true`). Sem pendência.
 
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
