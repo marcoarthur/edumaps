@@ -1,10 +1,16 @@
 use Mojo::Base -strict, -signatures;
 use Test2::V0;
 use Test2::Tools::Compare qw(T F D DF E DNE FDNE U L);
-use lib qw(./lib);
+use lib qw(./lib t/lib);
+use CI;
 use DateTime;
 use Mojo::JSON qw(decode_json encode_json);
 use Try::Tiny;
+
+# clean.school_indicators nasce vazia: quem a popula é o job de análise (R),
+# que não roda no CI. Sem ela, os métodos de City que a leem devolvem escalar
+# onde o teste espera referência.
+CI->skip_r ('clean.school_indicators e populada pelo job de analise (R)');
 
 # Carregar módulos necessários - Test2 não tem use_ok, vamos usar require + ok
 my $load_ok = 1;

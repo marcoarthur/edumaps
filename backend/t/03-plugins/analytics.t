@@ -1,11 +1,16 @@
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use EduMaps::Analytics::Client;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 use Mojo::JSON;
 use Mojo::Util;
 use IO::Socket::INET;
+
+# O client de analytics invoca o R e escreve o portfile; sem R ele nunca
+# levanta e o servidor de teste não fica pronto.
+CI->skip_r ('EduMaps::Analytics::Client precisa do R para escrever o portfile');
 use Time::HiRes qw(sleep);
 use utf8;
 use open ':std', ':encoding(UTF-8)';

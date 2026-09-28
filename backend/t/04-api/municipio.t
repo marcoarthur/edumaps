@@ -1,9 +1,14 @@
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 use DDP;
+
+# As OSM features vêm da API Overpass em tempo de execução; o banco de
+# fixtures não as traz e o CI não tem espelho da Overpass.
+CI->skip_network ('features do OpenStreetMap vêm da Overpass');
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');

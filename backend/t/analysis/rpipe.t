@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+use lib qw(t/lib);
+use CI;
 use Test2::V0;
 use Test2::Mock;
 use Test2::Tools::Exception qw(dies lives);
@@ -10,6 +12,11 @@ use File::Temp qw(tempdir);
 use File::Spec::Functions qw(catfile);
 use Mojo::File qw(path);
 
+# Exercita o R de verdade (script temporário + Rscript): o CI não tem R.
+# BEGIN porque o `use ok` abaixo roda em tempo de compilacao e emite testes: o
+# skip_all precisa vir antes dele, senao o prove reclama "You planned 0 tests
+# but ran 1".
+BEGIN { CI->skip_r('R::Pipe precisa de um interpretador R instalado') }
 use ok('EduMaps::Analysis::R::Pipe');
 
 # ----------------------------------------------------------------------

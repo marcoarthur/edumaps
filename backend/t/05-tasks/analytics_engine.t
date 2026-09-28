@@ -1,5 +1,6 @@
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
@@ -10,6 +11,9 @@ use Data::Dumper;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
+
+# O engine de analytics fala com o R via R::Pipe e popula analytics.*.
+CI->skip_r ('engine de analytics sobre o R (R::Pipe)');
 
 # ---------------------------------------------------------------------------
 # Servidor-filho emulando o Plumber (respostas fixas sem DB/R)

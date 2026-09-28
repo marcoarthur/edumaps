@@ -2,7 +2,11 @@ use strictures 2;
 use lib qw(./lib t/lib);
 use Test::Mojo;
 use Imports;
+use CI;
 use Utils qw(run_similarity_job cleanup_job expected_similarity_contract);
+
+# A similaridade é calculada no R (edumapsr) e gravada pelo job.
+CI->skip_r ('matriz de similaridade calculada no R');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $sch = $t->app->schema;

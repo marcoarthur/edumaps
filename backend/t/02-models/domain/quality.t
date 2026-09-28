@@ -1,6 +1,11 @@
 use strictures 2;
 use lib qw(t/lib lib);
 use Imports;
+use CI;
+# BEGIN porque os `use ok` abaixo rodam em tempo de compilacao e emitem testes:
+# o skip_all precisa vir antes deles, senao o prove reclama "You planned 0 tests
+# but ran N".
+BEGIN { CI->skip_r('school_indicators e o calculo R de qualidade') }
 use Test::Mojo;
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Model::Domain::SchoolQuality';
