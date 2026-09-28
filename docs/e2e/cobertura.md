@@ -8,6 +8,31 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-09-28 (tiles OSM no lugar do CARTO)
+
+**Causa do bug "mapas sem tiles + tarja para definir chave API"**: o tile
+layer usava o CDN `basemaps.cartocdn.com` (`light_all`), que exige
+chave/API em algumas condições. **Fix: `LeafletMap.svelte` e
+`AnalBaseMap.svelte` (legado) passaram a usar
+`https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`** (sem chave).
+
+Validação e2e (Chrome CDP `:9333`, profile `/tmp/edumaps-cdp2`, alvo
+`http://ubatexu.lan:8080/gestor/painel?inep=35211576`, fluxo "Buscar
+escolas similares"):
+
+| Verificação | Resultado |
+|---|---|
+| Bundle servido | `index-CWm3qagX.js` — `cartocdn: 0`, única `tileUrl` = OSM |
+| Tiles carregados | 🟢 15/15 (hosts `a/b/c.tile.openstreetmap.org`) |
+| Status HTTP dos tiles | 🟢 200 `image/png` (frio, 17 respostas, 0 falhas) |
+| Tarja/texto de API key no DOM do mapa | 🟢 ausente (`keyTexts: []`, `tileErrorCls: false`) |
+| Testes unitários frontend | 🟢 26 arquivos / 138 testes (docker `node:22-slim`) |
+| Deploy | 🟢 `rex prepare` + `deploy_frontend_dev` (`backend.edumaps`) |
+
+> **Nota do fix**: o `edumaps` não passa `tileUrl` custom em nenhum caller —
+> todos os mapas (escolas similares, escola, rede, cluster) usam o default
+> do `LeafletMap`; a troca única corrige todos.
+
 ## Ambiente desta rodada (2026-09-28)
 
 `ubatexu.lan` e `backend.edumaps` seguem **fora do ar**, então o alvo

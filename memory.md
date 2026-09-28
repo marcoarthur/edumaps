@@ -142,6 +142,43 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — Bug dos mapas sem tiles: troca CARTO → OSM (2026-09-28)
+
+**Relato do usuário**: "mapas leaflet renderizado no frontend estão todos
+sem os tiles, com uma tarja para definir a chave API (API key)" — ocorre
+na URL padrão (`http://ubatexu.lan:8080/gestor/painel?inep=...`, ex. escolas
+similares) e no localhost. O usuário apontou que a direção certa era
+"**saber do leaflet o que pode evitar o carto na URL**" e que "**o correto é
+usar o OSM**".
+
+**Causa**: o tile layer usava o CDN `basemaps.cartocdn.com` (`light_all`),
+que exige chave/API em algumas condições → tarja "defina sua API key".
+**Fix (código)**:
+
+- `frontend/edumaps/src/features/map/components/LeafletMap.svelte` —
+  `tileUrl` default CARTO → `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
+  e attribution `© OpenStreetMap contributors`. Nenhum caller passa
+  `tileUrl` custom (SimilarSchoolsSearch, SchoolMap, NetworkSchoolMap,
+  ClusterSchoolMap usam todos o default) — a troca única corrige todos os
+  mapas.
+- `frontend/map_app/src/lib/AnalBaseMap.svelte` (legado) — mesma troca
+  (usava CARTO `light_all` + subdomains `abcd`; agora OSM + `abc`).
+- `frontend/edumaps/frontend.md` — doc atualizada (contexo Leaflet).
+
+**Validação**:
+- Unit tests frontend (docker `node:22-slim`): 26 arquivos / 138 testes ✅.
+- Deploy: `rex prepare` + `rex -H backend.edumaps deploy_frontend_dev` ✅
+  (build + nginx restarted). Bundle novo servido: `index-CWm3qagX.js`.
+- Bundle novo: `cartocdn: 0`; única `tileUrl` = OSM.
+- E2e Chrome CDP `:9333` (alvo `ubatexu.lan:8080`, fluxo escolas similares):
+  15/15 tiles OSM, hosts `a/b/c.tile.openstreetmap.org`, 17 respostas
+  **200 `image/png`**, 0 falhas, `keyTexts: []`, `tileErrorCls: false`.
+- Rodada e2e registrada em `docs/e2e/cobertura.md`.
+
+**Estado**: `main` em `529db60`, working tree limpo ao final do
+ciclo; commit do fix segue via PR + merge. Chrome CDP reiniciado em
+`:9333` (profile `/tmp/edumaps-cdp2`) durante a validação.
+
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
 Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
