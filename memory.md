@@ -26,6 +26,17 @@
 >   `docker run --rm -v "$PWD/frontend/edumaps:/src" -w /src node:22-slim sh -c
 >   "npm ci --no-audit --no-fund && npx vitest run"`. Não há `node` no host —
 >   o build da SPA também vai no container.
+> - **Testes de backend**: mesma regra por máquina. No `ubaxala`, o backend roda
+>   no **perlbrew do host** apontando para o Postgres do Docker, e o
+>   `env -u PERL5LIB` é **obrigatório** — o `PERL5LIB` do shell tem caminhos de
+>   uma máquina antiga e o `prove` aborta antes de rodar qualquer teste:
+>   `cd backend && env -u PERL5LIB EDUMAPS_DB_HOST=127.0.0.1 EDUMAPS_DB_PORT=5432 prove -r -l t/04-api/`.
+>   Sempre com `-l`, sempre de `backend/`.
+> - **Falha pré-existente conhecida** (não é regressão): `t/04-api/municipio.t`
+>   subteste 8 (OSM features sem dados carregados) e
+>   `t/04-api/network/schools.t` subteste 3 (dois subtestes com expectativas
+>   contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem
+>   a mudança, em `git stash`.
 > - **Componente com LeafletMap em teste (jsdom)**: NUNCA instanciar o
 >   `LeafletMap` real — usar o stub `features/<feature>/components/__tests__/LeafletMapStub.svelte`
 >   (importa o `provideMapContext` real de `features/map/context.js` e injeta

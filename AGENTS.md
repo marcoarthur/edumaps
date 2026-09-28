@@ -28,6 +28,18 @@ Máx. 50 chars no subject. Mensagem de commit em **PT-BR**.
 
 ## Running tests (backend)
 
+**Onde rodar depende da máquina** (mesma regra do frontend):
+
+- **No host `ubaxala`** o backend roda no **perlbrew do host** e aponta para o
+  **Postgres do Docker** (`127.0.0.1:5432`, sobe com `docker compose up -d db`).
+  O `env -u PERL5LIB` é **obrigatório**: o `PERL5LIB` do shell tem caminhos de
+  uma máquina antiga e faz o `prove` abortar antes de rodar qualquer teste.
+
+- **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+  `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**: subir a
+  mudança com `rex prepare` + `rex -H backend.edumaps deploy_backend_dev` e só
+  então rodar.
+
 ```bash
 cd backend
 prove -vl t/02-models/SchoolNetwork.t   # modelo isolado
@@ -42,7 +54,10 @@ Sem `-l`, o módulo `EduMaps` não é encontrado e os testes falham com
 
 Muitos testes em `t/05-tasks` e `analysis/` dependem de serviços externos
 (R, schema staging, jobs agendados) e são **previamente falhos** — não são
-regressões.
+regressões. O mesmo vale para `t/04-api/municipio.t` (OSM features sem dados
+carregados) e `t/04-api/network/schools.t` (dois subtestes com expectativas
+contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem a
+mudança, em `git stash`.
 
 ## Running tests (frontend)
 
