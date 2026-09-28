@@ -12,7 +12,6 @@
   } from "../api/chatApi.js";
   import ChatCalendar from "../components/ChatCalendar.svelte";
   import ChatConversaList from "../components/ChatConversaList.svelte";
-  import ChatExportModal from "../components/ChatExportModal.svelte";
 
   // ---- estado ----
   let loading = $state(false);
@@ -34,13 +33,25 @@
   let searchTotal = $state(0);
   let isSearching = $state(false);
 
+  // O endpoint de busca devolve **uma linha por mensagem casada**, então a
+  // mesma conversa aparece repetida (achado 14, no SQL). Como a lista usa
+  // `{#each}` com key, ids repetidos derrubam a tela inteira com
+  // `each_key_duplicate`. Deduplicar aqui deixa a lista coerente enquanto o
+  // backend não é corrigido — e vira no-op quando for.
+  let listaExibida = $derived.by(() => {
+    const base = searchQuery.trim() ? searchResults : conversas;
+    const vistos = new Set();
+    return base.filter(c => {
+      if (vistos.has(c.id)) return false;
+      vistos.add(c.id);
+      return true;
+    });
+  });
+
   // calendário
   let calendarData = $state({});
   let currentMonth = $state(new Date());
   let selectedDate = $state("");
-
-  // export
-  let showExportModal = $state(false);
 
   // sessão
   onMount(async () => {
@@ -129,33 +140,40 @@
     }
   }
 
-  function openExportModal() {
+  // "Ver conversa": a ChatPage ainda não sabe reabrir uma conversa salva
+  // (não lê id nem query param, e `getConversa` não é chamado em lugar
+  // nenhum). Em vez de deixar o clique como no-op silencioso, avisamos.
+  function abrirConversa() {
+    error = "Reabrir uma conversa salva ainda não está disponível.";
+  }
+
+  // baixa o .md devolvido pela API. O `revokeObjectURL` vai num setTimeout:
+  // revogar no mesmo tick pode cancelar o download antes de ele começar.
+  function salvarMarkdown({ blob, filename }) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `conversas-${new Date().toISOString().split("T")[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function exportSelected(ids) {
-    exportConversas({ ids }).then(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `conversas-${new Date().toISOString().split("T")[0]}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }).catch(err => {
-      error = "Falha ao exportar: " + err.message;
-    });
+    exportConversas({ ids })
+      .then(salvarMarkdown)
+      .catch(err => {
+        error = "Falha ao exportar: " + err.message;
+      });
   }
 
   function exportAll() {
-    exportConversas({ all: true }).then(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `conversas-${new Date().toISOString().split("T")[0]}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }).catch(err => {
-      error = "Falha ao exportar: " + err.message;
-    });
+    exportConversas({ all: true })
+      .then(salvarMarkdown)
+      .catch(err => {
+        error = "Falha ao exportar: " + err.message;
+      });
   }
 
   function goToPage(newPage) {
@@ -221,14 +239,26 @@
         </label>
       </div>
 
-<ChatConversaList
-          {conversas}
+        <!-- A busca preenchia `searchResults`, mas o template sempre passava
+             `conversas` para a lista: o resultado era buscado no servidor e
+             descartado, e a busca não filtrava nada na tela. Agora a lista
+             recebe `listaExibida`, que escolhe entre os dois e ainda
+             deduplica os ids repetidos que a busca devolve.
+             `bind:searchQuery` é obrigatório: sem ele o `bind:value` do
+             campo de busca da lista escreve numa cópia local e a busca
+             daquele campo nunca chega ao servidor. Os handlers de
+             exportar/excluir também eram stubs vazios na lista. -->
+        <ChatConversaList
+          conversas={listaExibida}
+          bind:searchQuery={searchQuery}
           {loading}
-          {searchQuery}
           onSearch={handleSearchInput}
           {selectedDate}
           onExportSelected={ids => exportSelected(ids)}
           onExportAll={exportAll}
+          onExportOne={id => exportSelected([id])}
+          onDelete={handleDelete}
+          onOpen={abrirConversa}
         />
       {#if totalPages > 1}
     <nav class="mt-4 flex items-center justify-center gap-2" aria-label="Paginação">

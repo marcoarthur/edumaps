@@ -115,27 +115,37 @@ export function getCalendar(params) {
 
 /**
  * Exporta conversas selecionadas ou todas para Markdown.
+ *
+ * Precisa passar por `apiClient.download`: a rota é protegida por
+ * `_require_gestor`, que só aceita o header `Authorization: Bearer`. Um
+ * `fetch` cru com `credentials: "include"` manda só o cookie e tomava 401.
+ * O nome do arquivo vem do `Content-Disposition` do backend.
+ *
  * @param {Object} params
  * @param {Array<number>} [params.ids] - IDs das conversas a exportar
  * @param {boolean} [params.all] - Se true, exporta todas
- * @returns {Promise<Blob>} - Blob do arquivo .md
+ * @returns {Promise<{blob: Blob, filename: string}>}
  */
 export function exportConversas(params) {
-  const url = new URL("/api/chat/conversas/export", window.location.origin);
-  if (params.ids) {
-    params.ids.forEach(id => url.searchParams.append("ids[]", id));
+  const qs = new URLSearchParams();
+  if (params.ids?.length) {
+    // `ids=` repetido, e NÃO `ids[]`: o `to_hash` do Mojolicious não
+    // converte a notação de colchete, então `?ids[]=1` chega no backend
+    // como chave inexistente e o filtro é ignorado — o export saía com
+    // todas as conversas. (`ids` sem colchete também quebrava com 500,
+    // por causa do `id` ambíguo do JOIN com `mensagens`; ambos corrigidos
+    // no backend.)
+    params.ids.forEach(id => qs.append("ids", id));
   }
   if (params.all) {
-    url.searchParams.set("all", "1");
+    qs.set("all", "1");
   }
-  return fetch(url.toString(), {
-    method: "GET",
-    credentials: "include",
-    headers: { Accept: "text/markdown" },
-  }).then(r => {
-    if (!r.ok) throw new Error("Falha ao exportar");
-    return r.blob();
-  });
+  // a query vai no path: `download` faz `searchParams.set`, que não
+  // repete chave.
+  const query = qs.toString();
+  return apiClient.download(
+    `/api/chat/conversas/export${query ? `?${query}` : ""}`
+  );
 }
 
 /**

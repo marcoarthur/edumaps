@@ -6,20 +6,28 @@
   /**
    * @param {Array} conversas
    * @param {boolean} loading
-   * @param {string} searchQuery
+   * @param {string} searchQuery - precisa ser $bindable: a página passa
+   *   `bind:searchQuery`, senão o `bind:value` do input escreve só numa cópia
+   *   local e a busca deste campo nunca chega ao servidor.
    * @param {Function} onSearch
    * @param {string} selectedDate
    * @param {Function} onExportSelected
    * @param {Function} onExportAll
+   * @param {Function} onExportOne
+   * @param {Function} onDelete
+   * @param {Function} onOpen
    */
   let {
     conversas = [],
     loading = false,
-    searchQuery = "",
+    searchQuery = $bindable(""),
     onSearch = () => {},
     selectedDate = "",
     onExportSelected = () => {},
     onExportAll = () => {},
+    onExportOne = () => {},
+    onDelete = () => {},
+    onOpen = () => {},
   } = $props();
 
   let selectedIds = $state([]);
@@ -29,11 +37,9 @@
   }
 
   function selectAll() {
-    if (selectedIds.length === conversas.length) {
-      selectedIds = [];
-    } else {
-      selectedIds = conversas.map(c => c.id);
-    }
+    selectedIds = selectedIds.length === conversas.length
+      ? []
+      : conversas.map(c => c.id);
   }
 
   function handleExportSelected() {
@@ -60,17 +66,28 @@
       </label>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
+      <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={conversas.length > 0 && selectedIds.length === conversas.length}
+          onchange={selectAll}
+          disabled={conversas.length === 0}
+          aria-label="Selecionar todas as conversas"
+          class="h-4 w-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+        />
+        Selecionar todas
+      </label>
       <button
-        onclick={() => {}}
+        onclick={handleExportAll}
         class="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
         disabled={conversas.length === 0}
       >
         Exportar todas (.md)
       </button>
       <button
-        onclick={() => {}}
+        onclick={handleExportSelected}
         class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
-        disabled={conversas.length === 0}
+        disabled={selectedIds.length === 0}
       >
         Exportar selecionadas ({selectedIds.length})
       </button>
@@ -94,13 +111,14 @@
       </div>
     {:else}
       <div class="space-y-3 p-4">
-        {#each conversas as conversa}
+        {#each conversas as conversa (conversa.id)}
           <ChatConversaItem
             {conversa}
-            selected={false}
-            onClick={() => {}}
-            onExport={(id) => {}}
-            onDelete={(id) => {}}
+            selected={selectedIds.includes(conversa.id)}
+            onToggleSelect={toggleSelect}
+            onClick={() => onOpen(conversa.id)}
+            onExport={onExportOne}
+            onDelete={onDelete}
           />
         {/each}
       </div>
