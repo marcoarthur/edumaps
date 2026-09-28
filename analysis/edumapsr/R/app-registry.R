@@ -13,6 +13,11 @@
 #              "plotly" existe; guardar o nome já prepara terreno pra
 #              quando existir mais de um renderer por análise, ou um
 #              endpoint tipo /analysis que liste capacidades)
+#   model_class - classe do modelo semântico que a análise consome.
+#              Opcional; quando ausente assume "school_indicator_model"
+#              (histogram/scatter/boxplot). O `school_profile` consome um
+#              `school_profile_model` (perfil multimodal), por isso a
+#              entrada declara a classe explicitamente.
 #
 # O Controller nunca aceita um nome de análise fora desta lista, e o
 # dispatch é sempre por lookup nesta lista, nunca por string arbitrária
@@ -39,5 +44,11 @@ analysis_registry <- list(
     fn = analyze_boxplot,
     required = c("value", "group"),
     view = "plotly"
+  ),
+  school_profile = list(
+    fn = analyze_school_profile,
+    required = character(0),
+    view = "json",
+    model_class = "school_profile_model"
   )
 )

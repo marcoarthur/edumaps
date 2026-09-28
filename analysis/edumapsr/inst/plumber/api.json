@@ -538,6 +538,69 @@
       }
     },
 
+    "/school_profile": {
+      "post": {
+        "summary": "Gera o Perfil da Escola",
+        "description": "Dado um co_entidade (código INEP), devolve um payload pronto para o painel do gestor: diagnóstico, posição relativa (município/rede/Brasil), benchmarking justo (peers via Gower e cluster) e sinais de atenção (quartil inferior dentro do cluster).",
+        "operationId": "createSchoolProfile",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchoolProfileRequest"
+              },
+              "example": {
+                "co_entidade": 23165669
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Perfil gerado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolProfileResponse"
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida (co_entidade inexistente ou malformado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Escola não encontrada: 99999999"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao gerar o perfil da escola"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/health": {
       "get": {
         "summary": "Verifica a saúde do serviço",
@@ -1210,6 +1273,163 @@
 
           "chart": {
             "$ref": "#/components/schemas/AskChart"
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SchoolProfileRequest": {
+        "type": "object",
+        "required": ["co_entidade"],
+        "properties": {
+          "co_entidade": {
+            "type": "integer",
+            "description": "Código INEP da escola (8 dígitos).",
+            "example": 23165669
+          },
+          "schema": {
+            "type": "string",
+            "default": "clean",
+            "description": "Schema onde os dados do Censo vivem."
+          },
+          "output_schema": {
+            "type": "string",
+            "default": "analytics",
+            "description": "Schema de persistência (quando persist=true)."
+          },
+          "include_inactive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Inclui escolas com tp_situacao_funcionamento != 1."
+          },
+          "clusters": {
+            "type": "integer",
+            "default": 4,
+            "description": "Nº de clusters do kmeans de fallback (cluster restrito ao município)."
+          },
+          "similarity_threshold": {
+            "type": "number",
+            "default": 0.3,
+            "description": "Distância Gower máxima para considerar um par similar."
+          },
+          "persist": {
+            "type": "boolean",
+            "default": false,
+            "description": "Persiste o perfil em analytics.school_profile (UPSERT por co_entidade)."
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SchoolProfileResponse": {
+        "type": "object",
+        "required": ["analysis", "metadata", "tables"],
+        "properties": {
+          "analysis": {
+            "type": "string",
+            "example": "school_profile"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "data": {
+            "type": "array",
+            "items": {},
+            "description": "Vazio: o perfil entrega tudo em `tables`."
+          },
+          "metrics": {
+            "type": "object",
+            "description": "cluster_size, n_indicadores, n_peers, n_flags, total_escolas_municipio/rede/brasil.",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Identificação da escola + bloco do cluster.",
+            "properties": {
+              "co_entidade": { "type": "string" },
+              "no_entidade": { "type": "string" },
+              "co_municipio": { "type": "integer" },
+              "no_municipio": { "type": "string" },
+              "sg_uf": { "type": "string" },
+              "nu_ano_censo": { "type": "integer" },
+              "cluster_id": { "type": "integer", "nullable": true },
+              "cluster_label": { "type": "string", "nullable": true },
+              "cluster_source": {
+                "type": "string",
+                "enum": ["persisted", "fallback_kmeans", "none"]
+              },
+              "cluster_scope": { "type": "string", "nullable": true },
+              "cluster_size": { "type": "integer", "nullable": true },
+              "peers_source": {
+                "type": "string",
+                "enum": ["similarity_pairs", "gower_municipio"]
+              }
+            },
+            "additionalProperties": true
+          },
+          "tables": {
+            "type": "object",
+            "properties": {
+              "indicadores_comparados": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "indicador": { "type": "string" },
+                    "label": { "type": "string" },
+                    "escola": { "type": "number", "nullable": true },
+                    "municipio": { "type": "number", "nullable": true },
+                    "rede": { "type": "number", "nullable": true },
+                    "brasil": { "type": "number", "nullable": true },
+                    "cluster": { "type": "number", "nullable": true },
+                    "quartil_no_cluster": { "type": "integer", "nullable": true },
+                    "atencao": { "type": "boolean" }
+                  }
+                }
+              },
+              "cluster_resumo": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "indicador": { "type": "string" },
+                    "label": { "type": "string" },
+                    "media": { "type": "number", "nullable": true },
+                    "p25": { "type": "number", "nullable": true },
+                    "p50": { "type": "number", "nullable": true },
+                    "p75": { "type": "number", "nullable": true },
+                    "n": { "type": "integer", "nullable": true }
+                  }
+                }
+              },
+              "peers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "co_entidade": { "type": "string" },
+                    "no_entidade": { "type": "string" },
+                    "similarity": { "type": "number" },
+                    "ideb_observado": { "type": "number", "nullable": true }
+                  }
+                }
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "indicador": { "type": "string" },
+                    "codigo": { "type": "string" },
+                    "severidade": { "type": "string" },
+                    "mensagem": { "type": "string" },
+                    "escola": { "type": "number", "nullable": true },
+                    "quartil_no_cluster": { "type": "integer", "nullable": true }
+                  }
+                }
+              }
+            }
           }
         },
         "additionalProperties": false

@@ -29,7 +29,18 @@
 # de propósito — assim este arquivo não precisa mudar quando uma análise
 # nova entrar no registry, só a análise nova precisa declarar `required`
 # corretamente.
-fixture_model_for_required <- function(required) {
+#
+# Entradas que declaram `model_class` (ex.: school_profile) recebem o
+# fixture do modelo semântico correspondente.
+entry_model_class <- function(entry) {
+  if (is.null(entry$model_class)) "school_indicator_model" else entry$model_class
+}
+
+fixture_model_for_required <- function(required, model_class = "school_indicator_model") {
+  if (identical(model_class, "school_profile_model")) {
+    return(fixture_school_profile_model())
+  }
+
   n <- 9
   data <- list()
   if ("value" %in% required) data$value <- c(5, 6, 7, 8, 9, 10, 4, 6, 8)
@@ -72,7 +83,7 @@ test_that("todo campo em `required` corresponde a um accessor real do modelo sem
 test_that("fn(model, parameters) de toda análise registrada devolve um analysis_result válido", {
   for (name in names(analysis_registry)) {
     entry <- analysis_registry[[name]]
-    model <- fixture_model_for_required(entry$required)
+    model <- fixture_model_for_required(entry$required, entry_model_class(entry))
 
     result <- entry$fn(model, list())
 
@@ -88,7 +99,7 @@ test_that("run_analysis() aceita o fixture genérico pra toda análise registrad
   # validação de required fields do run_analysis, não só a análise em si.
   for (name in names(analysis_registry)) {
     entry <- analysis_registry[[name]]
-    model <- fixture_model_for_required(entry$required)
+    model <- fixture_model_for_required(entry$required, entry_model_class(entry))
 
     expect_no_error(run_analysis(name, model))
   }
@@ -97,7 +108,7 @@ test_that("run_analysis() aceita o fixture genérico pra toda análise registrad
 test_that("toda análise registrada tem um renderer funcionando para o `view` declarado", {
   for (name in names(analysis_registry)) {
     entry <- analysis_registry[[name]]
-    model <- fixture_model_for_required(entry$required)
+    model <- fixture_model_for_required(entry$required, entry_model_class(entry))
     result <- run_analysis(name, model)
 
     rendered <- export_result(result, entry$view)

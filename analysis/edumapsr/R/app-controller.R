@@ -18,8 +18,12 @@ run_analysis <- function(name, model, parameters = list()) {
   if (is.null(entry)) {
     stop_invalid_analysis(sprintf("Análise desconhecida: %s", name))
   }
-  if (!inherits(model, "school_indicator_model")) {
-    stop_invalid_parameter("run_analysis espera um modelo semântico (school_indicator_model), não dados crus")
+  expected_class <- entry$model_class %||% "school_indicator_model"
+  if (!inherits(model, expected_class)) {
+    stop_invalid_parameter(sprintf(
+      "run_analysis espera um modelo semântico (%s), não dados crus",
+      expected_class
+    ))
   }
 
   .assert_required_fields(model, entry$required)

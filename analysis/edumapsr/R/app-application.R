@@ -183,3 +183,49 @@ persist_similarity_pairs_result <- function(
 ) {
   persist_similarity_pairs(repository, result, ...)
 }
+
+#' Carrega um `SchoolProfileModel` a partir de qualquer DataSource
+#'
+#' @param source DataSource compatível com `load_school_profile()`.
+#' @param ... parâmetros específicos da fonte.
+#'
+#' @return Objeto da classe `school_profile_model`.
+#'
+#' @export
+load_school_profile_dataset <- function(source, ...) {
+  load_school_profile(source, ...)
+}
+
+#' Executa a análise do perfil da escola
+#'
+#' @param model objeto da classe `school_profile_model`.
+#' @param parameters lista de parâmetros da execução.
+#'
+#' @return Objeto da classe `analysis_result`.
+#'
+#' @export
+run_school_profile <- function(
+  model,
+  parameters = list()
+) {
+  analyze_school_profile(model, parameters)
+}
+
+#' Persiste um resultado do perfil da escola
+#'
+#' @param result objeto da classe `analysis_result`.
+#' @param repository Repository compatível com
+#'   `persist_school_profile()`.
+#' @param ... parâmetros específicos do Repository.
+#'
+#' @return Lista com `persisted`, `co_entidade`, `nu_ano_censo` e
+#'   `profile_table`.
+#'
+#' @export
+persist_school_profile_result <- function(
+  result,
+  repository,
+  ...
+) {
+  persist_school_profile(repository, result, ...)
+}

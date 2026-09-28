@@ -292,6 +292,64 @@ function(req, res) {
   )
 }
 
+#* @post /school_profile
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+  output_schema <- payload$output_schema %||% "analytics"
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      source <- postgres_source(con)
+
+      model <- load_school_profile_dataset(
+        source,
+        co_entidade = payload$co_entidade,
+        schema = schema,
+        include_inactive = isTRUE(payload$include_inactive),
+        clusters = payload$clusters %||% 4,
+        similarity_threshold = payload$similarity_threshold %||% 0.3
+      )
+
+      result <- run_school_profile(
+        model,
+        parameters = list(co_entidade = payload$co_entidade)
+      )
+
+      body <- export_result(result, "json")
+
+      if (isTRUE(payload$persist)) {
+        persisted <- persist_school_profile_result(
+          result,
+          postgres_school_profile_repository(con),
+          output_schema = output_schema
+        )
+        body$persisted <- persisted
+      }
+
+      body
+    },
+
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /school_profile: %s\n",
+        conditionMessage(e)
+      ))
+
+      res$status <- 500
+      list(error = "Erro interno ao gerar o perfil da escola")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")
