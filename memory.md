@@ -192,6 +192,31 @@ token → chat_id → `.env`). Enquanto isso o `notify.sh` degrada calado.
 `tools/notify/.env` (token + chat_id) e o push real validado
 (`notify.sh --event stage` → Telegram `ok:true`). Sem pendência.
 
+## Sessão — Compose completo no ubaxala + regra de rebuild pós-merge (2026-09-28)
+- **Regra nova (usuário)**: sempre que houver **merge em `main`**, rebuildar os
+  containers Docker locais (`docker compose up -d --build`). **Só no `ubaxala`**;
+  demais hosts (`backend.edumaps`, `database.edumaps`, `analytic.edumaps`) usam
+  Rex, regra não se aplica. Gravada em `memory.md` (commit `1557410`).
+- **Revisão do deploy**: banco do compose (`edumaps_dev` @127.0.0.1:5432)
+  **populado** (clean.escolas=158.182, todas c/ geometria; censo/ideb/inep OK;
+  58/58 migrations sqitch). O `public` está vazio **por design** (dados em
+  `clean.*`/`analytics.*`) — não é banco vazio. O "vazio" na UI era o
+  **backend ausente** na cadeia (na :8080 respondia o nginx e2e com proxy para
+  `host.docker.internal:3000`, e nada rodava em :3000 → HTTP 502 na API).
+- **Compose buildado e de pé no ubaxala** (commit `5ea2100`):
+  `db` (healthy) + `sqitch` (deploy ok) + `backend` (:3000) + `minion`.
+  Build: `docker compose build backend frontend minion` (imagens novas).
+  Fix: serviço `minion` não injetava `DB_NAME/DB_USER/DB_PASS` — o entrypoint
+  gera o `edu_maps.conf` a partir delas; missing → `fe_sendauth` ao conectar.
+  Credenciais adicionadas ao serviço (`docker-compose.yml`).
+- **Backend validado**: `GET /api/school/25058533/info` → 200 c/ dados (ESC MUL
+  JANUARIO GONCALVES DA SILVA, PB); `/api/school/search?q=Soledade` → 200 54KB;
+  proxy `:8080/api/*` → 200. Mapa carrega os 158k pontos.
+- **Atenção**: o serviço `frontend` do compose ainda builda o **`map_app`
+  legado** (não a SPA `frontend/edumaps`) — o compose está desatualizado nesse
+  ponto; a SPA atual é servida pelo nginx e2e (:8080). Pendência: alinhar
+  `frontend/Dockerfile` + nginx p/ a SPA atual se o compose for o alvo.
+
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
 Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
