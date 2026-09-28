@@ -6,8 +6,11 @@
 
 > ## ▶ RETOMADA — ponto de partida (2026-09-27, atualizado)
 >
-> **PR #100 aberto** (`fix/chat-meta-jsonb` → `main`): a correção do `meta`
-> do histórico de conversas. **Aguardando review/merge.** Não mergeado.
+> **PRs do histórico de conversas MERGEADOS em `main` (2026-09-28)**: #100
+> (`fix/chat-meta-jsonb`, `meta` como objeto + POST 400) e #101
+> (`fix/chat-historico-e2e`, 10 bugs achados na e2e). O bloco "Ambiente" e a
+> sessão "Verificação do histórico de conversas" abaixo descrevem o estado
+> **antes** desses merges — as pendências que eles resolveram já não valem.
 >
 > Ambiente **refeito e validado**: perlbrew restaurado, banco em Docker
 > (PG16 + PostGIS 3.5 + pgvector 0.8.6) com as **58 migrations aplicadas**
@@ -15,7 +18,8 @@
 > O commit `9fd4a0e` foi **verificado**: 1 das 6 pendências foi corrigida
 > (o `meta` jsonb), as outras 5 seguem abertas. Ver bloco "Ambiente" e a
 > sessão "Verificação do histórico de conversas" abaixo.
-> Nota técnica do ciclo: `docs/new_ideas/implementations_ideas/notas_tecnicas_64.md`.
+> Notas técnicas do ciclo: `notas_tecnicas_64.md` (meta/`POST 400`) e
+> `notas_tecnicas_65.md` (os 10 bugs da e2e + ambiente local com Docker).
 >
 > **O que ainda trava o ambiente**: `ubatexu.lan` e `backend.edumaps`
 > continuam **fora do ar**, então o **deploy (Rex) segue impossível** e o hook
@@ -35,11 +39,38 @@
 > conflito em `memory.md` — resolver com rebase quando der.
 
 > **Convenções duráveis (valem para toda sessão)**:
-> - **Testes de frontend** (`vitest` / `npm run test:run`): rodar **SOMENTE no
->   container** `backend.edumaps` — **NUNCA na máquina local**:
->   `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'`
->   (ou `npx vitest run src/features/<feature>`). Idem para o build (via
->   `deploy_frontend_dev`).
+> - **Onde rodar os testes depende da máquina** (2026-09-28, por indicação do
+>   usuário):
+>   - **No host `ubaxala`** (a máquina local, `127.0.1.1` — onde a sessão está
+>     rodando) o ambiente de teste é **preferencialmente Docker**. Subir o que
+>     for preciso com `docker compose`/`docker run` e rodar ali, em vez de
+>     depender dos containers LXC. Vale para o Postgres (`docker-compose.yml`,
+>     publicado no loopback), para o build e o `vitest` do frontend
+>     (`node:22-slim` com o repositório montado) e para o e2e (SPA em build de
+>     produção servido por nginx, Chrome via CDP). O `docker` precisa de
+>     `sg docker -c '...'` — o `sudo` pediria senha.
+>   - **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+>     `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**
+>     (`192.168.0.42`): `rex prepare` + a task da área, e os testes de frontend
+>     por `ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run
+>     test:run'`. Nada de ambiente local aí.
+>   Ou seja: **Docker é o padrão no `ubaxala`; o deploy é o padrão no resto.**
+> - **Testes de frontend** (`vitest` / `npm run test:run`): ver a regra acima
+>   sobre onde rodar. Em `ubaxala`, dentro do container:
+>   `docker run --rm -v "$PWD/frontend/edumaps:/src" -w /src node:22-slim sh -c
+>   "npm ci --no-audit --no-fund && npx vitest run"`. Não há `node` no host —
+>   o build da SPA também vai no container.
+> - **Testes de backend**: mesma regra por máquina. No `ubaxala`, o backend roda
+>   no **perlbrew do host** apontando para o Postgres do Docker, e o
+>   `env -u PERL5LIB` é **obrigatório** — o `PERL5LIB` do shell tem caminhos de
+>   uma máquina antiga e o `prove` aborta antes de rodar qualquer teste:
+>   `cd backend && env -u PERL5LIB EDUMAPS_DB_HOST=127.0.0.1 EDUMAPS_DB_PORT=5432 prove -r -l t/04-api/`.
+>   Sempre com `-l`, sempre de `backend/`.
+> - **Falha pré-existente conhecida** (não é regressão): `t/04-api/municipio.t`
+>   subteste 8 (OSM features sem dados carregados) e
+>   `t/04-api/network/schools.t` subteste 3 (dois subtestes com expectativas
+>   contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem
+>   a mudança, em `git stash`.
 > - **Componente com LeafletMap em teste (jsdom)**: NUNCA instanciar o
 >   `LeafletMap` real — usar o stub `features/<feature>/components/__tests__/LeafletMapStub.svelte`
 >   (importa o `provideMapContext` real de `features/map/context.js` e injeta
@@ -57,8 +88,12 @@
 > - **Dois bancos em dev**: o backend em container usa `Database` (LXC, user
 >   `edumaps`/`change_me`, `ssh root@database.edumaps`); os testes locais (`t/`)
 >   usam `ubatexu.lan` (user `devel`/`senhaboa123`). Migrações manuais precisam
->   ser aplicadas nos **dois**. `num` do Validator só aceita inteiro — decimais
->   exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar vírgula.
+>   ser aplicadas nos **dois**. No `ubaxala` há ainda um **terceiro**, o Postgres
+>   do `docker-compose.yml` (PostGIS 3 + pgvector, `127.0.0.1:5432`), que é o
+>   preferencial para teste local — apontar o backend para ele com
+>   `EDUMAPS_DB_HOST=127.0.0.1 EDUMAPS_DB_PORT=5432`. `num` do Validator só
+>   aceita inteiro — decimais exigem `like(qr/\d+(?:[.,]\d+)?/)` + normalizar
+>   vírgula.
 > - **`$_[0]` em `map` dentro de sub com `-signatures`**: lê o `@_` da sub, não o
 >   `$_` da lista. Usar `$_->[0]` (ex.: `map { $_->[0] + 0 } @$rows`).
 > - **Código de município NÃO é o prefixo do `cod_inep`**: usar a fonte oficial
@@ -107,6 +142,84 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — e2e do histórico de conversas em Chrome real (2026-09-28)
+
+`ubatexu.lan`, `backend.edumaps` e `analytic.edumaps` estavam fora do ar, o que
+travou a suíte de frontend no container e o deploy. Rodada feita com o
+ambiente inteiro local (Postgres em Docker + backend no perlbrew do host + SPA
+em build de produção servido por nginx + Chrome via CDP).
+
+### O que a rodada encontrou
+
+`/chat/historico` **não funcionava** — a lista nunca carregava e os botões de
+exportar/excluir eram stubs. Detalhe em `docs/e2e/cobertura.md` (16 achados).
+Os que mudam código:
+
+- `ChatCalendar.svelte`: `$effect(buildCalendar())` passava o **retorno** da
+  função. O `TypeError` no flush do Svelte **aborta o `onMount` da página**,
+  então a lista nunca era buscada.
+- `ChatConversaItem.svelte`: template usava o identificador solto `snippet`
+  em vez de `conversa.snippet`.
+- `ChatHistoricoPage.svelte`: a busca preenchia `searchResults` mas o template
+  passava `conversas` — o resultado era buscado e descartado.
+- `ChatConversaList.svelte`: exportar/excluir/`onOpen` eram `() => {}`.
+- **Overlay z-index**: o botão "Ver conversa" é um `absolute inset-0` sobre o
+  card e interceptava o clique dos botões de exportar/excluir. `stopPropagation`
+  não adianta — o clique nem chega nos handlers. `document.elementFromPoint` no
+  centro do botão resolve isso na hora.
+- `searchQuery` era `bind:value` num prop não bindável (precisava de
+  `$bindable` + `bind:` do pai).
+- `exportConversas` era a única função de `chatApi.js` **fora do `apiClient`**:
+  `fetch` cru com `credentials: "include"`, mas `_require_gestor` só lê o
+  header `Authorization: Bearer` → **401** nos dois botões.
+
+### Armadilhas de contrato do chat (custaram tempo — não repetir)
+
+- **`?ids[]=1` NÃO é a forma que o Mojolicious lê.** `to_hash` não converte a
+  notação de colchete: a chave vira literalmente `ids[]` e `to_hash->{ids}`
+  volta `undef`. O filtro era ignorado e o export saía com **todas** as
+  conversas, em silêncio. A forma lida é `?ids=1&ids=2`.
+- **Com o filtro aplicado, o export estourava 500**: `prefetch => mensagens`
+  fazia JOIN e `id` existe nas duas tabelas. O prefetch era **descartado**
+  (o loop já buscava com `$c->mensagens->search(...)`) — remover resolveu.
+- **`POST /api/chat/conversas` espera `messages`**, não `mensagens`; e responde
+  só `{id}`, apesar de o comentário prometer `{id, created_at}`.
+- **Teste que usava a forma quebrada passava sem verificar nada**: conferia
+  `## Pergunta 1` num corpo que vinha com todas as conversas. Ao corrigir o
+  filtro, o teste passou a falhar — porque a conversa mais recente do banco só
+  tinha mensagem de `user` e o export só numera `Resposta N` para `assistant`.
+- **`{#each}` com key + id repetido derruba a tela** (`each_key_duplicate`). A
+  busca devolve a mesma conversa mais de uma vez (o `snippet` entra no
+  `DISTINCT` do SQL). O sintoma — "a busca não filtra nada" — é parecido com o
+  do `searchResults` não lido, e confunde o diagnóstico.
+
+### Driver CDP: o que precisou de ajuste
+
+- `Runtime.evaluate` sem `awaitPromise: true` devolve o **objeto `Promise`**
+  (`{"type":"object","value":{}}`), não o resultado — o driver tem que sempre
+  pedir `awaitPromise` e fazer `json.loads` do valor, que é uma string.
+- O `wrap()` do driver embute a expressão num IIFE: passar uma **arrow** devolve
+  a própria função (inserializável), não o valor. Precisa ser uma expressão.
+- **`a.click()` de script não dá *user activation*** e o Chrome descarta o
+  download de `blob:`. Só funciona com `Input.dispatchMouseEvent` de verdade.
+  O `Page.setDownloadBehavior` na sessão de página não redirecionou o download
+  — o arquivo foi para o diretório padrão do Chrome.
+- `confirm()` trava o renderer: é preciso responder a
+  `Page.javascriptDialogOpening` com `Page.handleJavaScriptDialog`. Como o
+  `Session.send` descarta eventos sem `id`, o handler tem de ser chamado ali.
+
+### Estado
+
+- PR #100 (`fix/chat-meta-jsonb`, `meta` do chat como objeto + POST 400) foi
+  **mergeado em `main` antes deste PR** (`5e9b918`). Os 3 arquivos backend
+  tocados nos dois PRs mudavam em trechos distintos — o auto-merge foi limpo,
+  e o único conflito real foi `memory.md` (as duas branches prependem sessão
+  no topo; resolvido mantendo as duas seções em ordem cronológica).
+- `edu_maps.conf` ganhou um bloco `admin` **gitignored** (login do e2e);
+  backup em `/tmp/opencode/edu_maps.conf.bak`.
+- Hook de post-commit segue desativado (`ubatexu.lan` fora do ar); reabilitar
+  com `mv "$(git rev-parse --git-dir)"/hooks/post-commit.sample \
+  "$(git rev-parse --git-dir)"/hooks/post-commit` quando a rede voltar.
 > **Ambiente (2026-09-27 — resolvido; ver o que ainda falta)**:
 > - Repositório agora em **`/home/itaipu/Code/Data/leaflet`** (o caminho
 >   `/home/itaipu/Projects/leaflet` que aparece em alguns `@INC` é resíduo da

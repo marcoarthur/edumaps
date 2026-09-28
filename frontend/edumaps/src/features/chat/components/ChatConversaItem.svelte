@@ -9,11 +9,19 @@
    * @param {number} conversa.msg_count
    * @param {string} [conversa.snippet]
    * @param {boolean} selected
+   * @param {Function} onToggleSelect
    * @param {Function} onClick
    * @param {Function} onExport
    * @param {Function} onDelete
    */
-  let { conversa, selected = false, onClick, onExport, onDelete } = $props();
+  let {
+    conversa,
+    selected = false,
+    onToggleSelect = () => {},
+    onClick = () => {},
+    onExport = () => {},
+    onDelete = () => {},
+  } = $props();
 
   function formatDate(iso) {
     const d = new Date(iso);
@@ -23,15 +31,27 @@
 </script>
 
 <article class="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all {selected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}">
-  <div class="flex items-start justify-between gap-4">
+  <!-- `relative z-10`: o botão "Ver conversa" é um overlay `absolute inset-0`
+       sobre o card inteiro. Sem subir esta linha no empilhamento, ele
+       intercepta o clique e os botões de exportar/excluir ficam
+       inclicáveis (o `stopPropagation` dos handlers não adianta, porque o
+       clique nem chega neles). -->
+  <div class="relative z-10 flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 mb-1">
+        <input
+          type="checkbox"
+          checked={selected}
+          onclick={(e) => { e.stopPropagation(); onToggleSelect(conversa.id); }}
+          aria-label={`Selecionar ${conversa.titulo || "conversa"}`}
+          class="h-4 w-4 text-blue-600 focus:ring-blue-500 shrink-0 relative z-10 cursor-pointer"
+        />
         <h4 class="font-medium text-gray-900 truncate">{conversa.titulo || "Sem título"}</h4>
         <span class="text-xs text-gray-500 whitespace-nowrap">{conversa.msg_count} msg</span>
       </div>
       <p class="text-sm text-gray-600 mb-2">Criada em {formatDate(conversa.created_at)}</p>
-      {#if snippet}
-        <p class="text-sm text-gray-500 line-clamp-2 bg-gray-50 p-2 rounded">{snippet}</p>
+      {#if conversa.snippet}
+        <p class="text-sm text-gray-500 line-clamp-2 bg-gray-50 p-2 rounded">{conversa.snippet}</p>
       {/if}
     </div>
 

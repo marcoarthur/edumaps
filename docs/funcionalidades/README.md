@@ -49,6 +49,7 @@
 | [Painel financeiro](analise/financeiro.md) | Acompanhar recursos e gastos da educação. | 🟢 |
 | [Folha de pagamento](analise/folha-pagamento.md) | Ler a remuneração e o perfil dos profissionais. | 🟢 |
 | [Assistente do Censo](analise/assistente-censo.md) | Perguntar em linguagem natural e receber números do Censo no escopo da escola. | 🟢 |
+| [Histórico de conversas](analise/historico-conversas.md) | Guardar as conversas com o assistente, reencontrá-las por texto ou data e exportá-las em Markdown. | 🟡 |
 
 ### gestor
 | Capacidade | Resumo | Status |

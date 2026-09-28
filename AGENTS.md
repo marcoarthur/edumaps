@@ -28,6 +28,18 @@ Máx. 50 chars no subject. Mensagem de commit em **PT-BR**.
 
 ## Running tests (backend)
 
+**Onde rodar depende da máquina** (mesma regra do frontend):
+
+- **No host `ubaxala`** o backend roda no **perlbrew do host** e aponta para o
+  **Postgres do Docker** (`127.0.0.1:5432`, sobe com `docker compose up -d db`).
+  O `env -u PERL5LIB` é **obrigatório**: o `PERL5LIB` do shell tem caminhos de
+  uma máquina antiga e faz o `prove` abortar antes de rodar qualquer teste.
+
+- **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+  `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**: subir a
+  mudança com `rex prepare` + `rex -H backend.edumaps deploy_backend_dev` e só
+  então rodar.
+
 ```bash
 cd backend
 prove -vl t/02-models/SchoolNetwork.t   # modelo isolado
@@ -42,19 +54,37 @@ Sem `-l`, o módulo `EduMaps` não é encontrado e os testes falham com
 
 Muitos testes em `t/05-tasks` e `analysis/` dependem de serviços externos
 (R, schema staging, jobs agendados) e são **previamente falhos** — não são
-regressões.
+regressões. O mesmo vale para `t/04-api/municipio.t` (OSM features sem dados
+carregados) e `t/04-api/network/schools.t` (dois subtestes com expectativas
+contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem a
+mudança, em `git stash`.
 
 ## Running tests (frontend)
 
-**SEMPRE rodar no container `backend.edumaps` — NUNCA na máquina local:**
+**Onde rodar depende da máquina:**
 
-```bash
-ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'
-# feature isolada:
-ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src/features/<feature>'
-```
+- **No host `ubaxala`** (a máquina local) o ambiente de teste é
+  **preferencialmente Docker**. Não há `node` no host, então build e `vitest`
+  vão no container, com o repositório montado:
 
-O build do frontend também roda no container (`rex -H backend.edumaps deploy_frontend_dev`).
+  ```bash
+  sg docker -c 'docker run --rm -v "$PWD/frontend/edumaps:/src" -w /src node:22-slim \
+    sh -c "npm ci --no-audit --no-fund && npx vitest run"'
+  # feature isolada: troque por `npx vitest run src/features/<feature>`
+  ```
+
+  O `sg docker` é necessário porque o `sudo` pediria senha.
+
+- **Nos demais hosts** (`backend.edumaps`, `database.edumaps`,
+  `analytic.edumaps`) é **exclusivamente o deploy em `ubatexu.lan`**:
+
+  ```bash
+  ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npm run test:run'
+  # feature isolada:
+  ssh root@backend.edumaps 'cd /opt/edumaps/frontend/edumaps && npx vitest run src/features/<feature>'
+  ```
+
+O build do frontend segue pelo container (`rex -H backend.edumaps deploy_frontend_dev`).
 
 ## Running tests (frontend e2e — browser real via CDP)
 

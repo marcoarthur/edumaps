@@ -265,9 +265,22 @@ sub calendar_conversas ($self) {
 sub export_conversas ($self) {
   my $gestor = $self->stash('gestor') or return $self->unauthorized;
 
-  my $ids = $self->req->params->to_hash->{ids} // [];
-  $ids = [$ids] unless ref $ids eq 'ARRAY';
-  my $all = $self->req->params->to_hash->{all} // 0;
+  # O `to_hash` do Mojolicious NÃO converte a notação `ids[]`: o nome da
+  # chave fica literalmente `ids[]`. Com isso, um cliente que mandasse
+  # `?ids[]=1&ids[]=2` caía no `@ids` vazio e o export saía com **todas**
+  # as conversas do gestor, em silêncio. A forma que o backend de fato lê
+  # é `?ids=1&ids=2`, mas aceitamos as duas — e cada valor pode chegar
+  # como string (uma ocorrência) ou arrayref (várias), daí o `_lista`.
+  my $lista = sub {
+    my $v = shift;
+    return () unless defined $v;
+    return ref $v eq 'ARRAY' ? @$v : ($v);
+  };
+
+  my $hash = $self->req->params->to_hash;
+  my @raw  = ($lista->($hash->{ids}), $lista->($hash->{'ids[]'}));
+  my $ids  = [grep { /^\d+$/ } @raw];
+  my $all  = $hash->{all} // 0;
 
   my $model = $self->instantiate_model(model => 'Chat::Conversas');
   my $md = $model->export_conversas($gestor->{id} + 0, { ids => $ids, all => $all });

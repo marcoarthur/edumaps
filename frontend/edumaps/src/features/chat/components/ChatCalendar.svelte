@@ -63,7 +63,16 @@
     weeks = newWeeks;
   }
 
-  $effect(buildCalendar());
+  // `$effect` espera uma FUNÇÃO. `$effect(buildCalendar())` chamava o
+  // construtor do calendário na hora e passava o retorno (undefined) para o
+  // $effect, que estourava ("Object.defineProperty called on non-object") e
+  // derrubava o flush do Svelte — abortando o onMount da página e impedindo
+  // o histórico de carregar. O calendário também precisa refazer quando
+  // qualquer uma das props muda, e é isso que o arrow function passa a
+  // declarar.
+  $effect(() => {
+    buildCalendar();
+  });
 
   function handleDayClick(dayInfo) {
     if (!dayInfo.isCurrentMonth) return;
