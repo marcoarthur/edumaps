@@ -30,7 +30,6 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - DB_HOST=db
-    # Adicione esta linha:
     command: deploy db:pg://${DB_USER}:${DB_PASS}@db/${DB_NAME}
 
   backend:
@@ -53,6 +52,10 @@ services:
     depends_on:
       - db
     environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=db
       - EDUMAPS_DB_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
     command: ["/usr/local/bin/docker-entrypoint.sh", "minion"]
 
