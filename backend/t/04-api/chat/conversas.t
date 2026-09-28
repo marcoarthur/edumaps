@@ -21,6 +21,10 @@ my $USER_EMAIL  = sprintf('user.chat.%d@edumaps.test', $$);
 my $SENHA = 'senha123';
 
 my ($admin_token, $user_token);
+# Id da conversa criada no primeiro POST. O detalhe usa o id direto em vez de
+# "a conversa mais recente da lista": qualquer outro POST no meio do arquivo
+# mudaria a conversa devolvida e o teste passaria a medir a coisa errada.
+my $CONV_ID;
 
 END {
   return if !$has_tables;
@@ -71,6 +75,7 @@ subtest 'POST /api/chat/conversas — salva conversa (201)' => sub {
 
   my $json = $ok->tx->res->json;
   ok $json->{id}, 'retorna id da conversa salva';
+  $CONV_ID = $json->{id};
 };
 
 subtest 'POST /api/chat/conversas — falha sem mensagens (400)' => sub {
@@ -79,6 +84,29 @@ subtest 'POST /api/chat/conversas — falha sem mensagens (400)' => sub {
   $t->post_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" },
     json => { titulo => 'Vazia', messages => [] }
   )->status_is(400);
+};
+
+subtest 'POST /api/chat/conversas — meta invalido (400, nao 500)' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+
+  # `meta` fora de um objeto não tem tradução para jsonb. Sem validação o
+  # Postgres recusava e a resposta era 500 com a página de erro em HTML.
+  for my $invalido (['texto solto', 'nao e json'], ['array', [1, 2, 3]], ['numero', 42]) {
+    my ($nome, $meta) = @$invalido;
+    my $r = $t->post_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" },
+      json => { titulo => "Meta $nome", messages => [
+        { role => 'user', content => 'x', meta => $meta },
+      ]}
+    );
+    is $r->tx->res->code, 400, "meta como $nome devolve 400";
+  }
+
+  # e o caminho feliz continua: objeto vazio é válido
+  $t->post_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" },
+    json => { titulo => 'Meta vazio ok', messages => [
+      { role => 'user', content => 'x', meta => {} },
+    ]}
+  )->status_is(201);
 };
 
 subtest 'GET /api/chat/conversas — lista conversas do gestor' => sub {
@@ -96,9 +124,7 @@ subtest 'GET /api/chat/conversas — lista conversas do gestor' => sub {
 subtest 'GET /api/chat/conversas/:id — detalha conversa' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
 
-  my $list = $t->get_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" })
-    ->tx->res->json;
-  my $id = $list->{items}[0]{id};
+  my $id = $CONV_ID;
 
   my $ok = $t->get_ok("/api/chat/conversas/$id", { Authorization => "Bearer $admin_token" })
     ->status_is(200);
@@ -107,6 +133,16 @@ subtest 'GET /api/chat/conversas/:id — detalha conversa' => sub {
   is $json->{id}, $id, 'id confere';
   ok $json->{messages}, 'tem mensagens';
   is scalar(@{$json->{messages}}), 2, '2 mensagens salvas';
+
+  # `meta` é jsonb: precisa voltar como objeto. O ChatMessage.svelte lê
+  # meta.timestamp / meta.sql / meta.origem, então uma string aqui some com a
+  # metainformação da conversa salva sem erro nenhum na tela.
+  my @metas = map { $_->{meta} } @{$json->{messages}};
+  is scalar(grep { ref $_ ne 'HASH' } @metas), 0,
+    'meta de toda mensagem volta como objeto, não como string JSON';
+  my %ts = map { $_->{timestamp} => 1 } grep { ref $_ eq 'HASH' } @metas;
+  ok $ts{'2025-09-25T10:00:00Z'}, 'meta preserva o timestamp enviado';
+  ok $ts{'2025-09-25T10:00:05Z'}, 'meta preserva o timestamp da resposta';
 };
 
 subtest 'GET /api/chat/conversas/search — busca full-text' => sub {
