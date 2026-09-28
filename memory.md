@@ -142,6 +142,55 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — merge dos PRs abertos (2026-09-28)
+
+Os três PRs abertos foram mergeados em `main` por instrução do usuário
+("merge de todos os PR abertos"), **sem deploy** — a rede continuava fora.
+
+| PR | Branch | Merge commit | Conflito |
+|----|--------|--------------|----------|
+| #100 | `fix/chat-meta-jsonb` | `5e9b918` | nenhum |
+| #101 | `fix/chat-historico-e2e` | `b7cd5ca` | `memory.md` (com o #100) |
+| #76 | `docs/clients-apresentacao` | `900ecb9` | `memory.md` (após rebase) |
+
+**Os três se atropelavam em `memory.md`**, e sempre pela mesma razão: o
+arquivo é reverse-cronológico e **toda branch de sessão insere no topo**, então
+qualquer trabalho paralelo com #100/#101 colide. O padrão se repetiu porque
+`git` só resolve automaticamente quando as inserções não se sobrepõem — aqui
+as duas branches tocaram a mesma faixa de ~1000 linhas.
+
+- **#100 × #101**: cada um era limpo sobre `main` sozinho, mas colidiam entre si.
+  Resolvido com merge de `main` na branch do #101. O **código auto-mergeou
+  limpo** — as duas mudanças coexistem em `Chat.pm` (validação de `meta`,
+  linha ~102; filtro de `ids` no export, linha ~260) e em `Conversas.pm`.
+  Mantidas as duas seções de sessão, e corrigidas as afirmações que o merge
+  invalidou ("PR #100 aberto / não mergeado").
+- **#76**: 125 commits atrás, 1 commit. Rebase sobre o `main` novo. O lado
+  dele é de **2026-09-19**, então a sessão foi inserida na **posição
+  cronológica** (antes de "Pesquisas do gestor (fase 2)", linha 1111) em vez
+  do topo, e não no lugar onde o rebase a queria. Corrigida a nota que dizia
+  que `docs/clients/` "ficou fora deste PR".
+- **Ruído no histórico**: `5e9b918` e `82fced8` têm a mesma mensagem
+  ("Merge pull request #100…") — o commit de merge que fiz na branch do #101
+  herdou a mensagem automática do git. Cosmético, conteúdo correto.
+
+**Validação**: suíte de backend comparada com `origin/main` **num worktree
+separado** (não num `git stash`, para não arriscar o merge em andamento) —
+**17 arquivos falhando antes e depois, a mesma lista**: nenhuma regressão.
+398 testes (o +1 é o subtest de filtro do export do #101). `t/04-api/chat/`
+12/12. Frontend no container: 62 arquivos / 337 testes, todos passando (o
+"1 error" do vitest é o `runAnimationFrameCallbacks` do jsdom em
+`SchoolFinancePage.test.js`, pré-existente e não é falha de teste).
+
+**Pendente — deploy**: `ubatexu.lan` (192.168.0.42) segue sem resposta no
+SSH, `backend.edumaps`/`database.edumaps`/`analytic.edumaps` não resolvem no
+DNS, e o **`rex` nem está instalado** nesta máquina. Como o `main` agora tem
+código (PRs #100 e #101), o passo de deploy do workflow está **em aberto** —
+assim que a rede voltar: `rex prepare` + `deploy_backend_dev` (e
+`deploy_frontend_dev` para o #101). O `check` do Cloudflare Workers está
+**vermelho nos dois PRs** e não tem run correspondente no `main` para
+comparar — provavelmente é pré-existente, mas ficou sem confirmação.
+
 ## Sessão — e2e do histórico de conversas em Chrome real (2026-09-28)
 
 `ubatexu.lan`, `backend.edumaps` e `analytic.edumaps` estavam fora do ar, o que
