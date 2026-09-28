@@ -246,17 +246,28 @@ plano → execução → aprovação
 
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
-6. **PR + merge (via `gh`)**: após a aprovação e o deploy validado, criar o
-   pull request para `main` com a ferramenta de linha de comando do GitHub:
+6. **PR + merge (via `gh`) — REGRA OBRIGATÓRIA**: **toda `feat` e `fix`**
+   (qualquer artefato de código) entra no repositório **somente** via
+   **branch novo → PR → merge**. **NUNCA** dar push direto em `main` com
+   feature/fix. Após a aprovação e o deploy validado, criar o pull request para
+   `main` com a ferramenta de linha de comando do GitHub:
 
    ```bash
+   git checkout -b <tipo>/<escopo>-<descricao> main   # branch novo: feat/, fix/, refactor/, test/…
    git push -u origin <branch>
    gh pr create --base main --head <branch> --title "<título em PT-BR>" --body "<entregas, testes, validação>"
    gh pr merge <n> --merge --delete-branch   # merge commit (padrão do repositório)
    ```
 
-   Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
-   Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
+   - **Permitido em `main` direto (exceção)**: apenas mudanças **só de
+     documentação** (`docs/`, `*.md` como `AGENTS.md`/`memory.md`, `.opencode/`,
+     comentários) — não são deployáveis e não têm o que "entrar" como feature.
+   - **Exceção de infra Docker local (`docker-compose.yml`, `docker/` no
+     `ubaxala`)**: são código, então também passam por branch → PR → merge.
+   - Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
+   - Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
+   - Flag de bloqueio: se por qualquer motivo o fluxo tentar dar push direto em
+     `main` com `feat`/`fix`, **parar e notificar** o developer, não seguir.
 7. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
 8. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2

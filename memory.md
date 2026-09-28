@@ -197,6 +197,10 @@ token → chat_id → `.env`). Enquanto isso o `notify.sh` degrada calado.
   containers Docker locais (`docker compose up -d --build`). **Só no `ubaxala`**;
   demais hosts (`backend.edumaps`, `database.edumaps`, `analytic.edumaps`) usam
   Rex, regra não se aplica. Gravada em `memory.md` (commit `1557410`).
+- **Regra nova (usuário, `AGENTS.md` passo 6)**: **toda `feat`/`fix` entra via
+  branch → PR → merge**; push direto em `main` só p/ mudanças de documentação.
+  Vale também p/ infra Docker local (compose). Registrada no `AGENTS.md`
+  (2026-09-28) após os commits diretos `5ea2100`/`3a86822`.
 - **Revisão do deploy**: banco do compose (`edumaps_dev` @127.0.0.1:5432)
   **populado** (clean.escolas=158.182, todas c/ geometria; censo/ideb/inep OK;
   58/58 migrations sqitch). O `public` está vazio **por design** (dados em
