@@ -41,6 +41,11 @@ ok($mv_school, 'Encontrou escola com dados MV e rede municipal') or BAIL_OUT('Se
 my $mv_cod_inep = $mv_school->co_entidade;
 
 # --- Ideb: escola com dados para fundamental_ii (ideb_anos_finais) ---
+# A rede é ESTADUAL porque mais abaixo há uma subteste que pede o ranking com o
+# filtro `network => 'estadual'`. Sem filtrar a rede aqui, o ORDER BY ano (sem
+# desempate) escolhe qualquer uma das dezenas de escolas de 2023 — e se cair
+# numa municipal, o filtro de rede não acha a linha e a subteste falha. O
+# desempate por id_escola deixa a escolha estável entre execuções.
 my $ideb_school_rs = $schema->resultset('IdebNotasEscolas')
 ->search_rs(
   { 
@@ -48,10 +53,11 @@ my $ideb_school_rs = $schema->resultset('IdebNotasEscolas')
       ideb_observado => { '!=' => undef },
       etapa          => 'fundamental_ii',
       id_escola      => { '!=' => undef },
+      rede           => 'Estadual',
     ] 
   }
 )
-->order_by({ -desc => 'ano' })
+->order_by({ -desc => 'ano', -desc => 'id_escola' })
 ->limit(1);
 
 my $ideb_school = $ideb_school_rs->first;

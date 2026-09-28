@@ -2,6 +2,10 @@ use Mojo::Base -strict, -signatures;
 use lib qw(./lib t/lib);
 use Test::Mojo;
 use Imports;
+use CI;
+
+# A task SIOPE baixa microdados do INEP e emite progresso por SSE via Minion.
+CI->skip_network ('task siope: baixa microdados do INEP e precisa do Minion');
 
 my $t = Test::Mojo->new('EduMaps');
 my $minion = $t->app->minion;

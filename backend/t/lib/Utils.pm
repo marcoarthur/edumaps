@@ -8,6 +8,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(
   filter_resultsets c random_schools_ids random_schools_with_grades random_city_id
+  city_id_with_grades
   run_clustering_job cleanup_job expected_clustering_contract
   run_similarity_job expected_similarity_contract
   build_r_dataframe
@@ -18,17 +19,59 @@ sub filter_resultsets($filter_cb) {
   c($sch->sources)->map( sub { $sch->resultset($_ ) } )->grep( $filter_cb );
 }
 sub random_schools_ids ($size = 10){
-  $sch->resultset('CensoEscolas')
-  ->columns(['co_entidade'])->random_sample($size)->get_all;
+  _distintos($sch->resultset('CensoEscolas')->columns(['co_entidade']),
+    'co_entidade', $size);
 }
 sub random_schools_with_grades ($size = 10){
-  $sch->resultset('IdebNotasEscolas')->columns(['id_escola'])
-  ->random_sample($size)->get_all;
+  # Só escolas com linha no IDEB — é o que o `info_grades` precisa para
+  # devolver algo. Sortear no Censo inteiro devolveria escolas sem nota.
+  _distintos($sch->resultset('IdebNotasEscolas')->columns(['id_escola']),
+    'id_escola', $size);
+}
+sub _distintos ($rs, $chave, $size) {
+  # Um random_sample puro pode trazer a mesma escola várias vezes, e o teste
+  # perde cobertura sem perceber. Amostra 3x o pedido e corta as repetidas
+  # pela chave, não pelo objeto — comparar o Result direto exige has_column e
+  # devolve "Not a HASH reference" no grep.
+  my %visto;
+  my @escolhidas = grep { !$visto{ $_->get_column($chave) }++ }
+    @{ $rs->random_sample($size * 3)->get_all };
+  return c(@escolhidas[0 .. $size - 1]);
 }
 sub random_city_id ($size = 10) {
   $sch->resultset('MunicipiosSp')->random_sample($size)
   ->columns(['codigo_ibge', 'nome_municipio'])
   ->get_all;
+}
+sub city_id_with_grades ($size = 10) {
+  # Município com ao menos uma escola que o clustering por quantiles consegue
+  # usar. Os testes que clusterizam por cidade não podem ficar a cargo da
+  # sorte: nem toda cidade do banco tem escola com nota, e o contrato abaixo
+  # pressupõe uma resposta com grupos.
+  #
+  # O predicado é clean.inep com vl_observado_2023 — é a tabela que
+  # EduMaps::Roles::Business::School::Clustering lê. Filtrar por
+  # clean.ideb_notas_escolas não serve: no banco de fixtures devolve 2 cidades
+  # (Ubatuba entre elas) cujo cluster sai vazio.
+  #
+  # O CAST acompanha o tipo real das colunas: clean.censo_escolas.co_municipio
+  # é varchar e clean.municipios_sp.codigo_ibge é integer. O mesmo CAST aparece
+  # na relação de CensoEscolas.
+  my $sql = q{
+    SELECT m.codigo_ibge
+    FROM clean.municipios_sp m
+    JOIN clean.censo_escolas c ON CAST(c.co_municipio AS text) = m.codigo_ibge
+    JOIN clean.inep i ON i.id_escola = c.co_entidade
+    WHERE i.vl_observado_2023 IS NOT NULL
+    GROUP BY m.codigo_ibge
+  };
+  my @cidades = @{ $sch->storage->dbh->selectcol_arrayref($sql) };
+  # get_all já devolve um Mojo::Collection: embrulhar em c() faria uma coleção
+  # com a coleção dentro, e o chamador receberia um objeto sem codigo_ibge.
+  return $sch->resultset('MunicipiosSp')->search({
+    codigo_ibge => { -in => \@cidades },
+  })->random_sample($size)
+    ->columns(['codigo_ibge', 'nome_municipio'])->get_all;
 }
 
 # --------------------------------------------------------------------------

@@ -1,0 +1,3336 @@
+{
+  "municipios": {
+    "1100015": "Alta Floresta D'Oeste",
+    "1100205": "Porto Velho",
+    "1200401": "Rio Branco",
+    "1302603": "Manaus",
+    "1501402": "Belém",
+    "2104073": "Feira Nova do Maranhão",
+    "2111300": "São Luís",
+    "2302701": "Campos Sales",
+    "3106200": "Belo Horizonte",
+    "3509502": "Campinas",
+    "3550308": "São Paulo",
+    "3553807": "Taquarituba",
+    "3554102": "Taubaté",
+    "3555406": "Ubatuba",
+    "4106902": "Curitiba",
+    "4316808": "Santa Cruz do Sul",
+    "4316907": "Santa Maria",
+    "5107040": "Primavera do Leste"
+  },
+  "escolas": [
+    {
+      "inep": "11000040",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "EMEIEF PEQUENOS TALENTOS",
+      "tp_dependencia": "3",
+      "exigida_por": "t/04-api/gestor/painel.t e t/04-api/gestor/similares.t",
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11000260",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "COLEGIO TIRADENTES DA POLICIA MILITAR - CTPM I",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11000368",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "EMEIEF 13 DE MAIO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11000597",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "EEEFM BELA VISTA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11000708",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "EEEFM CAP CLAUDIO MANOEL DA COSTA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11000937",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "EEEFM DR OSWALDO PIANNA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11022558",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEF HAP BITT TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11024275",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "CEEJA LUIZ VAZ DE CAMOES",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11024291",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMMEF 7 DE SETEMBRO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11024372",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF ANA NERY",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11024666",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF BOA ESPERANCA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11024682",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EEEFM EURIDICE LOPES PEDROSO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11024828",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF IZIDORO STEDILE",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11024917",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF JOSE BASILIO DA GAMA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11024968",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EEEMTI JUSCELINO KUBITSCHEK DE OLIVEIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025034",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMMEF MALBA TAHAN",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11025077",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF MARIA DE SOUZA PEGO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv"
+      ]
+    },
+    {
+      "inep": "11025115",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMMEF MARTIM AFONSO DE SOUZA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11025280",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF PADRE FEIJO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025310",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF PEDRO ALEIXO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025352",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF POTY",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025476",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMMEF SAO JORGE",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11025620",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EEEF TANCREDO DE ALMEIDA NEVES",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025638",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "COLEGIO TIRADENTES DA POLICIA MILITAR - CTPM XI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11025654",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF FLORESTA ENCANTADA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11037962",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEFM KON KOATT TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11038047",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEF SAW D JO TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11038373",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEFM BOATT GERAINNY",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11039493",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "CRECHE MUNICIPAL CANTINHO DA ALEGRIA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11046236",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEF MEKITOM TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11046244",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEF AMEN KOARE TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11046252",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EIEEFM ANOMAE TUPARI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11046864",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "CENTRO EDUCACIONAL DR ANTONIO LAZARO DE MOURA",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11047402",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEI MONTEIRO LOBATO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11047461",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEIEF 17 DE JUNHO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11048450",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "ESCOLA MARCELO CANDIA SUBSEDE I",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv"
+      ]
+    },
+    {
+      "inep": "11049782",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMMEF HERBERT JOSE DE SOUSA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Escolas.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11050594",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "EMEF MARIOMA PEREIRA DA SILVA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "11051264",
+      "municipio": "1100015",
+      "nome_municipio": "Alta Floresta D'Oeste",
+      "nome": "CRECHE MUNICIPAL HEITOR MOREIRA UGOLINI",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "11109807",
+      "municipio": "1100205",
+      "nome_municipio": "Porto Velho",
+      "nome": "IFRO - CAMPUS PORTO VELHO CALAMA",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12010928",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "COLEGIO ADVENTISTA DE RIO BRANCO",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "12011410",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC COLEGIO DE APLICACAO UFAC",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12011681",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC ISMAEL GOMES DE CARVALHO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12012823",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC MAJOR JOAO CANCIO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12013242",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC PADRE CARLOS CASAVECCHIA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12013595",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC SAO PEDRO I",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12014001",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC SANTO ANTONIO II",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "12014389",
+      "municipio": "1200401",
+      "nome_municipio": "Rio Branco",
+      "nome": "ESC INSTITUTO SAO JOSE",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13025082",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "INSTITUICOES EDUCACIONAIS NELLY FALCO DE SOUZA - LTDA",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "13026488",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "COLEGIO MILITAR DE MANAUS",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13026577",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "COLEGIO MILITAR DA POLICIA MILITAR DO AMAZONAS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13026828",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "EM DESEMBARGADOR CANDIDO HONORIO FERREIRA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13027042",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "ESCOLA ESTADUAL 1º DE MAIO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13027158",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "ESCOLA ESTADUAL ANTONIO DA ENCARNACAO FILHO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13027255",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "ESCOLA ESTADUAL D MILTON CORREA PEREIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "13027280",
+      "municipio": "1302603",
+      "nome_municipio": "Manaus",
+      "nome": "ESCOLA ESTADUAL DR JOSE MILTON BANDEIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15035557",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA ESTADUAL RAINHA DA PAZ",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15037991",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA ESTADUAL CONEGO BATISTA CAMPOS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15038688",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA DE APLICACAO DA UFPA",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15038769",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA ESTADUAL BARAO DE IGARAPE MIRI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15039153",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "COLEGIO TENENTE REGO BARROS",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15039250",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA ESTADUAL PROFA HILDA VIEIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "15041670",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "INSTITUTO ADVENTISTA GRAO PARA",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "15140759",
+      "municipio": "1501402",
+      "nome_municipio": "Belém",
+      "nome": "ESCOLA MUNICIPAL BOSQUE PROFESSOR EIDORFE MOREIRA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21009902",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "CENTRO EDUCACIONAL MONTESSORIANO REINO INFANTIL",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "21011125",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "INSTITUTO ESTADUAL DE EDUCACAO CIENCIA E TECNOLOGIA DO MA- IEMA PLENO SAO LUIS-NEWTON BARJONAS LOBAO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21016070",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "CENTRO DE ENSINO ESTADO DO RIO GRANDE DO NORTE",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21016097",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "UEB ENS FUND EVANDRO BESSA - STA BARBARA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21016631",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "CENTRO DE ENSINO PROFESSORA JANILDE SILVA DE AQUINO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21016640",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "CENTRO EDUCA MAIS ESTADO DO AMAZONAS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21016763",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "CENTRO DE ENSINO JACKSON LAGO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21017484",
+      "municipio": "2111300",
+      "nome_municipio": "São Luís",
+      "nome": "UFMA - COLEGIO UNIVERSITARIO",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21182663",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM CRISTO REI",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21183066",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM LEOPOLDINO LISBOA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21183252",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM PEDRO ALVES DE OLIVEIRA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21183759",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM SEN ALEXANDRE COSTA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21252815",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "CENTRO DE ENSINO ROSALINA SA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21267715",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM PAULO DIAS",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "21286884",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "CRECHE MUNICIPAL PROFESSORA SILMARA SANTOS RIBEIRO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "21319200",
+      "municipio": "2104073",
+      "nome_municipio": "Feira Nova do Maranhão",
+      "nome": "EM JOSE PEREIRA DE BRITO",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv"
+      ]
+    },
+    {
+      "inep": "23153180",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "MARIA DULCE DE ALENCAR I E P",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "23153237",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "PADRE AZARIAS SOBREIRA EEIF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153253",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "ANTONIO RIBEIRO DE CARVALHO EEIF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153261",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "EEMTI PROFESSORA MARIA DOLORES ARRAIS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153369",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "JOAO XXIII EEF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153385",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "JOSE AUGUSTO SOBRINHO EEF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153415",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "LUCIANO TORRES DE MELO EEIF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "23153474",
+      "municipio": "2302701",
+      "nome_municipio": "Campos Sales",
+      "nome": "MANOEL DUARTE DE SA BARRETO E E F",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31000051",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "EE GUIA LOPES",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31000086",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "EE PROFESSOR JOSE MESQUITA DE CARVALHO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31000124",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "EE DOUTOR SIMAO TAMM BIAS FORTES",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31000132",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "EE GUIMARAES ROSA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31000191",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "EE CAIO NELSON DE SENA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31002593",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "ESCOLA MUNICIPAL BELO HORIZONTE",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "31004031",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "COLEGIO SANTA MARCELINA",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "31258377",
+      "municipio": "3106200",
+      "nome_municipio": "Belo Horizonte",
+      "nome": "ESCOLA DE EDUCACAO BASICA E PROFISSIONAL DA UFMG - CENTRO PEDAGOGICO",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35000024",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "GAVIAO PEIXOTO BRIGADEIRO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35000048",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "WALFREDO ARANTES CALDAS PROFESSOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35000309",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "BENEDITO TOLOSA PROFESSOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35000371",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "ANTONIO JOSE LEITE PROF",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35000693",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "RITA BICUDO PEREIRA PROFA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35007642",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "UNICCURSOS",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35007656",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "ESCOLA DE EDUCACAO INFANTIL CIRANDA DO SABER",
+      "tp_dependencia": "4",
+      "exigida_por": "t/02-models/school/geo.t (coordenadas exatas da busca por proximidade)",
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35008951",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "QUINTAL DA ARTE",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35011162",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "FLORENTINA MARTINS SANCHEZ PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": "t/02-models/school/profile.t",
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35011186",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "SEMIRAMIS PRADO DE OLIVEIRA PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35011198",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "AUREA MOREIRA RACHOU PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35011216",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "DEOLINDO DE OLIVEIRA SANTOS CAPITAO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35014278",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "ANTONIO MAGALHAES BASTOS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35014540",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "JOSE PENNA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35018107",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "FRANCISCO BARRETO LEME",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35018119",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "CECILIA PEREIRA PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35018156",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "AUREA ANUNCIACAO AMERICO DE GODOI PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35018272",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "THOMAS ALVES DOUTOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35018302",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "CARLOS GOMES",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35038751",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "SUELI APARECIDA FIGUEIRA DOS SANTOS PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35038763",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "DIONISIA BUENO VELLOSO PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35039664",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "JOSE MARCONDES DE MATTOS DOUTOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35045123",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "IDALINA DO AMARAL GRACA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35046747",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "MARIA ALICE ALVES PEREIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35047824",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "AURELINA FERREIRA PROFESSORA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35049888",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "JOSE APARECIDO CASTELUCCI PROFESSOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35054082",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "EMEFM LINNEU PRESTES PROF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35058932",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "CIRO EXEL MAGRO PROF EMEF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35060215",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "AVEDIS VICTOR NAHAS DR EMIEF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35070956",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "MARIA DE LOURDES MEDEIROS ROLIM DOS SANTOS PROFA EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35100432",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "JARDIM SAO PAULO COLEGIO",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35111173",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "SESI 411 CENTRO EDUCACIONAL",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35112513",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "PROGRESSO CAMPINEIRO COLEGIO",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35147205",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "MUNDO MAGICO ESCOLA DE EDUCACAO ESPECIAL",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35159414",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "SISTEMA PARTICULAR DE ENSINO PORTAL",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35159612",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "CETA CENTRO EDUCACIONAL DE TAQUARITUBA",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35201820",
+      "municipio": "3555406",
+      "nome_municipio": "Ubatuba",
+      "nome": "JOSE BELARMINO SOBRINHO EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35201856",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "BERNADETE DE LOURDES GOMES CLAUDIO PROFA EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35217049",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "JULIETA TRINDADE EVANGELISTA PROFA EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35229573",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "JOAQUIM FRANCA VEREADOR EMEFM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35246979",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "EMEI PROFESSORA FLAVIA GRASSELLI DE OLIVEIRA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35246980",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "ESCOLA MUNICIPAL PROFESSORA CONSUELLO MONTEIRO GONCALVES",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35277685",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "EMILIO AMADEI BERINGHS EMIEFM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35286485",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "CASA DA CRIANCA DE TAQUARITUBA ESCOLA DE EDUCACAO INFANTIL",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35290661",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "ETEC PROFESSORA TEREZINHA MONTEIRO DOS SANTOS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35345507",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "VIRGINIA OTTILIA MASCARENHAS DE MORAES PROFA EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35414165",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "AUREA LAMARCA EMEI",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35457197",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "ANNA DOS R SIGNORINI PROFA EMIEFM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35464824",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "JACYRA LOPES RODRIGUES PROFESSORA EMEI",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35500012",
+      "municipio": "3509502",
+      "nome_municipio": "Campinas",
+      "nome": "IFSP CAMPUS CAMPINAS",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35566937",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "CELIA DE CASTILHOS FERREIRA PROFESSORA EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35567498",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "MARIA ESTHER DI PASCHOAL EM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35573735",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "PENITENCIARIA DE TAQUARITUBA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "35659538",
+      "municipio": "3554102",
+      "nome_municipio": "Taubaté",
+      "nome": "JOSE MARCONDES DE MOURA PROF EMEIEFM",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35900424",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "DIMAS MOZART E SILVA PROFESSOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35910119",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "GUIDO DIAS DE ALMEIDA PROFESSOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35923692",
+      "municipio": "3550308",
+      "nome_municipio": "São Paulo",
+      "nome": "PAULISTINHA DE EDUCACAO ESCOLA",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "35924088",
+      "municipio": "3553807",
+      "nome_municipio": "Taquarituba",
+      "nome": "JOSE PIRES DE CARVALHO DOUTOR",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127013",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "ALBERT SCHWEITZER E MEF",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127021",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "ALCYONE M C VELLOZO C E PROFEF M PROFI",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127200",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "ANGELO TREVISAN C EEF M PROFIS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127218",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "ANGELO VOLPATO C EEF M",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127382",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "ATTICO EUSEBIO DA ROCHA C E DEF M PROF",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41127722",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "COLEGIO BOM JESUS ED INFANTIL ENSINO FUNDAMENTAL E MEDIO SEDE",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "41128052",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "CARRAO C E CONSEF M",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "41131215",
+      "municipio": "4106902",
+      "nome_municipio": "Curitiba",
+      "nome": "COLEGIO MILITAR DE CURITIBA",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43001807",
+      "municipio": "4316808",
+      "nome_municipio": "Santa Cruz do Sul",
+      "nome": "EEI PARAISO",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "43119956",
+      "municipio": "4316808",
+      "nome_municipio": "Santa Cruz do Sul",
+      "nome": "ESC EST ENS MED ERNESTO ALVES DE OLIVEIRA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43120318",
+      "municipio": "4316808",
+      "nome_municipio": "Santa Cruz do Sul",
+      "nome": "EMEF DONA LEOPOLDINA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43122043",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "ESC EST ENS MED DR WALTER JOBIM",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43122051",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "EMEF PROFª MARIA DE LOURDES BANDEIRA MEDINA",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43123120",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "ESC EST ENS MED PRINCESA ISABEL",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43123180",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "ESC EST ENS MED MARECHAL HUMBERTO DE ALENCAR CASTELO BRANCO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43123260",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "ESC BASICA EST CICERO BARRETO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43123279",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "ESC EST ENS MED DOM ANTONIO REIS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43123988",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "COLEGIO RIACHUELO",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "43172210",
+      "municipio": "4316808",
+      "nome_municipio": "Santa Cruz do Sul",
+      "nome": "EMEF SANTUARIO",
+      "tp_dependencia": "3",
+      "exigida_por": "t/03-plugins/middlewares/cache_school_search.t (nome \"EMEF SANTUARIO\")",
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "43184790",
+      "municipio": "4316907",
+      "nome_municipio": "Santa Maria",
+      "nome": "COLEGIO MILITAR DE SANTA MARIA",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51046946",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "CME CARLOS DRUMMOND DE ANDRADE",
+      "tp_dependencia": "3",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51047101",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "EE CAMPO VILA UNIAO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51047110",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "EE MONTEIRO LOBATO",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51055554",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "ASSOC DE PAIS E AMIGOS DOS EXCEPCIONAIS",
+      "tp_dependencia": "4",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "escolas.csv"
+      ]
+    },
+    {
+      "inep": "51066610",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "IFMT - CAMPUS PRIMAVERA DO LESTE",
+      "tp_dependencia": "1",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51066963",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "EE PROFESSORA MARIA SEBASTIANA DE SOUZA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51070120",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "EEDIEB GETULIO DORNELLES VARGAS",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    },
+    {
+      "inep": "51143801",
+      "municipio": "5107040",
+      "nome_municipio": "Primavera do Leste",
+      "nome": "EE CREMILDA DE OLIVEIRA VIANA",
+      "tp_dependencia": "2",
+      "exigida_por": null,
+      "fontes": [
+        "Tabela_Docente_2025.csv",
+        "Tabela_Escolas.csv",
+        "Tabela_Gestor_Escolar_2025.csv",
+        "Tabela_Matricula_2025.csv",
+        "divulgacao_anos_finais_escolas_2023.csv",
+        "divulgacao_anos_iniciais_escolas_2023.csv",
+        "divulgacao_ensino_medio_escolas_2023.csv",
+        "escolas.csv",
+        "inep.csv",
+        "inse_2023.csv"
+      ]
+    }
+  ],
+  "arquivos": {
+    "Tabela_Escolas.csv": 182,
+    "Tabela_Matricula_2025.csv": 175,
+    "Tabela_Docente_2025.csv": 175,
+    "Tabela_Gestor_Escolar_2025.csv": 176,
+    "escolas.csv": 182,
+    "inep.csv": 115,
+    "divulgacao_anos_finais_escolas_2023.csv": 122,
+    "divulgacao_anos_iniciais_escolas_2023.csv": 115,
+    "divulgacao_ensino_medio_escolas_2023.csv": 103,
+    "inse_2023.csv": 133,
+    "pop_2025_mun.csv": 18,
+    "populacao_faixas_etarias.csv": 18
+  }
+}

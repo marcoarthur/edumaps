@@ -2,7 +2,14 @@ use strict;
 use warnings;
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use Utils qw(build_r_dataframe);
+# Valida os indicadores contra uma planilha gerada por R::Pipe e contra
+# clean.school_indicators — as duas coisas vêm do job de análise.
+# BEGIN porque os `use ok` rodam em tempo de compilacao e emitem testes: o
+# skip_all precisa vir antes deles, senao o prove reclama "You planned 0 tests
+# but ran N".
+BEGIN { CI->skip_r('IQD/IDEB comparados com o R e com school_indicators') }
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Analysis::R::Pipe';
 use ok 'EduMaps::Model::Indicator::School::IQD';

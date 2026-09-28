@@ -2,11 +2,16 @@ use strictures 2;
 use lib qw(./lib t/lib);
 use Test::Mojo;
 use Imports;
+use CI;
 use Cpanel::JSON::XS qw(decode_json);   # ou JSON::MaybeXS
 use Mojo::File qw(path);
 use open ':std', ':encoding(UTF-8)';
 use utf8;
 use Encode qw(encode);
+
+# O job de análise de cidades (R) e suas tabelas analytics.* não existem no
+# banco de fixtures.
+CI->skip_r ('analise de cidades (R) e as tabelas analytics.*');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $sch = $t->app->schema;

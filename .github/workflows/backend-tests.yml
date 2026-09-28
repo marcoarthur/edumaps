@@ -1,0 +1,77 @@
+# Suíte de testes do backend Perl contra um banco Postgres/PostGIS criado do
+# zero com os fixtures de db/fixtures/.
+#
+# O que o job faz:
+#   1. Sobe o banco de CI com o espelho HTTPS local (db/fixtures/ci_db.sh up):
+#      imagem de db/Dockerfile, rede, sqitch deploy das 60+ migrations.
+#   2. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
+#   3. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 — os testes que dependem de
+#      R, de serviços externos ou do schema staging se auto-pulam
+#      (t/lib/CI.pm).
+#
+# O CI não depende do dataset real (765 MB): o fixture traz 18 municípios e as
+# escolas exigidas pelos testes. Para reproduzir localmente o mesmo banco,
+# rodar `db/fixtures/ci_db.sh up` e ver a lista de variáveis que ele imprime.
+
+name: backend-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'data_pipeline/**'
+      - 'db/**'
+      - '.github/workflows/backend-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Perl contra o banco de fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # Mesmas variáveis que o deploy do Rex injeta no container de dev —
+      # lidas por backend/t/ci/edu_maps.conf.
+      EDUMAPS_CONF: ./t/ci/edu_maps.conf
+      EDUMAPS_DB_HOST: 127.0.0.1
+      EDUMAPS_DB_PORT: '55432'
+      EDUMAPS_DB_NAME: edumaps_ci
+      EDUMAPS_DB_USER: ci
+      EDUMAPS_DB_PASS: ci
+      # Liga as guardas de skip em t/lib/CI.pm: os testes que exigem R,
+      # rede ou o schema staging se auto-pulam em vez de falhar.
+      EDUMAPS_FIXTURES: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: dependências de sistema (cabeçalhos do libpq, cpanminus)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libpq-dev cpanminus
+
+      - name: sobe o banco de CI (imagem, espelho, sqitch deploy)
+        run: db/fixtures/ci_db.sh up
+        env:
+          EDUMAPS_CI_PORT: '55432'
+
+      - name: diagnóstico (espelho + banco) se o deploy falhar
+        if: failure()
+        run: |
+          docker logs edumaps-ci-db | tail -40
+          docker logs edumaps-ci-mirror | tail -40
+
+      - name: dependências do backend (cpanfile)
+        run: sudo cpanm --notest --installdeps .
+        working-directory: backend
+
+      - name: suíte de testes
+        working-directory: backend
+        run: prove -r -l t/

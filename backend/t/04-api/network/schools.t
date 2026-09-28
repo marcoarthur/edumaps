@@ -2,9 +2,19 @@
 # Testes de integração para API da rede de escolas (schools)
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
+
+# /api/cluster/schools lê cluster_id/label/rank de clean.school_indicators, que
+# nasce vazia e só é populada pelo job de análise (R). Sem isso a resposta
+# volta sem `features` e o teste quebra em @{ $json->{features} }.
+#
+# O arquivo também faz DDL destrutivo (UPDATE + DROP COLUMN nas colunas de
+# cluster), então rodá-lo no CI contra o banco de fixtures derrubaria as
+# colunas para os testes seguintes.
+CI->skip_r ('/api/cluster/schools depende de clean.school_indicators (job R)');
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');

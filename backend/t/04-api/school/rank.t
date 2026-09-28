@@ -44,13 +44,17 @@ ok($mv_school, 'Encontrou escola com dados MV e rede municipal') or BAIL_OUT('Se
 my $mv_cod_inep = $mv_school->co_entidade;
 
 # --- Ideb: escola com dados para fundamental_ii (ideb_anos_finais) ---
+# Rede ESTADUAL porque há uma subteste que pede `rede=estadual`: sem o filtro
+# aqui, o ORDER BY ano (sem desempate) pode escolher uma escola municipal, e a
+# resposta de rede estadual sai 404. Mesma correção em t/02-models/school/rank.t.
 my $ideb_school_rs = $schema->resultset('IdebNotasEscolas')
 ->search_rs({ -and => [
       ideb_observado => { '!=' => undef },
       etapa          => 'fundamental_ii',
       id_escola      => { '!=' => undef },
+      rede           => 'Estadual',
     ] })
-->order_by({ -desc => 'ano' })
+->order_by({ -desc => 'ano', -desc => 'id_escola' })
 ->limit(1);
 
 my $ideb_school = $ideb_school_rs->first;

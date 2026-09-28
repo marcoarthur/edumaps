@@ -2,7 +2,11 @@ use strictures 2;
 use lib qw(./lib t/lib);
 use Test::Mojo;
 use Imports;
+use CI;
 use Mojo::JSON qw(decode_json);
+
+# query_osm consulta a API Overpass do OpenStreetMap.
+CI->skip_network ('query_osm consulta a Overpass');
 
 my $t = Test::Mojo->new('EduMaps');
 my $minion = $t->app->minion;

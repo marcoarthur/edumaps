@@ -1,7 +1,7 @@
 use strictures 2;
 use lib qw(t/lib lib);
 use Imports;
-use Utils qw(random_city_id);
+use Utils qw(city_id_with_grades);
 use Test::Mojo;
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Model::School';
@@ -17,9 +17,11 @@ $tag <clustering baseado em quantiles - clustering simples no db>
  - listagem das escolas via geotagging (parametro codigo_ibge)
  - teste happy-day, pega 1 codigo_ibge existente e avalia resposta
 / => sub {
-  my $id = random_city_id->first->codigo_ibge;
+  # Cidade que tem escola com nota: com `random_city_id` puro o teste depende
+  # de sorte, e nem toda cidade do banco tem escola com nota.
+  my $id = city_id_with_grades->first->codigo_ibge;
   my $result = $model->simple_cluster_school({codigo_ibge => $id});
-  fail "cidade $id->{codigo_ibge} não tem escolas com notas" if $result->size == 0;
+  fail "cidade $id não tem escolas com notas" if $result->size == 0;
   
   like(
     $result->[0],
@@ -55,7 +57,7 @@ $tag <clustering baseado em quantiles - clustering simples no db>
  - avalia tempo de resposta com uma cidade real
  - garante que o overhead de processamento do DB e decode JSON está sob controle
 / => sub {
-  my $id = random_city_id->first->codigo_ibge;
+  my $id = city_id_with_grades->first->codigo_ibge;
 
   # 1. Marca o início do cronômetro
   my $t0 = [gettimeofday];

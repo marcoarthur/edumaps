@@ -2,7 +2,14 @@ use strict;
 use warnings;
 use lib qw(t/lib lib);
 use Imports;
+use CI;
 use Utils qw(build_r_dataframe);
+# Validação estatística via R::Pipe sobre clean.school_indicators (vazia até o
+# job de análise rodar).
+# BEGIN porque os `use ok` rodam em tempo de compilacao e emitem testes: o
+# skip_all precisa vir antes deles, senao o prove reclama "You planned 0 tests
+# but ran N".
+BEGIN { CI->skip_r('qualidade escolar comparada com o R') }
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Model::Domain::SchoolQuality';
 use ok 'EduMaps::Analysis::R::Pipe';

@@ -2,7 +2,7 @@
 use strictures 2;
 use lib qw(t/lib lib);
 use Imports;
-use Utils qw(random_city_id);
+use Utils qw(city_id_with_grades);
 use Test::Mojo;
 use open ':std', ':encoding(UTF-8)';
 
@@ -46,7 +46,9 @@ $tag: <rota web para clustering verificação de contrato da API>
   - Identicadores do clusters (inteiros 1-6)
   - Latitude e longitude válidos
 / => sub {
-  my $c = random_city_id->first;
+  # Cidade que tem escola com nota: nem toda cidade do banco tem, e o contrato
+  # abaixo pressupõe uma resposta com clusters.
+  my $c = city_id_with_grades->first;
   my $code = $c->codigo_ibge;
   note( "Testando com cidade: " . $c->nome_municipio );
   my $tx = $t->get_ok("$path?codigo_ibge=$code")
