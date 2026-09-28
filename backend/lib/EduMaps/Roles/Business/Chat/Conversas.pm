@@ -204,9 +204,14 @@ sub export_conversas ($self, $gestor_id, $opts = {}) {
   my $where = { gestor_id => $gestor_id };
   $where->{id} = { -in => \@ids } if @ids && !$all;
 
+  # Sem `prefetch`: o loop abaixo já busca as mensagens com
+  # `$c->mensagens->search(...)`, ou seja o prefetch trazia um JOIN que
+  # (a) era descartado e (b) deixava `id` ambíguo entre `chat_conversas` e
+  # `chat_mensagens` — o filtro por ids estourava com "column reference id
+  # is ambiguous" (500) sempre que se exportava uma seleção.
   my $rs = $self->schema->resultset('ChatConversa')->search(
     $where,
-    { order_by => { -desc => 'me.created_at' }, prefetch => 'mensagens' },
+    { order_by => { -desc => 'created_at' } },
   );
 
   my $md = '';

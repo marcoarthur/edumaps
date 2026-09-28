@@ -136,18 +136,86 @@ subtest 'GET /api/chat/conversas/calendar — dias com conversas' => sub {
 subtest 'GET /api/chat/conversas/export — exporta .md' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
 
-  my $list = $t->get_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" })
-    ->tx->res->json;
-  my $id = $list->{items}[0]{id};
+  # Cria a própria conversa em vez de pegar a primeira da lista: o export
+  # só numera "Resposta N" para mensagens de role `assistant`, e a conversa
+  # mais recente do banco pode ter só `user`. Este teste só passava antes
+  # porque `?ids[]=` era ignorado e o corpo vinha com *todas* as conversas
+  # — ou seja, ele afirmava o que não testava.
+  my $criada = $t->post_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" },
+    json => { titulo => 'EXPORT-MD', messages => [
+      { role => 'user',      content => 'pergunta do teste', meta => {} },
+      { role => 'assistant', content => 'resposta do teste', meta => {} },
+    ]}
+  )->status_is(201)->tx->res->json;
 
-  my $ok = $t->get_ok("/api/chat/conversas/export?ids[]=$id", { Authorization => "Bearer $admin_token" })
+  my $id = $criada->{id};
+  ok $id, "conversa criada (id=$id)";
+
+  my $ok = $t->get_ok("/api/chat/conversas/export?ids=$id", { Authorization => "Bearer $admin_token" })
     ->status_is(200);
 
   is $ok->tx->res->headers->content_type, 'text/markdown; charset=utf-8', 'content-type markdown';
   like $ok->tx->res->headers->content_disposition, qr/attachment.*\.md/, 'content-disposition .md';
-  like $ok->tx->res->body, qr/^# Conversa:/, 'markdown começa com título';
+  like $ok->tx->res->body, qr/^# Conversa: EXPORT-MD/, 'markdown começa com título';
   like $ok->tx->res->body, qr/## Pergunta 1/, 'contém Pergunta 1';
   like $ok->tx->res->body, qr/## Resposta 1/, 'contém Resposta 1';
+  like $ok->tx->res->body, qr/pergunta do teste/, 'contém o conteúdo da pergunta';
+  like $ok->tx->res->body, qr/resposta do teste/, 'contém o conteúdo da resposta';
+
+  $t->delete_ok("/api/chat/conversas/$id", { Authorization => "Bearer $admin_token" })->status_is(204);
+};
+
+subtest 'GET /api/chat/conversas/export — o filtro por ids funciona' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+
+  # Este teste usava `?ids[]=`, que o `to_hash` do Mojolicious NÃO converte:
+  # a chave chegava literally `ids[]`, `to_hash->{ids}` era `undef` e o
+  # filtro era ignorado — o export trazia TODAS as conversas do gestor e o
+  # teste passava sem perceber. Além disso, com o filtro realmente aplicado
+  # o `id` ficava ambíguo pelo JOIN com `mensagens` (500).
+  my $criar = sub {
+    my ($titulo) = @_;
+    $t->post_ok('/api/chat/conversas', { Authorization => "Bearer $admin_token" },
+      json => { titulo => $titulo, messages => [
+        { role => 'user',   content => "pergunta de $titulo", meta => {} },
+        { role => 'assistant', content => "resposta de $titulo", meta => {} },
+      ]}
+    )->status_is(201)->tx->res->json;
+  };
+
+  my $a = $criar->('EXPORT-FILTRO-A');
+  my $b = $criar->('EXPORT-FILTRO-B');
+
+  my $so_a = $t->get_ok("/api/chat/conversas/export?ids=$a->{id}",
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->body;
+
+  # exatamente uma conversa no markdown
+  my @titulos = $so_a =~ /^# Conversa: (.+)$/mg;
+  is scalar @titulos, 1, 'exportou exatamente 1 conversa (o filtro valeu)';
+  like $so_a, qr/EXPORT-FILTRO-A/, 'é a conversa pedida';
+  unlike $so_a, qr/EXPORT-FILTRO-B/, 'NÃO vazou a outra conversa';
+
+  # `ids[]` deve continuar aceito (tolerância), mas também filtrando
+  my $so_a_bracket = $t->get_ok("/api/chat/conversas/export?ids[]=$a->{id}",
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->body;
+  my @titulos_bracket = $so_a_bracket =~ /^# Conversa: (.+)$/mg;
+  is scalar @titulos_bracket, 1, 'a forma ids[] também filtra (não vira "todas")';
+
+  # duas ids de uma vez
+  my $duas = $t->get_ok("/api/chat/conversas/export?ids=$a->{id}&ids=$b->{id}",
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->body;
+  my @duas_titulos = $duas =~ /^# Conversa: (.+)$/mg;
+  is scalar @duas_titulos, 2, 'ids repetidas devolvem as 2 conversas';
+
+  # `all=1` traz ambas
+  my $todas = $t->get_ok('/api/chat/conversas/export?all=1',
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->body;
+  like $todas, qr/EXPORT-FILTRO-A/, 'all=1 inclui A';
+  like $todas, qr/EXPORT-FILTRO-B/, 'all=1 inclui B';
+
+  # limpeza
+  $t->delete_ok("/api/chat/conversas/$a->{id}", { Authorization => "Bearer $admin_token" })->status_is(204);
+  $t->delete_ok("/api/chat/conversas/$b->{id}", { Authorization => "Bearer $admin_token" })->status_is(204);
 };
 
 subtest 'DELETE /api/chat/conversas/:id — exclui conversa' => sub {
