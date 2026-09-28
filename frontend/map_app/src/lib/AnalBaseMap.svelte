@@ -6,10 +6,10 @@
   export let center = [-15.5, -55.0];  // Centro do Brasil
   export let zoom = 4;
   export let style = {};
-  export let tileLayer = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  export let tileLayer = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
   export let tileLayerOptions = {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CartoDB</a>',
-    subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
     maxZoom: 19,
     minZoom: 3
   };

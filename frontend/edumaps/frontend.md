@@ -348,7 +348,7 @@ Registrado uma vez em `src/main.js`: `eventBus.use(logger)` —
 Leaflet é **imperativo** (não declarativo); a integração isola isso:
 
 - `features/map/components/LeafletMap.svelte` — cria o mapa em `onMount`
-  (`L.map(...).setView(center, zoom)` + `L.tileLayer` CartoDB light_all);
+  (`L.map(...).setView(center, zoom)` + `L.tileLayer` OpenStreetMap);
   publica `mapState = $state({ map, ready })`; destrói em `onDestroy`;
   render `{@render children?.()}` só quando `ready`.
 - `features/map/context.js` — `provideMapContext`/`useMapContext` (chave
