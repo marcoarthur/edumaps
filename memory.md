@@ -60,6 +60,85 @@
 > - _(Correções latentes "Alta" concluídas em 2026-09-24, PRs #96/#97 — ver
 >   sessão "Correções latentes (backlog Alta)" abaixo.)_
 
+## Sessão — e2e do histórico de conversas em Chrome real (2026-09-28)
+
+`ubatexu.lan`, `backend.edumaps` e `analytic.edumaps` estavam fora do ar, o que
+travou a suíte de frontend no container e o deploy. Rodada feita com o
+ambiente inteiro local (Postgres em Docker + backend no perlbrew do host + SPA
+em build de produção servido por nginx + Chrome via CDP).
+
+### O que a rodada encontrou
+
+`/chat/historico` **não funcionava** — a lista nunca carregava e os botões de
+exportar/excluir eram stubs. Detalhe em `docs/e2e/cobertura.md` (16 achados).
+Os que mudam código:
+
+- `ChatCalendar.svelte`: `$effect(buildCalendar())` passava o **retorno** da
+  função. O `TypeError` no flush do Svelte **aborta o `onMount` da página**,
+  então a lista nunca era buscada.
+- `ChatConversaItem.svelte`: template usava o identificador solto `snippet`
+  em vez de `conversa.snippet`.
+- `ChatHistoricoPage.svelte`: a busca preenchia `searchResults` mas o template
+  passava `conversas` — o resultado era buscado e descartado.
+- `ChatConversaList.svelte`: exportar/excluir/`onOpen` eram `() => {}`.
+- **Overlay z-index**: o botão "Ver conversa" é um `absolute inset-0` sobre o
+  card e interceptava o clique dos botões de exportar/excluir. `stopPropagation`
+  não adianta — o clique nem chega nos handlers. `document.elementFromPoint` no
+  centro do botão resolve isso na hora.
+- `searchQuery` era `bind:value` num prop não bindável (precisava de
+  `$bindable` + `bind:` do pai).
+- `exportConversas` era a única função de `chatApi.js` **fora do `apiClient`**:
+  `fetch` cru com `credentials: "include"`, mas `_require_gestor` só lê o
+  header `Authorization: Bearer` → **401** nos dois botões.
+
+### Armadilhas de contrato do chat (custaram tempo — não repetir)
+
+- **`?ids[]=1` NÃO é a forma que o Mojolicious lê.** `to_hash` não converte a
+  notação de colchete: a chave vira literalmente `ids[]` e `to_hash->{ids}`
+  volta `undef`. O filtro era ignorado e o export saía com **todas** as
+  conversas, em silêncio. A forma lida é `?ids=1&ids=2`.
+- **Com o filtro aplicado, o export estourava 500**: `prefetch => mensagens`
+  fazia JOIN e `id` existe nas duas tabelas. O prefetch era **descartado**
+  (o loop já buscava com `$c->mensagens->search(...)`) — remover resolveu.
+- **`POST /api/chat/conversas` espera `messages`**, não `mensagens`; e responde
+  só `{id}`, apesar de o comentário prometer `{id, created_at}`.
+- **Teste que usava a forma quebrada passava sem verificar nada**: conferia
+  `## Pergunta 1` num corpo que vinha com todas as conversas. Ao corrigir o
+  filtro, o teste passou a falhar — porque a conversa mais recente do banco só
+  tinha mensagem de `user` e o export só numera `Resposta N` para `assistant`.
+- **`{#each}` com key + id repetido derruba a tela** (`each_key_duplicate`). A
+  busca devolve a mesma conversa mais de uma vez (o `snippet` entra no
+  `DISTINCT` do SQL). O sintoma — "a busca não filtra nada" — é parecido com o
+  do `searchResults` não lido, e confunde o diagnóstico.
+
+### Driver CDP: o que precisou de ajuste
+
+- `Runtime.evaluate` sem `awaitPromise: true` devolve o **objeto `Promise`**
+  (`{"type":"object","value":{}}`), não o resultado — o driver tem que sempre
+  pedir `awaitPromise` e fazer `json.loads` do valor, que é uma string.
+- O `wrap()` do driver embute a expressão num IIFE: passar uma **arrow** devolve
+  a própria função (inserializável), não o valor. Precisa ser uma expressão.
+- **`a.click()` de script não dá *user activation*** e o Chrome descarta o
+  download de `blob:`. Só funciona com `Input.dispatchMouseEvent` de verdade.
+  O `Page.setDownloadBehavior` na sessão de página não redirecionou o download
+  — o arquivo foi para o diretório padrão do Chrome.
+- `confirm()` trava o renderer: é preciso responder a
+  `Page.javascriptDialogOpening` com `Page.handleJavaScriptDialog`. Como o
+  `Session.send` descarta eventos sem `id`, o handler tem de ser chamado ali.
+
+### Estado
+
+- PR #100 (`fix/chat-meta-jsonb`, `meta` do chat como objeto + POST 400) segue
+  **aberto e aguardando revisão** — não mergeado.
+- Esta rodada é um PR separado, com base em `origin/main`, para não arrastar os
+  commits do #100. Os 3 arquivos backend tocados nos dois PRs mudam em trechos
+  distintos, então o cherry-pick é limpo.
+- `edu_maps.conf` ganhou um bloco `admin` **gitignored** (login do e2e);
+  backup em `/tmp/opencode/edu_maps.conf.bak`.
+- Hook de post-commit segue desativado (`ubatexu.lan` fora do ar); reabilitar
+  com `mv "$(git rev-parse --git-dir)"/hooks/post-commit.sample \
+  "$(git rev-parse --git-dir)"/hooks/post-commit` quando a rede voltar.
+
 ## Sessão — Admin de instalação via config (bootstrap provisório), PR #99 (2026-09-25)
 
 - **Mecanismo provisório** para bootstrap de admin no deploy: credenciais admin
