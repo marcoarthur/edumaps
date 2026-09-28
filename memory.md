@@ -179,6 +179,9 @@ que exige chave/API em algumas condições → tarja "defina sua API key".
 ciclo; commit do fix segue via PR + merge. Chrome CDP reiniciado em
 `:9333` (profile `/tmp/edumaps-cdp2`) durante a validação.
 
+**PR #104 mergeado em `main`** (`dfcdd2b`). Nota técnica:
+`docs/new_ideas/implementations_ideas/notas_tecnicas_68.md`.
+
 ## Sessão — CI Fase 1: fixtures do banco + workflow de testes (2026-09-28)
 
 Issue #1 (GH Actions). **Rede voltou parcialmente**: `ubatexu.lan`
