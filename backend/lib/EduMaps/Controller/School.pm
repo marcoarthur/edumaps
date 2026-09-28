@@ -45,6 +45,38 @@ sub panel_info($self){
   $self->render(json => $result);
 }
 
+# Perfil analítico da escola (issue #105): ponte síncrona para o serviço
+# edumapsr/Plumber (POST /school_profile). O serviço devolve o payload
+# pronto para o painel do gestor. Erro de cliente do serviço
+# (co_entidade inexistente -> 400) é propagado como 400; indisponibilidade
+# do serviço analítico vira 503.
+sub profile($self) {
+  my $params = { co_entidade => $self->param('cod_inep') };
+
+  my $result = eval { $self->analytics->run_school_profile($params) };
+
+  if (my $err = $@) {
+    my $is_client_error = $err =~ /retornou 400/;
+    my $status = $is_client_error ? 400 : 503;
+    (my $msg = "$err") =~ s/^Analytics:\s*//;
+
+    $self->app->log->error(
+      "school_profile[$params->{co_entidade}]: $err"
+    );
+
+    return $self->render(
+      json => {
+        error => $is_client_error
+          ? $msg
+          : 'Perfil da escola temporariamente indisponível',
+      },
+      status => $status,
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 sub payroll($self){
   my $v = $self->validation;
   $v->optional('date', 'trim')->like(qr<\d{2}[-]\d{4}>);

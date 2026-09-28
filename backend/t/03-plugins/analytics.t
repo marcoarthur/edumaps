@@ -51,6 +51,19 @@ my $pid;
           tables   => [],
         };
       }
+      elsif ($method eq 'POST' && $path eq '/school_profile') {
+        $code = 200;
+        $json = {
+          analysis => 'school_profile',
+          data     => [],
+          metrics  => { cluster_size => 5, n_peers => 2 },
+          metadata => {
+            co_entidade    => "$body->{co_entidade}",
+            cluster_source => 'fallback_kmeans',
+          },
+          tables   => { peers => [], flags => [] },
+        };
+      }
       elsif ($method eq 'POST' && $path eq '/similarity/db') {
         $code = 200;
         $json = { analysis => 'gower_similarity', data => [], metrics => { n_pairs => 1 } };
@@ -149,6 +162,14 @@ subtest 'run_cluster chama POST /cluster e devolve o JSON da análise' => sub {
 subtest 'run_summary chama POST /summary' => sub {
   my $result = $make_client->()->run_summary({ codigo_ibge => '3550308' });
   is $result->{metrics}{total_escolas}, 3, 'resumo retornado';
+};
+
+subtest 'run_school_profile chama POST /school_profile' => sub {
+  my $result = $make_client->()->run_school_profile({ co_entidade => '23165669' });
+  is $result->{analysis}, 'school_profile', 'perfil retornado';
+  is $result->{metadata}{co_entidade}, '23165669', 'co_entidade propagado';
+  is $result->{metadata}{cluster_source}, 'fallback_kmeans', 'cluster_source propagado';
+  is $result->{metrics}{cluster_size}, 5, 'metrics retornadas';
 };
 
 subtest 'run_similarity_db chama POST /similarity/db' => sub {
