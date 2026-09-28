@@ -59,6 +59,12 @@
     </div>
     <div class="flex items-center gap-2">
       <a
+        href={`/escola/perfil?inep=${inep}`}
+        class="px-3 py-2 text-sm font-medium rounded-md border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors whitespace-nowrap"
+      >
+        Perfil analítico
+      </a>
+      <a
         href={`/escola/panel?inep=${inep}`}
         class="px-3 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
       >
