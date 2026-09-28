@@ -62,6 +62,17 @@ subtest 'erro de cliente do serviço (400) vira 400' => sub {
   like $json->{error}, qr/não encontrada/, 'mensagem do serviço propagada';
 };
 
+subtest 'mensagem 400 não vaza caminho/linha do Perl' => sub {
+  $StubAnalytics::error =
+    'Analytics: school_profile retornou 400: Escola não encontrada: 99999999 at /opt/edumaps/backend/lib/EduMaps/Controller/School.pm line 56.';
+
+  my $tx = $t->get_ok("/api/school/$INEP/profile")->status_is(400)->tx;
+  my $json = $tx->res->json;
+  like $json->{error}, qr/não encontrada/, 'mantém a mensagem do serviço';
+  unlike $json->{error}, qr{/opt/edumaps}, 'não vaza caminho do servidor';
+  unlike $json->{error}, qr/\bline\b/, 'não vaza número de linha';
+};
+
 subtest 'indisponibilidade do serviço vira 503' => sub {
   $StubAnalytics::error = 'Analytics: falha de conexão (http://analytic:8000/school_profile): Connection refused';
 

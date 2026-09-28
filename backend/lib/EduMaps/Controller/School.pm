@@ -58,7 +58,12 @@ sub profile($self) {
   if (my $err = $@) {
     my $is_client_error = $err =~ /retornou 400/;
     my $status = $is_client_error ? 400 : 503;
-    (my $msg = "$err") =~ s/^Analytics:\s*//;
+
+    # Limpa prefixo/origem do croak (path/linha) — não vazar interno.
+    (my $msg = "$err") =~ s/^\QAnalytics:\E\s*//;
+    $msg =~ s/^\Qschool_profile\E\s+retornou\s+\d+:\s*//;
+    $msg =~ s/\s+at\s+\S+\s+line\s+\d+.*$//s;
+    $msg =~ s/\s+$//;
 
     $self->app->log->error(
       "school_profile[$params->{co_entidade}]: $err"
