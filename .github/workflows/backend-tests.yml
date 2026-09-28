@@ -4,8 +4,8 @@
 # O que o job faz:
 #   1. Sobe o banco de CI com o espelho HTTPS local (db/fixtures/ci_db.sh up):
 #      imagem de db/Dockerfile, rede, sqitch deploy das 60+ migrations.
-#   2. Instala as dependências do backend (cpanfile) no runner.
-#   3. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 —os testes que dependem de
+#   2. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
+#   3. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 — os testes que dependem de
 #      R, de serviços externos ou do schema staging se auto-pulam
 #      (t/lib/CI.pm).
 #
@@ -52,10 +52,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: dependências de sistema (cabeçalhos do libpq para DBD::Pg)
+      - name: dependências de sistema (cabeçalhos do libpq, cpanminus)
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libpq-dev
+          sudo apt-get install -y build-essential libpq-dev cpanminus
 
       - name: sobe o banco de CI (imagem, espelho, sqitch deploy)
         run: db/fixtures/ci_db.sh up
@@ -68,11 +68,9 @@ jobs:
           docker logs edumaps-ci-db | tail -40
           docker logs edumaps-ci-mirror | tail -40
 
-      - name: dependências do backend (cpanfile, com cache)
-        uses: actions/setup-perl@v2
-        with:
-          perl-version: '5.40'
-          cpanfile: backend/cpanfile
+      - name: dependências do backend (cpanfile)
+        run: sudo cpanm --notest --installdeps .
+        working-directory: backend
 
       - name: suíte de testes
         working-directory: backend
