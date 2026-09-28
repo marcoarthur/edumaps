@@ -3,7 +3,7 @@ titulo: Painel da escola
 modulo: analise
 status: ativo
 audiencia: [gestor, pesquisador, investidor, comunidade]
-relacionadas: [escolas, similaridade, ranking]
+relacionadas: [escolas, similaridade, ranking, perfil-escola]
 ---
 
 # Painel da escola
@@ -40,3 +40,4 @@ apoiando priorização e planejamento.
 - [Busca de escolas](../busca/escolas.md)
 - [Escolas similares](../busca/similaridade.md)
 - [Ranking de escolas](ranking.md)
+- [Perfil analítico da escola](perfil-escola.md)
