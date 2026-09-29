@@ -64,3 +64,16 @@ test_that("SQL dos percentis agrupa por cluster e usa bind de ano", {
   expect_true(grepl("percentile_cont(0.25)", sql, fixed = TRUE))
   expect_true(grepl("WHERE e.nu_ano_censo = $1", sql, fixed = TRUE))
 })
+
+test_that(".profile_drop_constant_features remove colunas sem variância", {
+  df <- data.frame(
+    a = c(1, 2, 3),
+    b = c(5, 5, 5),
+    c = c(NA_real_, 1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  expect_equal(.profile_drop_constant_features(df, c("a", "b", "c")), c("a", "c"))
+  expect_equal(.profile_drop_constant_features(df, "b"), character(0))
+  expect_equal(.profile_drop_constant_features(df, "a"), "a")
+})

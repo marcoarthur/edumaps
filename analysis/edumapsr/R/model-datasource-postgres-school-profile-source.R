@@ -435,6 +435,23 @@ WHERE p.co_municipio = $1
   if (length(feats) == 0) inds else feats
 }
 
+#' Remove features sem variância (evitam NaN no scale()/daisy)
+#'
+#' `scale()` de uma coluna constante devolve NaN (0/0) e o kmeans/daisy
+#' estoura com "NA/NaN/Inf". Escolas pequenas têm indicadores inteiros
+#' constantes (ex.: nenhum docente com mestrado) — não servem como
+#' dimensão de comparação.
+#'
+#' @keywords internal
+.profile_drop_constant_features <- function(data, feats) {
+  keep <- vapply(feats, function(f) {
+    v <- suppressWarnings(as.numeric(data[[f]]))
+    v <- v[!is.na(v)]
+    length(v) > 1 && stats::sd(v) > 0
+  }, logical(1))
+  feats[keep]
+}
+
 .school_profile_fallback_cluster <- function(
   frame,
   co_entidade,
@@ -443,9 +460,10 @@ WHERE p.co_municipio = $1
   inds <- PROFILE_INDICATORS
   feats <- .profile_target_features(frame, co_entidade)
   valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
+  feats <- .profile_drop_constant_features(valid, feats)
   school_row <- valid[as.character(valid$co_entidade) == as.character(co_entidade), , drop = FALSE]
 
-  if (nrow(valid) < 2 || nrow(school_row) == 0) {
+  if (length(feats) == 0 || nrow(valid) < 2 || nrow(school_row) == 0) {
     warning(sprintf(
       "[school_profile] fallback kmeans degradado: município sem dados suficientes (n=%d) para a escola %s",
       nrow(valid), co_entidade
@@ -542,7 +560,8 @@ WHERE p.co_municipio = $1
   inds <- PROFILE_INDICATORS
   feats <- .profile_target_features(frame, co_entidade)
   valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
-  if (nrow(valid) < 2) {
+  feats <- .profile_drop_constant_features(valid, feats)
+  if (length(feats) == 0 || nrow(valid) < 2) {
     return(data.frame(
       co_entidade = character(0), no_entidade = character(0),
       similarity = numeric(0), ideb_observado = numeric(0),
