@@ -120,6 +120,77 @@ persist_school_profile.postgres_school_profile_repository <- function(
   )
 }
 
+#' Lê o perfil materializado de uma escola
+#'
+#' Devolve o payload persistido **apenas** quando o `nu_ano_censo` bate
+#' com o ano pedido (nunca serve dado de outro censo). `NULL` quando não
+#' há linha/tabela.
+#'
+#' @param repository objeto da classe
+#'   `postgres_school_profile_repository`.
+#' @param co_entidade código INEP da escola.
+#' @param nu_ano_censo ano do censo corrente.
+#' @param output_schema schema onde a tabela vive (default: "analytics").
+#' @param ... parâmetros adicionais não utilizados.
+#'
+#' @return Lista com `payload`, `nu_ano_censo` e `computed_at`, ou `NULL`.
+#'
+#' @export
+read_school_profile_cache <- function(repository, co_entidade, nu_ano_censo, ...) {
+  UseMethod("read_school_profile_cache")
+}
+
+#' @export
+read_school_profile_cache.postgres_school_profile_repository <- function(
+  repository,
+  co_entidade,
+  nu_ano_censo,
+  output_schema = "analytics",
+  ...
+) {
+  con <- repository$con
+
+  table_ok <- tryCatch(
+    DBI::dbGetQuery(
+      con,
+      "SELECT count(*) AS n FROM information_schema.tables
+        WHERE table_schema = $1 AND table_name = $2",
+      params = list(output_schema, SCHOOL_PROFILE_TABLE)
+    )$n,
+    error = function(e) 0
+  )
+  if (!isTRUE(table_ok > 0)) {
+    return(NULL)
+  }
+
+  row <- tryCatch(
+    DBI::dbGetQuery(
+      con,
+      sprintf(
+        "SELECT profile_data, nu_ano_censo, updated_at
+           FROM %s.%s
+          WHERE co_entidade = $1 AND nu_ano_censo = $2",
+        DBI::dbQuoteIdentifier(con, output_schema),
+        DBI::dbQuoteIdentifier(con, SCHOOL_PROFILE_TABLE)
+      ),
+      params = list(as.integer(co_entidade), as.integer(nu_ano_censo))
+    ),
+    error = function(e) data.frame()
+  )
+
+  if (nrow(row) == 0) {
+    return(NULL)
+  }
+
+  payload <- jsonlite::fromJSON(row$profile_data[1], simplifyVector = FALSE)
+
+  list(
+    payload = payload,
+    nu_ano_censo = as.integer(row$nu_ano_censo[1]),
+    computed_at = as.character(row$updated_at[1])
+  )
+}
+
 #' Garante a tabela de perfil da escola (UPSERT)
 #'
 #' @keywords internal
