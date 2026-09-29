@@ -203,17 +203,7 @@ load_school_profile <- function(source, ...) {
 #'
 #' @keywords internal
 .school_profile_persisted_cluster <- function(con, schema_q, co_entidade) {
-  col_ok <- tryCatch(
-    DBI::dbGetQuery(
-      con,
-      "SELECT count(*) AS n FROM information_schema.columns
-        WHERE table_schema = $1 AND table_name = $2 AND column_name = $3",
-      params = list(schema_q_plain(con, schema_q), "school_indicators", "cluster_id")
-    )$n,
-    error = function(e) 0
-  )
-
-  if (!isTRUE(col_ok > 0)) {
+  if (!.school_indicators_has_cluster_id(con, schema_q)) {
     return(NULL)
   }
 
@@ -376,6 +366,26 @@ SELECT count(*) AS n, %s
     n = as.integer(r$n_escolas[1]),
     source = "reference"
   )
+}
+
+#' A coluna `cluster_id` existe em `clean.school_indicators`?
+#'
+#' A coluna é criada dinamicamente pelo job de clustering (ALTER TABLE);
+#' enquanto ele não roda, a tabela/campo pode não existir. Quem consulta
+#' precisa degradar (fallback) em vez de errar.
+#'
+#' @keywords internal
+.school_indicators_has_cluster_id <- function(con, schema_q) {
+  col_ok <- tryCatch(
+    DBI::dbGetQuery(
+      con,
+      "SELECT count(*) AS n FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2 AND column_name = $3",
+      params = list(schema_q_plain(con, schema_q), "school_indicators", "cluster_id")
+    )$n,
+    error = function(e) 0
+  )
+  isTRUE(col_ok > 0)
 }
 
 #' Nome do schema sem aspas, para a consulta ao information_schema
