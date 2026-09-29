@@ -61,7 +61,10 @@ services:
       - DB_HOST=db
       - EDUMAPS_DB_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
       - ANALYTICS_URL=http://analytic:8000
-    command: ["/usr/local/bin/docker-entrypoint.sh", "minion"]
+    # O ENTRYPOINT da imagem já é o docker-entrypoint.sh; passar o caminho de
+    # novo aqui faria $1 virar o próprio script e o container subiria o morbo
+    # (web) em vez do worker. Use só o argumento esperado pelo entrypoint.
+    command: ["minion"]
 
   analytic:
     build: ./analysis/edumapsr
