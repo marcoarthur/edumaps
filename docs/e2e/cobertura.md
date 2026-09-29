@@ -330,3 +330,13 @@ Read-through do perfil (referências/percentis pré-computados):
 | `POST /api/task/school_profile` (JSON, limit=2) | 🟢 202; job processou 2 (`analytics.school_profile` 422→424) |
 | Timer `edumaps-school-profile-refresh.timer` | 🟢 enabled, próxima execução agendada |
 | Painel `/escola/perfil` (linha "Perfil atualizado em") | 🟢 PASS (validação visual do developer, 2026-09-29) |
+
+## Rodada 2026-09-29 — Roadmap do Perfil da Escola (itens A/B/C)
+
+| Verificação | Resultado |
+|---|---|
+| `/escola/perfil` — seção "Evolução" (IDEB/SAEB por ano) | 🟢 PASS (validação visual do developer, 2026-09-29) |
+| `/municipio/perfil?ibge=2307304` — "Rede vs. Brasil" + clusters | 🟢 PASS (validação visual do developer, 2026-09-29) |
+| `GET /api/school/:cod/evolution` | 🟢 200 (27 pontos); 99999999 → 400; `abc` → 404 |
+| `GET /api/network/:ibge/profile` | 🟢 200 (225 escolas); 9999999 → 400; `abc` → 404 |
+| `/ask` "Como está a escola 23165669?" | 🟢 200 consultando `analytics.school_profile_flat` (resposta coerente com o perfil) |

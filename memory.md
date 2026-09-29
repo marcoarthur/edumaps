@@ -4,6 +4,54 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Roadmap do #105 (itens A/B/C; PRs #112/#113/#114)
+
+Continuidade do Perfil da Escola. Três itens do roadmap do #105, cada um em
+branch/PR próprio (por decisão do usuário), com issue aberto antes:
+**A=#110** (evolução), **B=#109** (perfil da rede), **C=#111** (perfil no
+/ask).
+
+**A — `school_evolution` (PR #112)**
+- `analyze_school_evolution()` + `school_evolution_model` + DataSource sobre
+  `clean.ideb_notas_escolas` (IDEB por etapa) e
+  `clean.inep_notas_desagregadas` (SAEB por ano); `POST /school_evolution`
+  (400/500); registry com `model_class`; facades.
+- Backend: `GET /api/school/:cod_inep/evolution`.
+- Frontend: seção "Evolução" no `/escola/perfil` (série por indicador/etapa,
+  barras por ano, variação); carregada em paralelo ao perfil.
+
+**B — `/network_profile` (PR #113)**
+- `analyze_network_profile()` + `network_profile_model` + DataSource que
+  agrega as escolas ativas do município (opcional por `tp_dependencia`) por
+  cluster e compara a rede vs. Brasil (reusa
+  `analytics.school_profile_reference` do #107); `POST /network_profile`.
+- Backend: `GET /api/network/:codigo_ibge/profile`.
+- Frontend: página `/municipio/perfil?ibge=…` ("Rede vs. Brasil" +
+  "Distribuição por cluster").
+
+**C — perfil no `/ask` (PR #114)**
+- View achatada `analytics.school_profile_flat` (self-provisioning a partir do
+  JSONB de `analytics.school_profile`), com `GRANT SELECT` para a role
+  `edumaps_leitor`; entradas no `inst/chat/dicionario.yml` (whitelist, colunas,
+  conexão, termos) e regra no system prompt.
+- Validação: `POST /ask` respondeu coerente consultando a view (mestrado/sem
+  especialização em atenção; licenciatura vs. município; IDEB etc.).
+
+**Testes**: R 440 passam (falha de `test-cluster.R:154` pré-existente);
+backend `t/04-api/school/evolution.t` e `t/04-api/network/profile.t`; frontend
+369.
+
+**Deslize de processo (corrigido)**: o commit do item C foi feito direto na
+`main` local por engano; o push falhou (branch inexistente) e o commit foi
+movido para `feat/analytics-ask-profile`, com a `main` resetada para
+`origin/main` antes de qualquer push. A regra branch→PR→merge foi respeitada.
+
+**Pendências**
+- Documentar os endpoints batch (`/school_profile/reference|cluster|batch`) e os
+  novos (`/school_evolution`, `/network_profile`) também no `api.json`? (os dois
+  últimos já têm schemas; só os batch do #107 ficaram sem).
+- `docs/indice.md` (Tech Lead) segue sem passada recente.
+
 ## Sessão 2026-09-28/29 — Perfil da Escola Fase 2 (issue #107, PR #108)
 
 Segunda fase do painel do gestor: separa **cálculo** de **leitura**. Issue
