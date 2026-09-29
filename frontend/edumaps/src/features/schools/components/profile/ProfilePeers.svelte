@@ -4,13 +4,26 @@
   // Escolas similares do perfil (benchmarking justo por Gower). O payload
   // traz { co_entidade, no_entidade, similarity, ideb_observado }.
   import { formatSimilarity } from '../../utils/transformProfileData.js';
+  import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
   let { peers = [], sourceLabel = '', onSelect = () => {} } = $props();
 </script>
 
 <section class="flex flex-col gap-2" aria-label="Escolas similares">
-  <div class="flex items-baseline justify-between gap-3">
-    <h2 class="text-base font-bold text-gray-900">Escolas similares</h2>
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center gap-2">
+      <h2 class="text-base font-bold text-gray-900">Escolas similares</h2>
+      <InfoHint
+        title="Como escolhemos as similares"
+        text="Comparação justa por similaridade de Gower, sem viés de UF ou de rede."
+        items={[
+          'Gower mede a proximidade considerando indicadores numéricos e categóricos.',
+          'Fonte: pares persistidos (analytics.similarity_pairs) ou Gower calculado no município quando não há pares.',
+          'Similaridade = 1 − distância (0 a 100%); ordenadas da mais parecida.',
+          'Exibimos até 10 escolas dentro do limiar de distância.',
+        ]}
+      />
+    </div>
     {#if sourceLabel}
       <span class="text-xs text-gray-500">fonte: {sourceLabel}</span>
     {/if}
@@ -38,5 +51,9 @@
         </button>
       {/each}
     </div>
+
+    <p class="text-xs text-gray-500">
+      Similaridade 0–100% (1 − distância de Gower), da mais parecida para a menos.
+    </p>
   {/if}
 </section>

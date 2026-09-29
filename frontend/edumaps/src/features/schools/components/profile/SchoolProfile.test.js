@@ -75,6 +75,21 @@ describe("SchoolProfile", () => {
     expect(screen.getAllByText("IDEB observado").length).toBeGreaterThan(0);
   });
 
+  it("explica cada tabela/gráfico com legenda e caixa (?)", () => {
+    const evolutionGroups = transformEvolutionData(EVOLUTION_FIXTURE).groups;
+    render(SchoolProfile, { profile: profileFixture(), evolutionGroups });
+
+    // um (?) por seção: atenção, posição relativa, evolução, cluster, peers
+    expect(
+      screen.getAllByRole("button", { name: "Detalhes sobre este dado" }).length,
+    ).toBeGreaterThanOrEqual(5);
+
+    // legendas visíveis
+    expect(screen.getByText(/p25\/p50\/p75/)).toBeInTheDocument();
+    expect(screen.getByText(/Similaridade 0/)).toBeInTheDocument();
+    expect(screen.getByText(/barra é proporcional/)).toBeInTheDocument();
+  });
+
   it("renderiza as escolas similares com a fonte", () => {
     render(SchoolProfile, { profile: profileFixture() });
 

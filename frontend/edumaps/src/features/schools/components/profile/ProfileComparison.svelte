@@ -5,6 +5,7 @@
   // a rede, o Brasil e o cluster (mediana). Linhas no quartil inferior do
   // cluster ficam destacadas.
   import { formatIndicator, formatQuartil } from '../../utils/transformProfileData.js';
+  import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
   let { indicadores = [] } = $props();
 
@@ -13,7 +14,19 @@
 </script>
 
 <section class="flex flex-col gap-2" aria-label="Posição relativa">
-  <h2 class="text-base font-bold text-gray-900">Posição relativa</h2>
+  <div class="flex items-center gap-2">
+    <h2 class="text-base font-bold text-gray-900">Posição relativa</h2>
+    <InfoHint
+      title="Como calculamos a posição relativa"
+      text="Cada indicador da escola ao lado da média do município, da rede (dependência) e do Brasil, e da mediana do cluster a que a escola pertence."
+      items={[
+        'Fonte: Censo Escolar (docentes e matrículas), IDEB/SAEB e INSE — edição mais recente.',
+        'Os comparativos vêm de referências pré-computadas quando disponíveis; senão são calculados na hora.',
+        'Quartil = posição do valor da escola dentro do cluster (Q1 = inferior … Q4 = superior).',
+        'Cluster = mediana do indicador entre as escolas do grupo de referência.',
+      ]}
+    />
+  </div>
 
   <div class="overflow-x-auto border border-gray-200 rounded-md">
     <table class="min-w-full text-sm">
