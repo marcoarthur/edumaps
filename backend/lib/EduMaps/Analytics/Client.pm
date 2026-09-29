@@ -97,6 +97,19 @@ sub run_school_profile ($self, $args) {
   });
 }
 
+sub run_school_evolution ($self, $args = {}) {
+  $self->_run('school_evolution', {
+    co_entidade => $args->{co_entidade},
+    schema      => $args->{schema},
+  }, 'school_evolution', {
+    cacheable => 1,
+    cache_params => {
+      co_entidade => $args->{co_entidade},
+      schema      => $args->{schema},
+    },
+  });
+}
+
 sub run_school_profile_reference ($self, $args = {}) {
   $self->_run('school_profile/reference', {
     nu_ano_censo  => $args->{nu_ano_censo},

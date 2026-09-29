@@ -82,6 +82,39 @@ sub profile($self) {
   $self->render(json => $result);
 }
 
+# Série histórica da escola (issue #110, roadmap do #105): ponte síncrona
+# para POST /school_evolution. Mesmo tratamento de erro do profile.
+sub evolution($self) {
+  my $params = { co_entidade => $self->param('cod_inep') };
+
+  my $result = eval { $self->analytics->run_school_evolution($params) };
+
+  if (my $err = $@) {
+    my $is_client_error = $err =~ /retornou 400/;
+    my $status = $is_client_error ? 400 : 503;
+
+    (my $msg = "$err") =~ s/^\QAnalytics:\E\s*//;
+    $msg =~ s/^\Qschool_evolution\E\s+retornou\s+\d+:\s*//;
+    $msg =~ s/\s+at\s+\S+\s+line\s+\d+.*$//s;
+    $msg =~ s/\s+$//;
+
+    $self->app->log->error(
+      "school_evolution[$params->{co_entidade}]: $err"
+    );
+
+    return $self->render(
+      json => {
+        error => $is_client_error
+          ? $msg
+          : 'Evolução da escola temporariamente indisponível',
+      },
+      status => $status,
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 sub payroll($self){
   my $v = $self->validation;
   $v->optional('date', 'trim')->like(qr<\d{2}[-]\d{4}>);
