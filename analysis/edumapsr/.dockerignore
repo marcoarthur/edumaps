@@ -1,0 +1,6 @@
+# Artefatos de build/desenvolvimento que não entram na imagem.
+edumapsAnalytics.Rcheck/
+*.tar.gz
+.Renviron
+.Rhistory
+.Rproj.user/

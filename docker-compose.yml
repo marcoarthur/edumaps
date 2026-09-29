@@ -38,11 +38,14 @@ services:
     depends_on:
       sqitch:
         condition: service_completed_successfully
+      analytic:
+        condition: service_started
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - DB_HOST=db
+      - ANALYTICS_URL=http://analytic:8000
     ports:
       - "3000:3000"
 
@@ -57,7 +60,23 @@ services:
       - DB_PASS=${DB_PASS}
       - DB_HOST=db
       - EDUMAPS_DB_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
+      - ANALYTICS_URL=http://analytic:8000
     command: ["/usr/local/bin/docker-entrypoint.sh", "minion"]
+
+  analytic:
+    build: ./analysis/edumapsr
+    container_name: edumaps-analytic
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_HOST=db
+      - EDUMAPS_R_PORT=8000
+    ports:
+      - "8000:8000"
 
   frontend:
     build: ./frontend
@@ -66,3 +85,4 @@ services:
       - "8080:80"
     depends_on:
       - backend
+      - analytic

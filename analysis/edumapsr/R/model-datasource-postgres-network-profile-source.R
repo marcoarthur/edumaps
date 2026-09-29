@@ -154,24 +154,6 @@ load_network_profile.postgres_source <- function(
     ano_expr = ano_expr, where_extra = where_extra
   )
 
-  clusters_wide <- DBI::dbGetQuery(
-    con,
-    sprintf(
-      "
-WITH pop AS MATERIALIZED (
-%s
-)
-SELECT si.cluster_id AS cluster_id, count(*) AS n, %s
-  FROM pop p
-  LEFT JOIN %s.school_indicators si ON si.co_entidade = p.co_entidade
- GROUP BY si.cluster_id
- ORDER BY si.cluster_id NULLS LAST
-",
-      pop_body, .profile_avg_cols_alias("p"), schema_q
-    ),
-    params = params
-  )
-
   mean_row <- DBI::dbGetQuery(
     con,
     sprintf(
@@ -191,6 +173,32 @@ SELECT count(*) AS n_escolas, %s FROM pop p
       "Nenhuma escola ativa no recorte (codigo_ibge=%s, tp_dependencia=%s)",
       codigo_ibge, ifelse(is.na(tp_dep), "todas", tp_dep)
     ))
+  }
+
+  if (.school_indicators_has_cluster_id(con, schema_q)) {
+    clusters_wide <- DBI::dbGetQuery(
+      con,
+      sprintf(
+        "
+WITH pop AS MATERIALIZED (
+%s
+)
+SELECT si.cluster_id AS cluster_id, count(*) AS n, %s
+  FROM pop p
+  LEFT JOIN %s.school_indicators si ON si.co_entidade = p.co_entidade
+ GROUP BY si.cluster_id
+ ORDER BY si.cluster_id NULLS LAST
+",
+        pop_body, .profile_avg_cols_alias("p"), schema_q
+      ),
+      params = params
+    )
+  } else {
+    # Sem clusterização no banco: um único grupo "Sem cluster" com a rede
+    # inteira (a análise/rota continuam válidas).
+    clusters_wide <- mean_row
+    clusters_wide$n <- clusters_wide$n_escolas
+    clusters_wide$cluster_id <- NA_integer_
   }
 
   labels <- tryCatch(
