@@ -1,7 +1,7 @@
 # Nota técnica 73 — Observabilidade com Sentry (backend + Minion + frontend)
 
 **Data**: 2026-09-29
-**PRs**: #122 (a confirmar)
+**PRs**: #122
 **Issues**: — (sem issue; integração de infra)
 **Áreas**: backend, frontend
 
@@ -83,10 +83,23 @@ o loop roda → fire-and-forget.
 - `docker-compose.yml`: `EDUMAPS_SENTRY_DSN`/`EDUMAPS_SENTRY_RELEASE` no
   backend e no minion (vazio = no-op).
 
+## E — Ativação com DSN real (2026-09-29)
+
+Após o merge do PR #122, o usuário criou o projeto no sentry.io e forneceu o
+DSN. Ativação feita **sem commitar segredo**: o DSN entra por env
+(`EDUMAPS_SENTRY_DSN`) lida pelo Rexfile, que o injeta no bloco `sentry` do
+`edu_maps.conf` e no `VITE_SENTRY_DSN` do build. **Um único DSN de projeto**
+serve Svelte + backend/Minion (decisão do usuário). Região **us**, release =
+SHA curto do git (`5e33c41`).
+
+Validação: envelope real aceito pela Envelope API (**HTTP 200** com `id`), nos
+formatos do service Perl e do browser SDK; TLS ok no carton do host
+(`IO::Socket::SSL 2.081`); conf/boot/web/minion e bundle da SPA conferidos.
+
 ## Pendências
 
-- **Ativar de fato**: criar conta sentry.io, configurar os DSNs nos hosts
-  (via env do Rex/conf) e conferir os primeiros eventos.
 - Traces/replay / monitoramento de performance (fase 2).
 - Evento de estado de job nativo (quando o Minion ganhar `failed` hook,
   revisitar o wrap).
+- (Opcional) e2e visual do frontend no navegador (desktop não conectado na
+  sessão em 29/09).

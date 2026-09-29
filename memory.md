@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Sentry ativado com DSN real (projeto único)
+
+O usuário criou o projeto no sentry.io e forneceu o DSN real; a integração
+(feita com placeholder no PR #122) foi **ativada**. Região **us**. Decisão do
+usuário: **um único DSN de projeto** usado pelo Svelte **e** pelo backend/Minion.
+
+- **DSN** (público por design — vai embutido no bundle da SPA, mas **não
+  commitado**; fica no env do deploy e no `edu_maps.conf` do host):
+  `https://<key>@o4512171792662528.ingest.us.sentry.io/4512171824381952`
+  (projeto **4512171824381952**, região **us**). Valor real: pedir ao usuário
+  ou ler `/opt/edumaps/backend/edu_maps.conf` (host `backend.edumaps`).
+- **NUNCA commitado**: ativação via env `EDUMAPS_SENTRY_DSN` exportado **antes**
+  de `rex prepare` + deploys (mesmo padrão de `EDUMAPS_DB_PASS`). O Rexfile usa
+  `get('sentry_dsn')` tanto no bloco `sentry` do `edu_maps.conf` (linha ~78)
+  quanto no `VITE_SENTRY_DSN` do build da SPA (linha ~364). Release = SHA curto
+  do git no host (`5e33c41`).
+- **Ativar/re-ativar após um deploy** (senão o conf é reescrito com `dsn => ''`
+  e o Sentry volta a no-op):
+  ```bash
+  cd backend/script/deploy
+  export EDUMAPS_SENTRY_DSN='<DSN do projeto sentry.io — ver conf do host>'
+  rex prepare && rex -H backend.edumaps deploy_backend_dev && \
+    rex -H backend.edumaps deploy_minion_dev && rex -H backend.edumaps deploy_frontend_dev
+  ```
+- **Validação (29/09)**:
+  - Envelope real → Sentry **HTTP 200** `{"id":...}` (formato do service Perl e
+    formato browser `platform: javascript`); TLS ok no **carton do host**
+    (`IO::Socket::SSL 2.081`; o perlbrew *local* não tem TLS ≥2.009 — smoke
+    local só via `curl`).
+  - Host: `edu_maps.conf` com `dsn` preenchido e `release => '5e33c41'`;
+    `edumaps-web` e `edumaps-minion` bootam ("EduMaps inicializado…").
+  - SPA: `dist/assets/index-*.js` contém `ingest.us.sentry.io` + release
+    `5e33c41`; `ubatexu.lan:8080` → 200.
+  - e2e visual no navegador não feito: o desktop não estava conectado à sessão
+    (pendente de validação do usuário, se quiser).
+- **Nota**: `EDUMAPS_SENTRY_DSN` vazio em deploy futuro = no-op silencioso
+  (comportamento esperado, não é bug).
+
 ## Sessão 2026-09-29 — Observabilidade com Sentry (backend + Minion + frontend)
 
 Integração **sentry.io cloud** (free tier) com placeholder de DSN: sem
@@ -40,8 +78,8 @@ Integração **sentry.io cloud** (free tier) com placeholder de DSN: sem
   FakeMinion — sem DB, e no-DSN no-op). Frontend: `sentry.test.js` +
   `client.test.js` (ponte `api:error`) — **393 testes verdes**.
 - **Decisão de teste**: `Test2::V0` **não exporta `is_deeply`** — usar `is`.
-- **Pendência**: ativar de fato (criar conta sentry.io + configurar DSNs nos
-  hosts); traces/replay = fase 2 (`tracesSampleRate: 0`).
+- **Pendência** → **resolvida** na sessão acima (DSN real ativado nos hosts);
+  traces/replay = fase 2 (`tracesSampleRate: 0`).
 
 ## Sessão 2026-09-29 — POIs OSM no Painel do Gestor (PRs #118/#119/#120)
 
