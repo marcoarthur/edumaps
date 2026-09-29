@@ -171,3 +171,57 @@ escola de teste (35246177). O compose local roda no host `ubaxala`
 O build do compose local falhou antes por disco cheio; `docker builder prune -af`
 liberou ~13 GB (cache de build).
 
+## E — Worker Minion local + propagação de erro no OSM (PR #121)
+
+Ao testar o fluxo OSM no build Docker local apareceram dois problemas.
+
+### 1. O worker Minion não consumia jobs no localhost
+
+O `ENTRYPOINT` da imagem já é o `docker-entrypoint.sh`, mas o `command` do
+compose repetia o caminho do script:
+
+```yaml
+command: ["/usr/local/bin/docker-entrypoint.sh", "minion"]
+```
+
+Com isso o processo final vira
+`docker-entrypoint.sh docker-entrypoint.sh minion` → `$1` = o próprio script →
+o entrypoint caía no `else` e subia o **morbo (web)**. Nenhum job era
+consumido. Correção: `command: ["minion"]`.
+
+Sintoma: o container `edumaps-minion` ficava "Up" e logava
+`Web application available at http://127.0.0.1:3000` (mensagem do morbo); o
+worker saudável loga `Worker <id> started` e
+`performing job "<id>" with task "<task>"`.
+
+### 2. Falha silenciosa do OSM (Overpass 504 → 0 POIs "com sucesso")
+
+Com o worker funcionando, jobs `query_osm_school` terminavam `finished` com
+`related: 0` e `raw_results: null` **sem erro**, quando o Overpass devolvia
+`HTTP 504`.
+
+Causa raiz (dupla):
+
+- `die` dentro de um `async sub` (via `-async_await`) vira uma promise
+  **rejeitada**; o `await`/`wait` não a relança.
+- `Mojo::Promise::wait` **engole a rejeição** (`catch(sub { })` interno) e ainda
+  retorna imediatamente quando o IOLoop já está rodando — exatamente o contexto
+  do worker Minion.
+
+Resultado: `run` seguia com `geojson` indefinido; `_store_features`/`_relate_*`
+gravavam nada e o job "concluía".
+
+Correção: o `_request` passa a usar `Mojo::UserAgent` **síncrono**
+(`$ua->post(...)`), o mesmo padrão do `EduMaps::Analytics::Client` (usado em
+tasks). No worker o IOLoop não está `is_running` (o worker usa ticks), então a
+chamada bloqueante funciona — confirmado: com Overpass disponível o job
+`finished` com `related: 1` e a feição gravada. Erros de conexão/HTTP agora
+propagam (`die`): job **failed** com
+`{"error":"Overpass retornou HTTP 504..."}`. `run_p` vira um wrapper de promise
+que preserva o erro; `related` sai numérico (`0 + ($n // 0)`, pois `$dbh->do`
+devolve `"0E0"` quando 0 linhas).
+
+Regra prática: em task Minion, **não** use `->wait`/`async sub` para HTTP; use o
+UA síncrono (ou awaits com tratamento explícito de erro).
+
+

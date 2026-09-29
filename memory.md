@@ -80,6 +80,24 @@ os equipamentos públicos num buffer ao redor da escola, com catálogos
   mergeados.
 - **Doc funcional**: nova capacidade `docs/funcionalidades/gestor/equipamentos-entorno.md`
   (+ índice e `fontes-de-dados` com OpenStreetMap).
+- **Fixes do teste no Docker local (PR #121)**:
+  - **`docker-compose.yml`**: o `ENTRYPOINT` da imagem é o próprio
+    `docker-entrypoint.sh`; o `command` passava o caminho de novo → `$1` virava
+    o script → o container `minion` subia o **morbo (web)** e não consumia
+    jobs. Agora `command: ["minion"]` (roda `minion worker`). Infra Docker local
+    → branch/PR, sem deploy Rex.
+  - **Falha silenciosa do OSM**: o Overpass devolvia 504 e o job "concluía" com
+    `related: 0` e `raw_results: null` (sem erro). Causa: `die` dentro de
+    `async sub` vira promise rejeitada **não tratada**, e
+    **`Mojo::Promise::wait` engole a rejeição** (e ainda retorna cedo se o
+    IOLoop já está rodando — caso do worker). Correção: `Services::OSM::_request`
+    usa **Mojo::UserAgent síncrono** (padrão do `EduMaps::Analytics::Client`,
+    usado em tasks); `run` é síncrono e o erro propaga (`die`) → job falha com a
+    mensagem. `run_p` virou wrapper de promise; `related` saiu numérico
+    (`0 + ($n // 0)`). Testes em `t/osm_service_errors.t`.
+  - Lição: em task Minion, **não** use `->wait`/`async sub` para HTTP; use o UA
+    síncrono (ou awaits com tratamento explícito). Verificado no compose:
+    504 → job `failed` com o erro; retry OK → `finished` com `related: 1`.
 
 ## Sessão 2026-09-29 — Módulos OSM generalizados (Services/Model)
 
