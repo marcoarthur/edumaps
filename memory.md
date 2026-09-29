@@ -4,6 +4,60 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — POIs OSM no Painel do Gestor (PRs #118/#119)
+
+Botão "Equipamentos no entorno (OSM)" no painel do gestor: busca (assíncrona)
+os equipamentos públicos num buffer ao redor da escola, com catálogos
+(perfis) multi-seleção e raio 100–10000 m.
+
+- **DB — migração `school_osm_query`** (`clean.school_osm_query`): por
+  `(co_entidade, nu_ano_censo)` guarda `raio`, `profiles JSONB`, `digest`
+  (FK `clean.osm_query`) e `updated_at`. Base do upsert, do aviso de recência
+  e do status. Result class `EduMaps::Schema::Result::SchoolOsmQuery`.
+- **Backend**:
+  - `Task::OSM` — task `query_osm_school` com role `+Progress` (encaminha o
+    `progress` do `Model::OSM`/`Services::OSM` para as notes do job → SSE);
+    valida raio 100..10000 e catálogos (`Services::OSM::Query->valid_profile`);
+    helper `get_osm_school` enfileira com `notes => { co_entidade => … }` e
+    `queue => $app->config->{osm_queue} // 'default'`.
+  - `Model::OSM` — `current_selection`/`record_selection`/`school_pois_summary`
+    (resumo por categoria) + emissão de `progress`; `osm_for_school` grava a
+    seleção (upsert) no fim.
+  - `Controller::Gestor` — `osm_pois_request` (validação, **idempotência**:
+    reusa job pendente da escola → mesmo `job_id`; 202 + `Location`) e
+    `osm_pois_status` (seleção + resumo + `job_id`); rotas autenticadas
+    `POST/GET /api/gestor/:cod_inep/osm/pois` em `Plugin::API::Gestor`.
+  - **Achados do Minion** (nesta versão): `minion->jobs(...)` devolve
+    `Minion::Iterator` (sem `first`); `->next` devolve o **hashref** do job
+    (não objeto); o filtro `notes => [...]` casa por **chave**, não valor
+    (por isso o dedup itera e compara `notes->{co_entidade}`); `fail` grava em
+    `result` (não há coluna `error` separada).
+  - `Services::OSM` — modo offline carrega a fixture **sincronamente** no
+    `run` (um `die` dentro do `async run_p` virava promise rejeitada não
+    tratada, sem propagar); `Task::OSM::Service::run_query` passa a usar
+    `$svc->run`.
+  - Teste `t/04-api/gestor/osm_pois.t` (7 subtests): 401/403, 202, validações,
+    idempotência, GET status e task offline (progresso/finish/fail). Usa fila
+    dedicada `osm_test` (`$t->app->config->{osm_queue}`) + `perform_jobs({
+    queues => ['osm_test'] })` para não disputar com o worker do compose; os
+    casos offline forçam `refresh => 1` (evita cache de runs anteriores).
+- **Frontend**:
+  - Seção `OsmPoisPanel.svelte`: catálogos (checkboxes; "Todos" é exclusivo),
+    slider de raio, botão, **barra de progresso** (SSE), **confirmação quando
+    os dados têm < 7 dias**, **trava quando há job pendente** (anexa ao
+    `job_id` do status), erro imediato e resumo por categoria.
+  - `shared/api/taskProgress.js` — `watchJobProgress`/`getJobProgress`
+    extraídos de `schools/api/schoolApi.js` (que os re-exporta).
+  - Eventos `gestor/osm-pois-{start,progress,done,error}` no EventBus
+    (`constants/osm.js`); mocks MSW (`gestor/mocks/osmHandlers.js`).
+  - **Bug pego na validação visual**: o `GestorPanelPage` é público e não
+    chamava `restaurarSessao()`; o token não ia no `apiClient` → **401**. O
+    componente passou a restaurar a sessão no mount (PR #119).
+- **Validação**: backend verde e estável; frontend **381 testes**; deploy
+  (`deploy_db_dev` + `deploy_backend_dev` + `deploy_minion_dev` +
+  `deploy_frontend_dev`) e compose local rebuildado; validação visual PASS.
+  PR #118 (feature) e PR #119 (fix da sessão) mergeados.
+
 ## Sessão 2026-09-29 — Módulos OSM generalizados (Services/Model)
 
 Generalização do OSM (antes só `Task::OSM` municipality+landuse+way):
