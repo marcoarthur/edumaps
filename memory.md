@@ -4,6 +4,56 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-28 — Perfil da Escola (issue #105, PR #106)
+
+Painel analítico do gestor entregue de ponta a ponta: **R → backend Perl →
+frontend SPA**. Issue #105 (`refs #105`), PR #106 mergeado em `main`
+(`bca9e66`).
+
+**Decisões do usuário** (questionário): escopo = R + backend + frontend
+(a SPA fala só `/api/*`); painel em rota nova `/escola/perfil`; cluster de
+fallback **restrito ao município**. Peers: `analytics.similarity_pairs` ou,
+na ausência, Gower no município.
+
+**Entregue**
+- R: `analyze_school_profile()`, `school_profile_model`, DataSource Postgres
+  (`$1`/`$2`), `POST /school_profile`, repository UPSERT em
+  `analytics.school_profile`, `api.json`. `analysis_registry` ganhou
+  `model_class`.
+- Backend: `Analytics::Client#run_school_profile`, rota
+  `GET /api/school/:cod_inep/profile` (400/404/503; mensagem higienizada).
+- SPA: `/escola/perfil` + componentes, transform, mocks MSW, testes; links no
+  `SchoolPanel` e `GestorPanel`. Doc funcional `analise/perfil-escola.md`.
+
+**Testes**: R 348 passam (falha de `test-cluster.R:154` é pré-existente —
+confirmado no `main`); `R CMD check` só com o ERROR conhecido de
+`Author`/`Maintainer`; backend `t/04-api/school/profile.t` (5); frontend 353
+testes.
+
+**Desempenho** (host analítico de dev): escola típica sem cluster persistido
+~1,7–2,4s; com cluster persistido ~3,4s. Otimizações aplicadas: ano do censo
+resolvido uma vez (PK de `censo_matriculas`), IDEB via `DISTINCT ON` no ano
+mais recente (tirou a LATERAL de 180k probes), frame municipal filtrado por
+`co_municipio`, `co_entidade` dos peers como text.
+
+**Nuances de dados descobertas** (dev): `clean.school_indicators` tem 214.192
+linhas mas só **2.821 com `cluster_id`** e **27 com `cluster_label`** — o
+fallback kmeans é o caminho comum. `analytics.similarity_pairs` **não existe**
+no dev (peers caem no Gower municipal). `analytics.ranking_escola` e
+`clustering_metadata` vazios.
+
+**Deploy**: `rex prepare` + `deploy_analytics_dev` + `deploy_backend_dev` +
+`deploy_frontend_dev`. Bundle servido em `ubatexu.lan:8080`
+(`index-DAS1-W4A.js`).
+
+**Pendências / próximos passos**
+- `<2s` pleno para cluster persistido exige **pré-computar** os percentis do
+  cluster e as médias de referência (Brasil/rede) — citado nos "próximos
+  passos" do #105.
+- Escopo ampliado vs. o checklist do #105 (proibia `backend/`/`frontend/`):
+  o texto do issue pode ser atualizado.
+- `docs/indice.md` (Tech Lead) não foi revisitado nesta passada.
+
 > ## ▶ RETOMADA — ponto de partida (2026-09-27, atualizado)
 >
 > **PRs do histórico de conversas MERGEADOS em `main` (2026-09-28)**: #100
