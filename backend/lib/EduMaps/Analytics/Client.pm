@@ -97,6 +97,33 @@ sub run_school_profile ($self, $args) {
   });
 }
 
+sub run_school_profile_reference ($self, $args = {}) {
+  $self->_run('school_profile/reference', {
+    nu_ano_censo  => $args->{nu_ano_censo},
+    schema        => $args->{schema},
+    output_schema => $args->{output_schema},
+  }, 'school_profile_reference', { cacheable => 0 });
+}
+
+sub run_school_profile_cluster ($self, $args = {}) {
+  $self->_run('school_profile/cluster', {
+    nu_ano_censo  => $args->{nu_ano_censo},
+    schema        => $args->{schema},
+    output_schema => $args->{output_schema},
+  }, 'school_profile_cluster', { cacheable => 0 });
+}
+
+sub run_school_profile_batch ($self, $args = {}) {
+  $self->_run('school_profile/batch', {
+    scope         => $args->{scope},
+    co_municipio  => $args->{co_municipio},
+    sg_uf         => $args->{sg_uf},
+    limit         => $args->{limit},
+    schema        => $args->{schema},
+    output_schema => $args->{output_schema},
+  }, 'school_profile_batch', { cacheable => 0 });
+}
+
 sub run_similarity_db ($self, $args) {
   $self->_run('similarity/db', {
     schema        => $args->{schema},

@@ -55,6 +55,17 @@ export function formatSimilarity(value) {
   return `${Math.round(n * 100)}%`;
 }
 
+/**
+ * Formata o carimbo de atualização (ISO ou timestamp do Postgres) em
+ * data/hora pt-BR. Devolve `null` quando vazio/não parseável de forma útil.
+ */
+export function formatComputedAt(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
 /** Quartil do cluster (1..4) como rótulo curto. */
 export function formatQuartil(quartil) {
   const q = Number(quartil);
@@ -100,6 +111,10 @@ export function transformProfileData(raw) {
     },
     peersSource: meta.peers_source,
     peersSourceLabel: PEERS_SOURCE_LABELS[meta.peers_source] ?? meta.peers_source,
+    cached: meta.cached === true,
+    computedAt: meta.computed_at ?? null,
+    computedAtLabel: formatComputedAt(meta.computed_at),
+    clusterRunId: meta.cluster_run_id ?? null,
     metrics: raw?.metrics ?? {},
     indicadores: asArray(tables.indicadores_comparados),
     clusterResumo: asArray(tables.cluster_resumo),

@@ -1316,6 +1316,11 @@
             "type": "boolean",
             "default": false,
             "description": "Persiste o perfil em analytics.school_profile (UPSERT por co_entidade)."
+          },
+          "refresh": {
+            "type": "boolean",
+            "default": false,
+            "description": "Ignora o perfil materializado e recalcula (por padrão, o endpoint devolve o materializado quando o ano do censo bate)."
           }
         },
         "additionalProperties": false
@@ -1361,9 +1366,36 @@
               },
               "cluster_scope": { "type": "string", "nullable": true },
               "cluster_size": { "type": "integer", "nullable": true },
+              "cluster_run_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "run_id do batch que materializou os percentis do cluster."
+              },
               "peers_source": {
                 "type": "string",
                 "enum": ["similarity_pairs", "gower_municipio"]
+              },
+              "reference_source_municipio": {
+                "type": "string",
+                "enum": ["reference", "live"],
+                "description": "Se a média do município veio da referência pré-computada ou foi calculada ao vivo."
+              },
+              "reference_source_rede": {
+                "type": "string",
+                "enum": ["reference", "live"]
+              },
+              "reference_source_brasil": {
+                "type": "string",
+                "enum": ["reference", "live"]
+              },
+              "cached": {
+                "type": "boolean",
+                "description": "true quando o perfil veio materializado (sem recomputar)."
+              },
+              "computed_at": {
+                "type": "string",
+                "nullable": true,
+                "description": "Quando o perfil materializado foi gravado."
               }
             },
             "additionalProperties": true

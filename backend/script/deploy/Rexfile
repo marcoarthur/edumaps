@@ -116,6 +116,28 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
     }
   ;
 
+  #
+  # Refresh batch do Perfil da Escola (issue #107): script + timer systemd.
+  # O timer enfileira, na fila Minion 'analytics', as referências, os
+  # percentis de cluster e os perfis pendentes.
+  #
+  file "$path/script/tasks/school_profile_refresh.sh",
+    content => template('./files/school_profile_refresh.sh', {}),
+    mode => '0755'
+  ;
+
+  file "/etc/systemd/system/edumaps-school-profile-refresh.service",
+    content => template('./files/edumaps-school-profile-refresh.service', {})
+  ;
+
+  file "/etc/systemd/system/edumaps-school-profile-refresh.timer",
+    content => template('./files/edumaps-school-profile-refresh.timer', {}),
+    on_change => sub {
+      run q{systemctl daemon-reload};
+      run q{systemctl enable --now edumaps-school-profile-refresh.timer};
+    }
+  ;
+
   service 'edumaps-web' => 'restart';
 };
 

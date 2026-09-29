@@ -245,4 +245,60 @@ sub request_similarity($self) {
   $self->render(status => 202, json => {task => 'similarity', job_id => $job_id});
 }
 
+# ---------------------------------------------------------------------------
+# POST /api/task/school_profile
+#
+# Enfileira a atualização batch do Perfil da Escola (issue #107 — Fase 2)
+# na fila 'analytics'. mode = reference | cluster | profiles. Retorna
+# 202 + Location.
+# ---------------------------------------------------------------------------
+
+sub request_school_profile($self) {
+  # O script/timer envia application/json; os testes/CLI usam form.
+  # Normaliza a entrada como em request_cluster.
+  my $is_json = ($self->req->headers->content_type // '') =~ m{^application/json};
+  my $input = $is_json ? $self->req->json : $self->req->params->to_hash;
+  $input ||= {};
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->optional('mode', 'trim')->in(qw(reference cluster profiles));
+  $v->optional('schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
+  $v->optional('output_schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
+  $v->optional('nu_ano_censo', 'trim')->like(qr/^\d{4}$/);
+  $v->optional('scope', 'trim')->in(qw(pending municipio uf all));
+  $v->optional('co_municipio', 'trim')->like(qr/^\d{7}$/);
+  $v->optional('sg_uf', 'trim')->like(qr/^[A-Z]{2}$/);
+  $v->optional('limit', 'trim')->like(qr/^\d+$/);
+
+  return $self->bad_req if $v->has_error;
+
+  my %args;
+  for my $key (qw(mode schema output_schema nu_ano_censo scope co_municipio sg_uf limit)) {
+    $args{$key} = $v->param($key) if defined $v->param($key);
+  }
+  $args{mode} //= 'profiles';
+
+  my $scope = $args{scope} // 'pending';
+  if ($args{mode} eq 'profiles' && $scope eq 'municipio' && !defined $args{co_municipio}) {
+    return $self->render(
+      json   => { error => "scope=municipio exige co_municipio" },
+      status => 400,
+    );
+  }
+  if ($args{mode} eq 'profiles' && $scope eq 'uf' && !defined $args{sg_uf}) {
+    return $self->render(
+      json   => { error => "scope=uf exige sg_uf" },
+      status => 400,
+    );
+  }
+
+  my $job_id = $self->app->minion->enqueue(
+    school_profile_batch => [\%args] => { queue => 'analytics' }
+  );
+
+  $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
+  $self->render(status => 202, json => {task => 'school_profile', job_id => $job_id});
+}
+
 1;

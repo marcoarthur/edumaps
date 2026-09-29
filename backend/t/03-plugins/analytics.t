@@ -64,6 +64,18 @@ my $pid;
           tables   => { peers => [], flags => [] },
         };
       }
+      elsif ($method eq 'POST' && $path eq '/school_profile/reference') {
+        $code = 200;
+        $json = { persisted => 1, nu_ano_censo => 2025, rows => 50184, table => 'analytics.school_profile_reference' };
+      }
+      elsif ($method eq 'POST' && $path eq '/school_profile/cluster') {
+        $code = 200;
+        $json = { persisted => 1, clusters => 3, rows => 27, table => 'analytics.school_cluster_profile' };
+      }
+      elsif ($method eq 'POST' && $path eq '/school_profile/batch') {
+        $code = 200;
+        $json = { processed => 2, failed => [], targets => 2, nu_ano_censo => 2025 };
+      }
       elsif ($method eq 'POST' && $path eq '/similarity/db') {
         $code = 200;
         $json = { analysis => 'gower_similarity', data => [], metrics => { n_pairs => 1 } };
@@ -170,6 +182,19 @@ subtest 'run_school_profile chama POST /school_profile' => sub {
   is $result->{metadata}{co_entidade}, '23165669', 'co_entidade propagado';
   is $result->{metadata}{cluster_source}, 'fallback_kmeans', 'cluster_source propagado';
   is $result->{metrics}{cluster_size}, 5, 'metrics retornadas';
+};
+
+subtest 'run_school_profile_reference/cluster/batch (Fase 2)' => sub {
+  my $c = $make_client->();
+  my $ref = $c->run_school_profile_reference({ nu_ano_censo => 2025 });
+  is $ref->{rows}, 50184, 'reference materializada';
+
+  my $clu = $c->run_school_profile_cluster({ nu_ano_censo => 2025 });
+  is $clu->{clusters}, 3, 'perfil de cluster materializado';
+
+  my $batch = $c->run_school_profile_batch({ scope => 'pending', limit => 10 });
+  is $batch->{processed}, 2, 'lote processado';
+  is_deeply $batch->{failed}, [], 'sem falhas';
 };
 
 subtest 'run_similarity_db chama POST /similarity/db' => sub {

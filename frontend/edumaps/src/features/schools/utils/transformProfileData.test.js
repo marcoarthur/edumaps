@@ -44,6 +44,14 @@ describe("transformProfileData", () => {
     expect(p.flags).toHaveLength(1);
   });
 
+  it("mapeia frescor (cached/computed_at/cluster_run_id)", () => {
+    const p = transformProfileData(PROFILE_FIXTURE);
+    expect(p.cached).toBe(false);
+    expect(p.computedAt).toBe("2026-09-28 21:00:00");
+    expect(p.computedAtLabel).toBeTruthy();
+    expect(p.clusterRunId).toBe("run_123");
+  });
+
   it("normaliza tabela serializada como objeto único", () => {
     const p = transformProfileData({
       metadata: {},
