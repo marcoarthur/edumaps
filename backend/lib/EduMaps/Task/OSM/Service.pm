@@ -93,10 +93,10 @@ sub run_query_p($self) {
 
 sub run_query($self) {
   my $svc = $self->_forward_events( $self->_new_service );
-  my $raw = $svc->run_p->wait;
-  $self->_osm_raw($raw);
-  $self->_osm_geojson( $svc->geojson );
-  return $svc->geojson;
+  my $geojson = $svc->run;
+  $self->_osm_raw( $svc->raw );
+  $self->_osm_geojson($geojson);
+  return $geojson;
 }
 
 1;

@@ -47,7 +47,20 @@ has geojson  => undef;
 has elapsed  => 0;
 
 sub run($self) {
-  my $raw = $self->run_p->wait;
+  # Offline: carrega a fixture SINCRONAMENTE — um die aqui propaga direto
+  # (dentro do `async run_p` viraria uma promise rejeitada não tratada).
+  if ($self->offline) {
+    my $ql = $self->ql // ($self->query ? $self->query->to_ql : undef)
+      // die 'Need query or ql';
+    $self->emit(query => $ql);
+    $self->log->info('Carregando fixture OSM (offline)');
+    my $data = $self->_load_fixture;
+    $self->raw($data);
+    $self->geojson( $self->parse($data) );
+    return $self->geojson;
+  }
+
+  $self->run_p->wait;
   return $self->geojson;
 }
 

@@ -64,3 +64,5 @@ gestor_access_role [gestor_respostas] 2026-09-25T13:00:00Z Marco Arthur <arthurp
 chat_conversas [gestor_pesquisas] 2026-09-25T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Historico de conversas do Assistente do Censo: salvamento, busca full-text e exportacao
 
 osm_generalize [osm_data] 2026-09-29T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Generaliza o cache OSM: osm_feature (node/way/relation) + relacoes escola/municipio (buffer) e proveniencia
+
+school_osm_query [osm_generalize] 2026-09-29T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Selecao atual de POIs OSM por escola (raio, catalogos, digest, atualizado_em) para o painel do gestor
