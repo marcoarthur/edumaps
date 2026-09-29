@@ -80,6 +80,42 @@ sub markers($self) {
   $self->render(text => $result, format => 'json');
 }
 
+# Perfil da rede do município (issue #109, roadmap do #105): ponte síncrona
+# para POST /network_profile. Mesmo tratamento de erro do perfil da escola.
+sub network_profile($self) {
+  my $params = {
+    codigo_ibge    => $self->param('codigo_ibge'),
+    tp_dependencia => $self->param('tp_dependencia'),
+  };
+
+  my $result = eval { $self->analytics->run_network_profile($params) };
+
+  if (my $err = $@) {
+    my $is_client_error = $err =~ /retornou 400/;
+    my $status = $is_client_error ? 400 : 503;
+
+    (my $msg = "$err") =~ s/^\QAnalytics:\E\s*//;
+    $msg =~ s/^\Qnetwork_profile\E\s+retornou\s+\d+:\s*//;
+    $msg =~ s/\s+at\s+\S+\s+line\s+\d+.*$//s;
+    $msg =~ s/\s+$//;
+
+    $self->app->log->error(
+      "network_profile[$params->{codigo_ibge}]: $err"
+    );
+
+    return $self->render(
+      json => {
+        error => $is_client_error
+          ? $msg
+          : 'Perfil da rede temporariamente indisponível',
+      },
+      status => $status,
+    );
+  }
+
+  $self->render(json => $result);
+}
+
 1;
 
 =head1 NAME

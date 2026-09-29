@@ -110,6 +110,22 @@ sub run_school_evolution ($self, $args = {}) {
   });
 }
 
+sub run_network_profile ($self, $args = {}) {
+  $self->_run('network_profile', {
+    codigo_ibge    => $args->{codigo_ibge},
+    tp_dependencia => $args->{tp_dependencia},
+    schema         => $args->{schema},
+    output_schema  => $args->{output_schema},
+  }, 'network_profile', {
+    cacheable => 1,
+    cache_params => {
+      codigo_ibge    => $args->{codigo_ibge},
+      tp_dependencia => $args->{tp_dependencia},
+      schema         => $args->{schema},
+    },
+  });
+}
+
 sub run_school_profile_reference ($self, $args = {}) {
   $self->_run('school_profile/reference', {
     nu_ano_censo  => $args->{nu_ano_censo},
