@@ -85,13 +85,14 @@ describe("OsmPoisPanel", () => {
     );
     render(OsmPoisPanel, { inep: "11000040" });
 
-    // carrega o status recente e mostra o resumo
+    // carrega o status recente e mostra o resumo (categoria em PT)
     expect(await screen.findByText(/Atualizado em/)).toBeInTheDocument();
-    expect(screen.getByText(/amenity: bus station/)).toBeInTheDocument();
+    expect(screen.getByText("Terminal de ônibus")).toBeInTheDocument();
+    expect(screen.getByText("Ponto de ônibus")).toBeInTheDocument();
 
     // mapa com a escola + POIs e legenda com toggle por categoria
     expect(screen.getByTestId("leaflet-map-stub")).toBeInTheDocument();
-    const toggle = screen.getByRole("checkbox", { name: /amenity: bus station/ });
+    const toggle = screen.getByRole("checkbox", { name: /Terminal de ônibus/ });
     expect(toggle).toBeChecked();
     await fireEvent.click(toggle);
     expect(toggle).not.toBeChecked();

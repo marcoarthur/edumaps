@@ -27,7 +27,7 @@
     daysSince,
     formatUpdatedAt,
     categoryColor,
-    formatCategory,
+    categoryLabel,
   } from "../constants/osm.js";
 
   /** @type {{ inep: string|number }} */
@@ -263,7 +263,7 @@
         {#if hasMap}
           <OsmPoisMap
             escola={status?.escola}
-            features={status?.geojson?.features ?? []}
+            features={status?.geojson?.features}
             raio={status?.raio}
             {hidden}
             height="340px"
@@ -292,7 +292,7 @@
                         class="w-3 h-3 rounded-full inline-block shrink-0"
                         style:background-color={categoryColor(row.category)}
                       ></span>
-                      <span class="text-gray-700 truncate">{formatCategory(row.category)}</span>
+                      <span class="text-gray-700 truncate">{categoryLabel(row.category)}</span>
                     </span>
                     <span class="font-mono text-gray-900">{row.count}</span>
                   </label>

@@ -7,7 +7,7 @@
   // pai via `hidden` (a legenda é o resumo do painel).
   import LeafletMap from "@/features/map/components/LeafletMap.svelte";
   import L from "leaflet";
-  import { categoryColor, formatCategory } from "../constants/osm.js";
+  import { categoryColor, categoryLabel } from "../constants/osm.js";
 
   let {
     escola = null,
@@ -19,12 +19,10 @@
   } = $props();
 
   let mapRef = $state(null);
-  // Contador incrementado a cada desenho: dispara a aplicação de visibilidade
-  // sem fazer o efeito de desenho depender de `hidden` (evita re-fit ao togglar).
-  let tick = $state(0);
-  // Camadas por categoria — plain (não reativo): mutar aqui não deve re-disparar
-  // o efeito de desenho (mesmo padrão de NetworkSchoolMap).
-  let layersByCategory = {};
+  // Camadas por categoria. É $state para o efeito de visibilidade reagir a cada
+  // novo desenho; o efeito de desenho ESCREVE (nunca lê) esta variável — sem
+  // isso, ler+escrever no mesmo efeito causaria effect_update_depth_exceeded.
+  let layersByCategory = $state({});
 
   const SCHOOL_SVG =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30">' +
@@ -44,37 +42,28 @@
 
   function popupHtml(feature) {
     const nome = feature.properties?.nome;
-    const cat = formatCategory(feature.properties?.category);
+    const cat = categoryLabel(feature.properties?.category);
     const dist = feature.properties?.distance_m;
     const distTxt = dist != null ? `<br/><span style="color:#6b7280">a ${Math.round(dist)} m</span>` : "";
-    return `<b>${nome ?? cat}</b><br/>${cat}${distTxt}`;
+    // com nome: nome em destaque + categoria; sem nome: só a categoria
+    const title = nome ? `<b>${nome}</b><br/>${cat}` : `<b>${cat}</b>`;
+    return `${title}${distTxt}`;
   }
 
-  function clearLayers() {
+  function removeDrawnLayers() {
     if (!mapRef) return;
     mapRef.eachLayer((layer) => {
       if (layer instanceof L.CircleMarker || layer instanceof L.Circle || layer instanceof L.Marker) {
         layer.remove();
       }
     });
-    layersByCategory = {};
-  }
-
-  function applyVisibility() {
-    if (!mapRef) return;
-    for (const [cat, layers] of Object.entries(layersByCategory)) {
-      const visible = !hidden?.[cat];
-      for (const layer of layers) {
-        if (visible) mapRef.addLayer(layer);
-        else mapRef.removeLayer(layer);
-      }
-    }
   }
 
   function draw() {
     if (!mapRef) return;
-    clearLayers();
+    removeDrawnLayers();
 
+    const next = {};
     const points = [];
     const lat = escola?.latitude;
     const lng = escola?.longitude;
@@ -96,7 +85,7 @@
       }
     }
 
-    for (const feature of features) {
+    for (const feature of features ?? []) {
       const coords = feature.geometry?.coordinates;
       if (!Array.isArray(coords) || coords.length < 2) continue;
       const [flng, flat] = coords;
@@ -113,11 +102,12 @@
       circle.bindPopup(popupHtml(feature));
       circle.addTo(mapRef);
 
-      (layersByCategory[cat] ??= []).push(circle);
+      next[cat] = [...(next[cat] ?? []), circle];
       points.push([flat, flng]);
     }
 
-    tick += 1;
+    // publica as camadas (dispara o efeito de visibilidade)
+    layersByCategory = next;
 
     if (points.length > 0) {
       try {
@@ -129,16 +119,22 @@
   }
 
   // Redesenha quando chegam dados (mapa pronto, escola, feições ou raio).
+  // NÃO lê `hidden` — deve apenas escrever `layersByCategory`.
   $effect(() => {
-    if (mapRef && (features.length > 0 || escola?.latitude != null)) {
+    if (mapRef && ((features?.length ?? 0) > 0 || escola?.latitude != null)) {
       draw();
     }
   });
 
-  // Aplica o toggle de categorias depois de cada desenho e quando `hidden` muda.
+  // Aplica o toggle de categorias sempre que as camadas ou `hidden` mudam.
   $effect(() => {
-    tick;
-    applyVisibility();
+    for (const [cat, layers] of Object.entries(layersByCategory)) {
+      const visible = !hidden?.[cat];
+      for (const layer of layers) {
+        if (visible) mapRef?.addLayer(layer);
+        else mapRef?.removeLayer(layer);
+      }
+    }
   });
 </script>
 

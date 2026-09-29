@@ -53,6 +53,56 @@ export function formatCategory(category) {
   return String(category).replace(/_/g, " ").replace(/=/g, ": ");
 }
 
+// Rótulos em português para as tags do catálogo curado
+// (espelha EduMaps::Services::OSM::Query::%PROFILES).
+export const OSM_CATEGORY_LABELS = {
+  "highway=bus_stop": "Ponto de ônibus",
+  "public_transport=platform": "Plataforma de transporte",
+  "public_transport=station": "Estação de transporte",
+  "railway=station": "Estação ferroviária",
+  "railway=halt": "Parada ferroviária",
+  "railway=tram_stop": "Parada de bonde",
+  "railway=subway_entrance": "Entrada de metrô",
+  "amenity=bus_station": "Terminal de ônibus",
+  "amenity=ferry_terminal": "Terminal de balsa",
+  "aeroway=aerodrome": "Aeródromo",
+  "amenity=hospital": "Hospital",
+  "amenity=clinic": "Clínica",
+  "amenity=doctors": "Consultório médico",
+  "amenity=dentist": "Consultório odontológico",
+  "amenity=pharmacy": "Farmácia",
+  "amenity=school": "Escola",
+  "amenity=college": "Faculdade",
+  "amenity=university": "Universidade",
+  "amenity=kindergarten": "Educação infantil",
+  "amenity=library": "Biblioteca",
+  "amenity=social_facility": "Assistência social",
+  "amenity=community_centre": "Centro comunitário",
+  "amenity=nursing_home": "Casa de repouso",
+  "leisure=park": "Parque",
+  "leisure=playground": "Parquinho",
+  "leisure=sports_centre": "Centro esportivo",
+  "leisure=pitch": "Quadra",
+  "amenity=theatre": "Teatro",
+  "amenity=cinema": "Cinema",
+  "amenity=arts_centre": "Centro cultural",
+  "amenity=museum": "Museu",
+  "amenity=police": "Polícia",
+  "amenity=fire_station": "Corpo de bombeiros",
+  "amenity=townhall": "Prefeitura",
+  "amenity=courthouse": "Fórum",
+  "amenity=post_office": "Correios",
+  "office=government": "Órgão público",
+};
+
+/** Rótulo em PT de uma categoria (tag OSM); fallback formatado. */
+export function categoryLabel(category) {
+  if (!category) return "Outros";
+  if (OSM_CATEGORY_LABELS[category]) return OSM_CATEGORY_LABELS[category];
+  if (String(category).startsWith("healthcare=")) return "Serviço de saúde";
+  return formatCategory(category);
+}
+
 /** Dias (fracionários) desde um timestamp ISO/Postgres; null se inválido. */
 export function daysSince(value) {
   if (!value) return null;
