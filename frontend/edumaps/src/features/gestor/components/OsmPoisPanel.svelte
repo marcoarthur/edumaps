@@ -14,6 +14,7 @@
   import { eventBus } from "@/shared/events";
   import InfoHint from "@/shared/ui/components/InfoHint.svelte";
   import { restaurarSessao } from "../utils/gestorAuth.js";
+  import OsmPoisMap from "./OsmPoisMap.svelte";
   import {
     OSM_CATALOGS,
     OSM_DEFAULT_PROFILES,
@@ -25,6 +26,8 @@
     OSM_EVENTS,
     daysSince,
     formatUpdatedAt,
+    categoryColor,
+    formatCategory,
   } from "../constants/osm.js";
 
   /** @type {{ inep: string|number }} */
@@ -39,11 +42,20 @@
   let selectedProfiles = $state([...OSM_DEFAULT_PROFILES]);
   let raio = $state(OSM_RAIO_DEFAULT);
   let confirmOpen = $state(false);
+  let hidden = $state({});
   let cancelWatch = null;
 
   const updatedLabel = $derived(formatUpdatedAt(status?.updated_at));
   const recentDays = $derived(daysSince(status?.updated_at));
   const isRecent = $derived(recentDays !== null && recentDays < OSM_RECENT_DAYS);
+  const hasMap = $derived(
+    !!status &&
+      (status.escola?.latitude != null || (status.geojson?.features?.length ?? 0) > 0),
+  );
+
+  function toggleCategory(category) {
+    hidden = { ...hidden, [category]: !hidden[category] };
+  }
 
   function toggleCatalog(id) {
     if (id === "equipamentos_publicos") {
@@ -109,6 +121,7 @@
   async function submit({ refresh = false } = {}) {
     if (busy) return;
     error = null;
+    hidden = {};
     busy = true;
     progress = { percent: 0, message: "Enfileirando…" };
     eventBus.emit(
@@ -246,22 +259,48 @@
         {/if}
       </div>
 
-      <div class="flex flex-col gap-2">
-        <h3 class="text-sm font-semibold text-gray-800">
-          Equipamentos encontrados {status ? `(${status.total ?? 0})` : ""}
-        </h3>
-        {#if !status || (status.total ?? 0) === 0}
-          <p class="text-sm text-gray-500">Nenhum equipamento carregado ainda.</p>
-        {:else}
-          <ul class="flex flex-col gap-1">
-            {#each status.resumo as row (row.category)}
-              <li class="flex justify-between gap-2 text-sm">
-                <span class="text-gray-700 truncate">{row.category}</span>
-                <span class="font-mono text-gray-900">{row.count}</span>
-              </li>
-            {/each}
-          </ul>
+      <div class="flex flex-col gap-3">
+        {#if hasMap}
+          <OsmPoisMap
+            escola={status?.escola}
+            features={status?.geojson?.features ?? []}
+            raio={status?.raio}
+            {hidden}
+            height="340px"
+          />
         {/if}
+
+        <div class="flex flex-col gap-2">
+          <h3 class="text-sm font-semibold text-gray-800">
+            Equipamentos encontrados {status ? `(${status.total ?? 0})` : ""}
+          </h3>
+          {#if !status || (status.total ?? 0) === 0}
+            <p class="text-sm text-gray-500">Nenhum equipamento carregado ainda.</p>
+          {:else}
+            <ul class="flex flex-col gap-1">
+              {#each status.resumo as row (row.category)}
+                <li>
+                  <label class="flex items-center justify-between gap-2 text-sm cursor-pointer select-none">
+                    <span class="flex items-center gap-2 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={!hidden[row.category]}
+                        disabled={busy}
+                        onchange={() => toggleCategory(row.category)}
+                      />
+                      <span
+                        class="w-3 h-3 rounded-full inline-block shrink-0"
+                        style:background-color={categoryColor(row.category)}
+                      ></span>
+                      <span class="text-gray-700 truncate">{formatCategory(row.category)}</span>
+                    </span>
+                    <span class="font-mono text-gray-900">{row.count}</span>
+                  </label>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}

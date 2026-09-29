@@ -30,6 +30,29 @@ export const OSM_EVENTS = {
   ERROR: "gestor/osm-pois-error",
 };
 
+// Paleta categórica (estável por hash do nome) — mesma cor na legenda e no mapa.
+export const OSM_CATEGORY_PALETTE = [
+  "#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2",
+  "#db2777", "#65a30d", "#ea580c", "#4f46e5", "#0d9488", "#b45309",
+  "#9333ea", "#059669", "#e11d48", "#0284c7", "#a16207", "#6d28d9",
+];
+
+/** Cor estável de uma categoria (tag OSM) para legenda/marcador. */
+export function categoryColor(category) {
+  const key = String(category ?? "outros");
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  return OSM_CATEGORY_PALETTE[hash % OSM_CATEGORY_PALETTE.length];
+}
+
+/** Rótulo legível de uma tag OSM: `amenity=bus_station` → "amenity: bus station". */
+export function formatCategory(category) {
+  if (!category) return "outros";
+  return String(category).replace(/_/g, " ").replace(/=/g, ": ");
+}
+
 /** Dias (fracionários) desde um timestamp ISO/Postgres; null se inválido. */
 export function daysSince(value) {
   if (!value) return null;
