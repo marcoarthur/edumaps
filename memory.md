@@ -4,6 +4,30 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Container analítico no Docker (PR #115)
+
+O compose local não tinha o serviço analítico, então o backend caía em 503 nas
+rotas do perfil/evolução/rede. Entregue:
+
+- **`analysis/edumapsr/Dockerfile`** + **`docker/entrypoint.sh`**: imagem R
+  (rocker, binários do PPM) com o `edumapsr` instalado; entrypoint gera o
+  `/root/.pg_service.conf` (edumaps/edumaps_local/edumaps_leitor), fixa
+  TZ/locale e `EDUMAPS_R_PORT=8000`, e habilita LOGIN+senha da role leitora
+  (espelha o `deploy_db_dev`). `.dockerignore` exclui `.Rcheck`/`.tar.gz`.
+- **`docker-compose.yml`**: serviço `analytic` (`:8000`, depends_on db healthy);
+  `ANALYTICS_URL=http://analytic:8000` no backend e no minion.
+- **`frontend/nginx.conf`**: proxy `/analytic-api/` habilitado → `analytic:8000`.
+- **Fix R** (achado ao subir o container): `.school_indicators_has_cluster_id()`
+  — o `network_profile` consultava `school_indicators.cluster_id` sem checar a
+  coluna (criada dinamicamente pelo job de clustering); em banco sem
+  clusterização agora degrada para um grupo "Sem cluster". O perfil da escola
+  reusa o mesmo check. (No `ubaxala`, o DB `edumaps_dev` não tem a coluna.)
+
+**Validado no compose local**: `analytic /health` 200, `/analytic-api/health`
+(via nginx) 200, `/api/school/:cod/profile` 200, `/evolution` 200,
+`/network/:ibge/profile` 200. Testes R: 440 (falha pré-existente de
+`test-cluster.R`). Fix R também deployado no `analytic.edumaps` (rex).
+
 ## Sessão 2026-09-29 — Roadmap do #105 (itens A/B/C; PRs #112/#113/#114)
 
 Continuidade do Perfil da Escola. Três itens do roadmap do #105, cada um em
