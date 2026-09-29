@@ -19,6 +19,11 @@ vi.mock("@/shared/api/taskProgress.js", () => ({
   getJobProgress: mocks.getJobProgress,
 }));
 
+vi.mock("@/features/map/components/LeafletMap.svelte", async () => {
+  const { default: Stub } = await import("./__tests__/LeafletMapStub.svelte");
+  return { default: Stub };
+});
+
 describe("OsmPoisPanel", () => {
   beforeEach(() => {
     mocks.watchJobProgress.mockReset();
@@ -43,6 +48,8 @@ describe("OsmPoisPanel", () => {
     expect(
       screen.getByText(/Nenhum equipamento carregado ainda/),
     ).toBeInTheDocument();
+    // sem escola/feições não há mapa
+    expect(screen.queryByTestId("leaflet-map-stub")).not.toBeInTheDocument();
   });
 
   it("dispara a busca e acompanha o progresso até concluir", async () => {
@@ -78,9 +85,17 @@ describe("OsmPoisPanel", () => {
     );
     render(OsmPoisPanel, { inep: "11000040" });
 
-    // carrega o status recente e mostra o resumo
+    // carrega o status recente e mostra o resumo (categoria em PT)
     expect(await screen.findByText(/Atualizado em/)).toBeInTheDocument();
-    expect(screen.getByText(/amenity=bus_station/)).toBeInTheDocument();
+    expect(screen.getByText("Terminal de ônibus")).toBeInTheDocument();
+    expect(screen.getByText("Ponto de ônibus")).toBeInTheDocument();
+
+    // mapa com a escola + POIs e legenda com toggle por categoria
+    expect(screen.getByTestId("leaflet-map-stub")).toBeInTheDocument();
+    const toggle = screen.getByRole("checkbox", { name: /Terminal de ônibus/ });
+    expect(toggle).toBeChecked();
+    await fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
 
     await fireEvent.click(await screen.findByRole("button", { name: /Buscar equipamentos/ }));
 

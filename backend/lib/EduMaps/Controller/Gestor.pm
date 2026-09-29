@@ -1577,9 +1577,12 @@ sub osm_pois_status($self) {
   return unless $self->_gestor_inep_ok;
   my $cod_inep = $self->param('cod_inep');
 
-  my $model = EduMaps::Model::OSM->new;
-  my $sel   = $model->current_selection($cod_inep);
-  my $sum   = $model->school_pois_summary($cod_inep);
+  my $model  = EduMaps::Model::OSM->new;
+  my $sel    = $model->current_selection($cod_inep);
+  my $ano    = $sel ? $sel->{nu_ano_censo} : undef;
+  my $sum    = $model->school_pois_summary($cod_inep, $ano);
+  my $escola = $model->school_location($cod_inep, $ano);
+  my $geojson = $model->school_pois_geojson($cod_inep, $ano);
   my $job_id = $self->_pending_osm_job($cod_inep);
 
   $self->render(json => {
@@ -1589,6 +1592,8 @@ sub osm_pois_status($self) {
     digest     => $sel ? $sel->{digest} : undef,
     total      => $sum->{total},
     resumo     => $sum->{resumo},
+    escola     => $escola,
+    geojson    => $geojson,
     (defined $job_id ? (job_id => $job_id) : ()),
   });
 }
