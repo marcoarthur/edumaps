@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh batch do Perfil da Escola (referencias, cluster, perfis)
+After=edumaps-web.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/edumaps/backend/script/tasks/school_profile_refresh.sh

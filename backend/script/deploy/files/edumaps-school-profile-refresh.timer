@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer do refresh batch do Perfil da Escola
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=1800
+Persistent=true
+Unit=edumaps-school-profile-refresh.service
+
+[Install]
+WantedBy=timers.target
