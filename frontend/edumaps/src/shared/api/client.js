@@ -1,5 +1,7 @@
 // src/shared/api/client.js
 
+import { eventBus, EVENTS } from "@/shared/events";
+
 // Token de sessão do gestor (login, fase 2). Toda requisição autenticada leva
 // "Authorization: Bearer <token>"; rotas públicas simplesmente o ignoram.
 let bearerToken = null;
@@ -19,6 +21,17 @@ export class ApiError extends Error {
     this.status = status;
     this.url = url;
   }
+}
+
+// Erros >= 500 (falha do servidor) são também emitidos no eventBus como
+// EVENTS.API_ERROR — ponte para o Sentry/observabilidade sem acoplar o
+// cliente HTTP ao SDK. 4xx (erro do cliente/negócio) não sobem.
+function raiseApiError(message, status, url) {
+  const error = new ApiError(message, { status, url });
+  if (status >= 500) {
+    eventBus.emit(EVENTS.API_ERROR, { message, status, url, error });
+  }
+  return error;
 }
 
 async function request(path, { method = "GET", params, body, headers } = {}) {
@@ -54,7 +67,7 @@ async function request(path, { method = "GET", params, body, headers } = {}) {
     } catch {
       // resposta sem corpo JSON (ex: 500 sem handler de erro)
     }
-    throw new ApiError(message, { status: response.status, url: url.pathname });
+    throw raiseApiError(message, response.status, url.pathname);
   }
 
   if (response.status === 204) return null;
@@ -85,7 +98,7 @@ async function download(path, params = {}) {
     } catch {
       // corpo não-JSON (arquivo) sem erro tratado
     }
-    throw new ApiError(message, { status: response.status, url: url.pathname });
+    throw raiseApiError(message, response.status, url.pathname);
   }
 
   const cd = response.headers.get("Content-Disposition") ?? "";

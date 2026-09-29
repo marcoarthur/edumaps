@@ -18,6 +18,12 @@ set db_user => $ENV{EDUMAPS_DB_USER} || 'edumaps';
 set db_name => $ENV{EDUMAPS_DB_NAME} || 'edumaps_dev';
 set frontend_server_name => 'ubatexu.lan bore.pub *.shares.zrok.io *.ngrok-free.dev';
 
+# Sentry (sentry.io cloud) — dsn vazio = observabilidade desativada (no-op).
+# release identifica o build (SHA curto do git local no deploy).
+set sentry_dsn     => $ENV{EDUMAPS_SENTRY_DSN} || '';
+set sentry_release => $ENV{EDUMAPS_SENTRY_RELEASE}
+  || do { my $sha = qx{git -C "${\get('local_dir')}" rev-parse --short HEAD 2>/dev/null}; chomp $sha; $sha || 'dev' };
+
 group all => qw( backend.edumaps database.edumaps analytic.edumaps );
 
 desc "Update Debian, install minimum dev tools, Rsync your code";
@@ -69,6 +75,8 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
         db_user => get('db_user') || 'edumaps',
         admin_email  => get('admin_email') || '',
         admin_password => get('admin_password') || '',
+        sentry_dsn     => get('sentry_dsn') || '',
+        sentry_release => get('sentry_release') || 'dev',
       }
     )
   ;
@@ -352,7 +360,9 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
   Rex::Logger::info("Installing frontend dependencies");
   run q{npm install}, cwd => $frontend_path;
   Rex::Logger::info("Building frontend");
-  run q{npm run build}, cwd => $frontend_path;
+  # VITE_* no build-time controlam o Sentry no SPA (vazio = desativado).
+  run qq{env VITE_SENTRY_DSN='@{[get('sentry_dsn')]}' VITE_SENTRY_RELEASE='@{[get('sentry_release')]}' npm run build},
+    cwd => $frontend_path;
 
   my $web_root = '/var/www/edumaps-frontend';
   run qq{mkdir -p $web_root}, unless => qq{test -d $web_root};

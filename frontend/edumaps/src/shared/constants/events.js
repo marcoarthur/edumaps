@@ -10,6 +10,7 @@
 // features entre si só por compartilharem um arquivo de constantes.
 export const EVENTS = {
   ERROR: "error",
+  API_ERROR: "api:error",
   TOAST_ADD: "toast-add",
   TOAST_REMOVE: "toast-remove",
 };

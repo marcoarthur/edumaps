@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Observabilidade com Sentry (backend + Minion + frontend)
+
+Integração **sentry.io cloud** (free tier) com placeholder de DSN: sem
+`EDUMAPS_SENTRY_DSN`/`VITE_SENTRY_DSN` o sistema é **no-op silencioso**
+(decisão: usuário ainda não tem conta/DSN; implementação não bloqueia).
+
+- **Backend**:
+  - `EduMaps::Services::Sentry` — thin client da **Envelope API** (zero deps
+    CPAN): `_ingest_url` (DSN → `https://<host>/api/<project>/envelope/`),
+    `_build_envelope` (3 linhas, `length` em bytes), `capture_exception`/
+    `capture_message`, **envio adaptativo** (`is_running` → `post_p`
+    fire-and-forget no web; `post` síncrono no fork do worker, onde o loop é
+    resetado — lição do PR #121), `ua` injetável p/ teste.
+  - `EduMaps::Plugin::Sentry` — registrado em `EduMaps.pm` após o Minion.
+    Hooks: `after_dispatch` (≥500 → `stash->{exception}` ou msg genérica;
+    nunca corpo de request) + `around 'Minion::Job::fail'` (**choke point
+    único**: Minion 12 não tem evento de estado; fail explícito e óbito
+    convertido por `start`/`_reap` passam por aí). Guard `$WRAPPED` anti
+    re-wrap.
+  - `_sanitize_args`: descarta 11+ dígitos (CPF/CNPJ), chaves sensíveis
+    (`salario|senha|token|cpf|...`), valores > 200 chars; máx. 10.
+- **Frontend**: `@sentry/svelte` + `@sentry/browser` 9.47.2 (npm install no
+  container); `src/shared/sentry.js` com **import dinâmico** (sem DSN nada é
+  carregado — vitest/MSW intactos), `sendDefaultPii: false`, `beforeSend`
+  redige em qualquer profundidade; `client.js` emite `EVENTS.API_ERROR`
+  (≥ 500) no eventBus; `main.js` bootstrap assíncrono com `onerror` no mount.
+- **Deploy**: `Rexfile` (`sentry_dsn`/`sentry_release`, release = SHA curto
+  local), `files/edumaps_db.conf` + `docker-entrypoint.sh` (bloco `sentry`),
+  `deploy_frontend_dev` passa `VITE_*` no build; `docker-compose.yml`
+  (`EDUMAPS_SENTRY_DSN`/`_RELEASE` no backend e minion).
+- **Testes**: `t/sentry_service.t` (parse DSN, envelope, utf-8/length, no-op,
+  sanitização, Mojo::Exception com frames) e `t/sentry_plugin.t` (5xx via
+  Test::Mojo, 5xx explícito, wrap de `Minion::Job::fail` com FakeBackend/
+  FakeMinion — sem DB, e no-DSN no-op). Frontend: `sentry.test.js` +
+  `client.test.js` (ponte `api:error`) — **393 testes verdes**.
+- **Decisão de teste**: `Test2::V0` **não exporta `is_deeply`** — usar `is`.
+- **Pendência**: ativar de fato (criar conta sentry.io + configurar DSNs nos
+  hosts); traces/replay = fase 2 (`tracesSampleRate: 0`).
+
 ## Sessão 2026-09-29 — POIs OSM no Painel do Gestor (PRs #118/#119/#120)
 
 Botão "Equipamentos no entorno (OSM)" no painel do gestor: busca (assíncrona)
