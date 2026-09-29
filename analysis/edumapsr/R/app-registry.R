@@ -50,5 +50,11 @@ analysis_registry <- list(
     required = character(0),
     view = "json",
     model_class = "school_profile_model"
+  ),
+  school_evolution = list(
+    fn = analyze_school_evolution,
+    required = character(0),
+    view = "json",
+    model_class = "school_evolution_model"
   )
 )

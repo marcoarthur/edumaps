@@ -229,3 +229,30 @@ persist_school_profile_result <- function(
 ) {
   persist_school_profile(repository, result, ...)
 }
+
+#' Carrega um `SchoolEvolutionModel` a partir de qualquer DataSource
+#'
+#' @param source DataSource compatível com `load_school_evolution()`.
+#' @param ... parâmetros específicos da fonte.
+#'
+#' @return Objeto da classe `school_evolution_model`.
+#'
+#' @export
+load_school_evolution_dataset <- function(source, ...) {
+  load_school_evolution(source, ...)
+}
+
+#' Executa a análise de evolução da escola
+#'
+#' @param model objeto da classe `school_evolution_model`.
+#' @param parameters lista de parâmetros da execução.
+#'
+#' @return Objeto da classe `analysis_result`.
+#'
+#' @export
+run_school_evolution <- function(
+  model,
+  parameters = list()
+) {
+  analyze_school_evolution(model, parameters)
+}

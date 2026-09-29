@@ -40,6 +40,9 @@ fixture_model_for_required <- function(required, model_class = "school_indicator
   if (identical(model_class, "school_profile_model")) {
     return(fixture_school_profile_model())
   }
+  if (identical(model_class, "school_evolution_model")) {
+    return(fixture_school_evolution_model())
+  }
 
   n <- 9
   data <- list()

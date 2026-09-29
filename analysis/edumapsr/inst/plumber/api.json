@@ -601,6 +601,69 @@
       }
     },
 
+    "/school_evolution": {
+      "post": {
+        "summary": "Série histórica da escola",
+        "description": "Devolve a evolução da escola em IDEB (por etapa) e notas SAEB (por ano), pronta para o painel do gestor.",
+        "operationId": "createSchoolEvolution",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchoolEvolutionRequest"
+              },
+              "example": {
+                "co_entidade": 23165669
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Evolução gerada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolEvolutionResponse"
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida (co_entidade inexistente ou malformado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Escola não encontrada: 99999999"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao gerar a evolução da escola"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/health": {
       "get": {
         "summary": "Verifica a saúde do serviço",
@@ -1458,6 +1521,83 @@
                     "mensagem": { "type": "string" },
                     "escola": { "type": "number", "nullable": true },
                     "quartil_no_cluster": { "type": "integer", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SchoolEvolutionRequest": {
+        "type": "object",
+        "required": ["co_entidade"],
+        "properties": {
+          "co_entidade": {
+            "type": "integer",
+            "description": "Código INEP da escola (8 dígitos).",
+            "example": 23165669
+          },
+          "schema": {
+            "type": "string",
+            "default": "clean",
+            "description": "Schema onde os dados do Censo vivem."
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "SchoolEvolutionResponse": {
+        "type": "object",
+        "required": ["analysis", "data"],
+        "properties": {
+          "analysis": { "type": "string", "example": "school_evolution" },
+          "parameters": { "type": "object", "additionalProperties": true },
+          "data": {
+            "type": "array",
+            "description": "Série longa, uma linha por (indicador, ano, etapa).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "indicador": {
+                  "type": "string",
+                  "enum": ["ideb_observado", "saeb_media", "saeb_matematica", "saeb_portugues"]
+                },
+                "label": { "type": "string" },
+                "ano": { "type": "integer" },
+                "etapa": { "type": "string", "nullable": true },
+                "valor": { "type": "number", "nullable": true }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "description": "n_series, n_indicadores, n_etapas, ano_min, ano_max.",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Identificação da escola.",
+            "additionalProperties": true
+          },
+          "tables": {
+            "type": "object",
+            "properties": {
+              "resumo": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "indicador": { "type": "string" },
+                    "label": { "type": "string" },
+                    "etapa": { "type": "string", "nullable": true },
+                    "n_anos": { "type": "integer" },
+                    "ano_min": { "type": "integer" },
+                    "ano_max": { "type": "integer" },
+                    "primeiro_valor": { "type": "number", "nullable": true },
+                    "ultimo_valor": { "type": "number", "nullable": true },
+                    "variacao": { "type": "number", "nullable": true }
                   }
                 }
               }

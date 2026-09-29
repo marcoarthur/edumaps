@@ -102,3 +102,38 @@ fixture_school_profile_model <- function() {
     metadata = metadata
   )
 }
+
+# Fixture da evolução da escola (issue #110).
+fixture_school_evolution_model <- function() {
+  indicadores <- c("ideb_observado", "saeb_media")
+  labels <- c(
+    ideb_observado = "IDEB observado",
+    saeb_media = "Nota média (SAEB)"
+  )
+  anos <- c(2017, 2019, 2021, 2023)
+
+  make <- function(ind) {
+    data.frame(
+      indicador = ind,
+      label = unname(labels[[ind]]),
+      ano = anos,
+      etapa = if (identical(ind, "ideb_observado")) "fundamental_ii" else NA_character_,
+      valor = c(5.3, 4.7, 5.1, 4.9),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  data <- do.call(rbind, lapply(indicadores, make))
+
+  new_school_evolution_model(
+    data = data,
+    metadata = list(
+      co_entidade = "23165669",
+      no_entidade = "EMEF Exemplo",
+      co_municipio = 2307304,
+      no_municipio = "Juazeiro do Norte",
+      sg_uf = "CE",
+      rede = "Municipal"
+    )
+  )
+}
