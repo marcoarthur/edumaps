@@ -162,6 +162,12 @@ sub register($self, $app, @args) {
   $auth->post('/:cod_inep/financeiro/siope' => $check)
     ->to('gestor#finance_siope')->name('gestor_financeiro_siope');
 
+  # --- OSM: equipamentos públicos no entorno da escola (buffer) -------------
+  $auth->post('/:cod_inep/osm/pois' => $check)
+    ->to('gestor#osm_pois_request')->name('gestor_osm_pois_request');
+  $auth->get('/:cod_inep/osm/pois' => $check)
+    ->to('gestor#osm_pois_status')->name('gestor_osm_pois_status');
+
   # --- documentos e planos escolares (pastas, versões, tags, auditoria) -----
   my $doc_id_check = [ @$check, id => qr/\d+/ ];
 

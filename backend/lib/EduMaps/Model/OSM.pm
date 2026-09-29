@@ -44,6 +44,10 @@ sub osm_for_school($self, %args) {
   die sprintf('Escola sem coordenadas (latitude/longitude): %s', $co)
     unless defined $school->{latitude} && defined $school->{longitude};
 
+  my $profiles = $args{profiles} // (exists $args{filters} ? [] : ['equipamentos_publicos']);
+
+  $self->_emit_progress(5, 'Preparando consulta OSM');
+
   my $query = EduMaps::Services::OSM::Query->new(
     target => {
       type => 'around',
@@ -66,11 +70,22 @@ sub osm_for_school($self, %args) {
     $co, $school->{nu_ano_censo}, $raio, $run->{digest}
   );
 
+  # Sobrescreve a seleção atual (upsert) — raio/perfis/digest/atualizado_em.
+  $self->record_selection(
+    $co, $school->{nu_ano_censo}, $raio, $profiles, $run->{digest}
+  );
+
+  $self->_emit_progress(98, 'Concluindo');
+
+  my $sel = $self->current_selection($co, $school->{nu_ano_censo});
+
   return {
     digest       => $run->{digest},
     raio         => $raio,
-    nu_ano_censo => $school->{nu_ano_censo},
+    profiles     => $profiles,
+    nu_ano_censo => 0 + $school->{nu_ano_censo},
     related      => $related,
+    updated_at   => $sel ? $sel->{updated_at} : undef,
     geojson      => $run->{geojson},
   };
 }
@@ -135,11 +150,83 @@ sub query_features($self, $digest) {
   );
 }
 
+# Seleção atual (raio/perfis/digest/atualizado_em) da escola.
+sub current_selection($self, $co_entidade, $nu_ano_censo = undef) {
+  my $ano = $nu_ano_censo // $self->_latest_ano($co_entidade);
+  return undef unless $ano;
+
+  my $row = $self->schema->resultset('SchoolOsmQuery')
+    ->find({ co_entidade => $co_entidade, nu_ano_censo => $ano });
+  return undef unless $row;
+
+  my $profiles = eval { decode_json($row->profiles) } || [];
+
+  return {
+    co_entidade  => 0 + $row->co_entidade,
+    nu_ano_censo => 0 + $row->nu_ano_censo,
+    raio         => 0 + $row->raio,
+    profiles     => $profiles,
+    digest       => $row->digest,
+    updated_at   => $row->updated_at,
+  };
+}
+
+# Grava (upsert) a seleção usada — sobrescreve a anterior.
+sub record_selection($self, $co_entidade, $nu_ano_censo, $raio, $profiles, $digest) {
+  $self->schema->resultset('SchoolOsmQuery')->update_or_create({
+    co_entidade  => $co_entidade,
+    nu_ano_censo => $nu_ano_censo,
+    raio         => $raio,
+    profiles     => encode_json($profiles // []),
+    digest       => $digest,
+    updated_at   => \'now()',
+  });
+}
+
+# Resumo dos POIs relacionados à escola, por categoria.
+sub school_pois_summary($self, $co_entidade, $nu_ano_censo = undef) {
+  my @params = ($co_entidade);
+  my $where  = 's.co_entidade = ?';
+  if (defined $nu_ano_censo) {
+    $where .= ' AND s.nu_ano_censo = ?';
+    push @params, $nu_ano_censo;
+  }
+
+  my $rows = $self->_dbh->selectall_arrayref(qq{
+    SELECT COALESCE(f.category, f.tags_key, 'outros') AS category, count(*) AS count
+      FROM clean.school_osm_feature s
+      JOIN clean.osm_feature f
+        ON f.osm_type = s.osm_type AND f.osm_id = s.osm_id
+     WHERE $where
+     GROUP BY 1
+     ORDER BY count DESC, category ASC
+  }, { Slice => {} }, @params);
+
+  my $total = 0;
+  $total += $_->{count} for @$rows;
+
+  return {
+    total  => $total,
+    resumo => [ map { { category => $_->{category}, count => 0 + $_->{count} } } @$rows ],
+  };
+}
+
 # ---------------------------------------------------------------------------
 # Internos
 # ---------------------------------------------------------------------------
 
 sub _dbh($self) { $self->schema->storage->dbh }
+
+sub _latest_ano($self, $co) {
+  return $self->_dbh->selectrow_array(
+    'SELECT max(nu_ano_censo) FROM clean.censo_escolas WHERE co_entidade = ?',
+    undef, $co
+  );
+}
+
+sub _emit_progress($self, $percent, $message = '') {
+  $self->emit(progress => { percent => $percent, message => $message });
+}
 
 sub _load_school($self, $co, $ano = undef) {
   my $where  = 'co_entidade = ?';
@@ -196,12 +283,31 @@ sub _ensure_query($self, $query, %opts) {
 
   if ($cached) {
     $self->log->info("OSM cache HIT para digest $digest");
+    $self->_emit_progress(80, 'Usando dados do cache local');
     $raw     = $cached;
     $geojson = $self->service_class->new(query => $query, log => $self->log)->parse($raw);
   }
   else {
     $self->log->info("OSM cache MISS para digest $digest; consultando Overpass");
     my $svc = $self->service_class->new(query => $query, log => $self->log);
+    $svc->on(progress => sub ($evt, $p) {
+      my $phase = $p->{phase} // '';
+      my ($pct, $msg) = (10, 'Consultando o OpenStreetMap');
+
+      if ($phase eq 'download osm') {
+        $pct = 10 + int(($p->{processed} // 0) * 0.3);
+        $msg = 'Baixando dados do OpenStreetMap';
+      }
+      elsif ($phase eq 'geojson') {
+        my $total = $p->{total} // 0;
+        my $proc  = $p->{processed} // 0;
+        $pct = 40 + ($total ? int(($proc / $total) * 50) : 0);
+        $msg = sprintf 'Processando feições (%d/%d)', $proc, $total;
+      }
+
+      $self->_emit_progress($pct, $msg);
+    });
+
     $geojson = $svc->run;
     $raw     = $svc->raw;
 
@@ -217,6 +323,7 @@ sub _ensure_query($self, $query, %opts) {
     );
   }
 
+  $self->_emit_progress(92, 'Persistindo POIs');
   $self->_store_features($query, $digest, $geojson);
 
   return { digest => $digest, geojson => $geojson, raw => $raw };

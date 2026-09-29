@@ -110,7 +110,14 @@ sub new($class, %args) {
 
 # Nomes de perfis disponíveis (inclui o default agregador).
 sub available_profiles($class) {
-  return sort keys %PROFILES;
+  return sort($DEFAULT_PROFILE, keys %PROFILES);
+}
+
+# O nome é um perfil válido (nomeado ou o default agregador)?
+sub valid_profile($class, $name) {
+  return 0 unless defined $name;
+  return 1 if $name eq $DEFAULT_PROFILE;
+  return exists $PROFILES{$name} ? 1 : 0;
 }
 
 # Filtros de um perfil (o default agrega todos).

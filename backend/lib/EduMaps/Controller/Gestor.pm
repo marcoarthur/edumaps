@@ -4,6 +4,9 @@ use utf8;
 
 use File::Path qw(make_path);
 use DateTime;
+use Mojo::JSON ();
+use EduMaps::Services::OSM::Query;
+use EduMaps::Model::OSM;
 
 # API do painel do gestor escolar (/api/gestor/...) + módulo Reuniões e Atas
 # (contatos, grupos por drag-and-drop, agendamento com atas e anexos).
@@ -1512,6 +1515,101 @@ sub finance_siope($self) {
   my $job_id = $self->get_siope($st->{cod_municipio}, $ano);
   $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
   $self->render(status => 202, json => { task => 'query_siope', job_id => $job_id, ano => $ano + 0 });
+}
+
+# ---------------------------------------------------------------------------
+# OSM: equipamentos públicos no entorno da escola (buffer)
+#
+# Dispara a task query_osm_school (catálogos/perfis + raio) e devolve o
+# status/leitura (atualizado_em, resumo por categoria). O upsert sobrescreve
+# a seleção anterior; se já houver job pendente para a escola, reusa o mesmo
+# job_id (a UI trava e anexa ao progresso).
+# ---------------------------------------------------------------------------
+
+sub osm_pois_request($self) {
+  return unless $self->_gestor_inep_ok;
+  my $cod_inep = $self->param('cod_inep');
+
+  my $input = $self->_input;
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->optional('raio', 'trim')->like(qr/^\d+$/);
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $raio = $v->param('raio') // 1000;
+  return $self->render(
+    json => { error => 'raio deve estar entre 100 e 10000 metros' }, status => 400,
+  ) unless $raio >= 100 && $raio <= 10_000;
+
+  my $profiles = $input->{profiles};
+  $profiles = ['equipamentos_publicos']
+    unless ref $profiles eq 'ARRAY' && @$profiles;
+
+  for my $p (@$profiles) {
+    return $self->render(json => { error => "catálogo OSM inválido: $p" }, status => 400)
+      unless EduMaps::Services::OSM::Query->valid_profile($p);
+  }
+
+  # Idempotência: reusa o job pendente/ativo desta escola.
+  if (my $existing = $self->_pending_osm_job($cod_inep)) {
+    $self->res->headers->header('Location' => "/api/task/progress?job_id=$existing");
+    return $self->render(
+      status => 202,
+      json => { task => 'query_osm_school', job_id => $existing, reused => Mojo::JSON::true },
+    );
+  }
+
+  my $job_id = $self->get_osm_school({
+    co_entidade => $cod_inep,
+    raio        => 0 + $raio,
+    profiles    => $profiles,
+    (defined $input->{refresh} ? (refresh => $input->{refresh} ? 1 : 0) : ()),
+  });
+
+  $self->res->headers->header('Location' => "/api/task/progress?job_id=$job_id");
+  $self->render(
+    status => 202,
+    json => { task => 'query_osm_school', job_id => $job_id, reused => Mojo::JSON::false },
+  );
+}
+
+sub osm_pois_status($self) {
+  return unless $self->_gestor_inep_ok;
+  my $cod_inep = $self->param('cod_inep');
+
+  my $model = EduMaps::Model::OSM->new;
+  my $sel   = $model->current_selection($cod_inep);
+  my $sum   = $model->school_pois_summary($cod_inep);
+  my $job_id = $self->_pending_osm_job($cod_inep);
+
+  $self->render(json => {
+    updated_at => $sel ? $sel->{updated_at} : undef,
+    raio       => $sel ? $sel->{raio} : undef,
+    profiles   => $sel ? $sel->{profiles} : [],
+    digest     => $sel ? $sel->{digest} : undef,
+    total      => $sum->{total},
+    resumo     => $sum->{resumo},
+    (defined $job_id ? (job_id => $job_id) : ()),
+  });
+}
+
+# Job query_osm_school pendente/ativo desta escola (dedup/idempotência).
+sub _pending_osm_job($self, $inep) {
+  # O filtro `notes` do Minion casa por CHAVE (notes ? ANY), não por valor —
+  # então iteramos os jobs pendentes e comparamos o co_entidade nas notes
+  # (o volume de jobs pendentes por escola é pequeno).
+  my $jobs = $self->minion->jobs({
+    tasks  => ['query_osm_school'],
+    states => ['inactive', 'active'],
+  });
+
+  while (my $job = $jobs->next) {
+    my $notes = $job->{notes} // {};
+    my $co    = $notes->{co_entidade};
+    return $job->{id} if defined $co && $co eq $inep;
+  }
+
+  return undef;
 }
 
 # ---------------------------------------------------------------------------
