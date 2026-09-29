@@ -13,6 +13,7 @@ sub register ($self, $app, @args) {
   $api->post('/cluster')->to('task#request_cluster')->name('request_cluster');
   $api->post('/summary')->to('task#request_summary')->name('request_summary');
   $api->post('/similarity')->to('task#request_similarity')->name('request_similarity');
+  $api->post('/school_profile')->to('task#request_school_profile')->name('request_school_profile');
 }
 
 1;

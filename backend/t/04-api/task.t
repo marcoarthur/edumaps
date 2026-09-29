@@ -288,4 +288,44 @@ subtest 'request_similarity: id_column faltando -> 400' => sub {
   $t->post_ok('/api/task/similarity' => form => {table_name => 'censo_escolas'})->status_is(400);
 };
 
+# ------------------------------------------------------------
+# POST /api/task/school_profile (Fase 2 do Perfil da Escola)
+# ------------------------------------------------------------
+subtest 'request_school_profile: enfileira e retorna 202 + Location' => sub {
+  my $tx = $t->post_ok('/api/task/school_profile' => form => {
+    mode  => 'profiles',
+    scope => 'pending',
+    limit => 10,
+  })->status_is(202)->tx;
+  my $json = $tx->res->json;
+
+  is $json->{task}, 'school_profile', 'task = school_profile';
+  ok $json->{job_id} =~ /^\d+$/, 'job_id numérico';
+  like $tx->res->headers->header('Location'), qr{^/api/task/progress\?job_id=\d+$},
+    'Location p/ polling';
+  is $t->app->minion->job($json->{job_id})->info->{queue}, 'analytics',
+    'job na fila dedicada analytics';
+
+  $t->app->minion->backend->remove_job($json->{job_id});
+};
+
+subtest 'request_school_profile: mode reference e cluster aceitos' => sub {
+  for my $mode (qw(reference cluster)) {
+    my $tx = $t->post_ok('/api/task/school_profile' => form => {mode => $mode})
+      ->status_is(202)->tx;
+    $t->app->minion->backend->remove_job($tx->res->json->{job_id});
+  }
+};
+
+subtest 'request_school_profile: scope=municipio sem co_municipio -> 400' => sub {
+  $t->post_ok('/api/task/school_profile' => form => {
+    mode  => 'profiles',
+    scope => 'municipio',
+  })->status_is(400)->json_has('/error');
+};
+
+subtest 'request_school_profile: mode inválido -> 400' => sub {
+  $t->post_ok('/api/task/school_profile' => form => {mode => 'nope'})->status_is(400);
+};
+
 done_testing;
