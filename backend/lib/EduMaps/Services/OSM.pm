@@ -1,7 +1,8 @@
 package EduMaps::Services::OSM;
 
-use Mojo::Base 'Mojo::EventEmitter', -signatures, -async_await;
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 use Mojo::JSON qw(decode_json encode_json);
+use Mojo::Promise;
 use Mojo::URL;
 use Mojo::UserAgent;
 use Mojo::File qw(path);
@@ -46,35 +47,36 @@ has raw      => undef;
 has geojson  => undef;
 has elapsed  => 0;
 
+# Executa a consulta de forma SÍNCRONA (Mojo::UserAgent bloqueante, como o
+# EduMaps::Analytics::Client). Erros de rede/HTTP/fixture/parse PROPAGAM
+# (die) — o job Minion falha em vez de "concluir" com 0 POIs. No worker o
+# IOLoop não está `is_running`, então a chamada bloqueante funciona.
 sub run($self) {
-  # Offline: carrega a fixture SINCRONAMENTE — um die aqui propaga direto
-  # (dentro do `async run_p` viraria uma promise rejeitada não tratada).
-  if ($self->offline) {
-    my $ql = $self->ql // ($self->query ? $self->query->to_ql : undef)
-      // die 'Need query or ql';
-    $self->emit(query => $ql);
-    $self->log->info('Carregando fixture OSM (offline)');
-    my $data = $self->_load_fixture;
-    $self->raw($data);
-    $self->geojson( $self->parse($data) );
-    return $self->geojson;
-  }
-
-  $self->run_p->wait;
-  return $self->geojson;
-}
-
-async sub run_p($self) {
   my $ql = $self->ql // ($self->query ? $self->query->to_ql : undef)
     // die 'Need query or ql';
   $self->emit(query => $ql);
-  $self->log->info('Requesting OSM/Overpass service');
 
-  my $data = $self->offline ? $self->_load_fixture : await $self->_request($ql);
+  my $data;
+  if ($self->offline) {
+    $self->log->info('Carregando fixture OSM (offline)');
+    $data = $self->_load_fixture;
+  }
+  else {
+    $self->log->info('Requesting OSM/Overpass service');
+    $data = $self->_request($ql);
+  }
 
   $self->raw($data);
   $self->geojson( $self->parse($data) );
-  return $data;
+  return $self->geojson;
+}
+
+# API de promise (usada por Task::OSM::Service::run_query_p). Envolve o run
+# síncrono; a rejeição carrega o erro real (não é engolida).
+sub run_p($self) {
+  my $p = Mojo::Promise->new;
+  eval { $p->resolve( $self->run ) } or $p->reject($@ || 'erro desconhecido');
+  return $p;
 }
 
 sub _load_fixture($self) {
@@ -84,7 +86,8 @@ sub _load_fixture($self) {
   return decode_json( path($f)->slurp );
 }
 
-async sub _request($self, $ql) {
+# Requisição bloqueante ao Overpass. HTTP não-2xx / falha de conexão -> die.
+sub _request($self, $ql) {
   $self->emit(progress => { total => 0, processed => 0, phase => 'requesting osm' });
 
   my $t0 = [ gettimeofday ];
@@ -104,10 +107,19 @@ async sub _request($self, $ql) {
     }
   );
 
-  my $tx = await $self->ua->post_p($self->overpass_url => form => { data => $ql });
-  my $res = $tx->res;
+  my $tx = $self->ua->post($self->overpass_url => form => { data => $ql });
   $self->ua->unsubscribe(start => $id);
 
+  if (my $err = $tx->error) {
+    my $code = $err->{code} // 0;
+    my $msg  = $err->{message} // 'erro';
+    $self->log->error(sprintf 'Overpass falhou: %s (%s)', $ql, $code ? "HTTP $code" : $msg);
+    die $code
+      ? sprintf('Overpass retornou HTTP %s: %s', $code, $msg)
+      : "Falha na conexão com o Overpass: $msg";
+  }
+
+  my $res = $tx->res;
   if (!$res->is_success) {
     $self->log->error(sprintf 'Overpass falhou: %s (HTTP %s)', $ql, $res->code);
     die sprintf 'Overpass retornou HTTP %s: %s', $res->code, $res->message;
