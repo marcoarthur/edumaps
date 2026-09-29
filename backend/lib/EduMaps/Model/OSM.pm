@@ -466,7 +466,7 @@ sub _relate_school($self, $co, $ano, $raio, $digest) {
     ON CONFLICT (co_entidade, nu_ano_censo, osm_type, osm_id) DO NOTHING
   }, undef, $co, $ano, $raio, $digest, $co, $ano, $raio, $digest);
 
-  return $n // 0;
+  return 0 + ($n // 0);
 }
 
 sub _relate_municipio($self, $codigo_ibge, $digest) {
@@ -491,7 +491,7 @@ sub _relate_municipio($self, $codigo_ibge, $digest) {
     ON CONFLICT (codigo_ibge, osm_type, osm_id) DO NOTHING
   }, undef, $codigo_ibge, $digest, $codigo_ibge, $digest);
 
-  return $n // 0;
+  return 0 + ($n // 0);
 }
 
 1;
