@@ -13,6 +13,7 @@
   import { addToast } from "@/shared/stores/toastStore.js";
   import { eventBus } from "@/shared/events";
   import InfoHint from "@/shared/ui/components/InfoHint.svelte";
+  import { restaurarSessao } from "../utils/gestorAuth.js";
   import {
     OSM_CATALOGS,
     OSM_DEFAULT_PROFILES,
@@ -140,7 +141,12 @@
     submit();
   }
 
-  onMount(loadStatus);
+  onMount(() => {
+    // O painel do gestor é público; a busca exige sessão. Restaura o token
+    // salvo (localStorage) para as chamadas autenticadas do OSM.
+    restaurarSessao();
+    loadStatus();
+  });
   onDestroy(() => cancelWatch?.());
 </script>
 
