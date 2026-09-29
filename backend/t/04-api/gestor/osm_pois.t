@@ -43,8 +43,8 @@ if ($has_tables) {
   for my $inep ($INEP, $OUTRO) {
     $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ? AND nu_ano_censo = 2025', {}, $inep);
   }
-  $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio)
-            VALUES (2025, ?, ?, 3, ?)', {}, $INEP, 'Escola OSM POIs', 2307304);
+  $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio, latitude, longitude)
+            VALUES (2025, ?, ?, 3, ?, -23.5, -46.6)', {}, $INEP, 'Escola OSM POIs', 2307304);
   $dbh->do('INSERT INTO clean.censo_escolas (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio)
             VALUES (2025, ?, ?, 3, ?)', {}, $OUTRO, 'Outra Escola OSM', 2307304);
 }
@@ -167,14 +167,17 @@ subtest 'GET status: seleção atual + resumo por categoria' => sub {
 
   my $dbh = $t->app->schema->storage->dbh;
   $dbh->do(q{
-    INSERT INTO clean.osm_feature (osm_type, osm_id, tags_key, tags_value, category)
-    VALUES ('node', 900001, 'amenity', 'library', 'amenity=library'),
-           ('node', 900002, 'leisure', 'park',    'leisure=park')
+    INSERT INTO clean.osm_feature (osm_type, osm_id, tags_key, tags_value, category, geom, properties)
+    VALUES
+      ('node', 900001, 'amenity', 'library', 'amenity=library',
+       ST_SetSRID(ST_MakePoint(-46.601, -23.501), 4674), '{"name":"Biblioteca X"}'::jsonb),
+      ('node', 900002, 'leisure', 'park', 'leisure=park',
+       ST_SetSRID(ST_MakePoint(-46.599, -23.499), 4674), '{"name":"Praca Y"}'::jsonb)
   });
   $dbh->do(q{
-    INSERT INTO clean.school_osm_feature (co_entidade, nu_ano_censo, osm_type, osm_id, raio)
-    VALUES (?, 2025, 'node', 900001, 500),
-           (?, 2025, 'node', 900002, 500)
+    INSERT INTO clean.school_osm_feature (co_entidade, nu_ano_censo, osm_type, osm_id, raio, distance_m)
+    VALUES (?, 2025, 'node', 900001, 500, 120),
+           (?, 2025, 'node', 900002, 500, 260)
   }, {}, $INEP, $INEP);
   $dbh->do(q{
     INSERT INTO clean.school_osm_query (co_entidade, nu_ano_censo, raio, profiles, updated_at)
@@ -192,6 +195,17 @@ subtest 'GET status: seleção atual + resumo por categoria' => sub {
   is $json->{resumo}[0]{category}, 'amenity=library', 'categoria do resumo';
   is $json->{resumo}[0]{count}, 1, 'contagem';
   ok $json->{updated_at}, 'carimbo de atualização';
+
+  # dados para o mapa: localização da escola + GeoJSON (centroide)
+  is $json->{escola}{nome}, 'Escola OSM POIs', 'nome da escola';
+  is $json->{escola}{latitude}, -23.5, 'latitude da escola';
+  is $json->{geojson}{type}, 'FeatureCollection', 'tipo do GeoJSON';
+  is scalar(@{ $json->{geojson}{features} }), 2, 'duas feições no mapa';
+  my $f0 = $json->{geojson}{features}[0];
+  is $f0->{geometry}{type}, 'Point', 'geometria reduzida a ponto (centroide)';
+  is $f0->{properties}{category}, 'amenity=library', 'categoria da feição';
+  is $f0->{properties}{nome}, 'Biblioteca X', 'nome da feição';
+  is $f0->{properties}{distance_m}, 120, 'distância da feição (ordenação)';
 
   $dbh->do(q{
     DELETE FROM clean.school_osm_feature WHERE co_entidade = ? AND osm_id IN (900001, 900002)

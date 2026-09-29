@@ -211,6 +211,57 @@ sub school_pois_summary($self, $co_entidade, $nu_ano_censo = undef) {
   };
 }
 
+# Localização da escola (para desenhar no mapa junto aos POIs).
+sub school_location($self, $co_entidade, $nu_ano_censo = undef) {
+  my $row = $self->_load_school($co_entidade, $nu_ano_censo);
+  return undef unless $row;
+
+  return {
+    co_entidade  => 0 + $row->{co_entidade},
+    nu_ano_censo => 0 + $row->{nu_ano_censo},
+    nome         => $row->{no_entidade},
+    latitude     => defined $row->{latitude}  ? 0 + $row->{latitude}  : undef,
+    longitude    => defined $row->{longitude} ? 0 + $row->{longitude} : undef,
+  };
+}
+
+# GeoJSON dos POIs relacionados à escola, com a geometria reduzida ao
+# centroide (ST_PointOnSurface) — leve para desenhar no mapa.
+sub school_pois_geojson($self, $co_entidade, $nu_ano_censo = undef) {
+  my @params = ($co_entidade);
+  my $where  = 's.co_entidade = ?';
+  if (defined $nu_ano_censo) {
+    $where .= ' AND s.nu_ano_censo = ?';
+    push @params, $nu_ano_censo;
+  }
+
+  my $json = $self->_dbh->selectrow_array(qq{
+    SELECT json_build_object(
+      'type', 'FeatureCollection',
+      'features', COALESCE(json_agg(
+        json_build_object(
+          'type', 'Feature',
+          'geometry', ST_AsGeoJSON(ST_PointOnSurface(f.geom))::json,
+          'properties', json_build_object(
+            'osm_type', f.osm_type,
+            'osm_id', f.osm_id,
+            'category', COALESCE(f.category, f.tags_key, 'outros'),
+            'nome', f.properties->>'name',
+            'distance_m', s.distance_m
+          )
+        )
+        ORDER BY s.distance_m NULLS LAST, f.osm_type, f.osm_id
+      ), '[]'::json)
+    )
+    FROM clean.school_osm_feature s
+    JOIN clean.osm_feature f
+      ON f.osm_type = s.osm_type AND f.osm_id = s.osm_id
+   WHERE $where AND f.geom IS NOT NULL
+  }, undef, @params);
+
+  return $json ? decode_json($json) : { type => 'FeatureCollection', features => [] };
+}
+
 # ---------------------------------------------------------------------------
 # Internos
 # ---------------------------------------------------------------------------
@@ -238,7 +289,7 @@ sub _load_school($self, $co, $ano = undef) {
 
   my $row = $self->_dbh->selectrow_hashref(
     qq{
-      SELECT co_entidade, nu_ano_censo, co_municipio, latitude, longitude
+      SELECT co_entidade, nu_ano_censo, co_municipio, no_entidade, latitude, longitude
         FROM clean.censo_escolas
        WHERE $where
        ORDER BY nu_ano_censo DESC
