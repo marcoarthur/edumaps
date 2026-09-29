@@ -1,7 +1,7 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
 import HomePage from "@/features/home";
-import { NetworkComparePage } from "@/features/network-compare";
+import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage } from "@/features/config";
@@ -35,6 +35,7 @@ export const routes = [
   { path: "/", component: HomePage },
   { path: "/about", component: AboutPage },
   { path: "/municipio/compare", component: NetworkComparePage },
+  { path: "/municipio/perfil", component: NetworkProfilePage },
   { path: "/cluster/geotag", component: ClusterGeotagPage },
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },

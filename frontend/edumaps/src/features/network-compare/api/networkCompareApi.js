@@ -43,3 +43,16 @@ export function getNetworkMarkers(codigoIbge) {
 export function fetchMunicipioSuggestions(query) {
   return apiClient.get("/api/city/suggestions", { q: query });
 }
+
+/**
+ * Perfil analítico da rede do município (issue #109): distribuição por
+ * cluster e indicadores da rede vs. Brasil.
+ * @param {string|number} codigoIbge
+ * @param {{ tpDependencia?: number }} [opts]
+ * @returns {Promise<object>}
+ */
+export function getNetworkProfile(codigoIbge, { tpDependencia } = {}) {
+  return apiClient.get(`${BASE}/${codigoIbge}/profile`, {
+    tp_dependencia: tpDependencia,
+  });
+}

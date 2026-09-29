@@ -5,6 +5,7 @@ import {
   MUNICIPIO_SUGGESTIONS_FIXTURE,
   NETWORK_MARKERS_FIXTURE,
   NETWORK_PERFORMANCE_FIXTURE,
+  NETWORK_PROFILE_FIXTURE,
   NETWORK_SUMMARY_FIXTURE,
 } from "./fixtures.js";
 
@@ -30,6 +31,12 @@ export const networkCompareHandlers = [
 
   // Qualquer outro município retorna 404
   http.get("/api/network/:codigoIbge/summary", ({ params }) =>
+    municipalityNotFound(params.codigoIbge),
+  ),
+  http.get(`/api/network/${FIXTURE_CODIGO_IBGE}/profile`, () => {
+    return HttpResponse.json(NETWORK_PROFILE_FIXTURE);
+  }),
+  http.get("/api/network/:codigoIbge/profile", ({ params }) =>
     municipalityNotFound(params.codigoIbge),
   ),
   http.get("/api/network/:codigoIbge/performance", ({ params }) =>
