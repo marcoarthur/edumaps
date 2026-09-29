@@ -2,38 +2,37 @@ package EduMaps::Task::OSM::Service;
 
 use Mojo::Base 'Mojo::EventEmitter', -signatures, -async_await;
 use Mojo::JSON qw(decode_json encode_json);
-use List::Util qw(first);
-use Mojo::URL;
 use Mojo::Log;
 use Mojo::File qw(path);
+use Mojo::URL;
 use Mojo::UserAgent;
-use Time::HiRes qw(gettimeofday tv_interval);
 use Mojo::Template;
+use utf8;
+require EduMaps::Services::OSM;
+
+=head1 NAME
+
+EduMaps::Task::OSM::Service - (compat) Service legado OSM
+
+=head1 DESCRIPTION
+
+Mantido para compatibilidade: preserva a API antiga (C<polygon>,
+C<run_query>, C<_build_query>, C<_build_query_tmpl>, C<_precision>,
+C<_testing>) e as consultas legadas de landuse, mas **delega** o HTTP e o
+parse para o L<EduMaps::Services::OSM> generalizado. Código novo deve usar
+diretamente C<EduMaps::Services::OSM> + C<EduMaps::Model::OSM>.
+
+=cut
 
 has log           => sub { Mojo::Log->new };
 has polygon       => sub { die 'Need a polygon' };
 has timeout       => sub { 3*60 };
 has query         => sub ($self) { $self->_build_query };
-has _overpass_url => sub {
-  state $url = Mojo::URL->new('https://overpass-api.de/api/interpreter');
-};
-has _ua           => sub ($self) { Mojo::UserAgent->new->connect_timeout($self->timeout) };
-has _osm_raw      => sub { die 'require run_query() first' };
-has _osm_geojson  => sub { die 'require run_query() first' };
-
-# how many decimal points in coordinates
 has _precision    => sub { 6 };
 has _tmpl         => sub { Mojo::Template->new };
-
-
-# for OFFLINE testing only
-has _testing_data => sub {
-  require Mojo::JSON;
-  my $raw = Mojo::JSON::decode_json(path('t', 'raw_osm.json')->slurp);
-  return Mojo::Promise->resolve($raw);
-};
-
-has _testing => sub { 0 };
+has _osm_raw      => sub { die 'require run_query() first' };
+has _osm_geojson  => sub { die 'require run_query() first' };
+has _testing      => sub { 0 };
 
 sub _poly_string($self) {
   my @coords;
@@ -69,116 +68,35 @@ sub _build_query_tmpl($self, $tmpl) {
   return $self->_tmpl->render($code,$params);
 }
 
-async sub run_query_p($self) {
-  $self->log->info(sprintf 'Requesting OSM service...');
-  my $q = $self->_build_query;
-  $self->emit( query => $q );
-  my $data = await $self->_testing ? $self->_testing_data : $self->_get_from_osm($q);
-  $self->emit(osm_data => $data);
-  return $self->_osm_raw($data);
-}
-
-async sub _get_from_osm($self, $q = $self->_build_query) {
-  $self->log->info("Getting data from OSM service");
-  $self->emit( progress => { total => 0, processed => 0, phase => 'requesting osm' } );
-  my $t0 = [ gettimeofday ];
-  my $id = $self->_ua->on( 
-    start => sub ($ua, $txx, @rest) 
-    {
-      # download phase
-      $txx->req->once(
-        finish => sub {
-          $txx->res->on(
-            progress => sub ($msg, @rest){
-              return unless my $len = $msg->headers->content_length;
-              my $size = $msg->content->progress;
-              $self->emit(
-                progress => {total => 100, processed => int($size / ($len / 100)), phase => 'download osm'}
-              );
-            }
-          );
-        }
-      );
-    }
+# Constrói o Services::OSM com o QL legado (e o fixture offline quando em teste).
+sub _new_service($self) {
+  return EduMaps::Services::OSM->new(
+    ql      => $self->_build_query,
+    log     => $self->log,
+    timeout => $self->timeout,
+    offline => $self->_testing,
+    ( $self->_testing ? (fixture => path('t', 'raw_osm.json')->to_string) : () ),
   );
-  my $tx = await $self->_ua->post_p( $self->_overpass_url => form => { data => $q } );
-  my $res = $tx->res;
-
-  if ($res->is_success) {
-    my $osm_data = {
-      query => $q,
-      data  => $res->body,
-      elapsed => tv_interval($t0),
-    };
-    $self->emit( query_data => $osm_data );
-  } else {
-    $self->log->error( sprintf "Failed query: %s, Error %s", $q, $res->message );
-  }
-  $self->_ua->unsubscribe(start => $id);
-  return decode_json($res->body);
 }
 
-sub run_query($self) { 
-  $self->run_query_p->wait; 
-  $self->_process_raw_data;
+sub _forward_events($self, $svc) {
+  for my $ev (qw(query query_data feature progress)) {
+    $svc->on($ev => sub { my (undef, @args) = @_; $self->emit($ev => @args) });
+  }
+  return $svc;
 }
 
-sub _process_raw_data($self, $osm_data = $self->_osm_raw) {
-  $self->log->info('Processing OSM raw data into GeoJSON format');
-  my @nodes = grep { $_->{type} eq 'node' } $osm_data->{elements}->@*;
-  my @ways;
-  my $total = scalar( $osm_data->{elements}->@* ) - scalar( @nodes );
-  my $processed = 0;
+sub run_query_p($self) {
+  my $svc = $self->_forward_events( $self->_new_service );
+  return $svc->run_p;
+}
 
-  $self->emit(progress => {total => ($total-1), processed => $processed, phase => 'geojson'});
-
-  foreach my $el ($osm_data->{elements}->@*) {
-    next unless $el->{type} eq 'way';
-    my $props = { properties => { $el->{tags}->%* , id => $el->{id} } };
-    my $coords = [];
-
-    # find the nodes of polygon
-    foreach my $node ($el->{nodes}->@*) {
-      my $n = first { $_->{id} eq $node } @nodes;
-      push @$coords, [$n->{lon}, $n->{lat}];
-    }
-    my $type;
-    if (
-      $coords->[0][0] == $coords->[-1][0]
-      &&
-      $coords->[0][1] == $coords->[-1][1]
-    ) {
-      $type = 'Polygon';
-    } else {
-      $type = 'LineString';
-    }
-    my $feat = {
-      type => 'Feature',
-      geometry => { 
-        type => $type,
-        coordinates => $type eq 'LineString' ? $coords : [ $coords ],
-      },
-      $props->%*
-    };
-    push @ways, $feat;
-    $self->emit( feature => $feat );
-    $self->emit( progress => { total => $total, processed => ++$processed, phase => 'geojson' });
-  }
-  # make geojson
-  my $json = { type => 'FeatureCollection', features => [@ways] };
-  $self->_osm_geojson($json);
-  return $json
+sub run_query($self) {
+  my $svc = $self->_forward_events( $self->_new_service );
+  my $raw = $svc->run_p->wait;
+  $self->_osm_raw($raw);
+  $self->_osm_geojson( $svc->geojson );
+  return $svc->geojson;
 }
 
 1;
-
-__END__
-
-
-=head1 DESCRIPTION
-
-Fetches geographic features (landuse, natural areas, leisure facilities, and man-made structures)
-within municipal boundaries and converts them to GeoJSON format querin OpenStreetMap
-by overpass-api.
-
-=cut
