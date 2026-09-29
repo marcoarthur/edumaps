@@ -4,9 +4,20 @@ import {
   DEMO_SCHOOL_COD_INEP,
   INDICATORS_FIXTURE,
   RANKING_FIXTURES,
+  PROFILE_FIXTURE,
 } from "./fixtures.js";
 
 export const schoolsHandlers = [
+  http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/profile`, () => {
+    return HttpResponse.json(PROFILE_FIXTURE);
+  }),
+
+  http.get("/api/school/:codInep/profile", () => {
+    return HttpResponse.json(
+      { error: "Escola não encontrada." },
+      { status: 400 },
+    );
+  }),
   http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/indicators`, () => {
     return HttpResponse.json(INDICATORS_FIXTURE);
   }),

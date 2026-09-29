@@ -77,6 +77,26 @@ sub run_similarity ($self, $args) {
   }, 'gower_similarity', { cacheable => 0 });
 }
 
+sub run_school_profile ($self, $args) {
+  $self->_run('school_profile', {
+    co_entidade          => $args->{co_entidade},
+    schema               => $args->{schema},
+    include_inactive     => $args->{include_inactive},
+    clusters             => $args->{clusters},
+    similarity_threshold => $args->{similarity_threshold},
+    output_schema        => $args->{output_schema},
+  }, 'school_profile', {
+    cacheable => 1,
+    cache_params => {
+      co_entidade          => $args->{co_entidade},
+      schema               => $args->{schema},
+      include_inactive     => $args->{include_inactive},
+      clusters             => $args->{clusters},
+      similarity_threshold => $args->{similarity_threshold},
+    },
+  });
+}
+
 sub run_similarity_db ($self, $args) {
   $self->_run('similarity/db', {
     schema        => $args->{schema},

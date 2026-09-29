@@ -27,6 +27,7 @@ import {
   SchoolPayrollPage,
   SchoolFinancePage,
   SchoolPanelPage,
+  SchoolProfilePage,
   SchoolSearchPageRx,
 } from "@/features/schools";
 
@@ -39,6 +40,7 @@ export const routes = [
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/escola/financeiro", component: SchoolFinancePage },
   { path: "/escola/panel", component: SchoolPanelPage },
+  { path: "/escola/perfil", component: SchoolProfilePage },
   { path: "/gestor", component: GestorAcessoPage },
   { path: "/gestor/painel", component: GestorPanelPage },
   { path: "/gestor/pesquisas", component: GestorPesquisasPage },

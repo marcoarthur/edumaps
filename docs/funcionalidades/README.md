@@ -43,6 +43,7 @@
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
 | [Painel da escola](analise/painel-escola.md) | Raio-x da escola: matrículas, docentes, infraestrutura, desempenho e similares. | 🟢 |
+| [Perfil analítico da escola](analise/perfil-escola.md) | Diagnóstico, posição relativa (município/rede/Brasil), benchmarking justo e sinais de atenção. | 🟢 |
 | [Ranking de escolas](analise/ranking.md) | Posicionar a escola por indicadores no município e no estado. | 🟢 |
 | [Clusters de escolas](analise/clusters.md) | Agrupar escolas por características e geografia. | 🟢 |
 | [Comparação de redes](analise/rede-municipal.md) | Comparar as redes (federal, estadual, municipal, privada) de um município. | 🟢 |

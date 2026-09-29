@@ -297,3 +297,24 @@ Com 3 conversas semeadas via API e uma sessão de gestor real
   três bugs sobreviveram até o e2e.
 
 _Atualizar esta tabela a cada rodada; manter rastro de data + achados._
+
+## Rodada 2026-09-28 — Perfil da escola (`/escola/perfil`)
+
+Feature nova (issue #105): painel analítico do gestor com diagnóstico,
+posição relativa (município/rede/Brasil/cluster), distribuição no cluster,
+sinais de atenção e escolas similares (Gower). Consome
+`GET /api/school/:cod_inep/profile` (ponte backend → serviço analítico R).
+
+| Verificação | Resultado |
+|---|---|
+| Bundle deployado contém a rota/feature | 🟢 `index-DAS1-W4A.js` com `escola/perfil`, "Perfil da Escola", "Posição relativa", `school_profile` |
+| `GET /api/school/23165669/profile` (via `ubatexu.lan:8080`) | 🟢 200, payload com `indicadores_comparados`/`cluster_resumo`/`peers`/`flags` |
+| `co_entidade` inexistente | 🟢 400 (`Escola não encontrada`, sem vazar caminho/linha) |
+| `co_entidade` malformado | 🟢 404 |
+| Painel em `http://ubatexu.lan:8080/escola/perfil?inep=23165669` | 🟢 PASS (validação visual do developer, 2026-09-28) |
+| Atalho "Perfil analítico" em `/escola/panel` e `/gestor/painel` | 🟢 presente |
+
+Desempenho no host analítico de dev: escola típica (sem cluster persistido)
+**~1,7–2,4s**; escola com cluster persistido ~3,4s (percentis sobre 2.821
+escolas). A primeira chamada de cada escola é mais lenta (cache do backend
+`analytics.analysis_cache` cobre as seguintes por 24h).
