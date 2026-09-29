@@ -5,6 +5,7 @@ import {
   INDICATORS_FIXTURE,
   RANKING_FIXTURES,
   PROFILE_FIXTURE,
+  EVOLUTION_FIXTURE,
 } from "./fixtures.js";
 
 export const schoolsHandlers = [
@@ -13,6 +14,17 @@ export const schoolsHandlers = [
   }),
 
   http.get("/api/school/:codInep/profile", () => {
+    return HttpResponse.json(
+      { error: "Escola não encontrada." },
+      { status: 400 },
+    );
+  }),
+
+  http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/evolution`, () => {
+    return HttpResponse.json(EVOLUTION_FIXTURE);
+  }),
+
+  http.get("/api/school/:codInep/evolution", () => {
     return HttpResponse.json(
       { error: "Escola não encontrada." },
       { status: 400 },

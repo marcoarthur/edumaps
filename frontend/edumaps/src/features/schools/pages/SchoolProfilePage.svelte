@@ -8,11 +8,14 @@
   import { onMount } from 'svelte';
   import SchoolProfile from '../components/profile/SchoolProfile.svelte';
   import { getSchoolProfile } from '../api/schoolProfileApi.js';
+  import { getSchoolEvolution } from '../api/schoolEvolutionApi.js';
   import { transformProfileData } from '../utils/transformProfileData.js';
+  import { transformEvolutionData } from '../utils/transformEvolutionData.js';
   import { ApiError } from '@/shared/api/client.js';
 
   let inep = $state(null);
   let profile = $state(null);
+  let evolutionGroups = $state([]);
   let loading = $state(true);
   let error = $state(null);
 
@@ -20,10 +23,18 @@
     loading = true;
     error = null;
     try {
-      const raw = await getSchoolProfile(codInep);
-      profile = transformProfileData(raw);
+      const [rawProfile, rawEvolution] = await Promise.all([
+        getSchoolProfile(codInep),
+        // A evolução é complementar: falha nela não derruba o perfil.
+        getSchoolEvolution(codInep).catch(() => null),
+      ]);
+      profile = transformProfileData(rawProfile);
+      evolutionGroups = rawEvolution
+        ? transformEvolutionData(rawEvolution).groups
+        : [];
     } catch (err) {
       profile = null;
+      evolutionGroups = [];
       error =
         err instanceof ApiError
           ? err.message
@@ -78,6 +89,6 @@
       {error}
     </div>
   {:else if profile}
-    <SchoolProfile {profile} onSelectPeer={selectPeer} />
+    <SchoolProfile {profile} {evolutionGroups} onSelectPeer={selectPeer} />
   {/if}
 </div>

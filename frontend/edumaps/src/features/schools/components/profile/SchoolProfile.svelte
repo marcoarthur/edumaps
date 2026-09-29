@@ -8,6 +8,7 @@
   import ProfileComparison from './ProfileComparison.svelte';
   import ClusterSummary from './ClusterSummary.svelte';
   import ProfilePeers from './ProfilePeers.svelte';
+  import EvolutionSection from './EvolutionSection.svelte';
 
   /**
    * @typedef {Object} Profile
@@ -19,8 +20,8 @@
    * @property {Array} peers
    * @property {Array} flags
    */
-  /** @type {{ profile: Profile, onSelectPeer?: (id: string|number) => void }} */
-  let { profile, onSelectPeer = () => {} } = $props();
+  /** @type {{ profile: Profile, evolutionGroups?: Array<object>, onSelectPeer?: (id: string|number) => void }} */
+  let { profile, evolutionGroups = [], onSelectPeer = () => {} } = $props();
 
   const inep = $derived(profile?.school?.co_entidade);
 </script>
@@ -65,6 +66,8 @@
   <AttentionFlags flags={profile.flags} />
 
   <ProfileComparison indicadores={profile.indicadores} />
+
+  <EvolutionSection groups={evolutionGroups} />
 
   <ClusterSummary resumo={profile.clusterResumo} />
 
