@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Legendas e caixa "(?)" no Perfil (PR #116)
+
+Cada tabela/gráfico do Perfil da Escola (e do Perfil da Rede) passou a exibir
+uma **legenda** e um botão **"(?)"** com a proveniência/cálculo do dado.
+
+- Componente compartilhado `src/shared/ui/components/InfoHint.svelte`
+  (popover acessível; Enter/Espaço abre, Escape/clique-fora fecha), exportado em
+  `src/shared/ui/index.js`.
+- Aplicado em: Sinais de atenção, Posição relativa, Evolução, Distribuição no
+  cluster e Escolas similares; e no Perfil da Rede (Rede vs. Brasil,
+  Distribuição por cluster).
+- Frontend 375 testes / 70 arquivos. Deploy `ubatexu.lan` (bundle
+  `index-Ch1QyaWl.js`) + rebuild do compose local. Validação visual PASS.
+
 ## Sessão 2026-09-29 — Container analítico no Docker (PR #115)
 
 O compose local não tinha o serviço analítico, então o backend caía em 503 nas
