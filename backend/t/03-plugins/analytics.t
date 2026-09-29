@@ -74,6 +74,16 @@ my $pid;
           tables   => { resumo => [] },
         };
       }
+      elsif ($method eq 'POST' && $path eq '/network_profile') {
+        $code = 200;
+        $json = {
+          analysis => 'network_profile',
+          data     => [],
+          metrics  => { n_escolas => 225, n_clusters => 1 },
+          metadata => { codigo_ibge => "$body->{codigo_ibge}" },
+          tables   => { clusters => [], indicadores => [] },
+        };
+      }
       elsif ($method eq 'POST' && $path eq '/school_profile/reference') {
         $code = 200;
         $json = { persisted => 1, nu_ano_censo => 2025, rows => 50184, table => 'analytics.school_profile_reference' };
@@ -199,6 +209,13 @@ subtest 'run_school_evolution chama POST /school_evolution' => sub {
   is $result->{analysis}, 'school_evolution', 'evolução retornada';
   is $result->{metadata}{co_entidade}, '23165669', 'co_entidade propagado';
   is $result->{metrics}{n_series}, 1, 'metrics retornadas';
+};
+
+subtest 'run_network_profile chama POST /network_profile' => sub {
+  my $result = $make_client->()->run_network_profile({ codigo_ibge => '2307304' });
+  is $result->{analysis}, 'network_profile', 'perfil da rede retornado';
+  is $result->{metadata}{codigo_ibge}, '2307304', 'codigo_ibge propagado';
+  is $result->{metrics}{n_escolas}, 225, 'metrics retornadas';
 };
 
 subtest 'run_school_profile_reference/cluster/batch (Fase 2)' => sub {

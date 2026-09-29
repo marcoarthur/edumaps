@@ -155,3 +155,33 @@ export const MUNICIPIO_SUGGESTIONS_FIXTURE = [
   { codigo_ibge: 3550308, nome: "São Paulo", uf: "SP" },
   { codigo_ibge: 3555300, nome: "Ubatuba", uf: "SP" },
 ];
+
+// Payload do GET /api/network/:ibge/profile (issue #109).
+export const NETWORK_PROFILE_FIXTURE = {
+  analysis: "network_profile",
+  parameters: { codigo_ibge: FIXTURE_CODIGO_IBGE },
+  data: [],
+  metrics: { n_escolas: 30, n_clusters: 2, n_brasil: 180540, n_indicadores: 2 },
+  metadata: {
+    codigo_ibge: FIXTURE_CODIGO_IBGE,
+    no_municipio: "Sertãozinho",
+    sg_uf: "SP",
+    tp_dependencia: null,
+    nu_ano_censo: 2025,
+    n_escolas: 30,
+    n_clusters: 2,
+    n_brasil: 180540,
+  },
+  tables: {
+    indicadores: [
+      { indicador: "prop_licenciatura", label: "Docentes com licenciatura", rede: 0.8, brasil: 0.79, variacao: 0.01 },
+      { indicador: "ideb_observado", label: "IDEB observado", rede: 5.1, brasil: 5.2, variacao: -0.1 },
+    ],
+    clusters: [
+      { cluster_id: 1, cluster_label: "Alta perfil escolar", n: 12, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.85 },
+      { cluster_id: 1, cluster_label: "Alta perfil escolar", n: 12, indicador: "ideb_observado", label: "IDEB observado", media: 5.5 },
+      { cluster_id: 2, cluster_label: "Baixa perfil escolar", n: 18, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.72 },
+      { cluster_id: 2, cluster_label: "Baixa perfil escolar", n: 18, indicador: "ideb_observado", label: "IDEB observado", media: 4.6 },
+    ],
+  },
+};

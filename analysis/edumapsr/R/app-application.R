@@ -256,3 +256,30 @@ run_school_evolution <- function(
 ) {
   analyze_school_evolution(model, parameters)
 }
+
+#' Carrega um `NetworkProfileModel` a partir de qualquer DataSource
+#'
+#' @param source DataSource compatível com `load_network_profile()`.
+#' @param ... parâmetros específicos da fonte.
+#'
+#' @return Objeto da classe `network_profile_model`.
+#'
+#' @export
+load_network_profile_dataset <- function(source, ...) {
+  load_network_profile(source, ...)
+}
+
+#' Executa a análise do perfil da rede
+#'
+#' @param model objeto da classe `network_profile_model`.
+#' @param parameters lista de parâmetros da execução.
+#'
+#' @return Objeto da classe `analysis_result`.
+#'
+#' @export
+run_network_profile <- function(
+  model,
+  parameters = list()
+) {
+  analyze_network_profile(model, parameters)
+}

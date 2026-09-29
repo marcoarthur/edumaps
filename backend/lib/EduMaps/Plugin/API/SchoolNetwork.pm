@@ -13,6 +13,8 @@ sub register ($self, $app, @args) {
   $api->get('/:codigo_ibge/schools' => $check)->to('school_network#schools')->name('network_schools');
   $api->get('/:codigo_ibge/performance' => $check)->to('school_network#performance')->name('network_performance');
   $api->get('/:codigo_ibge/markers' => $check)->to('school_network#markers')->name('network_markers');
+
+  $api->get('/:codigo_ibge/profile' => $check)->to('school_network#network_profile')->name('network_profile');
 }
 
 1;
