@@ -4,7 +4,6 @@ use Mojo::Base -base, -signatures;
 use Mojo::IOLoop;
 use Mojo::JSON qw(encode_json);
 use Mojo::UserAgent;
-use Mojo::Util qw(random_bytes);
 use Scalar::Util qw(blessed);
 
 # ABSTRACT: Thin client para a Sentry Envelope API (sentry.io cloud)
@@ -90,7 +89,18 @@ sub _base_event ($self, %ctx) {
   return $event;
 }
 
-sub _event_id ($self) { unpack 'H*', random_bytes(16) }
+# event_id de 32 hex. Não depende de export de `Mojo::Util::random_bytes`
+# (incompatível com versões mais antigas do Mojolicious no carton): lê 16
+# bytes de /dev/urandom (core), com fallback puramente local p/ testes/dev.
+sub _event_id ($self) {
+  my $bytes = '';
+  if (open my $fh, '<', '/dev/urandom') {
+    read($fh, $bytes, 16);
+    close $fh;
+  }
+  $bytes .= chr(int(rand(256))) while length($bytes) < 16;
+  return unpack 'H*', $bytes;
+}
 
 sub _timestamp ($self) {
   my ($s, $m, $h, $d, $mon, $y) = gmtime(time);
