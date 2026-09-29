@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import SchoolProfile from "./SchoolProfile.svelte";
 import { transformProfileData } from "../../utils/transformProfileData.js";
-import { PROFILE_FIXTURE } from "../../mocks/fixtures.js";
+import { transformEvolutionData } from "../../utils/transformEvolutionData.js";
+import { PROFILE_FIXTURE, EVOLUTION_FIXTURE } from "../../mocks/fixtures.js";
 
 function profileFixture() {
   return transformProfileData(PROFILE_FIXTURE);
@@ -63,6 +64,15 @@ describe("SchoolProfile", () => {
     expect(screen.getByText("Distribuição no cluster")).toBeInTheDocument();
     expect(screen.getByText("p25")).toBeInTheDocument();
     expect(screen.getByText("p75")).toBeInTheDocument();
+  });
+
+  it("renderiza a seção de evolução quando há série", () => {
+    const evolutionGroups = transformEvolutionData(EVOLUTION_FIXTURE).groups;
+    render(SchoolProfile, { profile: profileFixture(), evolutionGroups });
+
+    expect(screen.getByText("Evolução")).toBeInTheDocument();
+    expect(screen.getByText("Anos Finais")).toBeInTheDocument();
+    expect(screen.getAllByText("IDEB observado").length).toBeGreaterThan(0);
   });
 
   it("renderiza as escolas similares com a fonte", () => {

@@ -19,6 +19,9 @@ describe("SchoolProfilePage", () => {
     await screen.findByText("EMEF Exemplo");
     expect(screen.getByText("Posição relativa")).toBeInTheDocument();
     expect(screen.getByText("Sinais de atenção")).toBeInTheDocument();
+    // a evolução vem de outra chamada (mesmo inep), em paralelo
+    expect(await screen.findByText("Evolução")).toBeInTheDocument();
+    expect(screen.getByText("Anos Finais")).toBeInTheDocument();
   });
 
   it("exibe erro quando a escola não é encontrada (400)", async () => {

@@ -64,6 +64,16 @@ my $pid;
           tables   => { peers => [], flags => [] },
         };
       }
+      elsif ($method eq 'POST' && $path eq '/school_evolution') {
+        $code = 200;
+        $json = {
+          analysis => 'school_evolution',
+          data     => [ { indicador => 'ideb_observado', ano => 2023, valor => 4.7 } ],
+          metrics  => { n_series => 1 },
+          metadata => { co_entidade => "$body->{co_entidade}" },
+          tables   => { resumo => [] },
+        };
+      }
       elsif ($method eq 'POST' && $path eq '/school_profile/reference') {
         $code = 200;
         $json = { persisted => 1, nu_ano_censo => 2025, rows => 50184, table => 'analytics.school_profile_reference' };
@@ -182,6 +192,13 @@ subtest 'run_school_profile chama POST /school_profile' => sub {
   is $result->{metadata}{co_entidade}, '23165669', 'co_entidade propagado';
   is $result->{metadata}{cluster_source}, 'fallback_kmeans', 'cluster_source propagado';
   is $result->{metrics}{cluster_size}, 5, 'metrics retornadas';
+};
+
+subtest 'run_school_evolution chama POST /school_evolution' => sub {
+  my $result = $make_client->()->run_school_evolution({ co_entidade => '23165669' });
+  is $result->{analysis}, 'school_evolution', 'evolução retornada';
+  is $result->{metadata}{co_entidade}, '23165669', 'co_entidade propagado';
+  is $result->{metrics}{n_series}, 1, 'metrics retornadas';
 };
 
 subtest 'run_school_profile_reference/cluster/batch (Fase 2)' => sub {

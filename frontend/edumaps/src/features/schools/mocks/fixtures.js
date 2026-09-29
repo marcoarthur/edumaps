@@ -178,3 +178,51 @@ export const PROFILE_FIXTURE = {
     ],
   },
 };
+
+// Payload do GET /api/school/:cod_inep/evolution (issue #110).
+export const EVOLUTION_FIXTURE = {
+  analysis: "school_evolution",
+  parameters: { co_entidade: DEMO_SCHOOL_COD_INEP },
+  data: [
+    { indicador: "ideb_observado", label: "IDEB observado", ano: 2019, etapa: "fundamental_ii", valor: 4.7 },
+    { indicador: "ideb_observado", label: "IDEB observado", ano: 2021, etapa: "fundamental_ii", valor: 5.1 },
+    { indicador: "ideb_observado", label: "IDEB observado", ano: 2023, etapa: "fundamental_ii", valor: 4.9 },
+    { indicador: "saeb_media", label: "Nota média (SAEB)", ano: 2019, etapa: null, valor: 5.2 },
+    { indicador: "saeb_media", label: "Nota média (SAEB)", ano: 2021, etapa: null, valor: 5.0 },
+    { indicador: "saeb_media", label: "Nota média (SAEB)", ano: 2023, etapa: null, valor: 4.8 },
+  ],
+  metrics: { n_series: 6, n_indicadores: 2, ano_min: 2019, ano_max: 2023 },
+  metadata: {
+    co_entidade: DEMO_SCHOOL_COD_INEP,
+    no_entidade: "EMEF Exemplo",
+    no_municipio: "São Paulo",
+    sg_uf: "SP",
+    rede: "Municipal",
+  },
+  tables: {
+    resumo: [
+      {
+        indicador: "ideb_observado",
+        label: "IDEB observado",
+        etapa: "fundamental_ii",
+        n_anos: 3,
+        ano_min: 2019,
+        ano_max: 2023,
+        primeiro_valor: 4.7,
+        ultimo_valor: 4.9,
+        variacao: 0.2,
+      },
+      {
+        indicador: "saeb_media",
+        label: "Nota média (SAEB)",
+        etapa: null,
+        n_anos: 3,
+        ano_min: 2019,
+        ano_max: 2023,
+        primeiro_valor: 5.2,
+        ultimo_valor: 4.8,
+        variacao: -0.4,
+      },
+    ],
+  },
+};

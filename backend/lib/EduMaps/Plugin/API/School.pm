@@ -14,6 +14,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/profile' => $check)->to('school#profile')->name('school_profile');
 
+  $api->get('/:cod_inep/evolution' => $check)->to('school#evolution')->name('school_evolution');
+
   $api->get('/:cod_inep/info' => $check)->to('school#info')->name('school_info');
 
   $api->get('/:cod_inep/payroll' => $check)->to('school#payroll')->name('school_payroll');

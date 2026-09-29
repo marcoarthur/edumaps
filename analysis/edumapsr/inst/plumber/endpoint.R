@@ -487,6 +487,51 @@ function(req, res) {
   )
 }
 
+#* @post /school_evolution
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      source <- postgres_source(con)
+
+      model <- load_school_evolution_dataset(
+        source,
+        co_entidade = payload$co_entidade,
+        schema = schema
+      )
+
+      result <- run_school_evolution(
+        model,
+        parameters = list(co_entidade = payload$co_entidade)
+      )
+
+      export_result(result, "json")
+    },
+
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /school_evolution: %s\n",
+        conditionMessage(e)
+      ))
+
+      res$status <- 500
+      list(error = "Erro interno ao gerar a evolução da escola")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")
