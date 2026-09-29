@@ -46,6 +46,8 @@ services:
       - DB_PASS=${DB_PASS}
       - DB_HOST=db
       - ANALYTICS_URL=http://analytic:8000
+      - EDUMAPS_SENTRY_DSN=${EDUMAPS_SENTRY_DSN:-}
+      - EDUMAPS_SENTRY_RELEASE=${EDUMAPS_SENTRY_RELEASE:-}
     ports:
       - "3000:3000"
 
@@ -61,6 +63,8 @@ services:
       - DB_HOST=db
       - EDUMAPS_DB_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
       - ANALYTICS_URL=http://analytic:8000
+      - EDUMAPS_SENTRY_DSN=${EDUMAPS_SENTRY_DSN:-}
+      - EDUMAPS_SENTRY_RELEASE=${EDUMAPS_SENTRY_RELEASE:-}
     # O ENTRYPOINT da imagem já é o docker-entrypoint.sh; passar o caminho de
     # novo aqui faria $1 virar o próprio script e o container subiria o morbo
     # (web) em vez do worker. Use só o argumento esperado pelo entrypoint.

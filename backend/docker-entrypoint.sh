@@ -21,6 +21,10 @@ cat > /opt/edumaps/backend/edu_maps.conf <<EOF
     pg_appname          => 'edumaps_dev',
   },
   db_url => 'postgresql://${DB_USER}:${DB_PASS}@db/${DB_NAME}',
+  sentry => {
+    dsn     => '${EDUMAPS_SENTRY_DSN:-}',
+    release => '${EDUMAPS_SENTRY_RELEASE:-}',
+  },
 }
 EOF
 
