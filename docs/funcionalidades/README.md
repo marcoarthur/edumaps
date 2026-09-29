@@ -63,6 +63,7 @@
 | [Inventário escolar](gestor/inventario.md) | Inventariar recursos e serviços, partindo do Censo. | 🟢 |
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
+| [Equipamentos no entorno](gestor/equipamentos-entorno.md) | Ver no mapa (e atualizar) os equipamentos públicos ao redor da escola. | 🟢 |
 
 ### comunidade
 | Capacidade | Resumo | Status |

@@ -26,6 +26,8 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode usar o **IDEB/SAEB** para desempenho ao longo do tempo.
 - Sistema pode usar o **SIOPE** para dados de financiamento da educação.
 - Sistema pode usar bases do **IBGE** para território e população.
+- Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
+  das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 
 ## Valor
 

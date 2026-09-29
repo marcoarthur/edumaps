@@ -3,7 +3,7 @@ titulo: Painel do gestor
 modulo: gestor
 status: ativo
 audiencia: [gestor]
-relacionadas: [acesso, painel-escola, pesquisas, reunioes-atas, inventario, relacoes-institucionais]
+relacionadas: [acesso, painel-escola, pesquisas, reunioes-atas, inventario, relacoes-institucionais, equipamentos-entorno]
 ---
 
 # Painel do gestor
@@ -39,3 +39,4 @@ sempre à mão.
 - [Reuniões e atas](reunioes-atas.md)
 - [Inventário escolar](inventario.md)
 - [Relações institucionais](relacoes-institucionais.md)
+- [Equipamentos no entorno](equipamentos-entorno.md)

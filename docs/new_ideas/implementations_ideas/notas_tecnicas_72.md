@@ -129,3 +129,45 @@ Deploy com `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
 `deploy_minion_dev` + `deploy_frontend_dev` e rebuild do compose local. Rotas
 respondem 401 sem sessão; validação visual do developer no `ubatexu.lan` PASS
 (após o fix da sessão do PR #119).
+
+## D — Mapa dos POIs OSM (PR #120)
+
+Segunda parte da feature: além do resumo, os equipamentos são desenhados num
+mapa junto à escola.
+
+- **Endpoint** (mesmo `GET /api/gestor/:cod_inep/osm/pois`): passa a devolver
+  - `escola` — nome/latitude/longitude (de `clean.censo_escolas`);
+  - `geojson` — `FeatureCollection` com o **centroide** de cada feição
+    (`ST_PointOnSurface`, leve para o mapa), mais `category`, `nome` (tag
+    `name`, quando houver) e `distance_m`; ordenado por distância.
+  - `Model::OSM::school_location` e `Model::OSM::school_pois_geojson`
+    (via `_dbh`); `_load_school` passou a selecionar `no_entidade`.
+- **`OsmPoisMap.svelte`**: marcador da escola, **círculo do buffer** (raio) e
+  um `L.circleMarker` por equipamento, **colorido por categoria** (paleta
+  estável por hash), com popup (nome em destaque + categoria + distância). O
+  resumo do painel virou **legenda com toggle**: o `OsmPoisPanel` mantém
+  `hidden` (categoria → oculta) e o mapa aplica a visibilidade.
+- **Categorias em PT**: `categoryLabel` (`constants/osm.js`) traduz as tags do
+  catálogo curado (`amenity=bus_station` → "Terminal de ônibus"), com fallback
+  formatado. `formatCategory` continua como base do fallback.
+
+### Lição: efeito que lê e escreve o mesmo estado
+
+A primeira versão usava um contador reativo (`tick += 1`) dentro do efeito de
+desenho para avisar o efeito de visibilidade. `tick += 1` **lê e escreve** o
+mesmo `$state`, então o efeito se auto-invalidava → `effect_update_depth_exceeded`
+(o erro aparecia ao re-renderizar o painel, p.ex. ao interagir com escolas
+similares). A correção: `layersByCategory` é `$state`, **escrito** pelo efeito
+de desenho (que não o lê) e **lido** pelo efeito de visibilidade (que não o
+escreve). Regra prática: um efeito não deve ler o estado que ele próprio escreve.
+
+### Topologia (para validação)
+
+`ubatexu.lan` (192.168.0.42) é o LXC `backend.edumaps` — a validação visual usa
+o deploy LXC, cujo `database.edumaps.edumaps_dev` guarda os dados de OSM da
+escola de teste (35246177). O compose local roda no host `ubaxala`
+(192.168.0.13) com o Postgres Docker próprio (`DB_HOST=db`) — bases separadas.
+
+O build do compose local falhou antes por disco cheio; `docker builder prune -af`
+liberou ~13 GB (cache de build).
+

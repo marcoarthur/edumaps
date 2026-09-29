@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-09-29 — POIs OSM no Painel do Gestor (PRs #118/#119)
+## Sessão 2026-09-29 — POIs OSM no Painel do Gestor (PRs #118/#119/#120)
 
 Botão "Equipamentos no entorno (OSM)" no painel do gestor: busca (assíncrona)
 os equipamentos públicos num buffer ao redor da escola, com catálogos
@@ -53,10 +53,33 @@ os equipamentos públicos num buffer ao redor da escola, com catálogos
   - **Bug pego na validação visual**: o `GestorPanelPage` é público e não
     chamava `restaurarSessao()`; o token não ia no `apiClient` → **401**. O
     componente passou a restaurar a sessão no mount (PR #119).
-- **Validação**: backend verde e estável; frontend **381 testes**; deploy
-  (`deploy_db_dev` + `deploy_backend_dev` + `deploy_minion_dev` +
-  `deploy_frontend_dev`) e compose local rebuildado; validação visual PASS.
-  PR #118 (feature) e PR #119 (fix da sessão) mergeados.
+- **Mapa dos POIs (PR #120)**:
+  - `GET /osm/pois` agora devolve `escola` (nome/lat/lon de `censo_escolas`) e
+    `geojson` (FeatureCollection com **centroide** `ST_PointOnSurface`, + 
+    `category`, `nome` da tag `name` e `distance_m`, ordenado por distância).
+  - `Model::OSM`: `school_location` e `school_pois_geojson` (via `_dbh`);
+    `_load_school` passou a selecionar `no_entidade`.
+  - Frontend: `OsmPoisMap.svelte` (marcador da escola, círculo do buffer,
+    pontos coloridos por categoria, popup com nome) e o resumo virou
+    **legenda com toggle** (`hidden` no `OsmPoisPanel`). Categorias em **PT**
+    via `categoryLabel` (`constants/osm.js`).
+  - **Bug de efeito**: `OsmPoisMap` lia e escrevia o mesmo `$state`
+    (`tick += 1`) → `effect_update_depth_exceeded`. Agora `layersByCategory`
+    é `$state` escrito pelo efeito de desenho e lido pelo de visibilidade
+    (escrever ≠ ler no mesmo efeito).
+  - **Topologia**: `ubatexu.lan` = 192.168.0.42 (LXC `backend.edumaps`), e a
+    validação visual usa o deploy LXC (`database.edumaps`). O compose local
+    (`192.168.0.13:8080`) usa o Postgres Docker próprio (`DB_HOST=db`),
+    separado — não confundir. Dados de teste da escola 35246177 ficam no
+    `edumaps_dev` do LXC.
+- **Validação**: backend verde e estável; frontend **384 testes** (72
+  arquivos); deploy (`deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_minion_dev` + `deploy_frontend_dev`) e compose local rebuildado
+  (o build local exigiu `docker builder prune -af` — disco a 100%); validação
+  visual PASS (resumo, mapa, categorias PT e correções). PRs #118/#119/#120
+  mergeados.
+- **Doc funcional**: nova capacidade `docs/funcionalidades/gestor/equipamentos-entorno.md`
+  (+ índice e `fontes-de-dados` com OpenStreetMap).
 
 ## Sessão 2026-09-29 — Módulos OSM generalizados (Services/Model)
 
