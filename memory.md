@@ -4,6 +4,35 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-29 — Módulos OSM generalizados (Services/Model)
+
+Generalização do OSM (antes só `Task::OSM` municipality+landuse+way):
+
+- **Migração `osm_generalize`**: `clean.osm_feature` (node/way/relation, PK
+  `(osm_type, osm_id)`), `osm_query_feature` (proveniência), `school_osm_feature`
+  (buffer escola, com `raio`/`distance_m`) e `municipio_osm_feature`; migra o
+  legado `osm_landuse` (way) para `osm_feature`. Result classes + resultset.
+- **`EduMaps::Services::OSM::Query`**: descreve a consulta (alvo `around`
+  raio 100–10000 m ou `poly`), filtros e **catálogo de perfis** de
+  equipamentos públicos (transporte/saúde/educação/assistência/cultura-lazer/
+  segurança/administração; default `equipamentos_publicos`); gera o Overpass
+  QL e `digest`.
+- **`EduMaps::Services::OSM`**: cliente Overpass + parser genérico
+  nwr→GeoJSON (Point/LineString/Polygon/MultiPolygon); modo offline/fixture;
+  eventos (query/query_data/feature/progress).
+- **`EduMaps::Model::OSM`**: cache (digest + `cache_ttl_days`, default 30) e
+  relações — `osm_for_school` (buffer em `censo_escolas`) e
+  `osm_for_municipio` (`municipios_sp`, nacional apesar do nome); valida por
+  `ST_DWithin`/`ST_Within`; leituras `school_features`/`municipio_features`.
+- **Wrappers**: `Task::OSM::Service` delega ao `Services::OSM` (QL/API legados
+  preservados; `t/osm_service.t` segue verde); `Task::OSM` ganha a task
+  `query_osm_school` + helper `get_osm_school`.
+- **Testes**: offline (`t/osm_query_builder.t`, `t/osm_service_offline.t`,
+  `t/osm_model_offline.t` com banco em rollback), online opt-in
+  (`t/osm_service_online.t`, `OSM_ONLINE=1`). Fixture `t/fixtures/osm/mixed.json`.
+  Obs.: o `ubaxala` não tem TLS no perlbrew (IO::Socket::SSL) → teste online
+  só roda no LXC.
+
 ## Sessão 2026-09-29 — Legendas e caixa "(?)" no Perfil (PR #116)
 
 Cada tabela/gráfico do Perfil da Escola (e do Perfil da Rede) passou a exibir
