@@ -1,6 +1,7 @@
 // src/main.js
 import { mount } from "svelte";
 import { eventBus, logger } from "@/shared/events";
+import { initSentry } from "@/shared/sentry";
 import { registerToastEventBridge } from "@/shared/stores/toastEventBridge.js";
 import "./app.css";
 import "@carbon/charts-svelte/styles.css";
@@ -19,8 +20,24 @@ async function enableMocking() {
 eventBus.use(logger);
 registerToastEventBridge();
 
-const app = mount(App, {
-  target: document.getElementById("app"),
-});
+async function bootstrap() {
+  // Sentry opcional: sem DSN retorna null e nada é inicializado.
+  const Sentry = await initSentry();
 
-export default app;
+  const options = { target: document.getElementById("app") };
+  if (Sentry) {
+    // Erros de componentes Svelte 5 (mount/update) também sobem ao Sentry.
+    options.onerror = (details) => {
+      const err =
+        details && typeof details === "object" && "error" in details
+          ? details.error
+          : details;
+      Sentry.captureException(err);
+    };
+  }
+
+  const app = mount(App, options);
+  if (import.meta.env.DEV) window.__edumapsApp = app;
+}
+
+bootstrap();

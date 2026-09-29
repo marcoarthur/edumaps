@@ -1,6 +1,7 @@
 // src/shared/api/client.test.js
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiClient, setApiToken, getApiToken } from "./client.js";
+import { eventBus, EVENTS } from "@/shared/events";
 
 describe("apiClient", () => {
   beforeEach(() => {
@@ -137,5 +138,45 @@ describe("apiClient", () => {
     await expect(
       apiClient.download("/api/gestor/11000040/reunioes/51/anexos/pauta"),
     ).rejects.toThrow("Anexo não encontrado");
+  });
+
+  it("emite api:error no eventBus para status >= 500", async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: "Boom interno" }),
+    });
+
+    const spy = vi.fn();
+    const unsubscribe = eventBus.on(EVENTS.API_ERROR, spy);
+
+    await expect(apiClient.get("/api/gestor/me")).rejects.toThrow("Boom interno");
+    expect(spy).toHaveBeenCalledOnce();
+    const [payload] = spy.mock.calls[0];
+    expect(payload.status).toBe(500);
+    expect(payload.url).toBe("/api/gestor/me");
+    expect(payload.message).toBe("Boom interno");
+    expect(payload.error).toBeInstanceOf(Error);
+    expect(payload.error.message).toBe("Boom interno");
+
+    unsubscribe();
+  });
+
+  it("não emite api:error para 4xx (erro de cliente/negócio)", async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ error: "Validação" }),
+    });
+
+    const spy = vi.fn();
+    const unsubscribe = eventBus.on(EVENTS.API_ERROR, spy);
+
+    await expect(apiClient.post("/api/gestor/me/pesquisas", {})).rejects.toThrow(
+      "Validação",
+    );
+    expect(spy).not.toHaveBeenCalled();
+
+    unsubscribe();
   });
 });

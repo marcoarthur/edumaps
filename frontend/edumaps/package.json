@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@carbon/charts-svelte": "^1.22.18",
+    "@sentry/browser": "^9.0.0",
+    "@sentry/svelte": "^9.0.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "svelte": "^5.0.0"
