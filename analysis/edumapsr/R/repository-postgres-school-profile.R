@@ -210,4 +210,60 @@ read_school_profile_cache.postgres_school_profile_repository <- function(
     DBI::dbQuoteIdentifier(con, output_schema),
     DBI::dbQuoteIdentifier(con, SCHOOL_PROFILE_TABLE)
   ))
+
+  .ensure_school_profile_flat_view(con, output_schema)
+}
+
+#' Cria a view achatada do perfil (para o Assistente do Censo)
+#'
+#' Achata `indicadores_comparados` do payload em uma linha por
+#' (escola, indicador), expondo colunas legíveis ao modelo NL->SQL
+#' (issue #111). Leitura de `analytics.school_profile`.
+#'
+#' @keywords internal
+.ensure_school_profile_flat_view <- function(con, output_schema) {
+  view <- "school_profile_flat"
+  q_schema <- DBI::dbQuoteIdentifier(con, output_schema)
+  q_table <- DBI::dbQuoteIdentifier(con, SCHOOL_PROFILE_TABLE)
+  q_view <- DBI::dbQuoteIdentifier(con, view)
+
+  DBI::dbExecute(con, sprintf(
+    "CREATE OR REPLACE VIEW %s.%s AS
+     SELECT
+       (sp.profile_data -> 'metadata' ->> 'co_entidade')::bigint  AS co_entidade,
+       sp.profile_data -> 'metadata' ->> 'no_entidade'            AS no_entidade,
+       (sp.profile_data -> 'metadata' ->> 'co_municipio')::int    AS co_municipio,
+       sp.profile_data -> 'metadata' ->> 'no_municipio'           AS no_municipio,
+       sp.profile_data -> 'metadata' ->> 'sg_uf'                  AS sg_uf,
+       sp.nu_ano_censo                                            AS nu_ano_censo,
+       (sp.profile_data -> 'metadata' ->> 'cluster_id')::int      AS cluster_id,
+       sp.profile_data -> 'metadata' ->> 'cluster_label'          AS cluster_label,
+       sp.profile_data -> 'metadata' ->> 'cluster_source'         AS cluster_source,
+       ind.item ->> 'indicador'                                   AS indicador,
+       ind.item ->> 'label'                                       AS indicador_label,
+       (ind.item ->> 'escola')::double precision                  AS escola,
+       (ind.item ->> 'municipio')::double precision               AS municipio,
+       (ind.item ->> 'rede')::double precision                    AS rede,
+       (ind.item ->> 'brasil')::double precision                  AS brasil,
+       (ind.item ->> 'cluster')::double precision                 AS cluster,
+       (ind.item ->> 'quartil_no_cluster')::int                   AS quartil_no_cluster,
+       (ind.item ->> 'atencao')::boolean                          AS atencao,
+       sp.updated_at                                              AS computed_at
+     FROM %s.%s sp
+     CROSS JOIN LATERAL jsonb_array_elements(
+       COALESCE(sp.profile_data -> 'tables' -> 'indicadores_comparados', '[]'::jsonb)
+     ) AS ind(item)",
+    q_schema, q_view, q_schema, q_table
+  ))
+
+  # O Assistente lê com a role somente-leitura `edumaps_leitor`. Grants só
+  # valem para objetos criados DEPOIS do `GRANT ALL TABLES`; garantimos o
+  # SELECT nesta view (best-effort: a role pode não existir em todo banco).
+  tryCatch(
+    DBI::dbExecute(con, sprintf(
+      "GRANT SELECT ON %s.%s TO edumaps_leitor",
+      q_schema, q_view
+    )),
+    error = function(e) NULL
+  )
 }

@@ -95,3 +95,26 @@ test_that("chat_tables trata glossrio sem tabelas", {
   expect_equal(nrow(vazio), 0)
   expect_equal(names(vazio), c("schema", "tabela", "descricao", "chave"))
 })
+
+test_that("perfil da escola esta na whitelist do chat (issue #111)", {
+  glossario <- edumapsAnalytics:::chat_glossary()
+  tabelas <- edumapsAnalytics:::chat_tables(glossario)
+  nms <- paste(tabelas$schema, tabelas$tabela, sep = ".")
+  expect_true("analytics.school_profile_flat" %in% nms)
+
+  curadas <- edumapsAnalytics:::chat_curated_columns(glossario)
+  flat <- curadas[curadas$tabela == "school_profile_flat", , drop = FALSE]
+  expect_gt(nrow(flat), 0)
+  expect_true(all(c("co_entidade", "indicador", "atencao", "quartil_no_cluster") %in% flat$coluna))
+})
+
+test_that("system prompt direciona o perfil da escola", {
+  glossario <- edumapsAnalytics:::chat_glossary()
+  dicionario <- edumapsAnalytics:::chat_curated_columns(glossario)
+  texto <- paste(
+    edumapsAnalytics:::chat_system_prompt(dicionario, glossario, list()),
+    collapse = "\n"
+  )
+  expect_match(texto, "school_profile_flat")
+  expect_match(texto, "atencao")
+})
