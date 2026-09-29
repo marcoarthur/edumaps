@@ -62,3 +62,5 @@ gestor_documentos [gestor_respostas] 2026-09-23T10:00:00Z Marco Arthur <arthurpb
 app_config [schemas] 2026-09-25T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Configuracao global da plataforma (Painel de Configuracao): schema app_config + tabela items com secrets cifrados via pgcrypto
 gestor_access_role [gestor_respostas] 2026-09-25T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Papel do gestor na plataforma: access_role (gestor|admin) para o painel administrativo
 chat_conversas [gestor_pesquisas] 2026-09-25T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Historico de conversas do Assistente do Censo: salvamento, busca full-text e exportacao
+
+osm_generalize [osm_data] 2026-09-29T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Generaliza o cache OSM: osm_feature (node/way/relation) + relacoes escola/municipio (buffer) e proveniencia

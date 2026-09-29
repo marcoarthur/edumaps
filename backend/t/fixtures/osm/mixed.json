@@ -1,0 +1,31 @@
+{
+  "version": 0.6,
+  "generator": "edumaps-test-fixture",
+  "elements": [
+    { "type": "node", "id": 1, "lat": -23.5000, "lon": -46.6000, "tags": { "amenity": "library", "name": "Biblioteca Municipal" } },
+
+    { "type": "node", "id": 2, "lat": -23.5000, "lon": -46.6000 },
+    { "type": "node", "id": 3, "lat": -23.5000, "lon": -46.5990 },
+    { "type": "node", "id": 4, "lat": -23.4990, "lon": -46.5990 },
+    { "type": "node", "id": 5, "lat": -23.4990, "lon": -46.6000 },
+    { "type": "node", "id": 6, "lat": -23.5000, "lon": -46.6000 },
+
+    { "type": "node", "id": 7, "lat": -23.5010, "lon": -46.6010 },
+    { "type": "node", "id": 8, "lat": -23.5020, "lon": -46.6020 },
+
+    { "type": "node", "id": 21, "lat": -23.5100, "lon": -46.6100 },
+    { "type": "node", "id": 22, "lat": -23.5100, "lon": -46.6090 },
+    { "type": "node", "id": 23, "lat": -23.5090, "lon": -46.6090 },
+    { "type": "node", "id": 24, "lat": -23.5090, "lon": -46.6100 },
+    { "type": "node", "id": 25, "lat": -23.5100, "lon": -46.6100 },
+
+    { "type": "way", "id": 100, "nodes": [2, 3, 4, 5, 6], "tags": { "amenity": "school", "name": "Escola Municipal" } },
+    { "type": "way", "id": 101, "nodes": [7, 8], "tags": { "highway": "primary", "name": "Rua Aberta" } },
+
+    { "type": "way", "id": 102, "nodes": [21, 22, 23, 24, 25, 21] },
+
+    { "type": "relation", "id": 200,
+      "members": [ { "type": "way", "ref": 102, "role": "outer" } ],
+      "tags": { "type": "multipolygon", "leisure": "park", "name": "Praça Central" } }
+  ]
+}
