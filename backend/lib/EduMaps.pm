@@ -27,6 +27,10 @@ sub startup ($self) {
   $self->plugin(Minion => {Pg => $conf->{db_url} });
   $self->plugin('Minion::Admin');
   $self->plugin('Status');
+
+  # Observabilidade: Sentry (5xx + jobs Minion falhos). Sem `sentry.dsn` no
+  # conf/ambiente o plugin é no-op (helper `sentry` inativo).
+  $self->plugin('EduMaps::Plugin::Sentry');
   $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity SchoolEmbedding CityAnalytics GruposFolha Chat SchoolProfile/;
   $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch/;
 
