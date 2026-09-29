@@ -254,7 +254,14 @@ sub request_similarity($self) {
 # ---------------------------------------------------------------------------
 
 sub request_school_profile($self) {
-  my $v = $self->validation;
+  # O script/timer envia application/json; os testes/CLI usam form.
+  # Normaliza a entrada como em request_cluster.
+  my $is_json = ($self->req->headers->content_type // '') =~ m{^application/json};
+  my $input = $is_json ? $self->req->json : $self->req->params->to_hash;
+  $input ||= {};
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
   $v->optional('mode', 'trim')->in(qw(reference cluster profiles));
   $v->optional('schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
   $v->optional('output_schema', 'trim')->like(qr/^[a-zA-Z]\w+$/);
@@ -264,7 +271,7 @@ sub request_school_profile($self) {
   $v->optional('sg_uf', 'trim')->like(qr/^[A-Z]{2}$/);
   $v->optional('limit', 'trim')->like(qr/^\d+$/);
 
-  return $self->bad_req if $self->any_error;
+  return $self->bad_req if $v->has_error;
 
   my %args;
   for my $key (qw(mode schema output_schema nu_ano_censo scope co_municipio sg_uf limit)) {

@@ -328,4 +328,19 @@ subtest 'request_school_profile: mode inválido -> 400' => sub {
   $t->post_ok('/api/task/school_profile' => form => {mode => 'nope'})->status_is(400);
 };
 
+subtest 'request_school_profile: corpo JSON é lido (limit no job)' => sub {
+  my $tx = $t->post_ok('/api/task/school_profile' => json => {
+    mode  => 'profiles',
+    scope => 'all',
+    limit => 5,
+  })->status_is(202)->tx;
+
+  my $job_id = $tx->res->json->{job_id};
+  my $job = $t->app->minion->job($job_id);
+  is $job->info->{args}[0]{limit}, '5', 'limit propagado do corpo JSON';
+  is $job->info->{args}[0]{scope}, 'all', 'scope propagado do corpo JSON';
+
+  $t->app->minion->backend->remove_job($job_id);
+};
+
 done_testing;
