@@ -57,56 +57,9 @@ export function getSchoolFinance(codInep) {
 export function requestSchoolSiope(codInep, ano) {
   return apiClient.post(`/api/gestor/${codInep}/financeiro/siope`, { ano });
 }
-
-/** Snapshot do job (polling simples). @returns {Promise<{state, error?}>} */
-export function getJobProgress(jobId) {
-  return apiClient.get("/api/task/progress", { job_id: jobId });
-}
-
-/**
- * Acompanha o job por SSE (Server-Sent Events) e, ao encerrar o stream, lê o
- * snapshot final (o SSE não emite falha) para decidir sucesso/erro.
- * @param {string|number} jobId
- * @param {{ onProgress?: (p:object)=>void, onDone?: ()=>void, onError?: (msg:string)=>void }} handlers
- * @returns {() => void} função para cancelar
- */
-export function watchJobProgress(jobId, { onProgress, onDone, onError } = {}) {
-  let encerrado = false;
-  const source = new EventSource(`/api/task/progress?job_id=${jobId}`);
-
-  const finalizar = async () => {
-    source.close();
-    try {
-      const snap = await getJobProgress(jobId);
-      if (snap.state === "failed") {
-        onError?.(snap.error || "Falha ao baixar os dados do SIOPE.");
-      } else {
-        onDone?.();
-      }
-    } catch (err) {
-      onError?.(err instanceof Error ? err.message : "Falha ao acompanhar o job.");
-    }
-  };
-
-  source.onmessage = (event) => {
-    try {
-      onProgress?.(JSON.parse(event.data));
-    } catch {
-      // evento sem JSON — ignora
-    }
-  };
-
-  source.onerror = () => {
-    if (encerrado) return;
-    encerrado = true;
-    finalizar();
-  };
-
-  return () => {
-    encerrado = true;
-    source.close();
-  };
-}
+// Acompanhamento de jobs Minion: implementação compartilhada em
+// shared/api/taskProgress.js (reusada por SIOPE, OSM, etc.).
+export { getJobProgress, watchJobProgress } from "@/shared/api/taskProgress.js";
 
 /**
  * Busca paginada de escolas com suporte a paginação server‑side.

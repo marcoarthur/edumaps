@@ -6,6 +6,7 @@
   import EquipmentSection from "./EquipmentSection.svelte";
   import StatusGrid from "./StatusGrid.svelte";
   import SimilarSchoolsSearch from "./SimilarSchoolsSearch.svelte";
+  import OsmPoisPanel from "./OsmPoisPanel.svelte";
   import { resumoCards, formatInt } from "../utils/transformGestorData.js";
 
   /**
@@ -43,6 +44,7 @@
     { href: "#equipamentos", label: "Equipamentos" },
     { href: "#acessibilidade", label: "Acessibilidade" },
     { href: "#escolas-similares", label: "Escolas similares" },
+    { href: "#osm-pois", label: "Equipamentos (OSM)" },
   ];
 </script>
 
@@ -156,4 +158,6 @@
   </section>
 
   <SimilarSchoolsSearch {inep} />
+
+  <OsmPoisPanel {inep} />
 </div>

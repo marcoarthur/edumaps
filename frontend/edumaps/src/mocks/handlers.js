@@ -8,6 +8,7 @@ import { gestorReunioesHandlers } from "@/features/gestor/mocks/reunioesHandlers
 import { gestorInventarioHandlers } from "@/features/gestor/mocks/inventarioHandlers.js";
 import { gestorRelacoesHandlers } from "@/features/gestor/mocks/relacoesHandlers.js";
 import { gestorDocumentosHandlers } from "@/features/gestor/mocks/documentosHandlers.js";
+import { gestorOsmHandlers } from "@/features/gestor/mocks/osmHandlers.js";
 import { configHandlers } from "@/features/config/mocks/configHandlers.js";
 
 export const handlers = [
@@ -19,5 +20,6 @@ export const handlers = [
   ...gestorInventarioHandlers,
   ...gestorRelacoesHandlers,
   ...gestorDocumentosHandlers,
+  ...gestorOsmHandlers,
   ...configHandlers,
 ];
