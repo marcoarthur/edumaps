@@ -377,6 +377,116 @@ function(req, res) {
   )
 }
 
+#* @post /school_profile/reference
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+  output_schema <- payload$output_schema %||% "analytics"
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      compute_and_save_school_profile_reference(
+        con,
+        nu_ano_censo = payload$nu_ano_censo,
+        schema = schema,
+        include_inactive = isTRUE(payload$include_inactive),
+        output_schema = output_schema
+      )
+    },
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /school_profile/reference: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao materializar as referências do perfil")
+    }
+  )
+}
+
+#* @post /school_profile/cluster
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+  output_schema <- payload$output_schema %||% "analytics"
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      compute_and_save_school_cluster_profile(
+        con,
+        nu_ano_censo = payload$nu_ano_censo,
+        schema = schema,
+        include_inactive = isTRUE(payload$include_inactive),
+        output_schema = output_schema
+      )
+    },
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /school_profile/cluster: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao materializar os percentis de cluster")
+    }
+  )
+}
+
+#* @post /school_profile/batch
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+  output_schema <- payload$output_schema %||% "analytics"
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      compute_and_save_school_profiles(
+        con,
+        scope = payload$scope %||% "pending",
+        co_municipio = payload$co_municipio,
+        sg_uf = payload$sg_uf,
+        limit = payload$limit %||% 500,
+        schema = schema,
+        output_schema = output_schema
+      )
+    },
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /school_profile/batch: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao materializar o perfil das escolas")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")
