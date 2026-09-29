@@ -56,5 +56,11 @@ analysis_registry <- list(
     required = character(0),
     view = "json",
     model_class = "school_evolution_model"
+  ),
+  network_profile = list(
+    fn = analyze_network_profile,
+    required = character(0),
+    view = "json",
+    model_class = "network_profile_model"
   )
 )

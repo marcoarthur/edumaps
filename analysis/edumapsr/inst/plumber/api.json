@@ -664,6 +664,69 @@
       }
     },
 
+    "/network_profile": {
+      "post": {
+        "summary": "Perfil da rede de um município",
+        "description": "Agrega as escolas ativas de um município (opcionalmente por dependência): distribuição por cluster e médias dos indicadores vs. o Brasil. Reusa as referências pré-computadas.",
+        "operationId": "createNetworkProfile",
+
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkProfileRequest"
+              },
+              "example": {
+                "codigo_ibge": 2307304
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": "Perfil da rede gerado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkProfileResponse"
+                }
+              }
+            }
+          },
+
+          "400": {
+            "description": "Requisição inválida (município inexistente/malformado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Município sem escolas no censo: 9999999"
+                }
+              }
+            }
+          },
+
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao gerar o perfil da rede"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/health": {
       "get": {
         "summary": "Verifica a saúde do serviço",
@@ -1597,6 +1660,81 @@
                     "ano_max": { "type": "integer" },
                     "primeiro_valor": { "type": "number", "nullable": true },
                     "ultimo_valor": { "type": "number", "nullable": true },
+                    "variacao": { "type": "number", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "NetworkProfileRequest": {
+        "type": "object",
+        "required": ["codigo_ibge"],
+        "properties": {
+          "codigo_ibge": {
+            "type": "integer",
+            "description": "Código IBGE do município (7 dígitos).",
+            "example": 2307304
+          },
+          "tp_dependencia": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Dependência administrativa (1=Federal, 2=Estadual, 3=Municipal, 4=Privada); ausente = todas."
+          },
+          "schema": { "type": "string", "default": "clean" },
+          "output_schema": { "type": "string", "default": "analytics" }
+        },
+        "additionalProperties": false
+      },
+
+      "NetworkProfileResponse": {
+        "type": "object",
+        "required": ["analysis", "tables"],
+        "properties": {
+          "analysis": { "type": "string", "example": "network_profile" },
+          "parameters": { "type": "object", "additionalProperties": true },
+          "data": { "type": "array", "items": {} },
+          "metrics": {
+            "type": "object",
+            "description": "n_escolas, n_clusters, n_brasil, n_indicadores.",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "description": "codigo_ibge, no_municipio, sg_uf, tp_dependencia, nu_ano_censo.",
+            "additionalProperties": true
+          },
+          "tables": {
+            "type": "object",
+            "properties": {
+              "clusters": {
+                "type": "array",
+                "description": "Uma linha por (cluster, indicador).",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cluster_id": { "type": "integer", "nullable": true },
+                    "cluster_label": { "type": "string" },
+                    "n": { "type": "integer" },
+                    "indicador": { "type": "string" },
+                    "label": { "type": "string" },
+                    "media": { "type": "number", "nullable": true }
+                  }
+                }
+              },
+              "indicadores": {
+                "type": "array",
+                "description": "Uma linha por indicador (rede vs. Brasil).",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "indicador": { "type": "string" },
+                    "label": { "type": "string" },
+                    "rede": { "type": "number", "nullable": true },
+                    "brasil": { "type": "number", "nullable": true },
                     "variacao": { "type": "number", "nullable": true }
                   }
                 }

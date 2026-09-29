@@ -137,3 +137,44 @@ fixture_school_evolution_model <- function() {
     )
   )
 }
+
+# Fixture do perfil da rede (issue #109).
+fixture_network_profile_model <- function() {
+  inds <- PROFILE_INDICATORS
+
+  clusters <- do.call(rbind, lapply(c(1L, 2L), function(cid) {
+    data.frame(
+      cluster_id = cid,
+      cluster_label = sprintf("Cluster %d", cid),
+      n = 10L * cid,
+      indicador = inds,
+      label = unname(PROFILE_LABELS[inds]),
+      media = rep(0.5, length(inds)),
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  indicadores <- data.frame(
+    indicador = inds,
+    label = unname(PROFILE_LABELS[inds]),
+    rede = rep(0.6, length(inds)),
+    brasil = rep(0.5, length(inds)),
+    variacao = rep(0.1, length(inds)),
+    stringsAsFactors = FALSE
+  )
+
+  new_network_profile_model(
+    clusters = clusters,
+    indicadores = indicadores,
+    metadata = list(
+      codigo_ibge = "2307304",
+      no_municipio = "Juazeiro do Norte",
+      sg_uf = "CE",
+      tp_dependencia = NA_integer_,
+      nu_ano_censo = 2025L,
+      n_escolas = 30L,
+      n_clusters = 2L,
+      n_brasil = 180540L
+    )
+  )
+}

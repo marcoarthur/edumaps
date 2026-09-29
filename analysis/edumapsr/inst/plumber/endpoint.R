@@ -532,6 +532,57 @@ function(req, res) {
   )
 }
 
+#* @post /network_profile
+function(req, res) {
+  payload <- req$body
+  schema <- payload$schema %||% "clean"
+  output_schema <- payload$output_schema %||% "analytics"
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      source <- postgres_source(con)
+
+      model <- load_network_profile_dataset(
+        source,
+        codigo_ibge = payload$codigo_ibge,
+        tp_dependencia = payload$tp_dependencia,
+        schema = schema,
+        output_schema = output_schema
+      )
+
+      result <- run_network_profile(
+        model,
+        parameters = list(
+          codigo_ibge = payload$codigo_ibge,
+          tp_dependencia = payload$tp_dependencia
+        )
+      )
+
+      export_result(result, "json")
+    },
+
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e))
+    },
+
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /network_profile: %s\n",
+        conditionMessage(e)
+      ))
+
+      res$status <- 500
+      list(error = "Erro interno ao gerar o perfil da rede")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")

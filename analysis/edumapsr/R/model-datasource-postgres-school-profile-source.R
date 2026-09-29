@@ -169,6 +169,14 @@ load_school_profile <- function(source, ...) {
   paste0(sprintf("avg(%s) AS %s", inds, inds), collapse = ",\n      ")
 }
 
+#' Médias por indicador com alias de tabela (ex.: agregação por cluster)
+#'
+#' @keywords internal
+.profile_avg_cols_alias <- function(alias = "p") {
+  inds <- PROFILE_INDICATORS
+  paste0(sprintf("avg(%s.%s) AS %s", alias, inds, inds), collapse = ",\n      ")
+}
+
 #' Colunas de quartis/média do cluster (CTE clus_stats)
 #'
 #' @keywords internal
