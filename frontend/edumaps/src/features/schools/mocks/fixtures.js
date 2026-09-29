@@ -83,6 +83,9 @@ export const PROFILE_FIXTURE = {
     n_municipio: 10,
     n_rede: 20,
     n_brasil: 100,
+    cached: false,
+    computed_at: "2026-09-28 21:00:00",
+    cluster_run_id: "run_123",
   },
   tables: {
     indicadores_comparados: [

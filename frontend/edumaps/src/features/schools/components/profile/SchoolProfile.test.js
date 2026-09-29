@@ -19,6 +19,13 @@ describe("SchoolProfile", () => {
     expect(screen.getByText(/Alta perfil escolar/)).toBeInTheDocument();
   });
 
+  it("mostra o frescor do perfil (atualizado em + run do cluster)", () => {
+    render(SchoolProfile, { profile: profileFixture() });
+
+    expect(screen.getByText(/Perfil atualizado em/)).toBeInTheDocument();
+    expect(screen.getByText(/cluster run_123/)).toBeInTheDocument();
+  });
+
   it("renderiza os sinais de atenção", () => {
     render(SchoolProfile, { profile: profileFixture() });
 

@@ -38,6 +38,12 @@
           {profile.cluster.label}
         </span>
       {/if}
+      {#if profile.computedAtLabel}
+        <p class="text-xs text-gray-500 mt-2">
+          Perfil atualizado em {profile.computedAtLabel}{profile.cached ? ' · cache' : ''}
+          {#if profile.clusterRunId}· cluster {profile.clusterRunId}{/if}
+        </p>
+      {/if}
     </div>
 
     <div class="flex items-center gap-2">
