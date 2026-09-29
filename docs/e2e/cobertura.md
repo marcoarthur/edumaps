@@ -318,3 +318,15 @@ Desempenho no host analítico de dev: escola típica (sem cluster persistido)
 **~1,7–2,4s**; escola com cluster persistido ~3,4s (percentis sobre 2.821
 escolas). A primeira chamada de cada escola é mais lenta (cache do backend
 `analytics.analysis_cache` cobre as seguintes por 24h).
+
+## Rodada 2026-09-29 — Perfil da Escola Fase 2 (issue #107)
+
+Read-through do perfil (referências/percentis pré-computados):
+
+| Verificação | Resultado |
+|---|---|
+| `GET /api/school/23165669/profile` warm | 🟢 200 em ~0,1–0,4s; `cached=true`, `reference_source_municipio=reference` |
+| Escola com cluster persistido (`51054531`) | 🟢 `cluster_source=persisted`, `cluster_scope=cluster_profile`, `cluster_run_id` presente |
+| `POST /api/task/school_profile` (JSON, limit=2) | 🟢 202; job processou 2 (`analytics.school_profile` 422→424) |
+| Timer `edumaps-school-profile-refresh.timer` | 🟢 enabled, próxima execução agendada |
+| Painel `/escola/perfil` (linha "Perfil atualizado em") | 🟢 PASS (validação visual do developer, 2026-09-29) |

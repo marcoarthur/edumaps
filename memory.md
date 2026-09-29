@@ -4,6 +4,52 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-28/29 — Perfil da Escola Fase 2 (issue #107, PR #108)
+
+Segunda fase do painel do gestor: separa **cálculo** de **leitura**. Issue
+#107 (derivada do #105), PR #108 mergeado em `main` (`fe8ce76`).
+
+**Entregue**
+- R: `analytics.school_profile_reference` (50.184 linhas; médias
+  Brasil/rede/município por ano) e `analytics.school_cluster_profile`
+  (p25/p50/p75 por cluster); `compute_and_save_school_profile_reference/
+  cluster_profile/profiles`; DataSource lê o pré-computado
+  (`prefer_reference`) com fallback live; `/school_profile` virou
+  **read-through** (`metadata.cached`/`computed_at`, `refresh=true`);
+  endpoints `/school_profile/reference|cluster|batch`.
+- Backend: `Task::SchoolProfile` (Minion, fila `analytics`, modos
+  reference/cluster/profiles), `POST /api/task/school_profile`, métodos no
+  `Analytics::Client`.
+- Agendamento: systemd service+timer diário (03:20) chamando o script
+  `backend/script/tasks/school_profile_refresh.sh` (instalado no
+  `deploy_backend_dev`).
+- Frontend: linha "Perfil atualizado em … · cluster <run>".
+
+**Desempenho**: read-through warm **~0,1–0,4s** (antes ~2–3,4s); cold ~1s.
+O gargalo era a agregação nacional por request; agora é materializada.
+
+**Bugs corrigidos no caminho**
+- `scale()`/`daisy` devolviam NaN com indicadores constantes (escolas
+  pequenas) → batch falhava; fix remove features sem variância.
+- `/api/task/school_profile` não lia o corpo JSON (Mojolicious não mescla
+  JSON nos params) → `limit`/`mode` do timer eram ignorados; normalizado
+  como em `request_cluster`.
+- Serialização: o round-trip do payload no cache perdia os marcadores
+  `unbox`; o handler fixa `serializer_json(auto_unbox=TRUE)`.
+
+**Nuance**: o UPSERT em lote não pode usar `unnest` com bind vetorial no
+RPostgres (parâmetro escalar) → usa tabela temporária (`dbWriteTable`) +
+`INSERT ... SELECT`.
+
+**Testes**: R 372 (falha de `test-cluster.R:154` pré-existente); backend
+`t/04-api/task.t` (25); frontend 355.
+
+**Pendências**
+- Documentar os endpoints batch no `api.json` (hoje só o `/school_profile`).
+- Disparo event-driven após a clusterização (hoje só o timer diário).
+- Itens 2–4 do roadmap do #105 (`school_evolution`, `/network_profile`,
+  `/ask` sobre o perfil) seguem como issues futuros.
+
 ## Sessão 2026-09-28 — Perfil da Escola (issue #105, PR #106)
 
 Painel analítico do gestor entregue de ponta a ponta: **R → backend Perl →
