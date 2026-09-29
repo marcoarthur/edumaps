@@ -10,6 +10,7 @@
     transformNetworkProfileData,
     formatNetworkValue,
   } from "../utils/transformNetworkProfileData.js";
+  import InfoHint from "@/shared/ui/components/InfoHint.svelte";
   import { ApiError } from "@/shared/api/client.js";
 
   let ibge = $state(null);
@@ -84,7 +85,18 @@
   {:else if profile}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section aria-label="Rede vs. Brasil" class="flex flex-col gap-2">
-        <h2 class="text-base font-bold text-gray-900">Rede vs. Brasil</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-gray-900">Rede vs. Brasil</h2>
+          <InfoHint
+            title="Como comparamos a rede"
+            text="Cada indicador é a média das escolas ativas do recorte (município e, se filtrado, a dependência), comparada à média do Brasil."
+            items={[
+              'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
+              'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola).',
+              'Variação = rede − Brasil (positivo = acima da média nacional).',
+            ]}
+          />
+        </div>
         <div class="overflow-x-auto border border-gray-200 rounded-md">
           <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
@@ -114,7 +126,18 @@
       </section>
 
       <section aria-label="Distribuição por cluster" class="flex flex-col gap-2">
-        <h2 class="text-base font-bold text-gray-900">Distribuição por cluster</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-gray-900">Distribuição por cluster</h2>
+          <InfoHint
+            title="Como os clusters agrupam a rede"
+            text="Agrupamos as escolas do recorte pelo cluster a que pertencem (similaridade de contexto) e mostramos a média de cada indicador por grupo."
+            items={[
+              'Cluster = agrupamento por similaridade (Gower/k-means); "Sem cluster" reúne escolas ainda não clusterizadas.',
+              'Médias por indicador calculadas sobre as escolas do grupo.',
+              'Se o município não tem clusterização, todas as escolas aparecem em "Sem cluster".',
+            ]}
+          />
+        </div>
         <div class="flex flex-col gap-4">
           {#each profile.clusters as cluster (cluster.cluster_label + '::' + (cluster.cluster_id ?? 'sem'))}
             <article class="bg-white border border-gray-200 rounded-md p-3 flex flex-col gap-2">
@@ -135,6 +158,10 @@
             </article>
           {/each}
         </div>
+
+        <p class="text-xs text-gray-500">
+          Cada grupo mostra o nº de escolas e a média do indicador entre elas.
+        </p>
       </section>
     </div>
   {/if}

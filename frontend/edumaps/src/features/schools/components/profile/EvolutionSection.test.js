@@ -26,4 +26,13 @@ describe("EvolutionSection", () => {
       screen.getByText(/Sem histórico disponível para esta escola/),
     ).toBeInTheDocument();
   });
+
+  it("explica a série com legenda e caixa (?)", () => {
+    render(EvolutionSection, { groups: groups() });
+
+    expect(
+      screen.getByRole("button", { name: "Detalhes sobre este dado" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/barra é proporcional/)).toBeInTheDocument();
+  });
 });

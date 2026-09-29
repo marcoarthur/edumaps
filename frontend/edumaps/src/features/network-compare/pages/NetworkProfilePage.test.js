@@ -24,6 +24,16 @@ describe("NetworkProfilePage", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("explica cada seção com legenda e caixa (?)", async () => {
+    renderWithQuery("?ibge=3551702");
+
+    await screen.findByText(/Sertãozinho/);
+    expect(
+      screen.getAllByRole("button", { name: "Detalhes sobre este dado" }).length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/Cada grupo mostra/)).toBeInTheDocument();
+  });
+
   it("exibe erro quando o município não é encontrado (404)", async () => {
     renderWithQuery("?ibge=9999999");
 

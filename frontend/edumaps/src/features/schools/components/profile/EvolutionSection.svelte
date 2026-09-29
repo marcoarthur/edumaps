@@ -4,6 +4,7 @@
   // Série histórica da escola (issue #110): uma série por (indicador,
   // etapa), com os anos e uma barra proporcional + variação total.
   import { formatEvolutionValue } from '../../utils/transformEvolutionData.js';
+  import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
   /** @type {{ groups?: Array<object> }} */
   let { groups = [] } = $props();
@@ -21,7 +22,19 @@
 </script>
 
 <section class="flex flex-col gap-2" aria-label="Evolução">
-  <h2 class="text-base font-bold text-gray-900">Evolução</h2>
+  <div class="flex items-center gap-2">
+    <h2 class="text-base font-bold text-gray-900">Evolução</h2>
+    <InfoHint
+      title="Como a série histórica é construída"
+      text="Séries por indicador e etapa, nos anos em que há avaliação."
+      items={[
+        'IDEB observado por etapa (edições do IDEB).',
+        'Notas SAEB de matemática, português e média, por ano.',
+        'Só anos de aplicação (ímpares); não interpolamos nem projetamos valores.',
+        'A barra é proporcional entre os anos da própria série; ▲/▼ mostra a variação total.',
+      ]}
+    />
+  </div>
 
   {#if groups.length === 0}
     <p class="text-sm text-gray-500">
@@ -68,5 +81,9 @@
         </article>
       {/each}
     </div>
+
+    <p class="text-xs text-gray-500">
+      Cada série é um indicador; a barra é proporcional entre os anos; ▲/▼ indica a variação entre o primeiro e o último ano.
+    </p>
   {/if}
 </section>
