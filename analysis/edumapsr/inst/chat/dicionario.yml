@@ -61,6 +61,9 @@ tabelas:
   analytics.mv_rede_escolas:
     descricao: "Rede de escolas por município e dependência administrativa (federal, estadual, municipal, privada): matrículas, docentes, etapas e desempenho."
     chave: co_municipio
+  analytics.school_profile_flat:
+    descricao: "Perfil analítico materializado de uma escola (issue #105/#107), achatado: uma linha por (escola, indicador) com o valor da escola e os comparativos município/rede/Brasil/cluster, o quartil no cluster e o sinal de atenção. Use para responder 'como está a escola X?' e 'quais os sinais de atenção da escola X?' sem varrer a população."
+    chave: co_entidade
 
 colunas:
   clean.censo_escolas:
@@ -342,6 +345,26 @@ colunas:
     qt_escolas: "Quantidade de escolas na rede"
     qt_matriculas: "Matrículas na rede"
     qt_docentes: "Docentes na rede"
+  analytics.school_profile_flat:
+    co_entidade: "Código INEP da escola (mesmo de clean.censo_escolas.co_entidade)"
+    no_entidade: "Nome da escola"
+    co_municipio: "Código IBGE do município"
+    no_municipio: "Nome do município"
+    sg_uf: "Sigla da UF"
+    nu_ano_censo: "Ano do censo do perfil"
+    cluster_id: "Cluster da escola (pode ser nulo)"
+    cluster_label: "Rótulo do cluster (pode ser nulo)"
+    cluster_source: "persisted | fallback_kmeans | none"
+    indicador: "Identificador do indicador (prop_licenciatura, ratio_aluno_docente, ideb_observado, inse, ...)"
+    indicador_label: "Rótulo PT-BR do indicador"
+    escola: "Valor do indicador na escola"
+    municipio: "Média do indicador no município"
+    rede: "Média do indicador na rede (dependência) da escola"
+    brasil: "Média do indicador no Brasil"
+    cluster: "Mediana do indicador no cluster da escola"
+    quartil_no_cluster: "Quartil do valor da escola dentro do cluster (1=inferior .. 4=superior)"
+    atencao: "true quando a escola está no quartil inferior do seu cluster"
+    computed_at: "Quando o perfil foi materializado"
     nota_media: "Média de proficiência (SAEB) na rede"
 
 conexoes:
@@ -352,8 +375,22 @@ conexoes:
   - "Demografia/PIB: clean.populacao_municipal e clean.dados_ibge por codigo_ibge; clean.municipios_sp tem geometria e nomes regionais (SP)."
   - "Remuneração: clean.remuneracao_municipal por cod_municipio (6 dígitos, formato antigo) e ano/mês; SEMPRE agregar por categoria/rede; nunca expor o profissional."
   - "Quando a pergunta pedir indicador já calculado (licenciatura, efetivos, nota média, IDEB, cluster), preferir clean.school_indicators."
+  - "Perfil da escola (diagnóstico + posição relativa): analytics.school_profile_flat por co_entidade, uma linha por indicador, com municipio/rede/brasil/cluster, quartil_no_cluster e atencao. Use para 'como está a escola X?' e 'quais os sinais de atenção da escola X?'; para o perfil vigente, filtre o nu_ano_censo mais recente."
 
 termos:
+  perfil da escola:
+    descricao: "Diagnóstico da escola com posição relativa e sinais de atenção"
+    colunas:
+      - "analytics.school_profile_flat.indicador"
+      - "analytics.school_profile_flat.indicador_label"
+      - "analytics.school_profile_flat.escola"
+      - "analytics.school_profile_flat.atencao"
+  sinais de atenção:
+    descricao: "Indicadores da escola no quartil inferior do seu cluster"
+    colunas:
+      - "analytics.school_profile_flat.atencao"
+      - "analytics.school_profile_flat.indicador_label"
+      - "analytics.school_profile_flat.quartil_no_cluster"
   libras:
     descricao: "Educação/atendimento em Libras (alunos surdos)"
     colunas:
