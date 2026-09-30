@@ -79,7 +79,7 @@ sources:
         license: "Domínio público (IBGE)"
 
   - id: inmet
-    name: "INMET - Dados meteorológicos"
+    name: "INMET - Dados meteorológicos e alertas"
     host: dados.inmet.gov.br
     base_url: "https://dados.inmet.gov.br"
     resources:
@@ -87,15 +87,29 @@ sources:
         method: GET
         description: "Estações automáticas/conceição - dados agregados por estação/dia"
         license: "CC-BY-4.0 (INMET)"
+      - path: "/alertas/cap12"
+        method: GET
+        params: [data_ini, data_fim, uf]
+        description: "Alerta-AS (CAP 1.2) - eventos meteorológicos que interrompem aula, com código IBGE"
+        license: "CC-BY-4.0 (INMET)"
+      - path: "/bdmep/estacao"
+        method: GET
+        params: [estacao, data_ini, data_fim]
+        description: "BDMEP - série diária histórica de estações (26 anos), sem autenticação"
+        license: "CC-BY-4.0 (INMET)"
 
   - id: mapbiomas
-    name: "MapBiomas - Cobertura/uso do solo"
+    name: "MapBiomas - Cobertura/uso do solo e fogo"
     host: mapbiomas.org
     base_url: "https://mapbiomas.org"
     resources:
       - path: "/download/collection/{colecao}/municipios"
         method: GET
-        description: "Mosaico municipal por coleção (agregado)"
+        description: "Mosaico municipal por COLEÇÃO (não por ano). Fixar coleção (ex.: collection9)"
+        license: "CC-BY-4.0 (MapBiomas)"
+      - path: "/download/collection/{colecao}/fogo"
+        method: GET
+        description: "MapBiomas Fogo por coleção (substitui INPE Queimadas)"
         license: "CC-BY-4.0 (MapBiomas)"
 
   - id: transportes_renavam
