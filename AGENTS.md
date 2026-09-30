@@ -136,34 +136,34 @@ Arquivos de perfil **e memória** em `docs/personas/`. Diferente das skills
 (instruções estáticas), as personas usam um **modelo com memória**: registram
 inputs e mantêm um loop de perguntas → respostas → follow-ups.
 
-Três personas avaliam o pacote `eduBR` (repo separado em `~/Projects/eduBR`):
+⚠️ **A curadoria está dividida entre dois repositórios.** O `eduBR` tem o
+acervo e o loop dele; aqui só fica o Tech Lead. Ver os dois blocos abaixo.
 
-| Persona | Arquivo | Foco |
-|---------|---------|------|
-| Pesquisadora educacional | `docs/personas/pesquisadora-educacional.md` | ML p/ questões nacionais/regionais/municipais |
-| Especialista em ML | `docs/personas/especialista-ml.md` | ML clássico + modelagem avançada |
-| Gestora escolar | `docs/personas/gestora-escolar.md` | Acompanhamento da escola vs painel municipal/estadual |
+### Personas do `eduBR` — curadoria mudou de repo
 
-Uma quarta persona atua sobre **todo o projeto** (não só o `eduBR`):
+O loop de curadoria do pacote `eduBR` **mudou para o próprio repositório dele**
+(`~/Projects/eduBR`, AGENTS.md lá tem o protocolo). Este repositório **não
+mantém mais o loop**: aqui o `eduBR` é só **fonte de dados** (via
+`service = "edumaps"`), não um objeto de curadoria.
+
+| Persona | Foco | Onde está |
+|---------|------|-----------|
+| Pesquisadora educacional | ML p/ questões nacionais/regionais/municipais | `eduBR/docs/personas/pesquisadora-educacional.md` |
+| Especialista em ML | ML clássico + modelagem avançada | `eduBR/docs/personas/especialista-ml.md` |
+| Gestora escolar | Acompanhamento da escola vs painel municipal/estadual | `eduBR/docs/personas/gestora-escolar.md` |
+
+⚠️ As cópias em `docs/personas/` deste repositório são **histórico congelado**,
+não a versão corrente: ficaram para trás quando o acervo foi movido, e já
+divergiram das do repo `eduBR`. **Não editar, não rodar rodada, não usar como
+fonte da verdade** — quando precisar do perfil ou da memória, ler lá.
+
+### Persona ativa neste repositório
+
+Uma persona atua sobre **todo o projeto** (não sobre o `eduBR`):
 
 | Persona | Arquivo | Foco |
 |---------|---------|------|
 | Tech Lead | `docs/personas/tech-lead.md` | Organiza o acervo (`docs/` + Zotero) e propõe direções/oportunidades técnicas |
-
-### Protocolo do loop (curadoria eduBR)
-
-1. **Ativar**: ler o perfil + memória da persona (`docs/personas/<slug>.md`).
-2. **Pendências**: as perguntas da rodada são as canônicas + os follow-ups abertos.
-3. **Responder**: executar o `eduBR` (via `Rscript`, `service = "edumaps"`) ou
-   ler o código/README e registrar `Pergunta → Resposta`.
-4. **Classificar**: `✓ atendido` / `lacuna` / `sugestão`.
-5. **Follow-up**: gerar a próxima pergunta e registrá-la em "Pendências".
-6. **Sugestões**: atualizar "Sugestões priorizadas" (`[alta]`/`[média]`/`[baixa]`).
-7. **Veredito**: ao zerar pendências, registrar `aprova` / `aprova com ressalvas`
-   / `reprova` com data.
-
-Cada rodada acrescenta uma entrada datada (mais recente no topo) no arquivo da
-persona e alimenta o backlog do `eduBR`.
 
 ### Loop do Tech Lead (acervo do projeto)
 

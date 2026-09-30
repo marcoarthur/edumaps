@@ -297,6 +297,6 @@ interdependente serializariam o trabalho sem ganho.
   que exige decisão não técnica.
 - **Decisão de leitura do IVET**: índice *territorial* ou *escolar com contexto*?
   A escolha altera a interpretação de todos os coeficientes (pendência P5 da
-  `pesquisadora-educacional`).
+  `pesquisadora-educacional`, cujo loop agora roda no repo `eduBR`).
 - Verificar handshake TLS com `download.inep.gov.br` a partir da rede de deploy
   (falhou neste ambiente; DNS resolve).

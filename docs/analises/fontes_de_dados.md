@@ -354,5 +354,6 @@ Sair de **um índice escolar com proxies uniformes por município** para **um
 (INMET), oferta de saúde em ponto (CNES), contexto sub-municipal (setor
 censitário), capacidade fiscal (SICONFI) e alcance real do aluno (isocronas +
 matriz OD)** — que é a direção que a
-[`pesquisadora-educacional.md`](../personas/pesquisadora-educacional.md)
-apontou como pendência aberta (P5, P8, P10).
+`pesquisadora-educacional` apontou como pendência aberta (P5, P8, P10). O loop
+dela roda agora no repo `eduBR`; a cópia em `../personas/` aqui é histórico
+congelado.

@@ -55,9 +55,11 @@
 - 🟢 Z:10022 `EduMaps Conceitos` · Z:6987 `EduMaps Modelagem` · Z:9563 `EduMaps Conceitos Matemáticos` · Z:6739 `Projeto EduMaps`.
 - 🟢 `docs/archive/dev/user_history_1.md` · notas Zotero `User Histories` (Z:12006 ranking+cluster, Z:12037 busca de escolas similares).
 
-## 7. Curadoria eduBR (personas)
-- 🟢 `docs/personas/pesquisadora-educacional.md` · `especialista-ml.md` · `gestora-escolar.md` · `tech-lead.md`.
-- 🟢 Repo separado `~/Projects/eduBR` (pacote R) — objeto de curadoria.
+## 7. Personas de curadoria
+- 🟢 `docs/personas/tech-lead.md` — **ativa neste repo**: acervo `docs/` + Zotero.
+- ⚪ **Curadoria do `eduBR` foi movida para o repo dele** (`~/Projects/eduBR`), que
+  agora guarda perfil **e** memória correntes das três personas de pacote.
+  As cópias em `docs/personas/` aqui são **histórico congelado** — não editar.
 
 ## 8. Notas técnicas (série)
 - 🔴 `docs/archive/dev/notas_tecnicas_1..16.md` — fases anteriores (**arquivadas**).

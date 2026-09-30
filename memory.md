@@ -4,6 +4,30 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Curadoria do `eduBR` saiu deste repositório
+
+Informado pelo developer: o **loop de curadoria do `eduBR` passou para o
+repositório do próprio `eduBR`** (`~/Projects/eduBR`), que já tem `AGENTS.md`,
+`docs/personas/` (perfil **e** memória das três personas) e o backlog
+consolidado.
+
+Consequência neste repo:
+
+- **`AGENTS.md`**: removido o "Protocolo do loop (curadoria eduBR)". A seção
+  "Personas de curadoria" agora avisa que a curadoria está dividida: o `eduBR`
+  guarda o acervo dele, aqui fica só o **Tech Lead**.
+- **⚠️ As cópias em `docs/personas/` (pesquisadora-educacional, especialista-ml,
+  gestora-escolar) são HISTÓRICO CONGELADO** — pedido explícito do developer
+  ("manter como histórico arquivado"). **Não editar, não rodar rodada.** Já
+  divergiram: a `pesquisadora-educacional.md` daqui tem a 3ª rodada (P10/P11 +
+  veredito, do ciclo #123) que **ainda não existe** no repo `eduBR`. Se esse
+  histórico for para lá, é **portar** — não copiar por cima.
+- `docs/indice.md` seção 7 reescrita; `memory.md`, `notas_tecnicas_74.md` e
+  `docs/analises/fontes_de_dados.md` ajustados para apontar o repo `eduBR` como
+  fonte da verdade.
+- Ciclo **só de documentação** → push direto em `main` (exceção do passo 6 do
+  Workflow), **sem deploy**.
+
 ## Sessão 2026-09-30 — Catálogo e priorização de fontes de dados abertas (issue #123)
 
 Ciclo **100% de documentação** (sem código → **sem deploy**).
@@ -22,8 +46,9 @@ Issues #124 a #132 criadas.
   de fontes, reescrita em alto nível.
 - `docs/indice.md` — nova seção 12; **numeração duplicada "## 11." corrigida**
   (Funcionalidades / Clientes → 11 e 13).
-- Entradas datadas em `docs/personas/tech-lead.md` e
-  `docs/personas/pesquisadora-educacional.md`.
+- Entradas datadas em `docs/personas/tech-lead.md` e, para a rodadas de
+  pesquisa, `docs/personas/pesquisadora-educacional.md` (ver nota de curadoria
+  abaixo).
 - `docs/new_ideas/implementations_ideas/notas_tecnicas_74.md`.
 
 ### Decisões de projeto
@@ -155,7 +180,8 @@ trabalho sem ganho.
 - **Decisão institucional sobre PeNSE** (CEP/Conep, ambiente controlado) — a
   maior fonte de saúde do catálogo e a única que exige decisão não técnica.
 - **Decisão de leitura do IVET**: territorial ou escolar com contexto? Muda a
-  interpretação de todos os coeficientes (P5 da pesquisadora-educacional).
+  interpretação de todos os coeficientes (P5 da pesquisadora-educacional, roda
+  no repo `eduBR`).
 - Verificar handshake TLS com `download.inep.gov.br` a partir da rede de deploy
   (falhou neste ambiente; DNS resolve para `200.130.24.15`).
 
