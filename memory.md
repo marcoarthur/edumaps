@@ -4,6 +4,105 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Catálogo e priorização de fontes de dados abertas (issue #123)
+
+Ciclo **100% de documentação** (sem código → **sem deploy**). Branch
+`docs/analytics-fontes-de-dados`.
+
+### Entregue
+- `docs/analises/fontes_de_dados.md` — matriz-mestre (48 fontes, 14 `[alta]`),
+  cobertura por lacuna e plano em 6 fases.
+- `docs/analises/fontes/` — 8 fichas por domínio (educacao, socioeconomico,
+  conectividade-obras, mobilidade, saude, seguranca, meio-ambiente, agregadores).
+- `docs/funcionalidades/plataforma/fontes-de-dados.md` — capacidade de curadoria
+  de fontes, reescrita em alto nível.
+- `docs/indice.md` — nova seção 12; **numeração duplicada "## 11." corrigida**
+  (Funcionalidades / Clientes → 11 e 13).
+- Entradas datadas em `docs/personas/tech-lead.md` e
+  `docs/personas/pesquisadora-educacional.md`.
+- `docs/new_ideas/implementations_ideas/notas_tecnicas_74.md`.
+
+### Decisões de projeto
+1. **`não verificado` impede `[alta]`** — sem exceção. Custo real: o lote
+   educação inteiro (6 fontes) ficou fora de `[alta]` por falta da licença do
+   INEP. Benefício: **zero** fontes `[alta]` com campo não confirmado.
+2. **Todo rebaixamento registra a regra que incide e o motivo** — senão "média"
+   vira opinião. Exemplo: Ipeadata somou 18 e é `[média]` (HTTP sem TLS, sem
+   paginação, licença sem SPDX).
+3. **Fase 0 do plano = allowlist de endpoints + proveniência com licença.** Não
+   é melhoria: a API do SUS publica microdado individual sem mitigação
+   (verificado em payload 200) e um erro de URL baixaria dado sensível de menor
+   para o banco de dev.
+
+### Achados que mudam decisões futuras
+- **`apisidra.ibge.gov.br` está atrás de Cloudflare** → 403 para servidor. Usar
+  a **v3 em `servicodados.ibge.gov.br`** (200 sem challenge). Não está em
+  documentação do IBGE.
+- **API do SUS devolve dado individual sem mitigação** em
+  `/sisvan/estado-nutricional`, `/vacinacao/doses-aplicadas-pni-*` e
+  `/cnes/estabelecimentos` (este último com nome de pessoa física, CNPJ,
+  telefone, e-mail). Allowlist é obrigatória antes de qualquer job de saúde.
+- **BCB usa ODbL share-alike** → não pode ser materializado no Postgres.
+  Descartado por licença, não por mérito.
+- **Portal de dados abertos do FNDE é SPA sem SSR** e o CKAN federal exige
+  credencial (**401**) → pipeline R direto é inviável. Três fontes rebaixadas por
+  **acesso**, não por valor.
+- **Censo Escolar do INEP: 1995–2025** (confirmado). ⚠️ a URL de 2025 é
+  `microdados_censo_escolar_2025_**.zip**` (underscore extra) → 404 só naquele
+  ano para ETL que interpola. Usar tabela de exceções ou scraping do `href`.
+- **Censo 2022 por setor censitário**: malha com atributos = **748 MB**; **vazio
+  ≠ zero** (supressão de células pequenas é estado distinto).
+- **MapBiomas**: fixar a URL da **Coleção** (ex.: `collection11`), não do ano.
+- **Atlas do IDHM** publica ~120 indicadores municipais com dimensões SAÚDE e
+  VULNERABILIDADE → abre parte da lacuna 1 sem depender do DATASUS.
+- **Base dos Dados** entrega Censo Escolar 2007–2022 em BigQuery (2023/2024
+  ausentes). `tesouror` traz **SICONFI** → nova dimensão fiscal no IVET.
+- **Sete itens do enunciado #123 não existem/estão mal nomeados**: `ibge7`,
+  `geodesobr`, `RRPP`, `CNTramas`, `PDL Educationis`, `SIGESC`, `Novo PAC da
+  CGU`; `PNCT`→**PNATE**; `GESAC`→modalidade do Wi-Fi Brasil; `PRODES/DETER`
+  são do **INPE**; `SISLIC` **exige login**; FIPE na BrasilAPI fora do ar.
+
+### Contexto de pipeline usado (verificado no repositório)
+- `clean.dados_ibge` **já existe** e já consome **SIDRA** (PIB municipal) → as
+  fontes IBGE do plano são **extensão**, não greenfield. Mesma chave
+  (`codigo_ibge`, `ano`).
+- `clean.ideb_notas_escolas` e `raw.inep_raw` **já existem**.
+- `clean.import_metadata` tem `table_name`, `source_file`, `import_timestamp`,
+  `row_count_loaded`, `notes` — **falta** `source_url`, `source_license`,
+  `retrieved_at` (Fase 0).
+- Convenção mantida: `raw.` → `clean.` → `analytics.`, migrations Sqitch em
+  `data_pipeline/deploy/`, R em `analysis/edumapsr/R/`.
+
+### Lacunas que o catálogo NÃO resolveu
+- **Conectividade**: só o Medidor Educação Conectada mede banda por escola, e
+  **não tem API nem licença publicada** (`licenca.txt` → 404), atrás de Shiny.
+  Contramedida correta é **e-SIC**, não scraper.
+- **Mobilidade**: não há base nacional comparável — o padrão é **GTFS, municipal
+  e não padronizado**. Recomendação: piloto municipal, com honestidade sobre a
+  ausência de cobertura nacional.
+
+### Pendências
+- **e-SIC ao INEP** (licença de Censo Escolar, IDEB, ENEM, painel do PNE) —
+  desbloqueia 4 fichas de `[alta]`.
+- **e-SIC ao MEC/NIC.br** (CSV + dicionário do Medidor Educação Conectada) —
+  fecha a lacuna 3; a metodologia de agregação já está publicada na aba "Dados".
+- **e-SIC ao FNDE** (URL + dicionário do Novo PAC/Proinfância e do PNATE).
+- **Decisão institucional sobre PeNSE** (CEP/Conep, ambiente controlado) — a
+  maior fonte de saúde do catálogo e a única que exige decisão não técnica.
+- **Decisão de leitura do IVET**: territorial ou escolar com contexto? Muda a
+  interpretação de todos os coeficientes (P5 da pesquisadora-educacional).
+- Verificar handshake TLS com `download.inep.gov.br` a partir da rede de deploy
+  (falhou neste ambiente; DNS resolve para `200.130.24.15`).
+
+### Notas de ambiente
+- `sqlite3` CLI **ausente** no host; usar `python3 -c "import sqlite3"` em
+  read-only (já documentado em `tech-lead.md`).
+- `webfetch` do IBGE (`www.ibge.gov.br`, `sidra.ibge.gov.br`) → **403
+  Cloudflare**; `servicodados.ibge.gov.br` e `ftp.ibge.gov.br` abrem normalmente.
+- **Subagentes de pesquisa às vezes ecoam o template vazio e emitem texto-lixo em
+  CJK/cirílico.** Revisar e limpar cada arquivo antes de commitar; varredura:
+  `grep -rnP '[\x{4e00}-\x{9fff}\x{0400}-\x{04ff}]' docs/`.
+
 ## Sessão 2026-09-29 — Sentry ativado com DSN real (projeto único)
 
 O usuário criou o projeto no sentry.io e forneceu o DSN real; a integração
