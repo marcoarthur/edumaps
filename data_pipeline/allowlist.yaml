@@ -140,6 +140,43 @@ sources:
         description: "Malha de setor censitário 2022 (GPKG, ~748 MB)"
         license: "Domínio público (IBGE)"
 
+  - id: tesouror_siconfi
+    name: "Tesouro Nacional / SICONFI - Finanças municipais"
+    host: tesouror.transparencia.gov.br
+    base_url: "https://tesouror.transparencia.gov.br"
+    resources:
+      - path: "/api/v1/receitas"
+        method: GET
+        params: [exercicio, id_ente, tipo_receita]
+        description: "Receitas municipais (próprias, transferências, FUNDEB) por exercício e ente"
+        license: "Domínio público (Tesouro Nacional)"
+      - path: "/api/v1/despesas"
+        method: GET
+        params: [exercicio, id_ente, funcao, subfuncao]
+        description: "Despesas municipais por função/subfunção (educação, saúde, etc.)"
+        license: "Domínio público (Tesouro Nacional)"
+      - path: "/api/v1/entes"
+        method: GET
+        params: [codigo_ibge]
+        description: "Cadastro de entes federativos com código IBGE"
+        license: "Domínio público (Tesouro Nacional)"
+
+  - id: cgu_transparencia
+    name: "CGU Portal da Transparência - Transferências da União"
+    host: api.portaldatransparencia.gov.br
+    base_url: "https://api.portaldatransparencia.gov.br"
+    resources:
+      - path: "/api-de-dados/transferencias"
+        method: GET
+        params: [codigo_ibge, data_inicio, data_fim, pagina]
+        description: "Transferências da União para estados/municípios (FUNDEB, PNATE, etc.)"
+        license: "CC-BY-4.0 (CGU)"
+      - path: "/api-de-dados/entes"
+        method: GET
+        params: [codigo_ibge]
+        description: "Cadastro de entes federativos"
+        license: "CC-BY-4.0 (CGU)"
+
 # ------------------------------------------------------------
 # RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
 # ------------------------------------------------------------
