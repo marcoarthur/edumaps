@@ -11,7 +11,7 @@ Stack: **Perl (Mojolicious) / R / PostgreSQL (PostGIS) / Sqitch / Leaflet.js**.
 backend/       Perl (Mojolicious) — API, models, controllers, roles
 data_pipeline/ Sqitch migrations, database config
 analysis/      R package (edumapsr) — analytics: ranking, similarity, indicators
-frontend/      Lua (LÖVE 2D) + Leaflet.js — mapas interativos
+frontend/      Svelte + Leaflet.js — mapas interativos
 db/            Scripts auxiliares de banco
 ```
 
