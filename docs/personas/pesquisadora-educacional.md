@@ -35,6 +35,44 @@
 
 ## Entradas
 
+### 2026-09-30 — 3ª rodada (lote de mobilidade — **corrige a 2ª**)
+
+**P11 — mobilidade: existe dado utilizável em escala nacional?**
+- Resposta: **existe, e são quatro fontes independentes.** A 2ª rodada respondeu
+  que não, crendo que o padrão aberto de transporte é GTFS municipal. Verificando
+  com o mesmo rigor dos outros lotes, apareceu:
+
+  | Dimensão | Fonte | Chave |
+  |---|---|---|
+  | Fluxo de deslocamento | ANTT / MONITRIIP | par de municípios, mensal desde jan/2019, CC BY |
+  | Tráfego e risco | ANTT (SAT, acidentes, geodados) | trecho viário com coordenada |
+  | Malha com volume | DNIT/INDE (SNV + VMDA) | trecho de rodovia, domínio público |
+  | Frota e sinistralidade | Transportes (RENAVAM, RENAEST) | município, mensal desde mai/2013 |
+
+  E, para a pergunta de acesso propriamente dita: **isocronas OSRM/Valhalla**,
+  que traduzem a malha do OSM em *população alcançável a pé em 15/30/45 min* —
+  **sem tocar em dado de passageiro**.
+- Status: **✓ atendido**. A lacuna 5 sai de "não resolvida" para "boa, com
+  ressalva de granularidade".
+- **A ressalva que importa para a pesquisa**: transporte escolar com **chave de
+  escola** existe em **um único município brasileiro verificado** — o Recife
+  publica vagas por unidade e por turno. Nenhuma fonte nacional chega perto.
+  Isso inverte o diagnóstico: o gargalo **não é a coleta, é a publicação**. O
+  dado existe nos DETRANs e nas secretarias de educação e quase nunca é aberto.
+  Para esta persona é a descoberta mais útil das três rodadas — um e-SIC
+  dirigido às secretarias municipais de educação renderia mais que qualquer
+  pipeline adicional.
+- **O que muda para o IVET**: `iv_mobilidade_isocrona_escolar_15` responde à
+  pergunta de P8 (escola rural × urbana) **sem reidentificação**. A isocrona por
+  escola em cidade pequena precisa sair agregada em grade de 1 km.
+- Follow-up: a isocrona mede **oportunidade de acesso**, não **uso** — um aluno a
+  4 km com ônibus a cada 40 min é alcançável na isocrona a pé e não no
+  deslocamento real. A matriz OD da ANTT corrige parte disso, mas opera em chave
+  **município-município**, não escola-aluno. A pergunta que fica é: **a
+  distância por tempo de viagem (não a distância geométrica) é a variável-chave
+  para o índice de vulnerabilidade, ou o IVET deve assume que a geométrica
+  basta?**
+
 ### 2026-09-30 — 2ª rodada (fontes de dados disponíveis para pesquisa, #123)
 
 **P5 — o IVET responde a qual pergunta, exatamente?**
@@ -73,7 +111,7 @@
   células? Sem isso, nenhum indicador de saúde sai do status de proposta.
 
 **P8 — a granularidade municipal basta para o IVET?**
-- Resposta: **não**, e esta é a crítica mais forte que averifyc sustente. O IVET
+- Resposta: **não**, e esta é a crítica mais forte que a verifiable evidência sustenta. O IVET
   atual repassa o **valor municipal uniforme a todas as escolas do município** —
   uma escola rural e uma urbana, no mesmo município, recebem o mesmo contexto.
   O **Censo 2022 por setor censitário** (316.574 setores, ~3.000 variáveis) e o
@@ -96,14 +134,11 @@
   mas a pergunta de quem é a ocorrência — bairro, escola, via — continua sem
   resposta, e é a que o gestor realmente quer.
 
-**P10 — mobilidade: existe dado utilizável?**
-- Resposta: ver `docs/analises/fontes/mobilidade.md`. Em resumo, o padrão de
-  dados abertos de transporte é **GTFS, municipal e não padronizado** — não há
-  base nacional comparável. É a lacuna mais difícil de fechar e a que mais
-  depende de escopo local.
-- Status: **lacuna** (a mais estrutural do catálogo).
-- Follow-up: faz sentido priorizar dois ou três municípios-piloto para
-  mobilidade, em vez de tentar cobertura nacional que não existe?
+**P10 — mobilidade: existe dado utilizável?** *(respondida na 3ª rodada)*
+- Resposta: **sim, e em nível nacional.** A 2ª rodada respondeu "não" — o que
+  estava errado. Ver P11.
+- Status: **✓ atendido**, com ressalva de granularidade.
+- Follow-up: ver P11.
 
 ## Pendências
 
@@ -117,8 +152,9 @@
   decisão institucional, não técnica.
 - [ ] **Arealização**: malha do setor censitário + buffer compatível com a área
   de influência do IVET (P8).
-- [ ] **Escopo de mobilidade**: municipal-piloto em vez de cobertura nacional
-  inexistente (P10).
+- [ ] **Verificar se o alcance a pé (isocrona) é a variável certa que responde à
+  pergunta de acesso** — é a que liga malha viária e malha censitária sem dado
+  individual (P11).
 
 ## Sugestões priorizadas
 
@@ -139,17 +175,32 @@
   de recursos" com dado de receita, não só de repasse federal.
 - **[média]** Projeção/`select` no acesso (evitar trazer 20–318 colunas).
 - **[média]** Documentar tipo e ano de referência das chaves/relações.
-- **[média]** Mobilidade como **piloto municipal** (GTFS), com honestidade sobre
-  a ausência de base nacional.
+- **[alta]** **Isocronas** (OSRM/Valhalla **auto-hospedados**) — alcance real do
+  aluno, sem dado de passageiro, é a forma mais segura em LGPD de medir acesso e
+  **já responde à pergunta de P8**: distingue a escola rural da urbana sem
+  depender de dado individual.
+- **[média]** Matriz origem-destino municipal da **ANTT/MONITRIIP** (fluxo entre
+  municípios), com supressão de célula pequena.
+- **[média]** Transporte escolar como **prova de viabilidade no Recife** — é o
+  único município com chave de escola verificado, e é ODbL, então serve de
+  referência de indicador, não de fonte a ingerir.
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 - **[baixa]** Conectividade por escola, **condicional a e-SIC** ao MEC/NIC.br —
   hoje não há API nem licença publicada.
 
 ## Veredito
 
+- **Aprova** (2026-09-30, 3ª rodada): das seis lacunas, **quatro** têm fonte
+  verificada e **uma** (conectividade) depende de e-SIC. As pendências que sobram
+  são de **decisão e governança** (leitura do IVET, LGPD, e-SIC), não de
+  disponibilidade de dado. A correção da 2ª rodada sobre mobilidade é o fato
+  mais importante desta persona: **a ausência de dado era de escopo de
+  verificação, não de publicação ou de coleta** — e as duas coisas que faltam de
+  verdade (transporte escolar por escola, conectividade por escola) são as duas
+  que **exigem e-SIC**, não engenharia.
 - **Aprova com ressalvas** (2026-09-30, 2ª rodada): a pergunta de **onde estão
   as fontes para as seis lacunas** tem resposta agora, e a resposta é
-  embarrassingly boa em saúde/contexto e ruim em mobilidade. As pendências que
+  razoavelmente boa em saúde/contexto e ruim em mobilidade. As pendências que
   sobram são de **decisão e governança** (leitura do IVET, LGPD), não de
   disponibilidade de dado — o que é a melhor notícia possível para esta rodada.
 - **Aprova com ressalvas** (2026-09-15): o acesso de alto nível funciona e

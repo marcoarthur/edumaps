@@ -69,14 +69,14 @@ Cada fonte é pontuada somando o peso dos critérios que ela **atende**:
 
 ## Domínios catalogados
 
-**48 fontes com ficha completa** em 8 domínios (ver [matriz](#matriz-de-priorização)):
+**61 fontes com ficha completa** em 8 domínios (ver [matriz](#matriz-de-priorização)):
 
 | Domínio | Fichas | Foco principal |
 |---|---|---|
 | [Educação](fontes/educacao.md) | Censo/IDEB/ENEM, Atlas-IDHM, PNE, SDG 4 | desempenho e contexto educacional |
 | [Socioeconômico](fontes/socioeconomico.md) | IBGE (SIDRA, malhas, setor censitário), Ipeadata, BCB, World Bank | demografia e economia municipal |
 | [Conectividade e obras](fontes/conectividade-obras.md) | Portal da Transparência, Medidor Educação Conectada, FNDE, Wi-Fi Brasil | lacunas 3 e 4 |
-| [Mobilidade](fontes/mobilidade.md) | ANTT/SNV, DNIT, GTFS, OSM/Overpass, roteadores | lacuna 5 |
+| [Mobilidade](fontes/mobilidade.md) | ANTT (OD, tráfego), DNIT/INDE, Transportes (frota, sinistros), OSM/Overpass, roteadores, CKANs de Recife e SP | lacuna 5 |
 | [Saúde](fontes/saude.md) | DATASUS, CNES, PeNSE/PNS, CIDACS, VIGITEL | lacuna 1 |
 | [Segurança](fontes/seguranca.md) | BrazilCrime, SINESP/Infoseg, SNSP | lacuna 2 |
 | [Meio ambiente e clima](fontes/meio-ambiente.md) | MapBiomas, INMET (Alerta-AS + BDMEP), IBAMA, Terrabrasilis, CEMADEN | lacuna 6 |
@@ -84,18 +84,18 @@ Cada fonte é pontuada somando o peso dos critérios que ela **atende**:
 
 ## Matriz de priorização
 
-Ordenada por prioridade, depois por pontos. **14 fontes `[alta]`** — bem acima do
+Ordenada por prioridade, depois por pontos. **21 fontes `[alta]`** — bem acima do
 mínimo de 5 exigido pela issue. O critério de aceite nº 9 (verificação de
-licença, endpoint e granularidade) foi aplicado sem exceção: nenhuma fonte
+licença, endpoint e granularidade) foi aplicado sem exceção: **nenhuma** fonte
 `[alta]` tem campo `não verificado`.
 
-### 🟢 Alta prioridade (14)
+### 🟢 Alta prioridade (21)
 
 | # | Fonte | Domínio | Lacuna | Gran. | API oficial? | Licença | Pts | Ficha |
 |---|---|---|---|---|---|---|---|---|
 | 1 | IBGE — API de Agregados (SIDRA) v3 + Localidades | socioeconômico | habilitadora 1/3/4/5/6 | município (N6) | **sim**, sem auth | domínio público | 19 | [link](fontes/socioeconomico.md) |
 | 2 | MapBiomas (Coleção 9) | meio-ambiente | **6** | grade 30 m | COG público | CC BY 4.0 | 19 | [link](fontes/meio-ambiente.md) |
-| 3 | IPEA — Ipeadata | socioeconômico | 1, 5 | município | **sim** (OData v4) | uso público c/ citação | 18 → **`[média]`** | [link](fontes/socioeconomico.md) |
+| 3 | **OpenStreetMap — Overpass API** | mobilidade | **5** | **escolar** | **sim**, sem auth | ODbL | 18 | [link](fontes/mobilidade.md) |
 | 4 | Base dos Dados (BigQuery público) | agregadores | ingestão | escola | SQL | CC BY 4.0 / MIT | 18 | [link](fontes/agregadores.md) |
 | 5 | INMET — Alerta-AS (CAP 1.2) | meio-ambiente | **6** | município + polígono | **sim**, sem auth | domínio público | 18 | [link](fontes/meio-ambiente.md) |
 | 6 | IBGE — Malhas territoriais | socioeconômico | habilitadora 1/5 | setor censitário | **sim**, v3 | domínio público | 17 | [link](fontes/socioeconomico.md) |
@@ -103,17 +103,34 @@ licença, endpoint e granularidade) foi aplicado sem exceção: nenhuma fonte
 | 8 | tesouror (CRAN) — SIOPE + **SICONFI** | agregadores | **4** | município | pacote R | MIT (pacote) | 17 | [link](fontes/agregadores.md) |
 | 9 | **DATASUS** — API Dados Abertos do SUS | saúde | **1** | município | **sim**, sem auth | CC BY 3.0 / BY-ND | 17 | [link](fontes/saude.md) |
 | 10 | BrazilCrime (CRAN) | segurança | **2** | município | pacote R | MIT (pacote) | 16 | [link](fontes/seguranca.md) |
-| 11 | MCP-Brasil | agregadores | ingestão | município | **sim** | CC0 / ISC | 16 | [link](fontes/agregadores.md) |
-| 12 | IBGE — Censo Demográfico 2022 por **setor censitário** | socioeconômico | **1**, 5 | **setor censitário** | download/FTP | domínio público | 16 | [link](fontes/socioeconomico.md) |
-| 13 | **CGU / Portal da Transparência** — transferências | conectividade | **4** | município (código IBGE) | planilha oficial | uso público (LAI) | 16 | [link](fontes/conectividade-obras.md) |
-| 14 | **CNES** — estabelecimentos de saúde | saúde | **1** | **ponto (lat/long)** | **sim**, sem auth | CC BY-ND 3.0 | 16 | [link](fontes/saude.md) |
-| 15 | geobr / ibger / censobr (família IBGE) | agregadores | habilitadora | município + setor | pacote R | MIT / CC0 | 15 | [link](fontes/agregadores.md) |
+| 11 | **ANTT — MONITRIIP, bilhetes de passagem** | mobilidade | **5** | **par de municípios** | sem API (CSV mensal) | CC BY 4.0 | 16 | [link](fontes/mobilidade.md) |
+| 12 | **ANTT — SAT/equipamentos e geodados de concessão** | mobilidade | **5**, 2 | trecho viário (buffer) | sem API (CSV/JSON/KMZ) | CC BY 4.0 | 16 | [link](fontes/mobilidade.md) |
+| 13 | **DNIT — SNV e modelagem de VMDA** ⚠️ | mobilidade | **5** | trecho viário (buffer) | WMS (OGC) | domínio público (camada INDE) | 16 | [link](fontes/mobilidade.md) |
+| 14 | **Transportes — RENAVAM / RENAEST** | mobilidade | **5**, 2 | município | sem API (ZIP mensal) | domínio público | 16 | [link](fontes/mobilidade.md) |
+| 15 | MCP-Brasil | agregadores | ingestão | município | **sim** | CC0 / ISC | 16 | [link](fontes/agregadores.md) |
+| 16 | IBGE — Censo Demográfico 2022 por **setor censitário** | socioeconômico | **1**, 5 | **setor censitário** | download/FTP | domínio público | 16 | [link](fontes/socioeconomico.md) |
+| 17 | **CGU / Portal da Transparência** — transferências | conectividade | **4** | município (código IBGE) | planilha oficial | uso público (LAI) | 16 | [link](fontes/conectividade-obras.md) |
+| 18 | **CNES** — estabelecimentos de saúde | saúde | **1** | **ponto (lat/long)** | **sim**, sem auth | CC BY-ND 3.0 | 16 | [link](fontes/saude.md) |
+| 19 | geobr / ibger / censobr (família IBGE) | agregadores | habilitadora | município + setor | pacote R | MIT / CC0 | 15 | [link](fontes/agregadores.md) |
+| 20 | **São Paulo — SMUL (zonas OD), CET, SMT** | mobilidade | **5** | **zona OD com coordenada** | CKAN (metadados) | CCZero | 14 | [link](fontes/mobilidade.md) |
+| 21 | **Roteadores abertos — OSRM e Valhalla** | mobilidade | **5** | isocrona | **sim**, sem auth (demo) | MIT (software) + ODbL | 13 | [link](fontes/mobilidade.md) |
 
-> A linha 3 (Ipeadata) somou **18** pontos e aparece aqui pela ordem da pontuação,
-> mas foi **rebaixada para `[média]`** pelas regras de licença (sem SPDX), acesso
-> (só HTTP, sem TLS) e eficiência (sem paginação). Ver a ficha.
-> A tabela tem 15 linhas e 14 `[alta]` — a diferença é exatamente o rebaixamento
-> do Ipeadata.
+> **A linha 3 do Ipeadata (18 pontos) aparece na tabela alta por ordem de
+> pontuação mas é `[média]`** — licença sem SPDX, acesso só HTTP sem TLS, sem
+> paginação. Ver [média](#-média-prioridade). A tabela tem 22 linhas e 21 `[alta]`;
+> a diferença é exatamente o rebaixamento do Ipeadata.
+>
+> ⚠️ **A linha 13 (DNIT) tem uma ressalva de licença que precisa de decisão
+> jurídica antes da ingestão**: a camada espelhada no INDE declara **Public
+> Domain**, mas o catálogo do GeoNetwork traz um texto padrão contraditório
+> ("o governo concedeu o direito exclusivo de…"). O campo licença *está*
+> verificado — a contradição é do outro lado — então a fonte permanece `[alta]`,
+> com a exigência de registrar a contradição em ADR antes de materializar.
+>
+> ⚠️ **A linha 21 (roteadores) tem uma condição de arquitetura**: as instâncias
+> verificadas são servidores de demonstração, **sem SLA**. O indicador só entra em
+> produção com OSRM/Valhalla **auto-hospedados** a partir de *tileset* extraído
+> uma vez.
 
 ### 🟡 Média prioridade
 
@@ -132,6 +149,7 @@ licença, endpoint e granularidade) foi aplicado sem exceção: nenhuma fonte
 | IDEB (INEP) | resultado | Já ingerido (`clean.ideb_notas_escolas`); sem licença verificada. |
 | ENEM (INEP) | resultado | Auto-seleção não censitária; granularidade individual. |
 | Censo Escolar (INEP) | base | **Já ingerido.** 1995–2025 confirmado; licença não verificada. |
+| **Prefeitura do Recife — CKAN** (transporte escolar, OD, fluxo, velocidade) | **5** | 16 pts e **única granularidade escolar** do lote de mobilidade, com a melhor API (CKAN DataStore consultável por SQL, sem auth) — mas **ODbL share-alike**, exatamente a razão que descartou o Banco Central. Vale como **prova de viabilidade** do indicador, não como fonte a ingerir. |
 
 ### 🔴 Baixa prioridade — fora do escopo do pipeline
 
@@ -157,27 +175,49 @@ licença, endpoint e granularidade) foi aplicado sem exceção: nenhuma fonte
 | BrasilAPI | **Redundante** com o IBGE; ToS indefinidos; proíbe crawling. |
 | BrazilDataAPI | Só estadual, GPL-3, escopo desalinhado. |
 | APIs-PublicasBrasil | Sem licença, abandonada, não introduz fonte nova. |
+| **GTFS / Mobility Database** | Agregador oficial **inalcançável deste host** (403, 413, NXDOMAIN) e **nenhum link GTFS** nos portais de SPTrans, Metrô, CPTM e SuperVia. Rebaixado por **acesso**, não por mérito — os pacotes R `gtfsio` e `gtfstools` existem. |
+| **ANTP — SIMU/SIMOB e Planilha Tarifária** | Único dado publicado é um **PDF de 2011**; a base é do questionário de **2014** e não é de demanda de viagem, mas de frota/tarifa/semáforo. Sem API, sem licença. |
+| **Estado de São Paulo — DER/DETRAN/ARTESP** | Granularidade estadual sem desagregação municipal. A **STM** escapa (é municipal) e está tratada como subficha própria. |
+| **Google Maps / Maps Platform / Mapbox** | **Delimitação negativa**: proprietários, com chave e faturamento, nenhum campo verificado. O que o IVET precisa é coberto de graça por OSM + Overpass + OSRM/Valhalla. |
+| **ITDP Brasil — MobiliDADOS** | Plataforma citada com "20+ indicadores anuais", mas **nenhum link, licença, formato ou API localizado**. |
 
 ### Cobertura das seis lacunas
 
 | Lacuna | **Alta** | Cobertura | Diagnóstico |
 |---|---|---|---|
 | 1 — Saúde | CNES, DATASUS, Censo setor censitário, MapBiomas (risco) | 🟢 **boa** | O IVET ganha saúde cartografável. A PeNSE (melhor fonte) depende de decisão institucional. |
-| 2 — Segurança | BrazilCrime | 🟡 **mínima, mas suficiente** | Uma fonte só, municipal, com disciplina de LGPD. Fecha a lacuna, mas é fina. |
-| 3 — Conectividade | — | 🔴 **não resolvida** | Só existe medição real por escola, e está sem API e sem licença. Depende de **e-SIC**. |
+| 2 — Segurança | BrazilCrime, ANTT (acidentes e sinistros viários) | 🟡 **melhor que mínima** | Uma fonte criminal municipal, com disciplina de LGPD, **mais** a exposição a risco viário do trecho (acidentes por km-ano, sinistros com vítima ciclista e pedestre). Fica melhor do que era, mas a série criminal em si é fina. |
+| 3 — Conectividade | — | 🔴 **não resolvida** | Só existe medição real por escola, e está sem API e sem licença. Depende de **e-SIC**. **Única lacuna do catálogo sem solução verificada.** |
 | 4 — Investimentos | Portal da Transparência, tesouror/SICONFI | 🟢 **boa** | Repasse e execução financeira municipal. Falta a obra em si (FNDE), também por e-SIC. |
-| 5 — Mobilidade | IBGE malhas + OSM (habilitadores) | 🔴 **não resolvida** | Não há base nacional comparável; o padrão é GTFS municipal. |
+| 5 — Mobilidade | **Overpass**, **ANTT (OD)**, **ANTT (tráfego)**, **DNIT/INDE (malha + VMDA)**, **Transportes (frota, sinistros)**, **SP SMUL (zonas OD)**, **OSRM/Valhalla (isocronas)** | 🟡 **boa, com uma ressalva** | **Correção em relação à leitura anterior desta matriz**: a lacuna 5 **não** está sem solução nacional. Há **quatro** bases nacionais verificadas (fluxo OD, tráfego e risco de trecho, malha com VMDA, frota e sinistralidade) e as isocronas fecham o elo com a malha censitária. **A ressalva é de granularidade, não de cobertura**: o **deslocamento escolar com chave de escola existe em um único município verificado** (Recife). O gargalo é **publicação, não coleta** — o dado existe nos DETRANs e nas secretarias e quase nunca é aberto. |
 | 6 — Meio ambiente | MapBiomas, INMET Alerta-AS, INMET BDMEP | 🟢 **boa** | Melhor bloco do catálogo: evento, série histórica e exposição a risco. |
 
-**Leitura honesta**: 3 das 6 lacunas ficam bem resolvidas, 1 fica mínima, e
-**2 (conectividade e mobilidade) não têm solução limpa no catálogo atual** — e
-essa é a conclusão mais útil da issue, porque são as duas que exigiriam mais
-engenharia se alguém tentasse sem saber.
+**Leitura honesta**: **4 das 6** lacunas ficam bem resolvidas, **2 ficam
+parciais mas utilizáveis** (segurança e mobilidade), e **1 — conectividade —
+permanece sem solução verificada**. Essa é a conclusão mais útil da issue: é a
+única lacuna em que alguém tentaria engenharia sem saber que o caminho está
+fechado, e ela depende de um **e-SIC**, não de código.
 
 ## Plano de integração faseado
 
-> **As fases abaixo viram issues de implementação separadas.** Esta issue
-> entrega o catálogo e o plano, não o código.
+> **Cada fase abaixo já tem issue de implementação criada** (esta issue entrega o
+> catálogo e o plano, não o código):
+
+| Fase | Issue | Escopo |
+|---|---|---|
+| **0** | [#124](https://github.com/marcoarthur/edumaps/issues/124) | Fundação: allowlist de endpoints + proveniência com licença |
+| **1** | [#125](https://github.com/marcoarthur/edumaps/issues/125) | Contexto municipal e sub-municipal — **maior retorno** |
+| **2** | [#126](https://github.com/marcoarthur/edumaps/issues/126) | Bloco de saúde — **primeira lacuna fechada** |
+| **3** | [#127](https://github.com/marcoarthur/edumaps/issues/127) | Eventos e exposição a risco |
+| **4** | [#128](https://github.com/marcoarthur/edumaps/issues/128) | Financeiro e investimento |
+| **5** | [#129](https://github.com/marcoarthur/edumaps/issues/129) | Segurança e sinistralidade viária (com revisão de LGPD) |
+| **6** | [#130](https://github.com/marcoarthur/edumaps/issues/130) | Mobilidade |
+| — | [#131](https://github.com/marcoarthur/edumaps/issues/131) | Transversal: conformidade do Overpass + viés de cobertura do OSM |
+| — | [#132](https://github.com/marcoarthur/edumaps/issues/132) | Transversal: os **três e-SIC** (administrativo, sem código) |
+
+Ordem de execução: **#124 primeiro** (bloqueia todas), depois #125 (libera quase
+todo o resto), e #131 junto com #130 porque as isocronas dependem do *tileset*
+extraído com fila e persistência de bruto.
 
 ### Fase 0 — Fundação (pré-requisito de tudo)
 
@@ -236,11 +276,34 @@ Nenhuma fonte entra sem estas duas peças:
 | Fonte | Entregável | Observação |
 |---|---|---|
 | BrazilCrime | `clean.brazilcrime_municipio` | Agregar **por município** com **supressão de célula pequena (count < 5)**. Nunca expor por escola. Revisão de LGPD **antes** de ir à interface. |
+| ANTT — acidentes e geodados de concessão | `clean.antt_acidente_trecho` | ⚠️ a chave bruta é `Concessionaria;Data;Km;Trecho` — **sem município**. Só entra combinada com a camada municipal/geodados da própria ANTT. |
+| Transportes — RENAEST | `clean.renaest_sinistro` | ⚠️ agrega por **localidade**, não por município: exige **de-para localidade → município** que a fonte **não publica**. |
 | Conectividade | — | **Depende de e-SIC** ao MEC/NIC.br (CSV + dicionário). Enquanto não houver, o bloco fica explicitamente vazio no IVET. |
+
+### Fase 6 — Mobilidade (a maior fonte de indicadores novos)
+
+Ordem deliberada: **do mais seguro em LGPD ao mais delicate**.
+
+| Ordem | Fonte | Entregável | Observação |
+|---|---|---|---|
+| 1º | **OSRM / Valhalla auto-hospedados** | `clean.isocrona_escolar` | O **elo exato** entre a malha do OSM e a malha censitária do IBGE, e **sem nenhum dado de passageiro** — a solução mais segura em LGPD para a lacuna 5. ⚠️ as instâncias públicas verificadas são **servidores de demonstração, sem SLA**: extrair o *tileset* uma vez e **auto-hospedar em container**. Isocrona por escola em cidade pequena é reidentificável → agregar em grade de 1 km. |
+| 2º | **ANTT — MONITRIIP** | `clean.antt_od_municipio` (par origem × destino × mês) | **Única matriz OD nacional** com chave município-município, mensal desde jan/2019. 🔴 **supressão obrigatória** de células com `quantidade_bilhetes < 10`; `tipo_gratuidade` fora da camada analítica. ⚠️ é **ônibus rodoviário intermunicipal** — não cobre o transporte urbano, que é o deslocamento da maioria dos alunos. |
+| 3º | **Transportes — RENAVAM** | `clean.renavam_frota_municipio` | Domínio público, municipal, mensal desde mai/2013. Denominador de dependência automobilística. |
+| 4º | **ANTT — SAT / volume / geodados** | `clean.antt_contagem_equipamento` | Exposição a ruído e tráfego em trecho. ⚠️ só **rodovias federais concedidas** — não extrapolar para a malha estadual/municipal, que é onde está a maioria das escolas rurais. |
+| 5º | **DNIT/INDE — SNV + modelagem de VMDA** | `clean.snv_trecho_vmda` | ⚠️ **exige decisão jurídica antes de ingerir**: a camada declara Public Domain, mas o catálogo do GeoNetwork traz texto padrão contraditório. Registrar em ADR. É **modelagem**, não medição — serve para comparação entre trechos, não substitui contagem. |
+| 6º | **Prefeitura do Recife — CKAN** | leitura para `iv_mobilidade_transporte_escolar` | **Prova de viabilidade** do indicador escolar (127 registros, granularidade de escola e turno). ⚠️ **ODbL** — leitura é permitida, materializar sob share-alike exige decisão do jurídico. 🔴 a pesquisa OD do Recife é "**dado bruto**": agregar a zona OD **antes** de armazenar. |
+
+**Regra de extração que vale para a fase toda**: `iv_mobilidade_completude_malha`
+— completude da malha no buffer de 500 m — deve ser **publicado junto** de todo
+indicador de OSM, para que o **viés de cobertura** do OSM (excelente em eixo
+arterial de capital, escasso em cidade pequena) fique auditável em vez de
+invisível. 🔴 **Nunca ingerir** os conjuntos de bilhetagem por viagem
+(`cnpj`, `placa`, `imei`, `lat`, `long`) nem o "Créditos Eletrônicos do Bilhete
+Único — Usuário" da SPTRANS: **licença aberta não anula risco LGPD**.
 
 ### Em paralelo, fora do código — ações administrativas
 
-Três **e-SIC** destravam mais valor do que qualquer pipeline:
+Três **e-SIC** destravam mais valor do que qualquer pipeline — **[#132](https://github.com/marcoarthur/edumaps/issues/132)**:
 
 1. **INEP** — licença do Censo Escolar, IDEB, ENEM e painel do PNE. Única
    pendência que bloqueia **quatro** fichas de `[alta]`.
@@ -253,15 +316,43 @@ Três **e-SIC** destravam mais valor do que qualquer pipeline:
 
 - **PeNSE**: exige projeto CEP/Conep, ambiente controlado e regra de
   não-persistência. Decisão **institucional**, não técnica.
-- **Banco Central**: ODbL share-alike. Não entra.
+- **Banco Central**: ODbL share-alike. Não entra. **A mesma razão rebaixa o CKAN
+  do Recife** — registrado para que a diferença com o OSM (ODbL já ingerido há
+  anos) seja explícita e não acidental.
 - **BCB/World Bank/UNESCO/UIS/INPE Queimadas/MMA/SGB/Wikidata**: sem ganho
   para o IVET no estado atual. Reavaliar se o IVET mudar de escopo.
+- **GTFS**: os pacotes R existem (`gtfsio` 1.2.1, `gtfstools` 1.4.0) e o padrão
+  seria o ideal, mas **nenhum agregador foi alcançável e nenhum grande operador
+  brasileiro publica o ZIP**. Fora do caminho crítico até alguém confirmar um
+  endpoint.
+- **Bilhetagem individual** (ANTT Viagens, SPTRANS): **nunca**. Não é "fase
+  posterior", é exclusão permanente.
+- **Fonte proprietária de mapas** (Google, Mapbox): o IVET não precisa — rede
+  viária, isocronas e transporte público são cobertos por OSM + Overpass +
+  OSRM/Valhalla, sem custo e sem fornecedor.
+
+### Correções ao enunciado da issue #123
+
+O catálogo **não confirma** sete candidatos listados na issue como se fossem
+fontes abertas. Detalhes e status HTTP na seção "Correções à lista de candidatos" de
+[`fontes/mobilidade.md`](fontes/mobilidade.md):
+
+| Candidato | O que a verificação encontrou |
+|---|---|
+| *"Sistema de Informações sobre Demandas de Transporte"* | **Não existe com esse nome.** O sistema real é a **SIMU/SIMOB** da ANTP (frota, tarifa e semáforo — não demanda de viagem), de **2014**, e só publica um PDF. |
+| **SNV como "Sistema Nacional de Viário"** | Nome incorreto: **Sistema Nacional de Viação**. |
+| **PNCT como malha rodoviária aberta** | **Premissa incorreta**: `/dadospnct/downloads` → **404**, o VGeo é visualizador sem API e a página declara "Todos os Direitos Reservados". O caminho aberto real é a camada de VMDA espelhada no INDE. |
+| **CARR / matriz OD** no portal do Ministério dos Transportes | **Não existe** — busca por "CARR" e "matriz OD" retorna 0 conjuntos. Substituído pela ficha ANTT/MONITRIIP. |
+| **Google Maps / Mapbox** como fontes de dados | **Proprietários**, com chave e faturamento. Delimitação negativa. |
+| **OSMnx** como caminho de derivação | **É Python.** Em R: `sf` + `httr2`. |
+| **dados.gov.br** como caminho de coleta | **HTTP 401**. Usar os portais setoriais. |
 
 ### O que o plano entrega, em uma frase
 
 Sair de **um índice escolar com proxies uniformes por município** para **um
 índice territorial com exposição a risco (MapBiomas), evento de interrupção
 (INMET), oferta de saúde em ponto (CNES), contexto sub-municipal (setor
-censitário) e capacidade fiscal (SICONFI)** — que é a direção que a
-`[pesquisadora-educacional.md`](../personas/pesquisadora-educacional.md)
-apontou como pendência aberta (P5, P8).
+censitário), capacidade fiscal (SICONFI) e alcance real do aluno (isocronas +
+matriz OD)** — que é a direção que a
+[`pesquisadora-educacional.md`](../personas/pesquisadora-educacional.md)
+apontou como pendência aberta (P5, P8, P10).

@@ -98,6 +98,73 @@ PY
 
 ## Entradas
 
+### 2026-09-30 — 3ª passada (lote de mobilidade, fecha a issue #123)
+
+**T10 — o catálogo estava incompleto, e a lacuna que ele supostamente não tinha
+solução tinha.** A 2ª passada registrou mobilidade como "a mais difícil, o padrão
+é GTFS municipal não padronizado". Verificando as fontes com o mesmo rigor das
+outras, apareceram **quatro bases nacionais**:
+
+| Dimensão | Fonte | Chave |
+|---|---|---|
+| Fluxo de deslocamento | ANTT / MONITRIIP | par de municípios, mensal desde jan/2019, CC BY |
+| Tráfego e risco | ANTT (SAT, acidentes, geodados) | trecho viário com coordenada, CC BY |
+| Malha com volume | DNIT/INDE (SNV + VMDA) | trecho de rodovia, domínio público |
+| Frota e sinistralidade | Transportes (RENAVAM, RENAEST) | município, mensal desde mai/2013 |
+
+E o elo que fecha o ciclo: **isocronas OSRM/Valhalla** traduzem a malha do OSM
+em "população alcançável a pé em 15/30/45 min" — que é **exatamente** a
+interseção entre rede viária e malha censitária do IBGE, e **sem tocar em dado
+de passageiro**. É a solução mais segura em LGPD para a lacuna 5.
+
+**A correção honesta é que o problema nunca foi cobertura, foi publicação.** O
+deslocamento escolar com **chave de escola** existe em **um único município
+verificado** — o Recife publica vagas por unidade e por turno. O dado está nos
+DETRANs e nas secretarias de educação e quase nunca é aberto. Isso inverte a
+recomendação: não "piloto municipal com honestidade sobre a falta de cobertura",
+mas "ingerir as quatro bases nacionais e usar o Recife como prova de
+viabilidade".
+
+**T11 — o teste que mais valeu foi o que deu errado.** O **PNCT**, que a issue
+tratava como malha rodoviária aberta, tem página de download em **404**,
+visualizador sem API e rodapé "Todos os Direitos Reservados". O caminho aberto
+real — camada de modelagem de VMDA espelhada no **INDE**, em domínio público —
+só apareceu por metadados de terceiro. **Sete correções** vieram do lote, e a
+mais estranha é o **"Sistema de Informações sobre Demandas de Transporte"**,
+que **não existe** com esse nome (o real é a SIMU/SIMOB da ANTP, sobre frota e
+semáforo, de **2014**, publicada só em PDF).
+
+**T12 — o método se auto-verificou num caso difícil.** A ficha do **CKAN do
+Recife** somou **16 pontos** e era a melhor do lote: única granularidade escolar,
+melhor API (DataStore com SQL, sem auth). Foi rebaixada para `[média]` **por
+consistência** com o BCB, porque aceitar ODbL aqui seria trapacear no método —
+o rebaixamento do BCB não pode depender de a fonte ser chata. A diferença com o
+**OSM** (também ODbL, já ingerido) ficou escrita na ficha: lá a obrigação já
+existe, aqui criaria do zero. **Escrever essa diferença vale mais que a
+prioridade em si**, porque é o que impede o próximo de "resolver" a incoerência
+achando que é um erro.
+
+**T13 — duas descobertas operacionais com custo de projeto:**
+- **Overpass tem rate limit verificado de 2 slots simultâneos.** A extração
+  atual, se paralelizada, seria bloqueada → fila com repetição espaçada e
+  persistência do bruto em disco.
+- **OSRM/Valhalla públicos são servidores de demonstração, sem SLA.** Como as
+  isocronas são o indicador mais defensável da lacuna, virou **requisito de
+  arquitetura**: extrair o *tileset* uma vez e **auto-hospedar** os roteadores.
+
+**T14 — caso-limite de LGPD, que generaliza a Fase 0.** O conjunto **SPTRANS
+"Créditos Eletrônicos do Bilhete Único — Usuário"** é **CCZero** — o degrau mais
+alto de liberdade de uso — e ainda assim é **nível individual**, com saldo por
+usuário. Cruzado com escola e horário, reconstrói o trajeto de um aluno. O
+caso-limite vale mais que a regra: **licença aberta não anula risco LGPD**, e a
+allowlist de endpoints da Fase 0 tem de cobrir *todas* as fontes, não só a API do
+SUS.
+
+**Veredito da 3ª passada: aprova com ressalva de método.** O acervo está
+completo quanto a fontes; a ressalva é que a priorização depende de duas
+decisões jurídicas ainda abertas (ODbL do Recife e a contradição de licença da
+camada do INDE) que estão **escritas, não escondidas**.
+
 ### 2026-09-30 — 2ª passada (catálogo de fontes abertas, issue #123)
 
 **T6 — o acervo tinha um buraco de metadado, não de conteúdo.**
@@ -105,7 +172,7 @@ A direção de 16/09 que mais pesou nesta passada: os *dados* do EduMaps já era
 amplos, mas **nada no acervo registrava quais fontes foram descartadas e por
 qué**. Um índice que só lista o que existe não ajuda a decidir o que não
 construir. O catálogo de fontes (`docs/analises/fontes_de_dados.md` +
-`fontes/`) preenche exatamente isso: **48 candidatas avaliadas, 14 `[alta]`, e
+`fontes/`) preenche exatamente isso: **61 candidatas avaliadas, 21 `[alta]`, e
 um registro explícito do que saiu** — com motivo, não por omissão.
 
 **T7 — o que a verificação em profundidade mudou no plano (achados que contrariam
@@ -114,8 +181,9 @@ o enunciado da issue).**
   `library()`, nacional e municipal. Mas é também a de **maior risco ético**:
   dado de ocorrência policial é dado sensível por natureza, e o acesso via SINESP
   é restrito. Cheap *e* delicado não é contraditório, é a definição do caso.
-- **Mobilidade é a lacuna mais difícil**: o padrão de dados abertos de transporte
-  é GTFS, que é municipal e não padronizado entre cidades.
+- **Conectividade é a lacuna mais difícil** — e a única sem solução verificada em
+  todo o catálogo. A leitura inicial de que *"mobilidade também não tem solução"*
+  estava **errada**: ver a 3ª passada, que a overturnou.
 - **O BCB usa ODbL share-alike** → materializar série no Postgres do EduMaps
   abriria a base sob copyleft. **Descartado por licença, não por mérito.**
 - **DATASUS publica microdado individual sem mitigação** — *verificado em payload
@@ -124,7 +192,8 @@ o enunciado da issue).**
   baixaria dado sensível de menor para o banco de dev.
 - **FNDE é inacessível a cliente não-browser** (SPA sem SSR + CKAN 401). Três
   fontes dependem disso e foram rebaixadas por **acesso**, não por valor.
-- **Sete itens do enunciado da issue não existem ou mudaram de nome**: `ibge7`,
+- **Catorze itens do enunciado da issue não existem ou mudaram de nome** (7 aqui,
+  7 no lote de mobilidade): `ibge7`,
   `geodesobr`, `RRPP`, `CNTramas`, `PDL Educationis`, `SIGESC`, `Novo PAC da
   CGU`; e `PNCT`→`PNATE`, `GESAC`→modalidade do Wi-Fi Brasil, `PRODES/DETER`
   são do **INPE** e não do IBAMA, `SISLIC` **exige login** (não é dado aberto).
@@ -150,7 +219,7 @@ o enunciado da issue).**
   censitário somam 52 pontos e são a base de quase todo o resto.
 - **[alta] nova — dimensão fiscal via `tesouror` (SICONFI)**: o IVET não tinha
   nenhuma dimensão orçamentária municipal.
-- **[média] `DVC` (Zotero 10097) subiu de relevância**: com 14 fontes de alta
+- **[média] `DVC` (Zotero 10097) subiu de relevância**: com 21 fontes de alta
   prioridade e 8 domínios, versionar datasets deixa de ser conveniência.
 - **[alta] confirmado — dicionário de dados (Zotero 9892)**: Base dos Dados e
   MCP-Brasil entregam dicionário pronto; falta padronizar o do INEP.
@@ -280,7 +349,7 @@ que **não** usar. Agora tem.
   reproduzível (BrazilCrime); conectividade depende de e-SIC. Baratas em custo,
   delicadas em ética.
 - **[média]** **DVC** para versionar datasets do pipeline (Zotero 10097) — sobe
-  de conveniência a necessidade com 14 fontes de alta prioridade.
+  de conveniência a necessidade com 21 fontes de alta prioridade.
 - **[média]** Padronização/qualidade com **Git Hooks** (Zotero 9931).
 - **[média]** Promover **RandomForest/índices** (Zotero 10450/10297) a produto.
 - **[baixa]** **Similaridade escolar/municipal via PgVector** (Zotero 11766) —
@@ -291,6 +360,13 @@ que **não** usar. Agora tem.
 
 ## Veredito
 
+- **Aprova com ressalva de método** (2026-09-30, 3ª passada): o acervo de fontes
+  está completo — **61 fontes verificadas, 21 `[alta]`, nenhuma com campo não
+  confirmado**. A ressalva é que a priorização depende de **duas decisões
+  jurídicas abertas** (ODbL do Recife, contradição de licença da camada do INDE),
+  ambas **escritas** na ficha de cada fonte. Lição da passada: a lacuna de
+  mobilidade foi declarada "sem solução" na 2ª passada e tinha **quatro bases
+  nacionais** — o erro foi de *escopo de verificação*, não de método.
 - **Aprova** (2026-09-30, 2ª passada): o acervo tinha as peças e faltava o
   registro do que **não** construir. O catálogo de fontes (#123) fecha essa
   lacuna de metadado, e a verificação em profundidade corrigiu sete itens do

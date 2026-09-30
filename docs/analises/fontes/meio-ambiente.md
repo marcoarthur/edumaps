@@ -7,7 +7,7 @@
 todo o catálogo**. O INMET publica alertas em **CAP 1.2 com o código IBGE do
 município dentro do payload** e o MapBiomas entrega **edificação exposta a risco
 climático** em COG público com **CC BY 4.0** — ambos com join direto no que o
-EduMaps já tem. Nenhum exige convênio, scraping ou licença(restritiva).
+EduMaps já tem. Nenhum exige convênio, scraping ou licença restritiva.
 
 ## ⚠️ Correções ao enunciado da issue #123
 
