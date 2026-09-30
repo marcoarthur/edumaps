@@ -4,6 +4,67 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #124: Fase 0 allowlist + proveniência
+
+Ciclo **com código** (data_pipeline + backend → **deploy necessário**).
+
+**Mergeado**: PR **#141** (merge commit `163d1d5`, commit `886b571`),
+branch `feat/data/fase0-allowlist-proveniencia` → `main`, +549 −4 em 11 arquivos.
+
+### Entregue
+
+- **Migration Sqitch** `import_metadata_fase0`: adiciona `source_url`,
+  `source_license`, `retrieved_at` em `clean.import_metadata` + índice.
+- **Allowlist YAML** versionada em `data_pipeline/allowlist.yaml`:
+  6 fontes permitidas (FNDE SIOPE agregado, IBGE SIDRA/servicodados,
+  INMET, MapBiomas, Transportes) + 5 recursos **explicitamente NEGADOS**
+  (ANTT viagens, SPTRANS Bilhete Único Usuário, SUS SISVAN/Vacinação/CNES).
+- **Módulo Perl** `EduMaps::Data::Allowlist`: valida URL antes de request
+  HTTP, falha fechada por padrão, suporta `source_id` para restringir
+  àquela fonte. Integrado no scraper SIOPE (`Gastos.pm`).
+- **Migrations Censo** (4) atualizadas para popular proveniência
+  (`source_url`, `source_license`, `retrieved_at`) em `clean.import_metadata`.
+- **Testes**: `t/02-models/allowlist.t` (8 subtests) — permitido, negado,
+  host desconhecido, licenças, restrição por source_id.
+- **Verificação**: migration verify passa; import_metadata populada para
+  4 tabelas censo.
+
+### Decisões de Design
+
+1. **Allowlist por recurso, não por host**: ANTT viagens e SPTRANS usuário
+   estão no mesmo host de recursos permitidos, mas são **negados
+   explicitamente** por serem nível individual (LGPD). Licença aberta
+   (CCZero SPTRANS) não anula risco.
+2. **Proveniência em import_metadata**: metadado canônico da ingestão;
+   dicionário (#134) referencia via DO block dinâmico.
+3. **Fail-fast**: validação antes do HTTP — dado sensível nunca chega ao
+   banco de dev.
+4. **DO block no dicionário**: roda sem erro antes de #124; popula
+   proveniência automaticamente quando Fase 0 existir.
+
+### Dependências Desbloqueadas
+
+- **#125–#130** (todas as fases): allowlist já cobre IBGE, INMET, MapBiomas,
+  Transportes, ANTT (agregado), SUS (agregados via e-SIC).
+- **#134** (dicionário): DO block popula proveniência quando Fase 0 rodar.
+- **#132** (e-SIC INEP): licença oficial do Censo → atualizar "Não verificada".
+
+### Arquivos
+
+- `data_pipeline/deploy|revert|verify/import_metadata_fase0.sql` (novos)
+- `data_pipeline/allowlist.yaml` (novo)
+- `backend/lib/EduMaps/Data/Allowlist.pm` (novo)
+- `backend/lib/EduMaps/Task/Siope/Scrap/SpreadSheet/Gastos.pm` (atualizado)
+- `data_pipeline/deploy/censo_escolar_2025.sql`, `censo_docentes.sql`,
+  `matriculas_censo_2025.sql`, `censo_gestor.sql` (atualizados)
+- `backend/t/02-models/allowlist.t` (novo)
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_76.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #134: dicionário de dados do Censo Escolar
 
 Ciclo **com código** (data_pipeline + analysis → **deploy necessário**).
