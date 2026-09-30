@@ -36,6 +36,10 @@ ALTER TABLE clean.antt_trecho_geodados
   FOREIGN KEY (codigo_ibge) REFERENCES clean.malha_municipio(codigo_ibge)
   ON DELETE SET NULL;
 
+-- Unique constraint on trecho for FK from antt_contagem_equipamento
+ALTER TABLE clean.antt_trecho_geodados
+  ADD CONSTRAINT uq_antt_trecho_geodados_trecho UNIQUE (trecho);
+
 -- Comentários
 COMMENT ON TABLE clean.antt_trecho_geodados IS 'Geodados ANTT de trechos rodoviários — resolve trecho → município (código IBGE). JOIN OBRIGATÓRIO com antt_acidente_trecho para resolver município do acidente.';
 COMMENT ON COLUMN clean.antt_trecho_geodados.concessionaria IS 'Concessionária da rodovia';

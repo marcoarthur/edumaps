@@ -311,6 +311,46 @@ sources:
         description: "Sinistros RENAEST agregados por localidade (não município) — requer de-para localidade → município"
         license: "CC-BY-4.0 (Transportes)"
 
+  - id: transportes_renavam
+    name: "Transportes - RENAVAM frota agregada por município"
+    host: dados.transportes.gov.br
+    base_url: "https://dados.transportes.gov.br"
+    resources:
+      - path: "/dataset/frota-por-municipio"
+        method: GET
+        params: [limit, offset]
+        description: "Frota agregada por município (não por veículo)"
+        license: "CC-BY-4.0 (Transportes)"
+      - path: "/dataset/renavam-frota"
+        method: GET
+        params: [limit, offset]
+        description: "Frota de veículos por município e tipo"
+        license: "CC-BY-4.0 (Transportes)"
+
+  - id: osrm_valhalla
+    name: "OSRM / Valhalla - Roteamento e isocronas auto-hospedados"
+    host: localhost
+    base_url: "http://localhost"
+    resources:
+      - path: "/route/v1"
+        method: GET
+        description: "OSRM auto-hospedado - rota e isocronas (tileset auto-hospedado)"
+        license: "BSD-2-Clause (OSRM), MIT (Valhalla)"
+      - path: "/isochrone"
+        method: GET
+        description: "Valhalla auto-hospedado - isocronas (tileset auto-hospedado)"
+        license: "MIT (Valhalla)"
+
+  - id: overpass_osm
+    name: "Overpass API - OpenStreetMap POIs e rede viária"
+    host: overpass-api.de
+    base_url: "https://overpass-api.de/api/interpreter"
+    resources:
+      - path: "/"
+        method: POST
+        description: "Overpass QL query para POIs, vias, transporte público"
+        license: "ODbL 1.0 (OpenStreetMap)"
+
 # ------------------------------------------------------------
 # RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
 # ------------------------------------------------------------
