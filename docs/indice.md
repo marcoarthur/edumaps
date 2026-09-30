@@ -79,7 +79,7 @@
 
 ## 12. Análises e catálogo de fontes (issue #123)
 - 🟢 `docs/analises/fontes_de_dados.md` — **matriz-mestre**: lacunas do IVET,
-  método de pontuação, priorização das 50+ fontes candidatas e plano de
+  método de pontuação, priorização das 48 fontes candidatas e plano de
   integração faseado.
 - 🟢 `docs/analises/fontes/` — fichas por domínio (`educacao`, `socioeconomico`,
   `conectividade-obras`, `mobilidade`, `saude`, `seguranca`, `meio-ambiente`,

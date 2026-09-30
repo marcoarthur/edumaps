@@ -105,7 +105,7 @@ A direção de 16/09 que mais pesou nesta passada: os *dados* do EduMaps já era
 amplos, mas **nada no acervo registrava quais fontes foram descartadas e por
 qué**. Um índice que só lista o que existe não ajuda a decidir o que não
 construir. O catálogo de fontes (`docs/analises/fontes_de_dados.md` +
-`fontes/`) preenche exatamente isso: **50+ candidatas avaliadas, 14 `[alta]`, e
+`fontes/`) preenche exatamente isso: **48 candidatas avaliadas, 14 `[alta]`, e
 um registro explícito do que saiu** — com motivo, não por omissão.
 
 **T7 — o que a verificação em profundidade mudou no plano (achados que contrariam
