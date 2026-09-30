@@ -11,6 +11,12 @@ Ciclo **com código** (data_pipeline + backend → **deploy necessário**).
 **Mergeado**: PR **#141** (merge commit `163d1d5`, commit `886b571`),
 branch `feat/data/fase0-allowlist-proveniencia` → `main`, +549 −4 em 11 arquivos.
 
+**Deploy Sqitch confirmado** (commit `2fb0059`):
+- `sqitch deploy` via container `sqitch/sqitch:latest` alvo `db:pg://devel:senhaboa123@db/edumaps_dev`
+- `+ import_metadata_fase0 .. ok` — colunas `source_url`, `source_license`, `retrieved_at` em `clean.import_metadata`
+- `+ censo_data_dictionary .. ok` — tabela `clean.censo_data_dictionary` (764 linhas, 4 tabelas censo)
+- `sqitch verify`: ambos os novos changes **OK** (falha em `rede_escolas_etapas` é pré-existente, divisão por zero)
+
 ### Entregue
 
 - **Migration Sqitch** `import_metadata_fase0`: adiciona `source_url`,
