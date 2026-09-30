@@ -4,6 +4,62 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #130: Fase 6 mobilidade completa
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#147** (merge commit `c404522`, commit `f74ba79`),
+branch `feat/data/fase6-mobilidade` → `main`, +879 linhas em 23 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ isocrona_escolar ........... ok` — isocronas OSRM/Valhalla auto-hospedadas, grade H3 1km.
+- `+ antt_od_municipio .......... ok` — MONITRIIP matriz OD município×município×mês, supressão count<10.
+- `+ renavam_frota_municipio .... ok` — frota agregada RENAVAM por município/mês.
+- `+ antt_contagem_equipamento .. ok` — tráfego em equipamentos (rodovias concedidas), JOIN com trecho geodados.
+- `+ snv_trecho_vmda ............ ok` — SNV/VMDA (MODELAGEM, decisão jurídica pendente).
+- `+ recife_transporte_escolar .. ok` — transporte escolar Recife ODbL (leitura permitida, materialização = decisão jurídica).
+- `sqitch verify`: 6 novos **OK** (falha em `rede_escolas_etapas` é pré-existente).
+
+### Entregue
+
+- **isocrona_escolar**: isocronas OSRM/Valhalla auto-hospedadas, grade H3 1km (não por escola isolada). Tileset extraído uma vez, engine version + build date registrados.
+- **antt_od_municipio**: MONITRIIP matriz OD município×município×mês, supressão count<10 obrigatória, tipo_gratuidade excluído.
+- **renavam_frota_municipio**: frota agregada RENAVAM por município/mês (domínio público, mensal desde mai/2013).
+- **antt_contagem_equipamento**: tráfego em equipamentos (rodovias concedidas), JOIN com trecho geodados para município.
+- **snv_trecho_vmda**: VMDA (MODELAGEM, não medição) PNCT+pedágio+OD PNT 2016/2017. DECISÃO JURÍDICA PENDENTE.
+- **recife_transporte_escolar**: transporte escolar Recife CKAN ODbL. LEITURA PERMITIDA; materialização sob share-alike = decisão jurídica.
+
+### Decisões Críticas
+
+1. **OSRM/Valhalla auto-hospedado obrigatório**: instâncias públicas sem SLA → extrair tileset uma vez e auto-hospedar.
+2. **Isocronas em grade H3 1km (res 10), NUNCA por escola isolada**: em cidade pequena = reidentificável.
+3. **ANTT OD**: supressão count<10 obrigatória; tipo_gratuidade excluído da camada analítica.
+4. **ANTT acidentes sem município**: chave bruta sem município → JOIN OBRIGATÓRIO com trecho geodados.
+5. **SNV/VMDA = MODELAGEM, não medição**: PNCT+pedágio+OD PNT 2016/2017. Decisão jurídica pendente (INDE contraditório).
+6. **INPE Queimadas = redundante** com MapBiomas Fogo (classe 6, melhor granularidade 30m).
+7. **Recife ODbL**: leitura permitida; materialização sob share-alike = decisão jurídica. Ficha = prova de viabilidade.
+
+### Allowlist Atualizada (Fase 6)
+
+- **OSRM/Valhalla**: auto-hospedado (sem endpoint HTTP)
+- **Overpass API**: `/api/interpreter`
+- **ANTT OD**: `monitriip-servico-regular`
+- **RENAVAM**: `frota-por-municipio`
+- **ANTT Tráfego**: `contagem-equipamentos` (KMZ → GPKG)
+- **INDE VMDA**: Geoftp malha rodoviária
+- **Recife CKAN**: transporte escolar ODbL
+
+### Dependências Desbloqueadas
+
+- **#131** (Overpass/OSM viés de cobertura) ✅
+- **#132** (e-SIC INEP/MEC/FNDE) ✅
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_82.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #129: Fase 5 BrazilCrime + ANTT + RENAEST
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
