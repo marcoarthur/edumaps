@@ -273,3 +273,45 @@ sources:
         params: [limit, offset]
         description: "Dicionário de tipos de unidade (UBS, SU, hospital, etc.)"
         license: "CC BY-ND 3.0 (dados abertos SUS)"
+
+  - id: brazilcrime
+    name: "BrazilCrime - Dados de criminalidade agregados por município"
+    host: cran.r-project.org
+    base_url: "https://cran.r-project.org/package=BrazilCrime"
+    resources:
+      - path: "/R/BrazilCrime"
+        method: CRAN
+        description: "Pacote R BrazilCrime - dados de criminalidade agregados por município/ano (homicídios, roubos, etc.)"
+        license: "GPL-3 (CRAN)"
+
+  - id: antt_acidentes
+    name: "ANTT - Acidentes e geodados por trecho"
+    host: dados.antt.gov.br
+    base_url: "https://dados.antt.gov.br"
+    resources:
+      - path: "/dataset/acidentes"
+        method: GET
+        params: [limit, offset]
+        description: "Acidentes em rodovias federais por trecho (Concessionaria;Data;Km;Trecho) — sem município, requer join com geodados ANTT"
+        license: "CC-BY-4.0 (ANTT)"
+      - path: "/dataset/trechos"
+        method: GET
+        params: [limit, offset]
+        description: "Geodados de trechos rodoviários (Concessionaria;Trecho;Km_Inicial;Km_Final;Municipio) — permite resolver trecho → município"
+        license: "CC-BY-4.0 (ANTT)"
+
+  - id: transportes_renatest
+    name: "Transportes - RENAEST sinistro (agregado por localidade)"
+    host: dados.transportes.gov.br
+    base_url: "https://dados.transportes.gov.br"
+    resources:
+      - path: "/dataset/renatest-sinistro"
+        method: GET
+        params: [limit, offset]
+        description: "Sinistros RENAEST agregados por localidade (não município) — requer de-para localidade → município"
+        license: "CC-BY-4.0 (Transportes)"
+
+# ------------------------------------------------------------
+# RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
+# ------------------------------------------------------------
+denied:

@@ -87,3 +87,8 @@ siconfi_receita [malha_municipio import_metadata_fase0] 2026-09-30T20:30:00Z Mar
 siconfi_despesa [malha_municipio import_metadata_fase0] 2026-09-30T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # SICONFI despesas municipais (funcao 12 educacao)
 transferencia_educ [malha_municipio import_metadata_fase0] 2026-09-30T21:30:00Z Marco Arthur <arthurpbs@gmail.com> # CGU Portal da Transparência transferências educação
 analytics_esforco_fiscal [siconfi_receita siconfi_despesa transferencia_educ censo_escolar_2025] 2026-09-30T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # View analítica esforço fiscal municipal em educação
+
+brazilcrime_municipio [malha_municipio import_metadata_fase0] 2026-09-30T22:30:00Z Marco Arthur <arthurpbs@gmail.com> # BrazilCrime criminalidade agregada por município/ano
+antt_acidente_trecho [malha_municipio import_metadata_fase0] 2026-09-30T23:00:00Z Marco Arthur <arthurpbs@gmail.com> # ANTT acidentes por trecho (sem município)
+antt_trecho_geodados [malha_municipio import_metadata_fase0] 2026-09-30T23:30:00Z Marco Arthur <arthurpbs@gmail.com> # ANTT geodados trechos (trecho → município)
+renaest_sinistro [malha_municipio import_metadata_fase0] 2026-09-30T23:59:00Z Marco Arthur <arthurpbs@gmail.com> # RENAEST sinistros por localidade (de-para localidade → município)
