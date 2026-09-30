@@ -146,16 +146,23 @@ O loop de curadoria do pacote `eduBR` **mudou para o próprio repositório dele*
 mantém mais o loop**: aqui o `eduBR` é só **fonte de dados** (via
 `service = "edumaps"`), não um objeto de curadoria.
 
-| Persona | Foco | Onde está |
-|---------|------|-----------|
+🔴 **O repositório `eduBR` é somente-leitura para este projeto.** NUNCA escrever
+nele — nem arquivo de persona, nem `AGENTS.md`, nem `memory.md`, nem backlog;
+NUNCA rodar rodada de curadoria lá; NUNCA abrir PR, issue ou commit naquele
+repositório. Qualquer achado sobre o `eduBR` é registrado **aqui**, neste
+repositório.
+
+| Persona | Foco | Onde está (leitura) |
+|---------|------|---------------------|
 | Pesquisadora educacional | ML p/ questões nacionais/regionais/municipais | `eduBR/docs/personas/pesquisadora-educacional.md` |
 | Especialista em ML | ML clássico + modelagem avançada | `eduBR/docs/personas/especialista-ml.md` |
 | Gestora escolar | Acompanhamento da escola vs painel municipal/estadual | `eduBR/docs/personas/gestora-escolar.md` |
 
-⚠️ As cópias em `docs/personas/` deste repositório são **histórico congelado**,
-não a versão corrente: ficaram para trás quando o acervo foi movido, e já
-divergiram das do repo `eduBR`. **Não editar, não rodar rodada, não usar como
-fonte da verdade** — quando precisar do perfil ou da memória, ler lá.
+⚠️ As cópias em `docs/personas/` deste repositório são **histórico congelado**:
+ficaram para trás quando o acervo foi movido, e já divergiram das do repo
+`eduBR`. Permanecem aqui **de propósito**, como registro do que já foi curado —
+não editar, não apagar, não usar como fonte da verdade. Para o perfil ou a
+memória correntes, ler no repo `eduBR`.
 
 ### Persona ativa neste repositório
 

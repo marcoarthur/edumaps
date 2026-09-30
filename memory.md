@@ -9,22 +9,29 @@
 Informado pelo developer: o **loop de curadoria do `eduBR` passou para o
 repositório do próprio `eduBR`** (`~/Projects/eduBR`), que já tem `AGENTS.md`,
 `docs/personas/` (perfil **e** memória das três personas) e o backlog
-consolidado.
+consolidado. Segunda instrução na mesma sessão: **o repo `eduBR` é
+somente-leitura — não escrever nele de maneira alguma.**
+
+🔴 **REGRA PERMANENTE: nunca escrever no repositório `eduBR`.** Nem arquivo de
+persona, nem `AGENTS.md`, nem `memory.md`, nem backlog; nem rodar rodada de
+curadoria lá; nem abrir PR, issue ou commit. Achado sobre o `eduBR` é registrado
+**aqui**.
 
 Consequência neste repo:
 
 - **`AGENTS.md`**: removido o "Protocolo do loop (curadoria eduBR)". A seção
   "Personas de curadoria" agora avisa que a curadoria está dividida: o `eduBR`
-  guarda o acervo dele, aqui fica só o **Tech Lead**.
-- **⚠️ As cópias em `docs/personas/` (pesquisadora-educacional, especialista-ml,
-  gestora-escolar) são HISTÓRICO CONGELADO** — pedido explícito do developer
-  ("manter como histórico arquivado"). **Não editar, não rodar rodada.** Já
-  divergiram: a `pesquisadora-educacional.md` daqui tem a 3ª rodada (P10/P11 +
-  veredito, do ciclo #123) que **ainda não existe** no repo `eduBR`. Se esse
-  histórico for para lá, é **portar** — não copiar por cima.
+  guarda o acervo dele (leitura), aqui fica só o **Tech Lead**.
+- **As cópias em `docs/personas/` (pesquisadora-educacional, especialista-ml,
+  gestora-escolar) PERMANECEM aqui como histórico congelado** — decisão do
+  developer ("o histórico aqui pode permanecer"). **Não editar, não apagar.**
+  Já divergiram: a `pesquisadora-educacional.md` daqui tem a 3ª rodada (P10/P11 +
+  veredito, do ciclo #123) que não existe no repo `eduBR`, e **fica assim** —
+  reconciliar exigiria escrever lá, o que está proibido. Para a versão
+  corrente, ler no repo `eduBR`.
 - `docs/indice.md` seção 7 reescrita; `memory.md`, `notas_tecnicas_74.md` e
   `docs/analises/fontes_de_dados.md` ajustados para apontar o repo `eduBR` como
-  fonte da verdade.
+  fonte da verdade (leitura).
 - Ciclo **só de documentação** → push direto em `main` (exceção do passo 6 do
   Workflow), **sem deploy**.
 

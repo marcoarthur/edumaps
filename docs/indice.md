@@ -57,9 +57,10 @@
 
 ## 7. Personas de curadoria
 - 🟢 `docs/personas/tech-lead.md` — **ativa neste repo**: acervo `docs/` + Zotero.
-- ⚪ **Curadoria do `eduBR` foi movida para o repo dele** (`~/Projects/eduBR`), que
-  agora guarda perfil **e** memória correntes das três personas de pacote.
-  As cópias em `docs/personas/` aqui são **histórico congelado** — não editar.
+- ⚪ **Curadoria do `eduBR` foi movida para o repo dele** (`~/Projects/eduBR`),
+  que guarda o perfil **e** a memória correntes das três personas de pacote —
+  **leitura apenas**, nunca escrever lá. As cópias em `docs/personas/` aqui
+  **permanecem como histórico congelado** — não editar, não apagar.
 
 ## 8. Notas técnicas (série)
 - 🔴 `docs/archive/dev/notas_tecnicas_1..16.md` — fases anteriores (**arquivadas**).
