@@ -58,6 +58,33 @@ sqlite3 "file:$DB?mode=ro" "SELECT count(*) FROM itemNotes n JOIN collectionItem
 > o que virou artefato. Parte do trabalho do Tech Lead é **promover** o
 > efêmero (Zotero) a durável (`docs/`/código).
 
+### Ambiente: `sqlite3` pode não existir (2026-09-30)
+
+O binário `sqlite3` **não está instalado** no host local (`ubaxala`) — as
+queries acima falham com `sqlite3: comando não encontrado`. Usar o módulo
+`sqlite3` do Python (ou `DBD::SQLite` no perlbrew), sempre em **read-only**:
+
+```bash
+DB=~/Code/perl/DBIX/zotero.sqlite
+python3 - <<'PY'
+import sqlite3, os
+db = os.path.expanduser("~/Code/perl/DBIX/zotero.sqlite")
+c = sqlite3.connect(f"file:{db}?mode=ro", uri=True)   # read-only garantido
+cols = (113, 115, 116, 119, 121, 122, 125, 126, 127, 129)
+for coll, iid, typ, title in c.execute(f"""
+  SELECT c.collectionName, i.itemID, it.typeName,
+    substr((SELECT v.value FROM itemData id JOIN itemDataValues v ON v.valueID=id.valueID
+      WHERE id.itemID=i.itemID AND id.fieldID=(SELECT fieldID FROM fields WHERE fieldName='title')
+      LIMIT 1),1,58)
+  FROM items i JOIN itemTypes it ON it.itemTypeID=i.itemTypeID
+  JOIN collectionItems ci ON ci.itemID=i.itemID JOIN collections c ON c.collectionID=ci.collectionID
+  WHERE c.collectionID IN ({','.join(map(str, cols))}) ORDER BY c.collectionName, i.itemID"""):
+    print(f"Z:{iid} [{coll}] {typ} :: {title}")
+PY
+```
+
+> `perl -MDBD::SQLite` (1.78) também funciona como alternativa.
+
 ## Perguntas canônicas
 
 1. O que existe em `docs/` **e** na coleção Zotero, e como os dois se
