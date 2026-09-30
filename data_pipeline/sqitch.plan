@@ -69,3 +69,8 @@ school_osm_query [osm_generalize] 2026-09-29T13:00:00Z Marco Arthur <arthurpbs@g
 
 import_metadata_fase0 [schemas] 2026-09-30T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # FASE 0: proveniencia com licença em clean.import_metadata
 censo_data_dictionary [censo_escolar_2025 censo_docentes matriculas_censo_2025 censo_gestor] 2026-09-30T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Dicionario canonico do Censo Escolar com versionamento por edicao
+
+malha_municipio [import_metadata_fase0] 2026-09-30T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Malha municipal IBGE 2024 (GPKG)
+malha_setor_censitario [malha_municipio] 2026-09-30T15:30:00Z Marco Arthur <arthurpbs@gmail.com> # Malha setor censitário 2022 (GPKG, ~748 MB)
+ibge_agregados [malha_municipio] 2026-09-30T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # Agregados IBGE SIDRA formato longo
+censo2022_setor [malha_setor_censitario ibge_agregados] 2026-09-30T16:30:00Z Marco Arthur <arthurpbs@gmail.com> # Censo 2022 por setor censitário
