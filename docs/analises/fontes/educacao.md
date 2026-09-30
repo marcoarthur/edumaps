@@ -7,20 +7,21 @@
 ## ⚠️ Nota de qualidade desta rodada
 
 Este lote foi o de **verificação mais fraca** dos oito: a pesquisa retornou os
-campos do template sem preencher ("`sim (R / Python / HTTP) / não`"), deixou a
-licença como "não verificado" em todas as fichas e trouxe uma afirmação
-suspeita (**Censo Escolar "desde 1995"** — não confirmada).
+campos do template sem preencher ("`sim (R / Python / HTTP) / não`") e deixou a
+licença como "não verificado" em todas as fichas.
 
-Tentei complementar pessoalmente: a página do INEP devolveu **apenas navegação**
-(sem corpo de artigo, sem lista de anos, sem termos de uso), então **não
-confirmei** URLs de download nem licença. Já o **Atlas foi verificado** e está
-firme.
+**Segunda passada executada (2026-09-30)**: extraí os `href` reais da página do
+INEP (o `webfetch` havia devolvido só navegação) e resolvi **2 das 4 pendências**:
 
-**Consequência honesta**: as fontes deste lote que ficaram com campos críticos
-"não verificado" **não podem entrar como `[alta]`** sem uma segunda passada de
-verificação. Isso é a regra nº 9 do método funcionando — e o único jeito de
+- ✅ **Cobertura temporal do Censo Escolar: 1995–2025, 31 edições** — a alegação
+  original do levantamento ("desde 1995") estava **correta** e foi confirmada.
+- ✅ **Padrão de URL confirmado**, com um *gotcha* registrado abaixo.
+- ❌ **Licença: continua não verificada.** Ver a ficha do Censo Escolar.
+- ❌ **Painel do PNE e download do Atlas**: não verificados nesta passada.
+
+**Consequência honesta, mantida**: sem licença verificada, nenhuma fonte deste
+lote pode entrar como `[alta]`. É a regra nº 9 do método funcionando — o jeito de
 atingir o critério de aceite é marcar a pendência, não arredondar o dado.
-A segunda passada está registrada como tarefa em aberto ao final do arquivo.
 
 ---
 
@@ -30,14 +31,23 @@ A segunda passada está registrada como tarefa em aberto ao final do arquivo.
 |---|---|
 | **URL** | https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar |
 | **Mantenedor** | INEP — Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira (MEC) |
-| **Licença** | ⚠️ **não verificada** — a página retorna só navegação; não há SPDX/Termos de Uso legíveis. O INEP publica RIPDs com análise da ANPD, mas isso não é licença. **Confirmar antes de publicar.** |
-| **Formato** | CSV dentro de ZIPs anuais (padrão `download.inep.gov.br/dados_abertos/microdados_censo_escolar_<ano>.zip`) — padrão **não verificado nesta rodada** |
+| **Licença** | ❌ **não verificada, e esta é a pendência que bloqueia a promoção** — a página do microdado e o *Plano de Dados Abertos* do INEP **não publicam termo de uso nem SPDX específico para os dados**. O único texto de licença encontrado é o **rodapé do portal gov.br** (*"Todo o conteúdo deste site está publicado sob a licença Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada"*) — que cobre **conteúdo do site**, não necessariamente os dados. O INEP publica RIPDs com análise da ANPD, o que é governança de tratamento, **não** licença de reutilização. **Ação: e-SIC/Fala.BR ao INEP ou consulta ao SEDAP.** |
+| **Formato** | CSV dentro de ZIPs anuais. **Padrão confirmado**: `https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_<ano>.zip` |
 | **Granularidade** | **escola** (e turmas/movimento) |
 | **Periodicidade** | anual |
 | **API/SDK oficial** | não — download de arquivos; não há API REST |
-| **Cobertura temporal** | ⚠️ **não verificada** (a alegação "desde 1995" do levantamento **não foi confirmada**; a série de microdados mais referenciada cobre 2007→, e a Base dos Dados cobre 2007–2022) |
+| **Cobertura temporal** | ✅ **1995–2025, 31 edições** (verificado: 30 hrefs `1995…2024` + `2025`) |
 | **Cobertura geográfica** | nacional |
 | **LGPD** | ⚠️ **risco alto**: microdados com **nível individual**. O INEP adotou anonimização e elaborou RIPDs com análise da ANPD — ainda assim exige agregação |
+
+**Verificação (2026-09-30)**: página de microdados do INEP **200** (219.952 bytes
+de HTML). Extraídos os `href` do host `download.inep.gov.br`: **30 arquivos**
+`microdados_censo_escolar_1995.zip` … `microdados_censo_escolar_2024.zip`, mais
+**`microdados_censo_escolar_2025_.zip`** (ver gotcha abaixo). Página marcada como
+*"Atualizado em 31/07/2026"*; a entrada 2025 consta como *"Documento atualizado
+em julho/2026"*. `download.inep.gov.br` resolve em DNS (`200.130.24.15`), mas o
+**handshake TLS falha deste ambiente** — a carga precisa ser verificada a partir
+da rede de deploy.
 
 **Relevância para o EduMaps:** é a **base estrutural já usada** pelo EduMaps
 (estabelecimentos, turmas, matrículas, profissionais, movimento). Não é lacuna
@@ -61,11 +71,21 @@ Dados Pessoais* · (Zotero: `Z:9892` — *Dicionário de Dados Tabela_Escolas.cs
 (Censo 2025)*, `Z:11901` — *Aula 3: Indicadores Educacionais SAEB e Censo*)
 
 **Riscos / cuidados:**
+- 🔴 **Gotcha de URL no ano de 2025 (verificado)**: a edição 2025 **não** segue o
+  padrão das demais — o arquivo é `microdados_censo_escolar_2025_**_**.zip`, com
+  um **underscore extra** antes da extensão. Um ETL que monte a URL por
+  interpolação `%d` recebe **404 só em 2025**, sem erro em nenhum outro ano. Não
+  corrigir "à mão" no meio do pipeline: manter uma **tabela de exceções** de
+  URLs, ou baixar por **scraping do `href`** da página oficial, que é a única
+  fonte que não mente.
 - **Nunca usar tabelas de nível aluno** no IVET — agregue por escola ou acima.
   Crossar perfil socioeconômico de estudante é tratamento de dado sensível de
   crianças e adolescentes.
 - ZIPs de vários GB por ano: exigir armazenamento e ETL próprios.
-- Confirmar os **Termos de Uso** antes de qualquer republicação.
+- ⚠️ **Licença ainda não verificada** — este é o único item que impede `[alta]`.
+  Enquanto não houver resposta do INEP, tratar com uso institucional interno.
+- ⚠️ **Handshake TLS** com `download.inep.gov.br` falhou neste ambiente
+  (DNS resolve). Verificar a partir da rede de deploy antes de dimensionar o job.
 
 ---
 
@@ -282,16 +302,22 @@ redistribuição. Só usar para contexto/relatório, nunca como insumo do IVET.
 | **Painel do PNE** | 🔴 `[baixa]` | — | Atrás de **Power BI** — exigiria scraping frágil. |
 | **UNESCO UIS** | 🔴 `[baixa]` | — | Granularidade de **país** — inútil para índice territorial. |
 
-## 🔴 Tarefa em aberto — segunda passada de verificação
+## 🔴 Tarefa em aberto — terceira passada de verificação
 
-Antes de qualquer implementação, o **lote educação** exige uma rodada de
-verificação com o mesmo rigor dos demais. Pendências concretas:
+A **segunda passada** (2026-09-30) resolveu a cobertura temporal e o padrão de
+URL do Censo Escolar. Restam três pendências concretas, **todas de licença** —
+que é o único critério que ainda separa este lote de `[alta]`:
 
-1. **Licença** de: microdados do Censo Escolar, IDEB, ENEM, painel do PNE — obter
-   os Termos de Uso/SPDX; sem isso, nenhuma pode virar `[alta]`.
-2. **Cobertura temporal real** dos microdados do Censo Escolar (a alegação
-   "desde 1995" **não** foi confirmada) e padrão exato das URLs de download.
-3. Confirmar se o painel do PNE tem rota de dados abertos (CSV) — se tiver, sobe
-   de `[baixa]` para `[média]`.
-4. Confirmar a existence de download massivo do **Atlas** em CSV (hoje a base está
-   em XLSX na seção *Acervo*), o que destravaria a ingestão em R.
+1. **Licença** de: microdados do Censo Escolar, IDEB, ENEM, painel do PNE —
+   obter Termos de Uso/SPDX. O INEP publica o *Plano de Dados Abertos*, mas
+   **sem licença por conjunto**. Caminho: **e-SIC/Fala.BR ao INEP** ou consulta ao
+   **SEDAP** (Serviço de Acesso a Dados Protegidos, link no menu *Dados Abertos*).
+2. Confirmar se o **painel do PNE** tem rota de dados abertos (CSV) — se tiver,
+   sobe de `[baixa]` para `[média]`.
+3. Confirmar download massivo do **Atlas** em CSV (hoje a base está em XLSX na
+   seção *Acervo*) — destravaria a ingestão em R.
+
+**Impacto no plano:** como nenhuma fonte do lote educação tem licença
+verificada, **nenhuma entra na Fase 1 de implementação**. Isso não impede
+concluir o catálogo — bloqueia a promoção a `[alta]`, e a ação de maior retorno é
+uma única e-SIC com as quatro perguntas de uma vez.
