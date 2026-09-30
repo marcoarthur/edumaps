@@ -6,14 +6,18 @@
 
 ## Sessão 2026-09-30 — Catálogo e priorização de fontes de dados abertas (issue #123)
 
-Ciclo **100% de documentação** (sem código → **sem deploy**). Branch
-`docs/analytics-fontes-de-dados`.
+Ciclo **100% de documentação** (sem código → **sem deploy**).
+
+**Mergeado**: PR **#133** (7 commits, `28178ae`..`f8a97cd`, merge `3003d00`),
+branch `docs/analytics-fontes-de-dados` → `main`, +5096 −31 em 16 arquivos.
+Issues #124 a #132 criadas.
 
 ### Entregue
 - `docs/analises/fontes_de_dados.md` — matriz-mestre (**61 fontes, 21 `[alta]`**),
-  cobertura por lacuna e plano em **7 fases**.
-- `docs/analises/fontes/` — 8 fichas por domínio (educacao, socioeconomico,
-  conectividade-obras, mobilidade, saude, seguranca, meio-ambiente, agregadores).
+  cobertura por lacuna, plano em **7 fases** (#124–#130) e tabela de issues.
+- `docs/analises/fontes/` — **61 fichas** em 8 domínios (educacao,
+  socioeconomico, conectividade-obras, **mobilidade (13 fichas, novo)**,
+  saude, seguranca, meio-ambiente, agregadores).
 - `docs/funcionalidades/plataforma/fontes-de-dados.md` — capacidade de curadoria
   de fontes, reescrita em alto nível.
 - `docs/indice.md` — nova seção 12; **numeração duplicada "## 11." corrigida**
