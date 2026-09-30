@@ -12,7 +12,7 @@ BEGIN;
 -- TABELA CANÔNICA DE DICIONÁRIO DO CENSO ESCOLAR
 -- =================================================================
 
-CREATE TABLE clean.censo_data_dictionary (
+CREATE TABLE IF NOT EXISTS clean.censo_data_dictionary (
     table_name           TEXT NOT NULL,
     column_name          TEXT NOT NULL,
     data_type            TEXT NOT NULL,
@@ -38,13 +38,13 @@ CREATE TABLE clean.censo_data_dictionary (
 );
 
 -- Índices para consultas comuns
-CREATE INDEX idx_censo_dict_table
+CREATE INDEX IF NOT EXISTS idx_censo_dict_table
     ON clean.censo_data_dictionary (table_name);
 
-CREATE INDEX idx_censo_dict_year
+CREATE INDEX IF NOT EXISTS idx_censo_dict_year
     ON clean.censo_data_dictionary (year_introduced);
 
-CREATE INDEX idx_censo_dict_domain
+CREATE INDEX IF NOT EXISTS idx_censo_dict_domain
     ON clean.censo_data_dictionary (table_name, column_name)
     WHERE value_domain IS NOT NULL;
 
@@ -252,6 +252,7 @@ DECLARE
     has_source_license boolean;
     has_retrieved_at boolean;
     sql text;
+    row_count integer;
 BEGIN
     -- Verificar quais colunas existem
     SELECT EXISTS (
@@ -303,7 +304,8 @@ BEGIN
           )';
 
     EXECUTE sql;
-    RAISE NOTICE 'Proveniência (Fase 0) atualizada para % linhas', SQL%ROWCOUNT;
+    GET DIAGNOSTICS row_count = ROW_COUNT;
+    RAISE NOTICE 'Proveniência (Fase 0) atualizada para % linhas', row_count;
 END $$;
 
 -- =================================================================
