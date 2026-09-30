@@ -4,6 +4,30 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Backlog consolidado: #123 fechada e #134–#139 criadas
+
+Ciclo administrativo (issues + documentação, **sem código → sem deploy**),
+pedido do developer a partir da lista de backlog.
+
+- **#123 fechada** com comentário apontando as 9 issues filhas (#124–#132) e as
+  3 decisões que continuam abertas. O trabalho já estava mergeado (PR #133) e a
+  issue ficou aberta por engano.
+- **6 issues novas** para as direções priorizadas pelo Tech Lead que **não**
+  eram ingestão de fonte e estavam sem issue: **#134** dicionário de dados do
+  Censo Escolar (`[alta]`, Z:9892), **#135** DVC, **#136** git hooks, **#137**
+  índices/RandomForest a produto, **#138** PgVector, **#139** fundamentação
+  na literatura. Todas com Zotero na referência.
+  ⚠️ Eu anunciei "5 direções" e eram **6** — o erro foi meu, na contagem.
+- **Bug de referência cruzada corrigido**: o corpo da #137 apontava para
+  "#137/DVC" — que era ela própria. Passou a apontar **#135**.
+- **Dependências reveladas pelas issues** e registradas: **#124 antes de tudo**;
+  **#134 antes de #137**; **#135 depois de #124** (versionar sem proveniência
+  registra o erro com data, o que é pior que não registrar).
+- **`memory.md`**: a lista de pendências da sessão #123 estava partida em duas
+  pela tabela de issues inserida no meio. Reestruturada em "Pendências sem
+  issue" + "Backlog registrado no GitHub", com as 16 issues em tabela única e
+  coluna de origem (plano de fontes × acervo).
+
 ## Sessão 2026-09-30 — Curadoria do `eduBR` saiu deste repositório
 
 Informado pelo developer: o **loop de curadoria do `eduBR` passou para o
@@ -156,41 +180,49 @@ Issues #124 a #132 criadas.
   nacional (ver seção de achados). A Fase 6 do plano trata isso como prova de
   viabilidade no Recife, não como cobertura nacional.
 
-### Pendências
-- **e-SIC ao INEP** (licença de Censo Escolar, IDEB, ENEM, painel do PNE) —
-  desbloqueia 4 fichas de `[alta]`. → **#132**
-- **e-SIC ao MEC/NIC.br** (CSV + dicionário do Medidor Educação Conectada) —
-  fecha a lacuna 3; a metodologia de agregação já está publicada na aba "Dados".
-  → **#132**
-- **e-SIC ao FNDE** (URL + dicionário do Novo PAC/Proinfância e do PNATE) →
-  **#132**
-- **e-SIC às secretarias municipais de educação** (vagas de transporte escolar
-  por unidade e turno) — o gargalo da lacuna 5 é **publicação, não coleta**.
-  → **#132**
-
-### Issues criadas (fases 0–6 + 2 transversais)
-| Issue | Escopo | Prioridade |
-|---|---|---|
-| **#124** | Fase 0 — allowlist de endpoints + proveniência com licença | **alta** (bloqueia todas) |
-| **#125** | Fase 1 — contexto municipal e sub-municipal | **alta** |
-| **#126** | Fase 2 — saúde (CNES + DATASUS) com sanidade de LGPD | **alta** |
-| **#127** | Fase 3 — eventos e exposição a risco (MapBiomas + INMET) | média |
-| **#128** | Fase 4 — financeiro e investimento | média |
-| **#129** | Fase 5 — segurança e sinistralidade viária + LGPD | **alta** |
-| **#130** | Fase 6 — mobilidade | **alta** |
-| **#131** | Overpass conforme à política de uso + viés de cobertura do OSM | **alta** |
-| **#132** | Os três e-SIC (administrativo, sem código) | **alta** |
-
-Uma fonte `[alta]` por fase, não uma issue por fonte: o entregável é a tabela +
-a view analítica, e nove issues de pipeline interdependente serializariam o
-trabalho sem ganho.
+### Pendências sem issue (decisões e ações administrativas)
 - **Decisão institucional sobre PeNSE** (CEP/Conep, ambiente controlado) — a
   maior fonte de saúde do catálogo e a única que exige decisão não técnica.
 - **Decisão de leitura do IVET**: territorial ou escolar com contexto? Muda a
   interpretação de todos os coeficientes (P5 da pesquisadora-educacional, roda
   no repo `eduBR`).
-- Verificar handshake TLS com `download.inep.gov.br` a partir da rede de deploy
-  (falhou neste ambiente; DNS resolve para `200.130.24.15`).
+- **Verificar handshake TLS com `download.inep.gov.br`** a partir da rede de
+  deploy (falhou neste ambiente; DNS resolve para `200.130.24.15`).
+- **Quatro e-SICs** — administrativos, sem código, todos rastreados em **#132**:
+  INEP (licença de Censo Escolar, IDEB, ENEM, painel do PNE — desbloqueia 4
+  fichas de `[alta]`), MEC/NIC.br (CSV + dicionário do Medidor Educação
+  Conectada — fecha a lacuna 3), FNDE (URL + dicionário do Novo PAC/Proinfância
+  e do PNATE) e secretarias municipais de educação (vagas de transporte escolar
+  por unidade e turno — o gargalo da lacuna 5 é **publicação, não coleta**).
+
+### Backlog registrado no GitHub (15 issues abertas)
+Até o ciclo #123 o backlog de código e o de curadoria de acervo estavam
+**desconectados**: as direções priorizadas pelo Tech Lead que não eram ingestão
+de fonte não tinham issue. As #134–#139 fecham essa lacuna.
+
+| Issue | Origem | Escopo | Prioridade |
+|---|---|---|---|
+| **#124** | plano de fontes | Fase 0 — allowlist de endpoints + proveniência com licença | **alta** (bloqueia todas) |
+| **#125** | plano de fontes | Fase 1 — contexto municipal e sub-municipal | **alta** |
+| **#126** | plano de fontes | Fase 2 — saúde (CNES + DATASUS) com sanidade de LGPD | **alta** |
+| **#127** | plano de fontes | Fase 3 — eventos e exposição a risco (MapBiomas + INMET) | média |
+| **#128** | plano de fontes | Fase 4 — financeiro e investimento | média |
+| **#129** | plano de fontes | Fase 5 — segurança e sinistralidade viária + LGPD | **alta** |
+| **#130** | plano de fontes | Fase 6 — mobilidade | **alta** |
+| **#131** | plano de fontes | Overpass conforme à política de uso + viés de cobertura do OSM | **alta** |
+| **#132** | plano de fontes | Os três e-SIC (administrativo, sem código) | **alta** |
+| **#134** | acervo (Z:9892) | Dicionário de dados versionado do Censo Escolar | **alta** |
+| **#135** | acervo (Z:10097) | Versionar datasets do pipeline com DVC | média |
+| **#136** | acervo (Z:9931) | Validar convenções do repositório em git hooks | média |
+| **#137** | acervo (Z:10450/10297) | Promover índices e RandomForest a produto versionado | média |
+| **#138** | acervo (Z:11766) | Similaridade escolar e municipal com PgVector | baixa |
+| **#139** | acervo (Z:10454/10673/10456) | Fundamentar os coeficientes do IVET na literatura | baixa |
+
+Duas ordens obrigatórias que as dependências revelaram: **#124 antes de tudo**,
+e **#134 antes de #137** (treinar modelo sobre tabela sem dicionário nem
+proveniência gera coeficiente impossível de auditar). Uma fonte `[alta]` por
+fase, não uma issue por fonte: o entregável é a tabela + a view analítica, e
+nove issues de pipeline interdependente serializariam o trabalho sem ganho.
 
 ### Notas de ambiente
 - `sqlite3` CLI **ausente** no host; usar `python3 -c "import sqlite3"` em
