@@ -73,7 +73,7 @@
 ### plataforma
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
-| [Fontes de dados](plataforma/fontes-de-dados.md) | Censo Escolar, IDEB/SAEB, SIOPE e IBGE sustentam os indicadores. | 🟢 |
+| [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
 | [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais e princípios de privacidade. | 🟢 |
 | [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje a chave do Assistente do Censo. | 🟡 |
 | [Observabilidade de erros](plataforma/observabilidade.md) | Registro central de falhas (API 5xx, jobs e erros de navegador) com dados pessoais redigidos. | 🟡 |

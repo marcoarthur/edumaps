@@ -77,9 +77,17 @@
   índice/síntese em `docs/funcionalidades/README.md`. Mantido no Workflow
   (passo "Documentação funcional").
 
+## 12. Análises e catálogo de fontes (issue #123)
+- 🟢 `docs/analises/fontes_de_dados.md` — **matriz-mestre**: lacunas do IVET,
+  método de pontuação, priorização das 50+ fontes candidatas e plano de
+  integração faseado.
+- 🟢 `docs/analises/fontes/` — fichas por domínio (`educacao`, `socioeconomico`,
+  `conectividade-obras`, `mobilidade`, `saude`, `seguranca`, `meio-ambiente`,
+  `agregadores`), com licença, endpoint, granularidade e risco verificados.
+
 ---
 
-## 11. Clientes / apresentação
+## 13. Clientes / apresentação
 - 🟢 `docs/clients/gestor/potencial.md` — doc de potencial para **gestor público**
   (linguagem simples, sem monetização).
 - 🟢 `docs/clients/privado/setor.md` — doc de potencial para **investidor de rede
