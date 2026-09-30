@@ -8,6 +8,7 @@ use Spreadsheet::Read;
 use Syntax::Keyword::Try;
 use IO::All;
 use utf8;
+use EduMaps::Data::Allowlist;
 
 =pod
 
@@ -150,6 +151,12 @@ Exemplo: C</tmp/350030_2024.xlsx>
 
 async sub get_data_p($self) {
   $self->base->query( %{$self->_data} );
+
+  # ---- FASE 0: Allowlist validation ----
+  my $allowlist = EduMaps::Data::Allowlist->new;
+  $allowlist->validate_url($self->base, 'fnde_siope_remuneracao')
+    or Mojo::Exception->throw("Allowlist validation failed: " . $allowlist->last_error);
+  # --------------------------------------
 
   my $tx = await $self->ua->get_p( $self->base );
 

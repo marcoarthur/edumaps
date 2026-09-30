@@ -1,0 +1,143 @@
+# Allowlist de endpoints/recursos para ingestão de dados
+#
+# Este arquivo define quais endpoints/recursos externos podem ser acessados
+# pelos jobs de ingestão. Qualquer URL fora desta lista ABORTA o job.
+#
+# Estrutura:
+# - sources: lista de fontes permitidas, cada uma com:
+#     id: identificador único (usado no código)
+#     name: nome legível
+#     host: host base (ex.: www.fnde.gov.br)
+#     resources: lista de recursos permitidos nesta fonte
+#         path: caminho do endpoint (pode ter placeholders {cod_mun}, {ano})
+#         method: HTTP method (GET, POST)
+#         description: justificativa de por que este recurso é agregado
+#         license: SPDX ou descrição da licença
+# - denied: recursos EXPLICITAMENTE NEGADOS (mesmo host de permitido, mas recurso sensível)
+
+sources:
+  - id: fnde_siope_remuneracao
+    name: "FNDE SIOPE - Remuneração Municipal (agregado)"
+    host: www.fnde.gov.br
+    base_url: "https://www.fnde.gov.br/siope/consultarRemuneracaoMunicipal.do"
+    resources:
+      - path: "/siope/consultarRemuneracaoMunicipal.do"
+        method: GET
+        params: [acao, cod_uf, municipios, anos, mes]
+        description: "Planilha Excel agregada por município/cargo (não individual)"
+        license: "Não verificada"
+    # NOTA: O recurso de viagens/detalhado NÃO está listado → negado por omissão
+
+  - id: ibge_sidra
+    name: "IBGE SIDRA - APIs agregadas"
+    host: apisidra.ibge.gov.br
+    base_url: "https://apisidra.ibge.gov.br"
+    resources:
+      - path: "/values/t/1393/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "PIB municipal (tabela 1393) - agregado por município/ano"
+        license: "Domínio público (IBGE)"
+      - path: "/values/t/6579/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "População municipal - agregado por município/ano"
+        license: "Domínio público (IBGE)"
+
+  - id: ibge_servicodados
+    name: "IBGE Serviço de Dados - Malhas e códigos"
+    host: servicodados.ibge.gov.br
+    base_url: "https://servicodados.ibge.gov.br/api/v1"
+    resources:
+      - path: "/localidades/municipios"
+        method: GET
+        description: "Lista de municípios com códigos IBGE"
+        license: "Domínio público (IBGE)"
+      - path: "/localidades/municipios/{codigo_ibge}"
+        method: GET
+        description: "Detalhes de um município"
+        license: "Domínio público (IBGE)"
+
+  - id: inmet
+    name: "INMET - Dados meteorológicos"
+    host: dados.inmet.gov.br
+    base_url: "https://dados.inmet.gov.br"
+    resources:
+      - path: "/dados/{tipo}/{ano}/{mes}"
+        method: GET
+        description: "Estações automáticas/conceição - dados agregados por estação/dia"
+        license: "CC-BY-4.0 (INMET)"
+
+  - id: mapbiomas
+    name: "MapBiomas - Cobertura/uso do solo"
+    host: mapbiomas.org
+    base_url: "https://mapbiomas.org"
+    resources:
+      - path: "/download/collection/{colecao}/municipios"
+        method: GET
+        description: "Mosaico municipal por coleção (agregado)"
+        license: "CC-BY-4.0 (MapBiomas)"
+
+  - id: transportes_renavam
+    name: "Ministério dos Transportes - RENAVAM/RENAEST (frota agregada)"
+    host: dados.transportes.gov.br
+    base_url: "https://dados.transportes.gov.br"
+    resources:
+      - path: "/dataset/frota-por-municipio"
+        method: GET
+        description: "Frota agregada por município (não por veículo)"
+        license: "CC-BY-4.0 (Transportes)"
+
+# ------------------------------------------------------------
+# RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
+# ------------------------------------------------------------
+denied:
+  - id: antta_monitriip_viagens
+    source_ref: antta_monitriip
+    host: dados.antt.gov.br
+    path: "/dataset/monitriip-viagens"
+    reason: "74 recursos, CC-BY, mas expõe CNPJ, placa, IMEI, lat/long POR VIAGEM — nível individual, LGPD"
+
+  - id: sptrans_bilhete_unico_usuario
+    source_ref: sptrans
+    host: dados.mobilidade.rio
+    path: "/dataset/creditos-eletronicos-bilhete-unico-usuario"
+    reason: "CCZero, mas nível INDIVIDUAL (saldo por usuário) — cruzado com escola/horário reconstrói trajeto de aluno"
+
+  - id: sus_sisvan_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/sisvan/estado-nutricional"
+    reason: "Microdado individual (peso, altura, IMC por pessoa) — menor de idade"
+
+  - id: sus_vacinacao_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/vacinacao/doses-aplicadas-pni-*"
+    reason: "Microdado individual (data vacinação, código documento, raça por pessoa)"
+
+  - id: sus_cnes_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/cnes/estabelecimentos"
+    reason: "Expõe CNPJ, telefone, e-mail, nome de pessoa física de estabelecimentos"
+
+# ------------------------------------------------------------
+# FONTES REFERENCIADAS EM 'denied' (para contexto)
+# ------------------------------------------------------------
+sources_ref:
+  - id: antta_monitriip
+    name: "ANTT MONITRIIP - Serviço Regular"
+    host: dados.antt.gov.br
+    base_url: "https://dados.antt.gov.br"
+    note: "Apenas recurso AGREGADO permitido; viagens negado acima"
+
+  - id: sptrans
+    name: "SPTRANS - Bilhete Único"
+    host: dados.mobilidade.rio
+    base_url: "https://dados.mobilidade.rio"
+    note: "Recurso agregado de créditos permitido se existir; usuário NEGADO"
+
+  - id: sus
+    name: "Ministério da Saúde - Dados Abertos"
+    host: dados.saude.gov.br
+    base_url: "https://dados.saude.gov.br"
+    note: "TODOS os endpoints de microdado individual NEGADOS"

@@ -155,9 +155,12 @@ BEGIN;
   -- Registro de metadados da importação
   -- =================================================================
 
-  INSERT INTO clean.import_metadata (table_name, source_file, row_count_loaded, notes)
+  INSERT INTO clean.import_metadata (table_name, source_file, source_url, source_license, retrieved_at, row_count_loaded, notes)
   SELECT 'clean.censo_gestor'::text,
          '/data/Tabela_Gestor_Escolar_2025.csv'::text,
+         'https://download.inep.gov.br/microdados/microdados_censo_escolar_2025.zip'::text,
+         'Não verificada'::text,
+         NOW(),
          COUNT(*)::bigint,
          'Importação via deploy Sqitch: censo_gestor'
   FROM clean.censo_gestor;
