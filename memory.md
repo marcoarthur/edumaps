@@ -4,6 +4,52 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #127: Fase 3 MapBiomas + INMET
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#144** (merge commit `bcf5d6d`, commit `fb200dd`),
+branch `feat/data/fase3-mapbiomas-inmet` → `main`, +428 −3 em 11 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ mapbiomas_cobertura ............ ok` — cobertura/uso do solo por município/ano/classe. Coleção FIXA (`collection9`), granularidade 30m.
+- `+ inmet_alerta ................... ok` — Alerta-AS (CAP 1.2) eventos meteorológicos que interrompem aula. Código IBGE no payload. Mede EVENTO, não exposição.
+- `+ inmet_bdmep .................... ok` — BDMEP série diária 26 anos, API sem autenticação. Base para normalização climática.
+- `sqitch verify`: 3 novos **OK** (falha em `rede_escolas_etapas` é pré-existente).
+
+### Entregue
+
+- **mapbiomas_cobertura**: estrutura para cobertura/uso do solo por município/ano/classe. **Coleção FIXA** (`collection9`), não interpolar ano. Granularidade 30m. Arealizar sobre área de influência, não centroide.
+- **inmet_alerta**: Alerta-AS (CAP 1.2) eventos meteorológicos que interrompem aula. Código IBGE no payload. Mede **EVENTO**, não exposição.
+- **inmet_bdmep**: BDMEP série diária 26 anos, API sem autenticação. Base para normalização climática.
+
+### Decisões de Design
+
+1. **MapBiomas: fixar COLEÇÃO, não ano**. URL por ano morre; fixar `collection9` e deixar ano como dado na tabela.
+2. **Granularidade 30m → arealizar, não centróide**. Buffer/área de influência da escola + interseção raster.
+3. **Alerta-AS mede EVENTO, não exposição**. Separar métricas: evento (binário/contagem) vs exposição (proporção contínua).
+4. **INPE Queimadas = redundante** com MapBiomas Fogo (classe 6). Não ingerir.
+5. **BDMEP = normalização climática**. 26 anos de série diária para anomalias, SPI/SPEI, dias extremos.
+
+### Allowlist Atualizada (Fase 3)
+
+- **MapBiomas**: `collection/{colecao}/municipios` + `fogo` (coleção fixa)
+- **INMET**: `alertas/cap12` (Alerta-AS), `bdmep/estacao` (BDMEP), `dados/{tipo}/{ano}/{mes}`
+
+### Dependências Desbloqueadas
+
+- **#128** (Fase 4 — SICONFI/Transparência) ✅
+- **#129** (Fase 5 — BrazilCrime segurança) ✅
+- **#130** (Fase 6 — ANTT/Transportes) ✅
+- **#131** (Overpass/OSM viés) ✅
+- **#132** (e-SIC INEP/MEC/FNDE) ✅
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_79.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #126: Fase 2 saúde CNES + SISAB
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
