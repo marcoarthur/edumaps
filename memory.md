@@ -4,6 +4,54 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #129: Fase 5 BrazilCrime + ANTT + RENAEST
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#146** (merge commit `5810881`, commit `90c6d64`),
+branch `feat/data/fase5-brazilcrime-seguranca` → `main`, +596 −1 em 14 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ brazilcrime_municipio .......... ok` — criminalidade agregada por município/ano com supressão de célula pequena (count < 5). NUNCA expor por escola.
+- `+ antt_acidente_trecho .......... ok` — acidentes ANTT por trecho (chave bruta sem município). JOIN OBRIGATÓRIO com antt_trecho_geodados para resolver município.
+- `+ antt_trecho_geodados .......... ok` — geodados ANTT trechos (trecho → município via código IBGE + geometria LineString SRID 4674).
+- `+ renaest_sinistro .............. ok` — sinistros RENAEST por localidade (não município). Requer de-para localidade → município versionado.
+- `sqitch verify`: 4 novos **OK** (falha em `rede_escolas_etapas` é pré-existente).
+
+### Entregue
+
+- **brazilcrime_municipio**: criminalidade agregada por município/ano com supressão de célula pequena (count < 5). NUNCA expor por escola.
+- **antt_acidente_trecho**: acidentes ANTT por trecho (chave bruta sem município). JOIN OBRIGATÓRIO com antt_trecho_geodados para resolver município.
+- **antt_trecho_geodados**: geodados ANTT trechos (trecho → município via código IBGE + geometria LineString SRID 4674).
+- **renaest_sinistro**: sinistros RENAEST por localidade (não município). Requer de-para localidade → município versionado.
+
+### Decisões Críticas de LGPD
+
+1. **Licença aberta NÃO anula risco LGPD**: SPTRANS Bilhete Único Usuário (CCZero, nível individual) e ANTT Monitriip Viagens (CC-BY, cnpj/placa/imei/lat-long por viagem) **NEGADOS explicitamente** na allowlist por nome.
+2. **ANTT acidentes sem município**: chave bruta `Concessionaria;Data;Km;Trecho` sem município. JOIN OBRIGATÓRIO com antt_trecho_geodados para resolver município.
+3. **RENAEST agrega por localidade (não município)**: requer de-para localidade → município versionado (construir é parte do escopo).
+4. **BrazilCrime**: supressão célula pequena (count < 5) via coluna `supressao_celula_pequena` boolean. NUNCA expor por escola.
+5. **INPE Queimadas = redundante** com MapBiomas Fogo (classe 6, melhor granularidade 30m).
+
+### Allowlist Atualizada (Fase 5)
+
+- **BrazilCrime**: CRAN package `BrazilCrime`
+- **ANTT**: acidentes + trechos geodados
+- **Transportes**: RENAEST sinistro
+- **Negados explicitamente**: ANTT Monitriip Viagens, SPTRANS Bilhete Único Usuário
+
+### Dependências Desbloqueadas
+
+- **#130** (Fase 6 — ANTT/Transportes frota/frota agregada) ✅
+- **#131** (Overpass/OSM viés de cobertura) ✅
+- **#132** (e-SIC INEP/MEC/FNDE) ✅
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_81.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #128: Fase 4 SICONFI + Transparência
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
