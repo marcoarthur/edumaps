@@ -4,6 +4,54 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #128: Fase 4 SICONFI + Transparência
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#145** (merge commit `af8adf9`, commit `1a24654`),
+branch `feat/data/fase4-siconfi-transparencia` → `main`, +641 linhas em 14 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ siconfi_receita ........... ok` — receitas municipais (realizada/estimativa), PK composta, `classificacao` separa realizada de estimativa.
+- `+ siconfi_despesa ........... ok` — despesas função 12 (educação) com funcao/subfuncao (361-365), valores empenhado/liquidado/pago.
+- `+ transferencia_educ ........ ok` — CGU Portal da Transparência transferências educação (FUNDEB, PNATE, PROINFANCIA, PDDE). WAF 405 intermitente.
+- `+ analytics_esforco_fiscal .. ok` — view cruzando SICONFI (receitas/despesas realizadas) + CGU transferências + Censo Escolar (matrículas) + População.
+- `sqitch verify`: 4 novos **OK** (falha em `rede_escolas_etapas` é pré-existente).
+
+### Entregue
+
+- **siconfi_receita**: receitas municipais (realizada/estimativa) com `tipo_receita` (propria, transferencia, fundeb, outros). PK composta, `classificacao` separa realizada de estimativa.
+- **siconfi_despesa**: despesas função 12 (educação) com funcao/subfuncao (361=Ensino Fundamental, 362=Ensino Médio, 363=Educação Infantil, 364=EJA, 365=Educação Especial), valores empenhado/liquidado/pago.
+- **transferencia_educ**: CGU Portal da Transparência transferências educação (FUNDEB, PNATE, PROINFANCIA, PDDE). WAF 405 intermitente → retry com backoff + job noturno com cache.
+- **analytics.esforco_fiscal_educacao**: view cruzando SICONFI (receitas/despesas realizadas) + CGU transferências + Censo Escolar (matrículas) + População. Indicadores: FUNDEB/aluno, despesa/aluno, % receita em educação, autonomia fiscal, dependência FUNDEB/federal.
+
+### Decisões de Design
+
+1. **`classificacao` separa `realizada` de `estimativa`** — regra de negócio, não detalhe técnico. PK composta obriga filtro explícito.
+2. **WAF 405 no Portal da Transparência** → retry com backoff obrigatório; job noturno com cache é arquitetural, não opcional.
+3. **SICONFI ≠ SIOPE** — SICONFI = finanças públicas (função 12 = educação); SIOPE = específico de educação.
+4. **FNDE condicionado a e-SIC** — portal inacessível sem browser (SPA sem SSR). Issue própria (#132).
+4. **Banco Central (SGS/SCR) descartado por licença** — ODbL share-alike contaminaria base derivada.
+
+### Allowlist Atualizada (Fase 4)
+
+- **Tesouro Nacional (SICONFI)**: `receitas`, `despesas`, `entes`
+- **CGU Portal da Transparência**: `transferencias`, `entes`
+- **WAF 405 intermitente** → retry com backoff + job noturno com cache
+
+### Dependências Desbloqueadas
+
+- **#129** (Fase 5 — BrazilCrime segurança) ✅
+- **#130** (Fase 6 — ANTT/Transportes) ✅
+- **#131** (Overpass/OSM viés) ✅
+- **#132** (e-SIC INEP/MEC/FNDE) ✅
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_80.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #127: Fase 3 MapBiomas + INMET
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
