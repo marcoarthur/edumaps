@@ -223,6 +223,12 @@ censo_dict_validate <- function(con, tables = NULL) {
       AND table_name NOT LIKE 'censo_data_dictionary'
   ", where_tables)
   real <- DBI::dbGetQuery(con, sql)
+
+  # Guard: se não há tabelas, retorna ok
+  if (nrow(real) == 0) {
+    return(list(ok = TRUE, missing_cols = character(), missing_domains = character()))
+  }
+
   real$table_name <- paste0("clean.", real$table_name)
 
   dict_keys <- paste(dict$table_name, dict$column_name, sep = ".")

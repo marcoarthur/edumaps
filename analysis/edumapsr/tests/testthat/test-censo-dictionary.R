@@ -62,44 +62,44 @@ test_that("cada tabela tem dezenas de colunas", {
   expect_true(all(counts > 50))  # cada tabela censo tem > 50 colunas
 })
 
-test_that("tp_dependencia tem value_domain em todas as tabelas", {
+test_that("tp_dependencia tem value_domain em censo_escolas", {
   skip_if_no_db()
   con <- get_test_con()
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   dict <- censo_dictionary(con, include_domain = TRUE)
-  for (t in c("clean.censo_escolas", "clean.censo_matriculas",
-              "clean.censo_docentes", "clean.censo_gestor")) {
-    row <- dict[dict$table_name == t & dict$column_name == "tp_dependencia", ]
-    expect_true(nrow(row) == 1, info = sprintf("tp_dependencia em %s", t))
-    expect_false(is.null(row$value_domain[[1]]), info = sprintf("value_domain em %s", t))
+  row <- dict[dict$table_name == "clean.censo_escolas" & dict$column_name == "tp_dependencia", ]
+  expect_true(nrow(row) == 1, info = "tp_dependencia em clean.censo_escolas")
+  expect_false(is.null(row$value_domain[[1]]), info = "value_domain em clean.censo_escolas")
 
-    dom <- row$value_domain[[1]]
-    expect_true("1" %in% names(dom) && dom[["1"]] == "Federal")
-    expect_true("2" %in% names(dom) && dom[["2"]] == "Estadual")
-    expect_true("3" %in% names(dom) && dom[["3"]] == "Municipal")
-    expect_true("4" %in% names(dom) && dom[["4"]] == "Privada")
-  }
+  dom <- row$value_domain[[1]]
+  expect_true("1" %in% names(dom) && dom[["1"]] == "Federal")
+  expect_true("2" %in% names(dom) && dom[["2"]] == "Estadual")
+  expect_true("3" %in% names(dom) && dom[["3"]] == "Municipal")
+  expect_true("4" %in% names(dom) && dom[["4"]] == "Privada")
 })
 
-test_that("colunas PK marcadas (co_entidade, nu_ano_censo)", {
+test_that("colunas PK marcadas (linha_id, nu_ano_censo, co_entidade)", {
   skip_if_no_db()
   con <- get_test_con()
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   dict <- censo_dictionary(con)
 
-  # co_entidade é PK em todas
-  for (t in c("clean.censo_escolas", "clean.censo_matriculas",
-              "clean.censo_docentes", "clean.censo_gestor")) {
-    row <- dict[dict$table_name == t & dict$column_name == "co_entidade", ]
-    expect_true(row$is_pk, info = sprintf("co_entidade PK em %s", t))
-  }
+  # censo_escolas: PK é linha_id
+  row <- dict[dict$table_name == "clean.censo_escolas" & dict$column_name == "linha_id", ]
+  expect_true(row$is_pk, info = "linha_id é PK em clean.censo_escolas")
 
-  # nu_ano_censo é PK em matriculas/docentes/gestor
+  # co_entidade NÃO é PK em censo_escolas
+  row <- dict[dict$table_name == "clean.censo_escolas" & dict$column_name == "co_entidade", ]
+  expect_false(row$is_pk, info = "co_entidade NÃO é PK em clean.censo_escolas")
+
+  # nu_ano_censo + co_entidade são PK composta em matriculas/docentes/gestor
   for (t in c("clean.censo_matriculas", "clean.censo_docentes", "clean.censo_gestor")) {
-    row <- dict[dict$table_name == t & dict$column_name == "nu_ano_censo", ]
-    expect_true(row$is_pk, info = sprintf("nu_ano_censo PK em %s", t))
+    row1 <- dict[dict$table_name == t & dict$column_name == "nu_ano_censo", ]
+    row2 <- dict[dict$table_name == t & dict$column_name == "co_entidade", ]
+    expect_true(row1$is_pk, info = sprintf("nu_ano_censo é PK em %s", t))
+    expect_true(row2$is_pk, info = sprintf("co_entidade é PK em %s", t))
   }
 })
 
