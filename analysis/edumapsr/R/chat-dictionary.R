@@ -134,12 +134,11 @@ chat_fetch_column_meta <- function(con) {
 
 #' Dicionário efetivo do chat (colunas + descrições)
 #'
-#' Cruza a whitelist curada (YAML) com o catálogo do banco e devolve um
-#' data.frame (schema_table_col, coluna, tipo, descricao, schema_table,
-#' descricao_tabela) com EXATAMENTE as colunas que o modelo pode consultar:
-#' - tabela com `colunas: '*'` (ou sem inscrição na seção `colunas`): todas
-#'   as colunas, com descrição vinda do comentário do banco;
-#' - demais: apenas as colunas curadas no YAML.
+#' Combina o dicionário canônico do Censo (tabela `clean.censo_data_dictionary`)
+#' com a whitelist curada (YAML). Para tabelas do Censo, usa o dicionário
+#' canônico como fonte primária (todas as colunas, tipos, domínios de valor,
+#' versionamento). Para demais tabelas, usa o catálogo do banco filtrado pela
+#' whitelist do YAML.
 #'
 #' @param con conexão DBI read-only.
 #' @param glossario lista retornada por [chat_glossary()]; se NULL, é lido.
@@ -158,42 +157,98 @@ chat_dictionary <- function(con, glossario = NULL) {
     ))
   }
 
-  metas <- chat_fetch_column_meta(con)
-  metas$schema_table <- paste(metas$schema, metas$tabela, sep = ".")
-  metas$schema_table_col <- paste(metas$schema_table, metas$coluna, sep = ".")
+  # 1) Carregar dicionário canônico do Censo para as tabelas censo_*
+  census_tables <- c("clean.censo_escolas", "clean.censo_matriculas",
+                     "clean.censo_docentes", "clean.censo_gestor")
+  census_in_whitelist <- intersect(tabelas$schema_table, census_tables)
+  other_tables <- setdiff(tabelas$schema_table, census_tables)
 
-  tabelas$schema_table <- paste(tabelas$schema, tabelas$tabela, sep = ".")
-  curadas$schema_table <- paste(curadas$schema, curadas$tabela, sep = ".")
-  curadas$schema_table_col <- paste(curadas$schema_table, curadas$coluna, sep = ".")
+  dict_parts <- list()
 
-  coringas <- setdiff(tabelas$schema_table, curadas$schema_table)
+  # 1a) Tabelas do Censo: usar censo_dictionary() (fonte canônica)
+  if (length(census_in_whitelist) > 0) {
+    censo_dict <- tryCatch(
+      censo_dictionary(con, tables = census_in_whitelist, include_domain = TRUE),
+      error = function(e) {
+        warning("Falha ao ler censo_dictionary: ", e$message, "; caindo para catálogo")
+        NULL
+      }
+    )
 
-  wildcard <- metas[metas$schema_table %in% coringas, , drop = FALSE]
-  curated <- merge(
-    curadas,
-    metas[, c("schema_table_col", "tipo")],
-    by = "schema_table_col",
-    all.x = TRUE
-  )
+    if (!is.null(censo_dict) && nrow(censo_dict) > 0) {
+      # Normalizar para formato do chat
+      censo_dict$schema_table_col <- paste(censo_dict$table_name, censo_dict$column_name, sep = ".")
+      censo_dict$tipo <- censo_dict$data_type
+      censo_dict$descricao <- censo_dict$description
+      censo_dict$value_domain_json <- vapply(censo_dict$value_domain %||% list(), function(v) {
+        if (is.null(v)) return("null")
+        jsonlite::toJSON(v, auto_unbox = TRUE)
+      }, character(1))
+      censo_dict$descricao_tabela <- tabelas$descricao[match(censo_dict$table_name, tabelas$schema_table)]
+      censo_dict$chave <- tabelas$chave[match(censo_dict$table_name, tabelas$schema_table)]
 
-  dicionario <- data.frame(
-    schema_table_col = c(wildcard$schema_table_col, curated$schema_table_col),
-    coluna = c(wildcard$coluna, curated$coluna),
-    tipo = c(wildcard$tipo, curated$tipo),
-    descricao = c(wildcard$comentario, curated$descricao),
-    schema_table = c(wildcard$schema_table, curated$schema_table),
-    stringsAsFactors = FALSE
-  )
+      dict_parts$censo <- censo_dict[, c("schema_table_col", "coluna", "tipo", "descricao",
+                                         "value_domain_json", "schema_table", "descricao_tabela", "chave")]
+    }
+  }
 
-  mesclado <- merge(
-    dicionario,
-    tabelas[, c("schema_table", "descricao", "chave")],
-    by = "schema_table"
-  )
-  names(mesclado)[names(mesclado) == "descricao.x"] <- "descricao"
-  names(mesclado)[names(mesclado) == "descricao.y"] <- "descricao_tabela"
+  # 1b) Demais tabelas: catálogo do banco filtrado pela whitelist (comportamento anterior)
+  if (length(other_tables) > 0) {
+    metas <- chat_fetch_column_meta(con)
+    metas$schema_table <- paste(metas$schema, metas$tabela, sep = ".")
+    metas$schema_table_col <- paste(metas$schema_table, metas$coluna, sep = ".")
 
-  mesclado
+    tabelas$schema_table <- paste(tabelas$schema, tabelas$tabela, sep = ".")
+    curadas$schema_table <- paste(curadas$schema, curadas$tabela, sep = ".")
+    curadas$schema_table_col <- paste(curadas$schema_table, curadas$coluna, sep = ".")
+
+    other_tabelas <- tabelas[tabelas$schema_table %in% other_tables, , drop = FALSE]
+    other_curadas <- curadas[curadas$schema_table %in% other_tables, , drop = FALSE]
+
+    coringas <- setdiff(other_tabelas$schema_table, other_curadas$schema_table)
+
+    wildcard <- metas[metas$schema_table %in% coringas, , drop = FALSE]
+    curated <- merge(
+      other_curadas,
+      metas[, c("schema_table_col", "tipo")],
+      by = "schema_table_col",
+      all.x = TRUE
+    )
+
+    other_dict <- data.frame(
+      schema_table_col = c(wildcard$schema_table_col, curated$schema_table_col),
+      coluna = c(wildcard$coluna, curated$coluna),
+      tipo = c(wildcard$tipo, curated$tipo),
+      descricao = c(wildcard$comentario, curated$descricao),
+      value_domain_json = "null",
+      schema_table = c(wildcard$schema_table, curated$schema_table),
+      stringsAsFactors = FALSE
+    )
+
+    other_mesclado <- merge(
+      other_dict,
+      other_tabelas[, c("schema_table", "descricao", "chave")],
+      by = "schema_table"
+    )
+    names(other_mesclado)[names(other_mesclado) == "descricao.x"] <- "descricao"
+    names(other_mesclado)[names(other_mesclado) == "descricao.y"] <- "descricao_tabela"
+
+    dict_parts$other <- other_mesclado
+  }
+
+  # Combinar
+  final_dict <- do.call(rbind, dict_parts)
+  if (is.null(final_dict) || nrow(final_dict) == 0) {
+    return(data.frame(
+      schema_table_col = character(), coluna = character(),
+      tipo = character(), descricao = character(),
+      value_domain_json = character(), schema_table = character(),
+      descricao_tabela = character(), chave = character(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  final_dict
 }
 
 # Bloco de colunas exibidas por tabela. O prompt completo do dicionário é
@@ -256,7 +311,23 @@ chat_dictionary_text <- function(dicionario, glossario) {
       } else {
         sprintf(" — %s", trimws(substr(desc, 1, CHAT_MAX_CHARS_DESCRICAO)))
       }
-      linhas <- c(linhas, sprintf("- %s %s%s", parte$coluna[[i]], parte$tipo[[i]], anotacao))
+
+      # Adicionar domínio de valores (enum) se disponível
+      domain_anotacao <- ""
+      if ("value_domain_json" %in% names(parte)) {
+        vd <- parte$value_domain_json[[i]]
+        if (!is.null(vd) && vd != "null" && nzchar(vd)) {
+          # Parse JSON e resumir (máx 3 pares)
+          dom <- tryCatch(jsonlite::fromJSON(vd), error = function(e) NULL)
+          if (!is.null(dom) && length(dom) > 0) {
+            dom_str <- paste(sprintf("%s=%s", names(dom), unlist(dom)), collapse = ", ")
+            if (nchar(dom_str) > 60) dom_str <- substr(dom_str, 1, 60)
+            domain_anotacao <- sprintf(" [enum: %s]", dom_str)
+          }
+        }
+      }
+
+      linhas <- c(linhas, sprintf("- %s %s%s%s", parte$coluna[[i]], parte$tipo[[i]], anotacao, domain_anotacao))
     }
     if (nrow(parte) > n_mostrar) {
       linhas <- c(linhas, sprintf("- (+%d colunas; use SELECT * para ver)", nrow(parte) - n_mostrar))
