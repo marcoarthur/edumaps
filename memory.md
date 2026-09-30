@@ -4,7 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-09-30 — Implementação #124: Fase 0 allowlist + proveniência
+## Sessão 2026-09-30 — Implementação #125: Fase 1 IBGE contexto municipal
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#142** (merge commit `c10600b`, commit `d30a4bc`),
+branch `feat/data/fase1-ibge-contexto` → `main`, +656 −1 em 14 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ malha_municipio ......... ok` — 5.573 municípios (derivado de clean.municipios_sp)
+- `+ malha_setor_censitario .. ok` — tabela vazia (estrutura p/ 316k setores)
+- `+ ibge_agregados .......... ok` — SIDRA v3 formato longo + view pivô
+- `+ censo2022_setor ......... ok` — supressao_celula_pequena (vazio ≠ zero)
+- `sqitch verify`: 4 novos **OK** (falha em rede_escolas_etapas é pré-existente)
+
+### Entregue
 
 Ciclo **com código** (data_pipeline + backend → **deploy necessário**).
 
