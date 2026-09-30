@@ -4,6 +4,53 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #126: Fase 2 saúde CNES + SISAB
+
+Ciclo **com código** (data_pipeline → **deploy necessário**).
+
+**Mergeado**: PR **#143** (merge commit `45ae322`, commit `a071293`),
+branch `feat/data/fase2-saude-cnes` → `main`, +454 −1 em 11 arquivos.
+
+**Deploy Sqitch confirmado**:
+- `+ cnes_estabelecimentos ........... ok` — tabela sanitizada (sem PII), PK composta `(codigo_cnes, dt_snapshot)`, índice GIST
+- `+ sisab_aps ....................... ok` — indicadores APS agregados, PK composta `(codigo_municipio, dt_referencia, dt_snapshot)`
+- `+ analytics_acessibilidade_saude .. ok` — view cruzando CNES (oferta ponto) + SISAB (efetividade APS) + Censo (demanda)
+- `sqitch verify`: 3 novos **OK** (falha em `rede_escolas_etapas` é pré-existente)
+
+### Entregue
+
+- **cnes_estabelecimentos**: tabela sanitizada (sem PII — descartados na entrada: `nome_razao_social`, `nome_fantasia`, CNPJ, telefone, e-mail, endereço/bairro). Mantidos: `codigo_cnes`, `codigo_municipio`, `codigo_tipo_unidade`, `status`, lat/long, `data_atualizacao`, `dt_snapshot`. Índice GIST espacial.
+- **sisab_aps**: indicadores APS SISAB/PIMMB agregados por município/mês (`cobertura_aps`, `ativas_ff`, `equipe_esf`, `equipe_emsi`, `total_vagas_ativas`, `ocupadas`, `categoria_ivs`). PK composta `(codigo_municipio, dt_referencia, dt_snapshot)`.
+- **analytics.acessibilidade_saude**: view cruzando CNES (UBS/USF em ponto) + SISAB (efetividade APS) + Censo Escolar (demanda). Distância haversine escola→UBS/USF, classificação de acesso (excelente/bom/regular/difícil/sem UBS), efetividade APS (`ocupadas/total_vagas_ativas`).
+
+### Decisões de Design
+
+1. **Sanitização na entrada (fail-fast LGPD)**: CNES bruto expõe nomes de pessoa física, CNPJ, telefone, e-mail. Regra: descartar na entrada, não depois.
+2. **Allowlist explícita por recurso (Fase 0 aplicada)**: DATASUS/SISAB agregados permitidos; CNES sanitizado permitido; recursos individuais (SISVAN, vacinação, CNES bruto) **negados explicitamente** mesmo no mesmo host.
+3. **`dt_snapshot` em ambas as tabelas**: versionamento temporal de snapshots mensais (abertura/fechamento de unidades, evolução de cobertura).
+4. **View analítica `acessibilidade_saude`**: distância haversine escola→UBS/USF, classificação de acesso, efetividade APS. Limitação: haversine ≈ linha reta; substituir por OSRM quando malha viária disponível.
+
+### Allowlist Atualizada (Fase 2)
+
+- **DATASUS/SISAB**: `pmmb-serie-historica`, `pmmb-consolidado`, `municipio` (agregados)
+- **CNES**: `estabelecimentos` (sanitizado), `tipounidades` (dicionário)
+- **Negados explicitamente**: SISVAN, vacinação PNI, CNES bruto (mesmo host)
+
+### Dependências Desbloqueadas
+
+- **#127** (Fase 3 — MapBiomas/INMET) ✅
+- **#128** (Fase 4 — SICONFI/Transparência) ✅
+- **#129** (Fase 5 — BrazilCrime segurança) ✅
+- **#130** (Fase 6 — ANTT/Transportes) ✅
+- **#131** (Overpass/OSM viés) ✅
+- **#132** (e-SIC INEP/MEC/FNDE) ✅
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_78.md`
+
+---
+
 ## Sessão 2026-09-30 — Implementação #125: Fase 1 IBGE contexto municipal
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
