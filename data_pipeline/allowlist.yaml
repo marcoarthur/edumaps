@@ -41,9 +41,11 @@ sources:
         method: GET
         description: "População municipal - agregado por município/ano"
         license: "Domínio público (IBGE)"
+    # NOTA: apisidra.ibge.gov.br está atrás de Cloudflare (403).
+    # Usar SIDRA v3 em servicodados.ibge.gov.br para produção.
 
   - id: ibge_servicodados
-    name: "IBGE Serviço de Dados - Malhas e códigos"
+    name: "IBGE Serviço de Dados - Malhas, códigos e SIDRA v3"
     host: servicodados.ibge.gov.br
     base_url: "https://servicodados.ibge.gov.br/api/v1"
     resources:
@@ -54,6 +56,26 @@ sources:
       - path: "/localidades/municipios/{codigo_ibge}"
         method: GET
         description: "Detalhes de um município"
+        license: "Domínio público (IBGE)"
+      - path: "/localidades/setores/{codigo_ibge}"
+        method: GET
+        description: "Setores censitários de um município (simplificado)"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/1393/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - PIB municipal (sem Cloudflare)"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/6579/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - População municipal"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/1093/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - IDHM municipal"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/5938/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - PIB per capita"
         license: "Domínio público (IBGE)"
 
   - id: inmet
@@ -85,6 +107,24 @@ sources:
         method: GET
         description: "Frota agregada por município (não por veículo)"
         license: "CC-BY-4.0 (Transportes)"
+
+  - id: ibge_geoftp
+    name: "IBGE Geoftp - Malhas territoriais (GPKG)"
+    host: geoftp.ibge.gov.br
+    base_url: "https://geoftp.ibge.gov.br"
+    resources:
+      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip"
+        method: GET
+        description: "Malha municipal 2024 (shapefile, usado em raw_municipios_sp)"
+        license: "Domínio público (IBGE)"
+      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.gpkg"
+        method: GET
+        description: "Malha municipal 2024 (GPKG, GeoPackage)"
+        license: "Domínio público (IBGE)"
+      - path: "/organizacao_do_territorio/malhas_territoriais/malha_setores_censitarios/setor_censitario_2022/Brasil/BR_Setor_Censitario_2022.gpkg"
+        method: GET
+        description: "Malha de setor censitário 2022 (GPKG, ~748 MB)"
+        license: "Domínio público (IBGE)"
 
 # ------------------------------------------------------------
 # RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
