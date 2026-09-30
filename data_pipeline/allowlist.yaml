@@ -181,3 +181,44 @@ sources_ref:
     host: dados.saude.gov.br
     base_url: "https://dados.saude.gov.br"
     note: "TODOS os endpoints de microdado individual NEGADOS"
+
+# ------------------------------------------------------------
+# FONTES PERMITIDAS — SAÚDE (agregados apenas, Fase 2)
+# ------------------------------------------------------------
+sources:
+  - id: datasus_sisab
+    name: "DATASUS/SISAB - Indicadores APS (agregados municipais)"
+    host: apidadosabertos.saude.gov.br
+    base_url: "https://apidadosabertos.saude.gov.br"
+    resources:
+      - path: "/atencao-primaria/pmmb-serie-historica"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Série histórica PIM/AB por município (cobertura, equipes, IVS)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+      - path: "/atencao-primaria/pmmb-consolidado"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Consolidado PIM/AB atual (ativas_ff, equipe_esf, equipe_emsi, total_vagas_ativas, categoria_ivs)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+      - path: "/macrorregiao-e-regiao-de-saude/municipio"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Municípios com população estimada IBGE 2022 (denominador)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+
+  - id: cnes_estabelecimentos
+    name: "CNES - Estabelecimentos de saúde (sanitizado)"
+    host: apidadosabertos.saude.gov.br
+    base_url: "https://apidadosabertos.saude.gov.br"
+    resources:
+      - path: "/cnes/estabelecimentos"
+        method: GET
+        params: [codigo_uf, codigo_municipio, codigo_tipo_unidade, status, data_atualizacao, limit, offset]
+        description: "Estabelecimentos com lat/long — SANITIZADO na ingestão (sem PII)"
+        license: "CC BY-ND 3.0 (dados abertos SUS)"
+      - path: "/cnes/tipounidades"
+        method: GET
+        params: [limit, offset]
+        description: "Dicionário de tipos de unidade (UBS, SU, hospital, etc.)"
+        license: "CC BY-ND 3.0 (dados abertos SUS)"
