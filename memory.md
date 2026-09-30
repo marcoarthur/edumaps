@@ -4,6 +4,65 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — Implementação #134: dicionário de dados do Censo Escolar
+
+Ciclo **com código** (data_pipeline + analysis → **deploy necessário**).
+
+**Mergeado**: PR **#140** (merge commit `54afa9f`, 2 commits `eaaf66d`..`267cefd`),
+branch `feat/data/censo-dictionary` → `main`, +1252 −37 em 8 arquivos.
+
+### Entregue
+
+- **Migration Sqitch** `censo_data_dictionary`: tabela `clean.censo_data_dictionary`
+  (PK composta `table_name, column_name, year_introduced`), `value_domain` JSONB
+  para enums, `year_changed`/`year_deprecated` para versionamento entre edições,
+  proveniência (`source_url`, `source_license`, `retrieved_at`) populada por
+  DO block dinâmico quando Fase 0 (#124) existir.
+- **764 linhas** populadas automaticamente para as 4 tabelas censo
+  (`censo_escolas`: 306, `censo_matriculas`: 237, `censo_docentes`: 156,
+  `censo_gestor`: 65) a partir do catálogo + YAML curado.
+- **Interface R** `censo_dictionary()` em `analysis/edumapsr/R/censo-dictionary.R`
+  com filtro por ano, validação (`censo_dict_validate` — quebra build se coluna
+  nova ou tp_*/in_* sem domínio), helpers (`filter`, `domain`, `summary`).
+- **Chat integrado**: `chat-dictionary.R` usa `censo_dictionary()` como fonte
+  primária para tabelas censo; YAML vira camada de curadoria (termos, conexões,
+  ocultar). Prompt mostra `[enum: ...]` inline.
+- **Testes**: 6 subtests Perl + 34 testes R passando.
+
+### Decisões de Design
+
+1. **PK composta por edição**: `(table_name, column_name, year_introduced)`
+   permite rastrear mesma coluna across Censo 2025/2026+.
+2. **DO block dinâmico**: só atualiza proveniência se colunas Fase 0 existirem
+   — migration roda sem erro antes de #124.
+3. **YAML curado como fonte de domínio**: 19 enums injetados via `UNION ALL`
+   na migration; `tp_*` sem domínio ganha nota `"Enum tp_* sem domínio no YAML — revisar"`.
+4. **Validação que quebra build**: `censo_dict_validate()` falha se houver
+   coluna no banco ausente no dicionário, ou enum sem `value_domain`.
+
+### Dependências Registradas
+
+- **#124 antes de tudo**: DO block popula proveniência quando Fase 0 rodar.
+- **#134 antes de #137**: treinar modelo sem dicionário/proveniência gera
+  coeficiente impossível de auditar.
+- **#135 depois de #124**: versionar (DVC) sem proveniência registra erro
+  com data — pior que não versionar.
+
+### Arquivos
+
+- `data_pipeline/deploy|revert|verify/censo_data_dictionary.sql` (novos)
+- `backend/lib/EduMaps/Schema/Result/CensoDataDictionary.pm` (novo)
+- `backend/t/02-models/censo_dictionary.t` (novo)
+- `analysis/edumapsr/R/censo-dictionary.R` (novo)
+- `analysis/edumapsr/tests/testthat/test-censo-dictionary.R` (novo)
+- `analysis/edumapsr/R/chat-dictionary.R` (atualizado)
+
+### Nota Técnica
+
+`docs/new_ideas/implementations_ideas/notas_tecnicas_75.md`
+
+---
+
 ## Sessão 2026-09-30 — Backlog consolidado: #123 fechada e #134–#139 criadas
 
 Ciclo administrativo (issues + documentação, **sem código → sem deploy**),
