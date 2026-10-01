@@ -4,6 +4,152 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-01 — #154 corrigida, #153 resolvida, e o registry Sqitch reparado
+
+Ciclo **com código** (`data_pipeline/` → **deploy feito**, 89/89 changes em
+`database.edumaps`).
+
+**Branch**: `fix/data/ausencia-visivel-nas-views`
+**Nota técnica**: `notas_tecnicas_85.md`
+
+### #154 — ausência de dado não é valor zero (entregue)
+
+Change Sqitch `analytics_ausencia_visivel` substitui as definições de
+`analytics.acessibilidade_saude` e `analytics.mobilidade_escola`.
+
+**Semântica de três estados**, não dois:
+
+| Estado da fonte | Município | `acidentes_12m` |
+|---|---|---|
+| Sem snapshot | — | `NULL` (não avaliável) |
+| Com snapshot | Sem acidentes | `0` (zero real) |
+| Com snapshot | Com acidentes | `N` |
+
+Um CTE `fontes` conta registos por fonte, porque o valor sozinho não distingue
+os dois primeiros casos. `status_isocrona` e `status_conexao_antt` ganham o
+terceiro estado `'fonte_vazia'`. Contrato de colunas preservado (31 + 16 = 47),
+o que permitiu `CREATE OR REPLACE` e um `revert` que restaura a definição
+anterior.
+
+### Três coisas que o relatório anterior sevenha errado (e foram corrigidas)
+
+1. **O mecanismo não era `COALESCE(x, 0)` em três views.** Só
+   `mobilidade_escola` tem `COALESCE` (3 colunas). `acessibilidade_saude`
+   **não tem nenhum** — o `0` vem de `COUNT()` sobre conjunto vazio e a
+   afirmação `"Sem UBS no município"` vem de um `CASE ... ELSE`. E
+   `esforco_fiscal_educacao` **não é defeituosa**: faz `LEFT JOIN` sem
+   `COALESCE` e propaga `NULL`. É o padrão de referência, não um alvo.
+2. **Havia fan-out cartesiano, invisível enquanto as tabelas estão vazias.** As
+   views faziam **7 `LEFT JOIN` num `GROUP BY` único**, logo as agregações
+   saíam multiplicadas. Medido com dados sintéticos: 6 acidentes reportados
+   como **12**; 1.500 VMDA como **9.000**. O fator varia por município, por não
+   ser constante. Foi por isso que a correção passou a pré-agregar cada fonte
+   ao seu grão — não é um extra, é o que torna distinguível zero real de
+   ausência.
+3. **O `sqitch verify` deste repositório nunca falha.** Os `verify/*.sql`
+   terminam em `SELECT 1 FROM ...`, e o Sqitch dá `ok` a um script que
+   devolve `f` — só um **erro** falha. Medido contra Sqitch 1.6.1 num sandbox
+   descartável. Um teste de regressão escrito à forma existente passaria com o
+   defeito presente. Por isso a #154 usa `DO $$ … RAISE EXCEPTION $$` em 20
+   asserções, e foi **provado que morde**: contra a definição antiga sai com
+   `Errors: 1` e apanha as **145.734** escolas.
+
+### #153 — resolvida, mas a causa diagnosticada estava errada
+
+O relatório dizia: "`pgvector` ausente em `ubatexu.lan`, `school_embedding`
+falhou 7×". As 7 falhas são reais. A conclusão é que não.
+
+**Em `ubatexu.lan` correm dois contentores de base de dados, ambos com
+`hostname` = `Database`:**
+
+| Contentor | SSH (porta) | IP | Acedido por | `pgvector` | Changes |
+|---|---|---|---|---|---|
+| `database.edumaps` | 2032 | `172.19.198.3` | **o backend real** | disponível | 89 |
+| `database.dev` | 2026 | `172.31.51.4` | o target Sqitch `dev_super` | **ausente** | 42 |
+
+Confirmado pelo serviço ligado, não por configuração:
+
+```bash
+ssh root@backend.edumaps 'ss -tnp | grep :5432'   # → 172.19.198.3:5432
+```
+
+`ubatexu.lan:5432` = `database.dev` = uma base que ninguém usa, que nunca
+passou pelo `deploy_db_dev` (que instala `pgvector`, Rexfile linha 452). Em
+`database.edumaps`, `school_embedding` tem **1 deploy e 0 falhas**, e o que
+faltava eram 13 changes do fim do plano.
+
+**O relatório mediu a base errada** — `edu_maps.conf` tem `ubatexu.lan` como
+default, e esse default foi tomado como o destino do produto sem ser
+confirmado contra o serviço em execução.
+
+### O bloqueio real: registry Sqitch com `change_id` divergentes
+
+O `rex -H database.edumaps deploy_db_dev` falhou com:
+
+```
+Cannot find change f931403e7969ba9232b73e7b2bcf6ec05639d87d
+(analytics_esforco_fiscal) in sqitch.plan
+```
+
+O Sqitch calcula o `change_id` como SHA-1 dos metadados da change, que
+incluem a lista `requires` **e o `change_id` do pai**. Logo, **mudar
+`requires` ou reordenar uma change já deployada muda a sua identidade**, em
+cascata para todo o resto do plano.
+
+**Isto foi feito no ciclo anterior** — `a13718c` (editou `requires` de 10
+changes já deployadas) e `83a77c5` (moveu `import_metadata_fase0` no plano) —
+e o `memory.md` da altura registou que era *"reordenação do plano, reexecutável
+por `sqitch deploy`, sem efeito colateral a corrigir"*.
+
+**Não era verdade.** Divergências medidas: **71 de 88** no banco local, **25 de
+42** em `database.dev`, **59 de 76** em `database.edumaps`.
+
+**Reparação** (sem reexecutar um único deploy script):
+
+1. `sqitch deploy --log-only` contra uma base descartável regista as 89
+   changes **sem executar os scripts**, logo com os `change_id` que o plano
+   calcula;
+2. `UPDATE sqitch.changes SET change_id = …` nos alvos reais. As FKs de
+   `dependencies` e `tags` têm `ON UPDATE CASCADE` e propagam sozinhas; só
+   `events` — que não tem FK para `changes` — exige update separado.
+
+É o que o `sqitch rewrite --set` faria, e **`sqitch rewrite` não existe** no
+Sqitch 1.6.1 instalado. Backups dos registries tirados antes de tocar em
+qualquer um.
+
+### Decisões
+
+1. **Reparar o registry em vez de reverter o plano** (escolha do developer) —
+   reverter o plano faria `sqitch status` passar, mas desfaria a declaração de
+   dependência e a correção de ordenação que motivaram os commits.
+2. **Change nova em vez de edição in-place** das definições das views: changes
+   já deployadas não re-executam.
+3. **`recife_vagas_transporte` mantida `integer`** via `SUM(...)::integer` —
+   sem o cast, o `CREATE OR REPLACE VIEW` falha.
+4. **Não tocar nos `verify` antigos neste ciclo** — corrigi-los exige medir
+   quantos estão a falhar de forma latente, o que não se descobre lendo-os.
+5. **`esforco_fiscal_educacao` ficou de fora**: não é defeituosa.
+
+### Dívida que fica (registada, não resolvida)
+
+- **`sqitch verify` global dá 45 "Out of order"** — `import_metadata_fase0`
+  foi deployada a 2026-09-30 e depois movida para antes no plano; as 45 changes
+  entre as posições ficam fora de ordem no histórico. Não corrigível sem
+  reverter a reordenação, e corrigir exigiria reescrever `events.requires` —
+  ou seja, mentir sobre o que foi aplicado e quando. **Não feito.**
+- **Os `verify/*.sql` não mordem** (§acima). Não há gate fiável de migração
+  neste repositório.
+- **1 erro real no verify global**: `raw_countries` precisa de acesso de rede a
+  `cdn.jsdelivr.net`, indisponível no contentor.
+
+### Regras novas em `AGENTS.md`
+
+Três secções novas, todas derivadas do que foi medido acima: a tabela dos dois
+contentores de base de dados, a proibição de editar `requires`/reordenar
+changes deployadas, e o comportamento real do `sqitch verify`.
+
+---
+
 ## Sessão 2026-10-01 — Relatório de saneamento das fontes novas pós-#123
 
 Ciclo **de análise/documentação** (relatório novo, **sem código de runtime →
@@ -104,8 +250,20 @@ destravaram o CI foram enviados **direto para `main`**, sem branch → PR →
 merge, contrariando a regra obrigatória do `AGENTS.md` para `fix`.
 
 **Decisão do developer: exceção concedida, encerrada sem PR retroativo.** Os
-commits ficam no histórico como estão — a mudança é de ordenação do plano
-Sqitch e é reexecutável por `sqitch deploy`, sem efeito colateral a corrigir.
+commits ficam no histórico como estão.
+
+**⚠️ RETIFICADO em 2026-10-01 — a justificação técnica desta decisão estava
+errada.** Ficou escrito que a mudança *"é de ordenação do plano Sqitch e é
+reexecutável por `sqitch deploy`, sem efeito colateral a corrigir"*. **Não é
+verdade.** Editar `requires` e reordenar changes já deployadas muda o
+`change_id` de forma irreversível e **partiu o `sqitch deploy` em todos os
+alvos** (71/88, 25/42 e 59/76 changes divergentes). O registry só foi reparado
+na sessão de 2026-10-01 — ver a secção acima.
+
+O padrão a reter: a excepção de processo foi concedida, mas a **avaliação de
+risco que a acompanhava estava errada e ninguém a mediu antes de a executar**. O
+mesmo se aplica ao PR: um "parece seguro" sem medição é um plano, não uma
+conclusão.
 
 **Não é precedente.** A regra branch → PR → merge vale integralmente daqui em
 diante, inclusive para hotfix que destrava CI: urgência não isenta. O

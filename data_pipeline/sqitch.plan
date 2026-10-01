@@ -103,3 +103,5 @@ recife_transporte_escolar [malha_municipio import_metadata_fase0] 2026-10-01T02:
 renaest_localidade_municipio [malha_municipio import_metadata_fase0] 2026-10-01T03:00:00Z Marco Arthur <arthurpbs@gmail.com> # De-para RENAEST localidade → município IBGE
 
 analytics_mobilidade_escola [isocrona_escolar antt_od_municipio renavam_frota_municipio antt_contagem_equipamento snv_trecho_vmda renaest_sinistro renaest_localidade_municipio recife_transporte_escolar] 2026-10-01T03:00:00Z Marco Arthur <arthurpbs@gmail.com> # View analítica mobilidade escolar consolidada
+analytics_ausencia_visivel [analytics_acessibilidade_saude analytics_mobilidade_escola] 2026-10-01T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Correção #154: ausência de dado não é valor zero nas views analíticas
+
