@@ -87,12 +87,21 @@ sumia do relatório — só **6 de 28** objetos apareciam. Corrigido com
 6. **Materializar** as 2 views quando houver dado (hoje recalculam sobre
    `censo_escolas`, 670 MB).
 
-### 🔴 Pendência de processo (aguardando decisão do developer)
+### Exceção de processo registrada (decidida em 2026-10-01)
 
 Os três `fix` de ordem do `sqitch.plan` (`a13718c`, `83a77c5`, `812f36d`) que
 destravaram o CI foram enviados **direto para `main`**, sem branch → PR →
-merge, contrariando a regra obrigatória do `AGENTS.md` para `fix`. O PR
-retroativo precisa ser decidido/aberto.
+merge, contrariando a regra obrigatória do `AGENTS.md` para `fix`.
+
+**Decisão do developer: exceção concedida, encerrada sem PR retroativo.** Os
+commits ficam no histórico como estão — a mudança é de ordenação do plano
+Sqitch e é reexecutável por `sqitch deploy`, sem efeito colateral a corrigir.
+
+**Não é precedente.** A regra branch → PR → merge vale integralmente daqui em
+diante, inclusive para hotfix que destrava CI: urgência não isenta. O
+`AGENTS.md` ganhou o procedimento de contingência para o caso em que o push
+direto for realmente inevitável (parar, avisar no PR/issue, e abrir o PR
+retroativo na sequência).
 
 ## Sessão 2026-09-30 — e-SICs protocolados: INEP, MEC/NIC.br, FNDE, Secretarias (#132)
 

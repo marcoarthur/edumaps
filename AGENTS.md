@@ -275,6 +275,15 @@ plano → execução → aprovação
    - Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
    - Flag de bloqueio: se por qualquer motivo o fluxo tentar dar push direto em
      `main` com `feat`/`fix`, **parar e notificar** o developer, não seguir.
+   - **Urgência não isenta** (CI quebrado, hotfix, incidente): a regra vale
+     igual. Um push direto inevitável é uma contingência, não um atalho — nesse
+     caso: (a) avisar o developer no mesmo instante, (b) comentar no
+     PR/issue **pertencente ao trabalho**, (c) abrir o PR retroativo na
+     sequência para registrar o que foi mergeado. Commitar direto e seguir
+     como se nada tivesse acontecido é o comportamento proibido.
+   - **Registrar a exceção não a torna precedente.** Concessões pontuais já
+     dadas (ex.: commits `a13718c`, `83a77c5`, `812f36d` em 2026-10-01, ver
+     `memory.md`) não criam precedente para o próximo ciclo.
 7. **Memória**: sempre que houver PR criado e/ou merge, atualizar `memory.md`
    (estado, commits, decisões, pendências) e commitar junto.
 8. **Nota técnica**: ao fim de cada ciclo de desenvolvimento (tipicamente 1–2

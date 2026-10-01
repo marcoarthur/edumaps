@@ -135,8 +135,14 @@ plano e é a única das fases que passou — daí "1 de 25".
 
 As correções de ordem do `sqitch.plan` (`a13718c`, `83a77c5`, `812f36d`) que
 destravaram o CI foram enviadas **direto para `main`**, sem branch → PR → merge,
-contrariando a regra do `AGENTS.md` para `fix`. O registro de PR não existe
-para elas.
+contrariando a regra do `AGENTS.md` para `fix`. Não existe registro de PR para
+elas.
+
+**Encerrado em 2026-10-01**: exceção concedida pelo developer, sem PR
+retroativo — a mudança é de ordenação do plano Sqitch, reexecutável por
+`sqitch deploy` e sem efeito colateral a corrigir. **Não é precedente:** o
+`AGENTS.md` passou a exigir o procedimento de contingência (avisar, comentar no
+PR/issue do trabalho, abrir PR retroativo) para qualquer push direto futuro.
 
 ---
 
