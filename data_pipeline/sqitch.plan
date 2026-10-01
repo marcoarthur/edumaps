@@ -18,12 +18,12 @@ raw_populacao_faixas_etarias [raw_populacao] 2025-12-14T16:08:04Z Marco Arthur <
 analytical_views_for_modeling 2026-04-06T19:31:15Z Marco Arthur <arthurpbs@gmail.com> # Views para modelagem de ML com intuito de preencher notas faltantes das escolas
 analytics_municipios_similaridade 2026-04-12T14:32:14Z Marco Arthur <arthurpbs@gmail.com> # cria a matriz de (des)similaridade entre municipios baseado em metrica euclidiana
 dados_ibge [raw_municipios_sp] 2026-04-16T15:20:55Z Marco Arthur <arthurpbs@gmail.com> # add data from ibge sources for municipalities, this at beginning includes economic data
-censo_escolar_2025 2026-04-26T14:36:26Z Marco Arthur <arthurpbs@gmail.com> # create table clean.escolas_censo
+censo_escolar_2025 [import_metadata_fase0] 2026-04-26T14:36:26Z Marco Arthur <arthurpbs@gmail.com> # create table clean.escolas_censo
 scores_view 2026-04-27T12:36:58Z Marco Arthur <arthurpbs@gmail.com> # all scores derived from censo_escolas
 badge_functions [scores_view] 2026-04-27T13:18:17Z Marco Arthur <arthurpbs@gmail.com> # create many badge and avaliation functions for school quality
-matriculas_censo_2025 [censo_escolar_2025] 2026-04-28T19:44:16Z Marco Arthur <arthurpbs@gmail.com> # add data of enrollment in each brazilian school
-censo_docentes [censo_escolar_2025] 2026-04-28T23:40:59Z Marco Arthur <arthurpbs@gmail.com> # teachers' info from census
-censo_gestor [censo_escolar_2025] 2026-04-29T11:42:44Z Marco Arthur <arthurpbs@gmail.com> # adding the managers information for brazilian school census 2025
+matriculas_censo_2025 [censo_escolar_2025 import_metadata_fase0] 2026-04-28T19:44:16Z Marco Arthur <arthurpbs@gmail.com> # add data of enrollment in each brazilian school
+censo_docentes [censo_escolar_2025 import_metadata_fase0] 2026-04-28T23:40:59Z Marco Arthur <arthurpbs@gmail.com> # teachers' info from census
+censo_gestor [censo_escolar_2025 import_metadata_fase0] 2026-04-29T11:42:44Z Marco Arthur <arthurpbs@gmail.com> # adding the managers information for brazilian school census 2025
 indicadores_gestao_docente [censo_gestor censo_docentes] 2026-04-29T16:39:49Z Marco Arthur <arthurpbs@gmail.com> # indicadores para o corpo docente e gestores das escolas
 ideb_notas_escolas 2026-04-30T15:48:02Z Marco Arthur <arthurpbs@gmail.com> # dados ideb/saeb para os anos finais do ensino básico (fundamental II) e o ensino médio, series 2005-2023
 ideb_historico_escola 2026-04-30T20:05:56Z Marco Arthur <arthurpbs@gmail.com> # função para obter dados historicos aggregados da serie historica do ideb para escola
@@ -33,18 +33,18 @@ ideb_anos_iniciais 2026-04-30T23:12:47Z Marco Arthur <arthurpbs@gmail.com> # Adi
 analytics_municipios_consolidado 2026-05-01T12:55:06Z Marco Arthur <arthurpbs@gmail.com> # Cria view consolidada para análise municipal no schema analytics
 maker_gis_function 2026-05-02T10:22:23Z Marco Arthur <arthurpbs@gmail.com> # crates a database function to help search for enveloped area
 consistent_schools_mv [ideb_notas_escolas] 2026-05-12T20:46:40Z Marco Arthur <arthurpbs@gmail.com> # materialized view for schools which consistently applies to national tests SAEB IDEB
-participacoes_exame [censo_escolar_2025] 2026-05-13T10:41:45Z Marco Arthur <arthurpbs@gmail.com> # add column to censo_escolas that shows number of participation in national exams for the school
+participacoes_exame [censo_escolar_2025 import_metadata_fase0] 2026-05-13T10:41:45Z Marco Arthur <arthurpbs@gmail.com> # add column to censo_escolas that shows number of participation in national exams for the school
 inse_2023 2026-05-16T17:43:41Z Marco Arthur <arthurpbs@gmail.com> # add the INSE index that measures socialeconomic level for the school students, given a measure of wealth and social status
 analytic_school_model 2026-05-17T18:39:40Z Marco Arthur <arthurpbs@gmail.com> # adds a parametarized function for data cleanup in order to pump data into model
-nro_etapas [censo_escolar_2025] 2026-05-18T10:48:16Z Marco Arthur <arthurpbs@gmail.com> # number of etapas (educational stages) a school offers, based on the columns of census representing the stage
+nro_etapas [censo_escolar_2025 import_metadata_fase0] 2026-05-18T10:48:16Z Marco Arthur <arthurpbs@gmail.com> # number of etapas (educational stages) a school offers, based on the columns of census representing the stage
 health_check 2026-05-18T17:41:06Z Marco Arthur <arthurpbs@gmail.com> # health check function to visualize quickly the data into a table
 escolas_scores 2026-05-25T17:55:04Z Marco Arthur <arthurpbs@gmail.com> # add scores for schools a materialized view of major topics
 ranking_escolas 2026-07-26T23:26:52Z Marco Arthur <arthurpbs@gmail.com> # Sistema de ranking para escolas baseados em indicadores diversos
 event_store 2026-08-14T22:13:37Z Marco Arthur <arthurpbs@gmail.com> # Adiciona tabela event_store para telemetria e auditoria de eventos
-analytics_rede_escolas [censo_escolar_2025 ideb_notas_escolas] 2026-09-11T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # View materializada da rede de escolas por município e tipo de administração, com matrículas, professores e desempenho IDEB/SAEB
+analytics_rede_escolas [censo_escolar_2025 ideb_notas_escolas import_metadata_fase0] 2026-09-11T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # View materializada da rede de escolas por município e tipo de administração, com matrículas, professores e desempenho IDEB/SAEB
 rede_escolas_etapas [analytics_rede_escolas nro_etapas] 2026-09-11T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Redefine mv_rede_escolas com total/média de etapas oferecidas por rede no município
 analytics_analysis_cache [schemas] 2026-09-13T10:00:00Z Marco Arthur <arthurpbs@gmail.com> # Cache compartilhado (edumapsr/Plumber) das análises R, lido/gravado pelo backend
-school_indicators [censo_escolar_2025 censo_docentes ideb_notas_escolas] 2026-09-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # Tabela denormalizada de indicadores (censo + docentes + IDEB) para clusterização multi-tabela
+school_indicators [censo_escolar_2025 censo_docentes ideb_notas_escolas import_metadata_fase0] 2026-09-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # Tabela denormalizada de indicadores (censo + docentes + IDEB) para clusterização multi-tabela
 school_embedding 2026-09-16T13:00:31Z Marco Arthur <arthurpbs@gmail.com> # Add pgvector extension + analytics.school_embedding (similaridade por cosseno)
 column_descriptions 2026-09-16T16:00:55Z Marco Arthur <arthurpbs@gmail.com> # Backfill de comentarios (COMMENT ON COLUMN) nas tabelas recentes
 gestor_pesquisas [schemas] 2026-09-19T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Pesquisas do gestor: cadastro de gestores e criacao de pesquisas (wizard + autosave)
@@ -68,7 +68,7 @@ osm_generalize [osm_data] 2026-09-29T12:00:00Z Marco Arthur <arthurpbs@gmail.com
 school_osm_query [osm_generalize] 2026-09-29T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Selecao atual de POIs OSM por escola (raio, catalogos, digest, atualizado_em) para o painel do gestor
 
 import_metadata_fase0 [schemas] 2026-09-30T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # FASE 0: proveniencia com licença em clean.import_metadata
-censo_data_dictionary [censo_escolar_2025 censo_docentes matriculas_censo_2025 censo_gestor] 2026-09-30T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Dicionario canonico do Censo Escolar com versionamento por edicao
+censo_data_dictionary [censo_escolar_2025 censo_docentes matriculas_censo_2025 censo_gestor import_metadata_fase0] 2026-09-30T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Dicionario canonico do Censo Escolar com versionamento por edicao
 
 malha_municipio [import_metadata_fase0] 2026-09-30T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Malha municipal IBGE 2024 (GPKG)
 malha_setor_censitario [malha_municipio] 2026-09-30T15:30:00Z Marco Arthur <arthurpbs@gmail.com> # Malha setor censitário 2022 (GPKG, ~748 MB)
@@ -86,7 +86,7 @@ inmet_bdmep [malha_municipio import_metadata_fase0] 2026-09-30T20:00:00Z Marco A
 siconfi_receita [malha_municipio import_metadata_fase0] 2026-09-30T20:30:00Z Marco Arthur <arthurpbs@gmail.com> # SICONFI receitas municipais (realizada/estimativa)
 siconfi_despesa [malha_municipio import_metadata_fase0] 2026-09-30T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # SICONFI despesas municipais (funcao 12 educacao)
 transferencia_educ [malha_municipio import_metadata_fase0] 2026-09-30T21:30:00Z Marco Arthur <arthurpbs@gmail.com> # CGU Portal da Transparência transferências educação
-analytics_esforco_fiscal [siconfi_receita siconfi_despesa transferencia_educ censo_escolar_2025] 2026-09-30T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # View analítica esforço fiscal municipal em educação
+analytics_esforco_fiscal [siconfi_receita siconfi_despesa transferencia_educ censo_escolar_2025 import_metadata_fase0] 2026-09-30T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # View analítica esforço fiscal municipal em educação
 
 brazilcrime_municipio [malha_municipio import_metadata_fase0] 2026-09-30T22:30:00Z Marco Arthur <arthurpbs@gmail.com> # BrazilCrime criminalidade agregada por município/ano
 antt_acidente_trecho [malha_municipio import_metadata_fase0] 2026-09-30T23:00:00Z Marco Arthur <arthurpbs@gmail.com> # ANTT acidentes por trecho (sem município)

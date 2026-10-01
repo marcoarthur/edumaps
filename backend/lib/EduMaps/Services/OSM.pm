@@ -9,6 +9,8 @@ use Mojo::File qw(path);
 use Mojo::Log;
 use Time::HiRes qw(gettimeofday tv_interval);
 use utf8;
+use File::Path qw(make_path);
+use Digest::MD5 qw(md5_hex);
 
 =head1 NAME
 
@@ -84,6 +86,96 @@ sub _load_fixture($self) {
   return $f if ref $f eq 'HASH';
   die "fixture não encontrada: $f" unless -f $f;
   return decode_json( path($f)->slurp );
+}
+
+# Requisição com rate limiting, cache em disco e retry com backoff
+sub _request_with_rate_limit($self, $ql) {
+  my $cache_key = md5_hex($ql);
+  my $cache_file = path($self->cache_dir)->child("$cache_key.json");
+
+  # Tenta ler do cache primeiro
+  if (-f $cache_file && !$self->query->no_cache) {
+    $self->log->info("Cache hit OSM: $cache_file");
+    my $cached = decode_json(path($cache_file)->slurp);
+    $self->emit(query_data => {
+      query   => $ql,
+      data    => $cached,
+      elapsed => 0,
+      cached  => 1,
+    });
+    return $cached;
+  }
+
+  # Rate limiting: semáforo para max 2 requisições concorrentes
+  $self->_acquire_semaphore;
+
+  my $attempt = 0;
+  my $max_retries = 3;
+  my $data;
+
+  while (1) {
+    $data = eval { $self->_request($ql) };
+    unless ($@) {
+      last;
+    }
+
+    my $error = $@;
+    chomp $error;
+    my $attempt = $self->{_attempt} // 0;
+    $self->log->warn("Tentativa $attempt falhou: $error");
+
+    if ($attempt >= 3) {
+      die "Falha permanente após 3 tentativas: $error";
+    }
+
+    my $sleep_time = 5 * (2 ** $attempt) + rand(2);
+    $self->log->info("Aguardando ${sleep_time}s antes de retry " . ($attempt + 1) . "/3");
+    sleep($sleep_time);
+    $self->{_attempt} = $attempt + 1;
+  }
+
+  $self->_release_semaphore;
+
+  # Salva no cache
+  make_path($self->cache_dir);
+  path($cache_file)->spew(encode_json($data));
+
+  $self->emit(query_data => {
+    query   => $ql,
+    data    => $data,
+    elapsed => $self->elapsed,
+    cached  => 0,
+  });
+
+  return $data;
+}
+
+# Semáforo simples para limitar concorrência a 2
+sub _acquire_semaphore($self) {
+  # Implementação simples: usa arquivo de lock
+  my $lock_file = path($self->cache_dir)->child('.osm_semaphore');
+  while (1) {
+    my $count = 0;
+    if (-f $lock_file) {
+      my $content = path($lock_file)->slurp;
+      $count = $content + 0;
+    }
+    last if $count < 2;
+    sleep(1);
+  }
+  # Incrementa contador
+  my $new_count = 0;
+  if (-f $lock_file) {
+    $new_count = path($lock_file)->slurp + 0;
+  }
+  path($lock_file)->spew($new_count + 1);
+}
+
+sub _release_semaphore($self) {
+  my $lock_file = path($self->cache_dir)->child('.osm_semaphore');
+  return unless -f $lock_file;
+  my $count = path($lock_file)->slurp + 0;
+  path($lock_file)->spew($count - 1) if $count > 0;
 }
 
 # Requisição bloqueante ao Overpass. HTTP não-2xx / falha de conexão -> die.
