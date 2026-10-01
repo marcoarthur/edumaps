@@ -4,6 +4,36 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-09-30 — e-SICs protocolados: INEP, MEC/NIC.br, FNDE, Secretarias (#132)
+
+Ciclo **administrativo** (issues + documentação, **sem código → sem deploy**).
+
+**Mergeado**: PR **#148** (merge commit `9b319f8`, commit `8248862`),
+branch `feat/admin/esic-inep-mec-fnde` → `main`, +172 −5 em 5 arquivos.
+
+### Entregue
+
+- **docs/admin/esic-requests.md**: registro dos 4 e-SICs (INEP, MEC/NIC.br, FNDE, Secretarias) com perguntas detalhadas, campos para protocolos e tracker de respostas.
+- **Fichas atualizadas**: INEP (licença aguardando e-SIC), MEC/NIC.br Medidor (e-SIC protocolado), FNDE PNATE/PAC (e-SIC protocolado), Recife transporte escolar (e-SIC municipal).
+- **Allowlist.yaml**: 4 novas fontes e-SIC adicionadas (INEP, MEC/NIC.br, FNDE, Secretarias) com hosts e protocolos ______.
+- **Allowlist denied**: ANTT Monitriip Viagens, SPTRANS Bilhete Único, SUS microdados individuais (mantidos).
+
+### Decisões
+
+1. **e-SIC é ação administrativa, não de engenharia** — maior retorno do plano (#123).
+2. **Três bloqueios de licença/acesso desbloqueados**: INEP (6 fontes), MEC/NIC.br (lacuna 3), FNDE (3 fontes).
+3. **Secretarias municipais**: transporte escolar por unidade existe em **1 município verificado** (Recife); e-SICs municipais escaláveis.
+4. **PeNSE fora de escopo** — exige CEP/Conep, ambiente controlado, não-persistência (decisão institucional).
+
+### Próximos Passos
+
+1. Protocolar os 4 e-SICs e registrar protocolos nos docs.
+2. Acompanhar prazos (20 dias + 10 prorrogáveis).
+3. Ao receber resposta: atualizar fichas, reavaliar prioridade para `[alta]`, registrar em `memory.md`.
+5. Resposta negativa também registrada: "não é dado aberto" fecha a ficha.
+
+---
+
 ## Sessão 2026-09-30 — Implementação #130: Fase 6 mobilidade completa
 
 Ciclo **com código** (data_pipeline → **deploy necessário**).
