@@ -101,3 +101,5 @@ snv_trecho_vmda [antt_trecho_geodados import_metadata_fase0] 2026-10-01T02:00:00
 recife_transporte_escolar [malha_municipio import_metadata_fase0] 2026-10-01T02:30:00Z Marco Arthur <arthurpbs@gmail.com> # Recife transporte escolar ODbL (prova de viabilidade)
 
 renaest_localidade_municipio [malha_municipio import_metadata_fase0] 2026-10-01T03:00:00Z Marco Arthur <arthurpbs@gmail.com> # De-para RENAEST localidade → município IBGE
+
+analytics_mobilidade_escola [isocrona_escolar antt_od_municipio renavam_frota_municipio antt_contagem_equipamento snv_trecho_vmda renaest_sinistro renaest_localidade_municipio recife_transporte_escolar] 2026-10-01T03:00:00Z Marco Arthur <arthurpbs@gmail.com> # View analítica mobilidade escolar consolidada
