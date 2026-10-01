@@ -101,10 +101,83 @@ via plugin `opencode-chrome-devtools` (CDP), alvo `http://ubatexu.lan:8080`.
 
 ## Database
 
-- Alvo dev: `edumaps_dev` em `ubatexu.lan` (user: `devel`, pass: `senhaboa123`)
-- Sqitch target: `dev_super`
+- Alvo dev: `edumaps_dev` (user: `devel`, pass: `senhaboa123`)
 - Migrations em `data_pipeline/` (deploy/revert/verify)
 - MVs em `analytics.*`, views limpas em `clean.*`
+
+### ⚠️ Existem DOIS contentores de base de dados em `ubatexu.lan`
+
+Existem **dois** contentores de base de dados em `ubatexu.lan`, e ambos se
+identificam como `Database` (`hostname` e prompt do psql são iguais). Só um
+deles é o que o backend usa, e é o inverso do que o nome do target Sqitch
+sugere.
+
+| Contentor | SSH (porta) | IP | Acedido por | `pgvector` |
+|---|---|---|---|---|
+| `database.edumaps` | 2032 | `172.19.198.3` | **O backend real.** Alvo do `deploy_db_dev` do Rexfile. | disponível |
+| `database.dev` | 2026 | `172.31.51.4` | O target Sqitch `dev_super`, isto é `ubatexu.lan:5432`. | **ausente** |
+
+Nada resolve `database.edumaps` por DNS — os dois nomes vivem no `~/.ssh/config`
+com portas diferentes. É por isso que a confusão passa despercebida.
+
+Confirmação rápida de qual base se está a usar (não usar `getent`, que não
+resolve os nomes):
+
+```bash
+# do backend: mostra a quem está ligado de facto
+ssh root@backend.edumaps 'ss -tnp | grep :5432'      # deve apontar para 172.19.198.3
+```
+
+Regra: **antes de medir o estado dos dados, confirmar qual base se está a
+medir.** O relatório de fontes foi escrito contra `database.dev` e mediu um
+estado que não é o do produto.
+
+### ⚠️ `sqitch change_id` é irreversível: nunca editar `requires` nem reordenar changes já deployadas
+
+O `change_id` de uma change é o SHA-1 dos seus metadados, que incluem a lista
+`requires` **e o `change_id` do pai** (a change anterior no plano). Logo:
+
+- adicionar/remover uma dependência numa change já deployada **muda o seu id**
+  e, em cascata, o de todas as changes seguintes do plano;
+- mover uma change já deployada para outra posição no plano **também** quebra
+  a cadeia.
+
+`sqitch` deixa de encontrar as changes deployadas e aborta com
+`Cannot find change <id> (<nome>) in sqitch.plan`. O registry não se
+repara sozinho, e o `sqitch rewrite` **não existe** em Sqitch 1.6.1.
+
+Isto já aconteceu: os commits `a13718c` (editou `requires` de 10 changes já
+deployadas) e `83a77c5` (moveu `import_metadata_fase0` no plano) partiram o
+`sqitch deploy` em todas as bases. Foram reparados a 2026-10-01 — ver
+`memory.md`.
+
+**Antes de tocar no `sqitch.plan`:**
+
+1. `sqitch status --target <t>` está limpo?
+2. Alguma das changes a editar já está deployada em algum alvo?
+3. Se sim: **não editar.** Criar uma change nova.
+
+Dependência nova entre changes já deployadas resolve-se com `requires`
+apenas se **nenhuma** delas foi deployada; caso contrário, a resposta certa é
+uma change nova.
+
+### `sqitch verify` não é um gate fiável
+
+Dois factos medidos, não presumidos:
+
+- **Os `verify/*.sql` deste repositório nunca falham.** Terminam em
+  `SELECT 1 FROM ...`, e o Sqitch considera a verificação bem-sucedida se o
+  script não produzir **erro**. Uma query que devolve `f` conta como sucesso.
+  Um teste de regressão escrito à mesma forma passaria com o defeito
+  presente.
+- **`sqitch verify` global falha com 45 "Out of order"**, porque
+  `import_metadata_fase0` foi movida no plano depois de já estar deployada.
+  Reflecte um facto histórico e não é corrigível sem reverter a
+  reordenação.
+
+Para escrever um `verify` que **falha mesmo**, usar
+`DO $$ … RAISE EXCEPTION '…' $$;` — é o que a change
+`analytics_ausencia_visivel` faz.
 
 ## Key conventions (Perl/Mojolicious)
 

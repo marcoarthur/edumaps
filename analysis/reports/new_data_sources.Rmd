@@ -909,6 +909,65 @@ Contrato de colunas preservado (31 + 16 = 47), o que permitiu `CREATE OR
 REPLACE VIEW` e portanto um `revert` que restaura exatamente a definição
 anterior.
 
+### 6.1e Achado de processo: os commits "inofensivos" de um ciclo anterior partiram o `sqitch deploy`
+
+**Severidade: 🔴 alta. Descoberto ao tentar deployar a correção de #154.**
+
+A change estava pronta, testada e commitada. O `rex -H database.edumaps
+deploy_db_dev` falhou com:
+
+```
+Cannot find change f931403e7969ba9232b73e7b2bcf6ec05639d87d
+(analytics_esforco_fiscal) in sqitch.plan
+```
+
+O `sqitch` calcula o `change_id` de cada change como SHA-1 dos seus metadados,
+e esses metadados incluem a lista `requires` **e o `change_id` da change
+anterior no plano** (`parent`). Duas operações proibidas sobre changes já
+deployadas resultam daí: mudar uma dependência declarada, e mover uma change
+de posição.
+
+Isso é precisamente o que os commits `a13718c` e `83a77c5` fizeram, na
+sequência. E o ciclo anterior registou em `memory.md` que a operação era
+*"reordenação do plano, re-executável por `sqitch deploy`, sem efeitos
+laterais"*.
+
+**Não era verdade.** Medido, nos três alvos:
+
+| Alvo | Changes com `change_id` divergente |
+|---|---|
+| Docker local (`127.0.0.1`) | 71 de 88 |
+| `database.dev` (`ubatexu.lan:5432`) | 25 de 42 |
+| `database.edumaps` (backend real) | 59 de 76 |
+
+Reparado a 2026-10-01, sem reexecutar um único deploy script. O método é o
+mesmo que `sqitch rewrite --set` faria — que, aliás, **não existe** no Sqitch
+1.6.1 instalado, e é a razão pela qual isto não se resolve com um comando:
+
+1. `sqitch deploy --log-only` contra uma base descartável regista todas as
+   changes **sem executar nenhum script**, e portanto com os `change_id` que o
+   plano calcula;
+2. `UPDATE sqitch.changes SET change_id = … WHERE change = …` nos alvos reais.
+   As FKs de `dependencies` e `tags` têm `ON UPDATE CASCADE`, logo propagam
+   sozinhas; só `events` — que não tem FK para `changes` — exige update
+   separado.
+
+O que sobrou é dívida e não se corrige sem voltar atrás:
+
+- **`sqitch verify` global falha com 45 "Out of order".** `import_metadata_fase0`
+  foi deployada a 2026-09-30 e depois movida para antes no plano; as 45 changes
+  entre a posição antiga e a nova ficam permanentemente fora de ordem no
+  histórico. É um facto histórico, e fingir o contrário exigiria reescrever a
+  coluna `requires` dos eventos — isto é, mentir sobre o que foi aplicado e
+  quando.
+- **Combina com §6.1c**: os `verify` não mordem, e o `verify` global não pode
+  servir de gate. Um pipeline de migração sem gate fiável é a mesma falha de
+  confiança, dois níveis acima.
+
+A regra que daqui sai, e que está agora em `AGENTS.md`: **nunca editar
+`requires` nem reordenar uma change já deployada.** Dependência nova resolve-se
+com uma change nova.
+
 ## 6.2 O de-para RENAEST é um placeholder disfarçado
 
 **Severidade: 🔴 alta. É o achado que mais facilmente passa por "dado pronto".**
@@ -1092,26 +1151,78 @@ O projeto tem **dois destinos de banco** com estados muito diferentes:
 | **Docker local** (`127.0.0.1:5432`) | `edumaps-db` | **25 de 25** | ✅ presente | ✅ presente | ✅ presente |
 | **Dev nominal** (`ubatexu.lan:5432`) | serviço `edumaps` do `~/.pg_service.conf`; padrão em `backend/edu_maps.conf` | **1 de 25** | ❌ ausente | ❌ ausente | ❌ ausente |
 
-**Causa raiz, confirmada no histórico do Sqitch.** O banco de dev registra
-**7 falhas do change `school_embedding`** entre 2026-09-16 e 2026-09-30. Como o
-Sqitch processa os changes em ordem topológica e **aborta no primeiro erro**,
-tudo que vem depois de `school_embedding` no plano nunca foi aplicado. A causa
-da falha é a extensão **`pgvector`, que não está disponível** nesse servidor
-(`pg_available_extensions` não retorna `vector`).
+> **Nota de rigor:** as linhas deste quadro foram medidas por introspecção do
+> catálogo Sqitch em 2026-09-30 e são reproduzidas aqui como estavam. A coluna
+> "Dev nominal" tem uma correção material — ver a nota abaixo.
+
+> **⚠️ Correção de 2026-10-01: a linha "Dev nominal" acima mede a base errada.**
+>
+> `ubatexu.lan:5432` **não** é a base que o backend usa. Ao implement a issue
+> #154 e precisar de medir o estado do destino de deploy, encontrou-se que em
+> `ubatexu.lan` correm **dois** contentores de base de dados, ambos com
+> `hostname` = `Database`, indistinguíveis pelo nome e pelo prompt do `psql`:
+>
+> | Contentor | SSH (porta) | IP | Acedido por | `pgvector` | Changes Sqitch |
+> |---|---|---|---|---|---|
+> | `database.edumaps` | 2032 | `172.19.198.3` | **o backend real** (`deploy_db_dev` do Rexfile) | disponível | 76 |
+> | `database.dev` | 2026 | `172.31.51.4` | o target Sqitch `dev_super`, isto é `ubatexu.lan:5432` | **ausente** | 42 |
+>
+> Confirmação de qual é a real, a partir do serviço em produção:
+>
+> ```bash
+> ssh root@backend.edumaps 'ss -tnp | grep :5432'   # → 172.19.198.3:5432
+> ```
+>
+> Consequências para este relatório:
+>
+> 1. **O "1 de 25" e as 7 falhas de `school_embedding` são reais** — mas são de
+>    `database.dev`, uma base que ninguém usa e que nunca recebeu o tratamento
+>    do `deploy_db_dev` (que instala `pgvector`, Rexfile linha 452). Não é o
+>    estado do produto.
+> 2. **A tabela acima não descrevia o bloqueio real.** Na base que o backend usa,
+>    `school_embedding` está aplicado e `pgvector` disponível; o que lá faltava
+>    eram 13 changes do fim do plano — deployados em 2026-10-01.
+> 3. **A recomendação de "instalar `pgvector` no servidor de dev" estava no
+>    alvo errado**, e o caminho para o `sqitch deploy` nunca foi esse: era um
+>    registry com `change_id` divergentes (ver §6.1e).
+>
+> A lição de método: `edu_maps.conf` tem `ubatexu.lan` como *default*, mas o
+> default não é onde o serviço ligado está a falar. Um default que ninguém
+> confirmou é uma hipótese, e medir contra uma hipótese produz um relatório
+> inteiro errado.
+
+**Causa raiz, confirmada no histórico do Sqitch.** Em `database.dev`
+(`ubatexu.lan:5432`) o registry registra **7 falhas do change
+`school_embedding`** entre 2026-09-16 e 2026-09-30. Como o Sqitch processa os
+changes em ordem topológica e **aborta no primeiro erro**, tudo que vem depois
+de `school_embedding` no plano nunca foi aplicado nessa base. A causa da falha
+é a extensão **`pgvector`, que não está disponível** nesse contentor
+(`pg_available_extensions` não retorna `vector`), porque nunca passou pelo
+`deploy_db_dev` do Rexfile, que a instala.
 
 Como `import_metadata_fase0` aparece **antes** de `school_embedding` no plano,
-foi a única das fases 0–6 a ser aplicada — o que explica o "1 de 25".
+foi a única das fases 0–6 a ser aplicada ali — o que explica o "1 de 25"
+**dessa base**. Em `database.edumaps`, o mesmo change tem **1 deploy e 0
+falhas**.
 
-> **Por que isso importa para o issue #123.** A issue #123 foi sobre
-> *catalogar e priorizar antes de implementar*. As fases 0–6 foram o passo
-> seguinte. Elas estão prontas **num** banco e ausentes **no** banco que o
-> `edu_maps.conf` do backend aponta por padrão. Qualquer consulta de frontend,
-> job R ou teste que rode contra o destino nominal vai receber
-> `relation does not exist`.
+> **Por que isso importava para o issue #123.** A issue #123 foi sobre
+> *catalogar e priorizar antes de implementar*. As fases 0–6 estavam prontas
+> **num** banco e ausentes na base que `edu_maps.conf` tem como default.
+>
+> **Retificação (2026-10-01):** esta conclusão era inválida, por causa da nota
+> acima. A base real do backend (`database.edumaps`) já tinha `school_embedding`
+> aplicado e nunca teve o problema do `pgvector`. As fases 0–6 estavam lá
+> aplicadas; o que faltava eram 13 changes do fim do plano, por causa do
+> registry (§6.1e), não do schema. A pergunta "por que o backend receberia
+> `relation does not exist`" tinha a premissa errada, e por isso a resposta
+> também estava errada.
 
-**Correção recomendada:** instalar `pgvector` no servidor de dev (ou tornar
-`school_embedding` opcional / movê-lo para o fim do plano), e então rodar
-`sqitch deploy` completo. Só depois disso faz sentido discutir carga de dados.
+**Correção recomendada — como ficou, e não como se propunha.** A recomendação
+original era instalar `pgvector` no servidor de dev. Não era preciso: `pgvector`
+estava disponível onde o backend liga. O bloqueio real era o registry, e a
+correção foi outra (§6.1e). Em `database.edumaps` o `sqitch deploy` está agora
+completo — **89 de 89 changes**, incluindo `analytics_ausencia_visivel`, com
+`--verify` a passar.
 
 ## 6.5 Inconsistências menores de metadado
 
@@ -1127,20 +1238,26 @@ foi a única das fases 0–6 a ser aplicada — o que explica o "1 de 25".
 
 ```{r veredito}
 achados <- data.frame(
-  `#` = 1:6,
+  `#` = 1:7,
   `Achado` = c(
-    "Zero confundido com nulo nas views analíticas",
+    "Zero confundido com nulo nas views analíticas (corrigido em #154)",
     "`renaest_localidade_municipio` é placeholder, não de-para",
-    "Schema ausente no banco de dev nominal (24 de 25 tabelas)",
+    "Registry Sqitch com `change_id` divergentes em todos os alvos (corrigido)",
     "Proveniência ausente nas 9 cargas antigas; duplicata no dicionário",
     "Versionamento do dicionário declarado e nunca exercitado",
-    "Divergência de licença (GPL-3 vs MIT) e `source_url` inválido"
+    "Divergência de licença (GPL-3 vs MIT) e `source_url` inválido",
+    "`sqitch verify` não falha em asserção falsa e não serve de gate"
   ),
-  `Severidade` = c("🔴 alta", "🔴 alta", "🔴 alta", "🟡 média", "🟡 média", "🟢 baixa"),
+  `Severidade` = c("🔴 alta", "🔴 alta", "🔴 alta", "🟡 média", "🟡 média", "🟢 baixa", "🟡 média"),
   `Onde` = c(
     "`analytics.acessibilidade_saude`, `analytics.mobilidade_escola`",
     "`clean.renaest_localidade_municipio`",
-    "`ubatexu.lan` (bloqueio por `school_embedding`/`pgvector`)",
+    "`sqitch.changes` em `database.edumaps`, `database.dev` e local",
+    "`clean.import_metadata`, `clean.censo_data_dictionary`",
+    "`clean.censo_data_dictionary`",
+    "`import_metadata`",
+    "todos os `verify/*.sql`, mais 45 \"Out of order\" no verify global"
+  ),
     "`clean.import_metadata`, `clean.censo_data_dictionary`",
     "`clean.censo_data_dictionary`",
     "`import_metadata`"
@@ -1148,10 +1265,11 @@ achados <- data.frame(
   `Consequência` = c(
     "Publica \"0 acidentes\" / \"sem UBS\" para 145.734 escolas com aparência de dado real",
     "Sinistros RENAEST sem correspondência são **descartados em silêncio**",
-    "Backend, jobs R e testes contra o destino nominal falham com `relation does not exist`",
+    "`sqitch deploy`/`status` abortam com `Cannot find change … in sqitch.plan`",
     "8 fontes do acervo (incluindo a base Censo) não são auditáveis",
     "Rastreabilidade de mudança de schema do Censo não existe na prática",
-    "Risco de licença copyleft não avaliado; proveniência aponta para origem errada"
+    "Risco de licença copyleft não avaliado; proveniência aponta para origem errada",
+    "Um teste de regressão escrito como os existentes passaria com o defeito presente"
   ),
   stringsAsFactors = FALSE
 )
@@ -1172,8 +1290,8 @@ Para não ser um relatório só de problemas, o que está realmente disponível:
 | **Malha municipal IBGE** (5.573 municípios, SRID 4674, geometrias válidas) | ✅ Integral | Base territorial, FK de 11 tabelas, qualquer análise municipal |
 | **Proveniência das cargas das fases 0–6** (23 entradas com URL, licença e data) | ✅ Completa | Auditoria de origem e licença |
 | **Dicionário canônico do Censo Escolar** (764 entradas, 4 tabelas) | 🟡 Parcial | Legibilidade de colunas do Censo; versionamento ainda não funciona |
-| **Views analíticas** (`acessibilidade_saude`, `mobilidade_escola`) | 🔴 Não | Apenas a contagem de escolas (145.734) é confiável. **Nenhum indicador** |
-| **Esforço fiscal** (`esforco_fiscal_educacao`) | 🔴 Não | Vazia |
+| **Views analíticas** (`acessibilidade_saude`, `mobilidade_escola`) | 🔴 Não | Apenas a contagem de escolas (145.734) é confiável. **Nenhum indicador** — corrigido em #154; continuam sem dado, mas agora sem afirmar falsamente que o valor é `0` |
+| **Esforço fiscal** (`esforco_fiscal_educacao`) | 🔴 Não | Vazia — **e vazia com honestidade**: propaga `NULL`, não `0` (§6.1) |
 | **21 tabelas de fonte** | 🔴 Não | Esquema pronto, aguardando ingestão |
 
 ---
@@ -1184,17 +1302,43 @@ Ordenado por dependência — cada passo desbloqueia o seguinte.
 
 ### Passo 1 — Desbloquear o schema (bloqueia tudo)
 
-Instalar `pgvector` no servidor de dev, ou reposicionar `school_embedding` no
-`data_pipeline/sqitch.plan` para que não bloqueie as fases 0–6. Em seguida:
+**✅ Feito** a 2026-10-01, por um caminho diferente do previsto.
+
+O plano original era instalar `pgvector` no servidor de dev. Não foi isso que
+bloqueou: `pgvector` já estava disponível na base que o backend usa
+(§6.4), e `school_embedding` lá estava aplicado. O bloqueio era o registry
+Sqitch com `change_id` divergentes (§6.1e), que abortava o `sqitch deploy` antes
+de olhar para extensões.
+
+O que foi feito:
+
+1. Identificar qual base o backend realmente usa, e reparar o registry das três
+   (local, `database.dev`, `database.edumaps`) — sem reexecutar deploy scripts;
+2. `rex -H database.edumaps deploy_db_dev` — **89 de 89 changes aplicados**,
+   com `--verify` a passar.
+
+O comando que este plano prescrevia nunca chegou a ser o passo certo:
 
 ```bash
 cd data_pipeline
-sqitch deploy --target dev_super
-sqitch verify --target dev_super
+sqitch deploy "db:pg://edumaps:change_me@localhost/edumaps_dev"   # a base real
+# ou, a partir do host do contentor:
+ssh root@database.edumaps 'cd /opt/edumaps/data_pipeline && sqitch status \
+  "db:pg://edumaps:change_me@localhost/edumaps_dev"'
 ```
 
-Enquanto isso não acontecer, o resto do trabalho não é observável pelo destino
-nominal.
+> `--target dev_super` aponta para `ubatexu.lan:5432` = `database.dev`, que
+> **não** é a base do produto (§6.4). Usá-lo deploya para o contentor errado.
+
+### Passo 1b — Tornar o `sqitch verify` utilizável como gate
+
+**🔴 Pendente, e mais largo que esta issue.** Os `verify/*.sql` existentes não
+falham em asserção falsa (§6.1c), e o `verify` global dá 45 "Out of order"
+(§6.1e). Enquanto não for corrigido, **não há gate fiável de migração** neste
+repositório — e um pipeline sem gate é o mesmo problema da #154 um nível acima:
+um teste que não falha não é um teste. Corrigir os `verify` existentes exige
+medir primeiro quantos estão a falhar de forma latente, porque isso não se
+descobre lendo-os.
 
 ### Passo 2 — Tornar a ausência de dado visível (corrige o achado mais grave)
 
@@ -1212,7 +1356,8 @@ relatório propunha:
 - O `revert` da change restaura a definição anterior **incluindo o defeito**, e
   isso está escrito no próprio ficheiro para ninguém o usar por engano.
 
-Dois achados novos surgiram ao implementar, e não estavam no plano original:
+Quatro achados novos surgiram ao implementar, e nenhum estava no plano
+original:
 
 - **Fan-out (§6.1b):** as mesmas views inflavam `acidentes_12m` ×2 e
   `vmda_total_municipio` ×6 com dados sintéticos. Invisível enquanto as tabelas
@@ -1221,6 +1366,14 @@ Dois achados novos surgiram ao implementar, e não estavam no plano original:
   passam mesmo quando a asserção é falsa. **Isto afeta todos os testes de
   migração do projeto** e é um risco mais largo do que a #154 — merece issue
   própria, a medir antes de mexer.
+- **O registry Sqitch estava partido em todos os alvos (§6.1e):** 25 a 71
+  changes deployadas com `change_id` divergente do plano, por causa de commits
+  de um ciclo anterior que editaram `requires` e reordenaram changes já
+  deployadas. Reparado sem reexecutar um único deploy script.
+- **"Dev nominal" são duas bases diferentes (§6.4):** `ubatexu.lan:5432` é
+  `database.dev`, que ninguém usa. O backend liga a `database.edumaps`. O
+  relatório mediu a base errada, e a recomendação de instalar `pgvector`
+  apontava para o alvo errado.
 
 ### Passo 3 — Tornar o de-para RENAEST verdadeiro
 
