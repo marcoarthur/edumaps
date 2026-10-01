@@ -4,6 +4,96 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-01 — Relatório de saneamento das fontes novas pós-#123
+
+Ciclo **de análise/documentação** (relatório novo, **sem código de runtime →
+sem deploy**).
+
+**Branch**: `docs/analise/relatorio-novas-fontes-dados` → `main`
+**Nota técnica**: `notas_tecnicas_84.md`
+
+### Entregue
+
+- **`analysis/reports/new_data_sources.Rmd`** — relatório que audita as **28
+  entradas** criadas pelas fases 0–6 (25 tabelas + 3 views) a partir da matriz
+  da issue #123. Inventário por fase (fonte, licença, granularidade, lacuna do
+  IVET, enfoque analítico, regra de privacidade), perfil de **todas** as colunas
+  com tipo e **% de nulos** (série A1–A28), e sanity check com 6 achados.
+- `analysis/reports/.gitignore` — exclui `*.html`, `*.knit.md` e `.cache/`.
+- `docs/new_ideas/implementations_ideas/notas_tecnicas_84.md`.
+
+### Estado real medido (banco local `127.0.0.1:5432`)
+
+- **4 entradas com dados**: `malha_municipio` (5.573, **íntegra: 0% nulos nas
+  7 colunas**), `import_metadata` (32), `censo_data_dictionary` (764),
+  `renaest_localidade_municipio` (5.573, mas ver achado 2).
+- **21 tabelas + 1 view vazias** — os 11 jobs de ingestão só rodaram em
+  `--dry-run`.
+- As 2 views com linhas (`acessibilidade_saude`, `mobilidade_escola`) têm
+  **100% de nulos em todas as colunas de indicador**.
+
+### Os 3 achados de severidade alta
+
+1. **`zero` confundido com `nulo`** — as 2 views fazem `LEFT JOIN` em tabelas
+   vazias + `COALESCE(..., 0)`. `acidentes_12m = 0` e
+   `classificacao_acesso = 'Sem UBS no município'` para as **145.734 escolas**,
+   com aparência de dado real. As views **já têm** `status_isocrona` /
+   `status_conexao_antt` corretos — o defeito é consistência interna.
+2. **`renaest_localidade_municipio` é placeholder** — auto-junção do IBGE
+   (5.573 municípios → eles mesmos), `match_type`/`match_score`/`validated_by`
+   com **1 único valor** cada. O join por `(localidade, uf)` faz as
+   localidades RENAEST que coincidem com nome de município casarem
+   (corretamente) e **todas as outras sumirem sem log e sem erro**.
+   `fuzzy_match_renaest.py` **nunca foi executado**.
+3. **24 de 25 tabelas ausentes no banco de dev nominal** (`ubatexu.lan`, serviço
+   `edumaps` do `~/.pg_service.conf`, padrão do `backend/edu_maps.conf`).
+
+### Decisões
+
+1. **O relatório consulta o banco ao vivo** — nada é embutido; snapshot
+   congelado daria falsa confiança.
+2. **Cache chaveado por `banco@host:porta`** — as conclusões diferem entre o
+   banco local e o de dev; cruzar cache seria incorreto.
+3. **Sem credencial no `.Rmd`** — só `EDUMAPS_DB_*` ou
+   `EDUMAPS_REPORT_PG_SERVICE`.
+4. **`analysis/reports/` não entra em deploy** — nenhuma task do Rexfile
+   sincroniza esse diretório (só `analysis/edumapsr/`), então o relatório é
+   entregável versionado, não artefato de runtime. Precedente:
+   `docs/archive/analytics/eda/*.Rmd`.
+
+### Achado de método (bug real, corrigido)
+
+A primeira versão do profiler usava `FROM v CROSS JOIN c` sobre
+`to_jsonb(t)`: para **tabela vazia** devolvia **zero linhas**, e a tabela
+sumia do relatório — só **6 de 28** objetos apareciam. Corrigido com
+`LEFT JOIN` de `pg_attribute` sobre a relação + guarda `CASE WHEN total = 0`.
+`% nulos` de tabela vazia é `NA`, não `0`.
+
+### Pendências (priorizadas, não executadas)
+
+1. **Desbloquear o schema** — instalar `pgvector` no servidor de dev, ou mover
+   `school_embedding` para o fim do `sqitch.plan`, e rodar `sqitch deploy`.
+   **Causa raiz verificada**: `pgvector` indisponível em `ubatexu.lan`;
+   `school_embedding` falhou **7×** (2026-09-16 a 2026-09-30) e o Sqitch aborta
+   no primeiro change que falha.
+2. **Substituir `COALESCE(x, 0)`** nas views por `x` (ou exigir filtro no
+   consumidor) + teste de regressão *"fonte vazia não pode virar `0` na view"*.
+3. **Rodar `fuzzy_match_renaest.py`** e substituir o seed; registar localidades
+   não resolvidas.
+4. **Fechar proveniência** — 9 cargas antigas sem URL/licença/data; duplicata de
+   `censo_data_dictionary` em `import_metadata`; resolver **GPL-3 vs MIT** do
+   BrazilCrime antes de distribuir.
+5. **Rodar a ingestão real** (`ingestion_runner.pl --run`).
+6. **Materializar** as 2 views quando houver dado (hoje recalculam sobre
+   `censo_escolas`, 670 MB).
+
+### 🔴 Pendência de processo (aguardando decisão do developer)
+
+Os três `fix` de ordem do `sqitch.plan` (`a13718c`, `83a77c5`, `812f36d`) que
+destravaram o CI foram enviados **direto para `main`**, sem branch → PR →
+merge, contrariando a regra obrigatória do `AGENTS.md` para `fix`. O PR
+retroativo precisa ser decidido/aberto.
+
 ## Sessão 2026-09-30 — e-SICs protocolados: INEP, MEC/NIC.br, FNDE, Secretarias (#132)
 
 Ciclo **administrativo** (issues + documentação, **sem código → sem deploy**).
