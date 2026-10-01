@@ -70,23 +70,32 @@ sumia do relatório — só **6 de 28** objetos apareciam. Corrigido com
 `LEFT JOIN` de `pg_attribute` sobre a relação + guarda `CASE WHEN total = 0`.
 `% nulos` de tabela vazia é `NA`, não `0`.
 
-### Pendências (priorizadas, não executadas)
+### Pendências → registradas como issues (2026-10-01)
 
-1. **Desbloquear o schema** — instalar `pgvector` no servidor de dev, ou mover
-   `school_embedding` para o fim do `sqitch.plan`, e rodar `sqitch deploy`.
-   **Causa raiz verificada**: `pgvector` indisponível em `ubatexu.lan`;
-   `school_embedding` falhou **7×** (2026-09-16 a 2026-09-30) e o Sqitch aborta
-   no primeiro change que falha.
-2. **Substituir `COALESCE(x, 0)`** nas views por `x` (ou exigir filtro no
-   consumidor) + teste de regressão *"fonte vazia não pode virar `0` na view"*.
-3. **Rodar `fuzzy_match_renaest.py`** e substituir o seed; registar localidades
-   não resolvidas.
-4. **Fechar proveniência** — 9 cargas antigas sem URL/licença/data; duplicata de
-   `censo_data_dictionary` em `import_metadata`; resolver **GPL-3 vs MIT** do
-   BrazilCrime antes de distribuir.
-5. **Rodar a ingestão real** (`ingestion_runner.pl --run`).
-6. **Materializar** as 2 views quando houver dado (hoje recalculam sobre
-   `censo_escolas`, 670 MB).
+Os 6 passos da secção 8 do relatório foram **abertos como issues**, com
+dependências explícitas:
+
+| Passo | Issue | Prioridade | Depende de |
+|-------|-------|-----------|------------|
+| 1 — desbloquear o schema (`pgvector` / `sqitch.plan`) | **#153** | 🔴 high | — |
+| 2 — `COALESCE(x, 0)` → `NULL` nas views + teste de regressão | **#154** | 🔴 high | **independe** |
+| 3 — de-para RENAEST verdadeiro | **#155** | 🔴 high | #156 |
+| 4 — ingestão real | **#156** | 🔴 high | #153 |
+| 5 — fechar proveniência | **#157** | 🟡 medium | #132 (parcial) |
+| 6 — materializar as views | **#158** | ⚪ low | #156, #154 |
+
+**#153 bloqueia #138** (similaridade com PgVector) — anotado em comentário na
+#138. Cruzamento também anotado na **#131**: a métrica de cobertura do OSM
+precisa da mesma disciplina de "ausência ≠ zero" da #154.
+
+**Onde começar, se for uma só: #154.** É o achado mais grave (as views
+**afirmam** "sem UBS no município" e "zero acidentes" para 145.734 escolas) e é
+**independente** de carga de dados e de #153 — testável contra o banco local
+hoje. Não espera ninguém.
+
+Causa raiz de #153: `pgvector` indisponível em `ubatexu.lan`; `school_embedding`
+falhou **7×** (2026-09-16 a 2026-09-30) e o Sqitch aborta no primeiro change
+que falha.
 
 ### Exceção de processo registrada (decidida em 2026-10-01)
 
