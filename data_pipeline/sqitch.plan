@@ -18,6 +18,7 @@ raw_populacao_faixas_etarias [raw_populacao] 2025-12-14T16:08:04Z Marco Arthur <
 analytical_views_for_modeling 2026-04-06T19:31:15Z Marco Arthur <arthurpbs@gmail.com> # Views para modelagem de ML com intuito de preencher notas faltantes das escolas
 analytics_municipios_similaridade 2026-04-12T14:32:14Z Marco Arthur <arthurpbs@gmail.com> # cria a matriz de (des)similaridade entre municipios baseado em metrica euclidiana
 dados_ibge [raw_municipios_sp] 2026-04-16T15:20:55Z Marco Arthur <arthurpbs@gmail.com> # add data from ibge sources for municipalities, this at beginning includes economic data
+import_metadata_fase0 [schemas] 2026-09-30T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # FASE 0: proveniencia com licença em clean.import_metadata
 censo_escolar_2025 [import_metadata_fase0] 2026-04-26T14:36:26Z Marco Arthur <arthurpbs@gmail.com> # create table clean.escolas_censo
 scores_view 2026-04-27T12:36:58Z Marco Arthur <arthurpbs@gmail.com> # all scores derived from censo_escolas
 badge_functions [scores_view] 2026-04-27T13:18:17Z Marco Arthur <arthurpbs@gmail.com> # create many badge and avaliation functions for school quality
@@ -67,8 +68,6 @@ osm_generalize [osm_data] 2026-09-29T12:00:00Z Marco Arthur <arthurpbs@gmail.com
 
 school_osm_query [osm_generalize] 2026-09-29T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Selecao atual de POIs OSM por escola (raio, catalogos, digest, atualizado_em) para o painel do gestor
 
-import_metadata_fase0 [schemas] 2026-09-30T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # FASE 0: proveniencia com licença em clean.import_metadata
-censo_data_dictionary [censo_escolar_2025 censo_docentes matriculas_censo_2025 censo_gestor import_metadata_fase0] 2026-09-30T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Dicionario canonico do Censo Escolar com versionamento por edicao
 
 malha_municipio [import_metadata_fase0] 2026-09-30T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Malha municipal IBGE 2024 (GPKG)
 malha_setor_censitario [malha_municipio] 2026-09-30T15:30:00Z Marco Arthur <arthurpbs@gmail.com> # Malha setor censitário 2022 (GPKG, ~748 MB)

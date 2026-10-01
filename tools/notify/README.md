@@ -52,6 +52,8 @@ cp .env.example .env
 
 ## Uso no ciclo de desenvolvimento
 
+⚠️ **RESTRIÇÃO**: Não execute `notify.sh` durante testes ou demonstrações do agente. O script envia mensagens ao Telegram e comenta no GitHub. Rode apenas quando o ciclo de desenvolvimento estiver realmente concluído, bloqueado ou em uma etapa marcante.
+
 | Quando | Comando |
 |---|---|
 | fim de **etapa/fase** | `notify.sh --event stage --title "Etapa 2/4 pronta" --msg "..."` |

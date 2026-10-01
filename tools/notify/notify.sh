@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # tools/notify/notify.sh
 #
+# NOTIFICAÇÃO: Este script envia mensagens ao Telegram e comenta no GitHub.
+# ⚠️ NÃO execute durante testes ou demonstrações do agente.
+# Rode apenas quando o ciclo de desenvolvimento estiver realmente concluído.
+#
 # Notifica o developer (usuário) do fim de ciclo / fim de etapa / bloqueios,
 # via Telegram (Bot API gratuita) e, em bloqueios, com reforço comentando no
 # PR/issue do ciclo via `gh` (GitHub mobile).
