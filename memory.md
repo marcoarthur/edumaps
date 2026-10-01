@@ -9,7 +9,8 @@
 Ciclo **de análise/documentação** (relatório novo, **sem código de runtime →
 sem deploy**).
 
-**Branch**: `docs/analise/relatorio-novas-fontes-dados` → `main`
+**PRs**: #150 (relatório, branch `docs/analise/relatorio-novas-fontes-dados`) e
+#151 (regras de processo, branch `docs/processo/excecao-pr-e-contingencia`)
 **Nota técnica**: `notas_tecnicas_84.md`
 
 ### Entregue
