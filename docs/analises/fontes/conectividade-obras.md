@@ -91,7 +91,7 @@ não estão na API (só na planilha) e não há pacote R.
 |---|---|
 | **URL** | https://medidor.educacaoconectada.mec.gov.br/ · https://educacaoconectada.mec.gov.br/ · página institucional https://www.gov.br/mec/pt-br/gestao-escolar/medidor-educacao-conectada |
 | **Mantenedor** | MEC (SEB) em parceria com **NIC.br/CePtoR (SIMET)**; programa instituído pelo **Decreto nº 9.204/2017**, critérios de repasse pela Portaria MEC 29/2019 |
-| **Licença** | ⚠️ **não verificada** — não há declaração de licença de dados abertos; o `licenca.txt` referenciado no rodapé (`http://simet.nic.br/medidor-educ-conectada/licenca.txt`) retorna **404**. Apenas o *software* tem licença, não os dados |
+| **Licença** | ❌ **não verificada** — o portal do Medidor **não publica termo de uso nem SPDX**. O rodapé `licenca.txt` é **404**. **Ação: e-SIC protocolado ao MEC/NIC.br (protocolo ______) — aguardando resposta.** |
 | **Formato** | **visualização web** (mapa + app Shiny). ❌ **não há CSV/JSON/planilha oficial**; a seção "Downloads" entrega só os executáveis do medidor (`.exe`, `.run`) e manuais em PDF |
 | **Granularidade** | **escola** (por dispositivo de medição, com matrícula via Censo Escolar) + município + UF + região. A página de metodologia declara: velocidade de download/upload, perda de pacotes, quantidade de matrículas, com polígonos do IBGE |
 | **Periodicidade** | **diária** (medição automática a cada ~3–4 h) |
@@ -158,7 +158,7 @@ computadores) · `licenca.txt` → **404**
 |---|---|
 | **URL** | https://www.gov.br/fnde/pt-br/acesso-a-informacao/dados-abertos/o-que-se-pode-acessar · https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/programas/pnate · https://www.gov.br/fnde/pt-br/assuntos/sistemas/sete-sistema-eletronico-de-gestao-do-transporte-escolar |
 | **Mantenedor** | FNDE/MEC — CGPTE; execução técnica do SETE: Cecate/UFG em parceria com o FNDE |
-| **Licença** | SETE: **software livre MIT** (declarado na página do FNDE). ⚠️ **licença dos dados do PNATE não verificada** |
+| **Licença** | SETE: **software livre MIT** (declarado na página do FNDE). ❌ **licença dos dados do PNATE não verificada** — **Ação: e-SIC protocolado ao FNDE (protocolo ______) — aguardando resposta.** |
 | **Formato** | CSV/planilha no portal de dados abertos do FNDE — conteúdo declarado: *"dados mensais sobre estimativa de repasses, valor per capita, alunos da zona rural contemplados e consulta à prestação de contas"*. ⚠️ **formato e colunas exatos não verificados** (SPA sem SSR, API 401) |
 | **Granularidade** | **município** (e UF). O SETE rastreia rotas até a escola, mas **a exposição pública em escala escolar não foi verificada** |
 | **Periodicidade** | **mensual** — a mais compatível com o ciclo de gestão escolar do lote |
@@ -216,7 +216,7 @@ Painel de Indicadores de Monitoramento) · ⚠️ `.../programas/pnct` → **404
 |---|---|
 | **URL** | https://www.gov.br/fnde/pt-br/acesso-a-informacao/dados-abertos/o-que-se-pode-acessar · http://www.fnde.gov.br/dadosabertos/ · https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/programas/proinfancia |
 | **Mantenedor** | FNDE/MEC — CGEST (análise) e CGIMP (monitoramento de obras); PDA-FNDE 2026-2028 publicado |
-| **Licença** | ⚠️ **não verificada** — o FNDE publica PDA e declara transparência ativa, mas não foi localizado termo de uso/licença de reutilização. Base legal: Lei 12.527/2011 |
+| **Licença** | ❌ **não verificada** — o FNDE publica PDA e declara transparência ativa, mas não foi localizado termo de uso/licença de reutilização. Base legal: Lei 12.527/2011. **Ação: e-SIC protocolado ao FNDE (protocolo ______) — aguardando resposta.** |
 | **Formato** | CSV/planilha via portal de dados abertos — ⚠️ **formato, nomenclatura de colunas e dicionário não verificados** |
 | **Granularidade** | **município** — a página oficial FNDE descreve: *"obras e empreendimentos para construção e reestruturação de creches e pré-escolas (antigo Proinfância), com monitoramento de repasses, finalidades e execução física"* |
 | **Periodicidade** | **irregular** — por campanha/ciclo PAR e por situação de obra |
