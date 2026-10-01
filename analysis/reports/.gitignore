@@ -1,0 +1,5 @@
+# Artefatos gerados ao renderizar o relatório.
+# O que é versionado é apenas o .Rmd.
+*.html
+*.knit.md
+.cache/
