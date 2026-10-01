@@ -760,9 +760,29 @@ entre colunas conta outra, e é essa que importa aqui.
 
 **Severidade: 🔴 alta. Este é o achado que mais merece atenção.**
 
-Duas das três views fazem `LEFT JOIN` contra tabelas vazias e preenchem as
-colunas numéricas com `COALESCE(..., 0)`. O resultado é que **"não temos dado" e
-"temos zero" tornam-se indistinguíveis** para qualquer consumidor.
+Duas das três views fazem `LEFT JOIN` contra tabelas vazias e publicam as
+colunas numéricas como `0`. O resultado é que **"não temos dado" e "temos zero"
+tornam-se indistinguíveis** para qualquer consumidor.
+
+> **Correção de precisão (2026-10-01, ao implementar a issue #154).** A versão
+> anterior deste relatório atribuía o defeito a `COALESCE(x, 0)` nas "três views".
+> Ao ler o SQL, o mecanismo é mais estreito e mais preciso do que isso:
+>
+> | View | `COALESCE`? | Mecanismo real do `0` falso | Defeituosa? |
+> |---|---|---|---|
+> | `analytics.mobilidade_escola` | sim, 3 colunas | `COALESCE(SUM(...), 0)` (vmda) **e** `COUNT(...)` sobre conjunto vazio (acidentes, sinistros) | **sim** |
+> | `analytics.acessibilidade_saude` | **não tem nenhum** | `COUNT(u.codigo_cnes)` → 0, e `CASE ... ELSE 'Sem UBS no município'` | **sim**, por outro caminho |
+> | `analytics.esforco_fiscal_educacao` | não | — faz `LEFT JOIN` sem `COALESCE` e propaga `NULL` | **não** |
+>
+> Duas consequências que mudam a correção:
+>
+> 1. `esforco_fiscal_educacao` **não está defeituosa** e é o padrão de referência,
+>    não um alvo. Está vazia (0 linhas) porque `WHERE receita_total > 0` e a SICONFI
+>    não tem dado — honesto, sem zeros falsos.
+> 2. Em `acessibilidade_saude` remover o `COALESCE` não bastaria, porque não há
+>    `COALESCE` nenhum: é preciso distinguir `COUNT` que devolve 0 por "conjunto
+>    vazio" da afirmação textual do `CASE`. A correção tem de atuar sobre a
+>    **causa** (a fonte estar vazia), não sobre a expressão.
 
 `analytics.acessibilidade_saude` — 145.734 escolas:
 
@@ -796,14 +816,102 @@ real, a afirmação "não há acidentes" ou "não há posto de saúde" para **to
 escolas do país**. No painel do gestor isso apareceria como um mapa de
 "segurança viária perfeita" e "sem acesso à saúde".
 
-**Correção recomendada:** substituir `COALESCE(x, 0)` por `x` nestas views
-(ou, se o `0` for semanticamente necessário, exigir que o consumidor filtre
-`status_* <> 'sem_*'`), e adicionar um teste de regressão que falhe quando uma
-tabela-fonte está vazia mas a view reporta `0`.
+### 6.1b Achado posterior: as mesmas views também inflavam números com dado
+
+**Severidade: 🔴 alta. Descoberto ao implementar a correção de #154.**
+
+Este achado **não** aparece na leitura de nulos — só aparece quando há dado, e
+nunca houve carga real, então o relatório original não o viu. Vale a pena
+deixá-lo escrito porque é o erro que permanece *depois* de uma correção
+superficial.
+
+A definição anterior de `analytics.mobilidade_escola` fazia **sete `LEFT JOIN`
+numa única query com um `GROUP BY` único**. Isso é produto cartesiano: o número
+de linhas de cada fonte multiplica o das outras seis. Como todas as agregações
+(`COUNT(acidentes)`, `SUM(vmda)`) eram calculadas nessa mesma query, elas
+saíam multiplicadas.
+
+Medido com dados sintéticos (3 trechos ANTT no município de São Paulo, 6
+acidentes e 1.500 VMDA reais):
+
+| Métrica | Verdade de campo | Definição antiga | Definição corrigida |
+|---|---|---|---|
+| `acidentes_12m` | 6 | **12** (×2) | 6 ✅ |
+| `vmda_total_municipio` | 1.500 | **9.000** (×6) | 1.500 ✅ |
+
+O fator de inflação é o produto do número de linhas das outras fontes — ou
+seja, **varia por município** e não é um fator constante que se possa corrigir
+por um fator de escala. Um dado cuja erro depende do número de outras fontes
+carregadas não é auditável.
+
+Por isso a correção de #154 não é "tirar o `COALESCE`": é **pré-agregar cada
+fonte ao seu grão** (município ou escola) antes do join, e eliminar o `GROUP BY`
+único. Só assim é possível distinguir zero real de ausência — o `GROUP BY`
+conjunto não permite, porque o `0` do `COUNT` e o `NULL` do join chegam
+misturados na mesma linha.
+
+### 6.1c Como o `sqitch verify` não falha — e o que isso significa para os testes
+
+**Severidade: 🟡 média. Afeta a confiança em todos os testes de migração do
+projeto, não só estes.**
+
+Os `verify/*.sql` deste repositório terminam em `SELECT 1 FROM ... LIMIT 1`.
+Testado empiricamente contra o Sqitch 1.6.1: **essa forma nunca falha.** O
+Sqitch considera a verificação bem-sucedida se o script não produzir **erro**;
+uma query que devolve a linha `f` conta como sucesso.
+
+```bash
+# verify com SELECT CASE WHEN 1 = 2 THEN TRUE ELSE FALSE END;
+Verifying local
+  * teste_verifica .. ok      # <-- "ok" com a asserção a devolver false
+Verify successful
+```
+
+Isto significa que **os `verify` existentes não são testes**: são registos de
+que a view existe. Um teste de regressão escrito à mesma forma passaria
+mesmo com o defeito presente — que é precisamente o que a issue #154 pedia
+para não acontecer.
+
+O `verify/analytics_ausencia_visivel.sql` usa `DO $$ … RAISE EXCEPTION`, que
+falha de verdade (verificado nos dois sentidos: passa quando a propriedade se
+cumpre, sai com `Errors: 1` quando não se cumpre). Contra a definição antiga,
+o script emite erro com **145.734** escolas afetadas.
+
+Os `verify` antigos não foram corrigidos neste ciclo — é trabalho à parte, e
+não é seguro alterá-los em conjunto com uma mudança de dados sem antes medir
+quantos estão a falhar de forma latente.
+
+### 6.1d O que a correção de #154 fez
+
+Não "tirar o `COALESCE`". Três estados, não dois:
+
+| Estado da fonte | Estado do município | `acidentes_12m` |
+|---|---|---|
+| Sem snapshot | — | `NULL` (não avaliável) |
+| Com snapshot | Sem acidentes | `0` (zero real) |
+| Com snapshot | Com acidentes | `N` |
+
+Implementado em `data_pipeline/` (change `analytics_ausencia_visivel`):
+
+- CTE `fontes` conta os registos de cada fonte, para separar "fonte vazia" de
+  "município sem oferta";
+- cada fonte é pré-agregada ao seu grão e entra por `LEFT JOIN` individual,
+  eliminando o fan-out;
+- `status_isocrona` e `status_conexao_antt` ganham o terceiro estado
+  `fonte_vazia`, para que o consumidor nunca tenha de inferir a causa a partir
+  do valor;
+- 20 asserções de regressão em `verify/`, incluindo as três que protegem o
+  sentido inverso (com a fonte carregada, município sem oferta tem de dar `0`,
+  não `NULL`) — sem elas, a correção seria fácil de "resolver" apagando todos os
+  zeros e o relatório passaria a esconder municípios inteiros.
+
+Contrato de colunas preservado (31 + 16 = 47), o que permitiu `CREATE OR
+REPLACE VIEW` e portanto um `revert` que restaura exatamente a definição
+anterior.
 
 ## 6.2 O de-para RENAEST é um placeholder disfarçado
 
-**Severidade: 🔴 alta. É o achado que mais easily passa por "dado pronto".**
+**Severidade: 🔴 alta. É o achado que mais facilmente passa por "dado pronto".**
 
 `clean.renaest_localidade_municipio` tem 5.573 linhas, **zero nulos em todas as
 10 colunas**, e `clean.renaest_sinistro` depende dela. À primeira vista parece
@@ -1090,11 +1198,29 @@ nominal.
 
 ### Passo 2 — Tornar a ausência de dado visível (corrige o achado mais grave)
 
-Nas três views, substituir `COALESCE(<indicador>, 0)` por `NULL` quando a
-tabela-fonte está sem snapshot. Onde o `0` for semanticamente necessário,
-manter as colunas `status_*` como autoridade e exigir filtro no consumidor.
-Adicionar teste de regressão: *se uma tabela-fonte está vazia, a view não pode
-reportar `0`*.
+**✅ Feito** pela issue **#154**, change `analytics_ausencia_visivel`
+(ver secções 6.1b–6.1d). Resumo do que se descobriu versus o que este
+relatório propunha:
+
+- O defeito **não** era `COALESCE(x, 0)` nas três views: `esforco_fiscal_educacao`
+  nunca teve o problema (é o padrão de referência), e `acessibilidade_saude`
+  não tem um único `COALESCE` — o `0` vem de `COUNT()` e a afirmação vem de um
+  `CASE ... ELSE`.
+- Só remover o `COALESCE` não resolvia. Foi preciso distinguir **três** estados
+  (fonte vazia / município sem oferta / município com dado) e pré-agregar cada
+  fonte ao seu grão.
+- O `revert` da change restaura a definição anterior **incluindo o defeito**, e
+  isso está escrito no próprio ficheiro para ninguém o usar por engano.
+
+Dois achados novos surgiram ao implementar, e não estavam no plano original:
+
+- **Fan-out (§6.1b):** as mesmas views inflavam `acidentes_12m` ×2 e
+  `vmda_total_municipio` ×6 com dados sintéticos. Invisível enquanto as tabelas
+  estão vazias.
+- **`sqitch verify` não falha (§6.1c):** os `verify/*.sql` deste repositório
+  passam mesmo quando a asserção é falsa. **Isto afeta todos os testes de
+  migração do projeto** e é um risco mais largo do que a #154 — merece issue
+  própria, a medir antes de mexer.
 
 ### Passo 3 — Tornar o de-para RENAEST verdadeiro
 
