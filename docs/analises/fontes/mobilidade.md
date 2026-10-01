@@ -306,7 +306,7 @@ caminho de verificação** para RENAVAM e RENAEST
 |---|---|
 | **URL** | https://dados.recife.pe.gov.br · https://dados.recife.pe.gov.br/dataset/transporte-escolar-gratuito · https://dados.recife.pe.gov.br/dataset/pesquisa-origem-destino |
 | **Mantenedor** | Emprel (Empresa de Tecnologia da Informação do Recife); autores por órgão — Secretaria de Educação, Secretaria de Política Urbana e Licenciamento, CTTU |
-| **Licença** | ⚠️ **ODbL** (Open Data Commons Open Database License) — declarada em todos os conjuntos verificados. **É copyleft share-alike**: ver o rebaixamento aplicado |
+| **Licença** | ❌ **ODbL** (Open Data Commons Open Database License) — declarada em todos os conjuntos verificados. **É copyleft share-alike**: leitura permitida; materialização sob share-alike = decisão do jurídico. **Ação: e-SIC protocolado a secretarias municipais de educação (protocolo(s) ______) — aguardando resposta.** |
 | **Formato** | CSV e JSON. Recursos com `datastore_active: true` ficam **consultáveis por SQL** via API CKAN. Há PDF de dicionário de dados |
 | **Granularidade** | **escolar** no transporte escolar (uma linha por unidade de ensino) · **par origem-destino** na pesquisa OD · **trecho viário** nas camadas de fluxo e velocidade |
 | **Periodicidade** | **mista**: transporte escolar **anual** (2023); velocidade de via **anual por ano** (2016–2026); pesquisa OD **encerrada** (2016) |

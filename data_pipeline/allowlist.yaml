@@ -351,6 +351,58 @@ sources:
         description: "Overpass QL query para POIs, vias, transporte público"
         license: "ODbL 1.0 (OpenStreetMap)"
 
+  - id: inep
+    name: "INEP - Censo Escolar, IDEB, ENEM, Painel PNE"
+    host: download.inep.gov.br
+    base_url: "https://download.inep.gov.br"
+    resources:
+      - path: "/microdados_censo_escolar_*.zip"
+        method: GET
+        description: "Microdados Censo Escolar (1995-2025) — aguardando e-SIC para licença"
+        license: "Não verificada (e-SIC protocolado ______)"
+      - path: "/microdados_ideb_*.zip"
+        method: GET
+        description: "Microdados IDEB/ENEM — aguardando e-SIC para licença"
+        license: "Não verificada (e-SIC protocolado ______)"
+
+  - id: mec_nicbr
+    name: "MEC/NIC.br - Medidor Educação Conectada"
+    host: educacaoconectada.mec.gov.br
+    base_url: "https://educacaoconectada.mec.gov.br"
+    resources:
+      - path: "/download"
+        method: GET
+        description: "CSV + dicionário do Medidor Educação Conectada (mensal/trimestral)"
+        license: "Não verificada (e-SIC protocolado ______)"
+
+  - id: fnde
+    name: "FNDE - PNATE, Novo PAC/Proinfância, PDDE"
+    host: www.gov.br
+    base_url: "https://www.gov.br/fnde/pt-br/acesso-a-informacao"
+    resources:
+      - path: "/dadosabertos/pnate"
+        method: GET
+        description: "PNATE mensal — URL + dicionário (e-SIC protocolado ______)"
+        license: "Não verificada (e-SIC protocolado ______)"
+      - path: "/dadosabertos/novo-pac"
+        method: GET
+        description: "Novo PAC/Proinfância — URL + dicionário (e-SIC protocolado ______)"
+        license: "Não verificada (e-SIC protocolado ______)"
+      - path: "/dadosabertos/pdde"
+        method: GET
+        description: "PDDE — URL + dicionário (e-SIC protocolado ______)"
+        license: "Não verificada (e-SIC protocolado ______)"
+
+  - id: secretarias_educacao
+    name: "Secretarias Municipais de Educação - Transporte Escolar"
+    host: variado
+    base_url: "https://falabr.cgu.gov.br"
+    resources:
+      - path: "/e-sic"
+        method: GET
+        description: "Vagas de transporte escolar por unidade/turno (e-SIC municipal)"
+        license: "Não verificada (e-SIC municipal protocolado ______)"
+
 # ------------------------------------------------------------
 # RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
 # ------------------------------------------------------------
