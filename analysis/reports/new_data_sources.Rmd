@@ -1,0 +1,1206 @@
+---
+title: "Novas fontes de dados governamentais — inventário, enfoque e sanity check"
+subtitle: "Issue #123 (matriz de novos dados) → fases 0 a 6 · EduMaps"
+author: "EduMaps — camada analítica"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    # Numeração é manual nos títulos (ver seções 1..9 e apêndices).
+    number_sections: false
+    code_folding: hide
+    df_print: kable
+    theme: cosmo
+params:
+  usar_cache: true
+  host: "127.0.0.1"
+  port: 5432
+  dbname: "edumaps_dev"
+  user: "devel"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE,
+  fig.width = 11, fig.height = 6, dpi = 120,
+  out.width = "100%", fig.align = "center"
+)
+options(knitr.kable.NA = "—")
+
+suppressPackageStartupMessages({
+  library(DBI); library(RPostgres); library(dplyr); library(tidyr)
+  library(ggplot2); library(scales)
+})
+
+# Chave do cache: muda quando muda a conexão de destino.
+# rmarkdown executa com o diretório de trabalho na pasta do próprio .Rmd,
+# por isso o cache fica em analysis/reports/.cache/.
+CACHE_DIR  <- ".cache"
+CACHE_KEY  <- paste0(params$dbname, "@", params$host, ":", params$port)
+CACHE_FILE <- file.path(CACHE_DIR, paste0("perfil-", CACHE_KEY, ".rds"))
+
+# Formatadores usados em várias seções.
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
+formatar_bytes <- function(x) {
+  vapply(x, function(b) {
+    if (is.na(b)) return("—")
+    unidades <- c("B", "kB", "MB", "GB", "TB")
+    i <- 1
+    while (b >= 1024 && i < length(unidades)) { b <- b / 1024; i <- i + 1 }
+    if (i == 1) sprintf("%d %s", as.integer(b), unidades[i])
+    else sprintf("%.1f %s", b, unidades[i])
+  }, character(1))
+}
+
+formatar_pct <- function(x) {
+  ifelse(is.na(x), "—", sprintf("%s%%", format(x, nsmall = 2, decimal.mark = ",")))
+}
+
+# Renderiza o perfil de colunas de um objeto como tabela Markdown.
+mostrar_objeto <- function(qualificado, titulo = NULL) {
+  partes <- strsplit(qualificado, "\\.")[[1]]
+  d <- dplyr::filter(perfil, schema == partes[1], objeto == partes[2]) %>%
+    dplyr::transmute(
+      `Coluna`    = coluna,
+      `Tipo`      = tipo,
+      `NOT NULL`  = ifelse(nullable == "NO", "sim", "não"),
+      `Nulos`     = ifelse(is.na(pct_nulos), "—", format(nulos, big.mark = ".")),
+      `% nulos`   = formatar_pct(pct_nulos),
+      `Distintos` = ifelse(n_linhas == 0, "—", format(n_distintos, big.mark = "."))
+    )
+  cat("\n\n**", titulo %||% qualificado, "**\n\n", sep = "")
+  print(knitr::kable(d, col.names = names(d)))
+}
+```
+
+# Por que este relatório
+
+A [issue #123](https://github.com/marcoarthur/leaflet/issues/123) produceiu a
+**matriz de priorização de fontes de dados abertas** que fechou o acervo do
+Tech Lead. Ela não implementou nada: o escopo declarado era "catalogar e
+priorizar **antes** de qualquer pipeline".
+
+As issues seguintes (**#124 a #132**) transformaram a matriz em migrations
+Sqitch, e a **#134** acrescentou o dicionário canônico do Censo Escolar. Entre
+`886b571` (fase 0) e `add5331` (fase 6), o repositório ganhou **28 objetos
+novos** em `clean.*` e `analytics.*`.
+
+Este relatório responde a três perguntas, uma por seção:
+
+1. **O que entrou** — cada nova entrada, com mantenedor, licença, granularidade
+   e o **enfoque** analítico que justifica sua existência (a lacuna do IVET que
+   ela endereça).
+2. **Quanto há** — quantas linhas existem **hoje** em cada tabela e view, com o
+   tamanho em disco.
+3. **O dado é confiável** — o *sanity check*: todas as colunas, seus tipos, e a
+   **porcentagem de nulos**, coluna a coluna, mais as checagens que a
+   porcentagem de nulos sozinha não revela.
+
+> **Conclusão principal, antecipada:** o *schema* das 7 fases está íntegro e
+> bem documentado, mas **a ingestão de dados não aconteceu**. Das 28 entradas,
+> **4 têm dados**; 21 tabelas e 1 view estão vazias; e as 2 views que têm linhas
+> devolvem **100% de nulos em todas as colunas de indicador** — Worse, algumas
+> dessas colunas são preenchidas com `0` em vez de `NULL`, o que faz "sem dado"
+> aparecer como "zero ocorrências". Os detalhes e a gravidade estão na
+> [seção 6](#6-sanity-check--veredito).
+
+---
+
+# 1. Escopo e proveniência
+
+| Item | Valor |
+|---|---|
+| Issue de origem | [#123](https://github.com/marcoarthur/leaflet/issues/123) — catálogo e priorização de fontes abertas |
+| Matriz gerada | `docs/analises/fontes_de_dados.md` + 8 fichas de domínio em `docs/analises/fontes/` (61 fontes catalogadas, 21 `[alta]`) |
+| Implementação | Issues #124 (fase 0) · #125 (fase 1) · #126 (fase 2) · #127 (fase 3) · #128 (fase 4) · #129 (fase 5) · #130/#131 (fase 6) |
+| Pull requests | #141 a #149 |
+| Migrations Sqitch | `import_metadata_fase0`, `malha_municipio`, `malha_setor_censitario`, `ibge_agregados`, `censo2022_setor`, `cnes_estabelecimentos`, `sisab_aps`, `analytics_acessibilidade_saude`, `mapbiomas_cobertura`, `inmet_alerta`, `inmet_bdmep`, `siconfi_receita`, `siconfi_despesa`, `transferencia_educ`, `analytics_esforco_fiscal`, `brazilcrime_municipio`, `antt_acidente_trecho`, `antt_trecho_geodados`, `renaest_sinistro`, `isocrona_escolar`, `antt_od_municipio`, `renavam_frota_municipio`, `antt_contagem_equipamento`, `snv_trecho_vmda`, `recife_transporte_escolar`, `renaest_localidade_municipio`, `analytics_mobilidade_escola` (+ `censo_data_dictionary`, issue #134) |
+| Fora do escopo | A issue #123 explicitamente **não** implementava ingestão. Este relatório mede o quanto dessa escada foi de fato percorrida. |
+
+## 1.1 As seis lacunas do IVET que as fases endereçam
+
+O IVET (Índice de Vulnerabilidade Educacional Territorial) tinha seis lacunas
+identificadas na #123. Cada fase do pipeline mapeia para uma delas:
+
+| Lacuna | Fase | Fontes trazidas |
+|---|---|---|
+| **1 — Saúde** | 2 | CNES, SISAB/PIMMB |
+| **2 — Segurança** | 5 | BrazilCrime, ANTT (acidentes), RENAEST (sinistros) |
+| **3 — Conectividade** | — | **Nenhuma.**Única lacuna sem solução verificada; depende de e-SIC |
+| **4 — Investimentos** | 4 | SICONFI (receitas/despesas), CGU (transferências) |
+| **5 — Mobilidade** | 6 | Isocronas OSRM/Valhalla, ANTT OD, RENAVAM, ANTT contagem, DNIT SNV/VMDA, transporte escolar Recife |
+| **6 — Meio ambiente e clima** | 3 | MapBiomas, INMET Alerta-AS, INMET BDMEP |
+| *habilitadora* | 1 | Malhas IBGE, agregados SIDRA, Censo 2022 por setor censitário |
+
+A **fase 1** é habilitadora: nada é indicator, é a base territorial e
+demográfica que todas as outras fases endereçam por município ou por setor
+censitário.
+
+---
+
+# 2. Inventário das novas entradas
+
+Esta é a tabela-índice. Cada linha é uma entrada nova: o objeto no banco, a
+fonte que a alimenta, o **enfoque** (a pergunta analítica que ela responde) e a
+disciplina de privacidade/granularidade que a migration impõe.
+
+A coluna `enfoque` é a mais importante do relatório: é ela que distingue uma
+tabela que existe de uma tabela que serve ao problema central do EduMaps.
+
+```{r registro}
+registro <- data.frame(
+  fase = c(
+    "0",
+    "1", "1", "1", "1",
+    "2", "2", "2",
+    "3", "3", "3",
+    "4", "4", "4", "4",
+    "5", "5", "5", "5",
+    "6", "6", "6", "6", "6", "6", "6", "6",
+    "134"
+  ),
+  objeto = c(
+    "clean.import_metadata",
+    "clean.malha_municipio",
+    "clean.malha_setor_censitario",
+    "clean.ibge_agregados",
+    "clean.censo2022_setor",
+    "clean.cnes_estabelecimentos",
+    "clean.sisab_aps",
+    "analytics.acessibilidade_saude",
+    "clean.mapbiomas_cobertura",
+    "clean.inmet_alerta",
+    "clean.inmet_bdmep",
+    "clean.siconfi_receita",
+    "clean.siconfi_despesa",
+    "clean.transferencia_educ",
+    "analytics.esforco_fiscal_educacao",
+    "clean.brazilcrime_municipio",
+    "clean.antt_acidente_trecho",
+    "clean.antt_trecho_geodados",
+    "clean.renaest_sinistro",
+    "clean.isocrona_escolar",
+    "clean.antt_od_municipio",
+    "clean.renavam_frota_municipio",
+    "clean.antt_contagem_equipamento",
+    "clean.snv_trecho_vmda",
+    "clean.recife_transporte_escolar",
+    "clean.renaest_localidade_municipio",
+    "analytics.mobilidade_escola",
+    "clean.censo_data_dictionary"
+  ),
+  tipo = c(
+    "tabela",
+    "tabela", "tabela", "tabela", "tabela",
+    "tabela", "tabela", "view",
+    "tabela", "tabela", "tabela",
+    "tabela", "tabela", "tabela", "view",
+    "tabela", "tabela", "tabela", "tabela",
+    "tabela", "tabela", "tabela", "tabela", "tabela", "tabela", "tabela", "view",
+    "tabela"
+  ),
+  fonte = c(
+    "EduMaps (interno)",
+    "IBGE — Malhas territoriais 2024", "IBGE — Malha setor censitário 2022",
+    "IBGE — API SIDRA v3", "IBGE — Censo Demográfico 2022",
+    "Ministério da Saúde — CNES (DATASUS)", "Ministério da Saúde — SISAB/PIMMB",
+    "cruzamento CNES × SISAB × Censo Escolar",
+    "MapBiomas — Coleção 9", "INMET — Alerta-AS (CAP 1.2)", "INMET — BDMEP",
+    "Tesouro Nacional — SICONFI (tesouror)", "Tesouro Nacional — SICONFI (tesouror)",
+    "CGU — Portal da Transparência", "cruzamento SICONFI × CGU × Censo Escolar",
+    "BrazilCrime (CRAN) / SSP / IBGE", "ANTT — acidentes rodoviários",
+    "ANTT — geodados de trechos", "Ministério dos Transportes — RENAEST",
+    "OSRM / Valhalla (auto-hospedado)", "ANTT — MONITRIIP (bilhetes de passagem)",
+    "Ministério dos Transportes — RENAVAM", "ANTT — contagem de tráfego",
+    "DNIT / INDE — SNV + VMDA", "Prefeitura do Recife — CKAN",
+    "IBGE (semente) + RENAEST", "cruzamento isocronas × ANTT × RENAVAM × DNIT",
+    "INEP — microdados do Censo Escolar (dicionário canônico)"
+  ),
+  licenca = c(
+    "—",
+    "Domínio público (IBGE)", "Domínio público (IBGE)",
+    "Domínio público (IBGE)", "Domínio público (IBGE)",
+    "CC BY-ND 3.0 (dados abertos SUS)", "CC BY 3.0 (dados abertos SUS)", "derivada",
+    "CC-BY-4.0 (MapBiomas)", "CC-BY-4.0 (INMET)", "CC-BY-4.0 (INMET)",
+    "Domínio público (Tesouro Nacional)", "Domínio público (Tesouro Nacional)",
+    "CC-BY-4.0 (CGU)", "derivada",
+    "GPL-3 (CRAN)", "CC-BY-4.0 (ANTT)", "CC-BY-4.0 (ANTT)", "CC-BY-4.0 (Transportes)",
+    "BSD-2-Clause (OSRM) / MIT (Valhalla)", "CC-BY-4.0 (ANTT)", "CC-BY-4.0 (Transportes)",
+    "CC-BY-4.0 (ANTT)",
+    "Public Domain (INDE) — ⚠️ texto contraditório, decisão jurídica pendente",
+    "ODbL 1.0 (share-alike) — ⚠️ materialização exige decisão jurídica",
+    "Domínio público (IBGE)",
+    "derivada",
+    "⚠️ não registada em `import_metadata` (ver secção 6.3)"
+  ),
+  granularidade = c(
+    "carga (batch)",
+    "município (polígono)", "setor censitário (polígono)",
+    "município × ano × variável", "setor censitário",
+    "ponto (lat/long) + município", "município × mês",
+    "escola (LEFT JOIN Censo)", "município × ano × classe",
+    "evento (município × período)", "estação × dia",
+    "município × ano × categoria", "município × ano × função",
+    "município × programa × período", "município × ano",
+    "município × ano", "trecho rodoviário", "trecho rodoviário",
+    "localidade × UF × data", "grade H3 res.10 (~1 km) por escola",
+    "município × município × mês", "município × mês",
+    "equipamento × data (via trecho)", "trecho rodoviário",
+    "escola (Recife, prova de viabilidade)", "localidade → município",
+    "escola (LEFT JOIN Censo)",
+    "coluna × tabela do Censo Escolar"
+  ),
+  lacuna = c(
+    "habilitadora",
+    "habilitadora", "habilitadora", "habilitadora", "habilitadora", "1, 5",
+    "1", "1", "1",
+    "6", "6", "6",
+    "4", "4", "4", "4",
+    "2", "2, 5", "habilitadora", "2, 5",
+    "5", "5", "5", "5", "5", "5", "habilitadora", "5"
+  ),
+  enfoque = c(
+    "Quem carregou o quê, de onde, sob qual licença. É a única fonte de verdade sobre proveniência de todo o pipeline novo; habilita a política de allowlist de endpoints da fase 0. Reúne as duas metades numa tabela só: identifica o lote e seu arquivo, e registra a licença. Sem ela nenhuma das outras 27 entradas é auditável.",
+    "Base territorial de referência. Habilita todas as fases por município: é a FK de 11 das 21 tabelas novas. Corrige geometrias inválidas na migração (ST_MakeValid) e fixa SRID 4674.",
+    "Malha de 316.574 setores (2022). É o que permite calcular área de influência escolar *de verdade*, em vez de buffering circular em torno do centróide.",
+    "Formato longo (tabela_id × variável × classificação) para qualquer agregado SIDRA. Generaliza o `clean.dados_ibge` (que só tem PIB em wide) sem criar uma tabela por indicador.",
+    "Perfil socioeconômico e de instrução no nível mais fino possível. Carrega renda média e per capita, escolaridade e raça por setor. Habilita IVET sub-municipal — o salto de município para setor censitário.",
+    "Oferta de saúde em ponto (lat/long), sanitizada na ingestão: nome, CNPJ, telefone, e-mail e endereço são descartados. Responde 'existe unidade de saúde a que distância da escola?'.",
+    "Efetividade da atenção primária: cobertura, equipes de saúde da família ativas, vagas ocupadas e a categoria IVS. Responde 'a rede existe mas está ociosa?' — o indicador que oferta pontual não capta.",
+    "Junta oferta (CNES), efetividade (SISAB) e demanda (Censo Escolar) numa linha por escola. É o primeiro produto analítico cross-fonte das fases: distância até a UBS, nº de UBS no município e uma classificação de acesso.",
+    "Exposição a risco ambiental por classe de uso do solo, arealizada sobre a área de influência da escola. Responde 'a escola está sobre Solo Exposto, área industrial ou área de proteção?'",
+    "O **evento** que interrompe a aula, não a exposição média. Severidade, risco e instruções. Responde Directly 'quantas aulas foram perdidas por evento extremo Severe ou Extremo?'",
+    "Série diária de 26 anos de pressão, temperatura, umidade, vento e precipitação. Base para **normalização climática**: distingue um evento extraordinário da média histórica do lugar.",
+    "Receita municipal por natureza e por origem (própria / transferência / FUNDEB). Responde 'quanto o município é capaz de financiar sozinho?' — insumo direto do índice de autonomia fiscal.",
+    "Despesa municipal por função e subfunção, com os três estágios do estágio do gasto (empenhado, liquidado, pago). A função 12 é educação. Responde 'do que foi orçado, quanto foi de fato pago?'",
+    "Repasse federal por programa (FUNDEB, PNATE, Proinfância, PDDE). Responde 'quanto o município recebeu da União para educação?' — fecha o ciclo de financiamento junto com a receita própria.",
+    "Consolida as três fontes financeiras em 28 colunas e produz os indicadores de uso: FUNDEB por aluno, despesa por aluno, % da receita em educação, autonomia fiscal e dependência de FUNDEB/federal. Responde 'o esforço fiscal do município é compatível com a demanda escolar?'",
+    "Criminalidade por município e ano, 11 tipologias, com **supressão de célula pequena** (count < 5) sinalizada por flag. Responde 'o entorno da escola está exposto a qual tipo de violência?' — nunca por escola, por desenho de LGPD.",
+    "Acidentes por trecho rodoviário. A chave bruta **não tem município**: exige junção obrigatória com `antt_trecho_geodados`. Responde 'qual trecho no entorno concentra acidentes?'",
+    "Tabela de junção que resolve trecho → município via geodados ANTT. Sem ela, acidentes e contagem de tráfego ficam órfãos. Habilitadora das duas tabelas de transporte.",
+    "Sinistros de trânsito por localidade. Também por localidade, não município — por isso depende do de-para `renaest_localidade_municipio`. Responde 'quais trechos registram sinistros com vítima?'",
+    "Isocronas de 10/20/30/45/60 min por escola, agregadas em grade H3 (~1 km), nunca por escola isolada. Registra versão do engine e data do tileset. Responde 'quantas pessoas alcança a escola a pé em 30 min?' — é a métrica de acesso mais informativa do lote.",
+    "Matriz origem-destino de ônibus rodoviário intermunicipal, município × município × mês, com **supressão obrigatória** de bilhetagem < 10. Responde 'de onde vem o aluno de fora e para onde ele vai?'",
+    "Frota de veículos por município e mês (automóveis, motos, ônibus). Responde 'existe alternativa de transporte individual/motorizado?' — proxy de dependência do carro e de acesso ao emprego pelo aluno.",
+    "Contagem volumétrica em equipamentos de medição, somente rodovias federais concedidas. Responde 'quanto tráfego passa por aquele trecho?'",
+    "Volume Médio Diário Anual **estimado** por trecho. O COMMENT da migration é explícito: **é modelagem, não medição**. Há decisão jurídica de licença pendente. Responde 'qual a capacidade e a carga da via no entorno?'",
+    "Única fonte **com chave de escola** de todo o lote de mobilidade. ODbL share-alike. Serve como prova de viabilidade do indicador, não como fonte a ingerir. Responde 'a escola oferta transporte escolar e com que lotação?'",
+    "De-para localidade → município, com `match_type` (exact/fuzzy/manual) e `match_score`. Sem ele, `renaest_sinistro` não tem como ser agregada ao município. Habilitadora da fase 5.",
+    "Consolida as 7 fontes de mobilidade em uma linha por escola: isocronas, OD de saída e entrada, frota, VMDA, acidentes, sinistros e transporte escolar do Recife, mais dois indicadores derivados e **duas colunas de status explícito** (`sem_isocrona`, `sem_conexao_antt`). É a maior superfície analítica das fases.",
+    "Dicionário de dados canônico do Censo Escolar: descreve cada coluna das tabelas `censo_escolas`, `censo_docentes`, `censo_matriculas` e `censo_gestor`, com domínio de valores e versionamento por edição. Responde 'o que significa esta coluna e quando mudou?'. Não é uma fonte nova — é metadado sobre as existentes, e por isso é a peça que torna o Censo auditável."
+  ),
+  guarda = c(
+    "—",
+    "geometria validada (CHECK ST_IsValid)", "geometria validada",
+    "—", "supressão de célula pequena sinalizada por flag",
+    "sanitizado na ingestão (sem PII)", "agregado mensal por município",
+    "nunca expor CNES além do agregado",
+    "coleção fixa (não interpolar %d no ETL)",
+    "evento, não exposição", "estação × dia",
+    "SEMPRE filtrar classificacao='realizada'", "SEMPRE filtrar classificacao='realizada'",
+    "WAF intermitente → retry com backoff",
+    "SEMPRE filtrar classificacao='realizada'",
+    "agregação obrigatória; supressão count < 5; NUNCA por escola",
+    "junção obrigatória com geodados", "junção obrigatória com acidentes",
+    "agrega por localidade/UF; NUNCA expor por escola",
+    "agregação em grade H3; NUNCA por escola isolada; tileset auto-hospedado",
+    "supressão de bilhetagem < 10 ANTES de agregar; tipo_gratuidade fora da camada",
+    "não por veículo individual",
+    "somente rodovias federais concedidas",
+    "modelagem, não medição; ADR de licença pendente",
+    "ODbL share-alike; agregar a no mínimo zona OD",
+    "exige validação humana posterior",
+    "—",
+    "versionamento declarado no schema, não exercitado nos dados"
+  ),
+  stringsAsFactors = FALSE
+)
+registro <- registro[!duplicated(registro$objeto), ]
+```
+
+```{r registro-tabela}
+knitr::kable(
+  select(registro, fase, objeto, tipo, fonte, licenca, granularidade, lacuna = lacuna),
+  caption = paste0("Tabela 1 — Inventário das ", nrow(registro),
+                   " entradas novas (25 tabelas + 3 views), por fase."),
+  col.names = c("Fase", "Objeto", "Tipo", "Fonte", "Licença", "Granularidade", "Lacuna"),
+  align = c("c", "l", "l", "l", "l", "l", "c")
+)
+```
+
+```{r registro-enfoque}
+knitr::kable(
+  select(registro, objeto, enfoque = enfoque),
+  caption = paste0("Tabela 2 — Enfoque analítico de cada entrada: a pergunta que ela responde. ",
+                   "Esta é a coluna que separa uma tabela que existe de uma tabela que serve."),
+  col.names = c("Objeto", "Enfoque")
+)
+```
+
+```{r registro-guarda}
+knitr::kable(
+  select(registro, objeto, guarda = guarda),
+  caption = "Tabela 3 — Disciplina de privacidade, granularidade e armadilhas de uso imposta por cada migration.",
+  col.names = c("Objeto", "Regra obrigatória")
+)
+```
+
+---
+
+# 3. Conexão e método
+
+O relatório **consulta o banco ao vivo** — não embute números. Reexecute para
+obter o estado real.
+
+```{r conectar}
+conectar <- function() {
+  svc <- Sys.getenv("EDUMAPS_REPORT_PG_SERVICE", "")
+  if (nzchar(svc)) {
+    return(DBI::dbConnect(RPostgres::Postgres(), service = svc))
+  }
+  DBI::dbConnect(
+    RPostgres::Postgres(),
+    host     = Sys.getenv("EDUMAPS_DB_HOST", params$host),
+    port     = as.integer(Sys.getenv("EDUMAPS_DB_PORT", params$port)),
+    dbname   = Sys.getenv("EDUMAPS_DB_NAME", params$dbname),
+    user     = Sys.getenv("EDUMAPS_DB_USER", params$user),
+    password = Sys.getenv("EDUMAPS_DB_PASS", "")
+  )
+}
+
+con <- tryCatch(conectar(), error = function(e) {
+  stop("Não foi possível conectar ao Postgres. Defina EDUMAPS_REPORT_PG_SERVICE ",
+       "ou EDUMAPS_DB_{HOST,PORT,NAME,USER,PASS}. Detalhe: ", conditionMessage(e))
+})
+
+# Perfil de colunas de uma relação.
+#
+# Usa `to_jsonb(t)` para obter todas as colunas numa única passagem (evita
+# reler a relação uma vez por coluna) e um LEFT JOIN de pg_attribute para a
+# relação — assim uma tabela VAZIA ainda devolve uma linha por coluna, com
+# n_linhas = 0 e pct_nulos = NA. Um CROSS JOIN devolveria zero linhas e a
+# tabela sumiria do relatório, que é exatamente o erro que esta função
+# precisa evitar.
+perfil_colunas <- function(con, schema, rel) {
+  stopifnot(grepl("^[A-Za-z_][A-Za-z0-9_]*$", schema),
+            grepl("^[A-Za-z_][A-Za-z0-9_]*$", rel))
+  rel_id <- paste0(schema, ".", rel)
+  sql <- paste0(
+    "WITH v AS MATERIALIZED (SELECT to_jsonb(t) AS j FROM ", rel_id, " t), ",
+    "c AS (SELECT attname, attnum, format_type(atttypid, atttypmod) AS tipo, attnotnull ",
+    "FROM pg_attribute WHERE attrelid = '", rel_id, "'::regclass ",
+    "AND attnum > 0 AND NOT attisdropped), ",
+    "n AS (SELECT count(*)::bigint AS total FROM v) ",
+    "SELECT c.attnum AS ord, c.attname AS coluna, c.tipo AS tipo, ",
+    "CASE WHEN c.attnotnull THEN 'NO' ELSE 'YES' END AS nullable, ",
+    "n.total AS n_linhas, ",
+    "CASE WHEN n.total = 0 THEN NULL::bigint ",
+    "ELSE count(*) FILTER (WHERE v.j -> c.attname = 'null'::jsonb) END AS nulos, ",
+    "CASE WHEN n.total = 0 THEN NULL::numeric ",
+    "ELSE round(100.0 * count(*) FILTER (WHERE v.j -> c.attname = 'null'::jsonb) ",
+    "           / n.total, 2) END AS pct_nulos, ",
+    "count(DISTINCT v.j ->> c.attname)::bigint AS n_distintos ",
+    "FROM c CROSS JOIN n LEFT JOIN v ON true ",
+    "GROUP BY c.attnum, c.attname, c.tipo, c.attnotnull, n.total ",
+    "ORDER BY c.attnum"
+  )
+  DBI::dbGetQuery(con, sql)
+}
+
+alvos <- tribble(
+  ~schema,         ~objeto,
+  "clean", "import_metadata", "clean", "malha_municipio",
+  "clean", "malha_setor_censitario", "clean", "ibge_agregados",
+  "clean", "censo2022_setor", "clean", "cnes_estabelecimentos",
+  "clean", "sisab_aps", "analytics", "acessibilidade_saude",
+  "clean", "mapbiomas_cobertura", "clean", "inmet_alerta",
+  "clean", "inmet_bdmep", "clean", "siconfi_receita",
+  "clean", "siconfi_despesa", "clean", "transferencia_educ",
+  "analytics", "esforco_fiscal_educacao", "clean", "brazilcrime_municipio",
+  "clean", "antt_acidente_trecho", "clean", "antt_trecho_geodados",
+  "clean", "renaest_sinistro", "clean", "isocrona_escolar",
+  "clean", "antt_od_municipio", "clean", "renavam_frota_municipio",
+  "clean", "antt_contagem_equipamento", "clean", "snv_trecho_vmda",
+  "clean", "recife_transporte_escolar", "clean", "renaest_localidade_municipio",
+  "analytics", "mobilidade_escola", "clean", "censo_data_dictionary"
+) %>% select(schema, rel = objeto)
+
+info_servidor <- DBI::dbGetQuery(con, "
+  SELECT inet_server_addr()::text AS host, inet_server_port() AS porta,
+         current_database() AS banco, current_user AS usuario,
+         version() AS versao, now()::date AS hoje")
+
+perfil <- if (isTRUE(params$usar_cache) && file.exists(CACHE_FILE)) {
+  message("Usando cache: ", CACHE_FILE)
+  readRDS(CACHE_FILE)
+} else {
+  message("Perfisando ", nrow(alvos), " objetos (isso leva ~1 min)…")
+  p <- bind_rows(lapply(seq_len(nrow(alvos)), function(i) {
+    d <- perfil_colunas(con, alvos$schema[i], alvos$rel[i])
+    if (nrow(d) == 0) return(NULL)
+    d$schema <- alvos$schema[i]; d$objeto <- alvos$rel[i]; d
+  }))
+  if (isTRUE(params$usar_cache)) {
+    dir.create(CACHE_DIR, recursive = TRUE, showWarnings = FALSE)
+    saveRDS(p, CACHE_FILE)
+  }
+  p
+}
+
+pares <- paste(sprintf("('%s','%s')", alvos$schema, alvos$rel), collapse = ", ")
+
+meta <- DBI::dbGetQuery(con, paste0(
+  "SELECT n.nspname AS schema, c.relname AS objeto, ",
+  "CASE c.relkind WHEN 'r' THEN 'tabela' WHEN 'v' THEN 'view' ",
+  "WHEN 'm' THEN 'matview' ELSE c.relkind::text END AS tipo, ",
+  "pg_total_relation_size(c.oid) AS bytes, obj_description(c.oid) AS comentario ",
+  "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace ",
+  "WHERE (n.nspname, c.relname) IN (", pares, ")"
+)) %>% as.data.frame()
+```
+
+```{r servidor}
+knitr::kable(
+  data.frame(
+    Campo  = c("Host", "Porta", "Banco", "Usuário", "Versão", "Data da consulta"),
+    Valor  = c(info_servidor$host, info_servidor$porta, info_servidor$banco,
+               info_servidor$usuario, strsplit(info_servidor$versao, " on ")[[1]][1],
+               as.character(info_servidor$hoje))
+  ),
+  caption = "Tabela 4 — Servidor consultado por este relatório."
+)
+```
+
+> **Nota sobre a senha:** o relatório nunca embute credencial. Use
+> `EDUMAPS_REPORT_PG_SERVICE=<serviço do ~/.pg_service.conf>` ou as variáveis
+> `EDUMAPS_DB_PASS`.
+
+---
+
+# 4. Estado atual: quanto dado existe
+
+## 4.1 Panorama
+
+```{r panorama}
+resumo <- perfil %>%
+  group_by(schema, objeto) %>%
+  summarise(
+    n_linhas  = max(n_linhas),
+    n_colunas = n(),
+    nulos_pct_100 = sum(pct_nulos == 100, na.rm = TRUE),
+    nulos_pct_0    = sum(pct_nulos == 0,   na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  left_join(meta %>% select(schema, objeto, tipo, bytes, comentario),
+            by = c("schema", "objeto")) %>%
+  mutate(qualificado = paste0(schema, ".", objeto),
+         tamanho = formatar_bytes(bytes)) %>%
+  left_join(select(registro, qualificado = objeto, fase, tipo_registro = tipo),
+            by = "qualificado") %>%
+  mutate(estado = case_when(
+    is.na(fase)                                        ~ "fora do inventário",
+    n_linhas == 0 & tipo == "tabela"                  ~ "vazia (esquema pronto)",
+    n_linhas == 0 & tipo == "view"                    ~ "vazia (fontes vazias)",
+    n_linhas > 0  & nulos_pct_100 > 0                 ~ "com dados, indicadores nulos",
+    TRUE                                              ~ "com dados"
+  )) %>%
+  arrange(fase, qualificado)
+
+knitr::kable(
+  select(resumo, fase, qualificado, tipo, n_linhas, n_colunas, tamanho,
+         nulos_pct_0, nulos_pct_100, estado),
+  caption = paste0("Tabela 5 — Estado de cada uma das ", nrow(resumo),
+                   " entradas. `nulos 0%` = colunas sem nenhum nulo; `nulos 100%` = colunas totalmente nulas."),
+  col.names = c("Fase", "Objeto", "Tipo", "Linhas", "Colunas", "Tamanho",
+                "Cols 0% nulo", "Cols 100% nulo", "Estado"),
+  align = c("c", "l", "l", "r", "r", "r", "r", "r", "l")
+)
+```
+
+```{r grafico-estado}
+ggplot(resumo, aes(x = reorder(estado, n_linhas), fill = estado)) +
+  geom_bar() +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "com dados" = "#2e7d32",
+    "com dados, indicadores nulos" = "#f9a825",
+    "vazia (esquema pronto)" = "#90a4ae",
+    "vazia (fontes vazias)" = "#cfd8dc"
+  )) +
+  labs(title = "Distribuição das entradas novas por estado de carga",
+       subtitle = paste0(nrow(resumo), " objetos criados pelas fases 0 a 6"),
+       x = NULL, y = "Nº de objetos") +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom")
+```
+
+## 4.2 As quatro entradas que têm dados
+
+```{r com-dados}
+com_dados <- resumo %>% filter(n_linhas > 0)
+
+knitr::kable(
+  com_dados %>% select(qualificado, tipo, n_linhas, n_colunas, tamanho, estado),
+  caption = "Tabela 6 — Únicas entradas com linhas carregadas.",
+  col.names = c("Objeto", "Tipo", "Linhas", "Colunas", "Tamanho", "Estado")
+)
+```
+
+**Leitura honesta de cada uma:**
+
+- **`clean.malha_municipio` (5.573 linhas)** — a **única** entrada nova com dado
+  integral e íntegro: **zero nulos em todas as 7 colunas**, 5.573 geometrias
+  distintas, SRID 4674, constraint `ST_IsValid` respeitada. É oalicerce
+  territorial e a FK de 11 tabelas. Pode ser usada hoje.
+- **`clean.import_metadata` (32 linhas)** — o registro de proveniência funciona,
+  mas com lacunas (ver [seção 6.3](#63-proveniência-incompleta-em-cleanimport_metadata)).
+- **`clean.censo_data_dictionary` (764 linhas)** — o dicionário canônico do
+  Censo existe e cobre 4 tabelas, mas é a **única** entrada fora das fases 0–6
+  (issue #134) e **não tem proveniência registrada** (ver
+  [seção 6.3](#63-proveniência-incompleta-em-cleanimport_metadata)).
+- **`clean.renaest_localidade_municipio` (5.573 linhas)** — **aparenta estar
+  pronta e não está.** É o achado mais perigoso do relatório; ver
+  [seção 6.2](#62-o-de-para-renaest-é-um-placeholder-disfarçado).
+
+## 4.3 Proveniência registrada pelo próprio pipeline
+
+`clean.import_metadata` é a tabela que o pipeline usa para dizer de onde veio
+cada carga. Ela merece uma leitura própria, porque é o mecanismo de
+auditoria de todo o resto.
+
+```{r proveniencia}
+prov <- DBI::dbGetQuery(con, "
+  SELECT table_name AS objeto, source_file AS arquivo,
+         row_count_loaded AS linhas, retrieved_at AS recuperado,
+         source_url AS url, source_license AS licenca, notes AS notas
+  FROM clean.import_metadata ORDER BY table_name, id_import") %>%
+  as.data.frame()
+
+knitr::kable(
+  prov %>% mutate(
+    objeto = sub("^clean\\.", "", objeto),
+    `Licença registada` = ifelse(is.na(licenca) | licenca == "",
+                                "— ausente —", licenca),
+    `URL registada`     = ifelse(is.na(url) | url == "", "— ausente —", url),
+    `Recuperado em`     = ifelse(is.na(recuperado), "— ausente —",
+                                format(as.Date(recuperado), "%d/%m/%Y"))
+  ) %>% select(objeto, arquivo, linhas, `Licença registada`,
+                `URL registada`, `Recuperado em`),
+  caption = paste0("Tabela 7 — Cargas registradas em `clean.import_metadata` (",
+                   nrow(prov), " linhas). `— ausente —` significa proveniência ",
+                   "não preenchida; ver secção 6.3."),
+  col.names = c("Objeto", "Arquivo de origem", "Linhas", "Licença", "URL", "Recuperado em"),
+  align = c("l", "l", "r", "l", "l", "c")
+)
+```
+
+---
+
+# 5. Perfil de colunas, tipos e nulos
+
+Esta é a seção pedida: **todas as colunas de todas as entradas, com tipo,
+nullable, contagem de nulos e a porcentagem de nulos**. Uma tabela por objeto,
+agrupadas por fase.
+
+As tabelas desta seção levam a série **`A1`–`A28`** (uma por objeto, na ordem
+das fases) para não se misturarem com a série principal `1`–`16`, que é usada
+para as demais seções.
+
+Convenção da coluna `% nulos`:
+
+| Valor | Significado |
+|---|---|
+| `0,00` | Nenhum nulo. Coluna **inteiramente preenchida**. |
+| `0 – 100` | Nulos parciais — falta de dado real, precisa ser tratada downstream. |
+| `100,00` | Coluna **totalmente nula**. Ou a fonte é vazia, ou o campo é decorativo. |
+| `—` | Tabela **vazia**: a porcentagem é indefinida (divisão por zero). Não confunda com "0% de nulos". |
+
+A última distinção é a que mais importa neste relatório: **21 das 25 tabelas
+estão na linha `—`, não na linha `0,00`.**
+
+## 5.1 Fase 0 — Proveniência
+
+```{r fase-0}
+mostrar_objeto("clean.import_metadata", "Tabela A1 — `clean.import_metadata` (32 linhas): registro de proveniência")
+```
+
+## 5.2 Fase 1 — Contexto municipal e sub-municipal (IBGE)
+
+```{r fase-1}
+mostrar_objeto("clean.malha_municipio", "Tabela A2 — `clean.malha_municipio` (5.573 linhas): base territorial — **íntegra**")
+mostrar_objeto("clean.malha_setor_censitario", "Tabela A3 — `clean.malha_setor_censitario`: malha de setor censitário 2022 — **vazia**")
+mostrar_objeto("clean.ibge_agregados", "Tabela A4 — `clean.ibge_agregados`: agregados SIDRA em formato longo — **vazia**")
+mostrar_objeto("clean.censo2022_setor", "Tabela A5 — `clean.censo2022_setor`: Censo 2022 por setor censitário — **vazia**")
+```
+
+> **Por que a fase 1 importa mais do que parece.** `censo2022_setor` é a única
+> entrada que leva o IVET do nível municipal para o **setor censitário**. Sem
+> ela, todo indicador de vulnerabilidade continua agregado por município — que é
+> exatamente o limite que a issue #123 queria quebrar. O schema de
+> `censo2022_setor` tem **36 de 38 colunas nullable** e foi desenhado para
+> receber ~3.000 variáveis numa fase posterior, mas as duas tabelas que o
+> sustentam (`malha_setor_censitario`, `ibge_agregados`) estão vazias — então nem
+> a área de influência da escola sobre o setor censitário pode ser calculada
+> hoje.
+
+## 5.3 Fase 2 — Saúde (CNES + SISAB)
+
+```{r fase-2}
+mostrar_objeto("clean.cnes_estabelecimentos", "Tabela A6 — `clean.cnes_estabelecimentos`: estabelecimentos CNES sanitizados — **vazia**")
+mostrar_objeto("clean.sisab_aps", "Tabela A7 — `clean.sisab_aps`: indicadores APS (SISAB/PIMMB) — **vazia**")
+mostrar_objeto("analytics.acessibilidade_saude", "Tabela A8 — `analytics.acessibilidade_saude` (145.734 linhas): view de acessibilidade à saúde — **todos os indicadores nulos**")
+```
+
+> **Achado crítico — [seção 6.1](#61-zero-versus-nulo-confunde-sem-dado-com-valor-zero).**
+> As colunas `n_ubs_municipio` e `classificacao_acesso` estão **100%
+> preenchidas** (0% nulo), mas `n_ubs_municipio` tem **um único valor
+> distinto — `0`** — e `classificacao_acesso` tem **um único valor — `"Sem UBS
+> no município"`**. A view afirma, para as 145.734 escolas do Brasil, que o
+> município não tem UBS. **Isso é falso**: `clean.cnes_estabelecimentos` está
+> vazia. A view não tem dado; ela tem uma mentira.
+
+## 5.4 Fase 3 — Eventos e exposição a risco (MapBiomas + INMET)
+
+```{r fase-3}
+mostrar_objeto("clean.mapbiomas_cobertura", "Tabela A9 — `clean.mapbiomas_cobertura`: cobertura/uso do solo — **vazia**")
+mostrar_objeto("clean.inmet_alerta", "Tabela A10 — `clean.inmet_alerta`: eventos Alerta-AS — **vazia**")
+mostrar_objeto("clean.inmet_bdmep", "Tabela A11 — `clean.inmet_bdmep`: série diária 26 anos — **vazia**")
+```
+
+> Esta fase tem o desenho mais bem pensado do lote. `inmet_alerta` mede **o
+> evento** que interrompe aula; `inmet_bdmep` fornece **26 anos** de série
+> para normalização climática. Juntos, permitem responder "este evento foi
+> extraordinário *para este lugar*?" — que é a pergunta certa, e que uma série
+> de médias nacionais não responderia. Nenhuma das duas tem dado.
+
+## 5.5 Fase 4 — Financeiro e investimento (SICONFI + CGU)
+
+```{r fase-4}
+mostrar_objeto("clean.siconfi_receita", "Tabela A12 — `clean.siconfi_receita`: receitas municipais — **vazia**")
+mostrar_objeto("clean.siconfi_despesa", "Tabela A13 — `clean.siconfi_despesa`: despesas municipais — **vazia**")
+mostrar_objeto("clean.transferencia_educ", "Tabela A14 — `clean.transferencia_educ`: transferências da União — **vazia**")
+mostrar_objeto("analytics.esforco_fiscal_educacao", "Tabela A15 — `analytics.esforco_fiscal_educacao`: esforço fiscal em educação — **vazia**")
+```
+
+> **28 colunas de indicador e zero linhas.** `esforco_fiscal_educacao` é a view
+> mais ambiciosa do lote (autonomia fiscal, dependência de FUNDEB, FUNDEB por
+> aluno, % da receita em educação) e é a única das 3 views que retorna **0
+> linhas** — porque as suas três fontes (`siconfi_receita`, `siconfi_despesa`,
+> `transferencia_educ`) estão todas vazias e a view é construída sobre
+> `malha_municipio` com junção interna.
+>
+> Quando essas tabelas forem carregadas, atenção à armadilha documentada nas
+> migrations: `classificacao` distingue `'realizada'` de `'estimativa'`, e
+> **todo indicador deve filtrar `classificacao = 'realizada'`**. Sem esse filtro,
+> projeção orçamentária entra como se fosse receita efetivada.
+
+## 5.6 Fase 5 — Segurança e sinistralidade viária
+
+```{r fase-5}
+mostrar_objeto("clean.brazilcrime_municipio", "Tabela A16 — `clean.brazilcrime_municipio`: criminalidade por município/ano — **vazia**")
+mostrar_objeto("clean.antt_acidente_trecho", "Tabela A17 — `clean.antt_acidente_trecho`: acidentes por trecho — **vazia**")
+mostrar_objeto("clean.antt_trecho_geodados", "Tabela A18 — `clean.antt_trecho_geodados`: geodados de trecho (junção) — **vazia**")
+mostrar_objeto("clean.renaest_sinistro", "Tabela A19 — `clean.renaest_sinistro`: sinistros por localidade — **vazia**")
+```
+
+> `clean.antt_trecho_geodados` é uma **tabela de junção pura**: existe só para
+> resolver trecho → município. Sem ela, tanto `antt_acidente_trecho` quanto
+> `antt_contagem_equipamento` ficam órfãos. É a menor tabela do lote (9 colunas)
+> e a de maior alavancagem.
+>
+> `brazilcrime_municipio` tem `supressao_celula_pequena BOOLEAN DEFAULT FALSE`:
+> a supressão de célula pequena é **declarada no schema** (13 de 16 colunas
+> nullable, só 3 NOT NULL). O desenho de LGPD está correto — mas não há como
+> verificar que ele é respeitado, porque a tabela está vazia.
+
+## 5.7 Fase 6 — Mobilidade em escala
+
+```{r fase-6}
+mostrar_objeto("clean.isocrona_escolar", "Tabela A20 — `clean.isocrona_escolar`: isocronas em grade H3 — **vazia**")
+mostrar_objeto("clean.antt_od_municipio", "Tabela A21 — `clean.antt_od_municipio`: matriz origem-destino — **vazia**")
+mostrar_objeto("clean.renavam_frota_municipio", "Tabela A22 — `clean.renavam_frota_municipio`: frota por município/mês — **vazia**")
+mostrar_objeto("clean.antt_contagem_equipamento", "Tabela A23 — `clean.antt_contagem_equipamento`: contagem de tráfego — **vazia**")
+mostrar_objeto("clean.snv_trecho_vmda", "Tabela A24 — `clean.snv_trecho_vmda`: SNV + VMDA modelado — **vazia**")
+mostrar_objeto("clean.recife_transporte_escolar", "Tabela A25 — `clean.recife_transporte_escolar`: transporte escolar Recife — **vazia**")
+mostrar_objeto("clean.renaest_localidade_municipio", "Tabela A26 — `clean.renaest_localidade_municipio`: de-para localidade → município — **5.573 linhas, mas falso-positivo**")
+mostrar_objeto("analytics.mobilidade_escola", "Tabela A27 — `analytics.mobilidade_escola` (145.734 linhas): mobilidade consolidada por escola — **todos os indicadores nulos**")
+```
+
+> **Armadilha de volume, declarada nas migrations e ainda assim um risco real.**
+> `snv_trecho_vmda` é a maior tabela do lote em colunas (16) e tem **15 de 16
+> nullable**. É modelagem, não medição, e depende de decisão jurídica de licença
+> pendente. `recife_transporte_escolar` é a única fonte com chave de escola, mas
+> é **ODbL share-alike** — materializá-la exige parecer do jurídico, e o próprio
+> COMMENT da migration diz que ela vale como **prova de viabilidade**, não como
+> fonte a ingerir.
+>
+> `mobilidade_escola` faz o coisa certa em dois pontos que valem citar como
+> referência de design: isocronas são agregadas em **grade H3** e não por escola
+> isolada, e existem **duas colunas de status explícito** (`status_isocrona`,
+> `status_conexao_antt`). O problema é que essas colunas de status coexistem com
+> colunas numéricas preenchidas com `0` — ver [seção 6.1](#61-zero-versus-nulo-confunde-sem-dado-com-valor-zero).
+
+## 5.8 Issue #134 — Dicionário canônico do Censo Escolar
+
+```{r fase-134}
+mostrar_objeto("clean.censo_data_dictionary", "Tabela A28 — `clean.censo_data_dictionary` (764 linhas): dicionário canônico do Censo Escolar")
+```
+
+---
+
+# 6. Sanity check — veredito
+
+O *sanity check* não é só "há nulos?". É também: **o schema promete algo que o
+dado não cumpre?** As colunas de nulos contam uma história; a leitura cruzada
+entre colunas conta outra, e é essa que importa aqui.
+
+## 6.1 Zero versus nulo: confunde "sem dado" com "valor zero"
+
+**Severidade: 🔴 alta. Este é o achado que mais merece atenção.**
+
+Duas das três views fazem `LEFT JOIN` contra tabelas vazias e preenchem as
+colunas numéricas com `COALESCE(..., 0)`. O resultado é que **"não temos dado" e
+"temos zero" tornam-se indistinguíveis** para qualquer consumidor.
+
+`analytics.acessibilidade_saude` — 145.734 escolas:
+
+| Coluna | % nulos | Distintos | Leitura correta | O que a view sugere |
+|---|---|---|---|---|
+| `n_ubs_municipio` | **0,00%** | **1** (`0`) | Fonte vazia | "Este município não tem UBS" |
+| `classificacao_acesso` | **0,00%** | **1** (`"Sem UBS no município"`) | Fonte vazia | Afirmação categórica de inexistência |
+| `dist_min_km_ubs` | 100,00% | 0 | Fonte vazia | — (correto: propagou o nulo) |
+| `cnes_snapshot`, `aps_snapshot` | 100,00% | 0 | Fonte vazia | — (correto) |
+
+`analytics.mobilidade_escola` — 145.734 escolas:
+
+| Coluna | % nulos | Distintos | Leitura correta | O que a view sugere |
+|---|---|---|---|---|
+| `vmda_total_municipio` | **0,00%** | **1** (`0`) | Fonte vazia | "Zero veículos/dia na via" |
+| `acidentes_12m` | **0,00%** | **1** (`0`) | Fonte vazia | "Nenhum acidente no trecho em 12 meses" |
+| `sinistros_12m` | **0,00%** | **1** (`0`) | Fonte vazia | "Nenhum sinistro registrado" |
+| `acidentes_fatais_12m`, `sinistros_fatais_12m` | **0,00%** | **1** (`0`) | Fonte vazia | "Nenhuma morte no trânsito" |
+| `status_isocrona` | 0,00% | 1 (`sem_isocrona`) | Fonte vazia | — ✅ **correto: sinaliza a ausência** |
+| `status_conexao_antt` | 0,00% | 1 (`sem_conexao_antt`) | Fonte vazia | — ✅ **correto: sinaliza a ausência** |
+| `isocronas_por_tempo`, `antt_od_*`, `renavam_*`, `recife_*`, `pct_*` | 100,00% | 0 | Fonte vazia | — (correto) |
+
+O contraste dentro da própria view é instrutivo: **`status_*` foi desenhado
+corretamente para distinguir ausência de zero, mas as colunas numéricas ao lado
+não seguem o mesmo princípio.** A leitura óbvia é que o desenho de mobilidade
+está "quase certo" — e está. O problema é de consistência dentro da mesma view.
+
+**Impacto concreto:** qualquer indicador construído sobre
+`acidentes_12m = 0` ou `n_ubs_municipio = 0` publicaria, com aparência de dado
+real, a afirmação "não há acidentes" ou "não há posto de saúde" para **todas as
+escolas do país**. No painel do gestor isso apareceria como um mapa de
+"segurança viária perfeita" e "sem acesso à saúde".
+
+**Correção recomendada:** substituir `COALESCE(x, 0)` por `x` nestas views
+(ou, se o `0` for semanticamente necessário, exigir que o consumidor filtre
+`status_* <> 'sem_*'`), e adicionar um teste de regressão que falhe quando uma
+tabela-fonte está vazia mas a view reporta `0`.
+
+## 6.2 O de-para RENAEST é um placeholder disfarçado
+
+**Severidade: 🔴 alta. É o achado que mais easily passa por "dado pronto".**
+
+`clean.renaest_localidade_municipio` tem 5.573 linhas, **zero nulos em todas as
+10 colunas**, e `clean.renaest_sinistro` depende dela. À primeira vista parece
+a única parte da fase 5 resolvida. Não é.
+
+```{r renaest-diagnostico}
+ren <- perfil %>% filter(objeto == "renaest_localidade_municipio")
+
+knitr::kable(
+  data.frame(
+    `Coluna`    = ren$coluna,
+    `Tipo`      = ren$tipo,
+    `Distintos` = format(ren$n_distintos, big.mark = "."),
+    `Observação` = c(
+      "5.300 nomes distintos — **é a lista de municípios do IBGE**, não localidades de RENAEST",
+      "27 UFs",
+      "5.573 códigos distintos",
+      "5.300 — igual a `localidade`: confirma auto-junção",
+      "**1 único valor: `exact`** — nenhum match fuzzy foi produzido",
+      "**1 único valor** — score constante, sem discriminação",
+      "**1 único valor: `auto_seed`** — nenhum registo de validação humana",
+      "**1 único valor** — nada foi validado depois da carga",
+      "**1 único valor** — carga única",
+      "**1 único valor** — um único snapshot"
+    )
+  ),
+  col.names = c("Coluna", "Tipo", "Distintos", "Observação"),
+  caption = paste0("Tabela 13 — Diagnóstico de `clean.renaest_localidade_municipio`. ",
+                   "O perfil de valores distintos revela que a tabela é uma auto-junção do IBGE, ",
+                   "não um de-para RENAEST.")
+)
+```
+
+**O que aconteceu.** A tabela foi semeada a partir de
+`clean.malha_municipio`: cada município do IBGE foi mapeado para si mesmo, com
+`match_type = 'exact'`, `match_score` constante e `validated_by = 'auto_seed'`.
+Isso está registrado honestamente em `import_metadata.source_file`:
+
+> `IBGE malha_municipio (seed exato) + validação manual posterior`
+
+O problema não é o seed — é que ele **ocupa o lugar do de-para real**. O
+`COMMENT ON TABLE` promete `match_type: exact/fuzzy/manual` e "construído por
+fuzzy matching + validação humana", e o schema está correto: as três colunas
+existem e estão tipadas. Mas `fuzzy` e `manual` **nunca ocorreram** — a coluna
+`match_score` não tem um único valor abaixo de 100, e `validated_by` não tem um
+único valor diferente de `auto_seed`.
+
+**Por que isso quebra em silêncio.** O join de `renaest_sinistro` para município
+é por `(localidade, uf)`. Com esta tabela:
+
+- Localidades RENAEST cujo nome **coincide** exatamente com um município →
+  casam, e o mapeamento está correto.
+- Localidades RENAEST que **são bairros, distritos ou nomes diferentes**
+  (a maioria) → **não casam, e desaparecem silenciosamente**. Não há erro, não
+  há log, não há linha.
+
+O resultado será uma série criminal-sinistral viária com cobertura
+`incorreta e não detectável`, sem nenhuma indicação de que dados foram
+descartados. O script de fuzzy matching
+(`data_pipeline/scripts/fuzzy_match_renaest.py`, `rapidfuzz`, limiar 70,
+top-3) existe e está documentado, mas **não foi executado**.
+
+**Correção recomendada:** rodar o fuzzy match e substituir o seed; adicionar
+contagem de não-casados porUF como alerta de qualidade; e — independentemente
+do fuzzy — fazer `renaest_sinistro` registrar explicitamente as localidades
+não resolvidas, para que a perda seja visível em vez de silenciosa.
+
+## 6.3 Proveniência incompleta em `clean.import_metadata`
+
+**Severidade: 🟡 média.**
+
+O mecanismo de proveniência da fase 0 é o que torna as outras 27 entradas
+auditáveis. Ele funciona, mas com três furos:
+
+```{r proveniencia-lacunas}
+lac <- DBI::dbGetQuery(con, "
+  SELECT count(*)::int AS total,
+         count(*) FILTER (WHERE source_url IS NULL)::int AS sem_url,
+         count(*) FILTER (WHERE source_license IS NULL)::int AS sem_licenca,
+         count(*) FILTER (WHERE retrieved_at IS NULL)::int AS sem_retrieved
+  FROM clean.import_metadata") %>% as.data.frame()
+
+sem_prov <- DBI::dbGetQuery(con, "
+  SELECT table_name AS objeto, source_file AS arquivo, row_count_loaded AS linhas
+  FROM clean.import_metadata
+  WHERE source_url IS NULL OR source_license IS NULL OR retrieved_at IS NULL
+  ORDER BY table_name") %>% as.data.frame()
+
+knitr::kable(
+  data.frame(
+    `Verificação` = c("Cargas registadas",
+                      "Sem `source_url`", "Sem `source_license`", "Sem `retrieved_at`",
+                      "Percentual sem proveniência completa"),
+    `Resultado`   = c(format(lac$total[1], big.mark = "."),
+                      sprintf("%d (%.2f%%)", lac$sem_url[1], 100 * lac$sem_url[1] / lac$total[1]),
+                      sprintf("%d (%.2f%%)", lac$sem_licenca[1], 100 * lac$sem_licenca[1] / lac$total[1]),
+                      sprintf("%d (%.2f%%)", lac$sem_retrieved[1], 100 * lac$sem_retrieved[1] / lac$total[1]),
+                      sprintf("%.2f%%", 100 * lac$sem_url[1] / lac$total[1])),
+    `Leitura` = c("Total de registos em `clean.import_metadata`",
+                  "Pre-fase 0: cargas herdadas do Censo/INEP/SIOPE",
+                  "Idem — a fase 0 só cobre o que ela ingestou",
+                  "Idem",
+                  "Aceitável **se** e somente se a proveniência dessas fontes antigas for reconstruída")
+  ),
+  col.names = c("Verificação", "Resultado", "Leitura")
+)
+
+knitr::kable(
+  sem_prov %>% mutate(objeto = gsub("^clean\\.", "", objeto)),
+  caption = paste0("Tabela 14 — As ", nrow(sem_prov), " cargas sem proveniência completa. ",
+                   "Todas são anteriores à fase 0 (herdadas do pipeline antigo)."),
+  col.names = c("Objeto", "Arquivo de origem", "Linhas")
+)
+```
+
+**Três problemas concretos, em ordem de gravidade:**
+
+1. **As cargas das fases 0–6 estão completas** — as 23 entradas novas têm
+   `source_url`, `source_license` e `retrieved_at`. ✅
+2. **As 9 cargas antigas estão sem proveniência** — `censo_escolas`,
+   `censo_matriculas`, `censo_docentes`, `censo_gestor`, `inse`,
+   `populacao_municipal`, `municipios_sp` e `censo_data_dictionary`. A fase 0
+   documentou o novo e deixou o antigo sem registro. ⚠️
+3. **`clean.censo_data_dictionary` aparece duas vezes** em
+   `import_metadata`, com `source_file` e `row_count_loaded` idênticos
+   (`generated_from_catalog`, 764). É duplicata — provavelmente efeito de
+   duas cargas da migration (#134 e o backfill de retry). 🔎
+
+**Consequência específica do item 2:** o dicionário canônico do Censo Escolar
+(issue #134) declara-se "canônico" e versionado, mas é a **única** entrada sem
+`source_url` e **sem** `source_license`. O catálogo de fontes verificou
+licenças com rigor para 61 fontes — e o dicionário que descreve os dados que
+mais pesam do EduMaps ficou de fora.
+
+**Armadilha adicional no dicionário.** As colunas de versionamento existem mas
+estão inertes:
+
+```{r dicionario}
+dic <- perfil %>% filter(objeto == "censo_data_dictionary")
+
+knitr::kable(
+  dic %>% transmute(
+    Coluna = coluna, `Tipo` = tipo,
+    `% nulos` = ifelse(is.na(pct_nulos), "—", sprintf("%s%%", format(pct_nulos, nsmall = 2, decimal.mark = ","))),
+    `Distintos` = n_distintos,
+    Observação = case_when(
+      coluna == "value_domain"        ~ "98% nulo — domínios de valor minúsculos;_ok_ para colunas categóricas, inútil no resto",
+      coluna == "year_changed"        ~ "**100% nulo** — versionamento declarado, nunca exercido",
+      coluna == "year_deprecated"     ~ "**100% nulo** — nada foi marcado como descontinuado",
+      coluna == "fk_target_table"     ~ "**100% nulo** — determinismo de FK não registrado",
+      coluna == "fk_target_column"    ~ "**100% nulo** — idem",
+      coluna == "is_fk"               ~ "**1 único valor (`false`)** — nenhuma FK declarada, apesar de haver `codigo_ibge`/`co_entidade` cruzando tabelas",
+      coluna == "source_url"          ~ "**100% nulo** — ver item 2 acima",
+      coluna == "source_license"      ~ "**100% nulo** — ver item 2 acima",
+      coluna == "retrieved_at"        ~ "**100% nulo** — ver item 2 acima",
+      coluna == "notes"               ~ "72% nulo",
+      coluna == "table_name"          ~ "4 tabelas cobertas: Censo Escolar + suas três tabelas filhas",
+      TRUE ~ ""
+    )
+  ),
+  col.names = c("Coluna", "Tipo", "% nulos", "Distintos", "Observação"),
+  caption = paste0("Tabela 15 — `clean.censo_data_dictionary`: ", nrow(dic),
+                   " colunas. O versionamento e a proveniência estão declarados no schema e não exercitados nos dados.")
+)
+```
+
+## 6.4 Divergência de schema entre os bancos
+
+**Severidade: 🔴 alta — bloqueia qualquer uso downstream.**
+
+Este achado é operacional, não de conteúdo, e é o que impede os dados de
+chegarem a quem os usaria.
+
+O projeto tem **dois destinos de banco** com estados muito diferentes:
+
+| Destino | Como se conecta | Tabelas novas presentes | `malha_municipio` | `cnes_estabelecimentos` | `mobilidade_escola` |
+|---|---|---|---|---|---|
+| **Docker local** (`127.0.0.1:5432`) | `edumaps-db` | **25 de 25** | ✅ presente | ✅ presente | ✅ presente |
+| **Dev nominal** (`ubatexu.lan:5432`) | serviço `edumaps` do `~/.pg_service.conf`; padrão em `backend/edu_maps.conf` | **1 de 25** | ❌ ausente | ❌ ausente | ❌ ausente |
+
+**Causa raiz, confirmada no histórico do Sqitch.** O banco de dev registra
+**7 falhas do change `school_embedding`** entre 2026-09-16 e 2026-09-30. Como o
+Sqitch processa os changes em ordem topológica e **aborta no primeiro erro**,
+tudo que vem depois de `school_embedding` no plano nunca foi aplicado. A causa
+da falha é a extensão **`pgvector`, que não está disponível** nesse servidor
+(`pg_available_extensions` não retorna `vector`).
+
+Como `import_metadata_fase0` aparece **antes** de `school_embedding` no plano,
+foi a única das fases 0–6 a ser aplicada — o que explica o "1 de 25".
+
+> **Por que isso importa para o issue #123.** A issue #123 foi sobre
+> *catalogar e priorizar antes de implementar*. As fases 0–6 foram o passo
+> seguinte. Elas estão prontas **num** banco e ausentes **no** banco que o
+> `edu_maps.conf` do backend aponta por padrão. Qualquer consulta de frontend,
+> job R ou teste que rode contra o destino nominal vai receber
+> `relation does not exist`.
+
+**Correção recomendada:** instalar `pgvector` no servidor de dev (ou tornar
+`school_embedding` opcional / movê-lo para o fim do plano), e então rodar
+`sqitch deploy` completo. Só depois disso faz sentido discutir carga de dados.
+
+## 6.5 Inconsistências menores de metadado
+
+| # | Objeto | Inconsistência | Efeito |
+|---|---|---|---|
+| 1 | `clean.brazilcrime_municipio` | `import_metadata` regista licença **`GPL-3 (CRAN)`**; a ficha em `docs/analises/fontes_de_dados.md` classifica o pacote BrazilCrime como **`MIT`**. | Divergência entre o catálogo e o metadado do pipeline. **GPL-3 é copyleft** — se o erro for do metadado, é grave; se for da ficha, é correção editorial. Resolver **antes** de distribuir. |
+| 2 | `clean.isocrona_escolar` | `source_url` = `router.project-osrm.org (demo) -> auto-hospedado` — **não é uma URL**, e documenta o servidor de *demo*, que o próprio catálogo classificou como **sem SLA**. | O metadado aponta para a origem que a issue #123 reprovou, não para o tileset auto-hospedado que deve ser a origem real. |
+| 3 | `clean.renaest_localidade_municipio` | `source_license` = `Domínio público (IBGE)` e `source_file` = `IBGE malha_municipio (seed exato)`. A tabela **não** documenta a licença RENAEST que vai de fato consumir. | Quando o fuzzy match rodar, a linha de RENAEST precisa de registo próprio. |
+| 4 | `import_metadata` | As **3 views** analíticas não têm linha de proveniência. | `acessibilidade_saude`, `esforco_fiscal_educacao` e `mobilidade_escola` são derivados, não cargas — mas devem ser rastreáveis às suas fontes. |
+| 5 | `clean.analytics_*` (3 views) | Nenhuma tem índice materializado nem `computed_at` refreshed; são views recalculadas a cada consulta. | `mobilidade_escola` faz agregação sobre `censo_escolas` (670 MB). Análise sobre a view vai ser **muito** lenta em produção. |
+
+## 6.6 Resumo do sanity check
+
+```{r veredito}
+achados <- data.frame(
+  `#` = 1:6,
+  `Achado` = c(
+    "Zero confundido com nulo nas views analíticas",
+    "`renaest_localidade_municipio` é placeholder, não de-para",
+    "Schema ausente no banco de dev nominal (24 de 25 tabelas)",
+    "Proveniência ausente nas 9 cargas antigas; duplicata no dicionário",
+    "Versionamento do dicionário declarado e nunca exercitado",
+    "Divergência de licença (GPL-3 vs MIT) e `source_url` inválido"
+  ),
+  `Severidade` = c("🔴 alta", "🔴 alta", "🔴 alta", "🟡 média", "🟡 média", "🟢 baixa"),
+  `Onde` = c(
+    "`analytics.acessibilidade_saude`, `analytics.mobilidade_escola`",
+    "`clean.renaest_localidade_municipio`",
+    "`ubatexu.lan` (bloqueio por `school_embedding`/`pgvector`)",
+    "`clean.import_metadata`, `clean.censo_data_dictionary`",
+    "`clean.censo_data_dictionary`",
+    "`import_metadata`"
+  ),
+  `Consequência` = c(
+    "Publica \"0 acidentes\" / \"sem UBS\" para 145.734 escolas com aparência de dado real",
+    "Sinistros RENAEST sem correspondência são **descartados em silêncio**",
+    "Backend, jobs R e testes contra o destino nominal falham com `relation does not exist`",
+    "8 fontes do acervo (incluindo a base Censo) não são auditáveis",
+    "Rastreabilidade de mudança de schema do Censo não existe na prática",
+    "Risco de licença copyleft não avaliado; proveniência aponta para origem errada"
+  ),
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(achados,
+  caption = "Tabela 16 — Veredito do sanity check, por severidade.",
+  align = c("c", "l", "c", "l", "l"))
+```
+
+---
+
+# 7. O que já dá para usar hoje
+
+Para não ser um relatório só de problemas, o que está realmente disponível:
+
+| Recurso | Situação | Uso permitido |
+|---|---|---|
+| **Malha municipal IBGE** (5.573 municípios, SRID 4674, geometrias válidas) | ✅ Integral | Base territorial, FK de 11 tabelas, qualquer análise municipal |
+| **Proveniência das cargas das fases 0–6** (23 entradas com URL, licença e data) | ✅ Completa | Auditoria de origem e licença |
+| **Dicionário canônico do Censo Escolar** (764 entradas, 4 tabelas) | 🟡 Parcial | Legibilidade de colunas do Censo; versionamento ainda não funciona |
+| **Views analíticas** (`acessibilidade_saude`, `mobilidade_escola`) | 🔴 Não | Apenas a contagem de escolas (145.734) é confiável. **Nenhum indicador** |
+| **Esforço fiscal** (`esforco_fiscal_educacao`) | 🔴 Não | Vazia |
+| **21 tabelas de fonte** | 🔴 Não | Esquema pronto, aguardando ingestão |
+
+---
+
+# 8. Plano de correção
+
+Ordenado por dependência — cada passo desbloqueia o seguinte.
+
+### Passo 1 — Desbloquear o schema (bloqueia tudo)
+
+Instalar `pgvector` no servidor de dev, ou reposicionar `school_embedding` no
+`data_pipeline/sqitch.plan` para que não bloqueie as fases 0–6. Em seguida:
+
+```bash
+cd data_pipeline
+sqitch deploy --target dev_super
+sqitch verify --target dev_super
+```
+
+Enquanto isso não acontecer, o resto do trabalho não é observável pelo destino
+nominal.
+
+### Passo 2 — Tornar a ausência de dado visível (corrige o achado mais grave)
+
+Nas três views, substituir `COALESCE(<indicador>, 0)` por `NULL` quando a
+tabela-fonte está sem snapshot. Onde o `0` for semanticamente necessário,
+manter as colunas `status_*` como autoridade e exigir filtro no consumidor.
+Adicionar teste de regressão: *se uma tabela-fonte está vazia, a view não pode
+reportar `0`*.
+
+### Passo 3 — Tornar o de-para RENAEST verdadeiro
+
+```bash
+python3 data_pipeline/scripts/fuzzy_match_renaest.py   # ainda não executado
+```
+
+Depois: substituir o seed, registar as localidades não resolvidas em tabela
+própria (em vez de deixá-las cair), e popular `match_type`/`match_score`
+variáveis para que a tabela deixe de ser constante.
+
+### Passo 4 — Executar a ingestão real
+
+Os 11 jobs existem em `backend/lib/EduMaps/Ingestion/Job/` e foram verificados
+apenas em `--dry-run`:
+
+```bash
+cd backend && perl -Ilib ingestion_runner.pl --dry-run   # já validado
+cd backend && perl -Ilib ingestion_runner.pl --run       # carga real
+```
+
+### Passo 5 — Fechar a proveniência
+
+Preencher `source_url`/`source_license`/`retrieved_at` das 9 cargas antigas;
+eliminar a duplicata de `censo_data_dictionary`; resolver **GPL-3 vs MIT** do
+BrazilCrime antes de qualquer distribuição; corrigir o `source_url` das
+isocronas para o tileset auto-hospedado; e registar as 3 views como derivadas.
+
+### Passo 6 — Materializar as views
+
+`mobilidade_escola` e `acessibilidade_saude` recalculam agregação sobre
+`censo_escolas` a cada consulta. Promover a `matview` (ou pré-computar) quando
+houver dado — antes disso, nenhum ganho.
+
+---
+
+# 9. Reprodução
+
+```bash
+# a partir da raiz do repositório
+export EDUMAPS_DB_HOST=127.0.0.1 EDUMAPS_DB_PORT=5432
+export EDUMAPS_DB_NAME=edumaps_dev EDUMAPS_DB_USER=devel
+export EDUMAPS_DB_PASS=...            # nunca versionada
+
+Rscript -e 'rmarkdown::render("analysis/reports/new_data_sources.Rmd")'
+```
+
+Alternativa por serviço do `~/.pg_service.conf`:
+
+```bash
+export EDUMAPS_REPORT_PG_SERVICE=edumaps
+```
+
+Para forçar re-perfilagem (padrão: usa cache em `analysis/reports/.cache/`):
+
+```bash
+Rscript -e 'rmarkdown::render("analysis/reports/new_data_sources.Rmd", params=list(usar_cache=FALSE))'
+```
+
+O cache é chaveado por `banco@host:porta` e gravado em
+`analysis/reports/.cache/`, então alternar entre o banco local e o de dev não
+cruza resultados.
+
+---
+
+# Apêndice A — Convenções do catálogo herdadas
+
+Restrições que as migrations impõem e que qualquer análise sobre estes dados
+precisa respeitar. Estão aqui porque são a diferença entre um indicador correto
+e um indicador juridicamente ou metodologicamente inválido.
+
+| Restrição | Origem | Onde se aplica |
+|---|---|---|
+| Agregação obrigatória por município; **supressão de célula pequena** (count < 5) sinalizada por flag | desenho de LGPD | `brazilcrime_municipio` |
+| **Nunca expor por escola**, nem agregada | desenho de LGPD | `brazilcrime_municipio`, `renaest_sinistro` |
+| **Supressão de bilhetagem < 10** antes de qualquer agregação | desenho de LGPD | `antt_od_municipio` |
+| Isocronas em **grade H3**, nunca por escola isolada | desenho de granularidade | `isocrona_escolar` |
+| **Sempre** filtrar `classificacao = 'realizada'` | `'estimativa'` é projeção orçamentária | `siconfi_receita`, `siconfi_despesa`, `esforco_fiscal_educacao` |
+| Junção **obrigatória** para resolver município | chave bruta não tem município | `antt_acidente_trecho`, `antt_contagem_equipamento` |
+| **Vazio ≠ zero** | supressão estatística é estado distinto | `censo2022_setor` |
+| Arealizar sobre área de influência, **não** sobre centróide | qualidade do indicador | `mapbiomas_cobertura` |
+| Fixar a **coleção** (ex.: `collection9`), nunca interpolar o ano | URL por ano morre; ETL quebra em silêncio | `mapbiomas_cobertura` |
+| Sanitização na ingestão (sem PII) | LGPD | `cnes_estabelecimentos` |
+| ODbL share-alike: materialização **exige decisão jurídica** | licença | `recife_transporte_escolar` |
+| Camada é **modelagem, não medição**; ADR de licença pendente | procedência | `snv_trecho_vmda` |
+| Roteadores **auto-hospedados** (instâncias de demo não têm SLA) | arquitetura | `isocrona_escolar` |
+| Retry com backoff obrigatório (WAF intermitente, HTTP 405) | disponibilidade | `transferencia_educ` |
+
+# Apêndice B — Índice dos commits
+
+| Fase | PR | Merge | Data |
+|---|---|---|---|
+| Catálogo (#123) | #133 | `3003d00` | 2026-09 |
+| Fase 0 — allowlist e proveniência (#124) | #141 | `163d1d5` | 2026-09-30 |
+| Fase 1 — contexto IBGE (#125) | #142 | `c10600b` | 2026-09-30 |
+| Fase 2 — saúde (#126) | #143 | `45ae322` | 2026-09-30 |
+| Fase 3 — MapBiomas + INMET (#127) | #144 | `bcf5d6d` | 2026-09-30 |
+| Fase 4 — SICONFI + Transparência (#128) | #145 | `af8adf9` | 2026-09-30 |
+| Fase 5 — BrazilCrime + ANTT + RENAEST (#129) | #146 | `5810881` | 2026-09-30 |
+| Fase 6 — mobilidade (#130) | #147 | `c404522` | 2026-10-01 |
+| De-para RENAEST (#130/#131) | #149 | `70d3af8` | 2026-10-01 |
+| Consolidação mobilidade | `9a13b3b` | — | 2026-10-01 |
+| Framework de ingestão (dry-run) | `2f2eadf` | — | 2026-10-01 |
+| Correções de ordem do `sqitch.plan` | `a13718c`, `83a77c5`, `812f36d` | `main` | 2026-10-01 |
+
+> ⚠️ **Nota de processo.** As três correções de ordem do `sqitch.plan`
+> (`a13718c`, `83a77c5`, `812f36d`) foram enviadas **direto para `main`**, sem
+> branch → PR → merge, contrariando a regra do `AGENTS.md` para `fix`. Foram o
+> que destravou o CI, mas o registro de PR não existe para elas.
