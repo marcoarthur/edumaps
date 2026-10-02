@@ -110,10 +110,76 @@ sinistros ao de-para.
 
 ## 4. Defeito encontrado de passagem
 
+### 4.1 `Job::Base::log_info` sem nome de job
+
 `Job::Base::log_info` interpolava `$self->{job_name}`. O `Mojo::Base` só preenche
 os atributos por omissão quando o **acessor** é chamado, e `log_info` lia o hash
 directly — o resultado era `[info] [] ...` em todos os jobs de ingestão, sem
 nome de job. Corrigido para `$self->job_name`.
+
+### 4.2 A cadeia de dependências do deploy estava partida em três pontos
+
+O mais importante deste ciclo **não** foi o loader. Foi o que se descobriu ao
+fazer o deploy e tentar correr o que se tinha validado localmente.
+
+O `perl -c` no `backend.edumaps` morreu em
+`Can't locate Text/CSV.pm in @INC`. A causa tinha três elos:
+
+1. **`cpanfile` declarava só `Text::CSV_XS`.** São **distribuições distintas**:
+   `Text::CSV_XS` instala `Text/CSV_XS.pm`. Sete módulos fazem
+   `use Text::CSV` (`Ingestion/Job/{Base,ANTT,BrazilCrime,IBGE,Transportes}`,
+   `Ingestion/Jobs`, `Roles/DB/Formats`) — e nenhum carregava.
+2. **O deploy sobrescrevia o `cpanfile` versionado.** A task fazia
+   `my $has_cpan = run qq{test -e cpanfile}`. O `run` devolve a **saída** do
+   comando, e `test -e` não escreve nada quando o ficheiro existe — a variável
+   ficava sempre vazia, o `unless` era sempre verdadeiro, e o "TEMPORARY HACK"
+   copiava por cima o artefacto gerado pelo Dist::Zilla em build de imagem
+   (Abr/2024). Uma correcção ao `cpanfile` **nunca** chegava ao
+   `carton install`, que respondia `Complete!` sem instalar nada.
+3. **Um segundo furo escondido atrás do primeiro.** `Ingestion/Jobs.pm` faz
+   `use DateTime::Format::ISO8601`, declarado nem no `cpanfile` nem no
+   `dist.ini`. Não foi apanhado pelo `AutoPrereqs` porque `Jobs.pm` não é
+   carregado pelo serviço web. Ficava tapado porque o `require` de `Text::CSV`
+   morria logo no topo do ficheiro.
+
+Correção: `cpanfile` declara as duas; a task usa
+`run qq{test -e cpanfile && echo yes}`. **Medido antes de mexer:** o
+`cpanfile` versionado é um **superconjunto** do gerado (78 vs 66 módulos, zero
+"só no gerado"), por isso respeitá-lo não perde dependência nenhuma — ganha as
+12 que só ele declara.
+
+Uma primeira tentativa de correção foi **errada** e vale registada: trocar o
+`run` por `-e $cpanfile` no script Rex. O `-e` olha para o filesystem **local**,
+onde `/opt/edumaps` não existe, e o hack voltou a correr. Só quando o `carton
+install` passou a demorar 11 minutos em vez de segundos é que ficou claro que
+passou a instalar alguma coisa.
+
+**Consequência honesta:** os loaders dos PRs #173 (BrazilCrime) e #175 (IBGE)
+foram validados com o Perl do perlbrew local, onde estas dependências
+existem, e **nunca carregaram no ambiente deployado**. A validação local não
+fez o que se pensava que fez.
+
+### 4.3 Inventário das dependências (em vez de as descobrir uma a uma)
+
+Depois de dois furos seguidos, o terceiro deploy foi feito contra um gate em vez
+de contra a boa-fé. Duas passagens no host:
+
+- **91 módulos** referenciados por `use`/`require` em `lib/` + `script/`,
+  testados **um processo por módulo** (um `require $var` dentro de `eval` dá
+  falsos negativos em runtime — foi o que produziu uma lista de 91 falhas,
+  incluindo `Carp`, o que é absurdo e o sinal de que o *check* estava errado).
+  Resultado: 89 resolvem, 1 falso positivo (`Minion::Task::Generator` é
+  vendorizado em `lib/Minion/Task/Generator.pm`), 1 genuíno
+  (`DateTime::Format::ISO8601`).
+- **`perl -c` de todos os 234 módulos** de `lib/` no `carton` do host:
+  **233 compilam**. O único que falha é
+  `Model/Rank/SchoolDerived.pm`, que faz `use
+  EduMaps::Model::Indicator::School::IdebAI` — um modelo que **não existe no
+  repositório**. Falha também localmente e nada o referencia (código morto),
+  por isso é anterior a este ciclo e fica por tratar.
+
+Os 10 subtests de `transportes_loader.t` passam agora no host — que é a prova de
+que o loader corre onde corre, e não só onde foi escrito.
 
 ---
 
