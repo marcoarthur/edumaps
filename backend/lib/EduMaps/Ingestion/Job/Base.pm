@@ -34,11 +34,11 @@ sub run ($self, $args = {}) {
 }
 
 sub log_info ($self, $msg) {
-  $self->log->info("[$self->{job_name}] $msg");
+  $self->log->info("[" . $self->job_name . "] $msg");
 }
 
 sub log_error ($self, $msg) {
-  $self->log->error("[$self->{job_name}] $msg");
+  $self->log->error("[" . $self->job_name . "] $msg");
 }
 
 sub run_with_retry ($self, $operation, $description) {
