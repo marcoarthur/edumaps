@@ -10,6 +10,9 @@ requires "DBIx::Class::Schema" => "0";
 requires "DBD::Pg" => "0";
 requires "DDP" => "0";
 requires "DateTime" => "0";
+# Ingestion/Jobs.pm usa DateTime::Format::ISO8601 e nao estava declarado em
+# cpanfile nem em dist.ini — o modulo nao carregava no backend.
+requires "DateTime::Format::ISO8601" => "0";
 requires "Digest::SHA" => "0";
 requires "Future::AsyncAwait" => "0";
 requires "HTTP::Tiny" => "0";
@@ -46,6 +49,12 @@ requires "Spreadsheet::Read" => "0";
 requires "SQL::Abstract::Tree" => "0";
 requires "Syntax::Keyword::Try" => "0";
 requires "Term::Table" => "0";
+# Text::CSV e Text::CSV_XS sao distribuicoes DISTINTAS: a segunda so
+# instala Text/CSV_XS.pm. Sete modulos fazem `use Text::CSV`
+# (Ingestion/Job/{Base,ANTT,BrazilCrime,IBGE,Transportes}, Ingestion/Jobs,
+# Roles/DB/Formats), logo a primeira tambem e obrigatoria — sem ela nenhum
+# job de ingestao carrega no backend.
+requires "Text::CSV" => "0";
 requires "Text::CSV_XS" => "0";
 requires "Time::HiRes" => "0";
 requires "URI::Escape" => "0";

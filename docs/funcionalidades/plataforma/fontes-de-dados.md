@@ -32,6 +32,26 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode usar bases do **IBGE** para território e população.
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
+- Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota
+  municipal) para melhorar a leitura de mobilidade e segurança no entorno das
+  escolas e do município.
+
+### Mobilidade e trânsito
+
+- Sistema pode **contar sinistros de trânsito por município e dia**, com o total
+  de mortos e de veículos envolvidos.
+- Sistema pode **manter o cadastro das localidades usadas pela fonte de
+  acidentes**, resolvendo cada uma ao município correspondente e distinguindo o
+  que casou exactamente do que casou por semelhança de nome.
+- Sistema pode **contabilizar a frota de veículos por município**, com a
+  fotografia datada de cada levantamento.
+- Sistema pode **deixar por vazio o que não consegue avaliar**: a quantidade de
+  feridos graves, leves e ilesos, e a quebra da frota por tipo de veículo, só
+  ficam preenchidas quando a fonte as publica. Onde não há dado, o valor é
+  vazio — nunca zero.
+- Sistema pode **relatar o que ficou de fora**: municípios que a fonte publica e
+  o cadastro não reconhece saem num relatório com o número de registos
+  afectados, e não desaparecem em silêncio.
 
 ### Curadoria de novas fontes
 

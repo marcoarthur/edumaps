@@ -4,6 +4,138 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-02 — #169 Transportes (RENAVAM + RENAEST): loader com dados reais
+
+Ciclo **com código** (`backend/` → **deploy por fazer nesta sessão**).
+Nada em `data_pipeline/`: **zero changes Sqitch** — o schema já fechava.
+
+**Nota técnica**: `notas_tecnicas_86.md`
+
+### As 3 decisões do developer (2026-10-02)
+
+1. **RENAVAM**: só `total_frota`; as 10 colunas de tipo ficam `NULL`.
+2. **RENAEST**: `feridos_graves`/`feridos_leves`/`ilesos` ficam `NULL` — não
+   processar o CSV `Vitimas` (1,8 GB).
+3. **De-para**: sim, redefinir `localidade` face ao `chv_localidade`/`codigo_ibge`
+   reais.
+
+### O `UNIQUE` da tabela era a decisão de desenho mais importante
+
+`clean.renaest_sinistro` tem `UNIQUE (localidade, uf, data_sinistro,
+dt_snapshot)` — **sem** `num_acidente`, que é único por linha na fonte. Carregar
+linha a linha com `ON COFLICT` faria o 2.º acidente do dia **sobrescrever** o
+1.º e as vítimas desapareceriam sem erro. Por isso o loader **agrega por
+localidade/UF/dia** e soma. Coberto por subtest (1+2 = 3 mortos, não 2).
+
+Consequência assumida e registada: `tipo_sinistro` e `classificacao` ficam
+`NULL` porque o grão localidade/dia colapsa vários tipos. Reavaliar exige uma
+change que quebre o `UNIQUE` — **change nova**, nunca editar deployada.
+
+### `localidade` não é `chv_localidade`
+
+`chv_localidade` = `<uf><codigo_ibge><yyyy><mm>` — chave **mensal**, 559 700
+linhas para 5 570 municípios. Não é um nome. O nome é `municipio` do CSV
+`Localidade`, e é o que a tabela promete e o que permite ligar sinistros ao
+de-para.
+
+### O `DEFAULT 0` quase repetiu a #154
+
+`feridos_graves`/`feridos_leves`/`ilesos` têm `DEFAULT 0`. Deixar o default
+trabalhar transformava "não avaliável" em **zero vítimas** — o defeito exacto
+da #154, agora dentro da ingestão. Corrigido: `NULL` explícito no `VALUES` e no
+`ON CONFLICT`. `qtde_feridosilesos` de `Acidentes` **não** foi posto em
+`ilesos`: a coluna soma feridos **e** ilesos, e escrevê-la ali afirmaria que
+ninguém ficou ferido.
+
+### Carga real medida (snapshot RENAEST `2026-08-13`, RENAVAM `2026-07-01`)
+
+| Tabela | Antes | Depois |
+|---|---|---|
+| `renaest_localidade_municipio` | 5 573, todas `exact`, `auto_seed` | **5 570** (`exact=5560`, `fuzzy=10`), `validated_by='fonte_renaest'` |
+| `renaest_sinistro` | 0 | **30 647** (amostra de 98 411 acidentes) |
+| `renavam_frota_municipio` | 0 | **5 538** municípios |
+
+- Semente `auto_seed` (auto-junção do IBGE que nunca viu RENAEST) removida: 5 573
+  linhas, uma vez, com a contagem no log.
+- Sentinelas contadas, nunca herdadas: RENAEST `codigo_ibge='0'` (2 700 linhas),
+  RENAVAM UFs "Sem Informação" (17 359), "Não Identificado", "Não se Aplica".
+- Idempotência verificada: re-correr manteve 5 570 e 30 647.
+
+### 33 pares (UF, município) órfãos na RENAVAM — agora nomeados
+
+111 173 linhas de 22 690 877 (0,49%) não casam na malha. Antes era só um número
+no log; passou a haver `renavam_orfaos.csv` com `uf_municipio,linhas`, ordenado
+por peso. Top: `RS/SANTANA DO LIVRAMENTO=14563` (a malha guarda
+`Sant'Ana do Livramento`), `SC/SAO MIGUEL D'OESTE=12404`, `RJ/PARATI=6849`,
+`PR/MUNHOZ DE MELLO=1909`, `MG/BARAO D0 MONTE ALTO=1185` (**zero** no `D0`).
+Causa: grafias divergem **dos dois lados** — não é a fonte errada em bloco.
+
+### 🔴 A cadeia de dependências do deploy estava partida em 3 pontos
+
+Descoberto ao fazer o deploy: **nenhum job de ingestão carregava no backend**.
+`perl -c` no `backend.edumaps` morria em `Can't locate Text/CSV.pm`.
+
+1. **`cpanfile` declarava só `Text::CSV_XS`** — que é outra distribuição
+   (instala `Text/CSV_XS.pm`). 7 módulos fazem `use Text::CSV`.
+2. **O deploy sobrescrevia o `cpanfile` versionado.** `run qq{test -e cpanfile}`
+   devolve a *saída* do comando, e `test -e` não escreve nada → variável sempre
+   vazia → o "TEMPORARY HACK" corria sempre e copiava por cima o artefacto do
+   Dist::Zilla (build de imagem, Abr/2024). **Qualquer correcção ao `cpanfile`
+   nunca chegava ao `carton install`**, que respondia `Complete!` sem instalar
+   nada. Corrigido para `run qq{test -e cpanfile && echo yes}`.
+   - *Armadilha:* trocar por `-e $cpanfile` **não funciona** — o `-e` olha para
+     o filesystem **local**, onde `/opt/edumaps` não existe. Só se notou porque
+     o `carton install` passou de segundos para 11 min.
+   - Medido antes de mexer: o `cpanfile` versionado é **superconjunto** do
+     gerado (78 vs 66, zero só-no-gerado) → respeitá-lo não perde nada.
+3. **Segundo furo escondido atrás do primeiro:** `Ingestion/Jobs.pm` usa
+   `DateTime::Format::ISO8601`, declarado nem no `cpanfile` nem no `dist.ini`.
+   O `AutoPrereqs` não a apanhou porque `Jobs.pm` não é carregado pelo serviço
+   web; e `require Text::CSV` morria logo no topo do ficheiro.
+
+**Consequência honesta:** os loaders dos PRs **#173** (BrazilCrime) e **#175**
+(IBGE) foram validados com o perl do perlbrew local e **nunca carregaram no
+ambiente deployado**. A validação local não fez o que se pensava.
+
+### Gate de aceitação de ambiente (passo a passo depois de 2 furos seguidos)
+
+- **Inventário**: 91 módulos de `use`/`require` em `lib/`, testados **um
+  processo por módulo** (`perl -M<mod> -e1`). 89 resolvem; 1 falso positivo
+  (`Minion::Task::Generator` é vendorizado em `lib/Minion/Task/Generator.pm`);
+  1 genuíno (`DateTime::Format::ISO8601`).
+  - *Armadilha:* `eval { require $var }` **dá falsos negativos** neste runtime —
+  gerou uma lista de 91 falhas incluindo `Carp`, o que denunciou o check errado,
+  não as deps.
+- **`perl -c` de todos os 234 módulos** no `carton` do host: **233 compilam**.
+  O único que falha é `Model/Rank/SchoolDerived.pm`, que faz `use
+  EduMaps::Model::Indicator::School::IdebAI` — modelo **inexistente no repo**.
+  Falha também localmente e nada o referencia: **código morto, anterior a este
+  ciclo**, por tratar.
+
+Os 10 subtests de `transportes_loader.t` passam agora no host.
+
+### Defeito de passagem em `Job::Base`
+
+`log_info` interpolava `$self->{job_name}`. O `Mojo::Base` só preenche atributos
+por omissão quando o **acessor** é chamado — ler o hash dá `undef`. Todos os
+jobs de ingestão logavam `[info] [] ...`, sem nome. Corrigido para
+`$self->job_name`.
+
+### Custos reais
+
+RENAVAM 22,7 M linhas em **~4 min**. RENAEST `Acidentes` completo (2,7 GB,
+4,4 M acidentes) é o passo pesado do job mensal e **ainda não foi medido** — a
+validação usou 98 411 linhas.
+
+### Fica por fazer
+
+- `analytics.mobilidade_escola` **continua bloqueada**: depende de
+  `antt_od_municipio` e `isocrona_escolar`, ambas vazias (#168). Esta carga não
+  a desbloqueia.
+- `fuzzy_match_renaest.py` não é preciso para esta fonte (ela dá `codigo_ibge`).
+  A #155 continua aberta.
+- Carga completa de `renaest_sinistro` por medir.
+
 ## Sessão 2026-10-01 — #154 corrigida, #153 resolvida, e o registry Sqitch reparado
 
 Ciclo **com código** (`data_pipeline/` → **deploy feito**, 89/89 changes em
