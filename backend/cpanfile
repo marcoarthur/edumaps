@@ -46,6 +46,12 @@ requires "Spreadsheet::Read" => "0";
 requires "SQL::Abstract::Tree" => "0";
 requires "Syntax::Keyword::Try" => "0";
 requires "Term::Table" => "0";
+# Text::CSV e Text::CSV_XS sao distribuicoes DISTINTAS: a segunda so
+# instala Text/CSV_XS.pm. Sete modulos fazem `use Text::CSV`
+# (Ingestion/Job/{Base,ANTT,BrazilCrime,IBGE,Transportes}, Ingestion/Jobs,
+# Roles/DB/Formats), logo a primeira tambem e obrigatoria — sem ela nenhum
+# job de ingestao carrega no backend.
+requires "Text::CSV" => "0";
 requires "Text::CSV_XS" => "0";
 requires "Time::HiRes" => "0";
 requires "URI::Escape" => "0";
