@@ -30,6 +30,7 @@ has vars_dados_ibge => '37,513,517,525,6575,516,520,528,6574';
 # Throttle leve (API pública, sem limite declarado)
 has throttle => 0.2;    # 0.2s entre chamadas
 
+
 sub run ($self, $args = {}) {
   $self->log_info('Iniciando ingestão IBGE/SIDRA (tabela 5938 - PIB municipal)');
 
@@ -41,7 +42,7 @@ sub run ($self, $args = {}) {
   # 1. Exportar municípios de referência
   my $n_mun = $self->exportar_municipios($mun_csv);
 
-  # 2. Extrair dados para dados_ibge (formato largo) - tabela 5938
+  # 2. Extrair dados para dados_ibge (formato largo)
   $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.dados_ibge');
   $self->extrair_dados_ibge($mun_csv, $dados_csv, $args);
 
@@ -50,8 +51,16 @@ sub run ($self, $args = {}) {
   die "Nenhuma linha extraída para dados_ibge\n" unless @$rows_dados;
   my $loaded_dados = $self->carregar_dados_ibge($rows_dados);
 
-  # 4. Metadados
-  my $hoje = strftime('%Y-%m-%d', localtime);
+  # 4. Extrair e carregar ibge_agregados (formato longo)
+  $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.ibge_agregados');
+  $self->extrair_ibge_agregados($mun_csv, $agregados_csv, $args);
+  my $rows_ag = $self->processar_ibge_agregados($agregados_csv);
+  my $loaded_ag = 0;
+  if (@$rows_ag) {
+    $loaded_ag = $self->carregar_ibge_agregados($rows_ag);
+  }
+
+  # 5. Metadados
   $self->upsert_metadata(
     'clean.dados_ibge',
     'SIDRA tabela 5938 (PIB municipal)',
@@ -61,9 +70,21 @@ sub run ($self, $args = {}) {
     sprintf('Extração SIDRA 5938 (PIB municipal), %d municípios de referência. Período conforme parâmetros; percentuais podem ser NULL quando não divulgados.', $n_mun)
   );
 
-  $self->log_info(sprintf('IBGE/SIDRA: %d registros carregados em clean.dados_ibge', $loaded_dados));
-  return $loaded_dados;
-}
+  if ($loaded_ag > 0) {
+    $self->upsert_metadata(
+      'clean.ibge_agregados',
+      'SIDRA tabela 5938 (PIB municipal) - formato longo',
+      'https://servicodados.ibge.gov.br/api/v3/agregados/5938',
+      'Domínio público (IBGE)',
+      $loaded_ag,
+      sprintf('Extração SIDRA 5938 em formato longo, %d municípios de referência.', $n_mun)
+    );
+  }
+
+  $self->log_info(sprintf('IBGE/SIDRA: %d (dados_ibge) + %d (ibge_agregados) registros carregados', $loaded_dados, $loaded_ag));
+  return $loaded_dados + $loaded_ag;
+};
+
 
 sub dir_trabalho ($self) {
   my $dir = $self->config->{dir_trabalho} // 'data/ingestao';
@@ -269,3 +290,150 @@ SQL
 }
 
 1;
+
+sub extrair_ibge_agregados ($self, $mun_csv, $out_csv, $args = {}) {
+  if ($self->dry_run) {
+    $self->log_info("[DRY-RUN] Extrairia ibge_agregados para $out_csv");
+    return;
+  }
+
+  my $anos = $args->{anos} // 'last 10';
+
+  my $csv_mun = Text::CSV->new({ binary => 1, auto_diag => 1, eol => "\n" });
+  open my $fh_m, '<:encoding(utf8)', $mun_csv or die "Não leu $mun_csv: $!";
+  my $header_m = $csv_mun->getline($fh_m);
+  $csv_mun->column_names(@$header_m);
+
+  my $csv_out = Text::CSV->new({ binary => 1, auto_diag => 1, eol => "\n" });
+  $self->_garantir_dir($out_csv);
+  open my $fh_o, '>:encoding(utf8)', $out_csv or die "Não abriu $out_csv: $!";
+  $csv_out->print($fh_o, [qw(codigo_ibge ano tabela_id variavel classificacao valor unidade)]);
+
+  my $cont = 0;
+  while (my $r = $csv_mun->getline_hr($fh_m)) {
+    my $cod = $r->{codigo_ibge} or next;
+    next unless $cod =~ /^\d{7}$/;
+
+    my $url = sprintf('%s/%s/n6/%s/v/all/p/%s?formato=json',
+      $self->sidra_base, $self->tabela_pib, $cod, $anos);
+
+    my $res;
+    eval {
+      my $tx = $self->ua->get($url);
+      if ($tx->res->code != 200) {
+        die sprintf('HTTP %d', $tx->res->code);
+      }
+      $res = $tx->res->json;
+      1;
+    } or do {
+      my $err = $@ // 'erro desconhecido';
+      chomp $err;
+      $self->log->warn(sprintf('Falha ao buscar agregados %s: %s - pulando município', $cod, $err));
+      sleep($self->throttle);
+      next;
+    };
+
+    next unless ref($res) eq 'ARRAY' && @$res > 1;
+
+    for (my $i = 1; $i < @$res; $i++) {
+      my $row = $res->[$i];
+      my $ano = $row->{D3C} // $row->{D3N};
+      my $vcode = $row->{D2C};
+      my $v = $row->{V};
+      my $unid = $row->{MN} // $row->{MC} // undef;
+      next unless defined $ano && defined $vcode && defined $v;
+      $ano += 0;
+
+      my $valor;
+      if ($v eq '...' || $v eq '-' || $v eq '') {
+        $valor = undef;
+      } else {
+        $v =~ s/\s+//g;
+        $valor = 0 + $v;
+      }
+
+      $csv_out->print($fh_o, [$cod, $ano, $self->tabela_pib, $vcode, undef, $valor, $unid]);
+      $cont++;
+    }
+    sleep($self->throttle) if $self->throttle > 0;
+  }
+
+  close $fh_m;
+  close $fh_o;
+  $self->log_info(sprintf('Extraídos %d registros (agregados) para %s', $cont, $out_csv));
+}
+
+sub processar_ibge_agregados ($self, $csv_path) {
+  my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, eol => "\n" });
+  open my $fh, '<:encoding(utf8)', $csv_path or die "Não leu $csv_path: $!";
+  my $header = $csv->getline($fh);
+  $csv->column_names(@$header);
+
+  my @rows;
+  my $linha = 1;
+  while (my $r = $csv->getline_hr($fh)) {
+    $linha++;
+    my %row;
+    $row{codigo_ibge} = $r->{codigo_ibge};
+    $row{ano} = defined $r->{ano} ? 0 + $r->{ano} : undef;
+    $row{tabela_id} = $r->{tabela_id} // '';
+    $row{variavel} = $r->{variavel} // '';
+    $row{classificacao} = $r->{classificacao};
+    $row{classificacao} = undef if defined $row{classificacao} && $row{classificacao} eq '';
+
+    die sprintf("Linha %d: dados obrigatórios inválidos\n", $linha)
+      unless defined $row{codigo_ibge} && $row{codigo_ibge} =~ /^\d{7}$/
+             && defined $row{ano} && $row{ano} >= 1900 && $row{ano} <= 2100
+             && $row{tabela_id} ne '' && $row{variavel} ne '';
+
+    my $v = $r->{valor};
+    if (defined $v && $v ne '') {
+      $row{valor} = 0 + $v;
+    } else {
+      $row{valor} = undef;
+    }
+    $row{unidade} = $r->{unidade};
+    $row{unidade} = undef if defined $row{unidade} && $row{unidade} eq '';
+
+    push @rows, \%row;
+  }
+  close $fh;
+  return \@rows;
+}
+
+sub carregar_ibge_agregados ($self, $rows) {
+  if ($self->dry_run) {
+    $self->log_info("[DRY-RUN] Carregaria " . scalar(@$rows) . " linhas em clean.ibge_agregados");
+    return scalar @$rows;
+  }
+
+  my $dbh = $self->app->schema->storage->dbh;
+  my $storage = $self->app->schema->storage;
+
+  my @cols = qw(codigo_ibge ano tabela_id variavel classificacao valor unidade);
+  my $cols_str = join(', ', @cols);
+  my $vals_str = join(', ', map { '?' } @cols);
+  my $updates = join(', ', map { "$_ = EXCLUDED.$_" } qw(valor unidade));
+
+  my $sql = sprintf(<<'SQL', $cols_str, $vals_str, $updates);
+    INSERT INTO clean.ibge_agregados (%s)
+    VALUES (%s)
+    ON CONFLICT (codigo_ibge, ano, tabela_id, variavel, classificacao) DO UPDATE SET
+      %s,
+      data_acessada = NOW()
+SQL
+
+  my $count = 0;
+  eval {
+    $storage->txn_do(sub {
+      my $sth = $dbh->prepare($sql);
+      for my $r (@$rows) {
+        $sth->execute(map { $r->{$_} } @cols);
+      }
+      $count = scalar @$rows;
+    });
+    1;
+  } or die "Carga falhou, nada foi gravado: $@\n";
+
+  return $count;
+}
