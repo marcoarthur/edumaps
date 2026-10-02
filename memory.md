@@ -6,10 +6,15 @@
 
 ## Sessão 2026-10-02 — #169 Transportes (RENAVAM + RENAEST): loader com dados reais
 
-Ciclo **com código** (`backend/` → **deploy por fazer nesta sessão**).
-Nada em `data_pipeline/`: **zero changes Sqitch** — o schema já fechava.
+Ciclo **com código** (`backend/` → **deploy feito**). Nada em `data_pipeline/`:
+**zero changes Sqitch** — o schema já fechava.
 
-**Nota técnica**: `notas_tecnicas_86.md`
+**Branch**: `feat/backend-Transportes-loader` · **PR #176 mergeado** (`f928c89`)
+· **Commits**: `45709de` (loader), `04c1f7d` + `fc022fa` (cpanfile), `56b9736`
+(deploy), `1402ee1` (docs)
+
+**Nota técnica**: `notas_tecnicas_86.md` · **Issue aberta**: #177 (gate de CI
+que apanhe módulos de `lib/` que não carregam)
 
 ### As 3 decisões do developer (2026-10-02)
 
@@ -134,7 +139,11 @@ validação usou 98 411 linhas.
   a desbloqueia.
 - `fuzzy_match_renaest.py` não é preciso para esta fonte (ela dá `codigo_ibge`).
   A #155 continua aberta.
-- Carga completa de `renaest_sinistro` por medir.
+- Carga completa de `renaest_sinistro` por medir (a validação usou 98 411
+  acidentes de ~4,4 M).
+- De-para secundário por semelhança para as 33 grafias divergentes da RENAVAM.
+- Gate de CI para módulos de `lib/` que não carregam: **#177**. Sem ele, o
+  mesmo furo de dependência volta a passar.
 
 ## Sessão 2026-10-01 — #154 corrigida, #153 resolvida, e o registry Sqitch reparado
 
