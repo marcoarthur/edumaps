@@ -4,6 +4,84 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-03 — `docker compose up` partido: a imagem do `sqitch` estava obsoleta
+
+Só documentação (`AGENTS.md` + esta memória): sem código, sem deploy.
+
+### O sintoma
+
+```
+Container edumaps-sqitch Error service "sqitch" didn't complete successfully: exit 2
+  Nothing to deploy (up-to-date)
+  Cannot find change 1b2c78e98a8e86d5b4df1370a5efb6e3e7e8f564 (import_metadata_uniq_table_name) in sqitch.plan
+```
+
+`backend` fica bloqueado por `depends_on: sqitch:
+condition: service_completed_successfully`.
+
+### O diagnóstico (e o que a mensagem esconde)
+
+A mensagem aponta para a base de dados. **Não é a base de dados.** Medido:
+
+| Medida | Valor |
+|---|---|
+| Changes no `sqitch.plan` (local) | **92** |
+| Changes em `sqitch.changes` (project `edumaps`) | **92** |
+| Diferença entre os dois conjuntos | **zero, nos dois sentidos** |
+| `sqitch.plan` dentro de `leaflet-sqitch:latest` | **68 linhas** (110 no working tree), sem `import_metadata_uniq_table_name` |
+| Data da imagem | 4 dias |
+
+O plano e o registry **batem exactamente**. A imagem é que tem uma fotografia
+antiga de `data_pipeline/`, porque `data_pipeline/Dockerfile` faz
+`COPY . /repo` no build e `docker compose up` **não reconstrói** imagens.
+
+O `sqitch deploy` le o registry, vê a ponta `1b2c78e9…` (que o registry
+declara deployada), e procura-a no plano de 68 linhas: não a encontra → exit 2.
+Por isso o "Nothing to deploy (up-to-date)" e o errocontradizem-se: o primeiro
+vem do estado, o segundo da validação do plano contra o registry
+(`App::Sqitch::Engine::_sync_plan`, que só reporta a **ponta** da cadeia — por
+isso o erro nomeia uma change e não as 92).
+
+### Duas armadilhas de diagnóstico que custaram tempo
+
+1. **`project` não era a causa.** O registry diz `project = edumaps` e o
+   `Dockerfile` usa `WORKDIR /repo`, o que sugeria basename `repo`. Era falso:
+   o `sqitch.plan` declara `%project=edumaps` nas primeiras linhas (pragma), e
+   o sqitch local resolve `edumaps` também. Medido, não presumido.
+2. **A hipótese óbvia (change_id partido) estava errada** por uma razão que só
+   o código do Sqitch diz: em `App::Sqitch::Plan::Change::info`, o id é
+   `sha1('change ' . length($content) . "\0" . $content)` e o `content` inclui
+   `parent <id-do-pai>`. Logo a cascata é real — mas aqui nada tinha mudado no
+   plano desde `2ae8a80`, e o working tree estava limpo.
+
+### A correcção
+
+```bash
+docker compose build sqitch
+```
+
+`exited with code 0`, e os seis serviços ficam de pé
+(`sqitch` sai com 0 por ser one-shot; `backend` responde 200 em
+`/api/city/suggestions` e `/api/school/search/pageable`).
+
+### A classe do bug, registada no AGENTS.md
+
+A mensagem de erro culpa a base de dados quando o problema é o build. Regista-se
+em `AGENTS.md` (secção "Database") o comando de verificação do plano dentro da
+imagem, para não se perder tempo a investigar o registry outra vez.
+
+**Em aberto (decisão do developer):** a correção é de(build) e volta a acontecer
+a cada change nova em `data_pipeline/`. Duas saídas — documentar
+`docker compose build sqitch` (o que foi feito no `AGENTS.md`), ou
+**bind-mount** `./data_pipeline:/repo` no serviço `sqitch` e eliminar a classe.
+O bind-mount só faz sentido no `sqitch` (runner puro de migrações); no `backend`
+seriaErrado, porque as dependências Perl são instaladas no build e um mount de
+fonte por cima parte o `carton`.
+
+Nota lateral: as imagens `backend`/`minion` também têm 4 dias e **não** têm o
+código desta semana (`Transportes.pm` nem existe lá dentro). `docker compose up`
+não avisa.
+
 ## Sessão 2026-10-02 — #169 Transportes (RENAVAM + RENAEST): loader com dados reais
 
 Ciclo **com código** (`backend/` → **deploy feito**). Nada em `data_pipeline/`:

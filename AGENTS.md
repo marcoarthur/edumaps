@@ -105,6 +105,38 @@ via plugin `opencode-chrome-devtools` (CDP), alvo `http://ubatexu.lan:8080`.
 - Migrations em `data_pipeline/` (deploy/revert/verify)
 - MVs em `analytics.*`, views limpas em `clean.*`
 
+### ⚠️ `docker compose up` NÃO reconstrói as imagens — o serviço `sqitch` mente sobre a base de dados
+
+`docker compose up` reutiliza a imagem já construída. O serviço `sqitch` faz
+`COPY . /repo` no build (`data_pipeline/Dockerfile`), portanto o `sqitch.plan`
+que ele lê é **uma fotografia de quando a imagem foi construída**, não o
+working tree.
+
+Depois de mexer em `data_pipeline/` (qualquer change nova, ou uma correcção ao
+`sqitch.plan`), é **obrigatório**:
+
+```bash
+docker compose build sqitch   # antes de `up`, ou `up` com `--build`
+```
+
+Sem isto, o contentor corre com um plano antigo e falha com:
+
+```
+Nothing to deploy (up-to-date)
+Cannot find change <id> (<change>) in sqitch.plan
+```
+
+A mensagem **aponta para a base de dados e está errada**: é o build que está
+obsoleto. Antes de investigar o registry, confirmar o plano dentro da imagem:
+
+```bash
+docker run --rm --entrypoint sh leaflet-sqitch:latest -c 'wc -l < /repo/sqitch.plan'
+git grep -cE '^[a-z0-9_]+ ' -- data_pipeline/sqitch.plan
+```
+
+O mesmo se aplica a `backend`/`minion` (imagens de 4 dias correm código de 4
+dias, sem o dizer): `docker compose build backend minion`.
+
 ### ⚠️ Existem DOIS contentores de base de dados em `ubatexu.lan`
 
 Existem **dois** contentores de base de dados em `ubatexu.lan`, e ambos se
