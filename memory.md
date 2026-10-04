@@ -4,6 +4,58 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-04 — Regra: as imagens Docker locais são parte do deploy
+
+Só documentação (`AGENTS.md`) + aplicação da regra à stack local. Sem código,
+sem deploy Rex.
+
+### O pedido
+
+> "devemos escrever uma regra de PR + merge que as imagens locais devem ser
+> recriadas/atualizadas também"
+
+### O que ficou escrito
+
+- **Passo 5 (Deploy)**: secção "As imagens Docker locais também são parte do
+  deploy", com a tabela área → imagem, o comando, os dois modos de falha e o
+  `md5sum` de verificação.
+- **Passo 6 (PR + merge)**: a obligation em si, logo a seguir ao
+  `git merge --ff-only` — *"Se o ambiente local não foi atualizado, o PR não
+  está validado."*
+
+O Rex sincroniza os contentores LXC; a stack local do `ubaxala` é **outro**
+ambiente, com as suas próprias imagens, e `docker compose up` não as reconstrói.
+São 6 serviços com `build:` — `db` (`./db`), `sqitch` (`./data_pipeline`),
+`backend` e `minion` (ambos `./backend`), `analytic`
+(`./analysis/edumapsr`), `frontend` (`./frontend`, app em `frontend/edumaps`).
+
+### Porque a regra não é burocracia
+
+Os dois modos de falha são **medidos** e nenhum deles avisa:
+
+| Serviço obsoleto | Como se manifesta |
+|---|---|
+| `sqitch` | `Cannot find change <id> in sqitch.plan` — **culpa a base de dados, e a base de dados está bem** (plano e registry com os mesmos 92 changes) |
+| `backend` / `minion` | **silencioso**: arranca normal, responde 200, serve a versão anterior |
+
+### A regra apanha-me a mim
+
+O ciclo da #169 (PR #176, 2026-10-02) fez deploy via Rex e **não** reconstruiu
+as imagens locais. Ficou exactamente no buraco que a regra fecha — e foi o que
+provocou a falha de 2026-10-03. Aplicada a si mesma: `docker compose build
+backend minion` + `up -d`, e conferido por `md5sum`
+(`Transportes.pm` `45b4e972…`, `cpanfile` `eac48e5a…` — contentor e working tree
+iguais). Stack de pé, `/api/city/suggestions?q=rec` → 200.
+
+### Em aberto (decisão do developer, do ciclo de 2026-10-03)
+
+A regra **documenta** a correcção (`docker compose build <serviço>`), mas a
+classe do bug volta a existir sempre que alguém a esquecer. A alternativa é um
+**bind-mount** `./data_pipeline:/repo` no serviço `sqitch`, que a elimina. Só
+faz sentido no `sqitch` (runner puro de migrações): no `backend` seria errado,
+porque as dependências Perl instalam-se no build e um mount de fonte por cima
+parte o `carton`.
+
 ## Sessão 2026-10-03 — `docker compose up` partido: a imagem do `sqitch` estava obsoleta
 
 Só documentação (`AGENTS.md` + esta memória): sem código, sem deploy.

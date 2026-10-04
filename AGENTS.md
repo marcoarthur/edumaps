@@ -358,6 +358,45 @@ plano → execução → aprovação
 
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
+
+   **As imagens Docker locais também são parte do deploy.** O `rex` sincroniza
+   os contentores LXC; a stack local do `ubaxala` é uma *outra* ambiente, com
+   as suas próprias imagens, e `docker compose up` **não as reconstrói**. Um
+   ciclo que altere código e fique só pelo Rex deixa o ambiente local a correr
+   código antigo, sem qualquer aviso. Os 6 serviços com `build:`:
+
+   | Área alterada | Imagem local a reconstruir |
+   |---------------|-----------------------------|
+   | `data_pipeline/` | `sqitch` |
+   | `backend/` | `backend` **e** `minion` (mesmo contexto de build) |
+   | `frontend/` | `frontend` (contexto `./frontend`, app em `frontend/edumaps`) |
+   | `analysis/edumapsr/` | `analytic` |
+   | `db/` | `db` — **atenção**: o cluster vive em `./pgdata` (bind mount), logo reconstruir a imagem **não** re-executa os scripts de `initdb`. só tem efeito num `pgdata` novo. |
+   | `docs/`, `*.md`, `.opencode/` | — (sem imagem) |
+
+   ```bash
+   sg docker -c 'docker compose build sqitch backend minion'   # só as afetadas
+   sg docker -c 'docker compose up -d'                        # ou: up -d --build
+   ```
+
+   Dois modos de falha, ambos medidos, e nenhum deles óbvio:
+
+   - **`sqitch` obsoleto** → `Cannot find change <id> in sqitch.plan`, mensagem
+     que **culpa a base de dados e está errada** (plano e registry batem
+     certo; o que está velho é a imagem). Detalhe na secção "Database".
+   - **`backend`/`minion` obsoletos** → **silencioso**: o contentor arranca
+     normal, responde 200, e serve a versão anterior do código. Medido a
+     2026-10-03: `Transportes.pm` não existia dentro do contentor com a imagem
+     de 4 dias.
+
+   Por isso, depois de um merge que toque código, confirmar que o ambiente local
+   corresponde ao `main` — um `md5sum` de um ficheiro characteristico basta:
+
+   ```bash
+   sg docker -c 'docker exec edumaps-backend md5sum /opt/edumaps/backend/lib/EduMaps/Ingestion/Job/Transportes.pm'
+   md5sum backend/lib/EduMaps/Ingestion/Job/Transportes.pm
+   ```
+
 6. **PR + merge (via `gh`) — REGRA OBRIGATÓRIA**: **toda `feat` e `fix`**
    (qualquer artefato de código) entra no repositório **somente** via
    **branch novo → PR → merge**. **NUNCA** dar push direto em `main` com
@@ -376,8 +415,16 @@ plano → execução → aprovação
      comentários) — não são deployáveis e não têm o que "entrar" como feature.
    - **Exceção de infra Docker local (`docker-compose.yml`, `docker/` no
      `ubaxala`)**: são código, então também passam por branch → PR → merge.
-   - Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
-   - Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.
+   - **Depois do merge: `git checkout main && git fetch origin && git merge --ff-only origin/main`.**
+   - **Depois do merge: reconstruir as imagens Docker locais** (ver passo 5,
+     "As imagens Docker locais também são parte do deploy"). Isto não é
+     opcional nem adiável para o fim do ciclo: um `merge` de `feat`/`fix` que
+     deixa a stack local com a imagem anterior produz **duas** armadilhas —
+     o `sqitch` a falhar com `Cannot find change ... in sqitch.plan` (culpa a
+     base de dados, e a base de dados está bem), e o `backend`/`minion` a
+     servir a versão anterior do código **sem dar sinal nenhum**. Se o ambiente
+     local não foi atualizado, o PR não está validado.
+   - **Mudanças não commitadas e não relacionadas ao trabalho NUNCA entram no PR.**
    - Flag de bloqueio: se por qualquer motivo o fluxo tentar dar push direto em
      `main` com `feat`/`fix`, **parar e notificar** o developer, não seguir.
    - **Urgência não isenta** (CI quebrado, hotfix, incidente): a regra vale
