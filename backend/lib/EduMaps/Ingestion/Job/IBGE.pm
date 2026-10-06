@@ -34,6 +34,22 @@ has throttle => 0.2;    # 0.2s entre chamadas
 sub run ($self, $args = {}) {
   $self->log_info('Iniciando ingestão IBGE/SIDRA (tabela 5938 - PIB municipal)');
 
+  # ---------------------------------------------------------------------------
+  # Semântica de --dry-run (corrigido 2026-10-06)
+  # ---------------------------------------------------------------------------
+  # `--dry-run` significa **não escrever na base de dados** — não "não fazer
+  # nada". Os guards estavam nas etapas de leitura (`exportar_municipios`,
+  # `extrair_dados_ibge`, `extrair_ibge_agregados`), que assim nem sequer
+  # escreviam os CSVs intermédios, e `processar_dados_ibge` morria com
+  # "Não leu data/ingestao/dados_ibge.csv: No such file or directory".
+  #
+  # Resultado: o dry-run falhava E, quando não falhava, não reportava contagem
+  # nenhuma — ver a #156, "os jobs foram verificados apenas em --dry-run".
+  #
+  # Agora a corrente corre toda (BD, rede, CSVs locais) e só pára antes de
+  # persistir: `carregar_*` e `upsert_metadata` têm guard de dry-run e devolvem
+  # a contagem que seria gravada sem gravar nada.
+  # ---------------------------------------------------------------------------
   my $dir = $self->dir_trabalho;
   my $mun_csv = "$dir/municipios.csv";
   my $dados_csv = "$dir/dados_ibge.csv";
@@ -99,11 +115,8 @@ sub _garantir_dir ($self, $file) {
   File::Path::make_path($dir);
 }
 
+# Sem guard de dry-run, de propósito: ver `run` para a semântica de --dry-run.
 sub exportar_municipios ($self, $destino) {
-  if ($self->dry_run) {
-    $self->log_info("[DRY-RUN] Exportaria $destino com lista de municípios");
-    return 0;
-  }
   my $db = $self->app->schema->storage->dbh;
   my $rows = $db->selectall_arrayref(
     'SELECT codigo_ibge, sigla_uf, nome_municipio
@@ -122,11 +135,7 @@ sub exportar_municipios ($self, $destino) {
 }
 
 sub extrair_dados_ibge ($self, $mun_csv, $out_csv, $args = {}) {
-  if ($self->dry_run) {
-    $self->log_info("[DRY-RUN] Extrairia dados_ibge para $out_csv");
-    return;
-  }
-
+  # Sem guard de dry-run, de propósito: ver `run` para a semântica de --dry-run.
   # Período: últimos anos (padrão 10 anos)
   my $anos = $args->{anos} // 'last 10';
 
@@ -292,11 +301,7 @@ SQL
 1;
 
 sub extrair_ibge_agregados ($self, $mun_csv, $out_csv, $args = {}) {
-  if ($self->dry_run) {
-    $self->log_info("[DRY-RUN] Extrairia ibge_agregados para $out_csv");
-    return;
-  }
-
+  # Sem guard de dry-run, de propósito: ver `run` para a semântica de --dry-run.
   my $anos = $args->{anos} // 'last 10';
 
   my $csv_mun = Text::CSV->new({ binary => 1, auto_diag => 1, eol => "\n" });

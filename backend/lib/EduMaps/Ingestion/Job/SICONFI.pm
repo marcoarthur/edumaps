@@ -133,3 +133,4 @@ sub _map_rreo_receita ($self, $cod_ibge, $exercicio, $items) {
   }
   return \@out;
 }
+1;
