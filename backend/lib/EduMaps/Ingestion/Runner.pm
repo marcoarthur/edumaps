@@ -14,29 +14,56 @@ has log => sub { Mojo::Log->new };
 has config => sub { {} };
 has dry_run => 0;
 
-sub register_job ($self, $job_class, $config = {}) {
+# Contexto mínimo passado a cada job (ver EduMaps::Ingestion::App). Lazy:
+# construir o Runner não abre ligação nenhuma à base de dados. Nos testes é
+# substituído por um mock — `Runner->new(app => $mock)`.
+has app => sub ($self) {
+  require EduMaps::Ingestion::App;
+  return EduMaps::Ingestion::App->new;
+};
+
+# Lista de jobs derivada do directório, e não de uma lista escrita à mão.
+#
+# Existia um `qw(...)` com 11 nomes em dois sítios (`load_jobs` e
+# `CLI::list_jobs`), e não continha `IBGE` — logo `--list`, `--schedule` e
+# "roda todos" omitiam um loader completo e mergeado. Derivar do directório
+# faz com que um job novo seja descoberto sem ninguém ter de lembrar-se de o
+# acrescentar em dois sítios.
+#
+# `Base.pm` é a classe abstracta pai (`run()` morre com "deve ser
+# implementado") e por isso fica de fora.
+sub job_names ($class) {
+  my $dir = path(__FILE__)->dirname->child('Job');
+  opendir my $dh, $dir or die "Não abriu $dir: $!\n";
+  my @names =
+    sort
+    map  { s/\.pm\z//r }
+    grep { $_ ne 'Base.pm' && /\.pm\z/ }
+    readdir $dh;
+  closedir $dh;
+  die "Nenhum job de ingestão em $dir\n" unless @names;
+  return @names;
+}
+
+sub register_job ($self, $job_class, $config = undef) {
   eval "require $job_class";
   die "Erro ao carregar $job_class: $@" if $@;
-  
+
+  my $cfg = defined $config ? $config : $self->config;
   my $job = $job_class->new(
     log => $self->log,
-    config => $config,
-    dry_run => $self->dry_run
+    config => $cfg,
+    dry_run => $self->dry_run,
+    app => $self->app,
   );
-  
+
   $self->jobs->{ $job->job_name } = $job;
   $self->log->info("Job registrado: $job_class ($job->{job_name})");
 }
 
 sub load_jobs ($self, $job_names = []) {
-  my @all_jobs = qw(
-    BrazilCrime MapBiomas INMET ANTT Transportes
-    SICONFI INEP MedidorConectada FNDE
-    SecretariasMunicipais CensoEscolar
-  );
-  
-  my @to_load = @$job_names ? @$job_names : @all_jobs;
-  
+  my @to_load = @$job_names ? @$job_names : $self->job_names;
+
   for my $name (@to_load) {
     my $class = "EduMaps::Ingestion::Job::$name";
     $self->register_job($class);
