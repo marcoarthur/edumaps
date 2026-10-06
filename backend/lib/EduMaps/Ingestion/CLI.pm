@@ -24,11 +24,16 @@ sub run ($class, @argv) {
     'list'       => \$opts{list},
     'dry-run'    => \$opts{dry_run},
     'config=s'   => \$opts{config},
+    '--stall-timeout=i'        => \$opts{stall_timeout},
+    '--stall-check-interval=i' => \$opts{stall_check_interval},
     'help|h'     => sub { $class->usage(); exit 0 };
   
+  my $config = $class->load_config($opts{config});
   my $runner = EduMaps::Ingestion::Runner->new(
-    dry_run => $opts{dry_run},
-    config  => $class->load_config($opts{config}),
+    dry_run                 => $opts{dry_run},
+    config                  => $config,
+    (defined $opts{stall_timeout}        ? (stall_timeout        => $opts{stall_timeout})        : ()),
+    (defined $opts{stall_check_interval} ? (stall_check_interval => $opts{stall_check_interval}) : ()),
   );
   
   if ($opts{list}) {
@@ -106,6 +111,8 @@ Opções:
   --list               Lista jobs disponíveis
   --dry-run            Simula execução sem gravar na base de dados
   --config=ARQUIVO     Arquivo de configuração (hashref Perl)
+  --stall-timeout=N    Segundos sem progresso antes de abortar (padrão 600)
+  --stall-check-interval=N  Intervalo de verificação de progresso (padrão 60)
   --help, -h           Mostra esta ajuda
 
 Exemplos:
