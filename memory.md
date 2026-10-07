@@ -4242,3 +4242,14 @@ gh pr merge <n> --merge --delete-branch
 - Fase 1A entregue: `EduMaps::Bots::{Base,Telegram,Policy::Actions,Role::Sender}` + `EduMaps::Config::Bot` + teste `t/05-tasks/bot_telegram.t` (10 PASS). Só envio (fase 1); `receive_updates` aborta por design.
 - CI verde após rebase (run 37640543482). Lição: PR #184 ficou vermelho por causa pré-existente da #177 — resolver o bloqueio em PR separado (#185) e rebase, nunca contornar o gate.
 - #183 segue aberta (parcial): fases 1B (persistência+API), 1C (frontend), 1D (integração) pendentes.
+
+### 2026-10-07 — #183 Fase 1B mergeada (PR #186)
+- Decisão no planning: **integrar a config do bot no sistema AppConfig existente** (não tabela nova). Reaproveita secrets cifrados pgcrypto, auth admin, API `/api/admin/config/*` e a ConfigPage que já renderiza a árvore.
+- Backend: `Roles/Business/Config/AppConfig.pm` ganhou grupo `bot_telegram` (token secret, chat_id, enabled, allowed_actions) e **novo tipo `multiselect`** (validação estrita: lista não-vazia, ação ∈ Policy::Actions, sem duplicadas). `bot_telegram_config()` monta a config com token decifrado em memória. Endpoint novo `POST /api/admin/bot/telegram/test` (auth admin; 400 se incompleto/desligado, 502 se a API recusar).
+- Frontend: `ConfigEditor.svelte` ganhou branch multiselect (checkboxes) + `$effect` para re-preenchimento ao trocar de folha (o `onMount` só rodava uma vez — bug que o teste multiselect expôs). Fixtures/handlers MSW do grupo.
+- Docs funcionais: capacidade nova `docs/funcionalidades/plataforma/bot-telegram.md` + Painel de Configuração e índice atualizados (a 1A não tinha documentado a capacidade — corrigido).
+- Testes: `t/04-api/admin/bot.t` (novo, 6 subtests), `app-config.t` estendido; 29 PASS nos 4 arquivos afetados; vitest config 8/8 e suíte completa 396/396; gate `perl -c` RC=0. CI verde (backend 10m26s, frontend 1m1s).
+- **Smoke manual ponta a ponta**: token real do `tools/notify/.env` persistido via API admin (PUT) → `POST /api/admin/bot/telegram/test` → `{"ok":1,"status":"200"}` — mensagem entregue e **confirmada pelo developer no Telegram**. Primeira tentativa deu 502 transitório (conexão) — repetição OK.
+- Deploy: `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev` OK; md5 do container local e do backend.edumaps batem com o working tree; imagens locais backend/minion reconstruídas.
+- Lições: (1) `is_deeply` não é exportado pelo Imports/Test2 — usar parentêses/join; (2) bug pré-existente `(value eq 'true' || value == 1)` emitia warning numérico com `'false'` — corrigido para `eq '1'`; (3) **GitHub comentários: incidente 16:53–16:58 UTC+?** — `gh issue comment` (GraphQL) **e** REST `POST /issues/:n/comments` devolviam erro/HTTP 500 mesmo em corpo mínimo; GET e merge OK. Registrar no comentário assim que o endpoint voltar.
+- #183 segue aberta (parcial): fases 1C (integração com alertas reais — ex.: stall do ingestion_runner) e 1D (recebimento) pendentes.
