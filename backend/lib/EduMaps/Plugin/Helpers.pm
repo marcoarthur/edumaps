@@ -53,7 +53,9 @@ sub _add_helpers($self, $app) {
 
   $app->helper(
     add_mw => sub ($c, $mw) {
-      my $class = "EduMaps::EventBus::Middleware::$mw";
+      # Nome curto (SiopeTask) -> EduMaps::EventBus::Middleware::$mw;
+      # classe completa (EduMaps::Middleware::Bot) é usada como está.
+      my $class = $mw =~ /::/ ? $mw : "EduMaps::EventBus::Middleware::$mw";
       my $mw_inst = $self->mw_cache->{$class} ||= do {
         unless ($class->can('new')) {
           eval "require $class" or die "Não foi possível carregar o Middleware $class: $@";

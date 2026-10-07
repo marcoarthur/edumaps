@@ -12,18 +12,43 @@ has ua   => sub { Mojo::UserAgent->new(timeout => 10) };
 
 sub can_receive { return 0 }
 
+# Envio síncrono (bloqueante): usado pelo endpoint admin de teste
+# (POST /api/admin/bot/telegram/test) e pelo Notifier em contexto sem loop.
 sub send_text ($self, $text, $opts = {}) {
+  my $tx = $self->_post_tx($text, $opts);
+  return $self->_map_response($tx);
+}
+
+# Envio assíncrono (Mojo::Promise, post_p não-bloqueante): usado pela
+# fronteira assíncrona do Middleware::Bot quando há loop rodando (web/Minion).
+# Nunca rejeita — resolve sempre { ok, status, error }.
+sub send_text_p ($self, $text, $opts = {}) {
+  my ($url, $form) = $self->_build_request($text, $opts);
+
+  return $self->ua->post_p($url => json => $form)->then(
+    sub ($tx) { $self->_map_response($tx) },
+    sub ($err) { { ok => 0, status => 0, error => "$err" } },
+  );
+}
+
+sub _post_tx ($self, $text, $opts) {
+  my ($url, $form) = $self->_build_request($text, $opts);
+  return $self->ua->post($url => json => $form);
+}
+
+sub _build_request ($self, $text, $opts) {
   my $token   = $opts->{token}   // $self->config->{telegram_token}   // '';
   my $chat_id = $opts->{chat_id} // $self->config->{telegram_chat_id} // '';
   $chat_id = $opts->{chat_id} if defined $opts->{chat_id};
   die "Telegram: token em falta\n"   unless length($token // '');
   die "Telegram: chat_id em falta\n" unless length($chat_id // '');
 
-  my $url = "https://api.telegram.org/bot$token/sendMessage";
-  my $tx = $self->ua->post($url => json => {
-    chat_id => $chat_id,
-    text    => $text,
-  });
+  my $url  = "https://api.telegram.org/bot$token/sendMessage";
+  my $form = { chat_id => $chat_id, text => $text };
+  return ($url, $form);
+}
+
+sub _map_response ($self, $tx) {
   if ($tx->res->is_success) {
     return { ok => 1, status => $tx->res->code };
   }
