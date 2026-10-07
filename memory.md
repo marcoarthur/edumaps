@@ -4223,3 +4223,22 @@ git push -u origin <branch>
 gh pr create --base main --head <branch> --title "<título em PT-BR>" --body "<entregas, testes, validação>"
 gh pr merge <n> --merge --delete-branch
 ```
+
+### 2026-10-07 — #177 (parte 1) resolvido (PR #181)
+- Reativado/implementado gate no backend-tests: `find lib -name '*.pm' -print0 | xargs -0 -n1 perl -Ilib -c >/dev/null` antes da suíte. Verifica sintaxe de todos os módulos.
+- Comentário adicionado no issue #177 com o resultado do merge. Issue permanece aberta (passos 2 e 3 pendentes).
+
+### 2026-10-07 — #163 resolvido (PR #182)
+- Adicionado data_pipeline/scripts/check_fontes.pl: verificador de 11 fontes com taxonomia fechada (ok, http_4xx/5xx, dns_morto, tls_invalido, sem_api, auth_requerida, e_sic_pendente), usa Net::DNS (8.8.8.8), LWP::UserAgent+TLS, suporta --json/--check-diverg/--allowlist. Exit 0, repetível.
+- Gerado data_pipeline/contrato_conectividade_20261007.json com medição.
+
+### 2026-10-07 — #177 passo 3 resolvido (PR #185)
+- Decisão do developer: apagar `backend/lib/EduMaps/Model/Rank/SchoolDerived.pm` (código morto, 6 indicadores inexistentes, zero referências).
+- Gate `perl -c` passou de 233/234 → 234/234. CI verde (run 37637742670). Commit separado do workflow (nota da issue: não somar passo 3 ao passo 1).
+- #177 segue aberta: passo 2 (inventário de dependências) pendente.
+
+### 2026-10-07 — #183 Fase 1A mergeada (PR #184)
+- Issue #183 aberto no ciclo: Bot Telegram bidirecional, planejado em fases 1A–1D.
+- Fase 1A entregue: `EduMaps::Bots::{Base,Telegram,Policy::Actions,Role::Sender}` + `EduMaps::Config::Bot` + teste `t/05-tasks/bot_telegram.t` (10 PASS). Só envio (fase 1); `receive_updates` aborta por design.
+- CI verde após rebase (run 37640543482). Lição: PR #184 ficou vermelho por causa pré-existente da #177 — resolver o bloqueio em PR separado (#185) e rebase, nunca contornar o gate.
+- #183 segue aberta (parcial): fases 1B (persistência+API), 1C (frontend), 1D (integração) pendentes.
