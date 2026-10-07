@@ -4273,3 +4273,12 @@ gh pr merge <n> --merge --delete-branch
 - Lição de compilação: arquivos de teste que usam `use strict`/`Mojo::Base -strict` **sem** `-signatures` quebram com `sub ($x)` (lido como protótipo) — usar `sub { my ($x) = @_; ... }` nesses arquivos.
 - Deploy: `rex prepare` + `deploy_backend_dev` OK; md5 de `Middleware/Bot.pm` idêntico (a19c359d) em working tree, `backend.edumaps` e container local; imagens backend/minion reconstruídas.
 - #188 encerrado (spec+issue). Backlog aberto segue: #183 (bidirecional + migração `notify.sh`), #165, ingestão IBGE em `extrair_dados_ibge`, #177 passo 2, #156, #155.
+
+### 2026-10-07 — Certificação e2e do Bot Telegram (#188) + gap de infra no produto
+- **Teste manual do developer falhou por config, não por bug**: no produto (`database.edumaps`) a `app_config.items` só tinha `allowed_actions` do `bot_telegram` — faltavam `enabled`, `token`, `chat_id`. O log já mostrava a cadeia a funcionar: `Notifier: bot desativado — system_bot_info ignorada`.
+- **Gap de infra medido**: `EDUMAPS_CONFIG_MASTER_KEY` **vazia** em `edumaps-web`/`edumaps-minion` → o backend recusa cifrar/decifrar secrets (o `assistant_censo.api_key` do produto já estava ilegível por isso). Gerada master key (hex 64) e setada nos dois units systemd + restart. ⚠️ **A chave vive nos units do host** (`backend.edumaps`) — rotacionar exige re-cifrar os secrets (`secret_key_version`).
+- **Config completada no produto via SQL** (a UI admin não conseguia salvar o token sem master key): `enabled=1`, `chat_id` (o de `tools/notify/.env`), `token` cifrado com `pgp_sym_encrypt` + master key; `allowed_actions` já tinha `system_bot_info`; `updated_by='e2e-certificacao'`.
+- **E2e real (Chrome CDP, driver próprio)**: login `e2e.bot@edumaps.local` (admin descartável criado para o teste, senha `e2e-bot-2026`) na SPA → `POST /api/gestor/login` 200 → `/gestor/painel` → logs `Notifier: system_bot_info enviada (HTTP 200)` + `Middleware::Bot: system_bot_info entregue`. Mensagem esperada: `Login realizado: <email>` — no próximo login do developer no produto: `Login realizado: rovai@edumaps.dev`.
+- **Lições**: (1) `openssl dgst -mac HMAC -macopt hexkey:` **diverge** do `Digest::SHA::hmac_sha256_hex` do app — para gerar `senha_hash` de gestor usar Perl (`perl -MDigest::SHA=hmac_sha256_hex -e 'print hmac_sha256_hex($ARGV[0],$ARGV[1])' "$senha" "$salt"`); (2) `getUpdates` da API do Telegram não prova envio (só lista mensagens recebidas pelo bot).
+- Usuário descartável `e2e.bot@edumaps.local` permanece na BD dev do produto — remover quando dispensável.
+---

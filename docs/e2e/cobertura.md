@@ -340,3 +340,39 @@ Read-through do perfil (referências/percentis pré-computados):
 | `GET /api/school/:cod/evolution` | 🟢 200 (27 pontos); 99999999 → 400; `abc` → 404 |
 | `GET /api/network/:ibge/profile` | 🟢 200 (225 escolas); 9999999 → 400; `abc` → 404 |
 | `/ask` "Como está a escola 23165669?" | 🟢 200 consultando `analytics.school_profile_flat` (resposta coerente com o perfil) |
+
+## Rodada 2026-10-07 — Certificação e2e do Bot Telegram (login → `system.bot.info`)
+
+**Objetivo**: certificar ponta a ponta o fluxo da #188 (PR #189) — login na
+SPA dispara `system.bot.info` e o bot entrega a mensagem no Telegram. Driver
+próprio sobre o CDP do Chrome (mesmo padrão da rodada 2026-09-28), container
+`node:22-slim` com `--network host`, alvo `http://ubatexu.lan:8080/gestor`.
+
+**Causa raiz do teste manual do developer (falha ≠ bug)**: no produto
+(`database.edumaps`) a `app_config.items` só tinha `allowed_actions` do
+`bot_telegram` — faltavam `enabled`, `token` e `chat_id`. E
+`EDUMAPS_CONFIG_MASTER_KEY` estava **vazia** no serviço `edumaps-web`, o que
+impede o backend de cifrar/decifrar secrets (nem o `assistant_censo.api_key`
+era legível). O log do backend registrava a cadeia a funcionar, só faltava
+config: `Notifier: bot desativado — system_bot_info ignorada`.
+
+**Preparação** (ambiente dev autorizado): master key gerada e setada em
+`edumaps-web` + `edumaps-minion` (systemd, restart); config completa via SQL
+na BD do produto (`enabled=1`, `chat_id` do `tools/notify/.env`, `token`
+cifrado com `pgp_sym_encrypt` + master key; `allowed_actions` já continha
+`system_bot_info`); gestor admin descartável `e2e.bot@edumaps.local` (hash
+`salt:hmac_sha256` via `Digest::SHA` — ⚠️ `openssl dgst -mac HMAC` diverge do
+Perl, não usar para esse hash).
+
+| Verificação | Resultado |
+|---|---|
+| Login na SPA (`/gestor`) — Chrome CDP real | 🟢 `POST /api/gestor/login` → **200** |
+| Sessão criada | 🟢 navegou para `/gestor/painel` ("Painel do Gestor") |
+| `Middleware::Login` → EventBus `system.bot.info` | 🟢 log `Middleware::Bot: system_bot_info entregue` |
+| Envio ao Telegram | 🟢 `Notifier: system_bot_info enviada (HTTP 200)` — API aceitou (`ok:true`) |
+| Mensagem esperada | 🟢 `Login realizado: e2e.bot@edumaps.local`; no próximo login do developer: `Login realizado: rovai@edumaps.dev` |
+
+> **Notas**: `getUpdates` da API do Telegram **não** é evidência de envio (lista
+> só mensagens recebidas pelo bot) — a prova é o HTTP 200 com `ok:true` no log
+> do Notifier. A master key agora vive nos units do host (`backend.edumaps`);
+> se rotacionar, re-cifrar os secrets (`secret_key_version`).
