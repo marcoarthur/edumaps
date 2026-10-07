@@ -2,6 +2,8 @@ use lib qw(t/lib lib);
 use strict;
 use warnings;
 use Test::More;
+use Mojo::Home;
+use Mojo::File;
 use Mojo::Log;
 use Mojo::File qw(path);
 use File::Temp qw(tempdir);
@@ -121,6 +123,29 @@ PM
   chdir $cwd if $chdir_ok;
   isnt $exit, 0, "exit != 0 (foi $exit)";
   like $saida, qr/falha(s)?/, 'reporta falhas';
+};
+
+
+subtest '7. Detecta stall (sem progresso) e aborta com exit != 0' => sub {
+  my $tmp = tempdir;
+  my $mod = path($tmp, 'EduMaps', 'Ingestion', 'Job');
+  $mod->make_path;
+  $mod->child('ZZStall.pm')->spurt(<<'PM');
+package EduMaps::Ingestion::Job::ZZStall;
+use Mojo::Base 'EduMaps::Ingestion::Job::Base', -signatures;
+has job_name     => 'ZZStall';
+has description  => 'stall';
+has schedule     => 'manual';
+sub run ($self, $args = {}) { sleep 3; return 1 }
+1;
+PM
+  my $cwd = getcwd();
+  my $chdir_ok = chdir 'backend';
+  my $saida = `$^X -I$tmp -Ilib ingestion_runner.pl --job=ZZStall --stall-timeout=1 --stall-check-interval=1 2>&1`;
+  my $exit = $? >> 8;
+  chdir $cwd if $chdir_ok;
+  isnt $exit, 0, "exit != 0 (foi $exit)";
+  like $saida, qr/\[STALL\]/, 'mensagem de stall emitida';
 };
 
 done_testing();
