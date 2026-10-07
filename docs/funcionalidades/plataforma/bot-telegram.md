@@ -29,6 +29,10 @@ funcionamento da plataforma (ingestão de dados, jobs, saúde do sistema).
 - Sistema permite escolher, por marcação, quais ações estão autorizadas a
   disparar mensagem no chat (alertas de sistema e de ingestão, notificações a
   usuários e administradores, entre outras).
+- Sistema envia **automaticamente** mensagens para o chat configurado quando
+  terminam os jobs de ingestão — sucesso (`ingest_done`), falha
+  (`ingest_failed`) ou ingestão parada sem progresso (`ingest_stall`) — sempre
+  respeitando a ativação e as ações autorizadas pela administração.
 - Sistema permite enviar uma mensagem de teste para o chat configurado, usando
   as credenciais já gravadas, para validar a entrega.
 - Sistema permite (em fase futura) receber mensagens do chat e responder — hoje

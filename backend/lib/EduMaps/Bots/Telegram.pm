@@ -27,6 +27,12 @@ sub send_text ($self, $text, $opts = {}) {
   if ($tx->res->is_success) {
     return { ok => 1, status => $tx->res->code };
   }
+  # Falha de conexão vs recusa HTTP: `res` fica vazio (code/message undef) e
+  # a causa real está em $tx->error — não perder o diagnóstico.
+  my $conn = $tx->error;
+  if ($conn) {
+    return { ok => 0, status => 0, error => $conn->{message} };
+  }
   return { ok => 0, status => $tx->res->code, error => $tx->res->message };
 }
 

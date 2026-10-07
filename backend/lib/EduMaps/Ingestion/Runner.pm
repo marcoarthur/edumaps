@@ -14,6 +14,18 @@ has log => sub { Mojo::Log->new };
 has config => sub { {} };
 has dry_run => 0;
 
+# Notificador de eventos (#183, fase 1D): avisa o Telegram sobre o resultado
+# de cada job (ingest_done / ingest_failed / ingest_stall), sujeito à config
+# da AppConfig (enabled + allowed_actions) — nada é enviado sem decisão
+# explícita do admin. Lazy e injetável: nos testes passa-se um mock.
+has notifier => sub ($self) {
+  require EduMaps::Bots::Notifier;
+  return EduMaps::Bots::Notifier->new(
+    schema => $self->app->schema,
+    log    => $self->log,
+  );
+};
+
 # --- Stall detection (#166) --------------------------------------------------
 # O IBGE ficou parado dentro da extração e nunca devolveu o controlo: nenhum
 # check "depois do job" correria. O watchdog corre EM PARALELO (SIGALRM) e
@@ -174,13 +186,29 @@ sub run_job ($self, $job_name, $args = {}) {
     my $error = $@ || 'Erro desconhecido';
     $self->_remove_stall_watch;
     $self->log->error("Job $job_name falhou: $error");
+    my $action = $error =~ /\[STALL\]/ ? 'ingest_stall' : 'ingest_failed';
+    $self->_notify($action, "Job $job_name falhou: $error");
     return { success => 0, error => $error, duration => time - $start };
   };
   $self->_remove_stall_watch;
   
   my $duration = time - $start;
   $self->log->info("Job $job_name concluído em ${duration}s");
+  $self->_notify('ingest_done', "Job $job_name concluído em ${duration}s");
   return { success => 1, duration => $duration };
+}
+
+# Notificação best-effort: nunca deita abaixo a ingestão. Um bot quebrado ou
+# sem config não pode fazer o job falhar — erros vão para o log.
+sub _notify ($self, $action, $text) {
+  my $sent = eval { $self->notifier->notify($action, $text) };
+  if ($@) {
+    $self->log->error("Notificação $action falhou: $@");
+  }
+  elsif (!$sent) {
+    $self->log->debug("Notificação $action não enviada (não habilitada/permitida)");
+  }
+  return $sent ? 1 : 0;
 }
 
 sub run_all ($self, $job_names = []) {
