@@ -76,7 +76,7 @@ jobs:
         working-directory: backend
         run: |
           set -e
-          find lib -name '*.pm' | sed 's|^lib/||; s|/|::|g; s|\.pm$||' | xargs -I{} perl -Ilib -M{} -e1
+          find lib -name '*.pm' -print0 | xargs -0 -n1 perl -Ilib -c >/dev/null
       - name: suíte de testes
         working-directory: backend
         run: prove -r -l t/
