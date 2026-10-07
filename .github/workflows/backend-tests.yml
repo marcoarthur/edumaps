@@ -72,11 +72,11 @@ jobs:
         run: sudo cpanm --notest --installdeps .
         working-directory: backend
 
-#       - name: compilar todos os módulos Perl (lib/)
-#         working-directory: backend
-#         run: |
-#           set -e
-#           find lib -name '*.pm' -print0 | xargs -0 -n1 perl -Ilib -c >/dev/null
+      - name: compilar todos os módulos Perl (lib/)
+        working-directory: backend
+        run: |
+          set -e
+          find lib -name '*.pm' -print0 | xargs -0 -n1 perl -Ilib -c >/dev/null
       - name: suíte de testes
         working-directory: backend
         run: prove -r -l t/
