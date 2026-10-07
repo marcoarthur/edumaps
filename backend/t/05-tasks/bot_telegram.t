@@ -46,4 +46,32 @@ subtest 'Telegram: can_receive falso (fase 1)' => sub {
   ok !$tg->can_receive;
 };
 
+{ package TesteResErro;
+  # is_success falso sem resposta HTTP (falha de conexão: code/message undef)
+  sub new { bless {}, $_[0] }
+  sub is_success { 0 }
+  sub code    { undef }
+  sub message { undef }
+}
+{ package TesteTxErro;
+  sub new { my ($c, $r) = @_; bless { res => $r, error => { message => 'Connect timeout' } }, $c }
+  sub res { $_[0]{res} }
+  sub error { $_[0]{error} }
+}
+{ package TesteUAErro;
+  sub new { bless {}, $_[0] }
+  sub post { TesteTxErro->new(TesteResErro->new) }
+}
+
+subtest 'Telegram: erro de conexão reporta causa (não perde diagnóstico)' => sub {
+  my $tg = EduMaps::Bots::Telegram->new(
+    ua     => TesteUAErro->new,
+    config => { telegram_token => 't', telegram_chat_id => 'c' },
+  );
+  my $res = $tg->send_text('x');
+  is $res->{ok}, 0, 'não ok';
+  is $res->{status}, 0, 'status 0 (sem resposta HTTP)';
+  like $res->{error}, qr/Connect timeout/, 'causa presente';
+};
+
 done_testing;

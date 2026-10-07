@@ -148,4 +148,69 @@ PM
   like $saida, qr/\[STALL\]/, 'mensagem de stall emitida';
 };
 
+{ package ZZJobOK;
+  sub new { bless {}, $_[0] }
+  sub run { return 1 }
+}
+{ package ZZJobFalha;
+  sub new { bless {}, $_[0] }
+  sub run { die "falha deliberada\n" }
+}
+{ package ZZJobStall;
+  sub new { bless {}, $_[0] }
+  sub run { die "[STALL] Sem progresso há 601s (timeout 600s). dir=data/ingestao sig=abc\n" }
+}
+{ package MockNotifier;
+  sub new { bless { calls => [] }, $_[0] }
+  sub notify { my ($self, $action, $text) = @_; push @{$self->{calls}}, [$action, $text]; return 1 }
+}
+
+subtest '8. run_job notifica ingest_done no sucesso' => sub {
+  my $notifier = MockNotifier->new;
+  my $runner = EduMaps::Ingestion::Runner->new(
+    app       => mock_app([]),
+    log       => Mojo::Log->new,
+    notifier  => $notifier,
+    stall_timeout => 0,
+  );
+  $runner->jobs->{ZZOK} = ZZJobOK->new;
+  my $r = $runner->run_job('ZZOK');
+  is $r->{success}, 1, 'job OK';
+  is scalar(@{$notifier->{calls}}), 1, '1 notificação';
+  is $notifier->{calls}[0][0], 'ingest_done', 'ação ingest_done';
+  like $notifier->{calls}[0][1], qr/ZZOK/, 'texto cita o job';
+};
+
+subtest '9. run_job notifica ingest_failed na falha' => sub {
+  my $notifier = MockNotifier->new;
+  my $runner = EduMaps::Ingestion::Runner->new(
+    app       => mock_app([]),
+    log       => Mojo::Log->new,
+    notifier  => $notifier,
+    stall_timeout => 0,
+  );
+  $runner->jobs->{ZZFalha} = ZZJobFalha->new;
+  my $r = $runner->run_job('ZZFalha');
+  is $r->{success}, 0, 'job falhou';
+  is scalar(@{$notifier->{calls}}), 1, '1 notificação';
+  is $notifier->{calls}[0][0], 'ingest_failed', 'ação ingest_failed';
+  like $notifier->{calls}[0][1], qr/falha deliberada/, 'texto cita o erro';
+};
+
+subtest '10. run_job notifica ingest_stall quando erro tem [STALL]' => sub {
+  my $notifier = MockNotifier->new;
+  my $runner = EduMaps::Ingestion::Runner->new(
+    app       => mock_app([]),
+    log       => Mojo::Log->new,
+    notifier  => $notifier,
+    stall_timeout => 0,
+  );
+  $runner->jobs->{ZZStall2} = ZZJobStall->new;
+  my $r = $runner->run_job('ZZStall2');
+  is $r->{success}, 0, 'job falhou';
+  is scalar(@{$notifier->{calls}}), 1, '1 notificação';
+  is $notifier->{calls}[0][0], 'ingest_stall', 'ação ingest_stall';
+  like $notifier->{calls}[0][1], qr/\[STALL\]/, 'texto cita stall';
+};
+
 done_testing();
