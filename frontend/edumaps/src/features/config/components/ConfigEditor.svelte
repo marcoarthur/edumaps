@@ -5,8 +5,6 @@
   permite trocar/salvar; nunca exibe o valor em claro).
 -->
 <script>
-  import { onMount } from "svelte";
-
   let { item, onSalvar, onValidar, salvando = false } = $props();
 
   let valor = $state("");
@@ -20,6 +18,11 @@
       valor = "";
       return;
     }
+    if (item?.type === "multiselect") {
+      const v = item?.value;
+      valor = Array.isArray(v) ? [...v] : [];
+      return;
+    }
     const v = item?.value;
     if (item?.type === "boolean") {
       valor = v === 1 || v === true ? "true" : v === 0 || v === false ? "false" : "";
@@ -30,7 +33,18 @@
     }
   }
 
-  onMount(preencher);
+  function alternarAcao(acao) {
+    const atual = Array.isArray(valor) ? valor : [];
+    valor = atual.includes(acao) ? atual.filter((a) => a !== acao) : [...atual, acao];
+    erro = null;
+    validado = null;
+  }
+
+  // Re-preenche quando a folha selecionada muda (onMount só roda uma vez).
+  $effect(() => {
+    item?.key;
+    preencher();
+  });
 
   async function aoMudar(e) {
     valor = e.currentTarget.value;
@@ -91,7 +105,31 @@
     {/if}
 
     <div class="mt-4 space-y-3">
-      {#if item.type === "secret"}
+      {#if item.type === "multiselect"}
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-1">
+            Marque as ações autorizadas ({valor.length} de {item.options?.length ?? 0})
+          </p>
+          <div class="space-y-1.5 border border-gray-200 rounded-md p-2.5 max-h-64 overflow-y-auto">
+            {#each item.options ?? [] as acao (acao)}
+              <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={valor.includes(acao)}
+                  onchange={() => alternarAcao(acao)}
+                  class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="flex-1">{acao}</span>
+              </label>
+            {/each}
+          </div>
+          {#if item.value?.length}
+            <p class="text-xs text-gray-400 mt-1.5">
+              Vigente: {item.value.join(", ")}
+            </p>
+          {/if}
+        </div>
+      {:else if item.type === "secret"}
         <div>
           <p class="text-sm font-medium text-gray-700 mb-1">
             {item.value?.set ? "Chave atualmente definida" : "Chave ainda não definida"}

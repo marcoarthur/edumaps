@@ -7,6 +7,7 @@ use utf8;
 # registrado no Plugin::API::Admin e reutilizando o _require_admin do
 # Controller::Gestor). Exposição mínima: árvore de config, leitura/validação e
 # gravação de itens — segredos nunca saem em claro (apenas { set: 0|1 }).
+use EduMaps::Bots::Telegram;
 
 # GET /api/admin/config/tree — árvore de configuração com estados.
 sub config_tree ($self) {
@@ -69,6 +70,48 @@ sub config_validate ($self) {
     return $self->render(json => { error => $result->{error} }, status => 400);
   }
   $self->render(json => { ok => 1, value => $key =~ /integrations\.assistant_censo\.api_key/ ? '[validada]' : $result->{value} });
+}
+
+# POST /api/admin/bot/telegram/test — envia uma mensagem de teste real para o
+# chat configurado. Usa a config da AppConfig (token decifrado em memória,
+# nunca retornado). Falha alto: 400 se incompleto/desligado, 502 se a API do
+# Telegram responder erro.
+sub bot_telegram_test ($self) {
+  my $model = $self->instantiate_model(model => 'AppConfig');
+  my $cfg   = $model->bot_telegram_config;
+
+  return $self->render(json => {
+    error => 'O bot está desativado — ative "Bot ativado" antes de testar.',
+  }, status => 400) unless $cfg->{enabled};
+
+  for my $campo (qw/token chat_id/) {
+    return $self->render(json => {
+      error => "Configuração incompleta: falta definir "
+        . ($campo eq 'token' ? 'o token do bot' : 'o chat de destino') . '.',
+    }, status => 400) unless defined $cfg->{$campo} && length $cfg->{$campo};
+  }
+
+  my $bot = EduMaps::Bots::Telegram->new(
+    enabled => 1,
+    config  => {
+      telegram_token   => $cfg->{token},
+      telegram_chat_id => $cfg->{chat_id},
+    },
+  );
+
+  my $quem = $self->stash('gestor')
+    ? ($self->stash('gestor')->{email} // 'admin') : 'admin';
+  my $res = $bot->send_text(
+    "✅ EduMaps — teste do bot Telegram.\n"
+    . "Enviado pelo painel de configuração por $quem."
+  );
+
+  return $self->render(json => {
+    error => 'A API do Telegram recusou a mensagem: '
+      . ($res->{error} // "HTTP $res->{status}"),
+  }, status => 502) unless $res->{ok};
+
+  $self->render(json => { ok => 1, status => $res->{status} });
 }
 
 # ---------------------------------------------------------------------------

@@ -106,6 +106,12 @@ subtest 'config_validate valida por tipo' => sub {
   is $model->config_validate('behavior.default_ano', '2025')->{value}, 2025, 'ano numérico';
   is $model->config_validate('appearance.theme', 'neon')->{error},
     'Opção inválida para este item.', 'tema inválido';
+  # Bot Telegram
+  is $model->config_validate('integrations.bot_telegram.enabled', 'true')->{value}, 1, 'boolean true normalizado';
+  is $model->config_validate('integrations.bot_telegram.enabled', 'false')->{value}, 0, 'boolean false normalizado';
+  ok $model->config_validate('integrations.bot_telegram.allowed_actions', ['ingest_stall'])->{ok}, 'multiselect aceita ação válida';
+  is $model->config_validate('integrations.bot_telegram.allowed_actions', 'bad')->{error},
+    'O valor deve ser uma lista de ações.', 'multiselect rejeita string';
 };
 
 subtest 'chat_llm_config: só campos definidos' => sub {

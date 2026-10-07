@@ -14,9 +14,9 @@ relacionadas: [assistente-censo, fontes-de-dados]
 
 Área administrativa onde a instalação configura parâmetros globais da
 plataforma — nome da instalação, fuso horário, aparência, comportamento dos
-painéis e integrações — organizados em categorias e grupos. Hoje está ativa a
-configuração da chave de API do Assistente do Censo; as demais categorias estão
-previstas.
+painéis e integrações — organizados em categorias e grupos. Hoje estão ativas a
+configuração da chave de API do Assistente do Censo e a do Bot Telegram; as
+demais categorias estão previstas.
 
 ## Para quem
 
@@ -33,6 +33,9 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   cifrada e nunca exibida em claro, exibindo apenas se ela está ou não definida.
 - Sistema pode aplicar a chave configurada ao Assistente do Censo, que passa a
   responder às perguntas do gestor usando o provedor da instalação.
+- Sistema pode guardar e gerenciar a configuração do Bot Telegram: token
+  (cifrado, nunca exibido), chat de destino, ativação e a lista de ações
+  autorizadas a disparar mensagem.
 
 ## Valor
 
@@ -43,4 +46,5 @@ seguro, com segredos protegidos.
 ## Relacionadas
 
 - [Assistente do Censo](../analise/assistente-censo.md)
+- [Bot Telegram](../plataforma/bot-telegram.md)
 - [Fontes de dados](../plataforma/fontes-de-dados.md)
