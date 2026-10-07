@@ -32,12 +32,17 @@ sub startup ($self) {
   # conf/ambiente o plugin é no-op (helper `sentry` inativo).
   $self->plugin('EduMaps::Plugin::Sentry');
   $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity SchoolEmbedding CityAnalytics GruposFolha Chat SchoolProfile/;
-  $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch/;
+  $self->plugin("EduMaps::Middleware::$_") for qw/Cache::SchoolSearch Login/;
 
   # ------------------------------------------------------------
   # Handlers/Middlewares do EventBus
   # ------------------------------------------------------------
   $self->add_mw($_) for qw/SiopeTask EventLogger/;
+  $self->add_mw('EduMaps::Middleware::Bot');
+
+  # Consome os labels system.bot.* sem o WARN do EventBus ("sem nenhum handler
+  # registrado") — o envio real acontece no Middleware::Bot, na cadeia.
+  $self->event_bus->on($_, sub { }) for map { "system.bot.$_" } qw(info warn error trace);
 
   # ------------------------------------------------------------
   # Custom Validations

@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Test::More;
 use Mojo::Log;
+use Mojo::Promise;
 
 use_ok 'EduMaps::Bots::Notifier';
 
@@ -10,7 +11,7 @@ use_ok 'EduMaps::Bots::Notifier';
 # MockBot: classe injetada via bot_class — regista chamadas e devolve RES.
 { package MockBot;
   our @NEW;        # args completos recebidos no new
-  our @SENT;       # [text, opts] de cada send_text
+  our @SENT;       # [text, opts] de cada send_text/send_text_p
   our $RES = { ok => 1, status => 200 };
 
   sub new {
@@ -22,6 +23,11 @@ use_ok 'EduMaps::Bots::Notifier';
     my ($self, $text, $opts) = @_;
     push @SENT, [$text, $opts];
     return $RES;
+  }
+  sub send_text_p {
+    my ($self, $text, $opts) = @_;
+    push @SENT, [$text, $opts];
+    return Mojo::Promise->resolve($RES);
   }
 }
 
@@ -112,6 +118,46 @@ subtest 'config ausente (means enabled=0) -> nada enviado' => sub {
   my $n = make_notifier(cfg => {});
   is $n->notify('ingest_done', 'x'), 0, 'retorna 0';
   is scalar(@MockBot::SENT), 0, 'nada enviado';
+};
+
+subtest 'notify_p: mesma política, resolve 1/0 via send_text_p' => sub {
+  # ação desconhecida: croak SÍNCRONO (antes de qualquer promise)
+  reset_bot;
+  my $n = make_notifier(cfg => $CFG_OK);
+  eval { $n->notify_p('acao_inexistente', 'x') };
+  like $@, qr/desconhecida/, 'croak síncrono p/ ação fora da whitelist';
+
+  # permitida + habilitada -> resolve 1
+  reset_bot;
+  $n = make_notifier(cfg => $CFG_OK);
+  my $r;
+  $n->notify_p('ingest_stall', 'Job IBGE parado')->then(sub { my ($v) = @_; $r = $v })->wait;
+  is $r, 1, 'resolve 1';
+  is $MockBot::SENT[0][0], 'Job IBGE parado', 'texto enviado';
+  is $MockBot::SENT[0][1]{action}, 'ingest_stall', 'ação passada ao envio';
+
+  # enabled=0 -> resolve 0, nada enviado
+  reset_bot;
+  $n = make_notifier(cfg => { enabled => 0, token => 't', chat_id => 'c' });
+  $r = undef;
+  $n->notify_p('system_alert', 'x')->then(sub { my ($v) = @_; $r = $v })->wait;
+  is $r, 0, 'enabled=0 resolve 0';
+  is scalar(@MockBot::SENT), 0, 'nada enviado';
+
+  # fora das allowed_actions -> resolve 0
+  reset_bot;
+  $n = make_notifier(cfg => $CFG_OK);
+  $r = undef;
+  $n->notify_p('ingest_failed', 'x')->then(sub { my ($v) = @_; $r = $v })->wait;
+  is $r, 0, 'fora das allowed resolve 0';
+  is scalar(@MockBot::SENT), 0, 'nada enviado';
+
+  # API recusa -> resolve 0 sem morrer
+  reset_bot;
+  $n = make_notifier(cfg => $CFG_OK, res => { ok => 0, status => 503, error => 'busy' });
+  $r = undef;
+  $n->notify_p('ingest_done', 'x')->then(sub { my ($v) = @_; $r = $v })->wait;
+  is $r, 0, 'API recusa resolve 0';
 };
 
 done_testing;

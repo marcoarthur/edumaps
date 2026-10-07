@@ -33,6 +33,12 @@ funcionamento da plataforma (ingestão de dados, jobs, saúde do sistema).
   terminam os jobs de ingestão — sucesso (`ingest_done`), falha
   (`ingest_failed`) ou ingestão parada sem progresso (`ingest_stall`) — sempre
   respeitando a ativação e as ações autorizadas pela administração.
+- Sistema permite que **eventos do próprio sistema** com nível de severidade
+  (`info`, `warn`, `error`, `trace`) disparem mensagem no chat via uma categoria
+  própria de envio para middlewares — por exemplo, avisar a operação quando um
+  gestor faz login com sucesso. O envio respeita a mesma política de ativação e
+  de ações autorizadas, e é **assíncrono**: o fluxo que gerou o evento (ex.: o
+  login) não espera a entrega da mensagem para concluir.
 - Sistema permite enviar uma mensagem de teste para o chat configurado, usando
   as credenciais já gravadas, para validar a entrega.
 - Sistema permite (em fase futura) receber mensagens do chat e responder — hoje
