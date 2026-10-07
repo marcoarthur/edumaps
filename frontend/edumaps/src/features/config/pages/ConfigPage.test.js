@@ -78,4 +78,42 @@ describe("ConfigPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/A chave não pode ser vazia/);
   });
+
+  it("exibe as ações permitidas do bot como checkboxes", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Ações permitidas" }));
+
+    expect(await screen.findByText(/Marque as ações autorizadas/)).toBeInTheDocument();
+    const boxes = screen.getAllByRole("checkbox");
+    expect(boxes.length).toBe(7); // 7 ações da Policy
+    expect(boxes.every((b) => !b.checked)).toBe(true); // lista vazia por omissão
+  });
+
+  it("alterna uma ação e salva a lista no servidor", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Ações permitidas" }));
+    await screen.findByText(/Marque as ações autorizadas/);
+
+    await fireEvent.click(screen.getByRole("checkbox", { name: /ingest_stall/ }));
+    await fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith("Configuração salva.", "success"));
+    expect(await screen.findByText(/Vigente: ingest_stall/)).toBeInTheDocument();
+  });
+
+  it("rejeita ação fora da Policy na validação", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Ações permitidas" }));
+    await screen.findByText(/Marque as ações autorizadas/);
+
+    // nada marcado: validar lista vazia → erro do servidor
+    await fireEvent.click(screen.getByRole("button", { name: "Validar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/A lista de ações não pode ser vazia/);
+  });
 });

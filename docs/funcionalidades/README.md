@@ -75,5 +75,6 @@
 |------------|--------|--------|
 | [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
 | [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais e princípios de privacidade. | 🟢 |
-| [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje a chave do Assistente do Censo. | 🟡 |
+| [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje a chave do Assistente do Censo e o Bot Telegram. | 🟡 |
+| [Bot Telegram](plataforma/bot-telegram.md) | Enviar notificações e alertas por Telegram, com ações autorizadas configuradas pela administração. | 🟡 |
 | [Observabilidade de erros](plataforma/observabilidade.md) | Registro central de falhas (API 5xx, jobs e erros de navegador) com dados pessoais redigidos. | 🟡 |

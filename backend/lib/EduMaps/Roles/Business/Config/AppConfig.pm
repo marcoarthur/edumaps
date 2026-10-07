@@ -3,6 +3,7 @@ use Mojo::Base -role, -signatures;
 use utf8;
 use Mojo::JSON qw(decode_json encode_json);
 use Carp qw(croak);
+use EduMaps::Bots::Policy::Actions;
 
 # Configuração global do EduMaps (Painel de Configuração). Fonte de verdade
 # da árvore exposta em GET /api/admin/config/tree. Cada folha define: key
@@ -94,6 +95,47 @@ my %TREE = (
             type        => 'text',
             sensitive   => 0,
             enabled     => 0,
+          },
+        ],
+      },
+      {
+        key      => 'bot_telegram',
+        label    => 'Bot Telegram',
+        children => [
+          {
+            key         => 'integrations.bot_telegram.token',
+            label       => 'Token do bot',
+            description => 'Token do bot no Telegram (fornecido pelo @BotFather). Guardado cifrado — nunca exibido em claro.',
+            example     => '123456789:ABCdefGHI...',
+            type        => 'secret',
+            sensitive   => 1,
+            enabled     => 1,
+          },
+          {
+            key         => 'integrations.bot_telegram.chat_id',
+            label       => 'Chat de destino',
+            description => 'Identificador do chat onde o bot envia alertas (grupo ou usuário admin).',
+            example     => '-1001234567890',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'integrations.bot_telegram.enabled',
+            label       => 'Bot ativado',
+            description => 'Liga/desliga o envio de mensagens pelo bot. Desligado, nenhum alerta é entregue.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'integrations.bot_telegram.allowed_actions',
+            label       => 'Ações permitidas',
+            description => 'Lista de ações autorizadas a disparar mensagem no chat. Apenas as marcadas são enviadas.',
+            type        => 'multiselect',
+            options     => EduMaps::Bots::Policy::Actions->available,
+            sensitive   => 0,
+            enabled     => 1,
           },
         ],
       },
@@ -228,7 +270,7 @@ sub config_validate ($self, $key, $value) {
   if ($def->{type} eq 'boolean') {
     return { error => 'O valor deve ser "true" ou "false".' }
       unless $value eq 'true' || $value eq 'false' || $value == 0 || $value == 1;
-    return { ok => 1, value => ($value eq 'true' || $value == 1) ? 1 : 0 };
+    return { ok => 1, value => ($value eq 'true' || $value eq '1') ? 1 : 0 };
   }
   if ($def->{type} eq 'number') {
     return { error => 'O valor deve ser um número inteiro.' }
@@ -246,6 +288,20 @@ sub config_validate ($self, $key, $value) {
     return { error => 'A chave não pode ser vazia.' } unless length $value >= 8;
     return { error => 'A chave excede 2048 caracteres.' } if length $value > 2048;
     return { ok => 1, value => $value };
+  }
+  if ($def->{type} eq 'multiselect') {
+    return { error => 'O valor deve ser uma lista de ações.' }
+      unless ref $value eq 'ARRAY';
+    return { error => 'A lista de ações não pode ser vazia.' }
+      unless @$value;
+    my %allowed = map { $_ => 1 } @{ $def->{options} // [] };
+    my %seen;
+    for my $action (@$value) {
+      return { error => 'Ação desconhecida na lista.' }
+        unless defined $action && !ref $action && $allowed{$action};
+      return { error => 'Ação duplicada na lista.' } if $seen{$action}++;
+    }
+    return { ok => 1, value => [@$value] };
   }
   # text
   $value //= '';
@@ -346,6 +402,31 @@ sub chat_llm_config ($self) {
       }
     }
     $cfg{$sub} = $value if defined $value;
+  }
+  return \%cfg;
+}
+
+# Monta a config efetiva do Bot Telegram para o EduMaps::Bots::Telegram.
+# Campos ausentes ficam undef; `enabled` é 0 por omissão (nada é enviado sem
+# decisão explícita do admin). O token sai decifrado aqui — nunca é exposto
+# por API (a folha sensitive devolve só { set: 0|1 }).
+sub bot_telegram_config ($self) {
+  my %cfg = (enabled => 0);
+  for my $sub (qw/token chat_id enabled allowed_actions/) {
+    my $key = "integrations.bot_telegram.$sub";
+    my $row = $self->_config_row($key) or next;
+    if ($sub eq 'token') {
+      next unless $row->{secret} && $row->{secret} ne '';
+      my $master_key = $ENV{EDUMAPS_CONFIG_MASTER_KEY};
+      next unless $master_key && length $master_key;
+      my $plain = eval { $self->_decrypt_secret($row->{secret}, $master_key) };
+      next unless defined $plain;
+      $cfg{token} = $plain;
+    }
+    else {
+      next unless defined $row->{value};
+      $cfg{$sub} = decode_json($row->{value});
+    }
   }
   return \%cfg;
 }

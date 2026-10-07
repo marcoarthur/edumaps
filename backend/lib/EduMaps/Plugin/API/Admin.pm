@@ -17,6 +17,9 @@ sub register ($self, $app, @args) {
   $auth->get('/config/:key' => $key_re)->to('admin#config_show')->name('admin_config_show');
   $auth->put('/config/:key' => $key_re)->to('admin#config_update')->name('admin_config_update');
   $auth->post('/config/:key/validate' => $key_re)->to('admin#config_validate')->name('admin_config_validate');
+
+  # Bot Telegram: envio de mensagem de teste (Fase 1B — #183).
+  $auth->post('/bot/telegram/test')->to('admin#bot_telegram_test')->name('admin_bot_telegram_test');
 }
 
 1;
