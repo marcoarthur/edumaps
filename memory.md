@@ -4,6 +4,55 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-08 — #155: de-para RENAEST declara o que é; não-resolvidas têm destino (PR #194)
+
+Escopo: entregáveis 3–5 da #155 (destino explícito p/ não resolvidas,
+`validated_by`/`validated_at` coerentes, `COMMENT` verdadeiro). Merge `9477aa5`.
+
+### Decisões do developer
+- Apagar `fuzzy_match_renaest.py` + `README_fuzzy_match.md` (+ `requirements.txt`,
+  só servia o script) — o loader resolve pelo `codigo_ibge` da fonte.
+- `analysis/reports/new_data_sources.Rmd` fica como snapshot datado; correção
+  registada na issue.
+
+### O que ficou
+- **Change Sqitch `renaest_depara_declaracao`** (uma só, append no fim do
+  plano, `requires: renaest_localidade_municipio`): tabela
+  `clean.renaest_localidade_nao_resolvida` (localidade/uf/codigo_ibge_fonte/
+  motivo/dt_carga/dt_snapshot; motivos `codigo_fora_da_malha`,
+  `codigo_sentinela`, `sem_nome_ou_uf`) + `COMMENT` verdadeiros no de-para.
+  `verify` com `DO … RAISE EXCEPTION` (SELECT preguiçoso não falha no Sqitch
+  1.6.1); provado que morde com linha plantada.
+- **Loader**: `classificar_depara` (puro) + `ingerir_depara` grava as não
+  resolvidas (substitui conjunto do snapshot); `ler_localidade` nomeia o que
+  descarta. Testes: 2 subtestes novos (12 no total, PASS com
+  `env -u PERL5LIB`).
+- **Docs**: mapa ER 05/07 + README + `docs/funcionalidades/plataforma/
+  fontes-de-dados.md` corrigidos (o `codigo_ibge` do sinistro vem da fonte
+  Acidentes, não do de-para; `match_type` não é "located"; entidade nova no
+  07). Validador ER zerado (6 checagens).
+
+### Armadilhas encontradas
+- **Semente de `import_metadata` quebrou verify alheio**: o `verify` de
+  `import_metadata_uniq_table_name` fixa a contagem em 31 linhas. Por isso a
+  change **não** semeia proveniência da tabela nova — o loader registra na 1ª
+  carga. Lição: qualquer `INSERT` novo em `clean.import_metadata` parte esse
+  verify.
+- **Disco do Docker cheio** (32G, 100%): build do `backend`/`minion` falhou com
+  "no space left on device"; `docker builder prune -af` liberou 7,5 GB e o
+  build retomou. Stack local reconstruída e confirmada (grep
+  `classificar_depara` dentro do contentor = 2).
+
+### Deploy
+`rex prepare` + `deploy_db_dev` (database.edumaps) + `deploy_backend_dev` +
+`deploy_minion_dev` (backend.edumaps). md5 do loader host = local.
+`sqitch verify` da change nova ok nos dois bancos (local docker e LXC).
+
+### Follow-up registado na #155
+Caminho **Acidentes**: sinistro cujo `codigo_ibge` não está no índice de nomes
+do de-para é contado (`sem_nome`) e não persistido — 0 no estado medido, mas o
+descarte continua só no log. Não entrou na PR (escopo 3–5 era o de-para).
+
 ## Sessão 2026-10-04 — Regra: as imagens Docker locais são parte do deploy
 
 Só documentação (`AGENTS.md`) + aplicação da regra à stack local. Sem código,
