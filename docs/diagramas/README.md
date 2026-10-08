@@ -4,7 +4,7 @@ Modelo de dados atual do EduMaps em **Mermaid** (`.mmd`) + **SVG**.
 O `.mmd` é a fonte editável; o `.svg` é o artefato para leitura. Ambos são
 versionados — um diagrama que não está aqui não existe na documentação.
 
-> **Estado**: 88 entidades distintas (77 em `clean`, 11 em `analytics`),
+> **Estado**: 89 entidades distintas (78 em `clean`, 11 em `analytics`),
 > 142 arestas, 9 arquivos.
 
 ## Índice
@@ -18,7 +18,7 @@ versionados — um diagrama que não está aqui não existe na documentação.
 | 04 | `04-financeiro` | SICONFI (receita/despesa), transferências de educação, esforço fiscal | 8 | 11 |
 | 05 | `05-mobilidade` | Isocronas, origem-destino, frota, capacidade das vias (VMDA), transporte escolar | 13 | 18 |
 | 06 | `06-saude-meio-ambiente` | Acessibilidade da escola à UBS, cobertura MapBiomas, eventos INMET | 8 | 9 |
-| 07 | `07-risco-seguranca` | Acidentes de trânsito, sinistros RENAEST, criminalidade municipal | 7 | 7 |
+| 07 | `07-risco-seguranca` | Acidentes de trânsito, sinistros RENAEST, criminalidade municipal | 8 | 7 |
 | 08 | `08-plataforma` | Gestão/comunidade: gestores, sessões, chat, documentos, inventário, pesquisas | 31 | 38 |
 
 Chaves do modelo: **`codigo_ibge`** (município) e **`co_entidade` = `codigo_inep`**
@@ -152,8 +152,15 @@ Registradas aqui porque afetam quem for ler o modelo — nenhuma delas foi
 - **`analytics.mobilidade_escola` junta acidentes a trechos só na view**
   (`t.trecho = a.trecho`), sem FK entre `antt_acidente_trecho` e
   `antt_trecho_geodados`.
-- **`renaest_sinistro.codigo_ibge` não vem da fonte**: é preenchido pelo
-  de-para `renaest_localidade_municipio` durante a ingestão (`[doc]`).
+- **`renaest_sinistro.codigo_ibge` vem da própria fonte** (ficheiro
+  `Acidentes` da RENAEST); o de-para `renaest_localidade_municipio` (mesmo
+  ficheiro `Localidade`) é que fornece `localidade`/`uf` e decide se a linha
+  entra. A aresta `[doc]` do 07 regista essa dependência de nome, não uma FK.
+- **O de-para RENAEST não faz fuzzy matching nem validação humana**:
+  resolve pelo `codigo_ibge` da própria fonte, validado contra a malha;
+  `match_type` rotula apenas a grafia (`exact`/`fuzzy`) e `manual` nunca
+  ocorreu. As localidades que não resolvem têm destino explícito em
+  `clean.renaest_localidade_nao_resolvida` (#155).
 
 ## Regenerar os SVG
 

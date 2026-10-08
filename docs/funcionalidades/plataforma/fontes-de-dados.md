@@ -41,8 +41,9 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode **contar sinistros de trânsito por município e dia**, com o total
   de mortos e de veículos envolvidos.
 - Sistema pode **manter o cadastro das localidades usadas pela fonte de
-  acidentes**, resolvendo cada uma ao município correspondente e distinguindo o
-  que casou exactamente do que casou por semelhança de nome.
+  acidentes**, resolvendo cada uma ao município correspondente pelo código
+  oficial que a própria fonte publica e registando o que não resolve, com o
+  motivo, em vez de o descartar.
 - Sistema pode **contabilizar a frota de veículos por município**, com a
   fotografia datada de cada levantamento.
 - Sistema pode **deixar por vazio o que não consegue avaliar**: a quantidade de
@@ -51,7 +52,8 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   vazio — nunca zero.
 - Sistema pode **relatar o que ficou de fora**: municípios que a fonte publica e
   o cadastro não reconhece saem num relatório com o número de registos
-  afectados, e não desaparecem em silêncio.
+  afectados, e localidades de acidentes que não resolvem ficam registadas com o
+  motivo — nada desaparece em silêncio.
 
 ### Curadoria de novas fontes
 

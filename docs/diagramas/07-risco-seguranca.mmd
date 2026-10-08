@@ -1,9 +1,11 @@
 erDiagram
 %% 07 · Risco e segurança — acidentes de trânsito, sinistros rodoviários e
 %% criminalidade municipal. Duas coisas acontecem aqui:
-%%   (a) acidentes/sinistros sao resolvidos para MUNICIPIO durante a ingestao
-%%       (de-para renaest_localidade_municipio) e depois alimentam a view de
-%%       mobilidade do diagrama 05;
+%%   (a) sinistros sao resolvidos para MUNICIPIO durante a ingestao pelo
+%%       codigo_ibge da propria fonte (Acidentes), com o de-para
+%%       renaest_localidade_municipio a fornecer localidade/UF; o que nao
+%%       resolve fica em renaest_localidade_nao_resolvida. Depois alimentam a
+%%       view de mobilidade do diagrama 05;
 %%   (b) a ligacao acidente->trecho e feita NA VIEW, sem FOREIGN KEY.
 %% NAO existe view de risco consolidada no banco: brazilcrime e consumido
 %% diretamente pelo IVET no relatorio R (analysis/reports/new_data_sources.Rmd).
@@ -13,7 +15,7 @@ erDiagram
     clean.malha_municipio ||--o{ clean.renaest_sinistro : "[chave] codigo_ibge resolvido na ingestao"
 
     clean.antt_trecho_geodados ||..o{ clean.antt_acidente_trecho : "[view] ON t.trecho = a.trecho - sem FK"
-    clean.renaest_localidade_municipio ||--o{ clean.renaest_sinistro : "[doc] de-para localidade+uf -> codigo_ibge"
+    clean.renaest_localidade_municipio ||--o{ clean.renaest_sinistro : "[doc] localidade/uf vem do mesmo ficheiro Localidade"
 
     clean.antt_acidente_trecho ||..o| analytics.mobilidade_escola : "[view] mortos e feridos por municipio"
     clean.renaest_sinistro ||..o| analytics.mobilidade_escola : "[view] sinistros por municipio"
@@ -53,18 +55,26 @@ erDiagram
         text causa_provavel
     }
     clean.renaest_localidade_municipio {
-        text localidade PK "nome normalizado"
+        text localidade PK "como a fonte publica"
         char uf PK
         text codigo_ibge FK
         numeric match_score
-        text match_type "exact, fuzzy ou located"
+        text match_type "exact, fuzzy ou manual"
         text nome_municipio
+    }
+    clean.renaest_localidade_nao_resolvida {
+        text localidade PK "como a fonte publica; vazio se nao trouxe nome"
+        char uf PK
+        text codigo_ibge_fonte PK "codigo da fonte; 0 no sentinela"
+        date dt_snapshot PK
+        text motivo "codigo_fora_da_malha, codigo_sentinela ou sem_nome_ou_uf"
+        timestamptz dt_carga
     }
     clean.renaest_sinistro {
         bigint id_sinistro PK
         text localidade FK "nome livre da fonte"
         char uf
-        text codigo_ibge FK "preenchido pelo de-para"
+        text codigo_ibge FK "codigo da fonte (Acidentes RENAEST)"
         date data_sinistro
         int mortos
         int feridos_leves
