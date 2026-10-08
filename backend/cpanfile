@@ -6,6 +6,7 @@ requires "DateTime::Format::Strptime" => "0";
 requires "Hash::Merge" => "0";
 requires "DBIx::Class::Core" => "0";
 requires "DBIx::Class::Helper::ResultSet::SetOperations" => "0";
+requires "DBIx::Class::ResultSet" => "0";
 requires "DBIx::Class::Schema" => "0";
 requires "DBD::Pg" => "0";
 requires "DDP" => "0";
@@ -13,8 +14,16 @@ requires "DateTime" => "0";
 # Ingestion/Jobs.pm usa DateTime::Format::ISO8601 e nao estava declarado em
 # cpanfile nem em dist.ini — o modulo nao carregava no backend.
 requires "DateTime::Format::ISO8601" => "0";
+# Core usado em lib/: declaração explícita por convenção do repo (como
+# Carp/List::Util/Scalar::Util/Time::HiRes já eram declarados).
+requires "Digest::MD5" => "0";
 requires "Digest::SHA" => "0";
+requires "Encode" => "0";
+requires "Exporter" => "0";
+requires "File::Path" => "0";
+requires "File::Find" => "0";
 requires "Future::AsyncAwait" => "0";
+requires "Getopt::Long" => "0";
 requires "HTTP::Tiny" => "0";
 requires "IO::All" => "0";
 requires "IO::Pager" => "0";
@@ -23,10 +32,12 @@ requires "JSON" => "0";
 requires "JSON::PP" => "0";
 requires "JSON::XS" => "0";
 requires "List::Util" => "0";
+requires "Memoize" => "0";
 requires "Minion" => "0";
 requires "Mojo::Base" => "0";
 requires "Mojo::Collection" => "0";
 requires "Mojo::DOM" => "0";
+requires "Mojo::EventEmitter" => "0";
 requires "Mojo::Exception" => "0";
 requires "Mojo::File" => "0";
 requires "Mojo::IOLoop" => "0";
@@ -34,13 +45,23 @@ requires "Mojo::JSON" => "0";
 requires "Mojo::Loader" => "0";
 requires "Mojo::Log" => "0";
 requires "Mojo::Pg" => "0";
+requires "Mojo::Promise" => "0";
 requires "Mojo::Template" => "0";
 requires "Mojo::URL" => "0";
 requires "Mojo::UserAgent" => "0";
 requires "Mojo::Util" => "0";
+# Submódulos do dist Mojolicious usados diretamente em lib/ e script/
+# (inclusive `use Mojo::Base 'Mojolicious'` na classe da app).
+requires "Mojolicious" => "0";
+requires "Mojolicious::Commands" => "0";
+requires "Mojolicious::Controller" => "0";
+requires "Mojolicious::Plugin" => "0";
 requires "Mojolicious::Plugin::Status" => "0";
+requires "Mojolicious::Validator" => "0";
 requires "PDL" => "0";
+requires "PDL::NiceSlice" => "0";
 requires "PDL::Stats::Kmeans" => "0";
+requires "POSIX" => "0";
 requires "Role::Tiny" => "0";
 requires "Role::Tiny::With" => "0";
 requires "RxPerl::Mojo" => "0";
@@ -57,8 +78,13 @@ requires "Term::Table" => "0";
 requires "Text::CSV" => "0";
 requires "Text::CSV_XS" => "0";
 requires "Time::HiRes" => "0";
+requires "Time::Piece" => "0";
 requires "URI::Escape" => "0";
+# YAML::XS é outra distribuição (YAML::LibYAML) — tal como Text::CSV_XS
+# não fornece Text/CSV.pm, `requires "YAML"` não garante YAML/XS.pm
+# (usado em EduMaps::Data::Allowlist). Inventário #177 passo 2.
 requires "YAML" => "0";
+requires "YAML::XS" => "0";
 requires "base" => "0";
 requires "constant" => "0";
 requires "strict" => "0";

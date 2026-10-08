@@ -77,6 +77,11 @@ jobs:
         run: |
           set -e
           find lib -name '*.pm' -print0 | xargs -0 -n1 perl -Ilib -c >/dev/null
+
+      - name: inventário de dependências (use/require vs cpanfile)
+        working-directory: backend
+        run: perl -Ilib script/check_dependencies.pl
+
       - name: suíte de testes
         working-directory: backend
         run: prove -r -l t/
