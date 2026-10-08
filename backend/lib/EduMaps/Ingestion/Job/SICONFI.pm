@@ -94,6 +94,7 @@ my %TIPO_POR_CONTA = (
   ExploracaoDeRecursosNaturais                 => 'propria',
   ExploracaoDoPatrimonioIntangivel             => 'propria',
   ReceitasDeValoresMobiliarios                 => 'propria',
+  ReceitasDeValoresMobiliariosIntra            => 'propria',
   OutrasReceitasPatrimoniais                   => 'propria',
   BensDireitosEValoresIncorporadosAoPatrimonioPublico => 'propria',
   ServicosAdministrativosEComerciaisGerais     => 'propria',
@@ -116,6 +117,8 @@ my %TIPO_POR_CONTA = (
   TransferenciasCorrentesDeOutrasInstituicoesPublicas => 'transferencia',
   TransferenciasCorrentesDosMunicipiosEDeSuasEntidadesIntra => 'transferencia',
   OutrasTransferenciasCorrentes                => 'transferencia',
+  # 1.7.5 — filha de TransferenciasCorrentes (não é agregada)
+  TransferenciasCorrentesDoExterior            => 'transferencia',
   TransferenciasDeCapitalDaUniaoEDeSuasEntidades => 'transferencia',
   TransferenciasDeCapitalDosEstadosEDoDistritoFederalEDeSuasEntidades => 'transferencia',
   TransferenciasDeCapitalDeInstituicoesPrivadas => 'transferencia',
@@ -352,9 +355,12 @@ SQL
       "Ingestão #165. classificacao: 'estimativa' = PREVISÃO ATUALIZADA (a); 'realizada' = Até o Bimestre (c).");
     $dbh->commit;
   };
-  if ($@) {
+  # CAPTURAR $@ ANTES do eval de rollback: o eval interno limpa $@, e o
+  # erro original se perde (medido — a falha vindo do rollback abortava o
+  # processo com a mensagem vazia, impossível de diagnosticar).
+  if (my $err = $@) {
     eval { $dbh->rollback };
-    die "SICONFI _load_receita falhou: $@";
+    die "SICONFI _load_receita falhou: $err";
   }
 
   $self->log_info("SICONFI: $loaded linhas em clean.siconfi_receita");
