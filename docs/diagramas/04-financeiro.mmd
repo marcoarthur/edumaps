@@ -1,0 +1,86 @@
+erDiagram
+%% 04 · Financeiro municipal — SICONFI (receita/despesa) e transferências
+%% Ciclo #165 (issue #165, PR #191). Tabelas NOVAS: aqui o vínculo com o
+%% território já é FOREIGN KEY real no Postgres (ao contrário do núcleo 02).
+
+    clean.malha_municipio ||--o{ clean.siconfi_receita : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.siconfi_despesa : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.transferencia_educ : "[FK] codigo_ibge"
+
+    clean.siconfi_receita ||..o| analytics.esforco_fiscal_educacao : "[view] soma estimativa e realizada por exercicio"
+    clean.siconfi_despesa ||..o| analytics.esforco_fiscal_educacao : "[view] educacao empenhada, liquidada e paga"
+    clean.transferencia_educ ||..o| analytics.esforco_fiscal_educacao : "[view] transferencias do proprio municipio"
+    clean.censo_escolas ||..o| analytics.esforco_fiscal_educacao : "[view] matriculas por municipio-ano"
+    clean.malha_municipio ||..o| analytics.esforco_fiscal_educacao : "[view] ancora o LEFT JOIN final"
+    clean.populacao_municipal ||..o| analytics.esforco_fiscal_educacao : "[view] valor per capita"
+
+    clean.import_metadata ||..o{ clean.siconfi_receita : "[proveniencia] table_name"
+    clean.import_metadata ||..o{ clean.siconfi_despesa : "[proveniencia] table_name"
+
+    clean.malha_municipio {
+        varchar codigo_ibge PK
+        varchar nome_municipio
+    }
+    clean.siconfi_receita {
+        text codigo_ibge PK,FK
+        smallint exercicio PK
+        text tipo_receita PK "propria ou transferencia"
+        text coluna_receita PK
+        text descricao_receita PK
+        text classificacao PK "estimativa ou realizada"
+        numeric valor
+        date dt_snapshot
+    }
+    clean.siconfi_despesa {
+        text codigo_ibge PK,FK
+        smallint exercicio PK
+        smallint funcao PK "12 = educacao"
+        smallint subfuncao PK
+        text coluna_despesa PK
+        text descricao_despesa PK
+        text classificacao PK "empenhada, liquidada ou paga"
+        numeric valor_empenhado
+        numeric valor_liquidado
+        numeric valor_pago
+        date dt_snapshot
+    }
+    clean.transferencia_educ {
+        text codigo_ibge PK,FK
+        text programa PK "FNDE"
+        date data_inicio PK
+        date data_fim PK
+        numeric valor_transferido
+        date dt_snapshot
+    }
+    clean.censo_escolas {
+        bigint co_entidade PK " = codigo_inep"
+        int nu_ano_censo PK
+        int co_municipio FK " = codigo_ibge"
+    }
+    clean.populacao_municipal {
+        varchar codigo_ibge PK,FK
+        int populacao_estimada
+    }
+    clean.import_metadata {
+        text table_name PK "alvo da carga"
+        timestamptz import_timestamp
+        text source_file
+        bigint row_count_loaded
+        text notes
+    }
+    analytics.esforco_fiscal_educacao {
+        text codigo_ibge PK,FK
+        smallint exercicio PK
+        numeric receita_propria
+        numeric receita_total
+        numeric despesa_educ_empenhada
+        numeric despesa_educ_por_aluno
+        bigint total_matriculas
+        numeric receita_per_capita
+        numeric pct_receita_em_educ
+        numeric autonomia_fiscal_pct
+        int populacao_estimada
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class analytics.esforco_fiscal_educacao view

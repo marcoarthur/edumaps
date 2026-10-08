@@ -1,0 +1,85 @@
+erDiagram
+%% 07 · Risco e segurança — acidentes de trânsito, sinistros rodoviários e
+%% criminalidade municipal. Duas coisas acontecem aqui:
+%%   (a) acidentes/sinistros sao resolvidos para MUNICIPIO durante a ingestao
+%%       (de-para renaest_localidade_municipio) e depois alimentam a view de
+%%       mobilidade do diagrama 05;
+%%   (b) a ligacao acidente->trecho e feita NA VIEW, sem FOREIGN KEY.
+%% NAO existe view de risco consolidada no banco: brazilcrime e consumido
+%% diretamente pelo IVET no relatorio R (analysis/reports/new_data_sources.Rmd).
+
+    clean.malha_municipio ||--o{ clean.brazilcrime_municipio : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.antt_trecho_geodados : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.renaest_sinistro : "[chave] codigo_ibge resolvido na ingestao"
+
+    clean.antt_trecho_geodados ||..o{ clean.antt_acidente_trecho : "[view] ON t.trecho = a.trecho - sem FK"
+    clean.renaest_localidade_municipio ||--o{ clean.renaest_sinistro : "[doc] de-para localidade+uf -> codigo_ibge"
+
+    clean.antt_acidente_trecho ||..o| analytics.mobilidade_escola : "[view] mortos e feridos por municipio"
+    clean.renaest_sinistro ||..o| analytics.mobilidade_escola : "[view] sinistros por municipio"
+
+    clean.malha_municipio {
+        varchar codigo_ibge PK
+        varchar nome_municipio
+    }
+    clean.brazilcrime_municipio {
+        text codigo_ibge PK,FK
+        smallint ano PK
+        int homicidio_doloso
+        int latrocinio
+        int lesao_corporal_seguida_de_morte
+        bool supressao_celula_pequena "crime igual ou menor que 5"
+        date dt_snapshot
+    }
+    clean.antt_trecho_geodados {
+        text trecho PK "id do trecho"
+        text concessionaria PK
+        text codigo_ibge FK "municipio do km inicial"
+        numeric km_inicial
+        numeric km_final
+        geometry geometry
+    }
+    clean.antt_acidente_trecho {
+        bigint id_acidente PK
+        text concessionaria
+        text trecho
+        numeric km
+        date data_acidente
+        int mortos
+        int feridos_leves
+        int feridos_graves
+        int veiculos_envolvidos
+        text tipo_acidente
+        text causa_provavel
+    }
+    clean.renaest_localidade_municipio {
+        text localidade PK "nome normalizado"
+        char uf PK
+        text codigo_ibge FK
+        numeric match_score
+        text match_type "exact, fuzzy ou located"
+        text nome_municipio
+    }
+    clean.renaest_sinistro {
+        bigint id_sinistro PK
+        text localidade FK "nome livre da fonte"
+        char uf
+        text codigo_ibge FK "preenchido pelo de-para"
+        date data_sinistro
+        int mortos
+        int feridos_leves
+        int feridos_graves
+        int veiculos_envolvidos
+    }
+    analytics.mobilidade_escola {
+        bigint co_entidade PK " = codigo_inep"
+        int codigo_ibge
+        bigint acidentes_12m
+        bigint acidentes_fatais_12m
+        bigint sinistros_12m
+        bigint sinistros_fatais_12m
+        numeric pct_acidentes_fatais
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class analytics.mobilidade_escola view

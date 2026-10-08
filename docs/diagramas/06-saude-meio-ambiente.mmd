@@ -1,0 +1,86 @@
+erDiagram
+%% 06 · Saúde (acessibilidade da escola à UBS) e meio ambiente
+%% CNES/SISAB: sem FOREIGN KEY para a malha (chegada por codigo_municipio na
+%% ingestão); MapBiomas/INMET já nascem com FK para malha_municipio.
+%% Meio ambiente NAO tem view consolidadora: nenhuma das 16 views/matviews do
+%% banco lê mapbiomas/inmet (medido). As quatro tabelas sao folhas aqui; quem
+%% as lê é o relatório R (analysis/reports/new_data_sources.Rmd).
+
+    clean.malha_municipio ||--o{ clean.cnes_estabelecimentos : "[chave] codigo_municipio = codigo_ibge"
+    clean.malha_municipio ||--o{ clean.sisab_aps : "[chave] codigo_municipio = codigo_ibge"
+    clean.malha_municipio ||--o{ clean.mapbiomas_cobertura : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.inmet_alerta : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.inmet_bdmep : "[FK] codigo_ibge"
+
+    clean.censo_escolas ||..o| analytics.acessibilidade_saude : "[view] escolas ativas com coordenadas"
+    clean.cnes_estabelecimentos ||..o| analytics.acessibilidade_saude : "[view] UBS mais proxima"
+    clean.sisab_aps ||..o| analytics.acessibilidade_saude : "[view] cobertura e efetividade APS"
+    clean.malha_municipio ||..o| analytics.acessibilidade_saude : "[view] total de UBS do municipio"
+
+    clean.malha_municipio {
+        varchar codigo_ibge PK
+        varchar nome_municipio
+    }
+    clean.censo_escolas {
+        bigint co_entidade PK " = codigo_inep"
+        int nu_ano_censo PK
+        int co_municipio FK " = codigo_ibge"
+        numeric latitude
+        numeric longitude
+        geometry geometry
+    }
+    clean.cnes_estabelecimentos {
+        bigint codigo_cnes PK
+        text codigo_municipio FK " = codigo_ibge"
+        smallint codigo_tipo_unidade "11 UBS, 12 posto de saude"
+        smallint status "1 = ativo"
+        date dt_snapshot
+        numeric latitude
+        numeric longitude
+    }
+    clean.sisab_aps {
+        text codigo_municipio PK,FK " = codigo_ibge"
+        date dt_referencia PK
+        date dt_snapshot PK
+        numeric cobertura_aps
+        int equipe_esf
+        int equipe_emsi
+        smallint categoria_ivs
+    }
+    clean.mapbiomas_cobertura {
+        text codigo_ibge PK,FK
+        smallint ano PK
+        text classe PK "7 classes"
+        numeric area_km2
+        text colecao "colecao fixa"
+    }
+    clean.inmet_alerta {
+        bigint id_alerta PK
+        text codigo_ibge FK
+        timestamptz data_inicio
+        timestamptz data_fim
+        text descricao
+        text risco
+        text severidade
+        char uf
+    }
+    clean.inmet_bdmep {
+        text codigo_estacao PK
+        date data PK
+        text codigo_ibge FK
+        numeric temp_ar_media_c
+        numeric temp_ar_max_c
+        numeric precipitacao_mm
+    }
+    analytics.acessibilidade_saude {
+        bigint co_entidade PK " = codigo_inep"
+        int codigo_ibge FK
+        double dist_min_km_ubs
+        bigint n_ubs_municipio
+        numeric cobertura_aps
+        text classificacao_acesso
+        numeric efetividade_vagas_aps
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class analytics.acessibilidade_saude view

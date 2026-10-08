@@ -1,0 +1,131 @@
+erDiagram
+%% 05 · Mobilidade — isocronas, origem-destino, frota, capacidade das vias
+%% Consolidado em analytics.mobilidade_escola (view), que também consome as
+%% bases de risco do diagrama 07 (acidentes e sinistros).
+%% Chave do domínio: codigo_ibge (município) e co_entidade (escola).
+%% Obs.: recife_transporte_escolar NAO tem codigo_ibge — liga só à escola.
+
+    clean.malha_municipio ||--o{ clean.isocrona_escolar : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.antt_od_municipio : "[FK] codigo_ibge_origem"
+    clean.malha_municipio ||--o{ clean.antt_od_municipio : "[FK] codigo_ibge_destino"
+    clean.malha_municipio ||--o{ clean.renavam_frota_municipio : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.snv_trecho_vmda : "[chave] codigo_ibge - onde cai o trecho"
+    clean.malha_municipio ||--o{ clean.antt_trecho_geodados : "[FK] codigo_ibge"
+
+    clean.isocrona_escolar ||--o| clean.escolas : "[chave] co_entidade = codigo_inep - sem FK"
+    clean.recife_transporte_escolar ||--o| clean.escolas : "[chave] co_entidade = codigo_inep - sem FK"
+
+    clean.antt_trecho_geodados ||--o{ clean.antt_contagem_equipamento : "[FK] concessionaria + trecho"
+    clean.antt_trecho_geodados ||--o{ clean.snv_trecho_vmda : "[chave] concessionaria + trecho"
+
+    clean.censo_escolas ||..o| analytics.mobilidade_escola : "[view] escolas ativas com geometry"
+    clean.isocrona_escolar ||..o| analytics.mobilidade_escola : "[view] tempo medio por escola"
+    clean.antt_od_municipio ||..o| analytics.mobilidade_escola : "[view] saida e entrada por municipio"
+    clean.renavam_frota_municipio ||..o| analytics.mobilidade_escola : "[view] frota total"
+    clean.snv_trecho_vmda ||..o| analytics.mobilidade_escola : "[view] VMDA por municipio"
+    clean.recife_transporte_escolar ||..o| analytics.mobilidade_escola : "[view] vagas de transporte por escola"
+    clean.antt_acidente_trecho ||..o| analytics.mobilidade_escola : "[view] ver diagrama 07"
+    clean.renaest_sinistro ||..o| analytics.mobilidade_escola : "[view] ver diagrama 07"
+
+    clean.malha_municipio {
+        varchar codigo_ibge PK
+        varchar nome_municipio
+    }
+    clean.isocrona_escolar {
+        bigint co_entidade PK,FK " = codigo_inep"
+        text grid_id PK
+        text codigo_ibge FK
+        smallint tempo_minutos
+        int populacao_grade
+        text engine
+    }
+    clean.antt_od_municipio {
+        text codigo_ibge_origem PK,FK
+        text codigo_ibge_destino PK,FK
+        date mes_viagem PK
+        int quantidade_bilhetes
+        bool supressao_aplicada
+    }
+    clean.renavam_frota_municipio {
+        text codigo_ibge PK,FK
+        smallint ano PK
+        smallint mes PK
+        int total_frota
+        int automoveis
+        int onibus
+        int moto
+    }
+    clean.antt_trecho_geodados {
+        text trecho PK "id do trecho rodoviario"
+        text concessionaria PK
+        text codigo_ibge FK "municipio do km inicial"
+        geometry geometry
+    }
+    clean.antt_contagem_equipamento {
+        text concessionaria PK,FK
+        text trecho PK,FK
+        numeric km PK
+        date data_contagem PK
+        int volume_diario
+        int composicao_leve
+        int composicao_pesado
+    }
+    clean.snv_trecho_vmda {
+        bigint id_trecho PK "concessao-trecho"
+        text concessionaria PK
+        text trecho PK
+        text codigo_ibge FK
+        int vmda_total
+        int vmda_leve
+        int vmda_pesado
+        geometry geometry
+    }
+    clean.recife_transporte_escolar {
+        bigint co_entidade PK,FK " = codigo_inep"
+        smallint ano PK
+        text turno
+        int vagas_transporte
+        date dt_snapshot
+    }
+    clean.censo_escolas {
+        bigint co_entidade PK
+        int nu_ano_censo PK
+        geometry geometry
+        smallint tp_situacao_funcionamento
+    }
+    clean.escolas {
+        bigint codigo_inep PK
+        geometry geometry
+    }
+    clean.antt_acidente_trecho {
+        bigint id_acidente PK
+        text concessionaria
+        text trecho
+        date data_acidente
+        int mortos
+        int feridos_leves
+        int feridos_graves
+    }
+    clean.renaest_sinistro {
+        bigint id_sinistro PK
+        text codigo_ibge FK "preenchido pelo de-para"
+        char uf
+        date data_sinistro
+        int mortos
+        int feridos_leves
+    }
+    analytics.mobilidade_escola {
+        bigint co_entidade PK " = codigo_inep"
+        int codigo_ibge
+        jsonb isocronas_por_tempo
+        jsonb antt_od_saida
+        jsonb antt_od_entrada
+        int renavam_total_frota
+        bigint vmda_total_municipio
+        bigint acidentes_12m
+        bigint sinistros_12m
+        int recife_vagas_transporte
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class analytics.mobilidade_escola view

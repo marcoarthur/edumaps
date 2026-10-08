@@ -1,0 +1,56 @@
+flowchart TB
+%% Indice navegavel dos diagramas — NAO e um ER. Cada dominio aponta para as
+%% views analiticas que o consomem. Ver README.md para a legenda completa.
+
+    subgraph HUBS["Chaves que atravessam os dominios"]
+        H1["codigo_ibge<br/>municipio IBGE de 7 digitos<br/>hub de TODA a camada clean"]
+        H2["co_entidade = codigo_inep<br/>INEP da escola<br/>hub escola"]
+        H3["dt_snapshot<br/>fotografia datada da carga<br/>apresente em toda tabela nova"]
+    end
+
+    subgraph DOMINIOS["Dominios (diagramas)"]
+        D1["01 - Territorio e IBGE<br/>malha · setor censitario · populacao"]
+        D2["02 - Censo e desempenho<br/>censo · IDEB · INEP · INSE · scores"]
+        D3["03 - OSM e equipamentos<br/>queries · features · landuse"]
+        D4["04 - Financeiro<br/>SICONFI receita/despesa · transferencias"]
+        D5["05 - Mobilidade<br/>isocronas · OD · frota · VMDA"]
+        D6["06 - Saude e meio ambiente<br/>CNES · SISAB · MapBiomas · INMET"]
+        D7["07 - Risco e seguranca<br/>acidentes · sinistros · crime"]
+        D8["08 - Plataforma<br/>gestores · chat · inventario · relacoes"]
+    end
+
+    subgraph ANALYTICS["Camada analitica (views que consolidam)"]
+        A3["analytics.esforco_fiscal_educacao"]
+        A1["analytics.mobilidade_escola"]
+        A2["analytics.acessibilidade_saude"]
+        A4["analytics.mv_municipios_consolidado"]
+        A5["analytics.mv_rede_escolas"]
+        A6["analytics.escola_features"]
+        A7["analytics.metricas_acessibilidade_municipios"]
+        A8["analytics.estatisticas_acessibilidade"]
+        A9["clean.v_ibge_municipio_ano"]
+    end
+
+    H1 --> D1
+    H2 --> D2
+    H3 --> D4
+
+    D1 --> A9
+    D1 --> A7
+    D2 --> A4
+    D2 --> A5
+    D2 --> A6
+    D3 --> A7
+    D4 --> A3
+    D5 --> A1
+    D6 --> A2
+    D7 --> A1
+    D8 -.->|"consumida pela API"| D2
+
+    A7 --> A8
+    A4 -.->|"consolidado municipal"| A5
+
+    classDef hub fill:#fff7e6,stroke:#d97706,stroke-width:2px
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class H1,H2,H3 hub
+    class A1,A2,A3,A4,A5,A6,A7,A8,A9 view

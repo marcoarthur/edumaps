@@ -1,0 +1,80 @@
+erDiagram
+%% 03 · OpenStreetMap: queries, features e associação à escola/município
+%% Vínculo escola↔OSM é ESPACIAL (DBIC com cond em code-ref), não é chave.
+
+    clean.osm_query ||--o{ clean.osm_query_feature : "[FK] digest"
+    clean.osm_feature ||--o{ clean.osm_query_feature : "[DBIC] osm_type + osm_id"
+    clean.osm_query ||--o{ clean.school_osm_query : "[FK] digest"
+    clean.osm_query ||--o{ clean.school_osm_feature : "[FK] digest"
+    clean.osm_feature ||--o{ clean.school_osm_feature : "[DBIC] osm_type + osm_id"
+    clean.osm_query ||--o{ clean.municipio_osm_feature : "[FK] digest"
+    clean.municipio_osm_feature ||--o| clean.municipios_sp : "[FK] codigo_ibge"
+    clean.osm_query ||--o{ clean.osm_landuse : "[FK] osm_query_id = digest"
+    clean.municipios_sp ||--o{ clean.osm_landuse : "[FK] municipio_id = codigo_ibge"
+    clean.escolas ||--o{ clean.osm_landuse : "[DBIC espacial] ST_Expand 1 km da escola"
+    clean.osm_landuse ||--o| clean.escolas : "[DBIC espacial] ST_DWithin - equipamento perto"
+
+    clean.municipios_sp ||..o| analytics.metricas_acessibilidade_municipios : "[view] buffers de 5 km"
+
+    clean.osm_query {
+        text digest PK "hash da consulta Overpass"
+        text query
+        timestamp last_run
+        double elapsed_time
+    }
+    clean.osm_feature {
+        text osm_type PK "node/way/relation"
+        bigint osm_id PK
+        text category
+        text tags_key
+        geometry geom
+    }
+    clean.osm_query_feature {
+        text digest PK,FK
+        text osm_type PK,FK
+        bigint osm_id PK,FK
+    }
+    clean.school_osm_query {
+        bigint co_entidade PK " = codigo_inep"
+        int nu_ano_censo PK
+        int raio PK
+        text digest FK
+        jsonb profiles
+    }
+    clean.school_osm_feature {
+        bigint co_entidade PK " = codigo_inep"
+        int nu_ano_censo PK
+        text osm_type PK,FK
+        bigint osm_id PK,FK
+        text digest FK
+        double distance_m
+    }
+    clean.municipio_osm_feature {
+        varchar codigo_ibge PK,FK
+        text osm_type PK,FK
+        bigint osm_id PK,FK
+        text digest FK
+    }
+    clean.osm_landuse {
+        bigint osm_id PK
+        varchar municipio_id PK,FK " = codigo_ibge"
+        text osm_query_id PK,FK " = digest"
+        text land_use
+        geometry geom
+    }
+    clean.municipios_sp {
+        varchar codigo_ibge PK
+        geometry geometry
+    }
+    clean.escolas {
+        bigint codigo_inep PK
+        geometry geometry
+    }
+    analytics.metricas_acessibilidade_municipios {
+        varchar codigo_ibge PK,FK
+        double percentual_cobertura
+        bigint n_escolas
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class analytics.metricas_acessibilidade_municipios view

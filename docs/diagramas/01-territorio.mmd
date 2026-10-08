@@ -1,0 +1,105 @@
+erDiagram
+%% 01 · Território e referência geográfica
+%% Hub: codigo_ibge. Tudo o que é "por município" amarra aqui.
+
+    clean.malha_municipio ||--o{ clean.malha_setor_censitario : "[FK] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.censo2022_setor : "[FK via malha] codigo_ibge"
+    clean.malha_setor_censitario ||--|| clean.censo2022_setor : "[FK] codigo_setor 1 para 1"
+    clean.malha_municipio ||--o{ clean.ibge_agregados : "[chave] codigo_ibge - SIDRA longo"
+    clean.malha_municipio ||--o{ clean.dados_ibge : "[chave] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.populacao_municipal : "[chave] codigo_ibge"
+    clean.malha_municipio ||--o{ clean.municipios_sp : "[chave] codigo_ibge - recorte SP"
+
+    clean.ibge_agregados }o..|| clean.v_ibge_municipio_ano : "[view] agrega para municipio-ano"
+    clean.malha_municipio }o..|| clean.v_ibge_municipio_ano : "[view] traz nome e uf"
+
+    clean.municipios_sp ||--o{ clean.escolas : "[DBIC] ST_Contains - escola no poligono"
+    clean.escolas }o..o| analytics.escolas_filtradas : "[view] ST_Within + coluna municipio_ibge"
+    clean.municipios_sp }o..o| analytics.escolas_filtradas : "[view] ST_Within + coluna municipio_ibge"
+
+    analytics.escolas_filtradas ||..o| analytics.metricas_acessibilidade_municipios : "[view] buffers de 5 km por escola"
+    clean.municipios_sp ||--o| analytics.metricas_acessibilidade_municipios : "[DBIC] codigo_ibge"
+    clean.populacao_municipal ||--o| analytics.metricas_acessibilidade_municipios : "[DBIC] codigo_ibge"
+    analytics.metricas_acessibilidade_municipios ||..o| analytics.estatisticas_acessibilidade : "[view] agrega os municipios"
+
+    clean.malha_municipio {
+        varchar codigo_ibge PK "7 digitos IBGE"
+        varchar nome_municipio
+        varchar sigla_uf
+        double area_km2
+        geometry geometry
+    }
+    clean.malha_setor_censitario {
+        text codigo_setor PK "15 digitos"
+        text codigo_ibge FK
+        geometry geometry
+    }
+    clean.censo2022_setor {
+        text codigo_setor PK,FK "15 digitos"
+        text codigo_ibge FK
+        int pop_total
+        int pop_homens
+        bool supressao_celula_pequena "celula < 3 habitantes"
+    }
+    clean.municipios_sp {
+        varchar codigo_ibge PK
+        varchar codigo_ibge_antigo "cod_municipio legado do IBGE"
+        varchar nome_municipio
+        varchar codigo_regiao_imediata
+        geometry geometry
+    }
+    clean.ibge_agregados {
+        text codigo_ibge PK,FK
+        smallint ano PK
+        text tabela_id PK "SIDRA"
+        text variavel PK
+        text classificacao PK
+        numeric valor
+        text unidade
+    }
+    clean.dados_ibge {
+        text codigo_ibge PK,FK
+        int ano PK
+        numeric pib_total
+        numeric agro_percent
+    }
+    clean.populacao_municipal {
+        varchar codigo_ibge PK,FK
+        int populacao_estimada
+        int pop_0_a_14
+        int pop_15_a_24
+    }
+    clean.escolas {
+        bigint codigo_inep PK " igual a co_entidade"
+        text escola
+        text uf
+        geometry geometry
+        double latitude
+        double longitude
+    }
+    clean.v_ibge_municipio_ano {
+        text codigo_ibge PK,FK
+        smallint ano PK
+        numeric pib_total
+        numeric populacao
+        numeric idhm
+    }
+    analytics.escolas_filtradas {
+        bigint codigo_inep PK
+        varchar municipio_ibge "derivado por ST_Within"
+        geometry geometry
+    }
+    analytics.metricas_acessibilidade_municipios {
+        varchar codigo_ibge PK,FK
+        double percentual_cobertura
+        bigint n_escolas
+        double area_coberta_km2
+    }
+    analytics.estatisticas_acessibilidade {
+        bigint total_municipios
+        double cobertura_media
+        double cobertura_minima
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class clean.v_ibge_municipio_ano,analytics.escolas_filtradas,analytics.estatisticas_acessibilidade view

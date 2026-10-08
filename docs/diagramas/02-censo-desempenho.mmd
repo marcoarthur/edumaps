@@ -1,0 +1,169 @@
+erDiagram
+%% 02 · Censo Escolar e desempenho
+%% Hub escola: co_entidade (Censo) = codigo_inep (cadastro/OSM) = id_escola (IDEB/INEP)
+%% Este é o núcleo ANTIGO: aqui o vínculo vive quase todo na camada Perl (DBIC),
+%% sem FOREIGN KEY no Postgres.
+
+    clean.escolas ||--o| clean.censo_escolas : "[DBIC has_one] codigo_inep = co_entidade"
+    clean.censo_escolas ||--o{ clean.censo_matriculas : "[DBIC] co_entidade + nu_ano_censo"
+    clean.censo_escolas ||--o{ clean.censo_docentes : "[DBIC] co_entidade + nu_ano_censo"
+    clean.censo_escolas ||--o{ clean.censo_gestor : "[DBIC] co_entidade + nu_ano_censo"
+    clean.censo_escolas ||--o{ clean.ideb_notas_escolas : "[DBIC] id_escola = co_entidade"
+    clean.escolas ||--o{ clean.inep_notas_desagregadas : "[DBIC has_many] id_escola = codigo_inep"
+    clean.censo_escolas ||--o| clean.inse : "[DBIC] id_escola = co_entidade"
+    clean.censo_escolas ||--o{ analytics.ranking_escola : "[DBIC] id_escola = co_entidade"
+    clean.censo_escolas ||--o| clean.mv_escolas_scores : "[DBIC] co_entidade + nu_ano_censo"
+    clean.escolas ||--o| clean.inep : "[DBIC might_have] codigo_inep = id_escola"
+    clean.escolas ||--o{ clean.remuneracao_municipal : "[DBIC] codigo_inep = cod_inep"
+    clean.escolas ||..o{ clean.censo_escolas_scores : "[view] infra por escola"
+    clean.ideb_notas_escolas ||..o{ clean.consistent_schools : "[matview] participacao em todos os anos"
+    clean.remuneracao_municipal ||..o{ analytics.municipio_similaridade : "[matview] medias por municipio"
+
+    clean.censo_escolas ||..o| analytics.escola_features : "[matview] junta 6 bases da escola"
+    clean.censo_matriculas ||..o| analytics.escola_features : "[matview]"
+    clean.censo_docentes ||..o| analytics.escola_features : "[matview]"
+    clean.censo_gestor ||..o| analytics.escola_features : "[matview]"
+    clean.ideb_notas_escolas ||..o| analytics.escola_features : "[matview]"
+    clean.inse ||..o| analytics.escola_features : "[matview]"
+
+    clean.censo_escolas ||..o| analytics.mv_municipios_consolidado : "[matview] agrega por co_municipio"
+    clean.censo_matriculas ||..o| analytics.mv_municipios_consolidado : "[matview] ano 2025"
+    clean.censo_docentes ||..o| analytics.mv_municipios_consolidado : "[matview] ano 2025"
+    clean.censo_escolas_scores ||..o| analytics.mv_municipios_consolidado : "[matview] medias de score"
+    clean.ideb_notas_escolas ||..o| analytics.mv_municipios_consolidado : "[matview] IDEB pivotado"
+    clean.populacao_municipal ||..o| analytics.mv_municipios_consolidado : "[matview] contexto demografico"
+    clean.dados_ibge ||..o| analytics.mv_municipios_consolidado : "[matview] PIB e composicao"
+
+    clean.censo_escolas ||..o| analytics.mv_rede_escolas : "[matview] agrega por rede"
+    clean.censo_matriculas ||..o| analytics.mv_rede_escolas : "[matview]"
+    clean.censo_docentes ||..o| analytics.mv_rede_escolas : "[matview]"
+    clean.ideb_notas_escolas ||..o| analytics.mv_rede_escolas : "[matview] ultimo ano por etapa"
+
+    clean.populacao_municipal {
+        varchar codigo_ibge PK,FK
+        int populacao_estimada
+    }
+    clean.dados_ibge {
+        text codigo_ibge PK,FK
+        int ano PK
+        numeric pib_total
+        numeric agro_percent
+    }
+
+    clean.escolas {
+        bigint codigo_inep PK "PK fisica"
+        text escola
+        text dependencia_administrativa
+        text localizacao "urbana ou rural"
+        geometry geometry
+    }
+    clean.censo_escolas {
+        bigint co_entidade PK,FK " = codigo_inep"
+        int nu_ano_censo PK
+        int co_municipio FK
+        smallint tp_dependencia
+        smallint tp_situacao_funcionamento
+        geometry geometry
+    }
+    clean.censo_matriculas {
+        bigint co_entidade PK,FK
+        int nu_ano_censo PK
+        int qt_mat_bas
+        int qt_mat_med
+    }
+    clean.censo_docentes {
+        bigint co_entidade PK,FK
+        int nu_ano_censo PK
+        int qt_doc_bas
+        int qt_doc_bas_esco_sup_grad
+    }
+    clean.censo_gestor {
+        bigint co_entidade PK,FK
+        int nu_ano_censo PK
+        int qt_gest_bas
+    }
+    clean.ideb_notas_escolas {
+        bigint id_escola PK,FK
+        int ano PK
+        varchar etapa PK
+        int co_municipio FK
+        numeric nota_media
+        numeric ideb_observado
+    }
+    clean.inep {
+        bigint id_escola PK,FK
+        varchar codigo_ibge FK
+        text rede
+        numeric vl_nota_media_2023
+    }
+    clean.inep_notas_desagregadas {
+        bigint id_escola PK,FK
+        int ano PK
+        varchar codigo_ibge FK
+        numeric nota_mat
+        numeric nota_por
+    }
+    clean.inse {
+        bigint id_escola PK,FK
+        int nu_ano_saeb PK
+        numeric media_inse
+        varchar inse_classificacao
+    }
+    clean.remuneracao_municipal {
+        bigint cod_inep PK,FK
+        varchar cod_municipio FK " = codigo_ibge_antigo"
+        int ano PK
+        text mes PK
+        numeric salario_total
+    }
+    clean.censo_escolas_scores {
+        bigint co_entidade PK,FK
+        numeric score_infra_essencial
+        numeric score_tecnologia
+    }
+    clean.mv_escolas_scores {
+        bigint co_entidade PK,FK
+        int nu_ano_censo PK
+        numeric score_infraestrutura
+        numeric score_capacidade_gestora
+    }
+    clean.consistent_schools {
+        bigint id_escola PK,FK
+        varchar etapa PK
+        bigint anos_participou
+    }
+    analytics.escola_features {
+        text co_entidade PK,FK
+        bigint infra_essencial_score
+        numeric media_inse
+        numeric nota_media
+    }
+    analytics.mv_municipios_consolidado {
+        text co_municipio PK " = codigo_ibge"
+        bigint total_escolas
+        bigint total_alunos
+        numeric ideb_fund_ii
+        int populacao_estimada
+        numeric pib_per_capita
+    }
+    analytics.mv_rede_escolas {
+        smallint codigo_rede PK
+        text co_municipio PK,FK
+        bigint total_escolas
+        numeric ideb_fund_ii
+    }
+    analytics.ranking_escola {
+        text indicador_id PK
+        int id_escola PK,FK
+        int ano PK
+        int rank_municipio
+        int rank_nacional
+    }
+    analytics.municipio_similaridade {
+        varchar municipio_1 PK,FK
+        varchar municipio_2 PK,FK
+        numeric distancia_euclidiana
+    }
+
+    classDef view fill:#eef6ff,stroke:#2b6cb0,stroke-dasharray: 5 4
+    class clean.censo_escolas_scores,clean.consistent_schools,analytics.escola_features,analytics.mv_municipios_consolidado,analytics.mv_rede_escolas,analytics.municipio_similaridade,clean.mv_escolas_scores view

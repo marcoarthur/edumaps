@@ -1,0 +1,297 @@
+erDiagram
+%% 08 · Plataforma — camada de gestão/comunidade. Aqui o vínculo é todo
+%% FOREIGN KEY real no Postgres, ancorado em clean.gestores (cascade_delete).
+%% clean.relacoes_entidades NAO é tabela-ponte: é o cadastro de entidades
+%% (pessoas/fornecedores externos) e clean.relacoes.entidade_id aponta para ele.
+
+    clean.gestores ||--o{ clean.sessoes : "[FK] gestor_id - cascade delete"
+    clean.gestores ||--o{ clean.chat_conversas : "[FK] gestor_id - cascade delete"
+    clean.gestores ||--o{ clean.contatos : "[FK] gestor_id - cascade delete"
+    clean.gestores ||--o{ clean.contato_grupos : "[FK] gestor_id - cascade delete"
+    clean.gestores ||--o{ clean.reunioes : "[chave] gestor_id"
+    clean.gestores ||--o{ clean.inventario_categorias : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.inventario_fornecedores : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.inventario_itens : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.gestor_pesquisas : "[FK] gestor_id - no action"
+    clean.gestores ||--o{ clean.escola_documentos : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.escola_documentos_versoes : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.escola_documentos_auditoria : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.relacoes : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.relacoes_entidades : "[FK] gestor_id"
+    clean.gestores ||--o{ clean.relacoes_categorias : "[FK] gestor_id"
+
+    clean.chat_conversas ||--o{ clean.chat_mensagens : "[FK] conversa_id - cascade delete"
+    clean.contato_grupos ||--o{ clean.contatos : "[FK] grupo_id - set null"
+    clean.reunioes ||--o{ clean.reunioes_participantes : "[FK] reuniao_id - cascade delete"
+    clean.contatos ||--o{ clean.reunioes_participantes : "[FK] contato_id - cascade delete"
+    clean.contato_grupos ||--o{ clean.reunioes_participantes : "[chave] via_grupo_id"
+    clean.reunioes ||--o{ clean.reuniao_anexos : "[FK] reuniao_id - cascade delete"
+
+    clean.escolas ||--o{ clean.reunioes : "[chave] cod_inep - sem FK"
+    clean.escolas ||--o{ clean.pastas_escolares : "[chave] cod_inep - sem FK"
+    clean.pastas_escolares ||--o{ clean.escola_documentos : "[FK] pasta_id - set null"
+    clean.pastas_escolares ||--o{ clean.pastas_escolares : "[chave] pasta_pai_id - arvore"
+    clean.escola_documentos ||--o{ clean.escola_documentos_versoes : "[FK] documento_id - cascade delete"
+
+    clean.inventario_categorias ||--o{ clean.inventario_itens : "[FK] categoria_id - set default"
+    clean.inventario_fornecedores ||--o{ clean.inventario_itens : "[FK] fornecedor_id - set null"
+    clean.inventario_itens ||--o{ clean.inventario_anexos : "[FK] item_id - cascade delete"
+
+    clean.relacoes_entidades ||--o{ clean.relacoes : "[FK] entidade_id"
+    clean.relacoes ||--o{ clean.relacoes_interacoes : "[FK] relacao_id - cascade delete"
+    clean.relacoes ||--o{ clean.relacoes_tarefas : "[FK] relacao_id - cascade delete"
+    clean.relacoes ||--o{ clean.relacoes_documentos : "[FK] relacao_id - cascade delete"
+
+    clean.gestor_pesquisas ||--o{ clean.gestor_pesquisas_perguntas : "[FK] pesquisa_id - cascade delete"
+    clean.gestor_pesquisas ||--o{ clean.gestor_pesquisas_respostas : "[FK] pesquisa_id - cascade delete"
+    clean.gestor_pesquisas_perguntas ||--o{ clean.gestor_pesquisas_respostas_itens : "[FK] pergunta_id"
+    clean.gestor_pesquisas_respostas ||--o{ clean.gestor_pesquisas_respostas_itens : "[FK] resposta_id"
+
+    clean.import_metadata ||..o{ clean.minion_jobs : "[proveniencia] task + args apontam a tabela"
+
+%% clean.event_store nao tem coluna de gestor: ancora em codigo_ibge
+%% (hub do diagrama 01), por isso fica sem aresta aqui.
+
+    clean.escolas {
+        bigint codigo_inep PK "chave comum a todo o sistema"
+        text escola
+        geometry geometry
+    }
+    clean.gestores {
+        bigint id PK
+        text nome
+        text email
+        bigint cod_inep
+        text cargo
+        timestamptz created_at
+    }
+    clean.sessoes {
+        bigint id PK
+        bigint gestor_id FK
+        text token
+        timestamptz expires_at
+    }
+    clean.chat_conversas {
+        bigint id PK
+        bigint gestor_id FK
+        text titulo
+        timestamptz created_at
+    }
+    clean.chat_mensagens {
+        bigint id PK
+        bigint conversa_id FK
+        text role "user, assistant ou tool"
+        text content
+        jsonb meta "timestamp, sql, origem"
+    }
+    clean.contato_grupos {
+        bigint id PK
+        bigint gestor_id FK
+        text nome
+    }
+    clean.contatos {
+        bigint id PK
+        bigint gestor_id FK
+        bigint grupo_id FK
+        text nome
+        text cargo
+        text email
+        text telefone
+    }
+    clean.reunioes {
+        bigint id PK
+        bigint cod_inep
+        bigint gestor_id
+        timestamptz quando
+        text titulo
+        text pauta_texto
+        text status
+    }
+    clean.reunioes_participantes {
+        bigint reuniao_id PK,FK
+        bigint contato_id PK,FK
+        bigint via_grupo_id PK
+    }
+    clean.reuniao_anexos {
+        bigint id PK
+        bigint reuniao_id FK
+        text nome_original
+        text mime
+    }
+    clean.pastas_escolares {
+        bigint id PK
+        bigint cod_inep
+        bigint pasta_pai_id FK "auto-referencia = arvore"
+        bigint gestor_id
+        text nome
+    }
+    clean.escola_documentos {
+        bigint id PK
+        bigint cod_inep
+        bigint pasta_id FK
+        bigint gestor_id FK
+        text nome
+        text[] tags
+        timestamptz created_at
+    }
+    clean.escola_documentos_versoes {
+        bigint id PK
+        bigint documento_id FK
+        bigint gestor_id FK
+        int versao
+        text caminho
+        text mime
+        char sha1
+        bigint tamanho
+    }
+    clean.escola_documentos_auditoria {
+        bigint id PK
+        bigint cod_inep
+        bigint gestor_id FK
+        text entidade "polimorfico: escola ou documento"
+        bigint entidade_id
+        text acao
+    }
+    clean.inventario_itens {
+        bigint id PK
+        bigint categoria_id FK
+        bigint fornecedor_id FK
+        bigint gestor_id FK
+        text descricao
+        text estado "bom, regular ou ruim"
+        numeric quantidade
+        numeric valor
+    }
+    clean.inventario_anexos {
+        bigint id PK
+        bigint item_id FK
+        text nome_original
+        text mime
+        bigint tamanho
+    }
+    clean.inventario_categorias {
+        bigint id PK
+        bigint gestor_id FK
+        text tipo
+        text nome
+    }
+    clean.inventario_fornecedores {
+        bigint id PK
+        bigint gestor_id FK
+        text nome
+        text tipo_servico
+        text email
+        text telefone
+    }
+    clean.relacoes {
+        bigint id PK
+        bigint gestor_id FK
+        bigint entidade_id FK
+        bigint cod_inep
+        text finalidade
+        text assunto
+        text status
+        text prioridade
+        date inicio
+        date prazo
+    }
+    clean.relacoes_entidades {
+        bigint id PK
+        bigint gestor_id FK
+        bigint cod_inep
+        text tipo "escola, contato ou fornecedor"
+        text nome
+        text identificador
+        text responsavel_externo
+        text email
+        text telefone
+        text site
+    }
+    clean.relacoes_categorias {
+        bigint id PK
+        bigint gestor_id FK
+        bigint cod_inep
+        text nome
+        text eixo
+        text origem
+        timestamptz created_at
+    }
+    clean.relacoes_interacoes {
+        bigint id PK
+        bigint relacao_id FK
+        bigint gestor_id FK
+        date data
+        text canal
+        text participante
+        text resultado
+    }
+    clean.relacoes_tarefas {
+        bigint id PK
+        bigint relacao_id FK
+        bigint gestor_id FK
+        text descricao
+        text responsavel
+        date prazo
+        text status
+    }
+    clean.relacoes_documentos {
+        bigint id PK
+        bigint relacao_id FK
+        bigint gestor_id FK
+        text tipo
+        date data
+        text referencia
+        text nome_original
+        text mime
+    }
+    clean.gestor_pesquisas {
+        bigint id PK
+        bigint gestor_id FK
+        text titulo
+        text descricao
+        text status "ativa ou encerrada"
+        uuid token
+    }
+    clean.gestor_pesquisas_perguntas {
+        bigint id PK
+        bigint pesquisa_id FK
+        int ordem
+        text texto
+        text tipo
+        jsonb opcoes
+    }
+    clean.gestor_pesquisas_respostas {
+        bigint id PK
+        bigint pesquisa_id FK
+        text identificador_dispositivo
+        timestamptz respondida_em
+    }
+    clean.gestor_pesquisas_respostas_itens {
+        bigint id PK
+        bigint resposta_id FK
+        bigint pergunta_id FK
+        text opcao_id
+        text valor_texto
+    }
+    clean.event_store {
+        bigint id PK
+        varchar event_id
+        varchar event_type
+        jsonb payload
+        varchar source
+        varchar codigo_ibge
+        bool is_speculative
+    }
+    clean.import_metadata {
+        text table_name PK "tabela ingerida"
+        timestamptz import_timestamp
+        text source_file
+        bigint row_count_loaded
+    }
+    clean.minion_jobs {
+        bigint id PK "uuid"
+        text task
+        jsonb args "inclui o nome da tabela"
+        minion_state state "inactive, active ou failed"
+        timestamptz started
+    }
