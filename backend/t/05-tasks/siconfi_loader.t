@@ -71,16 +71,22 @@ sub mk_job {
 }
 {
   package MockDBH;
-  sub new { bless { stmts => [], inserts => [], dos => [] }, $_[0] }
+  # fail_execute => 1 faz o execute explodir (regressão do erro engolido)
+  sub new { my ($c, %o) = @_; bless { stmts => [], inserts => [], dos => [], rolled => 0, commits => [], %o }, $c }
   sub begin_work { }
-  sub commit     { }
-  sub rollback   { }
+  sub commit     { push @{$_[0]{commits}}, 1; return 1 }
+  sub rollback   { $_[0]{rolled}++; return 1 }
   sub prepare    { my ($self, $sql) = @_; push @{$self->{stmts}}, $sql; bless { dbh => $self }, 'MockSTH' }
   sub do         { my ($self, $sql, @p) = @_; push @{$self->{dos}}, [ $sql, @p ]; return 1 }
 }
 {
   package MockSTH;
-  sub execute { my ($self, @p) = @_; push @{$self->{dbh}{inserts}}, \@p; return 1 }
+  sub execute {
+    my ($self, @p) = @_;
+    die "exec exploded: erro original do banco\n" if $self->{dbh}{fail_execute};
+    push @{$self->{dbh}{inserts}}, \@p;
+    return 1;
+  }
   sub finish  { }
 }
 {
@@ -264,6 +270,23 @@ subtest 'load: SQL com ON CONFLICT na PK exata e dt_snapshot nos params' => sub 
   is(scalar @{$dbh->{inserts}}, 4, '4 executes');
   is($dbh->{inserts}[0][7], '2025-06-30', 'dt_snapshot no último parâmetro');
   is($dbh->{inserts}[0][6], 'estimativa', 'classificacao no penúltimo');
+};
+
+# ---------------------------------------------------------------- 8b
+subtest 'load: erro real do banco sobrevive ao rollback (não some)' => sub {
+  # Regressão: `eval { $dbh->rollback }` limpa o $@, e um `die "...$@"`
+  # logo a seguir emitiria mensagem VAZIA — medido no ambiente produto,
+  # onde a falha saiu como "falhou:  at line 357" e era indiagnosticável.
+  my $dbh = MockDBH->new(fail_execute => 1);
+  my $app = MockApp->new(schema => MockSchema->new(storage => MockStorage->new(dbh => $dbh)));
+  my $j  = $JOB->new(log => Mojo::Log->new(level => 'fatal'), app => $app);
+  my $rows = $j->_map_receitas('3550308', 2025, \@FIXTURE, '2025-06-30');
+
+  my $died = !eval { $j->_load_receita($rows); 1 };
+  ok($died, 'a falha propaga como exceção');
+  like($@, qr/exec exploded/, 'a MENSAGEM ORIGINAL chega ao chamador');
+  ok($dbh->{rolled}, 'rollback executado antes do die');
+  is($dbh->{commits} ? scalar @{$dbh->{commits}} : 0, 0, 'sem commit parcial');
 };
 
 # ---------------------------------------------------------------- 9
