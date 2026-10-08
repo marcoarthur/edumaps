@@ -227,4 +227,53 @@ subtest 'contrato: coluna obrigatória em falta aborta' => sub {
   ok($j->_exigir_colunas([qw(a b c)], [qw(a c)], 'Fonte X'), 'coluna a mais não é erro fatal');
 };
 
+# -----------------------------------------------------------------
+# #155: o de-para resolve pelo codigo_ibge da fonte; o que não resolve
+# tem destino explícito em vez de desaparecer num `next`.
+subtest 'classificar_depara: exact, fuzzy e o que fica de fora com motivo' => sub {
+  my $j = job();
+  $j->{app} = mock_app(\@MALHA);
+  my $loc = {
+    registros => [
+      { localidade => 'JORDÃO',             uf => 'AC', codigo_ibge => '1200328' },
+      { localidade => 'FEIJO GRANDE',       uf => 'AC', codigo_ibge => '1200302' },
+      { localidade => 'MUNICIPIO FANTASMA', uf => 'AC', codigo_ibge => '9999999' },
+    ],
+    nao_resolvidas => [
+      { localidade => 'NAO INFORMADO', uf => 'XX', codigo_ibge_fonte => '0',       motivo => 'codigo_sentinela' },
+      { localidade => '',              uf => '',   codigo_ibge_fonte => '5208707', motivo => 'sem_nome_ou_uf' },
+    ],
+  };
+  my $c = $j->classificar_depara($loc);
+  is(scalar @{ $c->{linhas} }, 2, 'só as duas localidades que casam viram de-para');
+  is($c->{contagem}{exact}, 1, 'JORDÃO vs Jordão é exact');
+  is($c->{contagem}{fuzzy}, 1, 'grafia divergente com código válido é fuzzy');
+  is($c->{contagem}{codigo_fora_da_malha}, 1, 'código inexistente na malha é contado');
+  is($c->{contagem}{codigo_sentinela}, 1, 'o sentinela conta');
+  is($c->{contagem}{sem_nome_ou_uf}, 1, 'a linha sem nome/UF conta');
+  is(scalar @{ $c->{nao_resolvidas} }, 3, 'três destinos: sentinela, sem nome/UF e fora da malha');
+  my ($fora) = grep { $_->{motivo} eq 'codigo_fora_da_malha' } @{ $c->{nao_resolvidas} };
+  is($fora->{codigo_ibge_fonte}, '9999999', 'o código da fonte é preservado');
+  is($fora->{localidade}, 'MUNICIPIO FANTASMA', 'e o nome também');
+};
+
+subtest 'ler_localidade: o que é descartado sai nomeado, não só contado' => sub {
+  my $tmp = tempdir(CLEANUP => 1);
+  my $csv = "$tmp/localidade.csv";
+  escrever($csv, <<'CSV');
+chv_localidade;ano_referencia;mes_referencia;mes_ano_referencia;regiao;uf;codigo_ibge;municipio;regiao_metropolitana;qtde_habitantes;frota_total;frota_circulante
+AC1200328201801;2018;01;012018;NORTE;AC;1200328;JORDÃO;nao;8011;115;83
+XX0000000201801;2018;01;012018;NORTE;XX;0;NAO INFORMADO;nao;0;0;0
+AC1200302201801;2018;01;012018;NORTE;AC;1200302;;nao;33688;3729;3032
+CSV
+  my $loc = job()->ler_localidade($csv);
+  is(scalar @{ $loc->{registros} }, 1, 'só o município completo entra no de-para');
+  is(scalar @{ $loc->{nao_resolvidas} }, 2, 'sentinela e sem nome/UF têm destino');
+  my %m = map { $_->{motivo} => $_ } @{ $loc->{nao_resolvidas} };
+  is($m{codigo_sentinela}{codigo_ibge_fonte}, '0', 'o sentinela preserva o código 0');
+  is($m{codigo_sentinela}{localidade}, 'NAO INFORMADO', 'e o nome que a fonte deu');
+  is($m{sem_nome_ou_uf}{localidade}, '', 'a linha sem nome tem localidade vazia');
+  is($m{sem_nome_ou_uf}{codigo_ibge_fonte}, '1200302', 'mas preserva o código que trazia');
+};
+
 done_testing();

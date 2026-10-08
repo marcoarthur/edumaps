@@ -156,8 +156,11 @@ sub _indice_malha ($self) {
 # Localidade: uma leitura que produz o de-para e o índice de nomes
 # -----------------------------------------------------------------
 # Devolve { nome_por_codigo => { codigo => {uf, municipio} },
-#           registros       => [ {localidade, uf, codigo_ibge, municipio}, ... ],
+#           registros       => [ {localidade, uf, codigo_ibge}, ... ],
+#           nao_resolvidas  => [ {localidade, uf, codigo_ibge_fonte, motivo}, ... ],
 #           estatisticas    => { linhas, sentinelas, sem_codigo } }
+# `nao_resolvidas` nomeia o que a leitura descarta (sentinela, sem
+# nome/UF), para a carga ter onde o registar em vez de o perder (#155).
 sub ler_localidade ($self, $csv_path) {
   die "RENAEST Localidade não encontrado: $csv_path\n"
     unless defined $csv_path && -f $csv_path;
@@ -170,7 +173,7 @@ sub ler_localidade ($self, $csv_path) {
   $self->_exigir_colunas($header, \@LOCALIDADE_NEC, 'RENAEST Localidade');
 
   my %idx_h = map { $header->[$_] => $_ } 0 .. $#$header;
-  my (%nome_por_codigo, %visto, @registros);
+  my (%nome_por_codigo, %visto, @registros, @nao_resolvidas);
   my $linhas = 0;
   my $sentinelas = 0;
   my $sem_codigo = 0;
@@ -184,8 +187,24 @@ sub ler_localidade ($self, $csv_path) {
     $uf   =~ s/\s+//g if defined $uf;
     $nome =~ s/^\s+|\s+$//g if defined $nome;
 
-    if (!defined $codigo || $CODIGO_SENTINELA{$codigo}) { $sentinelas++; next }
-    if (!defined $nome || $nome eq '' || !defined $uf || $uf eq '') { $sem_codigo++; next }
+    # O que não é município utilizável não é descartado em silêncio: sai
+    # nomeado, com o motivo, para a carga registar (#155).
+    if (!defined $codigo || $CODIGO_SENTINELA{$codigo}) {
+      $sentinelas++;
+      push @nao_resolvidas, {
+        localidade => ($nome // ''), uf => ($uf // ''),
+        codigo_ibge_fonte => ($codigo // ''), motivo => 'codigo_sentinela',
+      };
+      next;
+    }
+    if (!defined $nome || $nome eq '' || !defined $uf || $uf eq '') {
+      $sem_codigo++;
+      push @nao_resolvidas, {
+        localidade => ($nome // ''), uf => ($uf // ''),
+        codigo_ibge_fonte => $codigo, motivo => 'sem_nome_ou_uf',
+      };
+      next;
+    }
 
     $nome_por_codigo{$codigo} = { uf => $uf, municipio => $nome };
 
@@ -203,6 +222,7 @@ sub ler_localidade ($self, $csv_path) {
   return {
     nome_por_codigo => \%nome_por_codigo,
     registros       => \@registros,
+    nao_resolvidas  => \@nao_resolvidas,
     estatisticas    => { linhas => $linhas, sentinelas => $sentinelas, sem_codigo => $sem_codigo },
   };
 }
@@ -424,29 +444,67 @@ sub registrar_orfaos_renavam ($self, $orfaos) {
 # -----------------------------------------------------------------
 # Carga: de-para
 # -----------------------------------------------------------------
-sub ingerir_depara ($self, $localidade) {
-  my $snapshot = $self->_snapshot('renaest_snapshot');
+# Decide, sem tocar na base, o que casa e o que não casa. As localidades
+# que já vêm marcadas de ler_localidade (sentinela, sem nome/UF) juntam-se
+# às que aqui se descobrem fora da malha — tudo o que não resolve sai com
+# motivo, para `ingerir_depara` o registar e nada desaparecer em silêncio
+# (#155).
+#
+# Devolve:
+#   linhas         => [ [localidade, uf, codigo, nome_ibge, tipo, score], ... ]
+#   nao_resolvidas => [ {localidade, uf, codigo_ibge_fonte, motivo}, ... ]
+#   contagem       => { exact => n, fuzzy => n, codigo_fora_da_malha => n,
+#                       codigo_sentinela => n, sem_nome_ou_uf => n }
+sub classificar_depara ($self, $localidade) {
   my $malha = $self->_indice_malha;
-  my $dbh = $self->app->schema->storage->dbh;
+  my (@linhas, @nao_resolvidas, %contagem);
 
-  my (@linhas, %contagem);
+  my $ja_marcadas = $localidade->{nao_resolvidas} // [];
+  push @nao_resolvidas, @$ja_marcadas;
+  $contagem{ $_->{motivo} }++ for @$ja_marcadas;
+
   for my $reg (@{ $localidade->{registros} }) {
     my $codigo = $reg->{codigo_ibge};
     my $ibge = $malha->{por_codigo}{$codigo};
-    if (!$ibge) { $contagem{sem_malha}++; next }
+    if (!$ibge) {
+      $contagem{codigo_fora_da_malha}++;
+      push @nao_resolvidas, {
+        localidade        => $reg->{localidade},
+        uf                => $reg->{uf},
+        codigo_ibge_fonte => $codigo,
+        motivo            => 'codigo_fora_da_malha',
+      };
+      next;
+    }
 
     my $score = $self->similaridade($reg->{localidade}, $ibge->{nome_municipio});
     my $tipo = $score == 100 ? 'exact' : 'fuzzy';
     $contagem{$tipo}++;
     push @linhas, [
       $reg->{localidade}, $reg->{uf}, $codigo, $ibge->{nome_municipio},
-      $tipo, $score, $snapshot,
+      $tipo, $score,
     ];
   }
 
+  return {
+    linhas         => \@linhas,
+    nao_resolvidas => \@nao_resolvidas,
+    contagem       => \%contagem,
+  };
+}
+
+sub ingerir_depara ($self, $localidade) {
+  my $snapshot = $self->_snapshot('renaest_snapshot');
+  my $dbh = $self->app->schema->storage->dbh;
+  my $class = $self->classificar_depara($localidade);
+  my $linhas = $class->{linhas};
+  my $nao_resolvidas = $class->{nao_resolvidas};
+  my $contagem = $class->{contagem};
+
   if ($self->dry_run) {
-    $self->log_info('[DRY-RUN] de-para: ' . scalar(@linhas) . " linhas");
-    return scalar @linhas;
+    $self->log_info(sprintf('[DRY-RUN] de-para: %d linhas, %d não resolvida(s)',
+      scalar(@$linhas), scalar(@$nao_resolvidas)));
+    return scalar @$linhas;
   }
 
   my $storage = $self->app->schema->storage;
@@ -465,8 +523,21 @@ sub ingerir_depara ($self, $localidade) {
             match_score   = EXCLUDED.match_score,
             validated_by  = EXCLUDED.validated_by,
             dt_carga      = NOW()});
-      $sth->execute(@$_) for @linhas;
-      $count = scalar @linhas;
+      $sth->execute(@$_, $snapshot) for @$linhas;
+      $count = scalar @$linhas;
+
+      # Não resolvidas: o conjunto do snapshot é substituído por inteiro,
+      # senão uma re-corrida deixaria para trás algo já resolvido.
+      $dbh->do(
+        q{DELETE FROM clean.renaest_localidade_nao_resolvida WHERE dt_snapshot = ?},
+        undef, $snapshot);
+      my $sth_nr = $dbh->prepare(
+        q{INSERT INTO clean.renaest_localidade_nao_resolvida
+            (localidade, uf, codigo_ibge_fonte, motivo, dt_snapshot)
+          VALUES (?, ?, ?, ?, ?)});
+      $sth_nr->execute(
+        $_->{localidade}, $_->{uf}, $_->{codigo_ibge_fonte}, $_->{motivo}, $snapshot,
+      ) for @$nao_resolvidas;
     });
     1;
   } or die "Carga do de-para falhou, nada gravado: $@\n";
@@ -478,21 +549,28 @@ sub ingerir_depara ($self, $localidade) {
   my $removidas = $dbh->do(
     q{DELETE FROM clean.renaest_localidade_municipio WHERE validated_by = 'auto_seed'});
 
+  my $resumo = join(', ', map { "$_=$contagem->{$_}" } sort keys %$contagem);
   $self->upsert_metadata(
     'clean.renaest_localidade_municipio',
     'RENAEST Localidade_DadosAbertos (CSV)',
     'https://dados.transportes.gov.br/dataset/renaest',
     'CC-BY-4.0 (Ministério dos Transportes)',
     $count,
-    sprintf('De-para derivado do ficheiro Localidade real (snapshot %s). match_type=%s; %d sem malha; semente auto_seed removida: %s. %s',
-      $snapshot,
-      join(', ', map { "$_=$contagem{$_}" } sort keys %contagem),
-      $contagem{sem_malha} // 0,
-      $removidas,
+    sprintf('De-para derivado do ficheiro Localidade real (snapshot %s). match_type=%s; semente auto_seed removida: %s. Resolução pelo codigo_ibge da fonte, não por semelhança de nome: match_type score mede a grafia. As localidades não resolvidas ficam em clean.renaest_localidade_nao_resolvida. %s',
+      $snapshot, $resumo, $removidas,
       'As colunas localidade/nome_municipio distinguem a grafia da fonte da grafia IBGE.'),
   );
-  $self->log_info(sprintf('De-para: %d linhas (%s), %s semente(s) auto_seed removida(s)',
-    $count, join(', ', map { "$_=$contagem{$_}" } sort keys %contagem), $removidas));
+  $self->upsert_metadata(
+    'clean.renaest_localidade_nao_resolvida',
+    'Derivado da carga RENAEST (Localidade + Acidentes)',
+    'https://dados.transportes.gov.br/dataset/renaest',
+    'CC-BY-4.0 (Ministério dos Transportes)',
+    scalar @$nao_resolvidas,
+    sprintf('Localidades RENAEST não resolvidas para a malha (snapshot %s): %s.',
+      $snapshot, $resumo),
+  );
+  $self->log_info(sprintf('De-para: %d linhas (%s), %s semente(s) auto_seed removida(s); %d não resolvida(s)',
+    $count, $resumo, $removidas, scalar @$nao_resolvidas));
   return $count;
 }
 
