@@ -1,26 +1,25 @@
 -- Verify edumaps:schemas on pg
+-- Verificação que FALHA MESMO (DO … RAISE EXCEPTION): o Sqitch 1.6.1 só
+-- considera a verificação falhada quando o script produz ERRO. Um SELECT que
+-- devolve 'f' passa como ok — ver issue #160.
 
 BEGIN;
-  -- Verificar se schemas foram criados
-  SELECT 
-      COUNT(*) = 5 as schemas_criados,
-      COUNT(*) FILTER (WHERE schema_name = 'raw') = 1 as tem_raw,
-      COUNT(*) FILTER (WHERE schema_name = 'clean') = 1 as tem_clean,
-      COUNT(*) FILTER (WHERE schema_name = 'analytics') = 1 as tem_analytics,
-      COUNT(*) FILTER (WHERE schema_name = 'postgis') = 1 as tem_postgis,
-      COUNT(*) FILTER (WHERE schema_name = 'contrib') = 1 as tem_contrib
-  FROM information_schema.schemata 
-  WHERE schema_name IN ('raw', 'clean', 'analytics', 'postgis', 'contrib');
 
-  -- Verificar search_path do banco (correção da conversão de array)
-  SELECT 
-      CASE 
-          WHEN setting::text LIKE '%clean%' 
-               AND setting::text LIKE '%analytics%'
-               AND setting::text LIKE '%raw%'
-          THEN true 
-          ELSE false 
-      END as search_path_semantico
-  FROM pg_catalog.pg_settings 
-  WHERE name = 'search_path' AND context = 'user';
+DO $$
+DECLARE
+    n  integer;
+    sp text := current_setting('search_path');
+BEGIN
+    SELECT count(*) INTO n
+    FROM information_schema.schemata
+    WHERE schema_name IN ('raw', 'clean', 'analytics', 'postgis', 'contrib');
+    IF n <> 5 THEN
+        RAISE EXCEPTION 'schemas: esperava raw/clean/analytics/postgis/contrib (5 schemas), encontrei %', n;
+    END IF;
+
+    IF sp NOT LIKE '%clean%' OR sp NOT LIKE '%analytics%' OR sp NOT LIKE '%raw%' THEN
+        RAISE EXCEPTION 'schemas: search_path efetivo sem clean/analytics/raw (%)', sp;
+    END IF;
+END $$;
+
 ROLLBACK;

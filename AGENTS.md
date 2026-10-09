@@ -193,23 +193,26 @@ Dependência nova entre changes já deployadas resolve-se com `requires`
 apenas se **nenhuma** delas foi deployada; caso contrário, a resposta certa é
 uma change nova.
 
-### `sqitch verify` não é um gate fiável
+### `sqitch verify` é um gate (issue #160)
 
-Dois factos medidos, não presumidos:
+O CI roda `db/fixtures/ci_db.sh verify` (step do workflow `backend-tests`)
+depois do `up`. No banco recém-deployado as changes estão em ordem de plano,
+portanto o gate **não** esbarra no erro histórico abaixo.
 
-- **Os `verify/*.sql` deste repositório nunca falham.** Terminam em
-  `SELECT 1 FROM ...`, e o Sqitch considera a verificação bem-sucedida se o
-  script não produzir **erro**. Uma query que devolve `f` conta como sucesso.
-  Um teste de regressão escrito à mesma forma passaria com o defeito
-  presente.
-- **`sqitch verify` global falha com 45 "Out of order"**, porque
-  `import_metadata_fase0` foi movida no plano depois de já estar deployada.
-  Reflecte um facto histórico e não é corrigível sem reverter a
-  reordenação.
-
-Para escrever um `verify` que **falha mesmo**, usar
-`DO $$ … RAISE EXCEPTION '…' $$;` — é o que a change
-`analytics_ausencia_visivel` faz.
+- **Os `verify/*.sql` têm de falhar mesmo.** O Sqitch 1.6.1 só considera a
+  verificação falhada quando o script produz **erro**; um `SELECT 1 FROM …` que
+  devolve `f` (ou 0 linhas) conta como sucesso. Por isso os verifies escrevem
+  `DO $$ … RAISE EXCEPTION '…' $$;` — ver `verify/analytics_ausencia_visivel.sql`.
+  Até a issue #160 os verifies eram `SELECT` e nunca falhavam.
+- **`information_schema.columns` não lista colunas de materialized views.**
+  Verificar matviews por `pg_attribute`/`pg_matviews`, nunca por
+  `information_schema` (era a causa do verify `rede_escolas_etapas` rebentar
+  sempre com `division by zero`).
+- **`sqitch verify` global no registry de produção falha com ~45 "Out of
+  order"**, porque `import_metadata_fase0` foi movida no plano depois de já
+  estar deployada. É um facto histórico do registry, não do código; o gate de
+  CI não o reproduz (banco fresco, ordem de plano) e não é corrigível sem
+  mentir ao registry.
 
 ## Key conventions (Perl/Mojolicious)
 
