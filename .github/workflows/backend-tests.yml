@@ -4,8 +4,10 @@
 # O que o job faz:
 #   1. Sobe o banco de CI com o espelho HTTPS local (db/fixtures/ci_db.sh up):
 #      imagem de db/Dockerfile, rede, sqitch deploy das 60+ migrations.
-#   2. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
-#   3. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 — os testes que dependem de
+#   2. Roda o gate das migrations (db/fixtures/ci_db.sh verify): cada change
+#      roda o seu verify/*.sql e uma falha derruba o job (issue #160).
+#   3. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
+#   4. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 — os testes que dependem de
 #      R, de serviços externos ou do schema staging se auto-pulam
 #      (t/lib/CI.pm).
 #
@@ -59,6 +61,11 @@ jobs:
 
       - name: sobe o banco de CI (imagem, espelho, sqitch deploy)
         run: db/fixtures/ci_db.sh up
+        env:
+          EDUMAPS_CI_PORT: '55432'
+
+      - name: gate das migrations (sqitch verify)
+        run: db/fixtures/ci_db.sh verify
         env:
           EDUMAPS_CI_PORT: '55432'
 

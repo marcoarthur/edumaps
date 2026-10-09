@@ -8,6 +8,8 @@
 #
 #   db/fixtures/ci_db.sh up        # sobe do zero (imagem, rede, espelho, banco,
 #                                  # sqitch deploy)
+#   db/fixtures/ci_db.sh verify    # roda sqitch verify: o gate das migrations
+#                                  # (cada change tem de passar a sua verificação)
 #   db/fixtures/ci_db.sh down      # derruba tudo
 #   db/fixtures/ci_db.sh status    # mostra o que está de pé
 #   db/fixtures/ci_db.sh shell     # psql no banco do CI
@@ -123,6 +125,17 @@ deploy() {
     "$IMAGEM_SQITCH" deploy "$URI_DEPLOY"
 }
 
+# Gate das migrations: cada change roda o seu verify/*.sql contra o banco
+# recem-deployado. No banco do CI as changes estao em ordem de plano, portanto
+# os erros "out of order" do registry de producao (ver AGENTS.md) nao aparecem.
+# Os verify escrevem `DO $$ ... RAISE EXCEPTION $$`; um SELECT que devolve 'f'
+# passaria como ok (issue #160), por isso o gate so vale com esse padrao.
+verify() {
+  log "rodando sqitch verify (gate das migrations)"
+  docker run --rm --network "$REDE" -v "$PIPELINE:/repo" -w /repo \
+    "$IMAGEM_SQITCH" verify "$URI_DEPLOY"
+}
+
 contagens() {
   docker exec "$CONT_DB" psql -U "$DB_USER" -d "$DB_NAME" -qtA -c "
     SELECT 'censo_escolas='       || (SELECT count(*) FROM clean.censo_escolas)
@@ -175,9 +188,10 @@ cmd_status() {
 
 case "${1:-up}" in
   up)     cmd_up ;;
+  verify) verify ;;
   down)   cmd_down ;;
   status) cmd_status ;;
   shell)  shift; docker exec -it "$CONT_DB" psql -U "$DB_USER" -d "$DB_NAME" "$@" ;;
   logs)   docker logs -f "$CONT_MIRROR" ;;
-  *)      erro "uso: $0 {up|down|status|shell|logs}"; exit 2 ;;
+  *)      erro "uso: $0 {up|verify|down|status|shell|logs}"; exit 2 ;;
 esac

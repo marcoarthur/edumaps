@@ -1,37 +1,50 @@
 -- Verify edumaps:raw_countries on pg
+-- Verificação que FALHA MESMO (DO … RAISE EXCEPTION) — ver issue #160.
+--
+-- A checagem de dados usa apenas clean.countries (materializada localmente).
+-- A foreign table raw.countries_geo NÃO é consultada aqui: consultá-la aciona
+-- o /vsicurl contra a rede, o que tornava o verify dependente de conectividade
+-- (no CI resolvido pelo espelho local — db/fixtures/mirror_countries.py).
 
 BEGIN;
 
-  -- Verificar se o servidor FDW foi criado
-  SELECT 
-      COUNT(*) = 1 as servidor_fdw_criado
-  FROM pg_foreign_server 
-  WHERE srvname = 'fds_geojson';
+DO $$
+DECLARE
+    n integer;
+BEGIN
+    SELECT count(*) INTO n FROM pg_foreign_server WHERE srvname = 'fds_geojson';
+    IF n <> 1 THEN
+        RAISE EXCEPTION 'raw_countries: servidor FDW fds_geojson ausente';
+    END IF;
 
-  -- Verificar se a tabela foreign foi importada
-  SELECT 
-      COUNT(*) = 1 as tabela_foreign_importada
-  FROM information_schema.tables 
-  WHERE table_schema = 'raw' AND table_name = 'countries_geo';
+    SELECT count(*) INTO n
+    FROM information_schema.tables
+    WHERE table_schema = 'raw' AND table_name = 'countries_geo';
+    IF n <> 1 THEN
+        RAISE EXCEPTION 'raw_countries: raw.countries_geo ausente';
+    END IF;
 
-  -- Verificar se a tabela limpa foi criada
-  SELECT 
-      COUNT(*) = 1 as tabela_limpa_criada,
-      COUNT(*) FILTER (WHERE column_name = 'geometry' AND data_type LIKE 'geography%') = 1 as tem_geografia
-  FROM information_schema.columns 
-  WHERE table_schema = 'clean' AND table_name = 'countries';
+    -- geography é tipo USER-DEFINED: o nome está em udt_name, não em data_type.
+    SELECT count(*) INTO n
+    FROM information_schema.columns
+    WHERE table_schema = 'clean' AND table_name = 'countries'
+      AND column_name = 'geometry' AND udt_name = 'geography';
+    IF n <> 1 THEN
+        RAISE EXCEPTION 'raw_countries: clean.countries.geometry (geography) ausente';
+    END IF;
 
-  -- Verificar se há dados nas tabelas
-  SELECT 
-      (SELECT COUNT(*) FROM raw.countries_geo) > 0 as dados_brutos_presentes,
-      (SELECT COUNT(*) FROM clean.countries) > 0 as dados_limpos_presentes;
+    SELECT count(*) INTO n
+    FROM pg_indexes
+    WHERE schemaname = 'clean' AND tablename = 'countries'
+      AND indexname IN ('ix_countries_geometry', 'ix_countries_name');
+    IF n <> 2 THEN
+        RAISE EXCEPTION 'raw_countries: esperava 2 índices em clean.countries, encontrei %', n;
+    END IF;
 
-  -- Verificar índices
-  SELECT 
-      COUNT(*) >= 2 as indices_criados,
-      COUNT(*) FILTER (WHERE indexname = 'ix_countries_geometry') = 1 as indice_geometria,
-      COUNT(*) FILTER (WHERE indexname = 'ix_countries_name') = 1 as indice_nome
-  FROM pg_indexes 
-  WHERE schemaname = 'clean' AND tablename = 'countries';
+    SELECT count(*) INTO n FROM clean.countries;
+    IF n = 0 THEN
+        RAISE EXCEPTION 'raw_countries: clean.countries vazia';
+    END IF;
+END $$;
 
 ROLLBACK;

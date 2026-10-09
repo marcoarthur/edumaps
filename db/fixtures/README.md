@@ -19,7 +19,7 @@ checksum do Sqitch nos bancos já implantados não quebra.
 | `gerar.py` | Regenera os 12 CSVs a partir dos datasets reais |
 | `gerar_zip_municipios.sh` | Regenera `BR_Municipios_2024.zip` (precisa `gdal-bin`) |
 | `mirror_countries.py` | Espelho HTTPS local para a migration `raw_countries` (nginx-like: responde `Range`/206) |
-| `ci_db.sh` | Sobe/destrói o banco de CI completo (imagem, rede, espelho, deploy) |
+| `ci_db.sh` | Sobe/destrói o banco de CI completo (imagem, rede, espelho, deploy) e roda o gate das migrations (`verify`) |
 
 ## Subir o banco de CI localmente
 
@@ -39,6 +39,19 @@ EDUMAPS_FIXTURES=1 prove -r -l t/
 
 É o mesmo caminho do `.github/workflows/backend-tests.yml`; rodar o script
 localmente reproduz (e permite depurar) o banco do CI byte a byte.
+
+O **gate das migrations** roda em separado, depois do `up`:
+
+```bash
+db/fixtures/ci_db.sh verify   # sqitch verify: cada change roda o seu verify/*.sql
+```
+
+No banco recém-deployado as changes estão em ordem de plano, portanto o gate não
+esbarra nos erros *out of order* do registry de produção (ver `AGENTS.md`). Os
+`verify/*.sql` falham de fato porque escrevem `DO $$ … RAISE EXCEPTION $$`; o
+Sqitch 1.6.1 só considera a verificação falhada quando o script produz **erro**,
+e um `SELECT` que devolve `f` passaria como ok (issue #160). O workflow do
+backend roda `up` seguido de `verify` antes da suíte Perl.
 
 ## Por que um espelho HTTPS para o GeoJSON de países
 
