@@ -1,6 +1,7 @@
 use lib qw(t/lib lib);
 use strict;
 use warnings;
+use utf8;
 use Test::More;
 use Mojo::Log;
 
@@ -10,6 +11,10 @@ use_ok('EduMaps::Ingestion::Runner');
 # devolve sucesso é indistinguível de um job que correu e a fonte não tinha
 # nada. O CensoEscolar (caminho morto) foi removido e não pode reaparecer na
 # lista de jobs (derivada do diretório).
+#
+# #171 (decisão C) e #170: INMET (API retirada) e MapBiomas (e-SIC para
+# token; loader antigo baixava geometria do IBGE) seguem a mesma regra —
+# falham alto com o motivo, sem sucesso silencioso.
 
 { package EsicTesteDBH;     sub selectall_arrayref { $_[0]{rows} } }
 { package EsicTesteStorage; sub dbh     { $_[0]{dbh} } }
@@ -43,6 +48,28 @@ subtest 'jobs com e-SIC pendente falham com motivo (sem sucesso silencioso)' => 
     like $r->{error}, qr/e-SIC|e-SICs|secretarias/i, "$name: motivo citado";
     like $r->{error}, qr/docs\/admin\/esic-requests\.md/, "$name: aponta o tracker de e-SIC";
   }
+};
+
+subtest 'INMET (decisão #171 C) e MapBiomas (#170) falham com motivo honesto' => sub {
+  my $runner = EduMaps::Ingestion::Runner->new(
+    app           => mock_app(),
+    log           => Mojo::Log->new,
+    notifier      => EsicMockNotifier->new,
+    stall_timeout => 0,
+  );
+  $runner->load_jobs([qw(INMET MapBiomas)]);
+
+  my $r = $runner->run_job('INMET');
+  is $r->{success}, 0, 'INMET: success=0 (decisão C registrada)';
+  like $r->{error}, qr/#171/, 'INMET: cita a decisão';
+  like $r->{error}, qr/NÃO CONSTRUÍD[AA]/, 'INMET: declara as tabelas não construídas';
+  like $r->{error}, qr/retirada/, 'INMET: motivo = API retirada';
+
+  $r = $runner->run_job('MapBiomas');
+  is $r->{success}, 0, 'MapBiomas: success=0 (e-SIC pendente)';
+  like $r->{error}, qr/#170/, 'MapBiomas: cita a issue';
+  like $r->{error}, qr/e-SIC/, 'MapBiomas: motivo = e-SIC para token';
+  like $r->{error}, qr/IBGE/, 'MapBiomas: explica o defeito do loader antigo';
 };
 
 subtest 'CensoEscolar removido (caminho morto) e INEP permanece' => sub {
