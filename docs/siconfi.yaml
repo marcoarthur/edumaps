@@ -1,0 +1,92 @@
+# =============================================================================
+# SICONFI — spec mínima dos endpoints da API DataLake do Tesouro Nacional
+# medições: 2026-10-08 (recon da issue #193, fase 2)
+#
+# Base: https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/
+# Tudo abaixo foi MEDIDO (payloads reais baixados), não presumido. O que não
+# está documentado aqui não foi verificado.
+# =============================================================================
+api:
+  base_url: https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt
+  host_header_note: >-
+    Sem o prefixo ords/cdwhprd/siconfi/tt/ tudo devolve 404 de Azure Static
+    Web Apps (o host real vive dentro do spec).
+
+  paginacao:
+    mecanismo: hasMore (campo autoritativo)
+    limit: 1000
+    offset: avanca por página (offset += limit)
+    count: "POR PÁGINA — não é o total de itens. Nunca usar count para saber
+      se acabou; decidir por hasMore. Fallback (respostas sem hasMore): página
+      curta (< limit) = fim."
+    retries: 429/5xx pontual não aborta a carga de um município
+    throttle: 1 requisicao/segundo (limite declarado no spec da API)
+
+endpoints:
+  entes:            # catálogo de entes (chave da iteração da malha)
+    path: /entes
+    params: { esfera: M }
+    uso: cache local por cod_ibge (7 dígitos) — casa com clean.malha_municipio
+
+  rreo:             # fase 1 (#165): receitas
+    path: /rreo
+    params:
+      an_exercicio: 2023..2025
+      nr_periodo: 1..6
+      co_tipo_demonstrativo: RREO
+      id_ente: cod_ibge
+    anexos_medidos: [01 Balanço, 02 Despesa por Função, 03 RCL, 04 RPPS,
+      06, 07, 09, 10 RPPS, 11, 13, 14]
+    ausencias_medidas: >-
+      NUNCA traz anexo de ensino/MDE (2023-2025). Anexo 02 tem só nomes de
+      conta (sem código de função) e sem coluna "pagas"; cod_conta constante
+      (RREO2TotalDespesas). Só o Anexo 01 tem a classificação econômica de
+      receita útil (colunas 'PREVISÃO ATUALIZADA (a)' / 'Até o Bimestre (c)').
+
+  dca:              # fase 2 (#193): despesa por função + FUNDEB
+    path: /dca
+    params:
+      an_exercicio: ano fechado (ex.: 2025)
+      id_ente: cod_ibge
+    item_shape: >-
+      { anexo, cod_conta, cod_ibge, coluna, conta, exercicio, instituicao,
+        populacao, rotulo, uf, valor }
+    anexos: [I-AB Balanço, I-C Receita, I-D Despesa por Natureza,
+      I-E Despesa por Função/Subfunção, I-F/I-G Restos a Pagar, I-HI Fluxo]
+    despesa:
+      anexo: DCA-Anexo I-E
+      granularidade_carregada: 'linha de função (subfuncao=0)'
+      porque: >-
+        O payload não reconcilia pai vs. soma dos filhos (SP 2024: função 12
+        = 23,29 bi vs. 21,42 bi da soma das subfunções — diff 8%). Filhos
+        (12.361) e buckets sintéticos (FU12 - Demais Subfunções) NÃO entram.
+      colunas:
+        - { rotulo: 'Despesas Empenhadas', destino: valor_empenhado }
+        - { rotulo: 'Despesas Liquidadas', destino: valor_liquidado }
+        - { rotulo: 'Despesas Pagas',      destino: valor_pago }
+      fora: >-
+        Inscrições de Restos a Pagar e colunas não mapeadas (não são gasto
+        executado da função).
+      ancoras_medidas: { 'SP 2025 função 12 pagas': 23.539.735.254,36 }
+    fundeb:
+      anexo: DCA-Anexo I-C
+      contas:
+        - { codigo: 1.7.5.1.00.0.0, descricao: FUNDEB (transferências dos estados), tipo_receita: fundeb }
+        - { codigo: 1.7.1.5.00.0.0, descricao: Complementação da União ao FUNDEB, tipo_receita: fundeb }
+      coluna_valor: Receitas Brutas Realizadas
+      nota_prefixo: ORDS prefixa 'RO' nos itens de receita (RO1.7.5.1.00.0.0) — remover antes de casar.
+      fora: >-
+        FNDE / Salário-Educação / convênios (1.7.1.4.x, 1.7.2.4.51): já contidos
+        no agregado 'transferencia' do RREO (fase 1); entrariam DUAS vezes.
+      ancoras_medidas:
+        - { 'SP 2025': '1.7.5.1.00.0.0 = 8.065.438.177,73' }
+        - { 'SP 2025': '1.7.1.5.00.0.0 = 117.028.677,98' }
+
+  rgf:
+    path: /rgf
+    medido: devolve 0 itens — descartado como fonte (fase 2)
+
+  educacao_inexistente:
+    nota: >-
+      Os endpoints temáticos de educação cogitados na #193 NÃO existem na API
+      (medido). FUNDEB e despesa por função só saem pelo /dca.

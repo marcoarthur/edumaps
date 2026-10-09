@@ -8,12 +8,14 @@ use File::Temp qw(tempdir);
 use Mojo::File qw(path);
 
 # =====================================================================
-# Regressão do loader SICONFI (receitas RREO) — issue #165
+# Regressão do loader SICONFI — issues #165 (receitas RREO) e #193
+# (fase 2: despesas por função e FUNDEB via DCA)
 #
 # Sem rede: o UA é mockado com fixtures (o mesmo shape que a API DataLake
 # do Tesouro devolve, verificado 2026-10-08). O que se verifica são as
-# DECISÕES do loader, que é onde a #165 coloca o risco:
+# DECISÕES do loader, que é onde as issues colocam o risco:
 #
+#   FASE 1 (#165):
 #   1. classificacao decidida pela COLUNA, nunca hardcoded: 'PREVISÃO
 #      ATUALIZADA (a)' -> estimativa, 'Até o Bimestre (c)' -> realizada;
 #      'PREVISÃO INICIAL' e 'No Bimestre (b)' saem (colidiriam na PK);
@@ -27,6 +29,21 @@ use Mojo::File qw(path);
 #   6. /entes cacheado por municípios (esfera M) para a iteração;
 #   7. load idempotente: ON CONFLICT na PK exata, dt_snapshot no parâmetro;
 #   8. idempotência com BD real: reexecutar não viola a PK (se houver BD).
+#
+#   FASE 2 (#193):
+#   9.  despesa vem do DCA-Anexo I-E (e NÃO do RREO — medido: o Anexo 02 só
+#       tem nomes de conta, sem código de função, e não tem coluna 'pagas');
+#       vira 1 linha por FUNÇÃO (subfuncao=0): o payload não reconcilia pai
+#       vs. soma dos filhos (medido no SP 2024: diff ~8%), logo filhos e
+#       buckets 'FUxx - Demais Subfunções' ficam de fora;
+#  10. FUNDEB vem do DCA-Anexo I-C: só 1.7.5.1.00.0.0 e 1.7.1.5.00.0.0,
+#      coluna 'Receitas Brutas Realizadas' (prefixo 'RO' do ORDS removido).
+#      FNDE/salário-educação/convênios ficam de fora (já estão no agregado
+#      'transferencia' do RREO da fase 1 — duplo-conto);
+#  11. /dca pagina por hasMore; count==0 no município único morre, mas a
+#      iteração da malha pula município sem DCA publicado (não aborta);
+#  12. load despesa idempotente na PK nova (sem coluna_despesa, a chave
+#      textual da fonte antiga) por dt_snapshot.
 # =====================================================================
 
 my $JOB = 'EduMaps::Ingestion::Job::SICONFI';
@@ -331,6 +348,211 @@ subtest 'idempotência com BD real: reexecutar não viola a PK' => sub {
   unlike($warn, qr/duplicate/i, 'sem erro de PK');
 
   $dbh->do('DELETE FROM clean.siconfi_receita WHERE dt_snapshot = ?', {}, $DT);
+};
+
+# --- fixture DCA: shape real dos itens do /dca (medido 2026-10-08) -----
+sub dca_item {
+  my (%p) = @_;
+  return {
+    exercicio => 2025, instituicao => 'Prefeitura Municipal de São Paulo - SP',
+    cod_ibge => 3550308, uf => 'SP', rotulo => 'Padrão',
+    anexo     => $p{anexo} // 'DCA-Anexo I-E',
+    cod_conta => $p{cod_conta} // 'TotalDespesas',
+    conta     => $p{conta},
+    coluna    => $p{coluna},
+    valor     => $p{valor},
+  };
+}
+
+# ---------------------------------------------------------------- 9-12
+# FASE 2 (#193) — DCA: despesa por função (I-E) e FUNDEB (I-C)
+
+my @DCA_DESPESA = (
+  dca_item(conta => '12 - Educação', coluna => 'Despesas Empenhadas', valor => 1000),
+  dca_item(conta => '12 - Educação', coluna => 'Despesas Liquidadas', valor => 900),
+  dca_item(conta => '12 - Educação', coluna => 'Despesas Pagas',      valor => 850),
+  # inscrição de RP: coluna esperada, sai em silêncio
+  dca_item(conta => '12 - Educação', coluna => 'Inscrição de Restos a Pagar Processados', valor => 42),
+  # subfunção, bucket sintético e total: fora (não reconciliam com o total da função)
+  dca_item(conta => '12.361 - Ensino Fundamental',  coluna => 'Despesas Pagas', valor => 500),
+  dca_item(conta => 'FU12 - Demais Subfunções',     coluna => 'Despesas Pagas', valor => 777),
+  dca_item(conta => 'Despesas Exceto Intraorçamentárias', coluna => 'Despesas Pagas', valor => 999),
+  dca_item(conta => '01 - Legislativa', coluna => 'Despesas Pagas',      valor => 30),
+);
+
+subtest 'fase 2: despesa DCA I-E vira 1 linha por função (filhos/buckets/totais fora)' => sub {
+  my $j = mk_job(sub { return {} });
+  my $rows = $j->_map_despesas('3550308', 2025, \@DCA_DESPESA, '2025-06-30');
+
+  is(scalar @$rows, 2, 'só as funções 12 e 01');
+  my %by = map { $_->{funcao} => $_ } @$rows;
+  my $e = $by{12};
+  ok($e, 'função 12 (Educação) presente');
+  is($e->{subfuncao}, 0, 'linha de função (total oficial do demonstrativo)');
+  is($e->{descricao_despesa}, 'Educação', 'descrição sem o código');
+  is($e->{valor_empenhado}, 1000, 'empenhado no slot certo');
+  is($e->{valor_liquidado}, 900,  'liquidado no slot certo');
+  is($e->{valor_pago}, 850,       'pago no slot certo');
+  is($e->{classificacao}, 'realizada', 'DCA é exercício fechado: nunca estimativa');
+  is($e->{dt_snapshot}, '2025-06-30', 'dt_snapshot propagado');
+  is($e->{codigo_ibge}, '3550308', 'codigo_ibge 7 dígitos');
+  ok($by{1}, 'função 01 presente');
+
+  my $soma = $e->{valor_empenhado} + $e->{valor_liquidado} + $e->{valor_pago};
+  is($soma, 2750, 'inscrição de RP (42) não contamina nenhum slot');
+  my $pagas = join ',', map { $_->{valor_pago} // '' } values %by;
+  unlike($pagas, qr/\b500\b/, 'subfunção 12.361 fora (soma dos filhos != total, medido)');
+  unlike($pagas, qr/\b777\b/, 'bucket FU12 - Demais Subfunções fora');
+  unlike($pagas, qr/\b999\b/, 'total (Despesas Exceto Intraorçamentárias) fora');
+};
+
+my @DCA_FUNDEB = (
+  dca_item(anexo => 'DCA-Anexo I-C', cod_conta => 'RO1.7.5.1.00.0.0',
+           conta => '1.7.5.1.00.0.0 - Transferências de Recursos do Fundo de Manutenção e Desenvolvimento da Educação Básica - FUNDEB',
+           coluna => 'Receitas Brutas Realizadas', valor => 8000),
+  dca_item(anexo => 'DCA-Anexo I-C', cod_conta => 'RO1.7.1.5.00.0.0',
+           conta => '1.7.1.5.00.0.0 - Transferências de Recursos de Complementação da União ao FUNDEB',
+           coluna => 'Receitas Brutas Realizadas', valor => 150),
+  # coluna de dedução: fora
+  dca_item(anexo => 'DCA-Anexo I-C', cod_conta => 'RO1.7.5.1.00.0.0',
+           conta => '1.7.5.1.00.0.0 - FUNDEB',
+           coluna => 'Outras Deduções da Receita', valor => 10),
+  # FNDE: fora (já contido no agregado 'transferencia' do RREO da fase 1)
+  dca_item(anexo => 'DCA-Anexo I-C', cod_conta => 'RO1.7.1.4.00.0.0',
+           conta => '1.7.1.4.00.0.0 - Transferências de Recursos do FNDE',
+           coluna => 'Receitas Brutas Realizadas', valor => 500),
+  # anexo de despesa não contamina o FUNDEB
+  dca_item(anexo => 'DCA-Anexo I-E', conta => '12 - Educação',
+           coluna => 'Despesas Pagas', valor => 850),
+);
+
+subtest 'fase 2: fundeb do DCA I-C (só 1.7.5.1 + 1.7.1.5, Receitas Brutas Realizadas)' => sub {
+  my $j = mk_job(sub { return {} });
+  my $rows = $j->_map_fundeb('3550308', 2025, \@DCA_FUNDEB, '2025-06-30');
+
+  is(scalar @$rows, 2, '2 linhas fundeb (dedução, FNDE e anexo I-E fora)');
+  my %by = map { $_->{coluna_receita} => $_ } @$rows;
+  my $f = $by{'1.7.5.1.00.0.0'};
+  ok($f, 'FUNDEB presente');
+  is($f->{valor}, 8000, 'valor da coluna Receitas Brutas Realizadas');
+  is($f->{tipo_receita}, 'fundeb', 'tipo fundeb');
+  is($f->{exercicio}, 2025, 'exercicio numérico');
+  is($f->{classificacao}, 'realizada', 'classificação realizada');
+  like($f->{descricao_receita}, qr/^Transferências de Recursos do Fundo/, 'descrição sem o código');
+  unlike($f->{descricao_receita}, qr/^1\.7\./, 'código numérico removido do texto');
+  is($by{'1.7.1.5.00.0.0'}{valor}, 150, 'Complementação da União ao FUNDEB entra');
+  is($by{'1.7.1.5.00.0.0'}{tipo_receita}, 'fundeb', 'complementação também é fundeb');
+  is($f->{dt_snapshot}, '2025-06-30', 'snapshot propagado');
+};
+
+subtest 'fase 2: _fetch_dca pagina por hasMore com an_exercicio/id_ente' => sub {
+  my $j = mk_job(sub {
+    my ($url, $form) = @_;
+    my $off = $form->{offset} // 0;
+    return $off == 0
+      ? { items => [ dca_item(conta => '12 - Educação', coluna => 'Despesas Pagas', valor => 1) ],
+          count => 1, hasMore => 1, limit => 1000, offset => 0 }
+      : { items => [ dca_item(anexo => 'DCA-Anexo I-C', cod_conta => 'RO1.7.5.1.00.0.0',
+                              conta => '1.7.5.1.00.0.0 - FUNDEB',
+                              coluna => 'Receitas Brutas Realizadas', valor => 2) ],
+          count => 1, hasMore => 0, limit => 1000, offset => 1000 };
+  });
+  my $items = $j->_fetch_dca(id_ente => '3550308', exercicio => 2025);
+
+  is(scalar @$items, 2, 'duas páginas consumidas');
+  like($j->ua->{calls}[0][0], qr{/dca$}, 'endpoint /dca');
+  is($j->ua->{calls}[0][1]{id_ente}, 3550308, 'id_ente passado');
+  is($j->ua->{calls}[0][1]{an_exercicio}, 2025, 'an_exercicio (nome real do parâmetro)');
+  is($j->ua->{calls}[1][1]{offset}, 1000, 'offset avança');
+};
+
+subtest 'fase 2: count==0 no DCA — município único morre, iteração pula' => sub {
+  my $j = mk_job(sub { return { items => [], count => 0, hasMore => 0 } });
+  my $err = eval { $j->_fetch_dca(id_ente => '3550308', exercicio => 2025); 1 };
+  ok(!$err, '0 itens morre no modo estrito');
+  like($@ // '', qr/0 itens/, 'mensagem denuncia o falso sucesso');
+
+  my $j2 = mk_job(sub { return { items => [], count => 0, hasMore => 0 } });
+  my $items = $j2->_fetch_dca(id_ente => '3550308', exercicio => 2025, strict_zero => 0);
+  ok(!defined $items, 'iteração da malha: undef (pulado) em vez de morrer');
+};
+
+subtest 'fase 2: load despesa — ON CONFLICT na PK nova, sem coluna_despesa' => sub {
+  my ($app, $dbh) = mock_app;
+  my $j = $JOB->new(log => Mojo::Log->new(level => 'fatal'), app => $app);
+
+  my $rows = $j->_map_despesas('3550308', 2025, \@DCA_DESPESA, '2025-06-30');
+  my $loaded = $j->_load_despesa($rows);
+  is($loaded, 2, '2 linhas carregadas');
+  my $sql = $dbh->{stmts}[0];
+  like($sql, qr/ON CONFLICT/, 'upsert idempotente');
+  like($sql, qr/funcao, subfuncao, classificacao,\s*dt_snapshot/, 'PK nova exata no ON CONFLICT');
+  unlike($sql, qr/coluna_despesa/, 'sem a coluna-chave textual da fonte antiga');
+  is($dbh->{inserts}[0][0], '3550308', 'codigo_ibge primeiro');
+  is($dbh->{inserts}[0][9], '2025-06-30', 'dt_snapshot por último');
+  is($dbh->{inserts}[0][8], 'realizada', 'classificação no parâmetro certo');
+};
+
+subtest 'fase 2: run({dca=>1}) carrega despesa + fundeb de um só /dca' => sub {
+  my ($app, $dbh) = mock_app;
+  my $j = mk_job(sub {
+    my ($url, $form) = @_;
+    # uma única resposta com os dois anexos, como a API real
+    return {
+      items => [
+        dca_item(cod_ibge => $form->{id_ente}, conta => '12 - Educação',
+                 coluna => 'Despesas Pagas', valor => 850),
+        dca_item(cod_ibge => $form->{id_ente}, anexo => 'DCA-Anexo I-C',
+                 cod_conta => 'RO1.7.5.1.00.0.0', conta => '1.7.5.1.00.0.0 - FUNDEB',
+                 coluna => 'Receitas Brutas Realizadas', valor => 8000),
+      ],
+      count => 2, hasMore => 0, limit => 1000, offset => 0,
+    };
+  }, app => $app);
+
+  my $total = $j->run({ cod_ibge => '3550308', dca => 1, exercicio => 2025, dt_snapshot => '2025-06-30' });
+  is($total, 2, 'despesa (1) + fundeb (1)');
+  like($j->ua->{calls}[0][0], qr{/dca$}, 'chamou /dca (não /rreo)');
+  is(scalar @{$dbh->{inserts}}, 2, '2 INSERTs emitidos');
+  like($dbh->{stmts}[0], qr/clean\.siconfi_despesa/, '1o INSERT na tabela de despesa');
+  like($dbh->{stmts}[1], qr/clean\.siconfi_receita/, '2o INSERT na tabela de receita');
+};
+
+subtest 'fase 2: idempotência com BD real — despesa reexecutada não duplica' => sub {
+  plan skip_all => 'sem EDUMAPS_DB_HOST: subteste exige base intencional (nunca o default ubatexu.lan do edu_maps.conf — armadilha dos dois contentores)'
+    unless $ENV{EDUMAPS_DB_HOST};
+  my $has_table = eval {
+    require EduMaps::Ingestion::App;
+    my $app = EduMaps::Ingestion::App->new;
+    my $dbh = $app->schema->storage->dbh;
+    $dbh->selectrow_array("SELECT to_regclass('clean.siconfi_despesa')");
+  };
+  plan skip_all => 'sem BD com o schema da fase 2 (deploy de siconfi_despesa_dca pendente)' unless $has_table;
+
+  my $app = EduMaps::Ingestion::App->new;
+  my $dbh = $app->schema->storage->dbh;
+  my $cod = $dbh->selectrow_array('SELECT codigo_ibge FROM clean.malha_municipio LIMIT 1');
+  plan skip_all => 'malha vazia' unless $cod;
+
+  my $DT  = '2099-01-02';
+  my $j   = $JOB->new(log => Mojo::Log->new(level => 'fatal'), app => $app);
+  my $row = { codigo_ibge => $cod, exercicio => 2025, funcao => 12, subfuncao => 0,
+              descricao_despesa => 'TESTE', valor_empenhado => 1, valor_liquidado => 1,
+              valor_pago => 1, classificacao => 'realizada', dt_snapshot => $DT };
+
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
+  my $first  = $j->_load_despesa([$row]);
+  my $second = $j->_load_despesa([$row]);
+  my $count  = $dbh->selectrow_array(
+    'SELECT count(*) FROM clean.siconfi_despesa WHERE dt_snapshot = ?', {}, $DT);
+
+  is($first, 1, 'primeira carga insere 1');
+  is($second, 1, 'reexecução processa 1 sem violar a PK');
+  is($count, 1, 'mesma PK após reexecutar (ON CONFLICT, sem duplicar)');
+  unlike($warn, qr/duplicate/i, 'sem erro de PK');
+
+  $dbh->do('DELETE FROM clean.siconfi_despesa WHERE dt_snapshot = ?', {}, $DT);
 };
 
 # ---------------------------------------------------------------- 0
