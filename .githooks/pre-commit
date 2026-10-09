@@ -1,0 +1,5 @@
+#!/bin/sh
+# Hook pre-commit do EduMaps. Instalado via tools/git-hooks/install.sh.
+# Advisory: avisa (docs funcionais + linters condicionais), nunca bloqueia.
+root=$(git rev-parse --show-toplevel) || exit 0
+exec perl -I"$root/tools/git-hooks/lib" "$root/tools/git-hooks/pre-commit.pl"

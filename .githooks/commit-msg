@@ -1,0 +1,5 @@
+#!/bin/sh
+# Hook commit-msg do EduMaps. Instalado via tools/git-hooks/install.sh.
+# Valida a convenção <type>(<scope>): <subject> (ver AGENTS.md).
+root=$(git rev-parse --show-toplevel) || exit 0
+exec perl -I"$root/tools/git-hooks/lib" "$root/tools/git-hooks/validate-commit-msg.pl" "$@"
