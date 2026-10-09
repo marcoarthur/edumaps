@@ -21,10 +21,43 @@ db/            Scripts auxiliares de banco
 <type>(<scope>): <subject>
 ```
 
-Types: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `perf`
-Scopes: `backend`, `frontend`, `data_pipeline`, `analytics`, `analysis`, `db`
+Types: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `perf`, `ci`
+Scopes: `backend`, `frontend`, `data_pipeline`, `data`, `analytics`, `analysis`,
+`db`, `infra`, `docker`, `deploy`, `docs`, `memory`, `diagramas`, `e2e`,
+`tools`, `workflow`, `ci`
+(o scope é **opcional**; um scope fora desta lista só gera **aviso**)
 
 Máx. 50 chars no subject. Mensagem de commit em **PT-BR**.
+
+Verificado automaticamente pelo hook `commit-msg` (ver **Git hooks**): formato e
+`type` **bloqueiam**; `scope` desconhecido e subject > 50 **avisam** — só ~36%
+do histórico cumpre os 50 caracteres, e bloquear seria pior que não ter hook
+(risco apontado na #136).
+
+## Git hooks (`tools/git-hooks/`)
+
+Hooks versionados em `.githooks/` que aplicam as convenções acima. Instalar uma
+vez por clone:
+
+```bash
+tools/git-hooks/install.sh   # git config core.hooksPath .githooks
+```
+
+- **`commit-msg`** (`tools/git-hooks/validate-commit-msg.pl`): valida a
+  convenção. Bloqueia formato e `type`; avisa `scope` desconhecido, subject > 50
+  e ponto final. Mensagens do git (`Merge`, `Revert`, `fixup!`, `squash!`) são
+  isentas. Lógica em `lib/GitHooks/CommitMsg.pm`; testes com
+  `prove tools/git-hooks/t`.
+- **`pre-commit`** (`tools/git-hooks/pre-commit.pl`): **só avisa, nunca
+  bloqueia**. (1) lembra o passo 3 do Workflow quando o commit toca
+  `backend/`/`frontend/`/`analysis/`/`data_pipeline/` sem tocar
+  `docs/funcionalidades/`; (2) corre `perlcritic` (Perl) e `lintr` (R) **apenas
+  se estiverem instalados** e houver ficheiros staged da área. Não roda a suíte
+  de testes (pré-falha por serviço externo).
+
+Vivem em `tools/` (local, **não** vai ao deploy). Bypass pontual:
+`git commit --no-verify` — escape, não caminho normal. Setup completo em
+`tools/git-hooks/README.md`.
 
 ## Running tests (backend)
 
