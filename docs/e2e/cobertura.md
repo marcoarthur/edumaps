@@ -376,3 +376,39 @@ Perl, não usar para esse hash).
 > só mensagens recebidas pelo bot) — a prova é o HTTP 200 com `ok:true` no log
 > do Notifier. A master key agora vive nos units do host (`backend.edumaps`);
 > se rotacionar, re-cifrar os secrets (`secret_key_version`).
+
+## Rodada 2026-10-09 — Busca 502: container do backend morto; validado pós-`up -d` (PR #196)
+
+**Contexto**: após o ciclo #172+#157 (PR #196), as imagens `backend`/`minion`
+foram reconstruídas e os containers recriados (`docker compose up -d`,
+12:53). O developer reportou **"busca retorna 502"** verificando os dockers.
+
+**Causa raiz do 502**: o container `edumaps-backend` **antigo** (criado ~5
+dias antes, código velho) estava com o aplicativo **sem escutar em `:3000`**.
+O nginx do frontend registrou `connect() failed (111: Connection refused)`
+no upstream `172.18.0.5:3000` de **12:07:16 até 12:40:31** — todos os
+`/api/*` da SPA (`school/suggestions`, `city/suggestions`,
+`school/search/pageable`, `gestor/me`) responderam **502**. A armadilha
+conhecida do AGENTS: imagem reconstruída ≠ container recriado. O
+`docker compose up -d` (12:53) recriou o backend com a imagem mergeada →
+`restart=0`, zero 502 desde então (log do nginx confirma).
+
+| Verificação (alvo `http://localhost:8080`, Chrome CDP `:9222`) | Resultado |
+|---|---|
+| `/escola/search` carrega (formulário) | 🟢 PASS |
+| Autocomplete: digitar "freire" → `GET /api/school/suggestions?q=freire` | 🟢 200 (1359 B) |
+| "Buscar Escolas" → `GET /api/school/search/pageable?escola=freire&page=1&per_page=10` | 🟢 200 (1382 B) — lista renderiza (Paulo Freire/RJ etc.) |
+| `/` (home) | 🟢 PASS (landing, sem chamadas de API) |
+| `/municipio/compare` | 🟢 PASS (mapa após selecionar município) |
+| Nenhum 502 no nginx após 12:53 | 🟢 PASS |
+
+**Observações**:
+- `search/pageable` para escola **inativa** retorna vazio por design:
+  `tp_situacao_funcionamento = 1` (só em funcionamento). Ex.: "mojuca"
+  (CENTRO EDUCACIONAL MOJUCA, Porto Velho) tem `tp=2` → corretamente
+  excluída; `search`/`suggestions` (sem o filtro) a acham.
+- A página de busca é **lista** (mapa é do painel da escola e das páginas de
+  comparação/geotag) — `leaflet-container` ausente na rota de busca é
+  esperado.
+- Nenhuma correção de código foi necessária: era infra/local (container
+  recriado). Sem deploy.
