@@ -4,6 +4,38 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-09 — #200: rejeições de promise do Radar do Carbon (PR #201)
+
+- **Fechado**: as **4 rejeições de promise não tratadas** (`Uncaught (in
+  promise) "Infantil"`) na `/municipio/compare?codigo_ibge=…`. Branch
+  `fix/frontend-radar-rejeicoes-200` → **PR #201** → merge `9c26dcc`.
+- **Causa raiz (medida por CDP, não deduzida)**: o Radar do `@carbon/charts`
+  1.22.18 anima os rótulos do eixo com `transition(...).end().finally(...)`
+  (`radar_x_labels_update`). `.end()` **rejeita com o datum** (string, ex.
+  "Infantil") quando a transição é interrompida por um novo `update()`; o
+  `.finally()` do Carbon não trata → rejeição não tratada. O estímulo era o
+  wrapper app re-renderizando o Carbon com options de conteúdo idêntico
+  (ResizeObserver no mount + `$effect`). Só o radar tem o padrão sem catch (o
+  `update()` geral usa `.end().catch(err => err)`).
+- **Fix no wrapper `RadarChart.svelte`**: (1) fim do churn — `syncSize` só
+  aplica quando `dims` mudam, RO coalescido em rAF, `chartOptions` só
+  re-atribuída quando o conteúdo muda (snapshot não-reativo `lastChart`); (2)
+  guarda de `unhandledrejection` para reasons **string** enquanto o radar está
+  montado (erros `Error` propagam; `console.debug` nos suprimidos).
+- **Validação**: unit 9/9 (charts; 3 novos) e 41/41 (network-compare +
+  shared/ui); `vite build` OK; e2e CDP no dev **e** no build de produção pós
+  deploy: **0 rejeições** no load e após troca Perfil → Volume, radar OK
+  (246 paths), toggle funciona. Cobertura atualizada em `docs/e2e/cobertura.md`.
+- **Sem `docs/funcionalidades/`** — nenhuma capacidade muda (visual idêntico).
+- **Deploy**: `rex prepare` + `rex -H backend.edumaps deploy_frontend_dev`
+  (nginx reiniciado) + imagem local `frontend` reconstruída (`docker compose
+  build frontend` + `up -d`) — o e2e :8080 rodou já com o código novo.
+- **Nota técnica 100** criada (`docs/new_ideas/implementations_ideas/`).
+- **Técnica que destravou o diagnóstico**: `Debugger.setAsyncCallStackDepth(64)`
+  + `Debugger.evaluateOnCallFrame` nos locals da pausa (o dispatch
+  `call("interrupt", that, "Infantil", 0, …)` revelou que o rótulo era **dado**,
+  não throw de listener). `Runtime.exceptionThrown` sozinho vinha sem stack.
+
 ## Sessão 2026-10-08 — #155: de-para RENAEST declara o que é; não-resolvidas têm destino (PR #194)
 
 Escopo: entregáveis 3–5 da #155 (destino explícito p/ não resolvidas,

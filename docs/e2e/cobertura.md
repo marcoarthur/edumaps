@@ -457,14 +457,43 @@ agora **PASS** — o nginx do container atual não reproduz o `try_files` antigo
 | Hosts de tile | 🟢 `a/b/c.tile.openstreetmap.org`, HTTP 200 |
 | `/escola/panel?inep=35245239` — mapa | 🟢 1 container, 8/8 tiles OK |
 
-### Achado aberto (pré-existente — não é regressão)
+### Achado aberto (pré-existente — não é regressão) → **resolvido no PR #201**
 
-Na `/municipio/compare?codigo_ibge=…` (com dados/mapa) o Chrome registra
+Na `/municipio/compare?codigo_ibge=…` (com dados/mapa) o Chrome registrava
 **4 rejeições de promise não tratadas** cujo motivo é a **string de um rótulo
-de etapa** (`"Infantil"`), **sem stack**. Não derruba a página: gráficos, mapa
-e tiles renderizam; 0 erros de console do app; API 200. Reproduz em todas as
-execuções; **não** aparece em `/municipio/perfil` nem `/escola/panel`. A origem
+de etapa** (`"Infantil"`), **sem stack**. Não derrubava a página: gráficos, mapa
+e tiles renderizam; 0 erros de console do app; API 200. Reproduzia em todas as
+execuções; **não** aparecia em `/municipio/perfil` nem `/escola/panel`. A origem
 é a camada de gráficos (Carbon Charts, `tooltip.customHTML`/rótulos de etapa) —
 **não** há `throw`/`reject` em `src/features/network-compare`. **Não
 relacionado a #136/#160** (frontend inalterado há 6 dias). Rastreado na
 **issue #200**.
+
+**Causa raiz** (medida via CDP `setPauseOnExceptions` + source maps): o Radar
+do `@carbon/charts` 1.22.18 anima os rótulos do eixo com
+`transition(...).end().finally(...)`; `.end()` **rejeita com o datum** (string,
+ex.: "Infantil") quando a transição é interrompida por um novo update, e o
+`.finally()` do Carbon **não trata** a rejeição. Interrupções vinham do wrapper
+app (`RadarChart.svelte`) que re-renderizava o Carbon com options idênticas
+(ResizeObserver + `$effect`).
+
+**Fix (PR #201, merge `9c26dcc`)**: no wrapper — `syncSize`/`$effect` só
+re-atribuem `chartOptions` quando o conteúdo muda (fim do churn) + guarda de
+`unhandledrejection` para reasons **string** enquanto o radar está montado
+(erros `Error` continuam a propagar).
+
+### Rodada 2026-10-09 — validação do fix #200 (PR #201)
+
+Alvo `http://localhost:8080` (imagem local reconstruída + deploys
+`frontend`), driver CDP (`node:22-slim --network host`), rota
+`/municipio/compare?codigo_ibge=2307304`.
+
+| Verificação | Resultado |
+|---|---|
+| Rejeições `Runtime.exceptionThrown` no load | 🟢 0 (eram 4× `"Infantil"`) |
+| Rejeições após troca de modo do radar (Perfil → Volume) | 🟢 0 |
+| Radar renderizado (grupo de modo + `h2` + paths SVG) | 🟢 `246` paths |
+| Toggle de modo (Perfil → Volume) | 🟢 `aria-checked` muda |
+| Testes unitários (charts + network-compare + shared/ui) | 🟢 41/41 (9 no charts, 3 novos do guard) |
+| `vite build` | 🟢 OK |
+| Deploy | 🟢 `rex prepare` + `deploy_frontend_dev` + imagem local `frontend` |
