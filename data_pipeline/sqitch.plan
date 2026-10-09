@@ -112,3 +112,4 @@ renaest_depara_declaracao [renaest_localidade_municipio] 2026-10-08T12:00:00Z Ma
 siconfi_despesa_dca [siconfi_despesa] 2026-10-08T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2 #193: despesa por funcao vem do DCA (Anexo I-E); PK sem a coluna textual
 analytics_esforco_fiscal_fundeb [analytics_esforco_fiscal] 2026-10-08T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2 #193: receita FUNDEB real fora do denominador (evita duplo-conto)
 comments_esic_pendente [analytics_esforco_fiscal_fundeb] 2026-10-09T09:20:00Z Marco Arthur <arthurpbs@gmail.com> # #172: comments das tabelas-fonte sem loader declaram o estado (e-SIC pendente)
+comments_inmet_mapbiomas_pendente [comments_esic_pendente] 2026-10-09T13:45:00Z Marco Arthur <arthurpbs@gmail.com> # #171 (C) + #170: INMET/MapBiomas declaram NÃO CONSTRUÍDA no schema; jobs falham com motivo

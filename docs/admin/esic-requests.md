@@ -107,6 +107,27 @@ o porquê.
 > são tabelas de aplicação do módulo gestor (a associação na #172 estava
 > errada — corrigida nesta passada).
 
+### Decisões registradas fora do e-SIC (2026-10-09)
+
+> **INMET — decisão C (#171)**: a API do INMET foi **retirada** (não é URL
+> errada nem licença). `dados.inmet.gov.br` não resolve, e
+> `apitempo.inmet.gov.br/bdmep/estacao` / `/alertas/cap12` → **404**; o
+> restante host é interface web/feed RSS, que não alimenta as tabelas
+> pretendidas (séries por estação + alertas CAP). Decisão **C**: sem loader
+> para endpoints mortos — `inmet_bdmep`/`inmet_alerta` declaradas **NÃO
+> CONSTRUÍDAS** no schema (change `comments_inmet_mapbiomas_pendente`) e fora
+> do objetivo da #156. O job `INMET.pm` falha alto com o motivo. Revisitar se
+> o INMET publicar API/feed oficial.
+>
+> **MapBiomas — loader real aguarda e-SIC (#170)**: o job antigo baixava
+> `BR_Municipios_2024.gpkg` (malha municipal do **IBGE**) para uma tabela de
+> uso do solo e descarregava uma **página web** do MapBiomas como se fosse
+> GPKG — geometria administrativa não é cobertura de uso do solo (defeito da
+> #154). O job agora falha alto e `mapbiomas_cobertura` declara **NÃO
+> CONSTRUÍDA**; o loader real (URL verificado + scripts R + areolização)
+> aguarda o e-SIC para o **token** da API do MapBiomas. Issue #170 segue
+> aberta.
+
 ---
 
 ## Registro de Respostas
