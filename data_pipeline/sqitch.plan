@@ -109,3 +109,5 @@ brazilcrime_contrato_sinesp [brazilcrime_municipio] 2026-10-01T17:30:00Z Marco A
 brazilcrime_sem_patrimoniais [brazilcrime_contrato_sinesp] 2026-10-01T19:30:00Z Marco Arthur <arthurpbs@gmail.com> # Correção #164: remover colunas de crimes patrimoniais sem fonte municipal
 import_metadata_uniq_table_name [brazilcrime_sem_patrimoniais] 2026-10-01T22:15:00Z Marco Arthur <arthurpbs@gmail.com> # Correção #164: unicidade em import_metadata.table_name para o ON CONFLICT do Base.pm
 renaest_depara_declaracao [renaest_localidade_municipio] 2026-10-08T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Correção #155: o de-para declara o que é, e o que não resolve tem destino explícito
+siconfi_despesa_dca [siconfi_despesa] 2026-10-08T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2 #193: despesa por funcao vem do DCA (Anexo I-E); PK sem a coluna textual
+analytics_esforco_fiscal_fundeb [analytics_esforco_fiscal] 2026-10-08T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2 #193: receita FUNDEB real fora do denominador (evita duplo-conto)
