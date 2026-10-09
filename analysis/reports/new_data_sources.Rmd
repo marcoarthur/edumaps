@@ -1086,24 +1086,28 @@ knitr::kable(
 )
 ```
 
-**Três problemas concretos, em ordem de gravidade:**
+**Três problemas concretos, em ordem de gravidade (medição original em
+`database.dev` — re-medida contra o produto `database.edumaps` em 2026-10-09):**
 
-1. **As cargas das fases 0–6 estão completas** — as 23 entradas novas têm
+1. **As cargas das fases 0–6 estão completas** — as entradas novas têm
    `source_url`, `source_license` e `retrieved_at`. ✅
-2. **As 9 cargas antigas estão sem proveniência** — `censo_escolas`,
-   `censo_matriculas`, `censo_docentes`, `censo_gestor`, `inse`,
-   `populacao_municipal`, `municipios_sp` e `censo_data_dictionary`. A fase 0
-   documentou o novo e deixou o antigo sem registro. ⚠️
-3. **`clean.censo_data_dictionary` aparece duas vezes** em
-   `import_metadata`, com `source_file` e `row_count_loaded` idênticos
-   (`generated_from_catalog`, 764). É duplicata — provavelmente efeito de
-   duas cargas da migration (#134 e o backfill de retry). 🔎
+2. **Cargas antigas sem proveniência** — a medição original (em `database.dev`)
+   apontava **9**; no **produto** havia **2** campos NULL (`inse`,
+   `censo_data_dictionary`) e **~19 tabelas populadas sem registro nenhum**
+   (censo_escolas 214k, ideb 814k, remuneracao_municipal 32,5M…). ⚠️
+3. **Duplicata de `censo_data_dictionary`** — existia em `database.dev`; no
+   **produto não existe** (uma única linha). A medição fica registada, sem ação.
 
-**Consequência específica do item 2:** o dicionário canônico do Censo Escolar
-(issue #134) declara-se "canônico" e versionado, mas é a **única** entrada sem
-`source_url` e **sem** `source_license`. O catálogo de fontes verificou
-licenças com rigor para 61 fontes — e o dicionário que descreve os dados que
-mais pesam do EduMaps ficou de fora.
+**Resolvido em 2026-10-09 pelo ciclo #157** (`db/backfill_proveniencia.sql`):
+o produto passou de 25 registros (2 NULL) para **47 registros, zero NULL de
+URL/licença/data de coleta** — as tabelas populadas entraram com proveniência
+das fichas em `docs/analises/fontes/` e as 3 views derivadas foram registadas.
+
+**Consequência específica do item 2 (histórico):** o dicionário canônico do
+Censo Escolar (issue #134) foi por muito tempo a única entrada do produto sem
+`source_url` e sem `source_license` — o catálogo de fontes verificou licenças
+com rigor para 61 fontes, e o dicionário que descreve os dados que mais pesam
+do EduMaps ficou de fora até a #157.
 
 **Armadilha adicional no dicionário.** As colunas de versionamento existem mas
 estão inertes:
@@ -1234,6 +1238,14 @@ completo — **89 de 89 changes**, incluindo `analytics_ausencia_visivel`, com
 | 4 | `import_metadata` | As **3 views** analíticas não têm linha de proveniência. | `acessibilidade_saude`, `esforco_fiscal_educacao` e `mobilidade_escola` são derivados, não cargas — mas devem ser rastreáveis às suas fontes. |
 | 5 | `clean.analytics_*` (3 views) | Nenhuma tem índice materializado nem `computed_at` refreshed; são views recalculadas a cada consulta. | `mobilidade_escola` faz agregação sobre `censo_escolas` (670 MB). Análise sobre a view vai ser **muito** lenta em produção. |
 
+**Situação em 2026-10-09 (ciclo #157):** o backfill
+`db/backfill_proveniencia.sql` **corrigiu** os itens 1 (licença do
+BrazilCrime → **`MIT + file LICENSE`**, o que o CRAN declara), 2
+(`source_url` das isocronas → tileset Geofabrik auto-hospedado) e 4 (**3 views
+registadas como derivadas** em `import_metadata`). O item 3 (RENAEST) foi
+corrigido no ciclo #155 (`renaest_depara_declaracao`). O item 5 (performance
+das views) segue **em aberto** — #158 (materializar views).
+
 ## 6.6 Resumo do sanity check
 
 ```{r veredito}
@@ -1243,9 +1255,9 @@ achados <- data.frame(
     "Zero confundido com nulo nas views analíticas (corrigido em #154)",
     "`renaest_localidade_municipio` é placeholder, não de-para",
     "Registry Sqitch com `change_id` divergentes em todos os alvos (corrigido)",
-    "Proveniência ausente nas 9 cargas antigas; duplicata no dicionário",
-    "Versionamento do dicionário declarado e nunca exercitado",
-    "Divergência de licença (GPL-3 vs MIT) e `source_url` inválido",
+    "Proveniência ausente nas cargas antigas — corrigido em #157 (2026-10-09)",
+    "Versionamento do dicionário declarado e nunca exercitado (year_changed/deprecated — declarado 1ª edição em #157)",
+    "Divergência de licença (GPL-3 vs MIT) e `source_url` inválido — corrigido em #157",
     "`sqitch verify` não falha em asserção falsa e não serve de gate"
   ),
   `Severidade` = c("🔴 alta", "🔴 alta", "🔴 alta", "🟡 média", "🟡 média", "🟢 baixa", "🟡 média"),
@@ -1258,17 +1270,13 @@ achados <- data.frame(
     "`import_metadata`",
     "todos os `verify/*.sql`, mais 45 \"Out of order\" no verify global"
   ),
-    "`clean.import_metadata`, `clean.censo_data_dictionary`",
-    "`clean.censo_data_dictionary`",
-    "`import_metadata`"
-  ),
   `Consequência` = c(
     "Publica \"0 acidentes\" / \"sem UBS\" para 145.734 escolas com aparência de dado real",
     "Sinistros RENAEST sem correspondência são **descartados em silêncio**",
     "`sqitch deploy`/`status` abortam com `Cannot find change … in sqitch.plan`",
-    "8 fontes do acervo (incluindo a base Censo) não são auditáveis",
+    "8 fontes do acervo (incluindo a base Censo) não são auditáveis — resolvido em #157 (47 registros, zero NULL)",
     "Rastreabilidade de mudança de schema do Censo não existe na prática",
-    "Risco de licença copyleft não avaliado; proveniência aponta para origem errada",
+    "Risco de licença copyleft não avaliado; proveniência aponta para origem errada — resolvido em #157 (MIT + tileset Geofabrik)",
     "Um teste de regressão escrito como os existentes passaria com o defeito presente"
   ),
   stringsAsFactors = FALSE
@@ -1395,12 +1403,18 @@ cd backend && perl -Ilib ingestion_runner.pl --dry-run   # já validado
 cd backend && perl -Ilib ingestion_runner.pl --run       # carga real
 ```
 
-### Passo 5 — Fechar a proveniência
+### Passo 5 — Fechar a proveniência ✅ (executado 2026-10-09, ciclo #157)
 
-Preencher `source_url`/`source_license`/`retrieved_at` das 9 cargas antigas;
-eliminar a duplicata de `censo_data_dictionary`; resolver **GPL-3 vs MIT** do
-BrazilCrime antes de qualquer distribuição; corrigir o `source_url` das
-isocronas para o tileset auto-hospedado; e registar as 3 views como derivadas.
+Preenchido `source_url`/`source_license`/`retrieved_at` via
+`db/backfill_proveniencia.sql` — produto passou de 25 registros (2 NULL) para
+**47 registros, zero NULL**, com as tabelas populadas registadas a partir das
+fichas de `docs/analises/fontes/`. A duplicata de `censo_data_dictionary` não
+existe no produto (medição registada). **GPL-3 vs MIT** do BrazilCrime
+resolvido → **`MIT + file LICENSE`** (o que o CRAN declara); `source_url` das
+isocronas corrigido para o tileset Geofabrik auto-hospedado; as **3 views**
+(`esforco_fiscal_educacao`, `mobilidade_escola`, `acessibilidade_saude`)
+registadas como derivadas; `year_changed`/`year_deprecated` declarados
+"primeira edição" na nota do registro.
 
 ### Passo 6 — Materializar as views
 

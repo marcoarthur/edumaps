@@ -84,6 +84,31 @@
 
 ---
 
+## Vínculo com os jobs de ingestão (#172)
+
+Cada e-SIC pendente bloqueia um job que hoje **falha explicitamente** (não
+devolve sucesso silencioso): `run()` morre com o motivo + este tracker. O
+comentário das tabelas-fonte correspondentes também declara "NÃO CARREGADA" e
+o porquê.
+
+| e-SIC | Job (`backend/lib/EduMaps/Ingestion/Job/`) | Tabelas alvo | Estado do job |
+|-------|--------------------------------------------|--------------|---------------|
+| INEP (Censo/IDEB/ENEM) | `INEP.pm` | `censo2022_setor`, `malha_setor_censitario`, microdados Censo/IDEB/ENEM | ⛔ falha explícita (aguardando e-SIC) |
+| MEC/NIC.br (Medidor) | `MedidorConectada.pm` | Medidor Educação Conectada | ⛔ falha explícita |
+| FNDE (PNATE/PAC/PDDE) | `FNDE.pm` | obras/programas FNDE | ⛔ falha explícita |
+| Secretarias (transporte) | `SecretariasMunicipais.pm` | transporte escolar por unidade/turno | ⛔ falha explícita |
+
+> **CensoEscolar removido em 2026-10-09 (#172)**: era caminho morto —
+> `clean.censo_escolas` (214k) e `clean.censo_docentes` (178k) já vêm de um
+> caminho próprio. O job `INEP` é o único dono da carga quando o e-SIC
+> responder.
+>
+> `inventario_fornecedores`/`inventario_anexos` **não** são alvos do FNDE:
+> são tabelas de aplicação do módulo gestor (a associação na #172 estava
+> errada — corrigida nesta passada).
+
+---
+
 ## Registro de Respostas
 
 | e-SIC | Protocolo | Data Resposta | Status | Licença Confirmada | Ficha Atualizada |

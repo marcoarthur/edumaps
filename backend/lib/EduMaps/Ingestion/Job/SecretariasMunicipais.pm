@@ -10,11 +10,11 @@ has description => 'e-SICs municipais para transporte escolar por unidade';
 has schedule => 'annual';
 
 sub run ($self, $args = {}) {
-  $self->log_info('Iniciando e-SICs municipais para transporte escolar...');
-  
-  # Itera lista de municípios prioritários
-  # Para cada: protocola e-SIC municipal, aguarda resposta
-  # ...
+  # #172: stub não pode "ter sucesso" — sem resposta das secretarias não há dado,
+  # e um job que devolve sucesso com a fonte ausente é indistinguível de um job
+  # que correu e a fonte não tinha nada. Falhar alto com o motivo.
+  die 'SecretariasMunicipais: ingestão não implementada — aguardando e-SICs municipais
+    (transporte escolar por unidade/turno). Tracker: docs/admin/esic-requests.md.'
 }
 
 1;

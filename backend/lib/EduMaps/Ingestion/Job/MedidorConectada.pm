@@ -10,10 +10,11 @@ has description => 'Ingestão Medidor Educação Conectada (MEC/NIC.br) - requer
 has schedule => 'quarterly';
 
 sub run ($self, $args = {}) {
-  $self->log_info('Iniciando ingestão Medidor Educação Conectada (aguardando e-SIC)...');
-  
-  # Aguarda e-SIC para CSV + dicionário + licença
-  # ...
+  # #172: stub não pode "ter sucesso" — sem e-SIC não há CSV/dicionário, e um job
+  # que devolve sucesso com a fonte ausente é indistinguível de um job que
+  # correu e a fonte não tinha nada. Falhar alto com o motivo.
+  die 'MedidorConectada: ingestão não implementada — aguardando e-SIC (CSV + dicionário + licença).
+    Tracker: docs/admin/esic-requests.md. Não rodar a carga antes da resposta.'
 }
 
 1;
