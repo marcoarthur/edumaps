@@ -412,3 +412,59 @@ conhecida do AGENTS: imagem reconstruída ≠ container recriado. O
   esperado.
 - Nenhuma correção de código foi necessária: era infra/local (container
   recriado). Sem deploy.
+
+## Rodada 2026-10-09 — Certificação de regressão pós #160/#136
+
+**Objetivo**: certificar que os merges recentes — #160 (`sqitch verify` como
+gate) e #136 (git hooks) — **não mudaram comportamento** da SPA. Nenhum dos
+dois toca `frontend/`/`backend/` de runtime (é infra de banco/CI e de git),
+logo o esperado é **regressão zero**.
+
+Driver próprio sobre o CDP do Chrome (`:9222`), container
+`node:22-slim --network host`, alvo `http://localhost:8080` (o plugin de
+browser do agente **não estava conectado** — mesmo padrão de 2026-09-28).
+14 rotas + interação de busca + fluxo de mapa, com captura de console,
+exceções e requisições `/api/`.
+
+| Rota | Resultado | API |
+|---|---|---|
+| `/` home | 🟢 PASS | — |
+| `/about` | 🟢 PASS | — |
+| `/escola/search` (+ digitar "freire" + Buscar) | 🟢 PASS | `suggestions` 200, `search/pageable` 200; 60 cards, "freire" presente |
+| `/escola/panel?inep=35245239` | 🟢 PASS | `panel/info` 200 |
+| `/escola/perfil?inep=23165669` | 🟢 PASS | `profile` 200, `evolution` 200 |
+| `/escola/ranking?inep=35011162` | 🟢 PASS | `info`/`indicators`/`ranking` 200 |
+| `/escola/financeiro?inep=35245239` | 🟢 PASS | `finance` 200; `gestor/me` 401 (anônimo, esperado) |
+| `/gestor` | 🟢 PASS | `gestor/me` 401 (card de login, esperado) |
+| `/municipio/compare` | 🟢 PASS | — |
+| `/municipio/perfil?ibge=2307304` | 🟢 PASS | `network/profile` 200 |
+| `/cluster/geotag` | 🟢 PASS | `regions`/`presets`/`columns`/`years` 200 |
+| `/chat/censo` | 🟢 PASS | — |
+| `/chat/historico` | 🟢 PASS | — ("Sessão não encontrada", esperado anônimo) |
+| `/config` | 🟢 PASS | — (card de admin, esperado) |
+
+As 14 rodadas: **0 exceções, 0 erros de console, 0 falhas de rede** (fora as
+duas 401 de `gestor/me`, esperadas). As rotas com query string que em rodadas
+antigas davam **500 do nginx** (`ranking`, `financeiro`, `municipio/perfil`)
+agora **PASS** — o nginx do container atual não reproduz o `try_files` antigo.
+
+### Fluxo de mapa (regressão histórica de tiles)
+
+| Verificação | Resultado |
+|---|---|
+| `/municipio/compare?codigo_ibge=2307304` — `.leaflet-container` | 🟢 1 |
+| Tiles OSM | 🟢 8/8 `complete` e `naturalWidth>0`, 0 `.leaflet-tile-error` |
+| Hosts de tile | 🟢 `a/b/c.tile.openstreetmap.org`, HTTP 200 |
+| `/escola/panel?inep=35245239` — mapa | 🟢 1 container, 8/8 tiles OK |
+
+### Achado aberto (pré-existente — não é regressão)
+
+Na `/municipio/compare?codigo_ibge=…` (com dados/mapa) o Chrome registra
+**4 rejeições de promise não tratadas** cujo motivo é a **string de um rótulo
+de etapa** (`"Infantil"`), **sem stack**. Não derruba a página: gráficos, mapa
+e tiles renderizam; 0 erros de console do app; API 200. Reproduz em todas as
+execuções; **não** aparece em `/municipio/perfil` nem `/escola/panel`. A origem
+é a camada de gráficos (Carbon Charts, `tooltip.customHTML`/rótulos de etapa) —
+**não** há `throw`/`reject` em `src/features/network-compare`. **Não
+relacionado a #136/#160** (frontend inalterado há 6 dias). Fica registrado para
+investigação.
