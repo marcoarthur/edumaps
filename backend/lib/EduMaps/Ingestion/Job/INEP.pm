@@ -10,12 +10,13 @@ has description => 'Ingestão INEP (Censo Escolar, IDEB, ENEM) - requer e-SIC';
 has schedule => 'annual';
 
 sub run ($self, $args = {}) {
-  $self->log_info('Iniciando ingestão INEP (aguardando e-SIC para licença)...');
-  
-  # Aguarda licença ser confirmada via e-SIC
-  # Enquanto isso, prepara estrutura
-  
-  $self->log_info('INEP: aguardando resposta de e-SIC para licença');
+  # #172: stub não pode "ter sucesso" — sem licença confirmada não há carga do
+  # Censo/IDEB/ENEM, e um job que devolve sucesso com a fonte ausente é
+  # indistinguível de um job que correu e a fonte não tinha nada. Falhar alto
+  # com o motivo. (O Censo Escolar já carregado veio por outro caminho e não
+  # depende deste job — ver `clean.censo_escolas`/`censo_docentes`.)
+  die 'INEP: ingestão não implementada — aguardando e-SIC (licença do Censo/IDEB/ENEM).
+    Tracker: docs/admin/esic-requests.md. Não rodar a carga antes da resposta.'
 }
 
 1;

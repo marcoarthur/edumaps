@@ -10,10 +10,11 @@ has description => 'Ingestão FNDE (PNATE, Novo PAC/Proinfância, PDDE) - requer
 has schedule => 'monthly';
 
 sub run ($self, $args = {}) {
-  $self->log_info('Iniciando ingestão FNDE (aguardando e-SIC para licença)...');
-  
-  # Aguarda e-SIC para licença + URL + dicionário
-  # ...
+  # #172: stub não pode "ter sucesso" — sem e-SIC não há URL/dicionário, e um job
+  # que devolve sucesso com a fonte ausente é indistinguível de um job que
+  # correu e a fonte não tinha nada. Falhar alto com o motivo.
+  die 'FNDE: ingestão não implementada — aguardando e-SIC (licença + URL + dicionário).
+    Tracker: docs/admin/esic-requests.md. Não rodar a carga antes da resposta.'
 }
 
 1;
