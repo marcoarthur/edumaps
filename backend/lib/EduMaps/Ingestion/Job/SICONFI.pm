@@ -10,7 +10,7 @@ use POSIX qw(strftime);
 use utf8;
 
 has job_name => 'SICONFI';
-has description => 'Ingestão SICONFI (receitas, RREO) via API DataLake do Tesouro';
+has description => 'Ingestão SICONFI (receitas RREO; despesas e FUNDEB via DCA) via API DataLake do Tesouro';
 has schedule => 'monthly';
 
 # API DataLake do Tesouro (verificada na #165). O host real está dentro do
@@ -69,11 +69,10 @@ my %COLUNA_CLASSIFICACAO = (
 # ReceitaPatrimonial, ReceitaDeServicos, ...) ficam de fora: guardar o
 # agregado E os filhos duplica qualquer soma posterior.
 #
-# 'fundeb' fica reservado no schema mas não é preenchido aqui: o endpoint
-# RREO não expõe a linha detalhada 1.7.5.x (transferências do FUNDEB vêm
-# agregadas dentro de TransferenciasCorrentes*) — nunca adivinhar pelo
-# nome da conta. Quando o esforço fiscal precisar, usar outro endpoint
-# ou aceitar a agregação.
+# 'fundeb' é preenchido a partir do DCA (Anexo I-C, fase 2 da #193): o
+# endpoint RREO não expõe a linha detalhada 1.7.5.x (transferências do
+# FUNDEB vêm agregadas dentro de TransferenciasCorrentes*) — nunca
+# adivinhar pelo nome da conta. Detalhe no bloco do DCA abaixo.
 #
 # Chave não mapeada => warning no log e linha ignorada (o loader não
 # inventa classificação) — por isso o mapeamento é uma allowlist explícita.
@@ -167,7 +166,10 @@ sub run ($self, $args = {}) {
   my $cod_ibge = $args->{cod_ibge};
 
   if ($cod_ibge) {
-    return $self->ingest_municipio_receita(%$args);
+    # dca => despesa por função + FUNDEB (DCA anual); senão receitas RREO
+    return $args->{dca}
+      ? $self->ingest_municipio_dca(%$args)
+      : $self->ingest_municipio_receita(%$args);
   }
 
   # Iteração sobre a malha via /entes (cache local): por UF ou todos.
@@ -182,13 +184,23 @@ sub run ($self, $args = {}) {
     my $total = 0;
     for my $i (0 .. $#cod) {
       $self->_throttle if $i > 0;
-      $total += $self->ingest_municipio_receita(cod_ibge => $cod[$i], %$args);
+      if ($args->{dca}) {
+        # DCA anual é publicado no semestre seguinte ao exercício —
+        # município que ainda não publicou é comum e não pode abortar a
+        # malha inteira (strict_zero => 0), ao contrário do RREO bimestral.
+        $total += $self->ingest_municipio_dca(cod_ibge => $cod[$i], strict_zero => 0, %$args);
+      }
+      else {
+        $total += $self->ingest_municipio_receita(cod_ibge => $cod[$i], %$args);
+      }
     }
     return $total;
   }
 
   # Fase 1 (escopo mínimo da #165): São Paulo quando nada é pedido
-  return $self->ingest_municipio_receita(cod_ibge => '3550308', %$args);
+  return $args->{dca}
+    ? $self->ingest_municipio_dca(cod_ibge => '3550308', %$args)
+    : $self->ingest_municipio_receita(cod_ibge => '3550308', %$args);
 }
 
 # ---------------------------------------------------------------------
@@ -364,6 +376,321 @@ SQL
   }
 
   $self->log_info("SICONFI: $loaded linhas em clean.siconfi_receita");
+  return $loaded;
+}
+
+# ---------------------------------------------------------------------
+# DCA (demonstrações contábeis anuais, DCASP) — fase 2 (#193)
+# ---------------------------------------------------------------------
+#
+# A pergunta da #193 ("FUNDEB detalhado sai pelo /rreo ou pelo /dca//rgf?")
+# foi respondida com medição (2026-10-08): só o /dca. O RREO não traz
+# anexo de ensino (2023-2025 medidos) e o /rgf devolve 0. No DCA:
+#
+#   Anexo I-E  despesa por função/subfunção — códigos numéricos no texto
+#              da conta ('12 - Educação', '12.361 - Ensino Fundamental') e
+#              colunas Empenhadas/Liquidadas/Pagas (o Anexo 02 do RREO só
+#              tem nomes e não tem 'pagas').
+#   Anexo I-C  demonstrativo da receita — classificador numérico
+#              (1.7.5.1.00.0.0 = FUNDEB; 1.7.1.5.00.0.0 = Complementação
+#              da União ao FUNDEB).
+#
+# `run` com `dca => 1` carrega despesa e FUNDEB de um só fetch por
+# município. O exercício é o ANUAL FECHADO (não há bimestre).
+
+# ---------------------------------------------------------------------
+# DCA de um município: despesa (I-E) + FUNDEB (I-C) em uma passada
+# ---------------------------------------------------------------------
+sub ingest_municipio_dca ($self, %args) {
+  my $cod_ibge = $args{cod_ibge} or die "cod_ibge e obrigatorio\n";
+  my $exercicio = $args{exercicio} // (localtime)[5] + 1900;
+  my $dt_snapshot = $args{dt_snapshot} // strftime('%Y-%m-%d', localtime);
+
+  my $items = $self->_fetch_dca(
+    id_ente     => $cod_ibge,
+    exercicio   => $exercicio,
+    strict_zero => $args{strict_zero} // 1,
+  );
+  return 0 unless $items;
+
+  my $despesas = $self->_map_despesas($cod_ibge, $exercicio, $items, $dt_snapshot);
+  my $fundeb   = $self->_map_fundeb($cod_ibge, $exercicio, $items, $dt_snapshot);
+
+  my $n1 = $self->_load_despesa($despesas);
+  my $n2 = $self->_load_fundeb($fundeb);
+  $self->log_info("SICONFI: $n1 linhas em clean.siconfi_despesa, $n2 em clean.siconfi_receita (fundeb) — $cod_ibge/$exercicio");
+  return $n1 + $n2;
+}
+
+# ---------------------------------------------------------------------
+# DCA: /dca
+# params da API: an_exercicio, id_ente (= cod_ibge), limit/offset.
+# Sem co_tipo_demonstracao: o default devolve o DCASP anual completo
+# (anexos I-AB, I-C, I-D, I-E, I-F, I-G, I-HI). Paginação por hasMore,
+# igual ao /rreo.
+# strict_zero=1 (município único): count==0 morre, como na fase 1.
+# strict_zero=0 (iteração da malha): município que ainda não publicou o
+# DCA anual é avisado e pulado — não aborta a carga inteira.
+# ---------------------------------------------------------------------
+sub _fetch_dca ($self, %args) {
+  my $cod_ibge = delete $args{id_ente} // delete $args{cod_ibge};
+  die "id_ente (cod_ibge) e obrigatorio\n" unless defined $cod_ibge;
+  my $exercicio = delete $args{exercicio} // (localtime)[5] + 1900;
+  my $strict = delete $args{strict_zero} // 1;
+
+  my %p = (
+    an_exercicio => $exercicio,
+    id_ente      => $cod_ibge,
+    limit        => 1000,
+    offset       => 0,
+    %args,
+  );
+
+  my @items;
+  my ($page, $max_pages) = (0, 500);
+
+  while ($page++ < $max_pages) {
+    my $tx = $self->run_with_retry(sub {
+      my $t = $self->ua->get($self->base_url . '/dca' => form => { %p });
+      die sprintf("SICONFI /dca: HTTP %d (offset=%d)", $t->res->code, $p{offset})
+        unless $t->res->code == 200;
+      return $t;
+    }, "dca $cod_ibge offset=$p{offset}");
+
+    my $json = $tx->res->json;
+    last unless $json && ref($json) eq 'HASH' && $json->{items} && @{$json->{items}};
+    push @items, @{$json->{items}};
+
+    # `count` é POR PÁGINA (limit=2 => count=2), não o total — a
+    # paginação decide-se por hasMore (sinal autoritativo).
+    last if defined $json->{hasMore} && !$json->{hasMore};
+    # Fallback apenas para respostas sem o campo hasMore — uma página curta
+    # com hasMore=true não pode ser tratada como fim.
+    last if !defined $json->{hasMore} && @{$json->{items}} < $p{limit};
+    $p{offset} += $p{limit};
+    $self->_throttle;
+  }
+
+  if (@items == 0) {
+    my $msg = sprintf("SICONFI /dca devolveu 0 itens para cod_ibge=%s (exercicio=%s) — DCA anual provavelmente ainda nao publicado",
+      $cod_ibge, $exercicio);
+    if ($strict) {
+      die $msg . " (HTTP 200 com count==0 NAO e sucesso)\n";
+    }
+    $self->log->warn('[' . $self->job_name . "] $msg (pulado)");
+    return undef;
+  }
+
+  return \@items;
+}
+
+# ---------------------------------------------------------------------
+# Despesa: DCA-Anexo I-E (execução das despesas por função)
+#           -> clean.siconfi_despesa
+#
+# A linha de FUNÇÃO traz o código no texto da conta ('12 - Educação'); os
+# descendentes ('12.361 - Ensino Fundamental') e os buckets sintéticos
+# ('FU12 - Demais Subfunções') ficam de fora DELIBERADAMENTE: medido no
+# SP 2024, a soma das subfunções não fecha com o total oficial da função
+# (diff ~8%) — guardar filhos E pai duplicaria qualquer soma, e guardar só
+# os filhos distorceria o total da função 12 que o esforço fiscal usa.
+# A linha de função vira subfuncao = 0 (total oficial do demonstrativo).
+#
+# Colunas: Empenhadas -> valor_empenhado; Liquidadas -> valor_liquidado;
+# Pagas -> valor_pago. Inscrições de restos a pagar e colunas não mapeadas
+# saem (não são gasto executado da função).
+# ---------------------------------------------------------------------
+my %COLUNA_DESPESA = (
+  'Despesas Empenhadas' => 'valor_empenhado',
+  'Despesas Liquidadas' => 'valor_liquidado',
+  'Despesas Pagas'      => 'valor_pago',
+);
+
+sub _map_despesas ($self, $cod_ibge, $exercicio, $items, $dt_snapshot) {
+  $dt_snapshot //= strftime('%Y-%m-%d', localtime);
+  my %by;
+  my %desconhecidas;
+
+  for my $it (@$items) {
+    next unless ($it->{anexo} // '') eq 'DCA-Anexo I-E';
+    next unless defined $it->{coluna} && defined $it->{valor};
+    my $slot = $COLUNA_DESPESA{$it->{coluna}};
+    unless ($slot) {
+      $desconhecidas{$it->{coluna}}++
+        unless $it->{coluna} =~ /Restos a Pagar/;
+      next;
+    }
+    my $conta = $it->{conta} // '';
+    my ($funcode) = $conta =~ /^(\d{2}) - / or next;
+    my $descricao = $conta;
+    $descricao =~ s/^\d{2} - //;
+    $by{$funcode}{$slot}      = $it->{valor} + 0;
+    $by{$funcode}{descricao}  = $descricao;
+  }
+
+  if (keys %desconhecidas) {
+    $self->log->warn('[' . $self->job_name . '] colunas despesa nao mapeadas no DCA I-E (ignoradas): '
+      . join(', ', sort keys %desconhecidas));
+  }
+
+  my @out;
+  for my $f (sort keys %by) {
+    push @out, {
+      codigo_ibge       => sprintf('%07d', $cod_ibge),
+      exercicio         => $exercicio + 0,
+      funcao            => $f + 0,
+      subfuncao         => 0,              # linha de função (total oficial)
+      descricao_despesa => $by{$f}{descricao},
+      valor_empenhado   => $by{$f}{valor_empenhado},
+      valor_liquidado   => $by{$f}{valor_liquidado},
+      valor_pago        => $by{$f}{valor_pago},
+      classificacao     => 'realizada',
+      dt_snapshot       => $dt_snapshot,
+    };
+  }
+
+  return \@out;
+}
+
+# ---------------------------------------------------------------------
+# FUNDEB: DCA-Anexo I-C (demonstrativo da receita) -> clean.siconfi_receita
+#
+# Só as duas contas do FUNDEB, identificadas pelo classificador numérico
+# (chave robusta — nada de de-para por nome):
+#   1.7.5.1.00.0.0  FUNDEB (transferências dos estados)
+#   1.7.1.5.00.0.0  Complementação da União ao FUNDEB
+# Ambas viram tipo_receita='fundeb'. FNDE / Salário-Educação / convênios
+# (1.7.1.4.x, 1.7.2.4.51) NÃO entram: já estão contidos no agregado
+# 'transferencia' do RREO (fase 1) e entrariam DUAS vezes no total.
+#
+# Valor = 'Receitas Brutas Realizadas'; as colunas de dedução saem.
+# ---------------------------------------------------------------------
+my %FUNDEB_CONTA = map { $_ => 1 } qw(
+  1.7.5.1.00.0.0
+  1.7.1.5.00.0.0
+);
+
+sub _map_fundeb ($self, $cod_ibge, $exercicio, $items, $dt_snapshot) {
+  $dt_snapshot //= strftime('%Y-%m-%d', localtime);
+  my @out;
+
+  for my $it (@$items) {
+    next unless ($it->{anexo} // '') eq 'DCA-Anexo I-C';
+    next unless ($it->{coluna} // '') eq 'Receitas Brutas Realizadas';
+    my $cod = $it->{cod_conta} // '';
+    $cod =~ s/^RO//;                # ORDS prefixa 'RO' nos itens de receita
+    next unless $FUNDEB_CONTA{$cod};
+    my $descricao = $it->{conta} // '';
+    $descricao =~ s/^[0-9.]+ - //;  # tira o código do texto
+
+    push @out, {
+      codigo_ibge       => sprintf('%07d', $cod_ibge),
+      exercicio         => $exercicio + 0,
+      tipo_receita      => 'fundeb',
+      coluna_receita    => $cod,
+      descricao_receita => $descricao,
+      valor             => $it->{valor} + 0,
+      classificacao     => 'realizada',
+      dt_snapshot       => $dt_snapshot,
+    };
+  }
+
+  return \@out;
+}
+
+# ---------------------------------------------------------------------
+# Load idempotente em clean.siconfi_despesa (PK da fase 2 #193:
+# codigo_ibge + exercicio + funcao + subfuncao + classificacao + snapshot)
+# ---------------------------------------------------------------------
+sub _load_despesa ($self, $rows) {
+  return 0 if $self->dry_run || !$rows || !@$rows;
+
+  my $dbh = $self->app->schema->storage->dbh;
+  my $sql = <<'SQL';
+INSERT INTO clean.siconfi_despesa
+  (codigo_ibge, exercicio, funcao, subfuncao, descricao_despesa,
+   valor_empenhado, valor_liquidado, valor_pago, classificacao, dt_snapshot)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (codigo_ibge, exercicio, funcao, subfuncao, classificacao,
+             dt_snapshot)
+DO UPDATE SET descricao_despesa = EXCLUDED.descricao_despesa,
+              valor_empenhado  = EXCLUDED.valor_empenhado,
+              valor_liquidado  = EXCLUDED.valor_liquidado,
+              valor_pago       = EXCLUDED.valor_pago
+SQL
+
+  my $loaded = 0;
+  $dbh->begin_work;
+  eval {
+    my $sth = $dbh->prepare($sql);
+    for my $r (@$rows) {
+      $sth->execute(
+        $r->{codigo_ibge}, $r->{exercicio}, $r->{funcao}, $r->{subfuncao},
+        $r->{descricao_despesa}, $r->{valor_empenhado}, $r->{valor_liquidado},
+        $r->{valor_pago}, $r->{classificacao}, $r->{dt_snapshot},
+      );
+      $loaded++;
+    }
+    $self->upsert_metadata('clean.siconfi_despesa',
+      'API Tesouro Nacional SICONFI despesas por função (DCA-Anexo I-E)',
+      'https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca',
+      'Domínio público (Tesouro Nacional)', $loaded,
+      "Ingestão #193. classificacao: 'realizada'. Granularidade: linha de função (subfuncao=0).");
+    $dbh->commit;
+  };
+  # CAPTURAR $@ ANTES do eval de rollback (mesma armadilha medida na #165)
+  if (my $err = $@) {
+    eval { $dbh->rollback };
+    die "SICONFI _load_despesa falhou: $err";
+  }
+
+  $self->log_info("SICONFI: $loaded linhas em clean.siconfi_despesa");
+  return $loaded;
+}
+
+# ---------------------------------------------------------------------
+# Load idempotente do FUNDEB em clean.siconfi_receita
+# ---------------------------------------------------------------------
+sub _load_fundeb ($self, $rows) {
+  return 0 if $self->dry_run || !$rows || !@$rows;
+
+  my $dbh = $self->app->schema->storage->dbh;
+  my $sql = <<'SQL';
+INSERT INTO clean.siconfi_receita
+  (codigo_ibge, exercicio, tipo_receita, coluna_receita, descricao_receita,
+   valor, classificacao, dt_snapshot)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (codigo_ibge, exercicio, tipo_receita, coluna_receita,
+             classificacao, dt_snapshot)
+DO UPDATE SET valor = EXCLUDED.valor,
+              descricao_receita = EXCLUDED.descricao_receita
+SQL
+
+  my $loaded = 0;
+  $dbh->begin_work;
+  eval {
+    my $sth = $dbh->prepare($sql);
+    for my $r (@$rows) {
+      $sth->execute(
+        $r->{codigo_ibge}, $r->{exercicio}, $r->{tipo_receita},
+        $r->{coluna_receita}, $r->{descricao_receita}, $r->{valor},
+        $r->{classificacao}, $r->{dt_snapshot},
+      );
+      $loaded++;
+    }
+    $self->upsert_metadata('clean.siconfi_receita',
+      'API Tesouro Nacional SICONFI receitas FUNDEB (DCA-Anexo I-C)',
+      'https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca',
+      'Domínio público (Tesouro Nacional)', $loaded,
+      "Ingestão #193. tipo_receita='fundeb': 1.7.5.1.00.0.0 (FUNDEB) e 1.7.1.5.00.0.0 (Complementação da União).");
+    $dbh->commit;
+  };
+  if (my $err = $@) {
+    eval { $dbh->rollback };
+    die "SICONFI _load_fundeb falhou: $err";
+  }
+
+  $self->log_info("SICONFI: $loaded linhas FUNDEB em clean.siconfi_receita");
   return $loaded;
 }
 
