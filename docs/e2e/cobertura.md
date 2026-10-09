@@ -466,5 +466,5 @@ e tiles renderizam; 0 erros de console do app; API 200. Reproduz em todas as
 execuções; **não** aparece em `/municipio/perfil` nem `/escola/panel`. A origem
 é a camada de gráficos (Carbon Charts, `tooltip.customHTML`/rótulos de etapa) —
 **não** há `throw`/`reject` em `src/features/network-compare`. **Não
-relacionado a #136/#160** (frontend inalterado há 6 dias). Fica registrado para
-investigação.
+relacionado a #136/#160** (frontend inalterado há 6 dias). Rastreado na
+**issue #200**.
