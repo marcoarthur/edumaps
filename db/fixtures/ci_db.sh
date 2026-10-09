@@ -61,8 +61,25 @@ imagem() {
   if docker image inspect "$IMAGEM" >/dev/null 2>&1; then
     return 0
   fi
-  log "construindo $IMAGEM a partir de db/Dockerfile (leva alguns minutos)"
-  docker build -f "$RAIZ/db/Dockerfile" -t "$IMAGEM" "$RAIZ/db"
+  # O Docker Hub regula o acesso anónimo por IP e responde 429 Too Many
+  # Requests à resolução de manifest em rajada (medido no CI a 2026-10-09:
+  # o build da base pgvector/pgvector:pg16-bookworm derrubou o job sem
+  # retry). O build é idempotente, logo repetir com backoff cobre o rate
+  # limit transitório sem mudar o resultado.
+  local tentativa
+  for tentativa in 1 2 3 4 5; do
+    log "construindo $IMAGEM a partir de db/Dockerfile (tentativa ${tentativa}/5)"
+    if docker build -f "$RAIZ/db/Dockerfile" -t "$IMAGEM" "$RAIZ/db"; then
+      return 0
+    fi
+    if [[ $tentativa -eq 5 ]]; then
+      break
+    fi
+    log "build falhou (tentativa ${tentativa}/5); aguardando $((tentativa * 10))s e repetindo"
+    sleep "$((tentativa * 10))"
+  done
+  erro "build da imagem $IMAGEM falhou após 5 tentativas"
+  return 1
 }
 
 rede() {
