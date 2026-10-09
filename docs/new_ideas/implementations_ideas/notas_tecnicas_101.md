@@ -79,9 +79,18 @@ because of a workflow file issue"). O padrão correto é repassar o secret por
 - Cache populado no 1º run verde: `edumaps-db-ci-abc685f5…` (231 MiB) — as
   próximas execuções com o mesmo Dockerfile restauram a imagem sem registry.
 
-## Ressalva
+## Ressalvas
 
-Qualquer mudança em `db/Dockerfile` muda a key do cache, e a construção volta a
-depender do registry — nesse cenário volta a valer o retry + espelho. Se o
-developer quiser eliminar a dependência de vez: criar os secrets do Docker Hub
-(detalhes no cabeçalho do workflow).
+- **Escopo do cache por evento (aprendido na prática)**: um cache criado por um
+  run de `pull_request` fica no merge ref (`refs/pull/N/merge`) e **não** é
+  visível aos pushes de `main` — regra documentada do `actions/cache`
+  ("limited scope… cannot be restored by the base branch"). O 1º push de main
+  pós-merge reconstrói de frio (o retry + espelho cobrem o caso de o Docker Hub
+  estar instável) e re-grava o cache no escopo de main; dali em diante main e
+  PRs restauram. Provado por rerun de main: log `carregando edumaps-db:ci de
+  …/edumaps-db-ci.tar.gz`, sem build e sem tocar no registry.
+
+- **Mudança em `db/Dockerfile`** muda a key do cache (o hash vira parte dela),
+  e a construção volta a depender do registry — nesse cenário volta a valer o
+  retry + espelho. Se o developer quiser eliminar a dependência de vez: criar
+  os secrets do Docker Hub (detalhes no cabeçalho do workflow).

@@ -39,6 +39,12 @@
   Hub já tinha recuperado — + sqitch deploy/verify + suíte completa).
 - **Sem deploy**: `db/fixtures/ci_db.sh` é ferramenta de CI/local e o
   `db/Dockerfile` não mudou → sem rebuild de imagem local nem task Rex.
+- **Escopo do cache (aprendido na prática)**: cache criado por run de
+  `pull_request` fica no merge ref (`refs/pull/N/merge`) e **não** é visível
+  aos pushes de `main` (regra documentada do actions/cache). O 1º push de main
+  pós-merge reconstrói — o retry+espelho cobrem — e re-grava o cache no escopo
+  de main; dali em diante main e PRs restauram (provado: rerun de main logou
+  `carregando edumaps-db:ci de …/edumaps-db-ci.tar.gz`, sem build).
 - **Ressalva**: quando o `db/Dockerfile` mudar, a key do cache muda e o build
   volta a tocar o registry — o espelho cobre o caso de o Docker Hub estar
   instável nesse momento.
