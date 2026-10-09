@@ -59,4 +59,46 @@ describe("wrappers de gráfico (Carbon)", () => {
     const stub = document.querySelector('[data-testid="carbon-chart-stub"]');
     expect(stub).toHaveAttribute("data-rows", String(DATA.length));
   });
+
+  describe("RadarChart: guarda de unhandledrejection (issue #200)", () => {
+    function dispatchRejection(reason) {
+      const event = new Event("unhandledrejection", { cancelable: true });
+      Object.defineProperty(event, "reason", { value: reason });
+      window.dispatchEvent(event);
+      return event;
+    }
+
+    it("suprime rejeições com reason string (datum do eixo do Carbon)", () => {
+      const { unmount } = render(RadarChart, {
+        props: { data: DATA, options: { title: "Radar guard" } },
+      });
+
+      const event = dispatchRejection("Infantil");
+      expect(event.defaultPrevented).toBe(true);
+
+      unmount();
+    });
+
+    it("propaga rejeições com reason Error (erros reais)", () => {
+      const { unmount } = render(RadarChart, {
+        props: { data: DATA, options: { title: "Radar guard" } },
+      });
+
+      const boom = new Error("prova real");
+      const event = dispatchRejection(boom);
+      expect(event.defaultPrevented).toBe(false);
+
+      unmount();
+    });
+
+    it("desmonta o listener ao destruir o componente", () => {
+      const { unmount } = render(RadarChart, {
+        props: { data: DATA, options: { title: "Radar guard" } },
+      });
+      unmount();
+
+      const event = dispatchRejection("Infantil");
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
 });
