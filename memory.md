@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-09 — CI backend: 429/504 do Docker Hub no build do banco (PR #202)
+
+- **Incidente**: `backend-tests` falhou no CI no último PR (runs 37992118533,
+  37993517730, 37994673009, 37994965426). O passo "sobe o banco de CI" morria
+  ao construir `edumaps-db:ci` (`db/Dockerfile`): a resolução da base
+  `pgvector/pgvector:pg16-bookworm` era recusada pelo Docker Hub — **429
+  Too Many Requests** (rate limit anónimo por IP nos runners partilhados do
+  GitHub) e **504** em `auth.docker.io/token` (auth instável). ~40 min de
+  429/504 sustentados, não rajada — retry simples não resolve.
+- **Fix** (branch `fix/ci-retry-build-429` → **PR #202** → merge `6cd5097`),
+  3 camadas sem credencial:
+  1. **Retry com backoff** em `db/fixtures/ci_db.sh` `imagem()` (3 tentativas
+     por fonte, espera 10s→20s) — cobre rajada.
+  2. **Fallback `mirror.gcr.io`** (espelho público do Google, sem os limites
+     anónimos por IP do Docker Hub): puxa a mesma base e taggeia com o nome
+     canónico → BuildKit resolve o `FROM` localmente. Testado acessível do host.
+  3. **Cache da imagem no GitHub Actions** (`actions/cache`, key =
+     `hashFiles('db/Dockerfile')`): tarball `docker save | gzip` de
+     `edumaps-db:ci`; em cache quente o CI faz `docker load` e não toca no
+     registry. Populado no 1º run verde (231 MiB). Script suporta via
+     `EDUMAPS_CI_IMAGE_TARBALL_IN/OUT` (só CI; uso local inalterado).
+- **Aprendizado de workflow**: `secrets` **não** é permitido em
+  `jobs.<job_id>.steps.if` (só `github/needs/strategy/matrix/job/runner/env/
+  vars/steps/inputs`) — `if: ${{ secrets.DOCKERHUB_TOKEN != '' }}` derrubou o
+  workflow inteiro ("workflow file issue"). Padrão correto: passar pelo `env:`
+  do step.
+- **Login opcional**: com secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`
+  (conta gratuita do Docker Hub, token read-only), o passo `docker/login-action`
+  (já no workflow, pulado sem secret) autentica os pulls e elimina o throttle
+  por completo. **Pendente de decisão do developer** se cria os secrets.
+- **Validação**: harnesses locais (retry/espelho com `docker build` fake 4/4;
+  cache com docker real 6/6) + CI verde 7m24s (build 1ª tentativa — o Docker
+  Hub já tinha recuperado — + sqitch deploy/verify + suíte completa).
+- **Sem deploy**: `db/fixtures/ci_db.sh` é ferramenta de CI/local e o
+  `db/Dockerfile` não mudou → sem rebuild de imagem local nem task Rex.
+- **Ressalva**: quando o `db/Dockerfile` mudar, a key do cache muda e o build
+  volta a tocar o registry — o espelho cobre o caso de o Docker Hub estar
+  instável nesse momento.
+
 ## Sessão 2026-10-09 — #200: rejeições de promise do Radar do Carbon (PR #201)
 
 - **Fechado**: as **4 rejeições de promise não tratadas** (`Uncaught (in
