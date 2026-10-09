@@ -29,6 +29,7 @@
 ## 2. Dados / PostGIS
 - 🟢 `docs/archive/IA/datapipeline.md` — pipeline de dados.
 - 🟢 `docs/archive/notebook-analises-censo-rankings.md` — análises de censo/rankings.
+- 🟢 `docs/siconfi.yaml` — spec medida dos endpoints SICONFI (RREO fase 1 / DCA fase 2, issue #193): paginação hasMore, anexos, contas FUNDEB.
 - 🟡 Z:8236 `EduMaps GIS` · Z:9439 `EduMaps Análise dos Dados` · Z:9892 `Dicionário de Dados Tabela_Escolas.csv (Censo 2025)` (Google Sheets).
 - 🔴 **PgVector/similaridade vetorial** (`Z:11766`) — sem doc/código (oportunidade).
 

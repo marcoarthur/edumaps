@@ -2,6 +2,9 @@ erDiagram
 %% 04 · Financeiro municipal — SICONFI (receita/despesa) e transferências
 %% Ciclo #165 (issue #165, PR #191). Tabelas NOVAS: aqui o vínculo com o
 %% território já é FOREIGN KEY real no Postgres (ao contrário do núcleo 02).
+%% Fase 2 (#193): siconfi_despesa sem coluna_despesa, PK por função/snapshot
+%% (fonte: DCA-Anexo I-E); receita FUNDEB real entra por clean.siconfi_receita
+%% (DCA-Anexo I-C) e sai do denominador da view.
 
     clean.malha_municipio ||--o{ clean.siconfi_receita : "[FK] codigo_ibge"
     clean.malha_municipio ||--o{ clean.siconfi_despesa : "[FK] codigo_ibge"
@@ -35,14 +38,13 @@ erDiagram
         text codigo_ibge PK,FK
         smallint exercicio PK
         smallint funcao PK "12 = educacao"
-        smallint subfuncao PK
-        text coluna_despesa PK
-        text descricao_despesa PK
-        text classificacao PK "empenhada, liquidada ou paga"
+        smallint subfuncao PK "0 = linha de funcao (fase 2 #193)"
+        text descricao_despesa
+        text classificacao PK "realizada ou estimativa"
         numeric valor_empenhado
         numeric valor_liquidado
         numeric valor_pago
-        date dt_snapshot
+        date dt_snapshot PK
     }
     clean.transferencia_educ {
         text codigo_ibge PK,FK
