@@ -24,9 +24,12 @@
 #   EDUMAPS_FIXTURES=1 prove -r -l t/
 #
 # Variáveis de ambiente:
-#   EDUMAPS_CI_PORT    porta do Postgres no host (padrão 5432)
-#   EDUMAPS_CI_STATE   diretorio de estado: CA, certificado e docroot (padrão
-#                      ${TMPDIR:-/tmp}/edumaps-ci)
+#   EDUMAPS_CI_PORT              porta do Postgres no host (padrão 5432)
+#   EDUMAPS_CI_STATE             diretorio de estado: CA, certificado e docroot
+#                                (padrão ${TMPDIR:-/tmp}/edumaps-ci)
+#   EDUMAPS_CI_IMAGE_TARBALL_IN  tarball da imagem a carregar antes do build
+#                                (cache do GitHub Actions; vazio fora do CI)
+#   EDUMAPS_CI_IMAGE_TARBALL_OUT onde gravar a imagem construída (mesmo fim)
 set -euo pipefail
 
 # O banco do CI é descartável por construção: pode ser derrubado e recriado a
@@ -60,6 +63,20 @@ erro() { printf '\033[1;31m[ci-db]\033[0m %s\n' "$*" >&2; }
 imagem() {
   if docker image inspect "$IMAGEM" >/dev/null 2>&1; then
     return 0
+  fi
+  # Cache do GitHub Actions (opcional): o CI restaura a imagem construída de um
+  # tarball (key = hash do db/Dockerfile) e não toca no docker.io. O Docker Hub
+  # regula o acesso anónimo por IP — em rajada resolve com retry (abaixo), mas
+  # em throttle sustentado nos IPs partilhados dos runners (medido a 2026-10-09,
+  # 429 em 5 tentativas seguidas) só o cache ou autenticação resolvem. No uso
+  # local as variáveis não estão definidas e o caminho é sempre o build.
+  if [[ -n "${EDUMAPS_CI_IMAGE_TARBALL_IN:-}" && -f "$EDUMAPS_CI_IMAGE_TARBALL_IN" ]]; then
+    log "carregando $IMAGEM de $EDUMAPS_CI_IMAGE_TARBALL_IN"
+    if docker load -i "$EDUMAPS_CI_IMAGE_TARBALL_IN" >/dev/null 2>&1 \
+        && docker image inspect "$IMAGEM" >/dev/null 2>&1; then
+      return 0
+    fi
+    erro "tarball de cache inválido; caindo no build"
   fi
   # O Docker Hub regula o acesso anónimo por IP e responde 429 Too Many
   # Requests à resolução de manifest em rajada (medido no CI a 2026-10-09:
@@ -170,6 +187,15 @@ cmd_up() {
   espelho
   banco
   deploy
+  if [[ -n "${EDUMAPS_CI_IMAGE_TARBALL_OUT:-}" \
+        && ( -z "${EDUMAPS_CI_IMAGE_TARBALL_IN:-}" || ! -f "$EDUMAPS_CI_IMAGE_TARBALL_IN" ) ]]; then
+    # Só grava quando a imagem veio do build (no CI o IN e o OUT são o mesmo
+    # caminho): em cache quente o tarball já existe e o actions/cache não
+    # re-envia chaves repetidas.
+    mkdir -p "$(dirname "$EDUMAPS_CI_IMAGE_TARBALL_OUT")"
+    log "salvando $IMAGEM em $EDUMAPS_CI_IMAGE_TARBALL_OUT"
+    docker save "$IMAGEM" | gzip > "$EDUMAPS_CI_IMAGE_TARBALL_OUT"
+  fi
   log "pronto"
   contagens | sed 's/^/[ci-db]   /'
   cat <<EOF
