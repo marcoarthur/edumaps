@@ -65,11 +65,12 @@ imagem() {
     return 0
   fi
   # Cache do GitHub Actions (opcional): o CI restaura a imagem construída de um
-  # tarball (key = hash do db/Dockerfile) e não toca no docker.io. O Docker Hub
-  # regula o acesso anónimo por IP — em rajada resolve com retry (abaixo), mas
-  # em throttle sustentado nos IPs partilhados dos runners (medido a 2026-10-09,
-  # 429 em 5 tentativas seguidas) só o cache ou autenticação resolvem. No uso
-  # local as variáveis não estão definidas e o caminho é sempre o build.
+  # tarball (key = hash do db/Dockerfile) e não toca no registry na maioria das
+  # execuções. O Docker Hub regula o acesso anónimo por IP — em rajada resolve
+  # com retry (abaixo), mas em throttle sustentado nos IPs partilhados dos
+  # runners, ou com o serviço de auth dele instável (504), só cache, espelho
+  # ou autenticação resolvem (medido a 2026-10-09: 429 e 504 em 30 min). No
+  # uso local as variáveis de cache não existem e o caminho é sempre o build.
   if [[ -n "${EDUMAPS_CI_IMAGE_TARBALL_IN:-}" && -f "$EDUMAPS_CI_IMAGE_TARBALL_IN" ]]; then
     log "carregando $IMAGEM de $EDUMAPS_CI_IMAGE_TARBALL_IN"
     if docker load -i "$EDUMAPS_CI_IMAGE_TARBALL_IN" >/dev/null 2>&1 \
@@ -78,24 +79,36 @@ imagem() {
     fi
     erro "tarball de cache inválido; caindo no build"
   fi
-  # O Docker Hub regula o acesso anónimo por IP e responde 429 Too Many
-  # Requests à resolução de manifest em rajada (medido no CI a 2026-10-09:
-  # o build da base pgvector/pgvector:pg16-bookworm derrubou o job sem
-  # retry). O build é idempotente, logo repetir com backoff cobre o rate
-  # limit transitório sem mudar o resultado.
-  local tentativa
-  for tentativa in 1 2 3 4 5; do
-    log "construindo $IMAGEM a partir de db/Dockerfile (tentativa ${tentativa}/5)"
-    if docker build -f "$RAIZ/db/Dockerfile" -t "$IMAGEM" "$RAIZ/db"; then
-      return 0
+  # Fontes da base: Docker Hub em primeiro; se estiver a recusar (429/504), a
+  # mesma imagem cai pelo espelho público do Google (mirror.gcr.io), que serve
+  # o mesmo conteúdo sem os limites anónimos por IP do Docker Hub. Taggear o
+  # espelho com o nome canónico faz o BuildKit resolver o FROM localmente, sem
+  # nova consulta ao registry. O build é idempotente: repetir com backoff não
+  # muda o resultado.
+  local fonte tentativa canonical="pgvector/pgvector:pg16-bookworm"
+  for fonte in "$canonical" "mirror.gcr.io/$canonical"; do
+    if ! docker image inspect "$canonical" >/dev/null 2>&1 && [[ "$fonte" != "$canonical" ]]; then
+      log "puxando a base pelo espelho: $fonte"
+      if docker pull "$fonte" && docker tag "$fonte" "$canonical"; then
+        log "base $canonical disponível localmente"
+      else
+        erro "espelho $fonte indisponível"
+        continue
+      fi
     fi
-    if [[ $tentativa -eq 5 ]]; then
-      break
-    fi
-    log "build falhou (tentativa ${tentativa}/5); aguardando $((tentativa * 10))s e repetindo"
-    sleep "$((tentativa * 10))"
+    for tentativa in 1 2 3; do
+      log "construindo $IMAGEM a partir de db/Dockerfile (fonte: $fonte, tentativa ${tentativa}/3)"
+      if docker build -f "$RAIZ/db/Dockerfile" -t "$IMAGEM" "$RAIZ/db"; then
+        return 0
+      fi
+      if [[ $tentativa -lt 3 ]]; then
+        log "build falhou (tentativa ${tentativa}/3); aguardando $((tentativa * 10))s e repetindo"
+        sleep "$((tentativa * 10))"
+      fi
+    done
+    log "esgotadas as tentativas com $fonte"
   done
-  erro "build da imagem $IMAGEM falhou após 5 tentativas"
+  erro "build da imagem $IMAGEM falhou (Docker Hub e espelho esgotados)"
   return 1
 }
 
