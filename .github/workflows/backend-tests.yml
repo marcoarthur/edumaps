@@ -2,8 +2,12 @@
 # zero com os fixtures de db/fixtures/.
 #
 # O que o job faz:
-#   1. Sobe o banco de CI com o espelho HTTPS local (db/fixtures/ci_db.sh up):
-#      imagem de db/Dockerfile, rede, sqitch deploy das 60+ migrations.
+#   1. Restaura a imagem do banco do cache (actions/cache, key = hash do
+#      db/Dockerfile) e sobe o banco de CI com o espelho HTTPS local
+#      (db/fixtures/ci_db.sh up): imagem de db/Dockerfile, rede, sqitch deploy
+#      das 60+ migrations. O cache existe porque o Docker Hub regula o acesso
+#      anónimo por IP (429 Too Many Requests sustenta nos runners partilhados);
+#      só reconstrói quando o Dockerfile muda.
 #   2. Roda o gate das migrations (db/fixtures/ci_db.sh verify): cada change
 #      roda o seu verify/*.sql e uma falha derruba o job (issue #160).
 #   3. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
@@ -14,6 +18,10 @@
 # O CI não depende do dataset real (765 MB): o fixture traz 18 municípios e as
 # escolas exigidas pelos testes. Para reproduzir localmente o mesmo banco,
 # rodar `db/fixtures/ci_db.sh up` e ver a lista de variáveis que ele imprime.
+#
+# Para eliminar de vez o 429 (em vez de só mitigar com cache), criar os
+# secrets DOCKERHUB_USERNAME e DOCKERHUB_TOKEN (token read-only de uma conta
+# gratuita do Docker Hub): o passo de login passa a autenticar os pulls.
 
 name: backend-tests
 
@@ -59,10 +67,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libpq-dev cpanminus
 
+      - name: cache da imagem do banco (edumaps-db:ci)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
+          key: edumaps-db-ci-${{ hashFiles('db/Dockerfile') }}
+
+      # Opcional: com DOCKERHUB_USERNAME/DOCKERHUB_TOKEN configurados, os pulls
+      # passam a ser autenticados e o 429 do Docker Hub desaparece por completo
+      # (ver o cabeçalho deste arquivo). Sem os secrets as variáveis ficam
+      # vazias e o passo é pulado. O contexto `secrets` não é permitido em `if`
+      # (só `env`), por isso os valores passam por variáveis de ambiente.
+      - name: login no Docker Hub (opcional)
+        if: env.DOCKERHUB_TOKEN != '' && env.DOCKERHUB_USERNAME != ''
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
       - name: sobe o banco de CI (imagem, espelho, sqitch deploy)
         run: db/fixtures/ci_db.sh up
         env:
           EDUMAPS_CI_PORT: '55432'
+          EDUMAPS_CI_IMAGE_TARBALL_IN: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
+          EDUMAPS_CI_IMAGE_TARBALL_OUT: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
 
       - name: gate das migrations (sqitch verify)
         run: db/fixtures/ci_db.sh verify
