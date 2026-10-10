@@ -529,3 +529,33 @@ falha sem o guard).
 | Autocomplete (`freire`) vs app | 🟢 sinais preservados |
 | Testes unitários da feature (schools) | 🟢 21 arquivos / 99 testes (incl. regressão nova) |
 | Deploy | 🟢 imagem local `frontend` reconstruída + `rex prepare` + `deploy_frontend_dev` |
+
+### Rodada 2026-10-10 — Telemetria de sessão: tracker no navegador (feat, etapa 2)
+
+**Objetivo**: certificar ponta a ponta a **etapa 2** da telemetria de sessão —
+o rastreador no navegador (Svelte/JS) que envia eventos a
+`POST /api/session/events` e os persiste em `clean.event_store` pela allowlist
+do backend (etapa 1, PR #204). Regra de privacidade: **nunca o texto digitado**.
+
+Driver próprio sobre o CDP do Chrome (`:9222`, `Network.setCacheDisabled`),
+alvo `http://ubatexu.lan:8080/escola/search` (deploy via `redeploy` +
+`deploy_frontend_dev`).
+
+| Verificação | Resultado |
+|---|---|
+| App monta com o bundle novo (`index-CKSXScwW.js` contém `api/session/events`) | 🟢 |
+| Busca por "Ubatuba" + navegação SPA (`pushState`/`popstate` → `/about`) | 🟢 input/btn/results OK, rota muda |
+| Flush no unload (`pagehide` → `sendBeacon`) | 🟢 1 `POST /api/session/events` |
+| Corpo do lote | 🟢 3 eventos: `navigate /escola/search`, `schools:search` `{q_len:7,result_count:5}`, `navigate /about` |
+| **Texto digitado no lote** | 🟢 **ausente** (nunca "Ubatuba"; allowlist corta no cliente e no servidor) |
+| Exceções / erros de console | 🟢 0 |
+| Persistência em `clean.event_store` (BD do backend) | 🟢 `source=frontend`, `session_id` único, payload só com as chaves permitidas |
+| Sessão do request de API (`Middleware::Session`) | 🟢 `session.request` com o **mesmo** `session_id` dos eventos `frontend` |
+| Testes unitários (tracker + mapeamento + gestor + busca) | 🟢 41/41 |
+| `vite build` | 🟢 OK |
+| Deploy | 🟢 `rex prepare` + `deploy_frontend_dev` + imagem local `frontend` |
+
+> **Nota de driver**: um `#app` vazio na primeira tentativa era **cache de
+> service worker** de sessão anterior, não regressão — resolvido com
+> `Network.setCacheDisabled: true` e espera pela montagem. Sem isso o probe
+> dá falso negativo (nenhuma request `/api/`, nenhuma exceção).
