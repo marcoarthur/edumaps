@@ -3,6 +3,7 @@ import { mount } from "svelte";
 import { eventBus, logger } from "@/shared/events";
 import { initSentry } from "@/shared/sentry";
 import { registerToastEventBridge } from "@/shared/stores/toastEventBridge.js";
+import { startTelemetry } from "@/app/telemetry.js";
 import "./app.css";
 import "@carbon/charts-svelte/styles.css";
 import App from "./app/App.svelte";
@@ -19,6 +20,9 @@ async function enableMocking() {
 
 eventBus.use(logger);
 registerToastEventBridge();
+// Telemetria de sessão (etapa 2): liga o tracker no bus antes de montar o app,
+// para capturar a navegação inicial e os primeiros eventos.
+startTelemetry();
 
 async function bootstrap() {
   // Sentry opcional: sem DSN retorna null e nada é inicializado.

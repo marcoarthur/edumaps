@@ -1,14 +1,14 @@
 ---
 titulo: Telemetria de sessão
 modulo: plataforma
-status: parcial
+status: ativo
 audiencia: [gestor, admin]
 relacionadas: [privacidade-lgpd, observabilidade]
 ---
 
 # Telemetria de sessão
 
-> Módulo: `plataforma` · Status: 🟡 parcial · Público: gestor, admin
+> Módulo: `plataforma` · Status: 🟢 ativo · Público: gestor, admin
 
 ## Resumo
 
@@ -43,12 +43,15 @@ precisa de evidências quantitativas de uso para priorizar melhorias.
 
 ## Nota de status
 
-A **Etapa 1 (backend)** está ativa: a sessão do visitante é identificada por
-cookie nos requests de API e as interações são persistidas em lotes. O
-rastreador no navegador (Etapa 2) que envia os eventos de navegação, busca e
-login/logout ainda não foi implementado — daí 🟡 parcial. Detalhes de
-implementação e limites de privacidade em `docs/new_ideas/...` (nota técnica
-do ciclo).
+A telemetria está **ativa nas duas pontas**. No servidor, a sessão do visitante
+é identificada por cookie nos requests de API e as interações são persistidas
+em lotes. No navegador, um rastreador envia — também em lotes — os eventos de
+navegação entre telas, buscas (só a contagem de caracteres e o total de
+resultados, nunca o texto digitado), login/logout de gestor e erros de API.
+Os tipos e campos aceitos são controlados por uma lista no servidor; o IP cru
+fica só na dimensão de sessão, com anonimização por hash diário para análises
+de longo prazo. Detalhes de implementação e limites de privacidade em
+`docs/new_ideas/...` (notas técnicas dos ciclos).
 
 ## Valor
 

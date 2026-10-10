@@ -6,6 +6,7 @@ import { of, throwError } from "rxjs";
 import SchoolSearchPage from "@/features/schools/pages/SchoolSearchPageRx.svelte";
 import * as schoolApi from "@/features/schools/api/schoolApi.js";
 import { eventBus, EVENTS } from "@/shared/events";
+import { SCHOOL_EVENTS } from "@/features/schools/constants/events.js";
 
 vi.mock("@/features/schools/api/schoolApi.js", () => ({
   searchPaginatedSchools: vi.fn(),
@@ -64,6 +65,10 @@ describe("SchoolSearchPageRx", () => {
 
   function getToastEvents() {
     return events.filter(({ event }) => event.type === EVENTS.TOAST_ADD);
+  }
+
+  function getSearchDoneEvents() {
+    return events.filter(({ event }) => event.type === SCHOOL_EVENTS.SEARCH_DONE);
   }
 
   it("deve exibir a mensagem inicial orientando a busca", () => {
@@ -146,6 +151,35 @@ describe("SchoolSearchPageRx", () => {
       type: "info",
       duration: 3000,
     });
+
+    // Telemetria: uma busca do usuário -> um schools:search com o RESUMO
+    // (q_len do termo "Brasil" = 6; total_entries = 25), nunca o texto.
+    const searchEvents = getSearchDoneEvents();
+    expect(searchEvents).toHaveLength(1);
+    expect(searchEvents[0].payload).toEqual({ q_len: 6, result_count: 25 });
+  });
+
+  it("não emite schools:search na troca de página (só na busca do usuário)", async () => {
+    schoolApi.searchPaginatedSchools.mockReturnValue(
+      of({ data: mockSchoolsData, meta: mockMeta }),
+    );
+
+    render(SchoolSearchPage);
+
+    await fireEvent.input(screen.getByLabelText(/nome da escola/i), {
+      target: { value: "Brasil" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: /buscar escolas/i }));
+
+    await waitFor(() => expect(screen.getByText("Escola E.E. Brasil")).toBeInTheDocument());
+    await waitFor(() => expect(getSearchDoneEvents()).toHaveLength(1));
+
+    await fireEvent.click(screen.getByRole("button", { name: /próxima/i }));
+
+    // passa o debounce (300ms) + o ciclo loading->pronto da paginação
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(getSearchDoneEvents()).toHaveLength(1);
   });
 
   it("deve emitir toast quando não há resultados", async () => {

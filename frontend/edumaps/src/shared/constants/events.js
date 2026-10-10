@@ -11,6 +11,10 @@
 export const EVENTS = {
   ERROR: "error",
   API_ERROR: "api:error",
+  // Navegação do SPA (shell). Emitido por App.svelte a cada mudança de rota;
+  // consumido pela telemetria (shared/telemetry) e, no futuro, por qualquer
+  // observador que precise saber "a tela mudou" sem se acoplar ao roteador.
+  NAVIGATE: "app:navigate",
   TOAST_ADD: "toast-add",
   TOAST_REMOVE: "toast-remove",
 };

@@ -1,6 +1,8 @@
 // src/features/gestor/api/gestorPesquisasApi.test.js
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { apiClient, getApiToken } from "@/shared/api/client.js";
+import { eventBus } from "@/shared/events";
+import { GESTOR_EVENTS } from "../constants/events.js";
 import {
   upsertGestor,
   listPesquisas,
@@ -96,6 +98,46 @@ describe("gestorPesquisasApi", () => {
     apiClient.get.mockResolvedValue({ id: 7, email: "m@e.gov.br" });
     await fetchMe();
     expect(apiClient.get).toHaveBeenCalledWith("/api/gestor/me");
+  });
+
+  it("loginGestor: emite gestor/login com ok=true no sucesso (sem credenciais)", async () => {
+    apiClient.post.mockResolvedValue({ token: "t", gestor: { id: 1 } });
+    const seen = [];
+    const off = eventBus.onAny((_payload, event) => seen.push(event));
+
+    await loginGestor({ email: "m@e.gov.br", senha: "senha123" });
+    off();
+
+    expect(seen).toContainEqual(
+      expect.objectContaining({ type: GESTOR_EVENTS.LOGIN, payload: { ok: true } }),
+    );
+    expect(JSON.stringify(seen)).not.toContain("senha123");
+  });
+
+  it("loginGestor: emite gestor/login com ok=false quando falha e propaga o erro", async () => {
+    apiClient.post.mockRejectedValue(new Error("credenciais invalidas"));
+    const seen = [];
+    const off = eventBus.onAny((_payload, event) => seen.push(event));
+
+    await expect(loginGestor({ email: "m@e.gov.br", senha: "errada123" })).rejects.toThrow(
+      "credenciais invalidas",
+    );
+    off();
+
+    expect(seen).toContainEqual(
+      expect.objectContaining({ type: GESTOR_EVENTS.LOGIN, payload: { ok: false } }),
+    );
+  });
+
+  it("logoutGestor: emite gestor/logout mesmo quando o servidor falha", async () => {
+    apiClient.post.mockRejectedValue(new Error("falha"));
+    const seen = [];
+    const off = eventBus.onAny((_payload, event) => seen.push(event));
+
+    await expect(logoutGestor()).rejects.toThrow("falha");
+    off();
+
+    expect(seen).toContainEqual(expect.objectContaining({ type: GESTOR_EVENTS.LOGOUT }));
   });
 
   it("logoutGestor: POST /api/gestor/logout e limpa o token mesmo com erro", async () => {
