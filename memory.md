@@ -4,6 +4,36 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (PR #203)
+
+- **Relato do usuário**: "a busca (busca escola) não retorna (vazia)" com a
+  imagem docker em `localhost:8080`.
+- **Diagnóstico (smoke CDP, browser real)**: a **busca funciona** — por nome e
+  município, `/api/school/search/pageable` 200, cards renderizados. O "vazio"
+  era um **toast espúrio na carga** de `/escola/search`: `createPaginationStore`
+  emite um ciclo loading→pronto na **montagem** (sem filtro, o adaptador de
+  `schoolPaginationStore.js` devolve `meta.total_entries = 0` **sem chamar a
+  API**) e o `notifySearchOutcome` da página convertia `total === 0` em toast
+  `Nenhuma escola encontrada.` — mesmo sem o usuário buscar nada.
+- **Fix** (branch `fix/frontend-busca-toast-vazio` → **PR #203** → merge
+  `2f4e43d`): guard `if (!hasSearched) return;` no topo de `notifySearchOutcome`
+  (`SchoolSearchPageRx.svelte`) — resultado de busca só vira toast quando o
+  usuário iniciou a busca (preserva os toasts legítimos de sucesso/vazio/erro;
+  silencia o da montagem e o do limpar). Teste de regressão novo em
+  `SchoolSearchPageRx.test.js` — **provado que falha sem o guard**.
+- **Validação**: `vitest run src/features/schools/` 99/99 (21 arquivos); smoke
+  CDP na imagem local reconstruída **e** no deploy `ubatexu.lan:8080`: carga =
+  `toasts=[]` + "Informe um nome…"; busca real = toast "Busca concluída: 1
+  escola encontrada"; vazio real (`E.M.`) = toast "Nenhuma escola encontrada.".
+- **Deploy** (pré-merge, working tree): `rex prepare` +
+  `rex -H backend.edumaps deploy_frontend_dev` + imagem local `frontend`
+  reconstruída; md5 do bundle container == local (`b2263533…`).
+- **Nota**: `E.M.` sem resultados é **dado**, não bug — nenhuma escola com esse
+  prefixo na base local; `tp_situacao_funcionamento = 1` exclui inativas por
+  design. Consistente entre curl, browser e deploy.
+- **Pendências inalteradas**: deploy do #160 segue adiado; loaders #170/#167/#168
+  aguardando direção.
+
 ## Sessão 2026-10-09 — CI backend: 429/504 do Docker Hub no build do banco (PR #202)
 
 - **Incidente**: `backend-tests` falhou no CI no último PR (runs 37992118533,

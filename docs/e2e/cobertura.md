@@ -498,7 +498,7 @@ Alvo `http://localhost:8080` (imagem local reconstruída + deploys
 | `vite build` | 🟢 OK |
 | Deploy | 🟢 `rex prepare` + `deploy_frontend_dev` + imagem local `frontend` |
 
-### Rodada 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (fix — PR deste ciclo)
+### Rodada 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (fix, PR #203)
 
 **Relato do developer**: "a busca (busca escola) não retorna (vazia)" com a
 imagem docker em `localhost:8080`.
@@ -514,7 +514,7 @@ sem o usuário buscar nada. Buscas reais sem correspondência (ex.: "E.M.",
 prefixo ausente da base local) retornam vazio **consistentemente** (curl =
 browser = `[]`), não é bug.
 
-**Fix (PR deste ciclo)**: guard `if (!hasSearched) return;` no topo de
+**Fix (PR #203, merge `2f4e43d`)**: guard `if (!hasSearched) return;` no topo de
 `notifySearchOutcome` (`SchoolSearchPageRx.svelte`) — só notifica o resultado
 de busca iniciada pelo usuário. Teste de regressão novo em
 `SchoolSearchPageRx.test.js` (montagem sem busca → 0 toasts; comprovado que
