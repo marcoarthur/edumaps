@@ -497,3 +497,35 @@ Alvo `http://localhost:8080` (imagem local reconstruída + deploys
 | Testes unitários (charts + network-compare + shared/ui) | 🟢 41/41 (9 no charts, 3 novos do guard) |
 | `vite build` | 🟢 OK |
 | Deploy | 🟢 `rex prepare` + `deploy_frontend_dev` + imagem local `frontend` |
+
+### Rodada 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (fix — PR deste ciclo)
+
+**Relato do developer**: "a busca (busca escola) não retorna (vazia)" com a
+imagem docker em `localhost:8080`.
+
+**Diagnóstico** (smoke CDP `:9222`, drivers próprios `smoke_busca*.mjs`,
+alvo `http://localhost:8080`): a **busca funcionava** (nome e município →
+`/api/school/search/pageable` 200, cards renderizados). O "vazio" era um
+**toast espúrio na carga** da página: `createPaginationStore` emite um ciclo
+loading→pronto na **montagem** (sem filtro o adaptador devolve
+`meta.total_entries = 0` **sem chamar a API**), e o `notifySearchOutcome` da
+página convertia `total === 0` em toast "Nenhuma escola encontrada." — mesmo
+sem o usuário buscar nada. Buscas reais sem correspondência (ex.: "E.M.",
+prefixo ausente da base local) retornam vazio **consistentemente** (curl =
+browser = `[]`), não é bug.
+
+**Fix (PR deste ciclo)**: guard `if (!hasSearched) return;` no topo de
+`notifySearchOutcome` (`SchoolSearchPageRx.svelte`) — só notifica o resultado
+de busca iniciada pelo usuário. Teste de regressão novo em
+`SchoolSearchPageRx.test.js` (montagem sem busca → 0 toasts; comprovado que
+falha sem o guard).
+
+| Verificação (imagem local `frontend` reconstruída, `localhost:8080`) | Resultado |
+|---|---|
+| Carga fresca de `/escola/search` — toast espúrio | 🟢 **ausente** (`toasts=[]`); corpo: "Informe um nome de escola ou município para começar" |
+| Busca por nome (`CENTRO EDUCACIONAL DE UBATUBA`) | 🟢 `/api/school/search/pageable?escola=…&page=1&per_page=10` 200; toast "Busca concluída: 1 escola encontrada" |
+| Busca por município (`Ubatuba`) | 🟢 200, resultados |
+| Busca real vazia (`E.M.`) | 🟢 200 vazio; toast legítimo "Nenhuma escola encontrada." (usuário buscou) |
+| Autocomplete (`freire`) vs app | 🟢 sinais preservados |
+| Testes unitários da feature (schools) | 🟢 21 arquivos / 99 testes (incl. regressão nova) |
+| Deploy | 🟢 imagem local `frontend` reconstruída + `rex prepare` + `deploy_frontend_dev` |
