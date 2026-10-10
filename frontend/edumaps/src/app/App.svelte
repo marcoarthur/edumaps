@@ -2,6 +2,7 @@
   // src/app/App.svelte
   import { router, link } from "./router.svelte.js";
   import { matchRoute } from "./routes.js";
+  import { eventBus, EVENTS } from "@/shared/events";
   import Toast from '@/shared/ui/components/Toast.svelte';
   import Logo from '@/shared/ui/components/Logo.svelte';
 
@@ -16,6 +17,18 @@
   ];
 
   let match = $derived(matchRoute(router.path.split("?")[0]));
+
+  // Navegação -> telemetria. Emite o PADRÃO da rota (ex.: /p/:token), nunca o
+  // pathname cru — o link público de resposta carrega um token na URL, que não
+  // pode ir para o repositório de eventos. O efeito roda no mount e a cada
+  // mudança de router.path (pushState do router.navigate ou popstate).
+  $effect(() => {
+    eventBus.emit(
+      EVENTS.NAVIGATE,
+      { route: match?.path ?? router.path.split("?")[0] },
+      { source: "App" }
+    );
+  });
 
   function navLinkClass(path) {
     const state = router.path === path ? "bg-white/20" : "hover:bg-white/10";

@@ -17,6 +17,12 @@
   });
   let hasSearched = $state(false);
 
+  // Telemetria: guarda o comprimento do termo buscado (nunca o texto) e se a
+  // próxima transição loading->pronto é de uma busca do usuário (e não de uma
+  // troca de página), para emitir um único `schools/search-done`.
+  let lastQueryLen = 0;
+  let searchPending = false;
+
   $effect(() => {
     let previousLoading = false;
 
@@ -44,6 +50,11 @@
     // o "Nenhuma escola encontrada." espúrio logo na carga de /escola/search.
     if (!hasSearched) return;
 
+    // Consome o marcador de "busca do usuário" em qualquer desfecho (sucesso
+    // ou erro), para não vazar para a próxima transição.
+    const wasUserSearch = searchPending;
+    searchPending = false;
+
     if (state.error) {
       eventBus.emit(EVENTS.TOAST_ADD, { message: state.error, type: "error", duration: 5000 });
       return;
@@ -54,6 +65,17 @@
     }
 
     const total = state.meta.total_entries;
+
+    // Telemetria: só uma busca do usuário (não paginação), e só o resumo —
+    // q_len + result_count, jamais o termo digitado.
+    if (wasUserSearch) {
+      eventBus.emit(
+        SCHOOL_EVENTS.SEARCH_DONE,
+        { q_len: lastQueryLen, result_count: total },
+        { source: "SchoolSearchPageRx" }
+      );
+    }
+
     const message =
       total === 0
         ? "Nenhuma escola encontrada."
@@ -63,6 +85,9 @@
 
   function handleSearch(filters) {
     hasSearched = true;
+    const term = (filters.escola || filters.municipio || "").trim();
+    lastQueryLen = term.length;
+    searchPending = true;
     schoolStore.setSearch({ ...filters, page: 1 });
   }
 

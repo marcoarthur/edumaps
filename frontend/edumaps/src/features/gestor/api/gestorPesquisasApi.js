@@ -4,6 +4,8 @@
 // Fase 1: cadastro do gestor + CRUD de pesquisas (rascunho -> publicada).
 // Fase 2: login do gestor e link público de resposta (token) + resultados.
 import { apiClient, setApiToken } from "@/shared/api/client.js";
+import { eventBus } from "@/shared/events";
+import { GESTOR_EVENTS } from "../constants/events.js";
 
 const BASE = "/api/gestor/pesquisas";
 
@@ -74,9 +76,16 @@ export function deletePesquisa(id) {
  * @returns {Promise<{token: string, expira_em: string, gestor: object}>}
  */
 export async function loginGestor(credenciais) {
-  const sessao = await apiClient.post("/api/gestor/login", credenciais);
-  setApiToken(sessao.token);
-  return sessao;
+  try {
+    const sessao = await apiClient.post("/api/gestor/login", credenciais);
+    setApiToken(sessao.token);
+    // Telemetria: registra o desfecho do login (nunca e-mail/senha).
+    eventBus.emit(GESTOR_EVENTS.LOGIN, { ok: true }, { source: "gestorPesquisasApi" });
+    return sessao;
+  } catch (err) {
+    eventBus.emit(GESTOR_EVENTS.LOGIN, { ok: false }, { source: "gestorPesquisasApi" });
+    throw err;
+  }
 }
 
 /** Verifica a sessão atual no servidor.
@@ -92,6 +101,7 @@ export async function logoutGestor() {
     await apiClient.post("/api/gestor/logout");
   } finally {
     setApiToken(null);
+    eventBus.emit(GESTOR_EVENTS.LOGOUT, undefined, { source: "gestorPesquisasApi" });
   }
 }
 
