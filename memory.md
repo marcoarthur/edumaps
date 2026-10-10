@@ -4,6 +4,57 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-10 — Telemetria de sessão, etapa 1: banco + backend (PR #204)
+
+- **Objetivo**: Etapa 1 (banco + backend) da telemetria — cookie de visitante,
+  `session.request` por request `/api/*`, endpoint de eventos com allowlist,
+  persistência em lote. Tracker JS é Etapa 2.
+- **Entregas** (branch `feat/backend-telemetria-sessao` → **PR #204**, **aberto**,
+  merge aguarda validação manual): `Middleware::Session` (cookie `edumaps_sid`
+  HttpOnly/SameSite=Lax/1 ano; emit antes do `Cache::SchoolSearch` para contar
+  HITs); `POST /api/session/events` (allowlist estrita; texto digitado
+  descartado); `EventLogger` bufferizado (flush 30s/500/comando; INSERT
+  multi-row + upsert de sessão); migrations `session_tracking` +
+  `event_store.session_id/gestor_id`.
+- **Bug raiz da regressão em `pesquisa.t`** (testes 3 e 12): `($c->stash('session')
+  //= {})->{gestor_id} = ...` — `//=` sobre **sub call não-lvalue** é Perl
+  inválido (`Can't modify non-lvalue subroutine call`); morria só nas rotas
+  autenticadas (`/api/gestor/me`) → `_exception` renderizava 500 depois do 200
+  ("response already rendered") → conexão morria. Fix: mutar via variável.
+- **Bug pego no probe real**: HIT de cache gravava `session.request` com rota
+  literal `"unknown"` (cache curto-circuita o dispatch → sem endpoint). Fix:
+  fallback para o path quando não há endpoint; teste novo pina HIT→path /
+  MISS→endpoint.
+- **Armadilha de schema (verifies)**: `schemas` (1ª change) faz `ALTER DATABASE
+  SET search_path = clean, analytics, raw, public, …`, então **toda tabela
+  não-qualificada cai em `clean.*` em QUALQUER ambiente** (docker local,
+  `database.edumaps`, CI). Os verifies novos checavam `table_schema='public'` e
+  **teriam quebrado o gate do CI** (`ci_db.sh verify`). Corrigido para `clean`
+  (convenção: 61 verifies usam `clean`, nenhum usa `public`). O `deploy_db_dev`
+  não roda verify, por isso passou despercebido no deploy.
+- **Fixes de suporte**: `Login.pm` defensivo (corpo JSON array não quebra mais o
+  `$body->{email}`); `add_mw` aceita opções (`$conf->{event_logger}`); comando
+  `event_logger.flush` registrado eager em `to_middleware`; `_ip_anon` com
+  `return undef unless` (evita lista vazia em contexto de push → "unbound
+  placeholder").
+- **Testes** (host, perlbrew): novos `event_logger.t`, `event_logger_buffer.t`,
+  `session.t`, `t/04-api/session/events.t` PASS; regressão `t/03-plugins/
+  middlewares` + `t/04-api` = 115 testes, só `municipio.t` #8 falha
+  (pré-existente, OSM sem dados). `t/event_bus.t` + `t/02-models/SchoolNetwork.t`
+  verdes.
+- **Validação real**: probe local (docker) e deployado (`ubatexu.lan:8080`) —
+  cookie setado/reutilizado; 3 requests (2 HIT + 1 MISS) → 3 `session.request`;
+  lote → 204 + `clean.event_store` (sem IP no payload) + `clean.session_tracking`
+  (ip + ip_anon HMAC + seen_count). No deploy: sessão `56bfb24b…`, 3 eventos.
+- **Deploy** (pré-merge, working tree): `rex prepare` + `deploy_db_dev` +
+  `deploy_backend_dev`; md5 de `Session.pm`/`EduMaps.pm`/`EventLogger.pm` batem
+  local × `backend.edumaps`. Imagens locais `backend`/`minion` reconstruídas.
+- **Docs**: `docs/funcionalidades/plataforma/telemetria-de-sessao.md` (🟡 parcial
+  — backend ativo, tracker JS planejado) + índice.
+- **Pendências**: **merge do #204 aguarda validação manual do usuário**; deploy do
+  #160 segue adiado; loaders #170/#167/#168 aguardando direção; Etapa 2 (tracker
+  JS) a fazer.
+
 ## Sessão 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (PR #203)
 
 - **Relato do usuário**: "a busca (busca escola) não retorna (vazia)" com a
