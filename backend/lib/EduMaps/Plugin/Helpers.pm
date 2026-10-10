@@ -52,7 +52,7 @@ sub _add_helpers($self, $app) {
   );
 
   $app->helper(
-    add_mw => sub ($c, $mw) {
+    add_mw => sub ($c, $mw, $opts = {}) {
       # Nome curto (SiopeTask) -> EduMaps::EventBus::Middleware::$mw;
       # classe completa (EduMaps::Middleware::Bot) é usada como está.
       my $class = $mw =~ /::/ ? $mw : "EduMaps::EventBus::Middleware::$mw";
@@ -62,7 +62,7 @@ sub _add_helpers($self, $app) {
         }
         my $weaked = $app;
         weaken($weaked);
-        $class->new(app => $weaked);
+        $class->new(app => $weaked, %$opts);
       };
       $app->event_bus->use($mw_inst->to_middleware);
     }

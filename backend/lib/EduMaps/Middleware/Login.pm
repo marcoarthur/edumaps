@@ -24,8 +24,10 @@ sub register ($self, $app, $conf = {}) {
   $app->hook(
     around_dispatch => sub ($next, $c) {
       # E-mail capturado ANTES do dispatch (corpo da requisição ainda intacto).
-      my $body  = $c->req->json || {};
-      my $email = $body->{email} // '';
+      # Defensivo: só corpos HASH (rotas de login) interessam — um array
+      # (ex.: POST /api/session/events) não deve quebrar o middleware.
+      my $body  = $c->req->json;
+      my $email = ref $body eq 'HASH' ? $body->{email} // '' : '';
 
       $next->();
 

@@ -113,3 +113,6 @@ siconfi_despesa_dca [siconfi_despesa] 2026-10-08T14:00:00Z Marco Arthur <arthurp
 analytics_esforco_fiscal_fundeb [analytics_esforco_fiscal] 2026-10-08T14:30:00Z Marco Arthur <arthurpbs@gmail.com> # Fase 2 #193: receita FUNDEB real fora do denominador (evita duplo-conto)
 comments_esic_pendente [analytics_esforco_fiscal_fundeb] 2026-10-09T09:20:00Z Marco Arthur <arthurpbs@gmail.com> # #172: comments das tabelas-fonte sem loader declaram o estado (e-SIC pendente)
 comments_inmet_mapbiomas_pendente [comments_esic_pendente] 2026-10-09T13:45:00Z Marco Arthur <arthurpbs@gmail.com> # #171 (C) + #170: INMET/MapBiomas declaram NÃO CONSTRUÍDA no schema; jobs falham com motivo
+
+session_tracking [event_store] 2026-10-10T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Telemetria: sessões de visitantes (IP retenção curta + ip_anon p/ análise)
+event_store_add_session [session_tracking] 2026-10-10T15:15:00Z Marco Arthur <arthurpbs@gmail.com> # Telemetria: event_store ganha session_id/gestor_id para atribuir interações à sessão
