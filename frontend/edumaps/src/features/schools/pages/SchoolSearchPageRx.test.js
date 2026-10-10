@@ -82,6 +82,22 @@ describe("SchoolSearchPageRx", () => {
     ).toBeInTheDocument();
   });
 
+  it("não deve emitir toast apenas por montar a página (sem busca do usuário)", async () => {
+    schoolApi.searchPaginatedSchools.mockReturnValue(
+      of({ data: mockSchoolsData, meta: mockMeta }),
+    );
+
+    render(SchoolSearchPage);
+
+    // O store (createPaginationStore) emite um ciclo loading→pronto na
+    // montagem, com debounce de 300ms. Sem busca do usuário, nenhum toast
+    // de resultado pode aparecer (regressão do toast espúrio "Nenhuma
+    // escola encontrada." na carga da página).
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(getToastEvents()).toHaveLength(0);
+  });
+
   it("oferece o acesso do gestor no cabeçalho da seção", () => {
     schoolApi.searchPaginatedSchools.mockReturnValue(of({ data: [], meta: null }));
     render(SchoolSearchPage);

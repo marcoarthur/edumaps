@@ -39,6 +39,11 @@
   });
 
   function notifySearchOutcome(state) {
+    // Sem busca iniciada pelo usuário (ex.: emissão inicial do store na
+    // montagem da página, ou limpeza), nenhum resultado vira toast — evita
+    // o "Nenhuma escola encontrada." espúrio logo na carga de /escola/search.
+    if (!hasSearched) return;
+
     if (state.error) {
       eventBus.emit(EVENTS.TOAST_ADD, { message: state.error, type: "error", duration: 5000 });
       return;
