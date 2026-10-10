@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-10 — Telemetria de sessão, etapa 2: rastreador no navegador (PR #205)
+
+- **Objetivo**: Etapa 2 (frontend) da telemetria — o tracker JS que produz os
+  eventos e os envia a `POST /api/session/events` (allowlist + persistência já
+  prontas na etapa 1/#204).
+- **Entregas** (3 commits, branch `feat/frontend-telemetria-sessao` → **PR #205**,
+  **merge `b5827dc`**): `shared/telemetry/tracker.js` (genérico: buffer 30s/200,
+  allowlist `CLIENT_EVENT_TYPES` espelhando o backend, `pagehide`→`sendBeacon`,
+  nunca lança); `app/telemetry.js` (composition root: mapa bus→cliente + envio);
+  emissores em `App.svelte` (navegação = **padrão da rota**, sem token/query),
+  `SchoolSearchPageRx.svelte` (`schools:search` só em busca do usuário, não na
+  paginação) e `gestorPesquisasApi.js` (`login {ok}` sucesso **e** falha, `logout`).
+- **Decisões de privacidade (perguntadas ao developer)**: (1) **sem opt-out/DNT
+  agora** (consciente, a revisitar); (2) **registrar login que falha**
+  (`ok:false`); (3) rota de navegação = **padrão casado** (`/p/:token`), nunca o
+  pathname cru com token.
+- **Privacidade em profundidade**: allowlist roda no cliente **e** no servidor.
+  O e2e confirmou o lote `schools:search {q_len:7, result_count:5}` — o termo
+  "Ubatuba" **nunca** saiu do navegador.
+- **Testes**: vitest **41/41** (novos `tracker.test.js` e `app/telemetry.test.js`;
+  asserções em gestor/busca, incl. regressão "não emite na paginação"). As 4
+  falhas em `gestor*Api` de upload são **pré-existentes no `main`** (confirmado
+  via `git stash`). `vite build` OK.
+- **Probe e2e real** (Chrome CDP `:9222` → `ubatexu.lan:8080`): 1 `POST`, corpo
+  com 3 eventos, **0 exceções**, **sem "Ubatuba"**; `clean.event_store`
+  (`source=frontend`, mesmo `session_id` do `session.request`). Registo em
+  `docs/e2e/cobertura.md`.
+- **Armadilha de driver**: primeira tentativa deu `#app` vazio e nenhuma request
+  `/api/`, **sem exceção** — era **cache de service worker** da sessão anterior,
+  não regressão. Resolvido com `Network.setCacheDisabled: true` + espera pela
+  montagem. Sem isso, falso negativo silencioso.
+- **Deploy**: `rex prepare` + `deploy_frontend_dev`; imagem local `frontend`
+  reconstruída + container recriado (`localhost:8080` serve o bundle novo).
+  Nenhuma mudança de backend/DB.
+- **Docs**: capacidade → 🟢 ativo (`telemetria-de-sessao.md` + índice) e NT104.
+- **Pendências**: opt-out/DNT em aberto; deploy do #160 segue adiado; loaders
+  #170/#167/#168 aguardando direção.
+
 ## Sessão 2026-10-10 — Telemetria de sessão, etapa 1: banco + backend (PR #204)
 
 - **Objetivo**: Etapa 1 (banco + backend) da telemetria — cookie de visitante,
