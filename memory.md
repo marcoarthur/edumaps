@@ -9,8 +9,8 @@
 - **Objetivo**: Etapa 1 (banco + backend) da telemetria — cookie de visitante,
   `session.request` por request `/api/*`, endpoint de eventos com allowlist,
   persistência em lote. Tracker JS é Etapa 2.
-- **Entregas** (branch `feat/backend-telemetria-sessao` → **PR #204**, **aberto**,
-  merge aguarda validação manual): `Middleware::Session` (cookie `edumaps_sid`
+- **Entregas** (branch `feat/backend-telemetria-sessao` → **PR #204**, **merge
+  `c2de82d`**): `Middleware::Session` (cookie `edumaps_sid`
   HttpOnly/SameSite=Lax/1 ano; emit antes do `Cache::SchoolSearch` para contar
   HITs); `POST /api/session/events` (allowlist estrita; texto digitado
   descartado); `EventLogger` bufferizado (flush 30s/500/comando; INSERT
@@ -51,9 +51,8 @@
   local × `backend.edumaps`. Imagens locais `backend`/`minion` reconstruídas.
 - **Docs**: `docs/funcionalidades/plataforma/telemetria-de-sessao.md` (🟡 parcial
   — backend ativo, tracker JS planejado) + índice.
-- **Pendências**: **merge do #204 aguarda validação manual do usuário**; deploy do
-  #160 segue adiado; loaders #170/#167/#168 aguardando direção; Etapa 2 (tracker
-  JS) a fazer.
+- **Pendências**: deploy do #160 segue adiado; loaders #170/#167/#168 aguardando
+  direção; Etapa 2 (tracker JS) a fazer.
 
 ## Sessão 2026-10-10 — Busca Escola: toast espúrio "Nenhuma escola encontrada." na carga (PR #203)
 
