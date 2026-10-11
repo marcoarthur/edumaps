@@ -141,6 +141,129 @@ my %TREE = (
       },
     ],
   },
+  canais => {
+    label    => 'Canais de comunicação',
+    children => [
+      {
+        key      => 'canais_email',
+        label    => 'E-mail (SMTP)',
+        children => [
+          {
+            key         => 'canais.email.smtp_host',
+            label       => 'Servidor SMTP',
+            description => 'Host do servidor de envio de e-mail.',
+            example     => 'smtp.exemplo.org',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.smtp_port',
+            label       => 'Porta SMTP',
+            description => 'Porta do servidor SMTP. 587 costuma usar TLS (STARTTLS); 465 usa TLS implícito.',
+            example     => '587',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.smtp_user',
+            label       => 'Usuário SMTP',
+            description => 'Usuário de autenticação no servidor SMTP (se exigido).',
+            example     => 'nao-responda@exemplo.org',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.smtp_password',
+            label       => 'Senha SMTP',
+            description => 'Senha de autenticação no servidor SMTP. Guardada cifrada — nunca exibida em claro.',
+            example     => '••••••••',
+            type        => 'secret',
+            sensitive   => 1,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.smtp_tls',
+            label       => 'Usar TLS',
+            description => 'Cifra a conexão SMTP (STARTTLS na porta 587, TLS implícito na 465).',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.from',
+            label       => 'E-mail do remetente',
+            description => 'Endereço que aparece como remetente das mensagens.',
+            example     => 'nao-responda@exemplo.org',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.email.from_name',
+            label       => 'Nome do remetente',
+            description => 'Nome exibido junto ao endereço do remetente.',
+            example     => 'Rede Municipal de Ensino',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 0,
+          },
+          {
+            key         => 'canais.email.enabled',
+            label       => 'Canal e-mail ativado',
+            description => 'Liga/desliga o envio de e-mail. Desligado, nenhuma mensagem é entregue.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+        ],
+      },
+      {
+        key      => 'canais_whatsapp',
+        label    => 'WhatsApp',
+        children => [
+          {
+            key         => 'canais.whatsapp.provider',
+            label       => 'Provedor',
+            description => 'link = apenas gera link wa.me (sem envio real); cloud = envio real pela WhatsApp Cloud API.',
+            example     => 'link',
+            type        => 'select',
+            options     => [qw(link cloud)],
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.whatsapp.token',
+            label       => 'Token de acesso',
+            description => 'Token permanente da WhatsApp Cloud API. Guardado cifrado — nunca exibido em claro.',
+            example     => 'EAAG...',
+            type        => 'secret',
+            sensitive   => 1,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.whatsapp.phone_number_id',
+            label       => 'ID do número',
+            description => 'Identificador do número no WhatsApp Cloud API (phone_number_id).',
+            example     => '123456789012345',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.whatsapp.enabled',
+            label       => 'Canal WhatsApp ativado',
+            description => 'Liga/desliga o envio pelo WhatsApp. Desligado, nenhuma mensagem é entregue.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+        ],
+      },
+    ],
+  },
   aparencia => {
     label    => 'Aparência',
     children => [
@@ -182,7 +305,7 @@ my %TREE = (
 
 sub config_tree ($self) {
   my @out;
-  for my $cat (qw/sistema integracoes aparencia comportamento outros/) {
+  for my $cat (qw/sistema integracoes canais aparencia comportamento outros/) {
     my $c = $TREE{$cat} or next;
     push @out, {
       key      => $cat,
@@ -429,6 +552,78 @@ sub bot_telegram_config ($self) {
     }
   }
   return \%cfg;
+}
+
+# ---------------------------------------------------------------------------
+# Consumo interno: canais de comunicação
+# ---------------------------------------------------------------------------
+
+# Lê um grupo de folhas `canais.<canal>.<sub>` e devolve um hashref pronto para
+# o construtor do canal. Segredos saem decifrados; folhas ausentes ficam de
+# fora (o canal aplica os próprios defaults).
+sub _canais_group_config ($self, $prefix, $subs, $secret_subs) {
+  my %secret = map { $_ => 1 } @$secret_subs;
+  my %cfg;
+  for my $sub (@$subs) {
+    my $row = $self->_config_row("$prefix.$sub") or next;
+    if ($secret{$sub}) {
+      next unless $row->{secret} && $row->{secret} ne '';
+      my $master_key = $ENV{EDUMAPS_CONFIG_MASTER_KEY};
+      next unless $master_key && length $master_key;
+      my $plain = eval { $self->_decrypt_secret($row->{secret}, $master_key) };
+      next unless defined $plain;
+      $cfg{$sub} = $plain;
+    }
+    else {
+      next unless defined $row->{value};
+      $cfg{$sub} = decode_json($row->{value});
+    }
+  }
+  return \%cfg;
+}
+
+# Config efetiva do canal de e-mail (canais.email.*). `enabled` é 0 por omissão
+# — nada é enviado sem decisão explícita do admin.
+sub email_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.email',
+    [qw/smtp_host smtp_port smtp_user smtp_password smtp_tls from from_name enabled/],
+    [qw/smtp_password/],
+  );
+  $cfg->{enabled} = 0 unless defined $cfg->{enabled};
+  return $cfg;
+}
+
+# Config efetiva do canal WhatsApp (canais.whatsapp.*). `provider` é 'link' por
+# omissão (sem envio real); `enabled` é 0 por omissão.
+sub whatsapp_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.whatsapp',
+    [qw/provider token phone_number_id enabled/],
+    [qw/token/],
+  );
+  $cfg->{provider} = 'link' unless defined $cfg->{provider};
+  $cfg->{enabled}  = 0 unless defined $cfg->{enabled};
+  return $cfg;
+}
+
+# Config efetiva do canal Telegram — reaproveita a config do bot já existente.
+sub telegram_config ($self) {
+  my $b = $self->bot_telegram_config;
+  return {
+    token   => $b->{token},
+    chat_id => $b->{chat_id},
+    enabled => $b->{enabled} // 0,
+  };
+}
+
+# Config pronta para `EduMaps::Channel->build_from_config($name, ...)`.
+sub channel_config ($self, $name) {
+  return undef unless defined $name;
+  return $self->email_config    if $name eq 'email';
+  return $self->whatsapp_config if $name eq 'whatsapp';
+  return $self->telegram_config if $name eq 'telegram';
+  return undef;
 }
 
 # ---------------------------------------------------------------------------
