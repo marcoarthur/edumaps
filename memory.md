@@ -4,6 +4,58 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Painel de Administração: telemetria de acesso (PR #206)
+
+- **Objetivo**: nova página `/admin` (Painel de Administração) que lê a
+  telemetria de sessão (etapas 1/#204 + 2/#205) e apresenta, em near-real-time,
+  o fluxo de acesso e uso da plataforma — **só agregados**.
+- **Entregas** (3 commits, branch `feat/painel-administracao` → **PR #206**,
+  **merge `f16206f`**):
+  - **Backend** (commit `5838678`): `GET /api/admin/telemetry/overview?window=…`
+    sob `_require_admin`; `Roles::Business::Admin::Telemetry` +
+    `Model::AdminTelemetry`; `Controller::Admin::telemetry_overview` (janela
+    inválida → 400, erro → 500); rota em `Plugin::API::Admin`;
+    `t/04-api/admin/telemetry.t`.
+  - **Frontend** (commit `9d008c4`): feature `admin` — página `/admin` (guard
+    `access_role=admin`), `TelemetryStatCard`/`TelemetryWindows`/
+    `TelemetryRoutesTable`/`TelemetryTimeseries` (Carbon `LineChart`), seletor de
+    janela, auto-refresh 30s + "Atualizar agora"; rota/nav em
+    `routes.js`/`App.svelte`; handler MSW.
+  - **Docs** (commit `75e4f7e`): capacidade
+    `docs/funcionalidades/plataforma/painel-administracao.md` + índice; rodada
+    e2e em `docs/e2e/cobertura.md`.
+- **Decisões (perguntadas ao developer no planejamento)**: métricas "essencial +
+  atividade" (logins, rotas, sessões, buscas; **sem** erros de API/5xx no v1);
+  janelas 6h/12h/24h/hoje/7d/30d (whitelist), granularidade hora (≤24h/hoje) e
+  dia (7d/30d); **endpoint único** com `logins` fixos em 6/12/24h enquanto as
+  demais métricas seguem a janela; "logins" = **gestores distintos**
+  (`COUNT(DISTINCT gestor_id)` via join `event_store(session.login ok=true) ×
+  session_tracking`); "rotas" = rotas de **frontend**
+  (`session.navigate.payload.route`); V1 com **consulta direta** (sem MV/rollup);
+  a resposta traz `granularity` para os rótulos do gráfico.
+- **Privacidade**: só agregados — nunca IP, texto de busca, User-Agent ou sessão
+  individual. Endpoint restrito a admin; a allowlist de janelas vira literais de
+  SQL no servidor (sem bind de `interval`).
+- **Validação**: backend `t/04-api/admin/` 🟢 4 arquivos / 21 testes; frontend
+  feature `admin` 🟢 4/4, suíte completa 🟢 72/76 (as 4 falhas são **pré-existentes**
+  de multipart `gestor*Api`, fora do admin), `vite build` 🟢; e2e Chrome CDP em
+  `/admin` com dados reais (logins `0/1/1`, sessões `11/3/8`, buscas `3`,
+  eventos `49`, série horária, rotas `/escola/search 44`; troca 24h→7d OK; **0**
+  requests ≥400, **0** exceções).
+- **Deploy**: `rex prepare` + `deploy_backend_dev` (restart `edumaps-web`) +
+  `deploy_frontend_dev` (build no host `backend.edumaps`). Imagens locais
+  `backend`/`minion`/`frontend` reconstruídas pós-merge.
+- **Admin de teste para o e2e**: criado via `POST /api/gestor/pesquisas/perfil`
+  (`e2e.admin.tel@edumaps.test` / `senha123`, INEP `11000171`) e promovido com
+  `UPDATE clean.gestores SET access_role='admin'` no `database.edumaps` (id `50`).
+  ⚠️ O `edu_maps.conf` deployado **não** tem o bloco `admin`
+  (`EDUMAPS_ADMIN_EMAIL`/`PASSWORD` vazias no deploy) → não há credencial de
+  bootstrap; foi preciso criar/promover uma.
+- **Pendências**: (a) sem rollup/MV — V1 consulta direta; monitorar custo da query
+  com volume; (b) `logins` fixos em 6/12/24h (não seguem o seletor) — decisão de
+  produto; (c) o admin de teste `id 50` ficou no `database.edumaps` (remover
+  quando não for mais útil).
+
 ## Sessão 2026-10-10 — Telemetria de sessão, etapa 2: rastreador no navegador (PR #205)
 
 - **Objetivo**: Etapa 2 (frontend) da telemetria — o tracker JS que produz os
