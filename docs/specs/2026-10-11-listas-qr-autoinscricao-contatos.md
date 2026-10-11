@@ -94,29 +94,34 @@ escola, canal, campos exigidos e validade. **Nunca** expor a lista de contatos.
 ### RF-004: Registrar contato (telefone, sem validação) — Essencial
 **Ator:** inscrito (não autenticado).
 **Descrição:** O sistema deve registrar `nome` + `telefone` na lista do token,
-criando o contato em `clean.contatos` (vinculado ao grupo correspondente) e
-registrando a proveniência.
+criando/reusando o contato em `clean.contatos` e vinculando-o à **lista**
+(`canal_lista_membros`), com proveniência em `canal_inscricoes`.
 **Aceite:**
 - [ ] `POST /api/canais/inscricao/:token` com `{ nome, telefone, consentimento:true }` → `201 { ok:1 }`.
 - [ ] `nome` e `telefone` obrigatórios; sem eles → `400`.
-- [ ] Contato aparece na agenda e na visão da lista do gestor.
+- [ ] Contato aparece na visão da lista do gestor (membro vinculado).
 - [ ] `consentimento` deve ser verdadeiro no MVP → senão `400`.
 
-### RF-005: Duplicidade — Essencial
+### RF-005: Duplicidade — modelo sensível e não destrutivo — Essencial
 **Ator:** sistema.
-**Descrição:** O sistema deve evitar duplicar contatos por telefone dentro da
-mesma escola.
+**Descrição:** O sistema deve evitar duplicar **contato** e **pertencimento** por
+telefone dentro da mesma lista/escola adotando um **modelo sensível e não
+destrutivo**: guarda o telefone **bruto e normalizado**, **marca** o dado
+pré-existente/não validado e **nunca descarta** registros.
 **Aceite:**
-- [ ] Mesmo telefone já inscrito na mesma lista → resposta **idempotente** (`200`/`201` sem duplicar).
-- [ ] Telefone existente em outra lista/grupo → associação à nova lista sem criar contato duplicado.
-- [ ] Normalização de telefone aplicada antes da comparação.
+- [ ] Normalização aplicada antes da comparação (guarda `telefone` bruto + `telefone_norm`).
+- [ ] Mesmo telefone já na lista → **sem novo contato e sem novo membro** (idempotente); a submissão ainda é registrada como histórico com `duplicado_de`.
+- [ ] Telefone já existente na escola (outra lista) → vincula à nova lista **sem** criar contato duplicado.
+- [ ] Divergência de nome/telefone **não sobrescreve** o existente: marca `conflito=true`.
+- [ ] Entradas do MVP ficam marcadas `validado=false` (telefone não validado); **nada é apagado**.
 
 ### RF-006: Visualizar contatos da lista — Essencial
 **Ator:** gestor autenticado.
-**Descrição:** O sistema deve listar os contatos inscritos por QR numa lista.
+**Descrição:** O sistema deve listar os **membros** (contatos vinculados) de uma
+lista, distinguindo origem e status de validação.
 **Aceite:**
-- [ ] `GET /api/gestor/:cod_inep/canais/listas/:id/inscricoes` retorna contatos (nome, telefone, quando), só da escola do gestor.
-- [ ] Contagem de inscrições aparece no detalhe da lista.
+- [ ] `GET /api/gestor/:cod_inep/canais/listas/:id/inscricoes` retorna os membros (nome, telefone, quando, `validado`, `conflito`), só da escola do gestor.
+- [ ] Contagem de membros aparece no detalhe da lista.
 - [ ] Somente o gestor dono da escola acessa (`403` caso contrário).
 
 ### RF-007: Revogação/expiração — Importante
@@ -142,8 +147,10 @@ mesma escola.
   funciona sem login.
 - **RNF-005 (Observabilidade):** cada inscrição registra proveniência
   (QR/lista) para auditoria; eventos de abuso logados.
-- **RNF-006 (Compatibilidade):** reusa `clean.contatos`/`contato_grupos` sem
-  quebrar a agenda existente; migrations Sqitch com `verify` no estilo gate.
+- **RNF-006 (Compatibilidade):** reusa `clean.contatos` sem quebrar a agenda
+  existente e **não depende de `clean.contato_grupos`** (grupos serão deprecados;
+  o pertencimento passa a ser da **lista**); migrations Sqitch com `verify` no
+  estilo gate.
 
 ## Critérios de Aceite (visão do usuário)
 
@@ -162,7 +169,7 @@ mesma escola.
 | R1 | Spam/abuso no endpoint público | Alto | rate limit, honeypot, `max_usos`, revogação, monitoramento |
 | R2 | Vazamento de PII | Alto | resposta mínima, PII só na agenda do gestor, token forte, sem listagem pública |
 | R3 | LGPD (consentimento/retenção) | Alto | consentimento explícito, anonimização de IP, retenção definida (decidir) |
-| R4 | Telefones duplicados/compartilhados | Médio | normalização + dedupe por escola (decidir política de telefones compartilhados) |
+| R4 | Telefones duplicados/compartilhados | Médio | modelo sensível não destrutivo: normaliza, reusa contato, marca `duplicado_de`/`conflito`, sem descarte |
 | R5 | QR vazado/circula além do público | Médio | revogação, expiração opcional, `max_usos` |
 | R6 | Rota pública no SPA (crawlers/deep-link) | Baixo | rota fora do guard de auth; noindex |
 | R7 | Dependência nova de geração de QR | Baixo | lib client-side leve; fallback backend SVG |
@@ -171,7 +178,8 @@ mesma escola.
 ## Dependências
 
 - Núcleo de Canais (`EduMaps::Channel`, PR #207) — para as fases de confirmação.
-- Agenda existente: `clean.contatos`, `clean.contato_grupos` (migration `gestor_reunioes`).
+- Agenda existente: `clean.contatos` (migration `gestor_reunioes`). **Não**
+  depende de `clean.contato_grupos` (será deprecado).
 - Auth do gestor (`gestor#_require_gestor`) e checagem de posse do `cod_inep`.
 - Precedente de link público: `Pesquisa#publica_form`/`publica_resposta`.
 - Frontend Svelte 5 + roteador; lib de QR (nova).
@@ -184,25 +192,30 @@ mesma escola.
 - % de duplicatas bloqueadas (qualidade dos dados).
 - Taxa de abuso (inscrições recusadas por rate limit/honeypot).
 
-## Perguntas em aberto (decidir antes/durante o MVP)
+## Decisões já tomadas
 
-1. **Lista = grupo existente?** Reutilizar `clean.contato_grupos` como "lista
-   nomeada" ou criar `clean.canal_listas` própria (com vínculo opcional a grupo)?
-2. **Normalização de telefone:** regra (só dígitos? DDD obrigatório? `+55`?) e se
-   telefone sem DDD é aceito.
-3. **Telefones compartilhados:** como deduplicar quando um número representa mais
-   de uma pessoa (ex.: telefone da família)?
-4. **Expiração default:** sem expiração, TTL fixo (ex.: 30 dias) ou configurável?
+1. **Lista própria** (`clean.canal_listas`) — **não** reutiliza
+   `clean.contato_grupos` (que será **deprecado**). O pertencimento passa a ser
+   da **lista**, via tabela de membros própria, independente de grupo.
+2. **Modelo de telefone sensível e não destrutivo:** guarda o telefone **bruto +
+   normalizado**, **marca** o dado (não validado / conflito) e **não descarta**.
+   Telefones compartilhados convivem como registros históricos/membros distintos.
+
+## Perguntas em aberto (demais)
+
+3. **Expiração default:** sem expiração, TTL fixo (ex.: 30 dias) ou configurável?
    Limite de usos por QR?
-5. **Consentimento/LGPD:** texto do consentimento, versão, e o que fazer com quem
+4. **Consentimento/LGPD:** texto do consentimento, versão, e o que fazer com quem
    não consente (bloquear? registrar anonimamente?).
-6. **IP/User-Agent:** guardar anonimizado para antiabuso, com que retenção?
-7. **Domínio/base URL** pública (HTTPS) e formato da URL do QR.
-8. **Múltiplos QR por lista / rotação** — um ativo por vez ou histórico?
-9. **Cascata:** ao excluir a lista, os contatos inscritos são apagados (dado que
-   estão em `clean.contatos`) ou desvinculados?
-10. **Rate limit:** limites concretos (por token, por IP, por janela) e se há
-    CAPTCHA simplificado no MVP.
+5. **IP/User-Agent:** guardar anonimizado para antiabuso, com que retenção?
+6. **Domínio/base URL** pública (HTTPS) e formato da URL do QR.
+7. **Múltiplos QR por lista / rotação** — um ativo por vez ou histórico?
+8. **Cascata:** ao excluir a lista, os membros são desvinculados (padrão, sem
+   descarte do contato) — confirmar; e os contatos órfãos em `clean.contatos`?
+9. **Rate limit:** limites concretos (por token, por IP, por janela) e se há
+   CAPTCHA simplificado no MVP.
+10. **`clean.contatos.telefone_norm`:** adicionar coluna normalizada (nullable,
+    backfill **marcado**, sem descarte) para dedupe indexável na escola?
 
 ---
 
@@ -233,7 +246,7 @@ Uma API por canal duplicaria roteamento, rate limit e dedupe sem ganho.
 │  Plugin::API::Canais  (PÚBLICO, novo)                              │
 │    canais#inscricao_form (GET) · canais#inscricao_create (POST)    │
 │  Model::Canal / Roles::Business::Canal                             │
-│    resolve token · rate limit · dedupe · cria contato              │
+│    resolve token · rate limit · dedupe · contato/membro           │
 │  EduMaps::Channel (núcleo existente)  ← confirmação (fases futuras)│
 └───────────────┬────────────────────────────────────────────────────┘
                 ▼
@@ -246,23 +259,24 @@ ideia de token em rota `under` sem auth, com `_valid_public_token`).
 ## Modelo de dados
 
 Novas tabelas em `clean` (migrations Sqitch, **anexadas ao fim** do plano,
-`verify` no estilo gate). A decisão "lista própria vs. reusar grupo" é a
-pergunta #1; o desenho abaixo usa **lista própria com vínculo opcional a grupo**
-(recomendação), porque QR/listas têm ciclo de vida (revogar, expirar, múltiplos
-canais) que não pertence ao grupo.
+`verify` no estilo gate). **A lista é entidade própria** (`canal_listas`), sem
+dependência de `contato_grupos` (deprecado); o pertencimento é da lista, via
+tabela de membros. O modelo de telefone é **sensível e não destrutivo** (bruto +
+normalizado, marcado, sem descarte).
 
 ```sql
-clean.canal_listas
+clean.canal_listas                     -- a "lista nomeada" (entidade canônica)
   id          bigserial PK
   cod_inep    bigint NOT NULL
   gestor_id   bigint NOT NULL REFERENCES clean.gestores(id) ON DELETE CASCADE
   nome        text NOT NULL
   canal       text NOT NULL DEFAULT 'telefone' CHECK (canal IN ('telefone'))  -- expandir depois
-  grupo_id    bigint REFERENCES clean.contato_grupos(id) ON DELETE SET NULL   -- exibição/agenda
+  descricao   text
   ativo       boolean NOT NULL DEFAULT true
   created_at  timestamptz NOT NULL DEFAULT NOW()
   updated_at  timestamptz NOT NULL DEFAULT NOW()
   UNIQUE (cod_inep, nome)
+  -- sem grupo_id: contato_grupo será deprecado; o pertencimento é da lista.
 
 clean.canal_qrcodes
   id          bigserial PK
@@ -276,30 +290,52 @@ clean.canal_qrcodes
   created_at  timestamptz NOT NULL DEFAULT NOW()
   revogado_em timestamptz
 
-clean.canal_inscricoes
+clean.canal_lista_membros              -- pertencimento (desacoplado de grupos)
+  id          bigserial PK
+  lista_id    bigint NOT NULL REFERENCES clean.canal_listas(id) ON DELETE CASCADE
+  contato_id  bigint NOT NULL REFERENCES clean.contatos(id) ON DELETE CASCADE
+  origem      text NOT NULL DEFAULT 'qrcode' CHECK (origem IN ('qrcode','manual','import'))
+  validado    boolean NOT NULL DEFAULT false -- MVP: telefone não validado
+  created_at  timestamptz NOT NULL DEFAULT NOW()
+  UNIQUE (lista_id, contato_id)              -- um contato por lista, idempotente
+  INDEX (contato_id)
+
+clean.canal_inscricoes                 -- proveniência/auditoria (append-only, sem descarte)
   id          bigserial PK
   qrcode_id   bigint NOT NULL REFERENCES clean.canal_qrcodes(id) ON DELETE CASCADE
   lista_id    bigint NOT NULL REFERENCES clean.canal_listas(id) ON DELETE CASCADE
   contato_id  bigint REFERENCES clean.contatos(id) ON DELETE SET NULL
   nome        text NOT NULL
-  telefone    text NOT NULL
-  telefone_norm text NOT NULL               -- só dígitos, para dedupe
-  ip_anon     text                          -- HMAC/sal, nunca IP puro
+  telefone    text NOT NULL                    -- como digitado (bruto)
+  telefone_norm text NOT NULL                  -- só dígitos; chave de comparação
+  validado    boolean NOT NULL DEFAULT false   -- MVP: telefone não validado
+  duplicado_de bigint REFERENCES clean.contatos(id) ON DELETE SET NULL -- contato pré-existente
+  conflito    boolean NOT NULL DEFAULT false   -- nome/telefone divergem do existente
+  ip_anon     text                             -- HMAC/sal, nunca IP puro
   user_agent  text
   consentimento_em timestamptz NOT NULL
   consentimento_versao text NOT NULL
   created_at  timestamptz NOT NULL DEFAULT NOW()
-  UNIQUE (lista_id, telefone_norm)          -- idempotência por lista
-  INDEX (lista_id), INDEX (telefone_norm)
+  INDEX (lista_id), INDEX (telefone_norm), INDEX (contato_id)
 ```
 
-Dedupe por escola usa `clean.contatos` + `telefone_norm`; o `UNIQUE(lista_id,
-telefone_norm)` garante idempotência por lista mesmo sob concorrência.
+**Dedupe não destrutivo (MVP):**
 
-> Questão: `clean.contatos` **não** tem hoje índice único por telefone. O plano
-> prevê dedupe **na camada de modelo**; um índice parcial
-> `UNIQUE (cod_inep, telefone_norm)` seria a opção robusta — decidir na pergunta
-> #2/#3 (telefones compartilhados podem inviabilizar o índice global).
+1. Normaliza o telefone (só dígitos; **sem** validação de formato).
+2. Procura um contato existente na escola por `telefone_norm`.
+   - **Existe:** não sobrescreve. Insere o membro (`ON CONFLICT DO NOTHING`) e
+     registra a inscrição com `duplicado_de = contato_id` e `conflito = (nome difere)`.
+   - **Não existe:** cria o contato (`validado=false`), insere o membro e a inscrição.
+3. **Nunca apaga**; o dado antigo/não validado permanece apenas **marcado**.
+
+`UNIQUE (lista_id, contato_id)` garante idempotência do pertencimento mesmo sob
+concorrência; `canal_inscricoes` é histórico append-only (o mesmo telefone pode
+ter várias submissões registradas — é a "marca", não um erro).
+
+> `clean.contatos` **não** tem today coluna normalizada de telefone. Para dedupe
+> indexável na escola, o caminho sensível é adicionar `telefone_norm` (nullable,
+> backfill **marcado**, sem descarte) — pergunta em aberto nº 10. No MVP, o dedupe
+> pode ser feito na camada de modelo.
 
 ## Endpoints da API
 
@@ -320,7 +356,7 @@ telefone_norm)` garante idempotência por lista mesmo sob concorrência.
 | Método | Rota | Entrada | Saída |
 |---|---|---|---|
 | GET | `/api/canais/inscricao/:token` | — | `200 {lista_nome, escola_nome, canal, campos, expira_em}` · `404/410` |
-| POST | `/api/canais/inscricao/:token` | `{nome, telefone, consentimento:true, _hp?}` | `201 {ok:1}` · `400` · `409/200` (dedupe) · `410` · `429` |
+| POST | `/api/canais/inscricao/:token` | `{nome, telefone, consentimento:true, _hp?}` | `201 {ok:1, duplicado?}` · `400` · `410` · `429` |
 
 Erros **genéricos** para token inválido/expirado (não revelar existência).
 
@@ -334,9 +370,11 @@ Erros **genéricos** para token inválido/expirado (não revelar existência).
 4. SPA faz `GET /api/canais/inscricao/:token` → renderiza form (nome, telefone,
    consentimento).
 5. `POST` → backend: valida token, rate limit, campos, consentimento → normaliza
-   telefone → dedupe → cria/atualiza `clean.contatos` (com `grupo_id` da lista) →
-   grava `canal_inscricoes` → incrementa `usos` → `201`.
-6. Gestor recarrega a lista → vê o contato (nome, telefone, data).
+   telefone → dedupe **não destrutivo** (cria contato **ou** reusa o existente,
+   `ON CONFLICT DO NOTHING` no membro, marca `duplicado_de`/`conflito`) → grava
+   `canal_inscricoes` → incrementa `usos` → `201`.
+6. Gestor recarrega a lista → vê o **membro** (nome, telefone, quando,
+   `validado`/`conflito`).
 
 ## Telas/UX mínimas
 
@@ -373,11 +411,12 @@ Erros **genéricos** para token inválido/expirado (não revelar existência).
 ## Testes
 
 - **Backend (`yath -l`):**
-  - `t/02-models/`: modelo de lista/QR (token gen/rotaciona/revoga, expiração,
-    `max_usos`, normalização, dedupe idempotente).
+  - `t/02-models/`: modelo de lista/QR/membros (token gen/rotaciona/revoga,
+    expiração, `max_usos`, normalização bruto+norm, dedupe **não destrutivo**,
+    marcação `validado`/`conflito`).
   - `t/04-api/canais/`: auth+posse (401/403), CRUD de lista, geração/revogação de
-    QR, `GET`/`POST` públicos (200/201/400/404/410/429), dedupe (409/200),
-    consentimento, resposta sem PII.
+    QR, `GET`/`POST` públicos (200/201/400/404/410/429), dedupe **não destrutivo**
+    (sem novo contato/membro; `duplicado_de`/`conflito`), consentimento, resposta sem PII.
   - Migrations: `verify` gate obrigatório.
 - **Frontend (`vitest`):** `InscricaoPublicaPage` (estados), `QRModal`
   (renderiza/usos/revoga), fluxo de criação de lista.
@@ -402,10 +441,10 @@ Erros **genéricos** para token inválido/expirado (não revelar existência).
 ## Backlog em fases
 
 **Fase 0 — MVP (telefone, sem validação)** *(esta issue)*
-- Migrations `canal_listas`/`canal_qrcodes`/`canal_inscricoes`.
+- Migrations `canal_listas`/`canal_qrcodes`/`canal_lista_membros`/`canal_inscricoes`.
 - Model/roles + endpoints de gestão e públicos (unificados).
-- Dedupe + normalização + consentimento + rate limit básico + honeypot.
-- `InscricaoPublicaPage` + `QRModal` + visão de inscrições.
+- Dedupe não destrutivo + normalização + consentimento + rate limit básico + honeypot.
+- `InscricaoPublicaPage` + `QRModal` + visão de membros.
 - Testes API/vitest/e2e + migration verify.
 
 **Fase 1 — Confirmação de posse (WhatsApp/Telegram)**
@@ -422,14 +461,16 @@ Erros **genéricos** para token inválido/expirado (não revelar existência).
 - `Channel::List::*` (envio em fila para a lista, dedupe, opt-out).
 - Múltiplos QR/segmentação; analytics de conversão; listas dinâmicas.
 
-## Decisões recomendadas (a confirmar)
+## Decisões tomadas (confirmadas com o developer)
 
 - **API unificada** `/api/canais/inscricao/:token` (canal como atributo) — atende
-  a preferência do requisito e evita duplicação.
-- **Lista própria** (`canal_listas`) com vínculo opcional a `contato_grupo`.
-- **Contato materializado** em `clean.contatos` (+ proveniência em
-  `canal_inscricoes`) — o gestor vê na agenda existente.
+  à preferência do requisito e evita duplicação.
+- **Lista própria** (`clean.canal_listas`) — **sem** vínculo a `contato_grupo`
+  (será deprecado). O pertencimento é da lista (`canal_lista_membros`).
+- **Contato materializado** em `clean.contatos` + **membro** na lista +
+  proveniência em `canal_inscricoes` — o gestor vê na visão da lista.
 - **Token UUID v4**, revogável; expiração **desligada por default** no MVP, mas
   coluna pronta.
-- **Dedupe** por telefone normalizado por escola, idempotente por lista.
+- **Dedupe não destrutivo** (modelo sensível): bruto+normalizado, reusa contato,
+  marca `duplicado_de`/`conflito`/`validado`, **sem descarte**.
 - **Consentimento obrigatório**, IP anonimizado, resposta pública mínima.
