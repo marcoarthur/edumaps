@@ -20,6 +20,9 @@ sub register ($self, $app, @args) {
 
   # Bot Telegram: envio de mensagem de teste (Fase 1B — #183).
   $auth->post('/bot/telegram/test')->to('admin#bot_telegram_test')->name('admin_bot_telegram_test');
+
+  # Telemetria de sessão: KPIs do fluxo de acesso (só agregados).
+  $auth->get('/telemetry/overview')->to('admin#telemetry_overview')->name('admin_telemetry_overview');
 }
 
 1;
