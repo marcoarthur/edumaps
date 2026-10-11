@@ -594,3 +594,41 @@ alvo `http://ubatexu.lan:8080/admin` (deploy via `rex prepare` +
 > **Nota**: a página já existia na janela visível (Chrome x11 `:9223`) para
 > validação visual. Nenhuma exceção e nenhuma request falhada em ambas as
 > janelas (24 h e 7 d).
+
+### Rodada 2026-10-11 — Listas com autoinscrição por QR (feat, issue #208)
+
+**Objetivo**: certificar ponta a ponta a **Fase 0** das listas nomeadas com QR
+para autoinscrição de contatos: migrations (`clean.canal_listas`,
+`canal_qrcodes`, `canal_lista_membros`, `canal_inscricoes`), API de gestão
+(autenticada) e face pública anônima `GET/POST /api/canais/inscricao/:token`,
+mais a SPA (gestão em `/gestor/listas` e página pública `/inscricao/:token`).
+
+Driver próprio sobre o CDP do Chrome (`:9222`), alvo `http://ubatexu.lan:8080`.
+Deploy: `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
+`deploy_frontend_dev`. A face pública exige a flag
+`canais.inscricao.enabled` (por omissão **desligada → 404**); habilitada na BD
+de dev (`app_config.items`) com `public_base_url=http://ubatexu.lan:8080`.
+
+| Verificação | Resultado |
+|---|---|
+| Migração aplicada (`database.edumaps`, `edumaps_dev`) | 🟢 4 tabelas + `sqitch.changes` com `canal_listas_autoinscricao` |
+| `sqitch verify` (banco limpo via `ci_db.sh`) | 🟢 |
+| `GET /api/canais/inscricao/:token` | 🟢 200 `{lista_nome, escola_nome, canal, campos, expira_em}` |
+| Token inválido | 🟢 404 |
+| `POST` válido | 🟢 201 `{ok:1}` |
+| `POST` telefone repetido (normalizado) | 🟢 201 `{duplicado:1}` — **sem** sobrescrever: 1 contato, 2 inscrições (`duplicado_de`, `conflito`), 1 membro, `usos` incrementado |
+| Honeypot `_hp` preenchido | 🟢 201 falso, **nada gravado** |
+| Consentimento ausente | 🟢 400 |
+| Telefone < 8 dígitos | 🟢 400 |
+| Rate limit (token+IP, 10/60 s) | 🟢 429 após o limite |
+| `GET /api/gestor/:inep/canais/listas` sem sessão | 🟢 401 |
+| SPA `/inscricao/:token` (formulário) | 🟢 lista + escola renderizam; preencher + consentir + submeter → "Inscrição confirmada!" |
+| SPA `/privacidade` (link do consentimento) | 🟢 "Política de Privacidade" renderiza (página nova desta rodada) |
+| Testes de unidade backend (`t/02-models/canal_listas.t` + `t/04-api/canais/`) | 🟢 3 arquivos / 30 testes |
+| Suíte frontend completa | 🟢 82 arquivos / 463 testes |
+
+> **Notas**: (1) o driver do plugin `opencode-chrome-devtools` **não estava
+> conectado** — usou-se um cliente CDP próprio (mesmo padrão das rodadas
+> 2026-09-28 e 2026-10-09). (2) A flag por omissão desligada é intencional
+> (endpoint público inexistente até decisão do admin). (3) Dados de teste
+> criados em dev: lista `E2E Coord 208` (escola de gestor id 2).

@@ -13,6 +13,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/about");
   });
 
+  it("encontra a rota de política de privacidade /privacidade", () => {
+    const match = matchRoute("/privacidade");
+    expect(match?.path).toBe("/privacidade");
+  });
+
   it("encontra a rota de análise de clusters /cluster/geotag", () => {
     const match = matchRoute("/cluster/geotag");
     expect(match?.path).toBe("/cluster/geotag");
@@ -71,6 +76,16 @@ describe("matchRoute", () => {
   it("captura o token na rota dinâmica /p/:token", () => {
     const match = matchRoute("/p/9f8f36e2-1234-4abc-8def-000000000000");
     expect(match?.path).toBe("/p/:token");
+    expect(match?.params.token).toBe("9f8f36e2-1234-4abc-8def-000000000000");
+  });
+
+  it("encontra a lista de gestão /gestor/listas", () => {
+    expect(matchRoute("/gestor/listas")?.path).toBe("/gestor/listas");
+  });
+
+  it("captura o token na rota pública de inscrição /inscricao/:token", () => {
+    const match = matchRoute("/inscricao/9f8f36e2-1234-4abc-8def-000000000000");
+    expect(match?.path).toBe("/inscricao/:token");
     expect(match?.params.token).toBe("9f8f36e2-1234-4abc-8def-000000000000");
   });
 

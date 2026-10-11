@@ -1,0 +1,51 @@
+---
+titulo: Listas com autoinscrição por QR
+modulo: gestor
+status: ativo
+audiencia: [gestor, comunidade]
+relacionadas: [contatos-grupos, privacidade-lgpd]
+---
+
+# Listas com autoinscrição por QR
+
+> Módulo: `gestor` · Status: 🟢 ativo · Público: gestor · comunidade
+
+## Resumo
+
+A plataforma permite criar uma lista nomeada e publicá-la por um QR code (ou
+link) para que as pessoas se inscrevam sozinhas, informando nome e telefone,
+sem precisar de convite individual.
+
+## Para quem
+
+Gestores escolares que querem reunir interessados (por exemplo, uma lista de
+uma ação, reunião ou grupo de contato) e a própria comunidade, que se inscreve
+pelo celular.
+
+## O que o sistema permite
+
+- Sistema pode criar listas nomeadas por escola.
+- Sistema pode gerar um QR code (e um link) para uma lista, com validade e
+  limite de inscrições opcionais, e revogá-lo a qualquer momento.
+- Sistema pode receber inscrições feitas pela comunidade a partir do QR code,
+  sem conta e sem e-mail.
+- Sistema pode reconhecer quem já estava inscrito pelo telefone, evitando
+  duplicatas sem descartar a submissão anterior.
+- Sistema pode listar os inscritos de cada lista para o gestor.
+
+## Valor
+
+Reduz o trabalho de convidar contato a contato e amplia o alcance: basta
+publicar o QR code. A escola mantém o controle de quem entra em cada lista e
+pode encerrar o link quando quiser.
+
+## Nota
+
+As inscrições carregam nome e telefone — dados pessoais. O acesso é restrito ao
+gestor da escola, o telefone é tratado como informação sensível e a submissão
+exige consentimento explícito (ver Privacidade e LGPD).
+
+## Relacionadas
+
+- [Contatos e grupos](contatos-grupos.md)
+- [Privacidade e LGPD](../plataforma/privacidade-lgpd.md)

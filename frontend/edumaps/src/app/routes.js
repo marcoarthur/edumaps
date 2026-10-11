@@ -1,5 +1,6 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
+import PrivacidadePage from "@/features/privacidade";
 import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
@@ -7,6 +8,7 @@ import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage } from "@/features/config";
 import { AdminTelemetryPage } from "@/features/admin";
 import { PublicaRespostaPage } from "@/features/resposta";
+import { InscricaoPublicaPage } from "@/features/inscricao";
 import {
   GestorAcessoPage,
   GestorPanelPage,
@@ -14,6 +16,7 @@ import {
   GestorPesquisasWizardPage,
   GestorPesquisasResultadosPage,
   GestorContatosPage,
+  GestorListasPage,
   GestorReunioesPage,
   GestorReunioesWizardPage,
   GestorReuniaoDetailPage,
@@ -35,6 +38,7 @@ import {
 export const routes = [
   { path: "/", component: HomePage },
   { path: "/about", component: AboutPage },
+  { path: "/privacidade", component: PrivacidadePage },
   { path: "/municipio/compare", component: NetworkComparePage },
   { path: "/municipio/perfil", component: NetworkProfilePage },
   { path: "/cluster/geotag", component: ClusterGeotagPage },
@@ -54,6 +58,7 @@ export const routes = [
   { path: "/config", component: ConfigPage },
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
+  { path: "/gestor/listas", component: GestorListasPage },
   { path: "/gestor/reunioes", component: GestorReunioesPage },
   { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },
   { path: "/gestor/reunioes/:id", component: GestorReuniaoDetailPage },
@@ -63,6 +68,7 @@ export const routes = [
   { path: "/gestor/relacoes/:id", component: GestorRelacaoDetailPage },
   { path: "/gestor/documentos", component: GestorDocumentosPage },
   { path: "/p/:token", component: PublicaRespostaPage },
+  { path: "/inscricao/:token", component: InscricaoPublicaPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
 

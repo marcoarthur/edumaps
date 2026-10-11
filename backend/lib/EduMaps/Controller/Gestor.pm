@@ -331,6 +331,112 @@ sub grupos_destroy($self) {
 }
 
 # ---------------------------------------------------------------------------
+# canais: listas nomeadas com QR para autoinscrição (issue #208)
+# ---------------------------------------------------------------------------
+# Gestão das listas da escola (A1). A face pública é anônima e vive em
+# Controller::Canais (Plugin::API::Canais); aqui só há CRUD autenticado com
+# posse do cod_inep (under _require_gestor + _gestor_inep_ok).
+
+sub canais_listas_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->listar_listas($self->param('cod_inep')));
+}
+
+sub canais_listas_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('nome', 'trim')->size(1, 120);
+  $v->optional('canal', 'trim')->size(1, 20);
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $lista = $self->_guard_api(sub {
+    $model->criar_lista(
+      cod_inep  => $self->param('cod_inep'),
+      gestor_id => $self->stash('gestor')->{id},
+      nome      => $v->param('nome'),
+      canal     => $v->param('canal'),
+      descricao => $input->{descricao},
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_conflict($lista->{error})
+    if ref $lista eq 'HASH' && $lista->{error};
+  return $self->_render_not_found('Lista não pôde ser criada')
+    unless $lista && $lista->{id};
+  $self->render(status => 201, json => $lista);
+}
+
+sub canais_listas_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $lista = $model->detalhe_lista($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista não encontrada') unless $lista;
+  $self->render(json => $lista);
+}
+
+# "Excluir" = desativar (soft delete, sem descarte do histórico). Idempotente
+# sobre listas já inativas; 404 quando a lista não é da escola.
+sub canais_listas_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $res = $model->excluir_lista($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista não encontrada') unless $res;
+  $self->render(status => 204, text => '');
+}
+
+# Gera (ou rotaciona) o QR público da lista. Resposta: {token,url,expira_em,...}.
+sub canais_qrcode_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->optional('max_usos', 'trim')->num;
+  return $self->_render_validation($v) if $v->has_error;
+
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $qr = $self->_guard_api(sub {
+    $model->gerar_qrcode(
+      cod_inep  => $self->param('cod_inep'),
+      lista_id  => $self->param('id'),
+      gestor_id => $self->stash('gestor')->{id},
+      expira_em => $input->{expira_em},
+      max_usos  => $v->param('max_usos'),
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Lista não encontrada ou inativa')
+    if ref $qr eq 'HASH' && $qr->{error};
+  $self->render(status => 201, json => $qr);
+}
+
+# Revoga o QR ativo da lista (imediato). Sem QR ativo -> 404.
+sub canais_qrcode_revoke($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $qr = $model->revogar_qrcode($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Nenhum QR ativo para revogar')
+    if ref $qr eq 'HASH' && $qr->{error};
+  $self->render(status => 204, text => '');
+}
+
+# Membros da lista (RF-006): só para o gestor da escola dona (posse via model).
+sub canais_inscricoes_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $rows = $model->listar_inscricoes($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista não encontrada') unless defined $rows;
+  $self->render(json => $rows);
+}
+
+# ---------------------------------------------------------------------------
 # gestor responsável pela agenda
 # ---------------------------------------------------------------------------
 

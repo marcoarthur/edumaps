@@ -60,6 +60,7 @@
 | [Pesquisas com a comunidade](gestor/pesquisas.md) | Ouvir a comunidade e ler os resultados agregados. | 🟢 |
 | [Reuniões e atas](gestor/reunioes-atas.md) | Agendar reuniões, gerar convite, registrar ata e anexos. | 🟢 |
 | [Contatos e grupos](gestor/contatos-grupos.md) | Organizar a agenda de contatos da escola. | 🟢 |
+| [Listas com autoinscrição por QR](gestor/listas-autoinscricao.md) | Publicar uma lista por QR code para a comunidade se inscrever, evitando duplicatas. | 🟢 |
 | [Inventário escolar](gestor/inventario.md) | Inventariar recursos e serviços, partindo do Censo. | 🟢 |
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
