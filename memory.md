@@ -62,13 +62,19 @@
   `deploy_frontend_dev` OK; migração confirmada em `edumaps_dev`
   (`database.edumaps`); flag `canais.inscricao.enabled=true` e
   `public_base_url=http://ubatexu.lan:8080` em `app_config.items`.
-- **⚠️ Disco cheio no rebuild local**: o `docker compose build` falhou com
-  `no space left on device` (`/var/lib/containerd`, `/` em 100%). Resolvido com
-  `docker builder prune -f` (~5,8 GB liberados); imagens `sqitch`/`backend`/
-  `minion`/`frontend` reconstruídas, `docker compose up -d`, md5 do código no
-  container confere com o `main`. **Follow-up pedido pelo developer**: mover o
-  **data-root do Docker para a partição de `/home`** (onde precisar `sudo`, o
-  developer passa a senha na hora) — fazer após este ciclo.
+- **Infra local — root do containerd movido para `/home` (feito).** O rebuild
+  local enchia `/` (32GB) porque o Docker 29 usa o **containerd image store**
+  (`Storage Driver: overlayfs`, `driver-type: io.containerd.snapshotter.v1`):
+  imagens e build cache vivem em `/var/lib/containerd` (em `/`), **não** no
+  `data-root` do Docker — que já apontava para `/home/itaipu/docker-data` e
+  guardava quase nada. Correção: `/root/…` → `root = "/home/itaipu/containerd-data"`
+  em `/etc/containerd/config.toml` (config **version 4**; `disabled_plugins`
+  não pode mais usar o apelido `cri`, exige URI — deixado no default `[]`),
+  parada de `docker`+`containerd`, `rsync -aHAX` de 9,9GB, restart e remoção do
+  root antigo. Resultado: `/` de 100% → **60% (12GB livres)**; imagens/containers
+  preservados; stack reerguida e validada (md5 do backend confere, `/privacidade`
+  → 200, DB healthy). Backup da config antiga em
+  `/etc/containerd/config.toml.orig-20261011-141103`.
 - **Pendências herdadas (fora da Fase 0)**: banner/aviso na
   `ConfigPage.svelte` sobre canais; reverts ausentes de
   `canal_confirmacoes`/`canal_mensagens`; atualizar

@@ -175,9 +175,17 @@ OK. Rodada registrada em `docs/e2e/cobertura.md`.
 O `docker compose build` falhou com `no space left on device`
 (`/var/lib/containerd`, `/` em **100%**). O build cache acumulado tinha **5,8 GB
 recuperáveis**; `docker builder prune -f` liberou o espaço e o build passou.
-**Follow-up pedido pelo developer**: mover o **data-root do Docker para a
-partição de `/home`**, para não repetir o problema (onde precisar `sudo`, o
-developer fornece a senha na hora).
+
+**Causa raiz e correção (mesmo dia):** o Docker 29 usa o **containerd image
+store** (`Storage Driver: overlayfs`, `driver-type:
+io.containerd.snapshotter.v1`), então imagens e build cache vivem em
+`/var/lib/containerd` (em `/`, 32GB), **não** no `data-root` do Docker — que já
+estava em `/home/itaipu/docker-data` e guardava quase nada. Correção: mover o
+`root` do containerd para `/home` (`/etc/containerd/config.toml`, config
+**version 4** — atenção: `disabled_plugins` não aceita mais o apelido `cri`,
+exige URI; deixado no default `[]`), parar `docker`+`containerd`, `rsync -aHAX`
+(9,9GB), restart e remover o root antigo. Resultado: `/` de 100% → **60%**. A
+partição `/home` (421GB) passa a hospedar todo o armazenamento de containers.
 
 ## Documentação funcional
 
