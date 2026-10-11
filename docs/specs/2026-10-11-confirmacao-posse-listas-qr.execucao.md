@@ -138,3 +138,67 @@ template + endpoints de código. Onda 3: integração, e2e, docs, PR.
 - **Contrato:** campos conferidos lado a lado (`exige_confirmacao`,
   `membros_confirmados/pendentes`, `estado`, `confirmado_via/em`, `canais[].url`,
   `expira_em`).
+
+## Onda 2 — contrato (congelado)
+
+Mantém tudo da onda 1. Os endpoints do WhatsApp já descritos acima passam a
+existir no backend **exatamente** como estão (o frontend já os consome).
+
+### Público
+
+| Método | Rota | Entrada | Saída |
+|---|---|---|---|
+| POST | `/api/canais/confirmacao/:ref/whatsapp` | — | `202 {enviado:1, expira_em}` · `404` · `409` · `429` |
+| POST | `/api/canais/confirmacao/:ref/whatsapp/verificar` | `{codigo}` | `200 {estado:"confirmado"}` · `400` · `410` |
+| POST | `/api/canais/telegram/webhook` | update do Telegram (JSON) | `200 {ok:1}` · `401` (header `X-Telegram-Bot-Api-Secret-Token` ausente/errado) · `404` (feature desligada ou `recebimento` ≠ `webhook`) |
+
+- WhatsApp: `expira_em` do **código** (TTL 10 min); limite de 3 envios por
+  ref e por telefone em 1h (`429`); `409` se o canal whatsapp não está
+  disponível; `410` em código expirado ou tentativas excedidas (5).
+- Webhook: sempre `200` para updates válidos, mesmo os ignorados (o Telegram
+  não deve reenviar).
+
+### Admin (Bearer admin, mesmo guard de `/api/admin/config`)
+
+| Método | Rota | Saída |
+|---|---|---|
+| GET | `/api/admin/canais/telegram/status` | `200 {enabled, recebimento, bot_username, webhook:{url, pending_update_count, last_error_message}?, polling:{ativo, offset}}` |
+| POST | `/api/admin/canais/telegram/webhook` | `200 {ok:1, url}` · `409` (recebimento ≠ webhook, ou sem `public_base_url`/secret) · `502` (Telegram recusou) |
+| DELETE | `/api/admin/canais/telegram/webhook` | `200 {ok:1}` · `502` |
+| POST | `/api/admin/canais/telegram/polling` | `202 {ok:1, job_id}` (ou `200 {ok:1, ja_ativo:1}`) · `409` (recebimento ≠ polling ou bot desligado) |
+
+URL do webhook: `<canais.inscricao.public_base_url>/api/canais/telegram/webhook`.
+
+### Comportamento do bot (Telegram::Updates)
+
+- `/start <ref>` com ref pendente → grava `telegram_chat_pendente`, responde
+  com teclado `request_contact` ("Compartilhar meu número", `one_time_keyboard`).
+- `contact` com `user_id == from.id` → localiza a ref pendente pelo `chat_id`
+  → número normalizado (tolerância ao `55`) igual ao `telefone_norm` →
+  `concluir(via=telegram, telegram_chat_id)` e resposta de sucesso (remove o
+  teclado); diferente → `registrar_conflito`, resposta "número não confere".
+- contato de terceiro → recusa; `/start` sem ref válida, ou qualquer outra
+  mensagem → resposta fixa curta. Rate limit simples por `chat_id`.
+- Cada envio do bot registra em `canal_mensagens` (operação `confirmacao`).
+
+### Polling
+
+Task Minion `telegram_polling`: `getUpdates(offset, timeout=25)` → `handle` →
+persiste `update_offset` em `canal_telegram_estado` → reagenda a si mesma
+enquanto `enabled` e `recebimento=polling`. Lock Minion
+`telegram_polling:<bot>` garante um único job ativo. Iniciada pelo endpoint
+admin e, no boot do worker, se a config pedir polling.
+
+### Frontend (onda 2)
+
+`ConfigPage`, grupo "Telegram (bot público)": painel de status e ações
+"Registrar webhook" / "Remover webhook" (modo webhook) e "Iniciar polling"
+(modo polling), contra os endpoints admin acima.
+
+| ID | Trilha | Escopo | Status |
+|----|--------|--------|--------|
+| B1 | T-A | `Channel::Telegram::Updates` + envio com teclado pelo bot público | ⚪ |
+| B2 | T-A | Webhook público + endpoints admin (status/webhook/polling) | ⚪ |
+| B3 | T-A | Task `telegram_polling` (offset, lock, reagendamento) | ⚪ |
+| B4 | T-A | WhatsApp: template de autenticação + endpoints de código | ⚪ |
+| F3 | T-B | ConfigPage: status e ações do bot público | ⚪ |
