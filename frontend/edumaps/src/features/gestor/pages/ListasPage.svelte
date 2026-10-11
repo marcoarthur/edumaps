@@ -2,11 +2,14 @@
 <script>
   // Listas e QR: cria listas nomeadas, gera/rotaciona o QR code de
   // autoinscrição e vê os contatos que se inscreveram (issue #208, Fase 0).
+  // Issue #212: a lista pode exigir a confirmação do telefone; o gestor liga/
+  // desliga a opção, vê o estado de cada membro (selo) e filtra por estado.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import {
     listListas,
     createLista,
+    atualizarLista,
     getLista,
     deleteLista,
     gerarQrCode,
@@ -30,11 +33,24 @@
 
   let listas = $state([]);
   let novaAberto = $state(false);
-  let nova = $state({ nome: "", descricao: "" });
+  let nova = $state({ nome: "", descricao: "", exige_confirmacao: false });
 
   let selecionada = $state(null);
   let membros = $state([]);
   let membrosCarregando = $state(false);
+  let filtroEstado = $state("todos"); // todos | confirmado | pendente | nao_exigida
+  let salvandoExige = $state(false);
+
+  const FILTROS = [
+    { valor: "todos", rotulo: "Todos" },
+    { valor: "confirmado", rotulo: "Confirmados" },
+    { valor: "pendente", rotulo: "Pendentes" },
+    { valor: "nao_exigida", rotulo: "Não exigida" },
+  ];
+
+  let membrosFiltrados = $derived(
+    filtroEstado === "todos" ? membros : membros.filter((m) => m.estado === filtroEstado),
+  );
 
   let qrcodeAberto = $state(null); // { lista, qrcode }
   let gerando = $state(false);
@@ -81,9 +97,10 @@
       const criada = await createLista(inep, {
         nome,
         descricao: nova.descricao.trim() || null,
+        exige_confirmacao: nova.exige_confirmacao,
       });
       listas = [criada, ...listas];
-      nova = { nome: "", descricao: "" };
+      nova = { nome: "", descricao: "", exige_confirmacao: false };
       novaAberto = false;
       addToast("Lista criada.", "success");
     } catch (err) {
@@ -110,8 +127,33 @@
     }
   }
 
+  async function alternarExigeConfirmacao(lista, exige, el = null) {
+    salvandoExige = true;
+    try {
+      const detalhe = await atualizarLista(inep, lista.id, { exige_confirmacao: exige });
+      atualizarListaLocal({ ...detalhe, id: lista.id, exige_confirmacao: exige });
+      addToast(
+        exige
+          ? "Confirmação do telefone passou a ser exigida."
+          : "Confirmação do telefone deixou de ser exigida.",
+        "success",
+      );
+      // o estado derivado dos membros muda (pendente ↔ não exigida)
+      if (selecionada === lista.id) {
+        membros = await listInscricoes(inep, lista.id);
+      }
+    } catch (err) {
+      if (el) el.checked = !exige; // desfaz o clique: a lista não mudou
+      const msg = onApiError(err, "Não foi possível atualizar a lista.");
+      if (msg) addToast(msg, "error");
+    } finally {
+      salvandoExige = false;
+    }
+  }
+
   async function abrirMembros(lista) {
     selecionada = lista.id;
+    filtroEstado = "todos";
     membrosCarregando = true;
     membros = [];
     try {
@@ -248,6 +290,19 @@
             placeholder="Descrição (opcional)"
             class="w-full h-9 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              bind:checked={nova.exige_confirmacao}
+              class="mt-0.5 accent-blue-600"
+            />
+            <span>
+              Exigir confirmação do telefone
+              <span class="block text-xs text-gray-500">
+                Quem se inscrever confirma o número pelo Telegram ou WhatsApp.
+              </span>
+            </span>
+          </label>
           <button
             type="submit"
             class="w-full h-9 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -271,6 +326,9 @@
                     · <span class="text-green-700 font-medium">QR ativo</span>
                   {:else}
                     · <span class="text-gray-400">sem QR</span>
+                  {/if}
+                  {#if lista.exige_confirmacao}
+                    · <span class="text-blue-700 font-medium">exige confirmação</span>
                   {/if}
                 </p>
               </div>
@@ -302,11 +360,53 @@
 
     {#if selecionada != null}
       {@const listaSel = listas.find((l) => l.id === selecionada)}
-      <section class="space-y-2">
-        <h2 class="text-sm font-semibold text-gray-900">
-          Inscrições — {listaSel?.nome ?? ""}
-        </h2>
-        <MembrosTable {membros} carregando={membrosCarregando} />
+      <section class="space-y-2" data-testid="lista-detalhe">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-sm font-semibold text-gray-900">
+            Inscrições — {listaSel?.nome ?? ""}
+          </h2>
+          {#if listaSel}
+            <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(listaSel.exige_confirmacao)}
+                disabled={salvandoExige}
+                onchange={(e) => alternarExigeConfirmacao(listaSel, e.currentTarget.checked, e.currentTarget)}
+                class="accent-blue-600"
+              />
+              Exigir confirmação do telefone
+            </label>
+          {/if}
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          {#if listaSel?.exige_confirmacao}
+            <p class="text-xs text-gray-600" data-testid="contadores-confirmacao">
+              <span class="font-semibold text-green-700">{listaSel.membros_confirmados ?? 0}</span> confirmado(s)
+              · <span class="font-semibold text-amber-700">{listaSel.membros_pendentes ?? 0}</span> pendente(s)
+            </p>
+          {/if}
+          <label class="ml-auto flex items-center gap-2 text-xs text-gray-600">
+            Estado
+            <select
+              bind:value={filtroEstado}
+              aria-label="Filtrar por estado"
+              class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white"
+            >
+              {#each FILTROS as f (f.valor)}
+                <option value={f.valor}>{f.rotulo}</option>
+              {/each}
+            </select>
+          </label>
+        </div>
+
+        <MembrosTable
+          membros={membrosFiltrados}
+          carregando={membrosCarregando}
+          mensagemVazia={membros.length > 0
+            ? "Nenhuma inscrição neste estado."
+            : undefined}
+        />
       </section>
     {/if}
   {/if}

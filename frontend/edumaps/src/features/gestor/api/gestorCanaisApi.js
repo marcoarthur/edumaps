@@ -12,6 +12,12 @@
 //   POST   /listas/:id/qrcode          gerar/rotacionar QR → {token,url,expira_em}
 //   DELETE /listas/:id/qrcode          revogar QR
 //   GET    /listas/:id/inscricoes      membros (nome, telefone, quando, validado, conflito)
+//
+// Confirmação de posse do telefone (issue #212, contrato da onda 1):
+//   POST   /listas                     aceita `exige_confirmacao` (default false)
+//   PATCH  /listas/:id                 {nome?, descricao?, exige_confirmacao?} → detalhe · 400 · 409 · 404
+//   GET    /listas, /listas/:id        + exige_confirmacao, membros_confirmados, membros_pendentes
+//   GET    /listas/:id/inscricoes      + estado (nao_exigida|pendente|confirmado), confirmado_via, confirmado_em
 
 import { apiClient } from "@/shared/api/client.js";
 
@@ -34,11 +40,28 @@ export function listListas(inep) {
 }
 
 /**
- * @param {{nome: string, descricao?: string|null}} lista
+ * @param {{nome: string, descricao?: string|null, exige_confirmacao?: boolean}} lista
  * @returns {Promise<object>} lista criada
  */
-export function createLista(inep, { nome, descricao = null }) {
-  return apiClient.post(BASE(inep), { nome, descricao: descricao || null });
+export function createLista(inep, { nome, descricao = null, exige_confirmacao = false }) {
+  return apiClient.post(BASE(inep), {
+    nome,
+    descricao: descricao || null,
+    exige_confirmacao: Boolean(exige_confirmacao),
+  });
+}
+
+/**
+ * Altera nome/descrição/exigência de confirmação. Só envia os campos passados.
+ * @param {{nome?: string, descricao?: string|null, exige_confirmacao?: boolean}} mudancas
+ * @returns {Promise<object>} detalhe da lista atualizada
+ */
+export function atualizarLista(inep, id, mudancas = {}) {
+  const body = {};
+  for (const campo of ["nome", "descricao", "exige_confirmacao"]) {
+    if (mudancas[campo] !== undefined) body[campo] = mudancas[campo];
+  }
+  return apiClient.patch(`${BASE(inep)}/${id}`, body);
 }
 
 /** @returns {Promise<object>} detalhe da lista (com n_membros) */
@@ -64,7 +87,8 @@ export function revogarQrCode(inep, id) {
 }
 
 /**
- * @returns {Promise<Array>} [{id, contato_id, nome, telefone, quando, validado, conflito, origem}]
+ * @returns {Promise<Array>} [{id, contato_id, nome, telefone, quando, validado, conflito, origem,
+ *   estado, confirmado_via, confirmado_em}]
  */
 export function listInscricoes(inep, id) {
   return apiClient.get(`${BASE(inep)}/${id}/inscricoes`).then(comoMembros);
