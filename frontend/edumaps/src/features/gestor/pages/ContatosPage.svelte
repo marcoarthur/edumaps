@@ -257,6 +257,10 @@
         >Sair</button>
       {/if}
       <a
+        href="/gestor/listas"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Listas e QR →</a>
+      <a
         href="/gestor/reunioes"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Reuniões →</a>

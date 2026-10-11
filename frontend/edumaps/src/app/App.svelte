@@ -38,7 +38,7 @@
 </script>
 
 <div class="min-h-screen flex flex-col">
-  {#if match?.path === "/p/:token"}
+  {#if match?.path === "/p/:token" || match?.path === "/inscricao/:token"}
     {#if match}
       <match.component token={match.params.token} />
     {/if}
