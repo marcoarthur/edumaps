@@ -27,6 +27,10 @@ requires "Getopt::Long" => "0";
 requires "HTTP::Tiny" => "0";
 requires "IO::All" => "0";
 requires "IO::Pager" => "0";
+# Canal de e-mail: Net::SMTP é núcleo (libnet); IO::Socket::SSL é exigido
+# pelo ramo TLS (SMTPS na 465 / STARTTLS na 587). Ambos declarados por
+# convenção do repo (core usado em lib/ é declarado explicitamente).
+requires "IO::Socket::SSL" => "0";
 requires "IPC::Run" => "0";
 requires "JSON" => "0";
 requires "JSON::PP" => "0";
@@ -58,6 +62,7 @@ requires "Mojolicious::Controller" => "0";
 requires "Mojolicious::Plugin" => "0";
 requires "Mojolicious::Plugin::Status" => "0";
 requires "Mojolicious::Validator" => "0";
+requires "Net::SMTP" => "0";
 requires "PDL" => "0";
 requires "PDL::NiceSlice" => "0";
 requires "PDL::Stats::Kmeans" => "0";

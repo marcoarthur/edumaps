@@ -7,7 +7,8 @@ use utf8;
 # ============================================================================
 #
 # Valida e normaliza o endereço (domínio em minúsculas) e entrega via SMTP
-# (Net::SMTP, núcleo do Perl — sem dependência nova). As credenciais vêm de
+# (Net::SMTP, núcleo do Perl; em TLS usa IO::Socket::SSL — ambos declarados
+# no cpanfile por convenção do repo). As credenciais vêm de
 # `canais.email.*` (Painel de Configuração; senha cifrada). Sem SMTP
 # configurado a entrega falha com erro explícito — nunca silencioso.
 
@@ -63,7 +64,9 @@ sub _smtp_transaction ($self, $cfg, $to, $from, $envelope) {
   require Net::SMTP;
   my $port = $cfg->{smtp_port} // 25;
   my %args = (Port => $port, Timeout => 10);
-  # 465 é SMTPS implícito; 587 usa STARTTLS depois de conectar.
+  # 465 é SMTPS implícito; 587 usa STARTTLS depois de conectar. Ambos exigem
+  # IO::Socket::SSL (declarado no cpanfile).
+  require IO::Socket::SSL if $cfg->{smtp_tls};
   $args{SSL} = 1 if $cfg->{smtp_tls} && $port == 465;
 
   my $smtp = Net::SMTP->new($cfg->{smtp_host}, %args)
