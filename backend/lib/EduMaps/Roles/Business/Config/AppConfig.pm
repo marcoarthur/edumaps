@@ -272,7 +272,7 @@ my %TREE = (
             description => 'Liga/desliga o endpoint público de autoinscrição (listas com QR). Desligado, o GET/POST público responde 404.',
             type        => 'boolean',
             sensitive   => 0,
-            enabled     => 0,
+            enabled     => 1,
           },
           {
             key         => 'canais.inscricao.public_base_url',
@@ -281,7 +281,7 @@ my %TREE = (
             example     => 'https://edumaps.exemplo.org',
             type        => 'text',
             sensitive   => 0,
-            enabled     => 0,
+            enabled     => 1,
           },
           {
             key         => 'canais.inscricao.rate_max',
@@ -290,7 +290,7 @@ my %TREE = (
             example     => '10',
             type        => 'number',
             sensitive   => 0,
-            enabled     => 0,
+            enabled     => 1,
           },
           {
             key         => 'canais.inscricao.rate_window_seconds',
@@ -299,7 +299,7 @@ my %TREE = (
             example     => '60',
             type        => 'number',
             sensitive   => 0,
-            enabled     => 0,
+            enabled     => 1,
           },
         ],
       },

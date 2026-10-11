@@ -287,7 +287,7 @@ export const CONFIG_TREE = {
                 "Liga/desliga o endpoint público de autoinscrição (listas com QR). Desligado, o GET/POST público responde 404.",
               type: "boolean",
               sensitive: 0,
-              enabled: 0,
+              enabled: 1,
               value: 0,
             },
             {
@@ -298,7 +298,7 @@ export const CONFIG_TREE = {
               example: "https://edumaps.exemplo.org",
               type: "text",
               sensitive: 0,
-              enabled: 0,
+              enabled: 1,
               value: null,
             },
             {
@@ -309,7 +309,7 @@ export const CONFIG_TREE = {
               example: "10",
               type: "number",
               sensitive: 0,
-              enabled: 0,
+              enabled: 1,
               value: null,
             },
             {
@@ -319,7 +319,7 @@ export const CONFIG_TREE = {
               example: "60",
               type: "number",
               sensitive: 0,
-              enabled: 0,
+              enabled: 1,
               value: null,
             },
           ],

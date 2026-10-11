@@ -53,6 +53,12 @@ subtest 'config_tree expõe categorias e folhas' => sub {
   my ($provider) = grep { $_->{key} eq 'canais.whatsapp.provider' } @{ $wa_grp->{children} };
   is $provider->{type}, 'select', 'provider é select';
   is $provider->{options}, [qw(link cloud)], 'opções de provider';
+  # A autoinscrição por QR está ativa (#208): as folhas são editáveis no painel,
+  # não "Em breve".
+  my ($insc_grp) = grep { $_->{key} eq 'canais_inscricao' } @{ $canais->{children} };
+  ok $insc_grp, 'grupo autoinscrição';
+  is scalar(grep { $_->{enabled} } @{ $insc_grp->{children} }), 4,
+    'folhas de canais.inscricao.* habilitadas';
 
   my ($integ) = grep { $_->{key} eq 'integracoes' } @{ $tree->{categories} };
   ok $integ, 'categoria integracoes';
