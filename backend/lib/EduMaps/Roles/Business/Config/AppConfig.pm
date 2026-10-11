@@ -262,6 +262,47 @@ my %TREE = (
           },
         ],
       },
+      {
+        key      => 'canais_inscricao',
+        label    => 'Autoinscrição por QR',
+        children => [
+          {
+            key         => 'canais.inscricao.enabled',
+            label       => 'Autoinscrição ativada',
+            description => 'Liga/desliga o endpoint público de autoinscrição (listas com QR). Desligado, o GET/POST público responde 404.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 0,
+          },
+          {
+            key         => 'canais.inscricao.public_base_url',
+            label       => 'URL pública base',
+            description => 'Base URL pública usada para montar o link de inscrição do QR (ex.: https://edumaps.exemplo.org).',
+            example     => 'https://edumaps.exemplo.org',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 0,
+          },
+          {
+            key         => 'canais.inscricao.rate_max',
+            label       => 'Limite de submissões (janela)',
+            description => 'Número máximo de submissões públicas por token+IP dentro da janela (antiabuso).',
+            example     => '10',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 0,
+          },
+          {
+            key         => 'canais.inscricao.rate_window_seconds',
+            label       => 'Janela do limite (segundos)',
+            description => 'Tamanho da janela do limite de submissões públicas (antiabuso).',
+            example     => '60',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 0,
+          },
+        ],
+      },
     ],
   },
   aparencia => {
@@ -615,6 +656,21 @@ sub telegram_config ($self) {
     chat_id => $b->{chat_id},
     enabled => $b->{enabled} // 0,
   };
+}
+
+# Config efetiva da autoinscrição por QR (canais.inscricao.*). `enabled` é 0
+# por omissão — o endpoint público responde 404 sem decisão explícita do admin.
+# `rate_max`/`rate_window_seconds` alimentam o rate limit em memória.
+sub inscricao_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.inscricao',
+    [qw/enabled public_base_url rate_max rate_window_seconds/],
+    [],
+  );
+  $cfg->{enabled}             = 0 unless defined $cfg->{enabled};
+  $cfg->{rate_max}            = 10 unless defined $cfg->{rate_max};
+  $cfg->{rate_window_seconds} = 60 unless defined $cfg->{rate_window_seconds};
+  return $cfg;
 }
 
 # Config pronta para `EduMaps::Channel->build_from_config($name, ...)`.

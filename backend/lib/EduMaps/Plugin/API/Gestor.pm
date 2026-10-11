@@ -45,6 +45,25 @@ sub register($self, $app, @args) {
   $auth->put('/:cod_inep/grupos/:id' => $check)->to('gestor#grupos_update')->name('gestor_grupos_update');
   $auth->delete('/:cod_inep/grupos/:id' => $check)->to('gestor#grupos_destroy')->name('gestor_grupos_destroy');
 
+  # --- canais: listas nomeadas com QR para autoinscrição (issue #208) ------
+  # Base /canais/listas (Bearer + posse do cod_inep). O par público é a rota
+  # anônima /api/canais/inscricao/:token (Plugin::API::Canais).
+  my $lista_check = [ @$check, id => qr/\d+/ ];
+  $auth->get('/:cod_inep/canais/listas' => $check)
+    ->to('gestor#canais_listas_index')->name('gestor_canais_listas_index');
+  $auth->post('/:cod_inep/canais/listas' => $check)
+    ->to('gestor#canais_listas_create')->name('gestor_canais_listas_create');
+  $auth->get('/:cod_inep/canais/listas/:id' => $lista_check)
+    ->to('gestor#canais_listas_show')->name('gestor_canais_listas_show');
+  $auth->delete('/:cod_inep/canais/listas/:id' => $lista_check)
+    ->to('gestor#canais_listas_destroy')->name('gestor_canais_listas_destroy');
+  $auth->post('/:cod_inep/canais/listas/:id/qrcode' => $lista_check)
+    ->to('gestor#canais_qrcode_create')->name('gestor_canais_qrcode_create');
+  $auth->delete('/:cod_inep/canais/listas/:id/qrcode' => $lista_check)
+    ->to('gestor#canais_qrcode_revoke')->name('gestor_canais_qrcode_revoke');
+  $auth->get('/:cod_inep/canais/listas/:id/inscricoes' => $lista_check)
+    ->to('gestor#canais_inscricoes_index')->name('gestor_canais_inscricoes');
+
   # --- reuniões -----------------------------------------------------------
   $auth->get('/:cod_inep' => $check)->to('gestor#escola_perfil')->name('gestor_escola_perfil');
   $auth->post('/:cod_inep/transferencia' => $check)->to('gestor#agenda_transferir')->name('gestor_agenda_transferir');
