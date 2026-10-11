@@ -4,6 +4,65 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Canais de comunicação: núcleo (PR #207)
+
+- **Objetivo**: modelar canais de comunicação (e-mail, WhatsApp, Telegram) como
+  classes backend de primeira classe — **validação** de endereço, **confirmação
+  de posse** (código) e **histórico** de mensagens (mensagem + operação).
+- **Escopo do ciclo**: apenas **núcleo** (biblioteca + migrations + config +
+  testes). **Sem** API/UI, **sem** envio em massa (listas ficam para a fase 2) e
+  **sem** docs funcionais (adiados para o ciclo de integração, por decisão do
+  plano — o pre-commit apenas avisa).
+- **Entregas** (3 commits, branch `feat/backend-canais-comunicacao` → **PR #207**,
+  **merge `e0a16b6`**):
+  - **`data_pipeline`** (`95c5125`): migrations `canal_confirmacoes`
+    (requires `gestor_reunioes`) e `canal_mensagens` (requires
+    `canal_confirmacoes`), com verifies no estilo **gate** (`DO $$ … RAISE
+    EXCEPTION`, issue #160). FKs para `clean.contatos`.
+  - **`backend`** (`e2cf476`): `EduMaps::Channel` (fábrica `types`/`build`/
+    `build_from_config`/`is_valid_type`); `Channel::Base` (template method
+    `send_message`/`send_message_p` sobre `Mojo::EventEmitter`, eventos
+    `message.invalid|queued|sent|failed` e `confirm.*`); `Channel::Email`
+    (SMTP nativo), `Channel::WhatsApp` (provedores `link`/`cloud`),
+    `Channel::Telegram` (delega a `EduMaps::Bots::Telegram`),
+    `Channel::Confirmation`/`Channel::History` (persistência), `Channel::Operacoes`
+    (lista canônica espelhada no CHECK). `AppConfig`: categoria `canais` no
+    `%TREE` + getters. Testes em `t/03-plugins/channel/` (9 arquivos).
+  - **`fix`** (`8d3257c`): declara `Net::SMTP` e `IO::Socket::SSL` no `cpanfile`
+    (gate `script/check_dependencies.pl` da CI).
+- **Decisões (perguntadas no planejamento)**: canais v1 = Email + WhatsApp +
+  Telegram; envio plugável (Telegram real, e-mail SMTP real, WhatsApp `link`
+  stub / `cloud` Meta); endereços **sobrepõem** `clean.contatos` sem refatorá-la;
+  histórico guarda metadados **e** corpo (PII, leitura mascarada); confirmação
+  guarda **apenas hash+salt** do código (TTL ~10min, `max_attempts`); eventos
+  locais no v1 com ponte para o `EventBus` adiada; config nova categoria `canais`
+  (Telegram reusa `integrations.bot_telegram.*`).
+- **Não feito / adiado**: `Channel::List::*` (envio massivo com fila, dedupe e
+  opt-out), API/UI, ponte `Channel` → `EventBus`, docs funcionais
+  (`plataforma/canais-de-comunicacao.md`) e banner do `ConfigPage.svelte`.
+- **Validação (host `ubaxala`)**: `prove -l t/03-plugins/channel/` +
+  `app-config.t` + `admin/config.t` → **PASS, 89 testes** (com
+  `EDUMAPS_DB_HOST=127.0.0.1`); sem env → 65 testes + 2 `skip_all`. `sqitch
+  verify canal_confirmacoes canal_mensagens` → **ok**. `check_dependencies.pl`
+  verde.
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_backend_dev`; tabelas
+  confirmadas na base real (`database.edumaps`); módulos carregam no
+  `backend.edumaps` (`carton exec`, perl 5.36). Imagens locais `sqitch`,
+  `backend`, `minion` reconstruídas; md5 de `Channel.pm`/`Email.pm`/`cpanfile`
+  batem local × contentor; app responde 200.
+- **⚠️ CI do PR vermelha por falha pré-existente**: `t/03-plugins/middlewares/
+  session.t` (linha 66, *cache HIT* na busca de escolas) falha **idêntico no
+  `main`** (runs `38129720701` de 11/10 e `38088302661` de 10/10) e passa 3×
+  local. Não é regressão deste ciclo; registrado no PR (#207) e no comentário.
+- **Armadilha do gate de dependências**: `script/check_dependencies.pl` exige
+  declarar **todo** `use`/`require` de `lib/`+`script/` no `cpanfile` — mesmo
+  core. `Net::SMTP` estava undeclared → CI falhou no passo de inventário
+  (antes da suíte). Fix: `cpanfile` + `require IO::Socket::SSL` explícito no
+  ramo TLS de `Channel::Email`.
+- **Pendências**: integração (API/UI + docs funcionais + banner); listas em
+  massa; opt-out/consentimento; ponte para `EventBus`; provedor real de
+  WhatsApp.
+
 ## Sessão 2026-10-11 — Painel de Administração: telemetria de acesso (PR #206)
 
 - **Objetivo**: nova página `/admin` (Painel de Administração) que lê a
