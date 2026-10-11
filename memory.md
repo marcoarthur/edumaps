@@ -4,6 +4,33 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Config da autoinscrição habilitada no painel (PR #211)
+
+- **Objetivo**: fechar a última dívida menor do ciclo #208 (escolhida pelo
+  developer): as folhas `canais.inscricao.*` do `AppConfig` estavam com
+  `enabled => 0` → apareciam "Em breve" e **não editáveis** no Painel de
+  Configuração, embora a autoinscrição esteja ativa desde o PR #209.
+- **Achado**: `enabled` da folha é **só flag de UI** (selo "Em breve" +
+  `disabled` no `ConfigEditor`); o backend (`config_validate`/`config_put`)
+  nunca a consultou — gravar já funcionava pela API.
+- **Entregas** (3 commits, branch `fix/config-inscricao-habilitada` → **PR
+  #211**, **merge `c424ae4`**): `fix(backend)` 4 folhas `enabled => 1` +
+  asserção em `t/02-models/app-config.t`; `fix(frontend)` fixture
+  `configFixtures.js` alinhada; `docs` `painel-configuracao.md` cita a
+  autoinscrição.
+- **Validação**: backend 5 arquivos / 33 testes PASS; frontend 82 / 463 PASS;
+  deploy `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev`;
+  `config_tree` no LXC → 4 folhas `enabled=1`; validação visual aprovada pelo
+  developer.
+- **Armadilha (teste backend no host)**: contra o CI DB é preciso
+  `EDUMAPS_CONF=./t/ci/edu_maps.conf` **além** de `EDUMAPS_DB_*`; sem ele a
+  porta/credenciais caem no `edu_maps.conf` local (5432, falha de senha `ci`).
+- **Imagem `frontend` "não muda"**: mudança só em mock de teste não entra no
+  `dist` → imagem final idêntica (id e data antigos) e o contentor não é
+  recriado. É esperado, não build obsoleto.
+- **Dívidas do #208**: todas fechadas. Restam só as fases 1–3 do roadmap da
+  spec (posse por código, e-mail + LGPD, listas em massa).
+
 ## Sessão 2026-10-11 — Dívidas do ciclo de listas com QR (PR #210)
 
 - **Objetivo**: fechar as dívidas apontadas no fecho do ciclo #208 (listas com
