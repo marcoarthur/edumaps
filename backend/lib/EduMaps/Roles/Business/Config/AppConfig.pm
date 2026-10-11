@@ -260,6 +260,75 @@ my %TREE = (
             sensitive   => 0,
             enabled     => 1,
           },
+          {
+            key         => 'canais.whatsapp.template_confirmacao',
+            label       => 'Template de confirmação',
+            description => 'Nome do template de autenticação (aprovado na Meta) usado para enviar o código de confirmação do telefone nas listas com QR. Sem template, o WhatsApp não é oferecido como canal de confirmação.',
+            example     => 'edumaps_codigo_confirmacao',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.whatsapp.template_idioma',
+            label       => 'Idioma do template',
+            description => 'Código de idioma do template de confirmação, como cadastrado na Meta.',
+            example     => 'pt_BR',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+        ],
+      },
+      {
+        key      => 'canais_telegram',
+        label    => 'Telegram (bot público)',
+        children => [
+          {
+            key         => 'canais.telegram.token',
+            label       => 'Token do bot público',
+            description => 'Token do bot público do Telegram (fornecido pelo @BotFather), usado para confirmar o telefone dos inscritos nas listas com QR. É um bot DIFERENTE do bot de notificações internas. Guardado cifrado — nunca exibido em claro.',
+            example     => '123456789:ABCdefGHI...',
+            type        => 'secret',
+            sensitive   => 1,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.telegram.bot_username',
+            label       => 'Usuário do bot',
+            description => 'Nome de usuário do bot público (sem @), usado no link https://t.me/<usuário>?start=<ref>.',
+            example     => 'EduMapsConfirmaBot',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.telegram.recebimento',
+            label       => 'Modo de recebimento',
+            description => 'polling = um worker consulta o Telegram (getUpdates; bom para desenvolvimento); webhook = o Telegram chama o EduMaps por HTTPS público.',
+            example     => 'polling',
+            type        => 'select',
+            options     => [qw(polling webhook)],
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.telegram.webhook_secret',
+            label       => 'Segredo do webhook',
+            description => 'Valor esperado no header X-Telegram-Bot-Api-Secret-Token (modo webhook). Guardado cifrado — nunca exibido em claro.',
+            example     => 'um-segredo-longo-e-aleatorio',
+            type        => 'secret',
+            sensitive   => 1,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.telegram.enabled',
+            label       => 'Bot público ativado',
+            description => 'Liga/desliga a confirmação pelo Telegram. Desligado, o Telegram não é oferecido como canal de confirmação.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
         ],
       },
       {
@@ -640,11 +709,12 @@ sub email_config ($self) {
 sub whatsapp_config ($self) {
   my $cfg = $self->_canais_group_config(
     'canais.whatsapp',
-    [qw/provider token phone_number_id enabled/],
+    [qw/provider token phone_number_id enabled template_confirmacao template_idioma/],
     [qw/token/],
   );
-  $cfg->{provider} = 'link' unless defined $cfg->{provider};
-  $cfg->{enabled}  = 0 unless defined $cfg->{enabled};
+  $cfg->{provider}        = 'link' unless defined $cfg->{provider};
+  $cfg->{enabled}         = 0 unless defined $cfg->{enabled};
+  $cfg->{template_idioma} = 'pt_BR' unless defined $cfg->{template_idioma};
   return $cfg;
 }
 
@@ -656,6 +726,48 @@ sub telegram_config ($self) {
     chat_id => $b->{chat_id},
     enabled => $b->{enabled} // 0,
   };
+}
+
+# Config efetiva do bot PÚBLICO do Telegram (canais.telegram.*), usado na
+# confirmação de posse do telefone nas listas com QR (#212). Independente do
+# bot de notificações internas (integrations.bot_telegram, ver telegram_config).
+# `recebimento` é 'polling' por omissão; `enabled` é 0 por omissão.
+# `bot_username` sai sem o '@' inicial (pronto para o link t.me).
+sub telegram_publico_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.telegram',
+    [qw/token bot_username recebimento webhook_secret enabled/],
+    [qw/token webhook_secret/],
+  );
+  $cfg->{bot_username} =~ s/^\@+// if defined $cfg->{bot_username};
+  $cfg->{recebimento} = 'polling' unless defined $cfg->{recebimento};
+  $cfg->{enabled}     = 0 unless defined $cfg->{enabled};
+  return $cfg;
+}
+
+# Canais disponíveis para a confirmação de posse do telefone (#212), na ordem
+# do contrato (telegram, whatsapp). Só entra o canal ligado E configurado:
+#
+#   telegram: canais.telegram.enabled + token + bot_username;
+#   whatsapp: canais.whatsapp.enabled + provider=cloud + token +
+#             phone_number_id + template_confirmacao.
+#
+# Devolve arrayref de { canal => ..., (bot_username => ... no telegram) }.
+sub canais_confirmacao_disponiveis ($self) {
+  my @out;
+  my $tem = sub ($v) { defined $v && length $v };
+
+  my $tg = $self->telegram_publico_config;
+  push @out, { canal => 'telegram', bot_username => $tg->{bot_username} }
+    if $tg->{enabled} && $tem->($tg->{token}) && $tem->($tg->{bot_username});
+
+  my $wa = $self->whatsapp_config;
+  push @out, { canal => 'whatsapp' }
+    if $wa->{enabled} && ($wa->{provider} // '') eq 'cloud'
+      && $tem->($wa->{token}) && $tem->($wa->{phone_number_id})
+      && $tem->($wa->{template_confirmacao});
+
+  return \@out;
 }
 
 # Config efetiva da autoinscrição por QR (canais.inscricao.*). `enabled` é 0

@@ -10,7 +10,10 @@ use Digest::SHA qw(hmac_sha256_hex);
 #
 #   GET  /api/canais/inscricao/:token  → 200 {lista_nome, escola_nome, canal,
 #                                          campos, expira_em} · 404/410
-#   POST /api/canais/inscricao/:token  → 201 {ok:1, duplicado?} · 400/404/410/429
+#   POST /api/canais/inscricao/:token  → 201 {ok:1, duplicado?, confirmacao?}
+#                                          · 400/404/410/429
+#   GET  /api/canais/confirmacao/:ref  → 200 {estado, canais, expira_em} · 404
+#                                          (#212 — confirmação de posse)
 #
 # Regras: feature flag `canais.inscricao.enabled` (desligada → 404 genérico);
 # resposta mínima (NUNCA PII de terceiros); honeypot `_hp` (201 falso sem
@@ -78,7 +81,44 @@ sub inscricao_create($self) {
 
   my $body = { ok => 1 };
   $body->{duplicado} = 1 if $r->{duplicado};
+  # Lista que exige confirmação de posse (#212): `confirmacao` com a ref e os
+  # canais disponíveis (ou {estado:"confirmado"}). Sem exigência, a resposta é
+  # idêntica à da Fase 0 (sem a chave).
+  $body->{confirmacao} = $r->{confirmacao} if $r->{confirmacao};
   $self->render(status => 201, json => $body);
+}
+
+# ---------------------------------------------------------------------------
+# GET — estado da confirmação de posse (#212, RF-105)
+# ---------------------------------------------------------------------------
+
+# A `ref` é a capability (32 hex). Pendente → 200 {estado:"pendente", canais,
+# expira_em}; usada → 200 {estado:"confirmado", canais:[], expira_em};
+# formato inválido, inexistente, expirada sem uso ou invalidada → 404 genérico.
+# Sem PII. A página pública consulta este GET periodicamente (polling), por
+# isso o rate limit tem orçamento próprio, maior que o do POST.
+sub confirmacao_show($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+
+  my $rl = $model->rate_limit_check(
+    token => 'confirmacao:' . lc $ref,
+    ip    => $self->tx->remote_address,
+    max   => $model->inscricao_config->{rate_max} * 6,
+  );
+  return $self->_render_too_many('Muitas consultas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref)
+    or return $self->_render_confirmacao_not_found;
+
+  $self->render(json => {
+    estado    => $e->{estado},
+    canais    => $e->{estado} eq 'pendente' ? $model->canais_confirmacao(lc $ref) : [],
+    expira_em => $e->{expira_em},
+  });
 }
 
 # ---------------------------------------------------------------------------
@@ -136,6 +176,10 @@ sub _render_inscricao_error($self, $r) {
 
 sub _render_not_found($self) {
   $self->render(json => { error => 'Link inválido ou expirado.' }, status => 404);
+}
+
+sub _render_confirmacao_not_found($self) {
+  $self->render(json => { error => 'Confirmação não encontrada.' }, status => 404);
 }
 
 sub _render_gone($self) {

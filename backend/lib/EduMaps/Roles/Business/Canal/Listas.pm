@@ -1,6 +1,7 @@
 package EduMaps::Roles::Business::Canal::Listas;
 use Mojo::Base -role, -signatures;
 use utf8;
+use Mojo::JSON qw(true false);
 
 # ============================================================================
 # LISTAS NOMEADAS COM QR PARA AUTOINSCRIÇÃO DE CONTATOS (issue #208)
@@ -62,6 +63,8 @@ sub listar_listas ($self, $cod_inep) {
     q{SELECT l.*,
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
+             (SELECT count(*)::int FROM clean.canal_lista_membros m
+               WHERE m.lista_id = l.id AND m.confirmado_em IS NOT NULL) AS membros_confirmados,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
                WHERE q.lista_id = l.id AND q.status = 'ativo') AS n_qrcodes_ativos
       FROM   clean.canal_listas l
@@ -90,6 +93,7 @@ sub listar_listas ($self, $cod_inep) {
       ativo             => $r->{ativo} ? 1 : 0,
       n_membros         => $r->{n_membros} + 0,
       n_qrcodes_ativos  => $r->{n_qrcodes_ativos} + 0,
+      $self->_campos_confirmacao_lista($r),
       qrcode            => $qr ? $self->_qr_publico($qr) : undef,
       created_at        => $r->{created_at},
       updated_at        => $r->{updated_at},
@@ -116,15 +120,26 @@ sub criar_lista ($self, %p) {
   my $descricao = $p{descricao};
   $descricao = undef if defined $descricao && !length $descricao;
 
+  # exigência de confirmação de posse (#212): default false (Fase 0 intacta).
+  my $exige = 0;
+  if (defined $p{exige_confirmacao}) {
+    $exige = $self->parse_bool($p{exige_confirmacao});
+    return { error => 'exige_confirmacao inválido (true/false).', invalido => 1 }
+      unless defined $exige;
+  }
+
   my $row = $self->_row(
-    'INSERT INTO clean.canal_listas (cod_inep, gestor_id, nome, canal, descricao)
-     VALUES (?, ?, ?, ?, ?)
+    'INSERT INTO clean.canal_listas (cod_inep, gestor_id, nome, canal, descricao,
+                                     exige_confirmacao)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT (cod_inep, nome) DO UPDATE
        SET ativo = true, gestor_id = EXCLUDED.gestor_id,
-           descricao = EXCLUDED.descricao, updated_at = NOW()
+           descricao = EXCLUDED.descricao,
+           exige_confirmacao = EXCLUDED.exige_confirmacao, updated_at = NOW()
        WHERE clean.canal_listas.ativo = false
      RETURNING id',
     $cod_inep + 0, $gestor_id + 0, $nome, $canal, $descricao,
+    $exige ? 1 : 0,
   );
   return { error => 'Já existe uma lista com este nome nesta escola.' } unless $row;
 
@@ -137,6 +152,8 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
     q{SELECT l.*, g.nome AS gestor_nome,
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
+             (SELECT count(*)::int FROM clean.canal_lista_membros m
+               WHERE m.lista_id = l.id AND m.confirmado_em IS NOT NULL) AS membros_confirmados,
              (SELECT count(*)::int FROM clean.canal_inscricoes i
                WHERE i.lista_id = l.id) AS n_inscricoes,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
@@ -168,10 +185,84 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
     n_membros        => $r->{n_membros} + 0,
     n_inscricoes     => $r->{n_inscricoes} + 0,
     n_qrcodes_ativos => $r->{n_qrcodes_ativos} + 0,
+    $self->_campos_confirmacao_lista($r),
     qrcode           => $qr ? $self->_qr_publico($qr) : undef,
     created_at       => $r->{created_at},
     updated_at       => $r->{updated_at},
   };
+}
+
+# Edita uma lista (PATCH, #212): `nome`, `descricao`, `exige_confirmacao` —
+# só os campos presentes em %campos. Mudar `exige_confirmacao` NÃO altera os
+# membros já existentes (o estado é derivado na leitura). Devolve o detalhe;
+# undef se a lista não é da escola; { error, status => 400|409 } nos erros.
+sub atualizar_lista ($self, $cod_inep, $lista_id, %campos) {
+  my $lista = $self->_lista_da_escola($cod_inep, $lista_id) or return;
+
+  my (@set, @binds);
+  if (exists $campos{nome}) {
+    my $nome = $campos{nome} // '';
+    $nome = '' if ref $nome;
+    $nome =~ s/^\s+|\s+$//g;
+    return { error => 'nome é obrigatório (1..120 caracteres).', status => 400 }
+      unless length $nome >= 1 && length $nome <= 120;
+    if ($nome ne $lista->{nome}) {
+      my $dup = $self->_row(
+        'SELECT 1 AS x FROM clean.canal_listas WHERE cod_inep = ? AND nome = ? AND id <> ?',
+        $cod_inep + 0, $nome, $lista_id + 0,
+      );
+      return { error => 'Já existe uma lista com este nome nesta escola.', status => 409 }
+        if $dup;
+    }
+    push @set, 'nome = ?';
+    push @binds, $nome;
+  }
+  if (exists $campos{descricao}) {
+    my $descricao = $campos{descricao};
+    return { error => 'descricao inválida.', status => 400 } if ref $descricao;
+    $descricao = undef if defined $descricao && !length $descricao;
+    push @set, 'descricao = ?';
+    push @binds, $descricao;
+  }
+  if (exists $campos{exige_confirmacao}) {
+    my $exige = $self->parse_bool($campos{exige_confirmacao});
+    return { error => 'exige_confirmacao inválido (true/false).', status => 400 }
+      unless defined $exige;
+    push @set, 'exige_confirmacao = ?';
+    push @binds, $exige ? 1 : 0;
+  }
+  return { error => 'Nada a alterar (nome, descricao ou exige_confirmacao).', status => 400 }
+    unless @set;
+
+  my $ok = eval {
+    $self->_rows(
+      'UPDATE clean.canal_listas SET ' . join(', ', @set, 'updated_at = NOW()')
+        . ' WHERE id = ? AND cod_inep = ?',
+      @binds, $lista_id + 0, $cod_inep + 0,
+    );
+    1;
+  };
+  unless ($ok) {
+    # corrida com outro gestor criando o mesmo nome (UNIQUE cod_inep, nome)
+    return { error => 'Já existe uma lista com este nome nesta escola.', status => 409 }
+      if ($@ // '') =~ /canal_listas_cod_inep_nome_key/;
+    die $@;
+  }
+
+  return $self->detalhe_lista($cod_inep + 0, $lista_id + 0);
+}
+
+# Booleano tolerante para entradas da API: JSON true/false, 1/0, "true"/"false",
+# "1"/"0". Devolve 1/0, ou undef se o valor não é um booleano reconhecível.
+sub parse_bool ($self, $v) {
+  return undef unless defined $v;
+  if (ref $v) {
+    return undef unless ref($v) =~ /Boolean/;
+    return $v ? 1 : 0;
+  }
+  return 1 if $v =~ /^(?:1|true)\z/i;
+  return 0 if $v =~ /^(?:0|false)\z/i;
+  return undef;
 }
 
 # "Excluir/desativar" a lista (contrato de gestão). Implementado como
@@ -269,6 +360,7 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
 
   my $rows = $self->_rows(
     q{SELECT m.id, m.lista_id, m.contato_id, m.origem, m.validado,
+             m.confirmado_em, m.confirmado_via,
              m.created_at AS quando, c.nome, c.telefone,
              i.conflito, i.duplicado_de
       FROM   clean.canal_lista_membros m
@@ -284,6 +376,10 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
     $lista_id + 0,
   );
 
+  my $exige = $self->_row(
+    'SELECT exige_confirmacao FROM clean.canal_listas WHERE id = ?', $lista_id + 0,
+  )->{exige_confirmacao};
+
   my @out;
   for my $r (@$rows) {
     push @out, {
@@ -296,6 +392,10 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
       conflito     => $r->{conflito} ? 1 : 0,
       duplicado_de => $r->{duplicado_de} ? $r->{duplicado_de} + 0 : undef,
       quando       => $r->{quando},
+      # estado da confirmação de posse (#212), derivado (não é coluna)
+      estado         => $self->estado_membro($exige, $r->{confirmado_em}),
+      confirmado_via => $r->{confirmado_via},
+      confirmado_em  => $r->{confirmado_em},
     };
   }
   return \@out;
@@ -318,7 +418,7 @@ sub validar_token ($self, $token) {
              (q.expira_em IS NOT NULL AND q.expira_em <= NOW()) AS vencido,
              (q.max_usos IS NOT NULL AND q.usos >= q.max_usos) AS esgotado,
              l.id AS lista_id, l.nome AS lista_nome, l.canal, l.ativo AS lista_ativa,
-             l.cod_inep, l.gestor_id,
+             l.cod_inep, l.gestor_id, l.exige_confirmacao,
              e.escola AS escola_nome
       FROM   clean.canal_qrcodes q
       JOIN   clean.canal_listas l ON l.id = q.lista_id
@@ -348,6 +448,7 @@ sub validar_token ($self, $token) {
   $r->{lista_id}    = $r->{lista_id} + 0;
   $r->{cod_inep}    = $r->{cod_inep} + 0;
   $r->{gestor_id}   = $r->{gestor_id} + 0;
+  $r->{exige_confirmacao} = $r->{exige_confirmacao} ? 1 : 0;
   return $r;
 }
 
@@ -409,7 +510,7 @@ sub registrar_inscricao ($self, %p) {
   my $resultado;
   my $ok = eval {
     $self->schema->storage->txn_do(sub {
-      my ($contato_id, $duplicado_de, $conflito);
+      my ($contato_id, $duplicado_de, $conflito, $membro_id);
 
       # dedupe na camada de modelo (MVP) — mesmo telefone normalizado na escola.
       my $existente = $self->_row(
@@ -428,13 +529,17 @@ sub registrar_inscricao ($self, %p) {
                       ne lc($self->_normaliza_nome($existente->{nome})) ? 1 : 0;
 
         # idempotência do pertencimento (UNIQUE lista_id, contato_id)
-        $self->_row(
+        my $m = $self->_row(
           q{INSERT INTO clean.canal_lista_membros (lista_id, contato_id, origem, validado)
             VALUES (?, ?, 'qrcode', false)
             ON CONFLICT (lista_id, contato_id) DO NOTHING
             RETURNING id},
           $v->{lista_id} + 0, $contato_id,
+        ) || $self->_row(
+          'SELECT id FROM clean.canal_lista_membros WHERE lista_id = ? AND contato_id = ?',
+          $v->{lista_id} + 0, $contato_id,
         );
+        $membro_id = $m->{id} + 0;
       }
       else {
         my $novo = $self->_row(
@@ -444,12 +549,13 @@ sub registrar_inscricao ($self, %p) {
           $v->{cod_inep} + 0, $v->{gestor_id} + 0, $nome, $telefone,
         );
         $contato_id = $novo->{id} + 0;
-        $self->_row(
+        my $m = $self->_row(
           q{INSERT INTO clean.canal_lista_membros (lista_id, contato_id, origem, validado)
             VALUES (?, ?, 'qrcode', false)
             RETURNING id},
           $v->{lista_id} + 0, $contato_id,
         );
+        $membro_id = $m->{id} + 0;
       }
 
       my $insc = $self->_row(
@@ -477,9 +583,17 @@ sub registrar_inscricao ($self, %p) {
         ok           => 1,
         inscricao_id => $insc->{id} + 0,
         contato_id   => $contato_id,
+        membro_id    => $membro_id,
         duplicado    => $duplicado_de ? 1 : 0,
         conflito     => $conflito ? 1 : 0,
       };
+
+      # Lista que exige confirmação de posse (#212): na mesma transação, abre a
+      # ref do membro pendente (invalida a anterior) ou informa que ele já está
+      # confirmado. Método de Canal::Confirmacao (composta no model Canal).
+      $resultado->{confirmacao} = $self->confirmacao_da_inscricao(
+        $membro_id, $resultado->{inscricao_id},
+      ) if $v->{exige_confirmacao};
     });
     1;
   };
@@ -503,7 +617,9 @@ sub rate_limit_check ($self, %p) {
         && defined $ip && length $ip;
 
   my $cfg = $self->inscricao_config;
-  my $max = $cfg->{rate_max} // 10;
+  # `max` opcional: orçamento próprio de outro endpoint público (ex.: GET da
+  # confirmação, consultado em polling — #212).
+  my $max = $p{max} // $cfg->{rate_max} // 10;
   my $win = $cfg->{rate_window_seconds} // 60;
   my $now = time;
   my $tick = int($now / $win);
@@ -554,6 +670,25 @@ sub _qr_publico ($self, $q) {
     created_at  => $q->{created_at},
     revogado_em => $q->{revogado_em},
   };
+}
+
+# Estado da confirmação de um membro (#212), derivado: `confirmado` se há
+# confirmado_em; senão `pendente` se a lista exige; senão `nao_exigida`.
+sub estado_membro ($self, $exige, $confirmado_em) {
+  return 'confirmado' if defined $confirmado_em;
+  return $exige ? 'pendente' : 'nao_exigida';
+}
+
+# Campos de confirmação no resumo/detalhe da lista. `membros_pendentes` só
+# conta quando a lista exige (senão 0).
+sub _campos_confirmacao_lista ($self, $r) {
+  my $exige = $r->{exige_confirmacao} ? 1 : 0;
+  my $conf  = ($r->{membros_confirmados} // 0) + 0;
+  return (
+    exige_confirmacao   => $exige ? true : false,   # booleano JSON (contrato #212)
+    membros_confirmados => $conf,
+    membros_pendentes   => $exige ? ($r->{n_membros} + 0) - $conf : 0,
+  );
 }
 
 sub _lista_da_escola ($self, $cod_inep, $lista_id) {

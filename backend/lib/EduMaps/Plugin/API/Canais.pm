@@ -20,6 +20,11 @@ sub register ($self, $app, @args) {
     ->to('canais#inscricao_form')->name('canais_inscricao_form');
   $api->post('/inscricao/:token' => $with_token)
     ->to('canais#inscricao_create')->name('canais_inscricao_create');
+
+  # Confirmação de posse do telefone (#212): a `ref` (32 hex) é a capability.
+  # Formato validado no controller (404 genérico, sem ir ao banco).
+  $api->get('/confirmacao/:ref')
+    ->to('canais#confirmacao_show')->name('canais_confirmacao_show');
 }
 
 1;
