@@ -559,3 +559,38 @@ alvo `http://ubatexu.lan:8080/escola/search` (deploy via `redeploy` +
 > service worker** de sessão anterior, não regressão — resolvido com
 > `Network.setCacheDisabled: true` e espera pela montagem. Sem isso o probe
 > dá falso negativo (nenhuma request `/api/`, nenhuma exceção).
+
+### Rodada 2026-10-11 — Painel de Administração: telemetria de acesso (feat)
+
+**Objetivo**: certificar ponta a ponta o **Painel de Administração** (`/admin`),
+que lê a telemetria de sessão (etapas 1+2) e apresenta KPIs agregados do fluxo
+de acesso: logins de gestores (6/12/24 h), sessões ativas (logadas/anônimas),
+buscas, eventos, série temporal e rotas mais acessadas. Privacidade: **só
+agregados** — sem IP, texto de busca ou sessão individual.
+
+Driver próprio sobre o CDP do Chrome (`:9222`, `Network.setCacheDisabled`),
+alvo `http://ubatexu.lan:8080/admin` (deploy via `rex prepare` +
+`deploy_backend_dev` + `deploy_frontend_dev`). Sessão obtida por
+`POST /api/gestor/login` e injetada em `localStorage` antes do carregamento.
+
+| Verificação | Resultado |
+|---|---|
+| SPA monta e roteia `/admin` ("Painel de Administração", nav "Administração") | 🟢 |
+| Guard de admin (`GET /api/gestor/me` antes do overview) | 🟢 200, `access_role=admin` |
+| `GET /api/admin/telemetry/overview?window=24h` | 🟢 200 |
+| KPIs renderizados (logins 6/12/24 h; sessões ativas/logadas/anônimas; buscas; eventos) | 🟢 `0/1/1`; `11/3/8`; `3`; `49` |
+| Série temporal (gráfico Carbon `LineChart`, granularidade por hora) | 🟢 eixo 09:00→09:00, 24 buckets |
+| Rotas mais acessadas (com volume e `%`) | 🟢 `/escola/search 44`, `/about 22`, `/escola/panel 11`, … |
+| Seletor de janela (24 h → 7 dias recalcula) | 🟢 nova request `window=7d` |
+| Atualização manual ("Atualizar agora") / auto-refresh 30 s | 🟢 botão presente; `REFRESH_MS=30000` |
+| Requests `/api/` com status ≥ 400 | 🟢 0 |
+| `Runtime.exceptionThrown` | 🟢 0 |
+| Teste de unidade da página (gsap/Carbon mockados) | 🟢 4/4 |
+| Suíte frontend completa | 🟢 72/76 arquivos (4 falhas pré-existentes multipart `gestor*Api`, fora do admin) |
+| `vite build` | 🟢 1053 módulos transformados |
+| Teste de API do backend (`t/04-api/admin/telemetry.t`) | 🟢 401/403/200, janela inválida 400 |
+| Deploy | 🟢 `rex prepare` + `deploy_backend_dev` + `deploy_frontend_dev` |
+
+> **Nota**: a página já existia na janela visível (Chrome x11 `:9223`) para
+> validação visual. Nenhuma exceção e nenhuma request falhada em ambas as
+> janelas (24 h e 7 d).
