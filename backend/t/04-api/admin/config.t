@@ -89,7 +89,7 @@ subtest 'tree: categorias e folha chaves' => sub {
   my $tree = $t->get_ok('/api/admin/config/tree', { Authorization => "Bearer $admin_token" })
     ->status_is(200)->tx->res->json;
   my @labels = map { $_->{label} } @{ $tree->{categories} };
-  is join(',', @labels), 'Sistema,Integrações,Aparência,Comportamento,Outros', 'categorias';
+  is join(',', @labels), 'Sistema,Integrações,Canais de comunicação,Aparência,Comportamento,Outros', 'categorias';
 
   my ($integ) = grep { $_->{key} eq 'integracoes' } @{ $tree->{categories} };
   my ($assistente) = grep { $_->{key} eq 'assistant_censo' } @{ $integ->{children} };

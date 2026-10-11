@@ -38,8 +38,21 @@ subtest 'config_tree expõe categorias e folhas' => sub {
   my $tree = $model->config_tree;
   ok ref($tree->{categories}) eq 'ARRAY', 'categories';
   my @labels = map { $_->{label} } @{ $tree->{categories} };
-  is(join(',', @labels), 'Sistema,Integrações,Aparência,Comportamento,Outros',
+  is(join(',', @labels), 'Sistema,Integrações,Canais de comunicação,Aparência,Comportamento,Outros',
     'categorias corretas');
+
+  my ($canais) = grep { $_->{key} eq 'canais' } @{ $tree->{categories} };
+  ok $canais, 'categoria canais';
+  my ($email_grp) = grep { $_->{key} eq 'canais_email' } @{ $canais->{children} };
+  ok $email_grp, 'grupo e-mail';
+  my ($email_host) = grep { $_->{key} eq 'canais.email.smtp_host' } @{ $email_grp->{children} };
+  ok $email_host, 'folha smtp_host';
+  is $email_host->{type}, 'text', 'smtp_host é text';
+  my ($wa_grp) = grep { $_->{key} eq 'canais_whatsapp' } @{ $canais->{children} };
+  ok $wa_grp, 'grupo whatsapp';
+  my ($provider) = grep { $_->{key} eq 'canais.whatsapp.provider' } @{ $wa_grp->{children} };
+  is $provider->{type}, 'select', 'provider é select';
+  is $provider->{options}, [qw(link cloud)], 'opções de provider';
 
   my ($integ) = grep { $_->{key} eq 'integracoes' } @{ $tree->{categories} };
   ok $integ, 'categoria integracoes';
