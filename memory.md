@@ -4,6 +4,51 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Dívidas do ciclo de listas com QR (PR #210)
+
+- **Objetivo**: fechar as dívidas apontadas no fecho do ciclo #208 (listas com
+  QR), escolhidas pelo developer.
+- **Entregas** (3 commits, branch `fix/canais-dividas-208` → **PR #210**,
+  **merge `b009495`**):
+  - **`fix(data_pipeline)`** (`cd4ebe0`): reverts faltantes
+    `revert/canal_confirmacoes.sql` e `revert/canal_mensagens.sql` (antes, o
+    `sqitch revert` quebrava nesses changes). Só `DROP TABLE IF EXISTS`; não
+    alteram `change_id` (scripts não entram no hash — só `requires`/pai).
+  - **`fix(frontend)`** (`7d3ef52`): banner do `ConfigPage.svelte` atualizado
+    (menciona Integrações **e** Canais de comunicação) e fixture de config
+    (`configFixtures.js`) alinhado ao `AppConfig` real, agora com a categoria
+    **Canais de comunicação** (e-mail/WhatsApp/autoinscrição); teste ajustado
+    (`getAllByText` — o banner passou a conter os mesmos rótulos do árvore).
+  - **`docs`** (`f925026`): nova capacidade
+    `docs/funcionalidades/plataforma/canais-de-comunicacao.md` (🟡 parcial) +
+    índice; resumo do Painel de Configuração atualizado; ligação cruzada com
+    `listas-autoinscricao`.
+- **Validação** (host `ubaxala`):
+  - Migrations no CI db (`EDUMAPS_CI_PORT=5433`): `sqitch revert --to
+    event_store_add_session` → reverteu `canal_listas_autoinscricao`,
+    `canal_mensagens`, `canal_confirmacoes` (os dois novos) `.. ok`, tabelas
+    dropadas; `sqitch deploy` → ok; `ci_db.sh verify` → **Verify successful**.
+  - Backend: `prove -l t/02-models/canal_listas.t t/04-api/canais/` →
+    **3 arquivos / 30 testes PASS** (CI db).
+  - Frontend: `vitest run` → **82 arquivos / 463 testes PASS** (feature config
+    8/8).
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_frontend_dev` OK
+  (⚠️ `deploy_db_dev` reinicia o `postgresql`); reverts presentes em
+  `/opt/edumaps/data_pipeline/revert/`; app 200/404 conforme esperado. Imagens
+  Docker locais `sqitch` + `frontend` reconstruídas.
+- **Limpeza dos dados de teste em dev** (`edumaps_dev` / `database.edumaps`,
+  feat. #208): removidos lista `id 1` ("E2E Coord 208"), 2 QR, 2 membros, 3
+  inscrições e os contatos `173`/`174` (E2E). As configs `canais.inscricao.*`
+  em `app_config.items` **foram mantidas** (mantêm a autoinscrição ativa em dev).
+- **Pendências do roadmap de canais** (fora do escopo): validação de posse do
+  telefone (código); envio em massa/campanhas (`Channel::List::*`, fila,
+  dedupe, opt-out); opt-out/consentimento granular e ciclo de vida LGPD;
+  múltiplos QR por lista e analytics (fase 2). Ver issue #208.
+- **Nota**: no `AppConfig` a categoria `canais` já existe, mas as folhas de
+  `canais.inscricao.*` estão com `enabled => 0` (aparecem como "Em breve" no
+  painel), embora a feature esteja ativa via `app_config.items`. Alinhar isso
+  é dívida menor.
+
 ## Sessão 2026-10-11 — Listas com QR para autoinscrição de contatos (PR #209)
 
 - **Objetivo**: capacidade de **listas nomeadas com QR** para autoinscrição de
