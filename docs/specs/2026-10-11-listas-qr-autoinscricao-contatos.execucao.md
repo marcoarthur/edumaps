@@ -56,7 +56,7 @@ Base: `/api/gestor/:cod_inep/canais/listas` (Bearer + posse do `cod_inep`).
 | A2 | T-A | API pública `GET/POST /api/canais/inscricao/:token` (sem auth; rate limit, honeypot, consentimento) | M2 | 🟢 | `t/04-api/canais/publico.t` verde |
 | F1 | T-B | UI gestão (criar lista, `QRModal`, membros) | — (contrato) | 🟢 | `vitest` (ListasPage/QRModal/api) verde |
 | F2 | T-B | Página pública `/inscricao/:token` (`InscricaoPublicaPage`) fora do guard | — (contrato) | 🟢 | `vitest` (InscricaoPublicaPage) verde |
-| T1 | coord. | Testes de integração + e2e + `sqitch verify`; fecho | M1..F2 | 🟡 | unit/integração verdes; e2e pendente |
+| T1 | coord. | Testes de integração + e2e + `sqitch verify`; fecho | M1..F2 | 🟢 | e2e verde; deploy OK; PR #209 mergeado |
 
 Legenda de status: ⚪ pendente · 🟡 em andamento · 🟢 concluído · 🔴 bloqueado.
 
@@ -103,6 +103,25 @@ Executada pelo coordenador, **não** pelos subagentes (segunda opinião):
 - **Contrato:** conferido lado a lado; o backend devolve **array cru** para listas
   e membros e o cliente aceita array (a normalização tolerante do T-B é inócua).
   Público e gestão casam com o contrato congelado.
+
+## Fecho (coordenador, 2026-10-11)
+
+- **Deploy (LXC):** `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_frontend_dev` → OK. Migração confirmada em `edumaps_dev`
+  (`database.edumaps`); flag `canais.inscricao.enabled=true` e
+  `public_base_url=http://ubatexu.lan:8080` em `app_config.items`.
+- **E2E (CDP, `http://ubatexu.lan:8080`):** tudo verde — GET 200; token
+  inválido 404; POST 201; duplicado 201 `{duplicado:1}` (1 contato, 2
+  inscrições, 1 membro); honeypot 201 sem gravar; sem consentimento 400;
+  telefone curto 400; rate limit 429; gestor sem sessão 401; SPA
+  `/inscricao/:token` → "Inscrição confirmada!"; `/privacidade` OK. Rodada
+  registrada em `docs/e2e/cobertura.md`.
+- **PR:** [#209](https://github.com/marcoarthur/edumaps/pull/209) mergeado
+  (`4b2828f`); branch remoto deletado; `main` local sincronizado.
+- **Imagens Docker locais:** `sqitch`/`backend`/`minion`/`frontend`
+  reconstruídas e containers recriados (`docker compose up -d`); md5sum do
+  código no container confere com o `main`. (O build inicial falhou por disco
+  cheio; resolvido com `docker builder prune`, que liberou ~5,8 GB.)
 
 ## Riscos de execução
 

@@ -4,6 +4,77 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Listas com QR para autoinscrição de contatos (PR #209)
+
+- **Objetivo**: capacidade de **listas nomeadas com QR** para autoinscrição de
+  contatos (Fase 0 / **MVP telefone**, sem validação de posse). Gestor cria a
+  lista, gera o QR/link e as pessoas se inscrevem por uma **página pública**.
+- **Issue:** [#208](https://github.com/marcoarthur/edumaps/issues/208). **Spec
+  (contrato congelado):** `docs/specs/2026-10-11-listas-qr-autoinscricao-contatos.md`.
+  **Execução (mutável):** `…-contatos.execucao.md`.
+- **Processo**: duas trilhas paralelas, **git centralizado** no coordenador —
+  T-A (backend/db) e T-B (frontend); subagentes só escreveram código/rodaram
+  teste. Contrato público/gestão congelado no arquivo de execução.
+- **Entregas** (5 commits, branch `feat/canais-listas-qr` → **PR #209**, **merge
+  `4b2828f`**):
+  - **`data_pipeline`** (`a8d3308`): migrations `canal_listas`, `canal_qrcodes`,
+    `canal_lista_membros`, `canal_inscricoes` (deploy/revert/verify; verify no
+    estilo gate, issue #160).
+  - **`backend`** (`4d8fa67`): `Roles::Business::Canal::Listas` (normalização de
+    telefone, dedupe **não destrutivo**, token via `gen_random_uuid()::text`,
+    rate limit por processo, honeypot, IP anonimizado HMAC+salt diário);
+    `Controller::Canais` + `Plugin::API::Canais` (face pública
+    `GET/POST /api/canais/inscricao/:token`); `Controller::Gestor` +
+    `Plugin::API::Gestor` (CRUD listas/QR/inscrições, Bearer + posse do
+    `cod_inep`); `Roles::Business::Config::AppConfig` (`inscricao_config` +
+    catálogo `canais.inscricao.*`).
+  - **`frontend`** (`dc01850`): `features/gestor/pages/ListasPage.svelte` +
+    `components/canais/QRModal.svelte` (dep `qrcode@^1.5.4`, QR gerado no
+    cliente); `features/inscricao/pages/InscricaoPublicaPage.svelte` (rota
+    pública `/inscricao/:token` fora do guard); `features/privacidade/` (página
+    `/privacidade`).
+  - **`docs`** (`dd101d9`): `funcionalidades/gestor/listas-autoinscricao.md` +
+    índice; **`docs(e2e)`** (`ea74f42`): rodada registrada em
+    `docs/e2e/cobertura.md`.
+- **Decisões**: lista própria `canal_listas` (**não** usa `clean.contato_grupos`,
+  que será deprecado); pertencimento via `canal_lista_membros`; telefone
+  **sensível e não destrutivo** (bruto+normalizado, marca
+  `validado`/`duplicado_de`/`conflito`, **nunca descarta**); API unificada
+  pública `GET/POST` (GET do token esgotado → 410, POST → 429); `excluir_lista`
+  = soft-delete (`ativo=false`) com reativação; `canal_inscricoes.qrcode_id`
+  nullable + `ON DELETE SET NULL`; rate limit em memória (model é singleton);
+  consentimento aponta para `/privacidade`.
+- **Desvio corrigido pelo coordenador**: o consentimento do formulário público
+  apontava para `/privacidade`, que **não existia** (link quebrado). Criada
+  página pública mínima `/privacidade` + rota + teste (texto definitivo fica com
+  revisão jurídica da escola).
+- **Validação (host `ubaxala`)**: backend
+  `prove -l t/02-models/canal_listas.t t/04-api/canais/` → **3 arquivos / 30
+  testes PASS** (CI DB `127.0.0.1:5433`, `env -u PERL5LIB`); migrations via
+  `ci_db.sh` (deploy + `sqitch verify`) → verde; frontend `vitest run` → **82
+  arquivos / 463 testes PASS**.
+- **E2E (CDP, `http://ubatexu.lan:8080`)**: verde — GET 200; token inválido 404;
+  POST 201; duplicado 201 `{duplicado:1}` (1 contato, 2 inscrições, 1 membro);
+  honeypot 201 sem gravar; sem consentimento 400; telefone curto 400; rate limit
+  429; gestor sem sessão 401; SPA `/inscricao/:token` → "Inscrição confirmada!";
+  `/privacidade` OK.
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_frontend_dev` OK; migração confirmada em `edumaps_dev`
+  (`database.edumaps`); flag `canais.inscricao.enabled=true` e
+  `public_base_url=http://ubatexu.lan:8080` em `app_config.items`.
+- **⚠️ Disco cheio no rebuild local**: o `docker compose build` falhou com
+  `no space left on device` (`/var/lib/containerd`, `/` em 100%). Resolvido com
+  `docker builder prune -f` (~5,8 GB liberados); imagens `sqitch`/`backend`/
+  `minion`/`frontend` reconstruídas, `docker compose up -d`, md5 do código no
+  container confere com o `main`. **Follow-up pedido pelo developer**: mover o
+  **data-root do Docker para a partição de `/home`** (onde precisar `sudo`, o
+  developer passa a senha na hora) — fazer após este ciclo.
+- **Pendências herdadas (fora da Fase 0)**: banner/aviso na
+  `ConfigPage.svelte` sobre canais; reverts ausentes de
+  `canal_confirmacoes`/`canal_mensagens`; atualizar
+  `docs/funcionalidades/plataforma/canais-de-comunicacao.md`; limpar dados de
+  teste em dev (lista `E2E Coord 208`, gestor id 2, `cod_inep 35038751`).
+
 ## Sessão 2026-10-11 — Canais de comunicação: núcleo (PR #207)
 
 - **Objetivo**: modelar canais de comunicação (e-mail, WhatsApp, Telegram) como
