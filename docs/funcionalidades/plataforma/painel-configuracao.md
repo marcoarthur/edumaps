@@ -16,7 +16,8 @@ relacionadas: [assistente-censo, fontes-de-dados]
 plataforma — nome da instalação, fuso horário, aparência, comportamento dos
 painéis, integrações e canais de comunicação — organizados em categorias e
 grupos. Hoje estão ativas as Integrações (chave de API do Assistente do Censo e
-Bot Telegram) e os Canais de comunicação (e-mail e WhatsApp); as demais
+Bot Telegram) e os Canais de comunicação (e-mail, WhatsApp e autoinscrição por
+QR); as demais
 categorias estão previstas.
 
 ## Para quem
@@ -40,6 +41,8 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   autorizadas a disparar mensagem.
 - Sistema pode guardar e gerenciar a configuração dos canais de comunicação:
   credenciais de e-mail (SMTP) e de WhatsApp, com segredos cifrados.
+- Sistema pode ligar ou desligar a autoinscrição pública por QR e ajustar seu
+  endereço público e o limite antiabuso de submissões.
 
 ## Valor
 
