@@ -162,8 +162,9 @@
   {/if}
 
   <div class="bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm rounded-md p-3">
-    Em desenvolvimento: hoje é possível configurar a <strong>chave do Assistente do Censo</strong>
-    (Integrações). As demais categorias entram em breve.
+    Em desenvolvimento: já é possível configurar <strong>Integrações</strong>
+    (Assistente do Censo e Bot Telegram) e <strong>Canais de comunicação</strong>
+    (E-mail e WhatsApp). As demais categorias entram em breve.
   </div>
 
   {#if carregando}

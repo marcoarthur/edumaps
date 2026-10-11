@@ -29,8 +29,8 @@ describe("ConfigPage", () => {
     expect(await screen.findByText("Painel de Configuração")).toBeInTheDocument();
     // a árvore carrega via API — espera a primeira categoria aparecer
     expect(await screen.findByText("Sistema")).toBeInTheDocument();
-    for (const label of ["Integrações", "Aparência", "Comportamento", "Outros"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+    for (const label of ["Integrações", "Canais de comunicação", "Aparência", "Comportamento", "Outros"]) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
     expect(await screen.findByText(/Chave ainda não definida/)).toBeInTheDocument();
     expect(screen.getByText(/Categorias/)).toBeInTheDocument();
