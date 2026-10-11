@@ -5,6 +5,7 @@ import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compa
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage } from "@/features/config";
+import { AdminTelemetryPage } from "@/features/admin";
 import { PublicaRespostaPage } from "@/features/resposta";
 import {
   GestorAcessoPage,
@@ -51,6 +52,7 @@ export const routes = [
   { path: "/chat/censo", component: ChatPage },
   { path: "/chat/historico", component: ChatHistoricoPage },
   { path: "/config", component: ConfigPage },
+  { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/reunioes", component: GestorReunioesPage },
   { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },

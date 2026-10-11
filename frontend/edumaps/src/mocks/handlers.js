@@ -10,6 +10,7 @@ import { gestorRelacoesHandlers } from "@/features/gestor/mocks/relacoesHandlers
 import { gestorDocumentosHandlers } from "@/features/gestor/mocks/documentosHandlers.js";
 import { gestorOsmHandlers } from "@/features/gestor/mocks/osmHandlers.js";
 import { configHandlers } from "@/features/config/mocks/configHandlers.js";
+import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -22,4 +23,5 @@ export const handlers = [
   ...gestorDocumentosHandlers,
   ...gestorOsmHandlers,
   ...configHandlers,
+  ...telemetryHandlers,
 ];
