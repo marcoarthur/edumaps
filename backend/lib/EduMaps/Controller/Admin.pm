@@ -114,6 +114,25 @@ sub bot_telegram_test ($self) {
   $self->render(json => { ok => 1, status => $res->{status} });
 }
 
+# GET /api/admin/telemetry/overview — KPIs do fluxo de acesso de sessão
+# (logins, sessões, rotas, buscas, série temporal). Só agregados; nunca IP,
+# User-Agent, texto digitado ou sessão individual. `window` é validado contra
+# a whitelist (6h/12h/24h/hoje/7d/30d).
+sub telemetry_overview ($self) {
+  my $model  = $self->instantiate_model(model => 'AdminTelemetry');
+  my $window = $self->param('window') // '24h';
+  return $self->render(json => { error => "Janela inválida: '$window'." }, status => 400)
+    unless $model->is_window($window);
+
+  my $data = eval { $model->overview({ window => $window }) };
+  unless ($data) {
+    $self->app->log->error('Admin::Telemetry error: ' . ($@ || 'erro desconhecido'));
+    return $self->render(json => { error => 'Não foi possível gerar a telemetria.' }, status => 500);
+  }
+
+  $self->render(json => $data);
+}
+
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
