@@ -14,9 +14,10 @@ relacionadas: [assistente-censo, fontes-de-dados]
 
 Área administrativa onde a instalação configura parâmetros globais da
 plataforma — nome da instalação, fuso horário, aparência, comportamento dos
-painéis e integrações — organizados em categorias e grupos. Hoje estão ativas a
-configuração da chave de API do Assistente do Censo e a do Bot Telegram; as
-demais categorias estão previstas.
+painéis, integrações e canais de comunicação — organizados em categorias e
+grupos. Hoje estão ativas as Integrações (chave de API do Assistente do Censo e
+Bot Telegram) e os Canais de comunicação (e-mail e WhatsApp); as demais
+categorias estão previstas.
 
 ## Para quem
 
@@ -26,7 +27,8 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
 ## O que o sistema permite
 
 - Sistema pode organizar as configurações da plataforma em categorias e grupos
-  navegáveis (Sistema, Integrações, Aparência, Comportamento, Outros).
+  navegáveis (Sistema, Integrações, Canais de comunicação, Aparência,
+  Comportamento, Outros).
 - Sistema pode exibir cada item de configuração com descrição e exemplo, e
   sinalizar os itens ainda não disponíveis.
 - Sistema pode guardar e gerenciar a chave de API do Assistente do Censo,
@@ -36,6 +38,8 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
 - Sistema pode guardar e gerenciar a configuração do Bot Telegram: token
   (cifrado, nunca exibido), chat de destino, ativação e a lista de ações
   autorizadas a disparar mensagem.
+- Sistema pode guardar e gerenciar a configuração dos canais de comunicação:
+  credenciais de e-mail (SMTP) e de WhatsApp, com segredos cifrados.
 
 ## Valor
 
@@ -46,5 +50,6 @@ seguro, com segredos protegidos.
 ## Relacionadas
 
 - [Assistente do Censo](../analise/assistente-censo.md)
+- [Canais de comunicação](../plataforma/canais-de-comunicacao.md)
 - [Bot Telegram](../plataforma/bot-telegram.md)
 - [Fontes de dados](../plataforma/fontes-de-dados.md)
