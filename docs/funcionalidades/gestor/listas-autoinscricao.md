@@ -3,7 +3,7 @@ titulo: Listas com autoinscrição por QR
 modulo: gestor
 status: ativo
 audiencia: [gestor, comunidade]
-relacionadas: [contatos-grupos, privacidade-lgpd]
+relacionadas: [contatos-grupos, canais-de-comunicacao, privacidade-lgpd]
 ---
 
 # Listas com autoinscrição por QR
@@ -48,4 +48,5 @@ exige consentimento explícito (ver Privacidade e LGPD).
 ## Relacionadas
 
 - [Contatos e grupos](contatos-grupos.md)
+- [Canais de comunicação](../plataforma/canais-de-comunicacao.md)
 - [Privacidade e LGPD](../plataforma/privacidade-lgpd.md)
