@@ -143,3 +143,11 @@ test_that("sem dados o LLM não é chamado", {
   expect_match(report_secao(r, "resumo")$markdown, "Não há dados")
   expect_true("sem_dados" %in% vapply(r$avisos, `[[`, character(1), "tipo"))
 })
+
+test_that("o saneamento não engole texto entre comparações com < e >", {
+  s <- edumapsAnalytics:::report_sanitize_markdown(
+    "A rede municipal (1 escola, IDEB 4,5 < 4,7 do estado).\nNa outra etapa, 5,1 > 4,2 da rede.")
+  expect_match(s, "4,5 < 4,7 do estado", fixed = TRUE)
+  expect_match(s, "5,1 > 4,2 da rede", fixed = TRUE)
+  expect_equal(edumapsAnalytics:::report_sanitize_markdown("<b>forte</b> e <script>x</script>"), "forte e x")
+})

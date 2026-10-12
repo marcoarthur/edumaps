@@ -338,7 +338,10 @@ report_sanitize_markdown <- function(x) {
   x <- gsub("```[^`]*```", "", x, perl = TRUE)
   x <- gsub("!\\[[^]]*\\]\\([^)]*\\)", "", x, perl = TRUE)
   x <- gsub("\\[([^]]+)\\]\\([^)]*\\)", "\\1", x, perl = TRUE)
-  x <- gsub("<[^>]+>", "", x, perl = TRUE)
+  # Só o que parece TAG (<letra…> ou </letra…>, sem atravessar linha): a
+  # versão gananciosa "<[^>]+>" engolia texto entre comparações como
+  # "4,5 < 4,7 … > 4" e truncava o resumo da EDA (achado do e2e, Fase 4).
+  x <- gsub("</?[A-Za-z][^<>\n]*>", "", x, perl = TRUE)
   x <- gsub("(?m)^#{1,6}[[:space:]]*", "## ", x, perl = TRUE)
   x <- gsub("\n{3,}", "\n\n", x)
   x <- trimws(x)
