@@ -9,6 +9,8 @@ use Mojo::JSON ();
 #
 # Fase 3: relatórios salvos (clean.relatorios_salvos) — fotografia do
 # ReportResult de um job relatorio_gerar, escopo do gestor da sessão.
+# Fase 4: o salvo registra o assistente (coluna `assistente`, dos args do
+# job); o título do assistente vem da fotografia (conteudo->'assistente').
 
 requires qw(schema);
 
@@ -116,7 +118,8 @@ sub geotag_valido($self, $geotag, $cod_inep_gestor) {
 # Colunas do resumo, com as datas já em ISO 8601 UTC ("...Z").
 my $COLS_RESUMO = q{
   id, titulo, tema_id, tema_titulo, nivel, codigo, recorte_nome,
-  opcoes::text AS opcoes,
+  opcoes::text AS opcoes, assistente,
+  (conteudo -> 'assistente')::text AS assistente_info,
   to_char(gerado_em  AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS gerado_em,
   to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS salvo_em
 };
@@ -140,10 +143,19 @@ sub _json_do_banco ($s) {
   return utf8::is_utf8($s) ? Mojo::JSON::from_json($s) : Mojo::JSON::decode_json($s);
 }
 
+# Título exibido para salvos sem `assistente` na fotografia (anteriores à
+# Fase 4, todos do assistente padrão).
+our %ASSISTENTE_TITULO_PADRAO = (relatorio => 'Relatório por tema');
+
 sub _salvo_resumo ($r) {
+  my $info = eval { _json_do_banco($r->{assistente_info}) };
+  my $assistente_id = $r->{assistente} // 'relatorio';
+  my $assistente_titulo = (ref $info eq 'HASH' ? _texto($info->{titulo}) : undef)
+    // $ASSISTENTE_TITULO_PADRAO{$assistente_id} // $assistente_id;
   return {
     id      => $r->{id} + 0,
     titulo  => $r->{titulo},
+    assistente => { id => $assistente_id, titulo => $assistente_titulo },
     tema    => { id => $r->{tema_id}, titulo => $r->{tema_titulo} },
     recorte => { nivel => $r->{nivel}, codigo => $r->{codigo}, nome => $r->{recorte_nome} },
     opcoes    => _json_do_banco($r->{opcoes}) // {},
@@ -165,12 +177,20 @@ sub salvar_relatorio ($self, $gestor_id, $cod_inep, $job_id, $info) {
   my $geotag = ref $args->{geotag} eq 'HASH' ? $args->{geotag} : {};
   my $nivel  = _texto($geotag->{nivel});
   my $codigo = _texto($geotag->{codigo});
-  my $tema_id = _texto($args->{tema});
+
+  # Assistente dos args do job; jobs anteriores à Fase 4 não o têm -> padrão.
+  my $assistente = _texto($args->{assistente});
+  $assistente = 'relatorio' unless defined $assistente && $assistente =~ /^[a-z0-9_]{1,64}\z/;
+
+  # No modo composto não há tema nos args: o ReportResult traz
+  # tema = {id: <assistente>, titulo: <título do assistente>}.
+  my $tema_res = ref $result->{tema} eq 'HASH' ? $result->{tema} : {};
+  my $tema_id  = _texto($args->{tema}) // _texto($tema_res->{id})
+    // ($assistente ne 'relatorio' ? $assistente : undef);
   return unless $nivel && (grep { $_ eq $nivel } @NIVEIS) && defined $codigo && defined $tema_id;
 
   my $opcoes = ref $args->{opcoes} eq 'HASH' ? $args->{opcoes} : {};
 
-  my $tema_res    = ref $result->{tema} eq 'HASH' ? $result->{tema} : {};
   my $recorte_res = ref $result->{recorte} eq 'HASH' ? $result->{recorte} : {};
   my $tema_titulo = _texto($tema_res->{titulo}) // $tema_id;
   my $titulo      = _texto($result->{titulo}) // $tema_titulo;
@@ -190,14 +210,14 @@ sub salvar_relatorio ($self, $gestor_id, $cod_inep, $job_id, $info) {
   my $novo = $self->_row(
     qq{INSERT INTO clean.relatorios_salvos
          (gestor_id, cod_inep, job_id, tema_id, tema_titulo, nivel, codigo,
-          recorte_nome, opcoes, titulo, conteudo, gerado_em)
+          recorte_nome, opcoes, titulo, conteudo, gerado_em, assistente)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?::jsonb,
-               COALESCE(?::timestamptz, to_timestamp(?)))
+               COALESCE(?::timestamptz, to_timestamp(?)), ?)
        ON CONFLICT (gestor_id, job_id) DO NOTHING
        RETURNING $COLS_RESUMO},
     $gestor_id, $cod_inep, $job_id, $tema_id, $tema_titulo, $nivel, $codigo,
     $recorte_nome, Mojo::JSON::to_json($opcoes), $titulo,
-    Mojo::JSON::to_json(\%conteudo), $gerado_em, $finished,
+    Mojo::JSON::to_json(\%conteudo), $gerado_em, $finished, $assistente,
   );
   return (_salvo_resumo($novo), 1) if $novo;
 

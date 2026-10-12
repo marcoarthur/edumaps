@@ -68,14 +68,18 @@ sub report_result (%o) {
 }
 
 # Cria um job relatorio_gerar e o leva ao estado pedido.
+# Sem `assistente` em %o: job anterior à Fase 4 (args sem a chave).
 sub job_relatorio (%o) {
-  my $id = $minion->enqueue(relatorio_gerar => [{
+  my %args = (
     gestor_id => $o{gestor_id} // $GID,
     cod_inep  => $o{cod_inep}  // $INEP,
     geotag    => { nivel => 'municipio', codigo => '3555406' },
     tema      => 'ideb_territorio',
     opcoes    => { etapa => 'fundamental_ii' },
-  }] => { queue => $FILA });
+  );
+  $args{assistente} = $o{assistente} if exists $o{assistente};
+  delete $args{tema} if $o{sem_tema};
+  my $id = $minion->enqueue(relatorio_gerar => [\%args] => { queue => $FILA });
   my $estado = $o{estado} // 'finished';
   return $id if $estado eq 'inactive';
   my $job = $minion->worker->register->dequeue(0, { queues => [$FILA], id => $id });
@@ -116,6 +120,7 @@ subtest 'POST: salva job finished (201) e de novo (200, mesmo id)' => sub {
     ->json_is('/tema', { id => 'ideb_territorio', titulo => 'IDEB do território' })
     ->json_is('/recorte', { nivel => 'municipio', codigo => '3555406', nome => 'Ubatuba' })
     ->json_is('/opcoes', { etapa => 'fundamental_ii' })
+    ->json_is('/assistente', { id => 'relatorio', titulo => 'Relatório por tema' })
     ->json_is('/gerado_em', '2026-10-12T12:00:00Z')
     ->json_like('/salvo_em', qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   $salvo_id = $t->tx->res->json->{id};
@@ -135,6 +140,58 @@ subtest 'POST: salva job finished (201) e de novo (200, mesmo id)' => sub {
   ok !exists $c->{cache_hit}, 'cache_hit não é gravado';
   is $c->{titulo}, 'Relatório de Ubatuba', 'conteúdo do job (com acento íntegro)';
   unlike $conteudo, qr/ADULTERADO/, 'corpo do cliente ignorado';
+};
+
+subtest 'POST: assistente dos args do job (Fase 4)' => sub {
+  # modo tema com o assistente padrão explícito e o título vindo do resultado
+  my $r = report_result(titulo => 'Relatório F4');
+  $r->{assistente} = { id => 'relatorio', titulo => 'Relatório por tema (R)', modo => 'tema' };
+  my $j = job_relatorio(assistente => 'relatorio', result => $r);
+  $t->post_ok($base, $auth{a}, json => { job_id => $j })->status_is(201)
+    ->json_is('/assistente', { id => 'relatorio', titulo => 'Relatório por tema (R)' });
+  my $id_tema = $t->tx->res->json->{id};
+
+  # composto: sem tema nos args; tema = {id, titulo} do assistente no resultado
+  my $rc = report_result(titulo => 'EDA de Ubatuba');
+  $rc->{assistente} = { id => 'eda_municipio', titulo => 'EDA do município', modo => 'composto' };
+  $rc->{tema}       = { id => 'eda_municipio', titulo => 'EDA do município' };
+  $rc->{capitulos}  = [ { id => 'ideb', titulo => 'IDEB do município', tema => 'ideb_territorio' } ];
+  my $jc = job_relatorio(assistente => 'eda_municipio', sem_tema => 1, result => $rc);
+  $t->post_ok($base, $auth{a}, json => { job_id => $jc })->status_is(201)
+    ->json_is('/assistente', { id => 'eda_municipio', titulo => 'EDA do município' })
+    ->json_is('/tema', { id => 'eda_municipio', titulo => 'EDA do município' })
+    ->json_is('/titulo', 'EDA de Ubatuba');
+  my $id_eda = $t->tx->res->json->{id};
+
+  my ($col) = $dbh->selectrow_array(
+    'SELECT assistente FROM clean.relatorios_salvos WHERE id = ?', {}, $id_eda);
+  is $col, 'eda_municipio', 'coluna assistente gravada dos args';
+
+  # composto sem tema no resultado: tema_id cai no id do assistente
+  my $rs = report_result(titulo => 'EDA sem tema');
+  delete $rs->{tema};
+  my $js = job_relatorio(assistente => 'eda_municipio', sem_tema => 1, result => $rs);
+  $t->post_ok($base, $auth{a}, json => { job_id => $js })->status_is(201)
+    ->json_is('/tema/id', 'eda_municipio')
+    ->json_is('/assistente', { id => 'eda_municipio', titulo => 'eda_municipio' });
+  my $id_sem = $t->tx->res->json->{id};
+
+  # detalhe e lista trazem o assistente
+  $t->get_ok("$base/$id_eda", $auth{a})->status_is(200)
+    ->json_is('/assistente', { id => 'eda_municipio', titulo => 'EDA do município' })
+    ->json_is('/relatorio/capitulos/0/tema', 'ideb_territorio');
+  $t->get_ok($base, $auth{a})->status_is(200)
+    ->json_is('/items/0/id', $id_sem)
+    ->json_is('/items/1/assistente/id', 'eda_municipio')
+    ->json_is('/items/2/assistente', { id => 'relatorio', titulo => 'Relatório por tema (R)' });
+
+  # assistente malformado nos args -> padrão
+  my $jm = job_relatorio(assistente => 'Mal-Formado');
+  $t->post_ok($base, $auth{a}, json => { job_id => $jm })->status_is(201)
+    ->json_is('/assistente/id', 'relatorio');
+
+  $dbh->do('DELETE FROM clean.relatorios_salvos WHERE id IN (?, ?, ?)', {}, $id_tema, $id_eda, $id_sem);
+  $dbh->do('DELETE FROM clean.relatorios_salvos WHERE job_id = ?', {}, $jm);
 };
 
 subtest 'POST: job de outro gestor / outra task / outra escola / inexistente -> 404' => sub {

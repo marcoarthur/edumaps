@@ -107,6 +107,7 @@ subtest 'finish com ReportResult + cache_hit; segundo job vem do cache' => sub {
   # Corpo enviado ao R conforme o contrato.
   is $R{ultimo}{geotag},   $ARGS{geotag}, 'geotag';
   is $R{ultimo}{tema},     'ideb_territorio', 'tema';
+  is $R{ultimo}{assistente}, 'relatorio', 'job sem assistente (antigo): padrão relatorio';
   is $R{ultimo}{opcoes},   $ARGS{opcoes}, 'opcoes';
   is $R{ultimo}{contexto}, { cod_inep => '35038751' }, 'contexto.cod_inep';
   is $R{ultimo}{config}{api_key}, 'segredo-123', 'config (com api_key) vai no body';
@@ -120,7 +121,12 @@ subtest 'finish com ReportResult + cache_hit; segundo job vem do cache' => sub {
 
 subtest 'cache_params: sem api_key; config_version muda com a config' => sub {
   my $p = $client->report_cache_params({ %ARGS, config => { %CFG } });
-  is [ sort keys %$p ], [qw(config_version geotag opcoes tema)], 'só as chaves do contrato';
+  is [ sort keys %$p ], [qw(assistente config_version geotag opcoes tema)], 'só as chaves do contrato';
+  is $p->{assistente}, 'relatorio', 'assistente ausente = relatorio';
+  is $client->report_cache_params({ %ARGS, assistente => 'relatorio', config => { %CFG } }), $p,
+    'assistente padrão explícito = mesma chave (jobs antigos continuam no cache)';
+  my $pe = $client->report_cache_params({ %ARGS, assistente => 'eda_municipio', config => { %CFG } });
+  is $pe->{assistente}, 'eda_municipio', 'assistente na chave';
   unlike Mojo::JSON::encode_json($p), qr/segredo/, 'api_key fora da chave';
 
   my $p2 = $client->report_cache_params({ %ARGS, config => { %CFG, api_key => 'outra' } });
@@ -130,6 +136,18 @@ subtest 'cache_params: sem api_key; config_version muda com a config' => sub {
     'SELECT params::text FROM analytics.analysis_cache WHERE source_version = ?', {}, $SV);
   ok scalar @$rows, 'entrada gravada no analysis_cache';
   unlike $_->[0], qr/segredo/, 'params persistidos sem api_key' for @$rows;
+};
+
+subtest 'assistente dos args vai ao R e separa o cache' => sub {
+  my $antes = $R{chamadas};
+  my $info = roda(assistente => 'eda_municipio', tema => undef);
+  is $info->{state}, 'finished', 'finished';
+  is $R{ultimo}{assistente}, 'eda_municipio', 'assistente no body';
+  is $R{chamadas}, $antes + 1, 'outro assistente não reaproveita o cache do relatorio';
+
+  my $info2 = roda(assistente => 'eda_municipio', tema => undef, gestor_id => 3);
+  ok $info2->{result}{cache_hit}, 'mesmo assistente e recorte: cache';
+  is $R{chamadas}, $antes + 1, 'R não chamado de novo';
 };
 
 subtest '400 do R -> fail com a mensagem do R' => sub {

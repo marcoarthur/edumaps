@@ -1,7 +1,8 @@
 # t/04-api/gestor/relatorios.t
 # Assistente de Relatório (#219) — rotas do gestor:
 #   GET  /api/gestor/:cod_inep/relatorios/recorte-padrao
-#   GET  /api/gestor/:cod_inep/relatorios/temas?nivel=
+#   GET  /api/gestor/:cod_inep/relatorios/assistentes        (Fase 4)
+#   GET  /api/gestor/:cod_inep/relatorios/temas?nivel=&assistente=
 #   POST /api/gestor/:cod_inep/relatorios
 #   GET  /api/gestor/:cod_inep/relatorios/jobs/:job_id
 # O serviço R (Plumber) é simulado por um app Mojolicious embutido no UA do
@@ -22,7 +23,8 @@ my $minion = $t->app->minion;
 my $dbh    = $t->app->schema->storage->dbh;
 
 # --- R simulado ------------------------------------------------------------
-my %R = (temas_status => 200, chamadas_temas => 0);
+my %R = (temas_status => 200, chamadas_temas => 0,
+         assistentes_status => 200, chamadas_assistentes => 0, ultimo_temas => undef);
 my @TEMAS = (
   { id => 'ideb_territorio', titulo => 'IDEB do território', niveis => [qw(municipio uf regiao)] },
   { id => 'redes_territorio', titulo => 'Redes de ensino', niveis => [qw(municipio uf regiao)] },
@@ -30,14 +32,42 @@ my @TEMAS = (
   { id => 'minha_escola', titulo => 'Minha escola', niveis => ['escola'] },
 );
 
+# Fase 4: assistentes declarados no R. `interno` não é do público gestor;
+# `uf_so` tem publico escalar (Plumber com auto_unbox) e só o nível uf.
+my @ASSISTENTES = (
+  { id => 'relatorio', titulo => 'Relatório por tema', modo => 'tema',
+    niveis => [qw(escola municipio uf regiao)], publico => ['gestor'],
+    temas => [ map { $_->{id} } @TEMAS ], opcoes => {}, padroes => {} },
+  { id => 'eda_municipio', titulo => 'EDA do município', modo => 'composto',
+    niveis => ['municipio'], publico => ['gestor'],
+    capitulos => [ { tema => 'ideb_territorio', titulo => 'IDEB do município' } ],
+    opcoes => {}, padroes => {} },
+  { id => 'uf_so', titulo => 'Só UF', modo => 'tema', niveis => 'uf', publico => 'gestor',
+    temas => ['redes_territorio'], opcoes => {}, padroes => {} },
+  { id => 'interno', titulo => 'Interno', modo => 'tema', niveis => [qw(uf)],
+    publico => ['admin'], temas => ['ideb_territorio'], opcoes => {}, padroes => {} },
+);
+
 my $mock = Mojolicious->new;
 $mock->log->level('fatal');
+$mock->routes->get('/report/assistentes' => sub ($c) {
+  $R{chamadas_assistentes}++;
+  return $c->render(json => { error => 'boom interno' }, status => $R{assistentes_status})
+    if $R{assistentes_status} != 200;
+  $c->render(json => { assistentes => \@ASSISTENTES });
+});
 $mock->routes->get('/report/temas' => sub ($c) {
   $R{chamadas_temas}++;
+  $R{ultimo_temas} = $c->req->query_params->to_hash;
   return $c->render(json => { error => 'boom interno' }, status => $R{temas_status})
     if $R{temas_status} != 200;
   my $nivel = $c->param('nivel');
-  my @t = grep { !$nivel || grep { $_ eq $nivel } @{ $_->{niveis} } } @TEMAS;
+  my $assistente = $c->param('assistente') // 'relatorio';
+  my ($def) = grep { $_->{id} eq $assistente } @ASSISTENTES;
+  return $c->render(json => { error => 'assistente desconhecido' }, status => 400) unless $def;
+  my %do_assistente = map { $_ => 1 } @{ $def->{temas} // [] };
+  my @t = grep { $do_assistente{ $_->{id} } }
+          grep { !$nivel || grep { $_ eq $nivel } @{ $_->{niveis} } } @TEMAS;
   $c->render(json => { temas => \@t });
 });
 $mock->routes->post('/report' => sub ($c) {
@@ -157,6 +187,62 @@ subtest 'temas: proxy do R (com filtro de nível e cache)' => sub {
   is scalar @{ $t->tx->res->json->{temas} }, 4, 'sem nivel: catálogo inteiro';
 
   $t->get_ok("$base/temas?nivel=bairro", $auth)->status_is(400);
+
+  is $R{ultimo_temas}{assistente}, 'relatorio', 'sem ?assistente: o padrão vai ao R';
+};
+
+subtest 'assistentes: proxy do R filtrado por público gestor (cache)' => sub {
+  $client->cache_enabled(1);
+  $t->get_ok("$base/assistentes")->status_is(401);
+  $t->get_ok("$base/assistentes", $oauth)->status_is(403);
+
+  $t->get_ok("$base/assistentes", $auth)->status_is(200)
+    ->json_is('/assistentes/0/id', 'relatorio')
+    ->json_is('/assistentes/1/id', 'eda_municipio')
+    ->json_is('/assistentes/1/modo', 'composto')
+    ->json_is('/assistentes/1/capitulos/0/tema', 'ideb_territorio');
+  my $ids = [ map { $_->{id} } @{ $t->tx->res->json->{assistentes} } ];
+  is $ids, [qw(relatorio eda_municipio uf_so)], 'sem o assistente de outro público';
+  ok !exists $t->tx->res->json->{cache_hit}, 'cache_hit não vaza na resposta';
+
+  my $antes = $R{chamadas_assistentes};
+  $t->get_ok("$base/assistentes", $auth)->status_is(200);
+  is $R{chamadas_assistentes}, $antes, 'segunda chamada servida do cache';
+};
+
+subtest 'assistentes: R fora do ar -> 502 genérico' => sub {
+  $client->cache_enabled(0);
+  local $R{assistentes_status} = 500;
+  $t->get_ok("$base/assistentes", $auth)->status_is(502)
+    ->json_like('/error', qr/indisponível/);
+  unlike $t->tx->res->body, qr/boom interno/, 'não vaza o erro do R';
+
+  # o POST também depende da lista
+  $t->post_ok($base, $auth, json => { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio' })
+    ->status_is(502);
+  $client->cache_enabled(1);
+};
+
+subtest 'temas: ?assistente repassado ao R e validado' => sub {
+  $client->cache_enabled(0);
+  $t->get_ok("$base/temas?nivel=uf&assistente=uf_so", $auth)->status_is(200);
+  is [ map { $_->{id} } @{ $t->tx->res->json->{temas} } ], ['redes_territorio'], 'temas do assistente no nível';
+  is $R{ultimo_temas}, { nivel => 'uf', assistente => 'uf_so' }, 'query repassada ao R';
+
+  $t->get_ok("$base/temas?nivel=uf&assistente=relatorio", $auth)->status_is(200);
+  is scalar @{ $t->tx->res->json->{temas} }, 3, 'assistente padrão explícito';
+
+  $t->get_ok("$base/temas?assistente=EDA-municipio", $auth)->status_is(400)->json_like('/error', qr/assistente/);
+  $t->get_ok("$base/temas?assistente=nao_existe", $auth)->status_is(400);
+  $t->get_ok("$base/temas?assistente=interno", $auth)->status_is(400, 'assistente de outro público');
+  $client->cache_enabled(1);
+};
+
+subtest 'cache: chave de temas inclui o assistente' => sub {
+  $client->cache_enabled(1);
+  $t->get_ok("$base/temas?nivel=uf&assistente=uf_so", $auth)->status_is(200);
+  $t->get_ok("$base/temas?nivel=uf", $auth)->status_is(200);
+  is scalar @{ $t->tx->res->json->{temas} }, 3, 'cache do padrão não colide com o de uf_so';
 };
 
 subtest 'temas: R fora do ar -> 502 com mensagem genérica' => sub {
@@ -184,6 +270,15 @@ subtest 'POST: validação do geotag, tema e opcoes (400)' => sub {
     [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'nao_existe' }, 'tema fora do catálogo' ],
     [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'minha_escola' }, 'tema de outro nível' ],
     [ { geotag => { nivel => 'regiao', codigo => 'SE' }, tema => 'ideb_territorio', opcoes => [1] }, 'opcoes não-objeto' ],
+    # Fase 4 — assistente
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio', assistente => 'nao_existe' }, 'assistente desconhecido' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio', assistente => 'interno' }, 'assistente de outro público' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio', assistente => 'Bad-Id' }, 'assistente com formato inválido' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio', assistente => ['relatorio'] }, 'assistente não-escalar' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, assistente => 'eda_municipio' }, 'nível fora dos niveis do assistente' ],
+    [ { geotag => { nivel => 'municipio', codigo => '3509502' }, tema => 'redes_territorio', assistente => 'uf_so' }, 'nível fora (niveis escalar)' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, assistente => 'uf_so' }, 'modo tema exige tema' ],
+    [ { geotag => { nivel => 'uf', codigo => 'SP' }, tema => 'ideb_territorio', assistente => 'uf_so' }, 'tema fora do catálogo do assistente' ],
   );
   for my $c (@casos) {
     $t->post_ok($base, $auth, json => $c->[0])->status_is(400, $c->[1])->json_has('/error');
@@ -214,11 +309,36 @@ subtest 'POST: 202 + job_id; job com args do gestor' => sub {
   ok $args->{gestor_id}, 'gestor_id';
   is $args->{geotag}, { nivel => 'municipio', codigo => '3509502' }, 'geotag normalizado (string)';
   is $args->{opcoes}, { etapa => 'fundamental_i' }, 'opcoes';
+  is $args->{assistente}, 'relatorio', 'assistente padrão nos args';
+  is $args->{tema}, 'ideb_territorio', 'tema nos args';
 
   # escola do próprio gestor é aceita
   $t->post_ok($base, $auth, json => {
     geotag => { nivel => 'escola', codigo => $INEP }, tema => 'minha_escola',
   })->status_is(202);
+};
+
+subtest 'POST: assistente composto (sem tema / tema ignorado) e tema de outro assistente' => sub {
+  $t->post_ok($base, $auth, json => {
+    geotag => { nivel => 'municipio', codigo => '3509502' }, assistente => 'eda_municipio',
+    opcoes => { etapa => 'fundamental_ii' },
+  })->status_is(202)->json_has('/job_id');
+  my $args = $minion->job($t->tx->res->json->{job_id})->info->{args}[0];
+  is $args->{assistente}, 'eda_municipio', 'assistente nos args';
+  ok !exists $args->{tema}, 'composto: sem tema nos args';
+  is $args->{opcoes}, { etapa => 'fundamental_ii' }, 'opcoes';
+
+  $t->post_ok($base, $auth, json => {
+    geotag => { nivel => 'municipio', codigo => '3509502' }, assistente => 'eda_municipio',
+    tema => 'qualquer_coisa',
+  })->status_is(202);
+  ok !exists $minion->job($t->tx->res->json->{job_id})->info->{args}[0]{tema}, 'tema ignorado no composto';
+
+  $t->post_ok($base, $auth, json => {
+    geotag => { nivel => 'uf', codigo => 'SP' }, assistente => 'uf_so', tema => 'redes_territorio',
+  })->status_is(202);
+  $args = $minion->job($t->tx->res->json->{job_id})->info->{args}[0];
+  is [ @$args{qw(assistente tema)} ], [qw(uf_so redes_territorio)], 'modo tema com assistente não padrão';
 };
 
 subtest 'GET job: estado inactive -> finished com ReportResult + cache_hit' => sub {

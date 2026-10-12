@@ -241,9 +241,11 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/osm/pois' => $check)
     ->to('gestor#osm_pois_status')->name('gestor_osm_pois_status');
 
-  # --- Assistente de Relatório (#219): recorte, temas, job assíncrono --------
+  # --- Assistente de Relatório (#219): recorte, assistentes, temas, job ------
   $auth->get('/:cod_inep/relatorios/recorte-padrao' => $check)
     ->to('gestor_relatorios#recorte_padrao')->name('gestor_relatorios_recorte_padrao');
+  $auth->get('/:cod_inep/relatorios/assistentes' => $check)
+    ->to('gestor_relatorios#assistentes')->name('gestor_relatorios_assistentes');
   $auth->get('/:cod_inep/relatorios/temas' => $check)
     ->to('gestor_relatorios#temas')->name('gestor_relatorios_temas');
   $auth->post('/:cod_inep/relatorios' => $check)

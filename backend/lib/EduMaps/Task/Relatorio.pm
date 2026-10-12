@@ -8,7 +8,7 @@ use Minion::Task::Generator qw/task/;
 
 # Assistente de Relatório (#219). A task `relatorio_gerar` roda na fila
 # `analytics` (o mesmo worker do Assistente do Censo) e chama o Plumber
-# (POST /report) via EduMaps::Analytics::Client — com cache read-through de
+# (POST /report, com o `assistente` dos args — Fase 4) via EduMaps::Analytics::Client — com cache read-through de
 # 24 h em analytics.analysis_cache. O resultado do job é o ReportResult do R
 # acrescido de `cache_hit` (booleano JSON).
 #
@@ -46,11 +46,12 @@ sub _relatorio_gerar ($job, $args) {
   my $result;
   try {
     $result = $app->analytics->run_report({
-      geotag   => $args->{geotag},
-      tema     => $args->{tema},
-      opcoes   => $args->{opcoes} // {},
-      contexto => { cod_inep => $args->{cod_inep} },
-      config   => $config,
+      geotag     => $args->{geotag},
+      assistente => $args->{assistente},    # undef (jobs antigos) = relatorio
+      tema       => $args->{tema},
+      opcoes     => $args->{opcoes} // {},
+      contexto   => { cod_inep => $args->{cod_inep} },
+      config     => $config,
     });
   } catch ($err) {
     $app->log->error("Falha no Assistente de Relatório: $err");

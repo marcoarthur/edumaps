@@ -8,7 +8,9 @@ use EduMaps::Roles::Business::Gestor::Relatorios ();
 # posse do cod_inep (_gestor_inep_ok, herdado do Controller::Gestor).
 #
 #   GET  .../relatorios/recorte-padrao  escola, município, UF e região
-#   GET  .../relatorios/temas?nivel=    catálogo do R (cache)
+#   GET  .../relatorios/assistentes     assistentes do R com público gestor (cache)
+#   GET  .../relatorios/temas?nivel=&assistente=
+#                                       catálogo do R (cache)
 #   POST .../relatorios                 valida e enfileira relatorio_gerar
 #   GET  .../relatorios/jobs/:job_id    estado/progresso/resultado do job
 #
@@ -38,8 +40,45 @@ sub recorte_padrao($self) {
   $self->render(json => $recorte);
 }
 
+# Fase 4: id do assistente padrão ("Relatório por tema") e formato dos ids.
+use constant ASSISTENTE_PADRAO => 'relatorio';
+my $RE_ASSISTENTE = qr/^[a-z0-9_]{1,64}\z/;
+
+# Valor de uma lista vinda do R: arrayref (normal) ou escalar (Plumber com
+# auto_unbox numa lista de 1 elemento) -> lista Perl.
+sub _lista ($v) {
+  return @$v if ref $v eq 'ARRAY';
+  return ()  if !defined $v || ref $v;
+  return ($v);
+}
+
+sub assistentes($self) {
+  return unless $self->_gestor_inep_ok;
+
+  my $assistentes = $self->_assistentes
+    // return $self->render(json => { error => ERRO_R_INDISPONIVEL }, status => 502);
+
+  $self->render(json => { assistentes => $assistentes });
+}
+
 sub temas($self) {
   return unless $self->_gestor_inep_ok;
+
+  my $assistente = $self->param('assistente');
+  if (defined $assistente && length $assistente) {
+    return $self->render(json => { error => 'assistente inválido' }, status => 400)
+      unless $assistente =~ $RE_ASSISTENTE;
+    # Só os assistentes visíveis ao gestor (o padrão dispensa a consulta).
+    if ($assistente ne ASSISTENTE_PADRAO) {
+      my $lista = $self->_assistentes
+        // return $self->render(json => { error => ERRO_R_INDISPONIVEL }, status => 502);
+      return $self->render(json => { error => "Assistente '$assistente' não está disponível." }, status => 400)
+        unless _achar_assistente($lista, $assistente);
+    }
+  }
+  else {
+    $assistente = ASSISTENTE_PADRAO;
+  }
 
   my $nivel = $self->param('nivel');
   if (defined $nivel && length $nivel) {
@@ -50,7 +89,7 @@ sub temas($self) {
     $nivel = undef;
   }
 
-  my $temas = $self->_temas($nivel)
+  my $temas = $self->_temas($nivel, $assistente)
     // return $self->render(json => { error => ERRO_R_INDISPONIVEL }, status => 502);
 
   $self->render(json => { temas => $temas });
@@ -68,29 +107,53 @@ sub criar($self) {
   my ($geotag, $erro) = $self->model('Gestor')->geotag_valido($input->{geotag}, $gestor->{cod_inep});
   return $self->render(json => { error => $erro }, status => 400) unless $geotag;
 
-  my $tema = $input->{tema};
-  return $self->render(json => { error => 'tema é obrigatório' }, status => 400)
-    unless defined $tema && !ref $tema && length $tema;
+  # Fase 4: assistente opcional (padrão: Relatório por tema).
+  my $assistente = $input->{assistente} // ASSISTENTE_PADRAO;
+  return $self->render(json => { error => 'assistente inválido' }, status => 400)
+    unless !ref $assistente && $assistente =~ $RE_ASSISTENTE;
 
   my $opcoes = $input->{opcoes} // {};
   return $self->render(json => { error => 'opcoes deve ser um objeto' }, status => 400)
     unless ref $opcoes eq 'HASH';
 
-  # O tema precisa existir no catálogo do nível (catálogo vem do R, cache).
-  my $temas = $self->_temas($geotag->{nivel})
+  # O assistente precisa estar na lista do R visível ao gestor (cache).
+  my $lista = $self->_assistentes
     // return $self->render(json => { error => ERRO_R_INDISPONIVEL }, status => 502);
-  return $self->render(
-    json   => { error => "Tema '$tema' não está disponível para o nível $geotag->{nivel}." },
-    status => 400,
-  ) unless grep { ref $_ eq 'HASH' && (_scalar($_->{id}) // '') eq $tema } @$temas;
+  my $def = _achar_assistente($lista, $assistente)
+    or return $self->render(json => { error => "Assistente '$assistente' não está disponível." }, status => 400);
 
-  my $job_id = $self->gerar_relatorio({
-    gestor_id => $gestor->{id},
-    cod_inep  => $cod_inep,
-    geotag    => $geotag,
-    tema      => $tema,
-    opcoes    => $opcoes,
-  });
+  my $nivel = $geotag->{nivel};
+  return $self->render(
+    json   => { error => "O assistente '$assistente' não está disponível para o nível $nivel." },
+    status => 400,
+  ) unless grep { defined $_ && !ref $_ && $_ eq $nivel } _lista($def->{niveis});
+
+  my $modo = _scalar($def->{modo}) // 'tema';
+  my %job = (
+    gestor_id  => $gestor->{id},
+    cod_inep   => $cod_inep,
+    geotag     => $geotag,
+    assistente => $assistente,
+    opcoes     => $opcoes,
+  );
+
+  # No `composto` os capítulos são fixos: o tema é opcional e ignorado.
+  if ($modo ne 'composto') {
+    my $tema = $input->{tema};
+    return $self->render(json => { error => 'tema é obrigatório' }, status => 400)
+      unless defined $tema && !ref $tema && length $tema;
+
+    # O tema precisa existir no catálogo do assistente no nível (R, cache).
+    my $temas = $self->_temas($nivel, $assistente)
+      // return $self->render(json => { error => ERRO_R_INDISPONIVEL }, status => 502);
+    return $self->render(
+      json   => { error => "Tema '$tema' não está disponível para o nível $nivel." },
+      status => 400,
+    ) unless grep { ref $_ eq 'HASH' && (_scalar($_->{id}) // '') eq $tema } @$temas;
+    $job{tema} = $tema;
+  }
+
+  my $job_id = $self->gerar_relatorio(\%job);
 
   $self->res->headers->header(
     Location => "/api/gestor/$cod_inep/relatorios/jobs/$job_id"
@@ -212,9 +275,39 @@ sub _job_do_gestor($self, $job_id) {
   return $info;
 }
 
-# Catálogo de temas do nível (arrayref) ou undef se o R falhar.
-sub _temas($self, $nivel) {
-  my $res = eval { $self->analytics->run_report_temas($nivel) };
+# Assistentes do R visíveis ao gestor (`publico` contém `gestor`), como
+# arrayref, ou undef se o R falhar.
+sub _assistentes($self) {
+  my $res = eval { $self->analytics->run_report_assistentes };
+  if (my $err = $@) {
+    $self->app->log->error("Assistente de Relatório: /report/assistentes falhou: $err");
+    return undef;
+  }
+  my $lista = ref $res eq 'HASH' ? $res->{assistentes} : undef;
+  unless (ref $lista eq 'ARRAY') {
+    $self->app->log->error('Assistente de Relatório: /report/assistentes sem lista de assistentes');
+    return undef;
+  }
+  return [
+    grep {
+      my $def = $_;
+      ref $def eq 'HASH'
+        && grep { defined $_ && !ref $_ && $_ eq 'gestor' } _lista($def->{publico})
+    } @$lista
+  ];
+}
+
+# Definição do assistente $id na lista (hashref) ou undef.
+sub _achar_assistente ($lista, $id) {
+  for my $def (@$lista) {
+    return $def if (_scalar($def->{id}) // '') eq $id;
+  }
+  return undef;
+}
+
+# Catálogo de temas do nível e assistente (arrayref) ou undef se o R falhar.
+sub _temas($self, $nivel, $assistente = ASSISTENTE_PADRAO) {
+  my $res = eval { $self->analytics->run_report_temas($nivel, $assistente) };
   if (my $err = $@) {
     $self->app->log->error("Assistente de Relatório: /report/temas falhou: $err");
     return undef;
