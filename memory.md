@@ -4,6 +4,48 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — Assistente de Relatório, Fases 0 e 1 (PR #220)
+
+- **Issue:** [#219](https://github.com/marcoarthur/edumaps/issues/219)
+  (**aberta**, as fases seguem). **Plano:**
+  `docs/specs/2026-10-12-assistente-relatorio-plano-inicial.md` (v1.1);
+  **execução:** `…-assistente-relatorio.execucao.md`; nota técnica **114**.
+- **Decisões do developer:**
+  - gestor tratado como **pesquisador** (persona `pesquisadora-educacional`
+    do eduBR; o pesquisador, quando modelado, fica com as análises profundas);
+  - entrega em **seções estruturadas**;
+  - **roteiro fixo por tema, LLM só redige**;
+  - **LLM do painel**;
+  - eduBR instalado do **GitHub em commit fixo** (`marcoarthur/eduBR@2dc9af9`,
+    público).
+- **Entregas** (branch `feat/assistente-relatorio` → **PR #220**, merge
+  `c62d730`):
+  - adapter do eduBR e 6 temas no `edumapsAnalytics` (`/report`,
+    `/report/temas`);
+  - task Minion `relatorio_gerar` e rotas `/api/gestor/:inep/relatorios/*`;
+  - página `/gestor/relatorios`;
+  - Rexfile instala o eduBR fixado + `dbplyr`/`parsnip`/`broom`/`remotes`.
+- **Correção importante:** o cache `analytics.analysis_cache` **nunca ligava**
+  (`$app->can('pg')`, `pg` é helper). Agora vale para todas as análises
+  cacheáveis (24 h), com aprovação do developer.
+- **eduBR é somente-leitura:** spike e build feitos de `git archive` para o
+  scratchpad; nada escrito em `~/Projects/eduBR`.
+- **Armadilhas:**
+  - `censo-dictionary.R` estava fora do `Collate` e o deploy do `analytic`
+    falhou ao reinstalar (o Rex restaura a versão anterior; corrigido);
+  - o service worker serve o bundle antigo logo após um deploy (tela em
+    branco até recarregar);
+  - a sessão de teste em `clean.sessoes` precisa de token **≤ 64** caracteres;
+  - o Chrome CDP falha com captura de 2200 px de altura (usar 1600).
+- **Validação:**
+  - R 28 / 1085;
+  - backend 103 / 676 (só falhas antigas);
+  - frontend 101 / 779;
+  - E2E 14/14 com o Gemini real;
+  - validação visual.
+- **Próximo:** Fase 2 (aprofundamento: IDEB por escola, covariáveis,
+  regressões, complemento das ferramentas de escola).
+
 ## Sessão 2026-10-12 — CI do backend verde de novo (PR #218)
 
 - O `backend-tests` falhava no `main` desde 2026-10-10 só por
