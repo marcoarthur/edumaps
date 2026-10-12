@@ -197,8 +197,45 @@ admin e, no boot do worker, se a config pedir polling.
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| B1 | T-A | `Channel::Telegram::Updates` + envio com teclado pelo bot público | ⚪ |
-| B2 | T-A | Webhook público + endpoints admin (status/webhook/polling) | ⚪ |
-| B3 | T-A | Task `telegram_polling` (offset, lock, reagendamento) | ⚪ |
-| B4 | T-A | WhatsApp: template de autenticação + endpoints de código | ⚪ |
-| F3 | T-B | ConfigPage: status e ações do bot público | ⚪ |
+| B1 | T-A | `Channel::Telegram::Updates` + envio com teclado pelo bot público | 🟢 |
+| B2 | T-A | Webhook público + endpoints admin (status/webhook/polling) | 🟢 |
+| B3 | T-A | Task `telegram_polling` (offset, lock, reagendamento) | 🟢 |
+| B4 | T-A | WhatsApp: template de autenticação + endpoints de código | 🟢 |
+| F3 | T-B | ConfigPage: status e ações do bot público | 🟢 |
+
+### Log de decisões — onda 2
+
+- **Desvios da T-A aceitos pelo coordenador:**
+  - `POST …/whatsapp` → `502` quando a Meta falha (registrado em
+    `canal_mensagens`, não conta no limite); o cliente mostra erro genérico.
+  - `POST …/whatsapp` com ref já confirmada → `404` (ref usada); `…/verificar`
+    com ref confirmada → `200 {estado:"confirmado"}` (idempotente).
+  - Limite de envios: 3 por ref (total) e 3 por telefone em 1h (só `sent`).
+  - Webhook: `404` quando o **bot público** está desligado/incompleto (não
+    `canais.inscricao.enabled`); segredo não configurado → `401`.
+  - Admin: `DELETE webhook` sem token → `409`; status traz `webhook.erro`
+    quando `getWebhookInfo` falha.
+  - Um código WhatsApp vale para qualquer ref do mesmo telefone
+    (`Channel::Confirmation` é chaveado por telefone) — prova a mesma posse.
+- **Bot só em conversa privada**; grupos e updates sem `message` são
+  ignorados; rate limit 20 updates/min por `chat_id` (memória).
+- **Polling:** cada job faz um ciclo, grava o offset por update (nunca
+  retrocede), reagenda com 1s (backoff 5s→5min em erro; `409` de webhook ativo
+  chama `deleteWebhook`). Início automático no evento `wait` do primeiro laço
+  do `minion worker`.
+- **Frontend:** painel de status como componente próprio
+  (`TelegramPublicoStatus`), visível em qualquer folha do grupo
+  `canais_telegram`; botão extra "Atualizar status".
+
+## Verificação independente (coordenador, onda 2)
+
+- **Backend:** `prove -l t/02-models/ t/04-api/canais/ t/04-api/admin/
+  t/04-api/gestor* t/03-plugins/ -r t/05-tasks/telegram_polling.t
+  t/05-tasks/bot_telegram.t t/05-tasks/bot_notifier.t` → 65 arquivos / 428
+  testes; falham só 6 arquivos **idênticos no `main` limpo**: `City.t`,
+  `domain/quality.t`, `indicators/quality.t`, `indicators_quality.t`,
+  `03-plugins/analytics.t` (mock em `/tmp/user/1000/opencode`) e
+  `middlewares/session.t`. `check_dependencies.pl` OK.
+- **Frontend:** `vitest run` → 83 arquivos / 511 testes PASS; `vite build` OK.
+- **Contrato:** admin devolve `{error}` em 409/502 e `webhook.url` nulo quando
+  não registrado, como o painel espera.
