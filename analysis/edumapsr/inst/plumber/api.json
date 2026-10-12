@@ -727,6 +727,144 @@
       }
     },
 
+    "/report/temas": {
+      "get": {
+        "summary": "Lista os temas do Assistente de Relatório",
+        "description": "Catálogo de temas do Assistente de Relatório (issue #219), opcionalmente filtrado pelo nível do recorte. A primeira etapa de `opcoes.etapa` é o padrão; `rede` é opcional (omitida = todas as redes; \"publica\" junta Federal, Estadual e Municipal, só nos temas que a aceitam).",
+        "operationId": "reportTemas",
+        "parameters": [
+          {
+            "name": "nivel",
+            "in": "query",
+            "required": false,
+            "description": "Nível do recorte.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "municipio",
+                "uf",
+                "regiao",
+                "escola"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Temas disponíveis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemasResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nível inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Nível inválido: bairro. Use um de: municipio, uf, regiao, escola.",
+                  "tipo": "invalid_request"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao listar os temas",
+                  "tipo": "internal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/report": {
+      "post": {
+        "summary": "Gera um relatório (Assistente de Relatório)",
+        "description": "Gera o relatório de um tema sobre um recorte geográfico. O roteiro do tema chama de forma determinística as ferramentas do pacote eduBR (persona pesquisadora-educacional) pela conexão somente-leitura; o modelo de linguagem do painel só redige as seções `resumo` e `leitura`. Falha do modelo não derruba o relatório (`rastreio.llm = \"indisponivel\"`, aviso `llm` e resumo determinístico). `config.provider = \"mock\"` gera texto determinístico.",
+        "operationId": "createReport",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              },
+              "example": {
+                "geotag": {
+                  "nivel": "municipio",
+                  "codigo": "3509502"
+                },
+                "tema": "ideb_territorio",
+                "opcoes": {
+                  "etapa": "fundamental_i"
+                },
+                "contexto": {
+                  "cod_inep": "35038751"
+                },
+                "config": {
+                  "provider": "mock"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Relatório gerado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pedido inválido (tema, nível, geotag ou opção) ou eduBR ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "O tema \"Perfil dos gestores escolares\" não está disponível para o nível municipio (níveis: uf, regiao).",
+                  "tipo": "invalid_request"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno (banco, eduBR ou bug)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao gerar o relatório",
+                  "tipo": "internal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/health": {
       "get": {
         "summary": "Verifica a saúde do serviço",
@@ -1760,6 +1898,471 @@
           }
         },
         "additionalProperties": false
+      },
+
+      "ReportTema": {
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "niveis",
+          "profundidade",
+          "opcoes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ideb_territorio"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "niveis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "municipio",
+                "uf",
+                "regiao",
+                "escola"
+              ]
+            }
+          },
+          "profundidade": {
+            "type": "string",
+            "enum": [
+              "descritiva"
+            ]
+          },
+          "opcoes": {
+            "type": "object",
+            "properties": {
+              "etapa": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "fundamental_i",
+                    "fundamental_ii",
+                    "ensino_medio"
+                  ]
+                }
+              },
+              "rede": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Municipal",
+                    "Estadual",
+                    "Federal",
+                    "Privada",
+                    "publica"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReportTemasResponse": {
+        "type": "object",
+        "required": [
+          "temas"
+        ],
+        "properties": {
+          "temas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportTema"
+            }
+          }
+        }
+      },
+      "ReportGeotag": {
+        "type": "object",
+        "required": [
+          "nivel",
+          "codigo"
+        ],
+        "description": "municipio: código IBGE (7 dígitos); uf: sigla (2 letras maiúsculas); regiao: N|NE|SE|S|CO; escola: INEP (8 dígitos), só a escola do gestor.",
+        "properties": {
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "municipio",
+              "uf",
+              "regiao",
+              "escola"
+            ]
+          },
+          "codigo": {
+            "type": "string",
+            "example": "3509502"
+          }
+        }
+      },
+      "ReportRequest": {
+        "type": "object",
+        "required": [
+          "geotag",
+          "tema"
+        ],
+        "properties": {
+          "geotag": {
+            "$ref": "#/components/schemas/ReportGeotag"
+          },
+          "tema": {
+            "type": "string",
+            "example": "ideb_territorio"
+          },
+          "opcoes": {
+            "type": "object",
+            "properties": {
+              "etapa": {
+                "type": "string",
+                "enum": [
+                  "fundamental_i",
+                  "fundamental_ii",
+                  "ensino_medio"
+                ]
+              },
+              "rede": {
+                "type": "string",
+                "enum": [
+                  "Municipal",
+                  "Estadual",
+                  "Federal",
+                  "Privada",
+                  "publica"
+                ]
+              }
+            }
+          },
+          "contexto": {
+            "type": "object",
+            "properties": {
+              "cod_inep": {
+                "type": "string",
+                "description": "Escola do gestor (o backend garante a posse)."
+              }
+            }
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuração do LLM vinda do Painel (sobrepõe as variáveis EDUMAPS_LLM_*).",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "gemini",
+                  "groq",
+                  "openai",
+                  "ollama",
+                  "mock"
+                ]
+              },
+              "model": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "api_key": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ReportSecao": {
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "titulo"
+        ],
+        "description": "Seção tipada. `texto`: markdown simples; `indicadores`: itens com valor e referência; `tabela`: colunas + linhas (objetos por id de coluna, null = sem valor); `grafico`: barras ou linhas, eixo x + séries + dados. A primeira seção é `resumo` e a última `leitura`.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "texto",
+              "indicadores",
+              "tabela",
+              "grafico"
+            ]
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "markdown": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "rotulo",
+                "valor",
+                "formato"
+              ],
+              "properties": {
+                "rotulo": {
+                  "type": "string"
+                },
+                "valor": {},
+                "formato": {
+                  "type": "string",
+                  "enum": [
+                    "texto",
+                    "inteiro",
+                    "decimal1",
+                    "decimal2",
+                    "percentual"
+                  ]
+                },
+                "referencia": {
+                  "type": "object",
+                  "properties": {
+                    "rotulo": {
+                      "type": "string"
+                    },
+                    "valor": {}
+                  }
+                }
+              }
+            }
+          },
+          "colunas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "rotulo",
+                "formato"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "rotulo": {
+                  "type": "string"
+                },
+                "formato": {
+                  "type": "string",
+                  "enum": [
+                    "texto",
+                    "inteiro",
+                    "decimal1",
+                    "decimal2",
+                    "percentual"
+                  ]
+                }
+              }
+            }
+          },
+          "linhas": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "nota": {
+            "type": "string"
+          },
+          "grafico": {
+            "type": "string",
+            "enum": [
+              "barras",
+              "linhas"
+            ]
+          },
+          "x": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "rotulo": {
+                "type": "string"
+              }
+            }
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "rotulo": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "dados": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "formato": {
+            "type": "string",
+            "enum": [
+              "texto",
+              "inteiro",
+              "decimal1",
+              "decimal2",
+              "percentual"
+            ],
+            "description": "Formato dos valores das séries (só em gráfico; opcional)."
+          }
+        }
+      },
+      "ReportResult": {
+        "type": "object",
+        "required": [
+          "titulo",
+          "gerado_em",
+          "recorte",
+          "tema",
+          "secoes",
+          "fontes",
+          "avisos",
+          "rastreio"
+        ],
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "example": "IDEB do território — Campinas (SP)"
+          },
+          "gerado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recorte": {
+            "type": "object",
+            "required": [
+              "nivel",
+              "codigo",
+              "nome"
+            ],
+            "properties": {
+              "nivel": {
+                "type": "string"
+              },
+              "codigo": {
+                "type": "string"
+              },
+              "nome": {
+                "type": "string"
+              },
+              "uf": {
+                "type": "string"
+              },
+              "municipio": {
+                "type": "string",
+                "description": "Só no nível escola."
+              }
+            }
+          },
+          "tema": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "titulo": {
+                "type": "string"
+              }
+            }
+          },
+          "secoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSecao"
+            }
+          },
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ferramenta": {
+                  "type": "string"
+                },
+                "descricao": {
+                  "type": "string"
+                },
+                "edicao": {
+                  "type": "string"
+                },
+                "escopo": {
+                  "type": "string"
+                },
+                "n": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "avisos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "description": "truncado, aviso, sem_dados ou llm."
+                },
+                "mensagem": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "rastreio": {
+            "type": "object",
+            "properties": {
+              "provedor": {
+                "type": "string"
+              },
+              "modelo": {
+                "type": "string"
+              },
+              "llm": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "indisponivel"
+                ]
+              },
+              "versao_edubr": {
+                "type": "string",
+                "nullable": true
+              },
+              "chamadas": {
+                "type": "integer"
+              },
+              "duracao_ms": {
+                "type": "integer"
+              }
+            }
+          }
+        }
       },
 
       "HealthResponse": {

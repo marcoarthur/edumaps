@@ -583,6 +583,58 @@ function(req, res) {
   )
 }
 
+#* @get /report/temas
+function(req, res, nivel = NULL) {
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    report_temas(nivel = nivel),
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e), tipo = "invalid_request")
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /report/temas: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao listar os temas", tipo = "internal")
+    }
+  )
+}
+
+# Assistente de Relatório (#219). Erros de cliente (tema/nível/geotag/opção
+# inválidos, eduBR ausente) → 400; qualquer outro (banco, eduBR, bug) → 500.
+# Falha do LLM não é erro: o relatório sai com resumo determinístico.
+#* @post /report
+function(req, res) {
+  payload <- req$body
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null", digits = NA)
+
+  tryCatch(
+    run_report(
+      geotag   = payload$geotag %||% NULL,
+      tema     = payload$tema %||% NULL,
+      opcoes   = payload$opcoes %||% NULL,
+      contexto = payload$contexto %||% NULL,
+      config   = payload$config %||% NULL
+    ),
+    edumaps_client_error = function(e) {
+      res$status <- 400
+      list(error = conditionMessage(e), tipo = "invalid_request")
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /report: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao gerar o relatório", tipo = "internal")
+    }
+  )
+}
+
 #* @get /health
 function() {
   list(status = "ok")
