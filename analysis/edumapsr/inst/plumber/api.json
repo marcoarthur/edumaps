@@ -1936,8 +1936,10 @@
           "profundidade": {
             "type": "string",
             "enum": [
-              "descritiva"
-            ]
+              "descritiva",
+              "profunda"
+            ],
+            "description": "`profunda` = lista escola a escola ou regressão com especificação fixa (Fase 2)."
           },
           "opcoes": {
             "type": "object",
@@ -2087,7 +2089,7 @@
           "tipo",
           "titulo"
         ],
-        "description": "Seção tipada. `texto`: markdown simples; `indicadores`: itens com valor e referência; `tabela`: colunas + linhas (objetos por id de coluna, null = sem valor); `grafico`: barras ou linhas, eixo x + séries + dados. A primeira seção é `resumo` e a última `leitura`.",
+        "description": "Seção tipada. `texto`: markdown simples; `indicadores`: itens com valor e referência; `tabela`: colunas + linhas (objetos por id de coluna, null = sem valor; a chave `_destaque: true` realça a linha e não é coluna; `recolhida: true` = detalhes técnicos, mostrados recolhidos); `grafico`: barras ou linhas, eixo x + séries + dados; `associacoes` (Fase 2): leitura simplificada de uma regressão, itens com direção e segurança. Tipos desconhecidos devem ser ignorados pelo cliente. A primeira seção é `resumo` e a última `leitura`.",
         "properties": {
           "id": {
             "type": "string"
@@ -2098,7 +2100,8 @@
               "texto",
               "indicadores",
               "tabela",
-              "grafico"
+              "grafico",
+              "associacoes"
             ]
           },
           "titulo": {
@@ -2109,12 +2112,11 @@
           },
           "itens": {
             "type": "array",
+            "description": "Em `indicadores`: {rotulo, valor, formato, referencia?}. Em `associacoes`: {rotulo, corte?, direcao (maior | menor | sem_relacao_clara; sem_relacao_clara quando p ≥ 0,05), seguranca (alta: p < 0,01 | media: p < 0,05 | baixa), n}.",
             "items": {
               "type": "object",
               "required": [
-                "rotulo",
-                "valor",
-                "formato"
+                "rotulo"
               ],
               "properties": {
                 "rotulo": {
@@ -2139,6 +2141,29 @@
                     },
                     "valor": {}
                   }
+                },
+                "corte": {
+                  "type": "string",
+                  "example": "Urbana"
+                },
+                "direcao": {
+                  "type": "string",
+                  "enum": [
+                    "maior",
+                    "menor",
+                    "sem_relacao_clara"
+                  ]
+                },
+                "seguranca": {
+                  "type": "string",
+                  "enum": [
+                    "alta",
+                    "media",
+                    "baixa"
+                  ]
+                },
+                "n": {
+                  "type": "integer"
                 }
               }
             }
@@ -2175,11 +2200,16 @@
           "linhas": {
             "type": "array",
             "items": {
-              "type": "object"
+              "type": "object",
+              "description": "Valores por id de coluna; `_destaque: true` (opcional) realça a linha."
             }
           },
           "nota": {
             "type": "string"
+          },
+          "recolhida": {
+            "type": "boolean",
+            "description": "Só em `tabela` (Fase 2): mostrar recolhida (\"Ver detalhes técnicos\")."
           },
           "grafico": {
             "type": "string",
@@ -2326,7 +2356,7 @@
               "properties": {
                 "tipo": {
                   "type": "string",
-                  "description": "truncado, aviso, sem_dados ou llm."
+                  "description": "truncado, aviso, sem_dados, llm ou associacao (fixo em todo relatório de regressão)."
                 },
                 "mensagem": {
                   "type": "string"

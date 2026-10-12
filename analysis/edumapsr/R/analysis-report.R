@@ -47,6 +47,7 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
     recorte = dados$recorte,
     recorte_nome = recorte_nome,
     tema = list(id = tema$id, titulo = tema$titulo),
+    profundidade = tema$profundidade %||% "descritiva",
     secoes = dados$secoes,
     fontes = dados$fontes,
     avisos = dados$avisos,

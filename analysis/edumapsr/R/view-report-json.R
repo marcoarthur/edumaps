@@ -9,6 +9,10 @@
 # listas de objetos (uma por linha).
 
 #' Data.frame → lista de objetos (uma por linha), escalares JSON
+#'
+#' A marca `_destaque` (Fase 2) só sai nas linhas destacadas (`true`); nas
+#' demais a chave é omitida.
+#'
 #' @keywords internal
 report_json_rows <- function(df) {
   if (!is.data.frame(df) || !nrow(df)) {
@@ -21,6 +25,13 @@ report_json_rows <- function(df) {
       if (length(v) != 1L) NA else v
     })
     names(row) <- names(df)
+    if (REPORT_DESTAQUE %in% names(row)) {
+      if (isTRUE(row[[REPORT_DESTAQUE]])) {
+        row[[REPORT_DESTAQUE]] <- TRUE
+      } else {
+        row[[REPORT_DESTAQUE]] <- NULL
+      }
+    }
     row
   })
 }
@@ -28,7 +39,8 @@ report_json_rows <- function(df) {
 #' Seção → objeto JSON do contrato
 #' @keywords internal
 report_json_section <- function(s) {
-  out <- s
+  # Campos internos (`.ocultar_llm`...) não fazem parte do contrato.
+  out <- s[!startsWith(names(s), ".")]
   if (identical(s$tipo, "tabela")) {
     out$colunas <- unname(s$colunas)
     out$linhas <- report_json_rows(s$linhas)
@@ -37,7 +49,7 @@ report_json_section <- function(s) {
     out$series <- unname(s$series)
     out$dados <- report_json_rows(s$dados)
   }
-  if (identical(s$tipo, "indicadores")) {
+  if (identical(s$tipo, "indicadores") || identical(s$tipo, "associacoes")) {
     out$itens <- unname(s$itens)
   }
   out
