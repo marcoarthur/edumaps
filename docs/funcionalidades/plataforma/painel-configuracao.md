@@ -47,6 +47,10 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   oficial de código do WhatsApp usados na confirmação de telefone, exibir o
   estado do bot e acioná-lo (iniciar o recebimento de mensagens ou registrar
   o endereço de entrega).
+- Administração pode publicar **versões do termo de consentimento** (rascunho,
+  pré-visualização e publicação; versões publicadas não mudam) e definir os
+  **prazos de retenção** de dados das listas, acompanhando a última limpeza
+  automática ou disparando uma na hora.
 
 ## Valor
 

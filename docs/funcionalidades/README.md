@@ -60,7 +60,7 @@
 | [Pesquisas com a comunidade](gestor/pesquisas.md) | Ouvir a comunidade e ler os resultados agregados. | 🟢 |
 | [Reuniões e atas](gestor/reunioes-atas.md) | Agendar reuniões, gerar convite, registrar ata e anexos. | 🟢 |
 | [Contatos e grupos](gestor/contatos-grupos.md) | Organizar a agenda de contatos da escola. | 🟢 |
-| [Listas com autoinscrição por QR](gestor/listas-autoinscricao.md) | Publicar uma lista por QR code para a comunidade se inscrever, evitando duplicatas, com confirmação opcional do telefone por Telegram ou WhatsApp. | 🟢 |
+| [Listas com autoinscrição por QR](gestor/listas-autoinscricao.md) | Publicar uma lista por QR code para a comunidade se inscrever, evitando duplicatas, coletando telefone e/ou e-mail, com confirmação opcional dos contatos e exclusão a pedido. | 🟢 |
 | [Inventário escolar](gestor/inventario.md) | Inventariar recursos e serviços, partindo do Censo. | 🟢 |
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
@@ -75,7 +75,7 @@
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
 | [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
-| [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais e princípios de privacidade. | 🟢 |
+| [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais: termo de consentimento versionado, exclusão a pedido pelo titular e retenção com expurgo automático. | 🟢 |
 | [Canais de comunicação](plataforma/canais-de-comunicacao.md) | Alcançar a comunidade por e-mail, WhatsApp e Telegram, validando endereços, confirmando posse (Telegram e WhatsApp nas listas por QR) e registrando o histórico de mensagens. | 🟡 |
 | [Telemetria de sessão](plataforma/telemetria-de-sessao.md) | Reconhecer o visitante por sessão e registrar uso da plataforma em lotes, de forma agregada e privada — do servidor e do navegador (navegação, buscas, login/logout, erros), sem texto digitado. | 🟢 |
 | [Painel de Administração](plataforma/painel-administracao.md) | Acompanhar, em tempo quase real, logins de gestores (6/12/24 h), sessões ativas (logadas/anônimas), rotas mais acessadas, buscas e atividade ao longo do tempo — só agregados. | 🟢 |

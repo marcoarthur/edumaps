@@ -664,3 +664,32 @@ público com o `secret_token`.
 > `EDUMAPS_CONFIG_MASTER_KEY` na shell gravavam a chave **vazia** nas units
 > (segredos ilegíveis); agora o Rexfile aborta. Dev usa uma chave própria,
 > fora do repositório.
+
+### Rodada 2026-10-12 — E-mail e LGPD nas listas com QR (feat, issue #214)
+
+**Objetivo**: certificar a Fase 2 em dev (`http://ubatexu.lan:8080`) com a lista
+`E2E 214` (coleta `ambos`, exige confirmação, QR com limite 5 e validade) e a
+versão **1.1** do consentimento (cita e-mail) publicada pelo modelo de admin.
+Driver CDP próprio em Perl (Chrome `:9222`).
+
+| Verificação | Resultado |
+|---|---|
+| Migração `canal_email_lgpd` em `database.edumaps`; 1.0 vigente no seed | 🟢 |
+| Publicação da 1.1 (rascunho → vigente; 1.0 arquivada) | 🟢 |
+| `GET` inscrição: `campos`/`obrigatorios` = nome, telefone, e-mail; consentimento 1.1 | 🟢 |
+| `POST` com `consentimento_versao` 1.0 (desatualizada) | 🟢 409 |
+| `POST` sem e-mail (coleta `ambos`) / e-mail inválido | 🟢 400 / 400 |
+| `POST` válido | 🟢 201 com `exclusao_url` e `contatos` (telefone e e-mail pendentes) |
+| SPA: campo e-mail + termo 1.1 visível → inscrição → link "Remover meus dados" | 🟢 |
+| SPA `/privacidade/exclusao/:token` → confirmar → "Seus dados foram removidos"; recarregar → já excluído | 🟢 |
+| Varredura de PII no banco (contatos, inscrições, membros, refs, confirmações, mensagens) após exclusão pelo titular | 🟢 0 ocorrências |
+| Remoção pelo gestor (modelo) com motivo; varredura de PII | 🟢 0 ocorrências; auditoria `gestor` com motivo |
+| Auditoria `canal_exclusoes` sem PII (titular, gestor) | 🟢 |
+| Retenção avulsa: 3 linhas de resumo (`cod_inep=0`) mesmo com zero | 🟢 |
+| Inscrições com `consentimento_hash` e `anonimizado_em` | 🟢 2/2 |
+| Backend (74 arquivos / 476 testes; 6 pré-falhos idênticos no `main`) | 🟢 |
+| Frontend completo | 🟢 88 arquivos / 611 testes |
+
+> **Notas**: (1) envio real de código por e-mail não exercitado — não há SMTP
+> em dev; coberto por testes com SMTP simulado. (2) A versão 1.1 do
+> consentimento fica publicada em dev (pré-requisito para listas com e-mail).
