@@ -356,3 +356,17 @@ cobrir `canal_envio_destinatarios`.
 - Frontend 96 arquivos / 718 testes; `vite build` OK. Conferidos `optout`
   booleano, `suspensao` sem nome, `getSaida`/`confirmarSaida` com
   `{confirmar:true}`.
+
+## Onda 3 (coordenador)
+
+- **E2E em dev** com SMTP de captura (Mailpit temporário no `ubaxala` +
+  túnel SSH reverso a partir do `backend.edumaps`): 41 verificações + remoção
+  pelo gestor com varredura de PII, `409 cota_insuficiente` e painel admin —
+  rodada em `docs/e2e/cobertura.md`.
+- **Achados corrigidos** (`2babb37`): espaço antes de "da escola" na
+  `SairPage`; "1 saiu dos envios" no singular. Taxa acesso → inscrição acima de
+  100% fica documentada como comportamento.
+- **Docs**: capacidade nova `gestor/envios-email.md`; atualizados
+  `listas-autoinscricao`, `canais-de-comunicacao`, `privacidade-lgpd`,
+  `painel-configuracao` e o índice; nota técnica **112** cobrindo o ciclo
+  inteiro das listas com QR (Fases 0–3).

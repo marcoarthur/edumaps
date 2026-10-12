@@ -60,7 +60,8 @@
 | [Pesquisas com a comunidade](gestor/pesquisas.md) | Ouvir a comunidade e ler os resultados agregados. | 🟢 |
 | [Reuniões e atas](gestor/reunioes-atas.md) | Agendar reuniões, gerar convite, registrar ata e anexos. | 🟢 |
 | [Contatos e grupos](gestor/contatos-grupos.md) | Organizar a agenda de contatos da escola. | 🟢 |
-| [Listas com autoinscrição por QR](gestor/listas-autoinscricao.md) | Publicar uma lista por QR code para a comunidade se inscrever, evitando duplicatas, coletando telefone e/ou e-mail, com confirmação opcional dos contatos e exclusão a pedido. | 🟢 |
+| [Listas com autoinscrição por QR](gestor/listas-autoinscricao.md) | Publicar uma lista por QR code para a comunidade se inscrever, evitando duplicatas, coletando telefone e/ou e-mail, com confirmação opcional dos contatos, exclusão a pedido, listas dinâmicas (recortes salvos) e funil de conversão (acessos → inscrições → confirmações). | 🟢 |
+| [Envios por e-mail para listas](gestor/envios-email.md) | Escrever um e-mail e enviá-lo a uma lista ou lista dinâmica, na hora ou agendado: prévia, teste para si, fila com ritmo e cota, link de saída por lista e resultado de cada envio, sem rastreio de abertura. | 🟢 |
 | [Inventário escolar](gestor/inventario.md) | Inventariar recursos e serviços, partindo do Censo. | 🟢 |
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
@@ -75,10 +76,10 @@
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
 | [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
-| [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais: termo de consentimento versionado, exclusão a pedido pelo titular e retenção com expurgo automático. | 🟢 |
-| [Canais de comunicação](plataforma/canais-de-comunicacao.md) | Alcançar a comunidade por e-mail, WhatsApp e Telegram, validando endereços, confirmando posse (Telegram e WhatsApp nas listas por QR) e registrando o histórico de mensagens. | 🟡 |
+| [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais: termo de consentimento versionado, exclusão a pedido pelo titular (inclusive do histórico de envios), saída das comunicações por lista em um clique, sem rastreio de e-mails, e retenção com expurgo automático. | 🟢 |
+| [Canais de comunicação](plataforma/canais-de-comunicacao.md) | Alcançar a comunidade por e-mail, WhatsApp e Telegram, validando endereços, confirmando posse (Telegram e WhatsApp nas listas por QR), enviando e-mail em massa em fila com ritmo e cota, limites e suspensão pela administração, e registrando o histórico e o resultado de cada envio. | 🟡 |
 | [Telemetria de sessão](plataforma/telemetria-de-sessao.md) | Reconhecer o visitante por sessão e registrar uso da plataforma em lotes, de forma agregada e privada — do servidor e do navegador (navegação, buscas, login/logout, erros), sem texto digitado. | 🟢 |
 | [Painel de Administração](plataforma/painel-administracao.md) | Acompanhar, em tempo quase real, logins de gestores (6/12/24 h), sessões ativas (logadas/anônimas), rotas mais acessadas, buscas e atividade ao longo do tempo — só agregados. | 🟢 |
-| [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje as Integrações (Assistente do Censo e Bot Telegram) e os Canais de comunicação (e-mail, WhatsApp, bot público do Telegram e autoinscrição). | 🟡 |
+| [Painel de Configuração](plataforma/painel-configuracao.md) | Categorias e grupos de configurações globais da instalação; hoje as Integrações (Assistente do Censo e Bot Telegram) e os Canais de comunicação (e-mail, WhatsApp, bot público do Telegram, autoinscrição, consentimento, retenção e limites de envio, com painel de volume e suspensão por escola). | 🟡 |
 | [Bot Telegram](plataforma/bot-telegram.md) | Enviar notificações e alertas por Telegram — teste manual, envio automático em eventos de ingestão (sucesso, falha, stall) e categoria de envio p/ eventos do sistema por severidade (ex.: login de gestor) — com ações autorizadas configuradas pela administração. | 🟡 |
 | [Observabilidade de erros](plataforma/observabilidade.md) | Registro central de falhas (API 5xx, jobs e erros de navegador) com dados pessoais redigidos. | 🟡 |
