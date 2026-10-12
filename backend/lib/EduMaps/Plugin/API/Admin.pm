@@ -32,6 +32,13 @@ sub register ($self, $app, @args) {
   $auth->post('/canais/telegram/polling')
     ->to('admin#telegram_publico_polling')->name('admin_telegram_publico_polling');
 
+  # Retenção (LGPD) dos dados das listas com QR (#214, RF-207): prazos,
+  # última execução e execução avulsa da task `canais_retencao`.
+  $auth->get('/canais/retencao')
+    ->to('admin#canais_retencao_status')->name('admin_canais_retencao_status');
+  $auth->post('/canais/retencao/executar')
+    ->to('admin#canais_retencao_executar')->name('admin_canais_retencao_executar');
+
   # Consentimento versionado da autoinscrição (#214, RF-208): rascunho ->
   # publicar (vira vigente; a anterior é arquivada). Publicada é imutável.
   my $versao_id = [ id => qr/\d+/ ];

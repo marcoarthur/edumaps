@@ -65,6 +65,13 @@ sub register($self, $app, @args) {
     ->to('gestor#canais_qrcode_revoke')->name('gestor_canais_qrcode_revoke');
   $auth->get('/:cod_inep/canais/listas/:id/inscricoes' => $lista_check)
     ->to('gestor#canais_inscricoes_index')->name('gestor_canais_inscricoes');
+  # Exclusão pelo gestor (#214, RF-205): anonimiza o contato do membro (sai de
+  # todas as listas da escola) + histórico de exclusões da escola (sem PII).
+  $auth->delete('/:cod_inep/canais/listas/:id/membros/:membro_id'
+                => [ @$lista_check, membro_id => qr/\d+/ ])
+    ->to('gestor#canais_membro_destroy')->name('gestor_canais_membro_destroy');
+  $auth->get('/:cod_inep/canais/exclusoes' => $check)
+    ->to('gestor#canais_exclusoes_index')->name('gestor_canais_exclusoes_index');
 
   # --- reuniões -----------------------------------------------------------
   $auth->get('/:cod_inep' => $check)->to('gestor#escola_perfil')->name('gestor_escola_perfil');

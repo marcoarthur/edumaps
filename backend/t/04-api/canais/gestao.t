@@ -11,6 +11,8 @@
 # Fase 2 (#214): `coleta` no POST/PATCH/GET, e-mail e estado por contato
 # (telefone_estado/email_estado, `parcial`) nos membros, validação de
 # expira_em/max_usos do QR.
+# Fase 2, onda 2 (#214): DELETE /listas/:id/membros/:membro_id (exclusão pelo
+# gestor, anonimiza) e GET /canais/exclusoes (histórico sem PII).
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -39,6 +41,8 @@ my $out_auth = sub { { Authorization => "Bearer $out_token" } };
 sub limpa_tudo {
   return unless $has;
   for my $inep ($INEP, $OUTRA) {
+    $dbh->do('DELETE FROM clean.canal_exclusoes WHERE cod_inep = ?', {}, $inep)
+      if $dbh->selectrow_array("SELECT to_regclass('clean.canal_exclusoes')");
     $dbh->do(q{DELETE FROM clean.canal_inscricoes i USING clean.canal_listas l
                WHERE i.lista_id = l.id AND l.cod_inep = ?}, {}, $inep);
     $dbh->do(q{DELETE FROM clean.canal_lista_membros m USING clean.canal_listas l
@@ -511,6 +515,56 @@ subtest 'qrcode (#214): validação de expira_em e max_usos -> 400' => sub {
     ->status_is(201)->json_is('/max_usos', 5)->json_is('/expira_em', undef);
   $t->post_ok($url, $auth->(), json => { expira_em => '2099-01-01' })
     ->status_is(201, 'só a data (ISO 8601)');
+};
+
+subtest 'exclusão pelo gestor + histórico (#214, onda 2)' => sub {
+  plan skip_all => 'migration canal_email_lgpd nao aplicada'
+    unless $has && $dbh->selectrow_array("SELECT to_regclass('clean.canal_exclusoes')");
+  my $model = $t->app->model('Canal');
+  my ($gid) = $dbh->selectrow_array('SELECT id FROM clean.gestores WHERE email = ?', {}, $EMAIL);
+
+  my $la = $model->criar_lista(cod_inep => $INEP, gestor_id => $gid, nome => "Excl A $$");
+  my $lb = $model->criar_lista(cod_inep => $INEP, gestor_id => $gid, nome => "Excl B $$");
+  my %tk = map { $_->{id} => $model->gerar_qrcode(cod_inep => $INEP, lista_id => $_->{id},
+                                                  gestor_id => $gid)->{token} } $la, $lb;
+  my $tel = sprintf '1194%04d8888', $$ % 10000;
+  my $a = $model->registrar_inscricao(token => $tk{ $la->{id} }, consentimento => 1,
+                                      nome => 'Pessoa Removida', telefone => $tel);
+  my $b = $model->registrar_inscricao(token => $tk{ $lb->{id} }, consentimento => 1,
+                                      nome => 'Pessoa Removida', telefone => $tel);
+  is $a->{contato_id}, $b->{contato_id}, 'mesmo contato nas duas listas';
+  my $base = "/api/gestor/$INEP/canais/listas";
+  my $url  = "$base/$la->{id}/membros/$a->{membro_id}";
+
+  $t->delete_ok($url)->status_is(401);
+  $t->get_ok("/api/gestor/$INEP/canais/exclusoes")->status_is(401);
+  $t->delete_ok($url, $out_auth->())->status_is(403);
+  $t->get_ok("/api/gestor/$INEP/canais/exclusoes", $out_auth->())->status_is(403);
+  # membro de outra lista / inexistente / lista de outra escola
+  $t->delete_ok("$base/$la->{id}/membros/$b->{membro_id}", $auth->())->status_is(404)->json_has('/error');
+  $t->delete_ok("$base/$la->{id}/membros/999999999", $auth->())->status_is(404);
+  $t->delete_ok("/api/gestor/$OUTRA/canais/listas/$la->{id}/membros/$a->{membro_id}", $out_auth->())
+    ->status_is(404, 'lista não é da escola do gestor');
+
+  $t->delete_ok($url, $auth->(), json => { motivo => 'Pedido por telefone à secretaria' })
+    ->status_is(200)->json_is({ ok => 1, contatos => 1, inscricoes => 2, membros => 2 });
+  is $dbh->selectrow_array('SELECT nome FROM clean.contatos WHERE id = ?', {}, $a->{contato_id}),
+    '[removido]', 'contato anonimizado';
+  $t->get_ok("$base/$lb->{id}/inscricoes", $auth->())->status_is(200)->json_is('', [], 'saiu também da lista B');
+  $t->delete_ok($url, $auth->())->status_is(404, 'já removido');
+
+  my $h = $t->get_ok("/api/gestor/$INEP/canais/exclusoes", $auth->())->status_is(200)->tx->res->json;
+  is scalar @$h, 1, 'uma exclusão';
+  is $h->[0]{origem}, 'gestor', 'origem';
+  is $h->[0]{motivo}, 'Pedido por telefone à secretaria', 'motivo';
+  is $h->[0]{gestor_id}, $gid, 'gestor';
+  is [ @{ $h->[0] }{qw(contatos inscricoes membros)} ], [1, 2, 2], 'contagens';
+  ok !defined $h->[0]{regra}, 'sem regra';
+  like $h->[0]{created_at}, qr/T.*Z$/, 'created_at ISO';
+  my $json = JSON::PP->new->canonical->encode($h);
+  unlike $json, qr/Pessoa Removida|\Q$tel\E/, 'sem PII';
+
+  $t->get_ok("/api/gestor/$OUTRA/canais/exclusoes", $out_auth->())->status_is(200)->json_is('', []);
 };
 
 done_testing;

@@ -213,6 +213,30 @@ sub telegram_publico_polling ($self) {
   $self->render(status => 202, json => { ok => 1, job_id => $r->{job_id} });
 }
 
+# ---------------------------------------------------------------------------
+# Retenção (LGPD) das listas com QR (#214, RF-207)
+# ---------------------------------------------------------------------------
+
+# GET /api/admin/canais/retencao — 200 {enabled, metadados_dias,
+# pendentes_dias, listas_inativas_meses, ultima_execucao {em, metadados,
+# pendentes, listas_inativas} | null, agendado}.
+sub canais_retencao_status ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $pub   = $model->retencao_publica;
+  $self->render(json => {
+    %$pub,
+    ultima_execucao => scalar($model->retencao_ultima_execucao),
+    agendado        => $self->canais_retencao_agendado ? \1 : \0,
+  });
+}
+
+# POST /api/admin/canais/retencao/executar — execução avulsa (não reagenda):
+# 202 {ok:1, job_id}.
+sub canais_retencao_executar ($self) {
+  my $id = $self->helpers->canais_retencao_executar;
+  $self->render(status => 202, json => { ok => 1, job_id => $id + 0 });
+}
+
 sub _tem ($v) { return defined $v && !ref $v && length $v ? 1 : 0 }
 
 sub _telegram_publico_bot ($self, $cfg) {

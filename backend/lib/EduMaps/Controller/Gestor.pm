@@ -469,6 +469,40 @@ sub canais_inscricoes_index($self) {
   $self->render(json => $rows);
 }
 
+# Exclusão pelo gestor (#214, RF-205): corpo opcional {motivo} -> 200 {ok:1,
+# contatos, inscricoes, membros} · 404 (membro não é da lista/escola). O
+# contato é anonimizado (RF-206) e sai de todas as listas da escola.
+sub canais_membro_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input  = $self->_input;
+  my $motivo = ref $input eq 'HASH' ? $input->{motivo} : undef;
+  $motivo = undef if ref $motivo;   # texto livre; o modelo corta em 500
+
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $self->_guard_api(sub {
+    $model->excluir_membro(
+      $self->param('cod_inep'), $self->param('id'), $self->param('membro_id'),
+      gestor_id => $self->stash('gestor')->{id},
+      motivo    => $motivo,
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Membro não encontrado nesta lista') unless $r;
+  $self->render(json => {
+    ok         => 1,
+    contatos   => $r->{contatos} + 0,
+    inscricoes => $r->{inscricoes} + 0,
+    membros    => $r->{membros} + 0,
+  });
+}
+
+# Histórico de exclusões da escola (#214): mais recentes primeiro, até 200.
+sub canais_exclusoes_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->listar_exclusoes($self->param('cod_inep')));
+}
+
 # ---------------------------------------------------------------------------
 # gestor responsável pela agenda
 # ---------------------------------------------------------------------------

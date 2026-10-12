@@ -36,7 +36,12 @@ use EduMaps::Channel::Telegram::Updates;
 #                                        · 404/409/429/502
 #   POST /api/canais/confirmacao/:ref/email/verificar → 200 {estado, contatos}
 #                                        · 400/404/410/429
-#   GET  /api/canais/consentimento     → 200 {versao, texto, publicada_em}
+#   GET  /api/canais/consentimento     → 200 {versao, texto, publicada_em,
+#                                        retencao {...}} (onda 2)
+#   GET  /api/canais/exclusao/:token   → 200 {escola_nome, lista_nome,
+#                                        ja_excluido} · 404 (onda 2)
+#   POST /api/canais/exclusao/:token   → {confirmar:true} → 200 {ok:1,
+#                                        ja_excluido} · 400/404/429 (onda 2)
 #
 # Regras: feature flag `canais.inscricao.enabled` (desligada → 404 genérico);
 # resposta mínima (NUNCA PII de terceiros); honeypot `_hp` (201 falso sem
@@ -358,7 +363,8 @@ sub confirmacao_email_verificar($self) {
 # ---------------------------------------------------------------------------
 
 # Público (para a página /privacidade). Não depende de canais.inscricao.enabled
-# (o texto da política é público). 200 {versao, texto, publicada_em}.
+# (o texto da política é público). 200 {versao, texto, publicada_em,
+# retencao {metadados_dias, pendentes_dias, listas_inativas_meses, enabled}}.
 sub consentimento_show($self) {
   my $model = $self->instantiate_model(model => 'Canal');
   my $vig   = $model->consentimento_vigente;
@@ -366,7 +372,62 @@ sub consentimento_show($self) {
     versao       => $vig->{versao},
     texto        => $vig->{texto},
     publicada_em => $vig->{publicada_em},
+    retencao     => $model->retencao_publica,
   });
+}
+
+# ---------------------------------------------------------------------------
+# Exclusão a pedido do titular (#214, RF-204)
+# ---------------------------------------------------------------------------
+# Independe de canais.inscricao.enabled (direito do titular). Erros genéricos
+# (sem enumeração): formato inválido ou token inexistente → 404.
+
+# GET — 200 {escola_nome, lista_nome, ja_excluido} (sem PII) · 404.
+sub exclusao_show($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $e = $model->exclusao_por_token($self->param('token'))
+    or return $self->_render_exclusao_not_found;
+  $self->render(json => {
+    escola_nome => $e->{escola_nome},
+    lista_nome  => $e->{lista_nome},
+    ja_excluido => $e->{ja_excluido} ? \1 : \0,
+  });
+}
+
+# POST {confirmar:true} — anonimiza (RF-206). 200 {ok:1, ja_excluido}
+# (idempotente) · 400 sem confirmar · 404 · 429 (rate limit por token+IP).
+sub exclusao_confirmar($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $token = $self->param('token');
+  return $self->_render_exclusao_not_found unless $model->exclusao_token_valido($token);
+  $token = lc $token;
+
+  my $rl = $model->rate_limit_check(
+    token => "exclusao:$token", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->exclusao_por_token($token)
+    or return $self->_render_exclusao_not_found;
+
+  my $confirmar = $self->_input->{confirmar};
+  return $self->render(
+    json   => { error => 'Confirme a exclusão (confirmar: true).' },
+    status => 400,
+  ) unless defined $confirmar && !(ref $confirmar && ref $confirmar ne 'JSON::PP::Boolean')
+        && $confirmar && $confirmar ne 'false';
+
+  my $r = eval { $model->excluir_por_token($token) };
+  unless ($r) {
+    $self->app->log->error("Exclusão (titular): $@") if $@;
+    return $@ ? $self->render(json => { error => 'Erro interno.' }, status => 500)
+              : $self->_render_exclusao_not_found;
+  }
+  $self->render(json => { ok => 1, ja_excluido => $r->{ja_excluido} ? \1 : \0 });
+}
+
+sub _render_exclusao_not_found($self) {
+  $self->render(json => { error => 'Link inválido.' }, status => 404);
 }
 
 # ---------------------------------------------------------------------------

@@ -45,6 +45,14 @@ sub register ($self, $app, @args) {
   $api->get('/consentimento')
     ->to('canais#consentimento_show')->name('canais_consentimento_show');
 
+  # Exclusão a pedido do titular (#214, RF-204): o token pessoal (32 hex) da
+  # `exclusao_url` é a capability. NÃO depende de canais.inscricao.enabled
+  # (direito do titular). Formato validado no controller (404 genérico).
+  $api->get('/exclusao/:token')
+    ->to('canais#exclusao_show')->name('canais_exclusao_show');
+  $api->post('/exclusao/:token')
+    ->to('canais#exclusao_confirmar')->name('canais_exclusao_confirmar');
+
   $api->post('/telegram/webhook')
     ->to('canais#telegram_webhook')->name('canais_telegram_webhook');
 
