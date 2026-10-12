@@ -32,12 +32,23 @@ pelo celular.
 - Sistema pode reconhecer quem já estava inscrito pelo telefone, evitando
   duplicatas sem descartar a submissão anterior.
 - Sistema pode listar os inscritos de cada lista para o gestor.
+- Gestor pode **exigir a confirmação do telefone** numa lista: quem se inscreve
+  confirma, no próprio celular, que o número é seu — pelo **Telegram**
+  (compartilhando o contato da sua conta) ou por um **código enviado pelo
+  WhatsApp**.
+- Sistema pode mostrar, para cada inscrito, se o telefone está **confirmado**
+  (e por qual canal) ou **pendente**, com filtro e contagem por estado.
+- Sistema pode manter na lista, como pendente, quem não concluiu a confirmação,
+  e registrar como divergência quem tentou confirmar um número que não é o seu —
+  sem descartar nada.
 
 ## Valor
 
 Reduz o trabalho de convidar contato a contato e amplia o alcance: basta
 publicar o QR code. A escola mantém o controle de quem entra em cada lista e
-pode encerrar o link quando quiser.
+pode encerrar o link quando quiser. Com a confirmação do telefone, a lista
+passa a ser uma base confiável para falar com a comunidade: erros de digitação
+e números de terceiros deixam de se misturar aos contatos verdadeiros.
 
 ## Nota
 

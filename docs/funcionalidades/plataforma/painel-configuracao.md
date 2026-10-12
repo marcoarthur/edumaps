@@ -43,6 +43,10 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   credenciais de e-mail (SMTP) e de WhatsApp, com segredos cifrados.
 - Sistema pode ligar ou desligar a autoinscrição pública por QR e ajustar seu
   endereço público e o limite antiabuso de submissões.
+- Sistema pode guardar a configuração do bot público do Telegram e da mensagem
+  oficial de código do WhatsApp usados na confirmação de telefone, exibir o
+  estado do bot e acioná-lo (iniciar o recebimento de mensagens ou registrar
+  o endereço de entrega).
 
 ## Valor
 
