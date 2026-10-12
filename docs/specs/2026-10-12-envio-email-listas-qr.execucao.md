@@ -188,11 +188,114 @@ listas excluídas depois → ignoradas, aparecem em `listas_ignoradas`); `estado
 | F1 | T-B | API + fixtures | 🟢 |
 | F2 | T-B | EnviosPage + editor + detalhe | 🟢 |
 | F3 | T-B | SegmentosPage + ação na ListasPage | 🟢 |
-| T1 | coord. | verificação, commits, deploy | ⚪ |
+| T1 | coord. | verificação, commits, deploy | 🟢 |
+| M6 | T-A | Opt-out público (GET/POST, One-Click, reinscrição desfaz) | ⚪ |
+| M7 | T-A | Funil (acessos ao QR + endpoint) + `n_optouts`/`optout` | ⚪ |
+| M8 | T-A | Admin (volume, suspender, reativar + retomada) | ⚪ |
+| M9 | T-A | Anonimização cobre os destinatários de envio | ⚪ |
+| F4 | T-B | `SairPage` | ⚪ |
+| F5 | T-B | ListasPage: selo, contador, Funil; Saídas no detalhe | ⚪ |
+| F6 | T-B | Painel admin de envios no `/config` | ⚪ |
 
 Onda 2: opt-out público (página, One-Click, reinscrição desfaz), funil
 (acessos + endpoint + aba), admin (volume, suspender/reativar e retomada dos
 envios), anonimização cobrindo as tabelas novas, selo "Saiu dos envios".
+
+## Onda 2 — contrato (congelado)
+
+### Público (independente de `canais.inscricao.enabled` — direito do titular)
+
+| Método | Rota | Entrada | Saída |
+|---|---|---|---|
+| GET | `/api/canais/sair/:token` | — | `200 {escola_nome, lista_nome, ja_saiu}` · `404` genérico |
+| POST | `/api/canais/sair/:token` | JSON `{confirmar:true}` **ou** form `List-Unsubscribe=One-Click` (RFC 8058) | `200 {ok:1, ja_saiu}` (idempotente) · `400` (sem nenhum dos dois) · `404` · `429` |
+
+- Token: 32 hex; procura `canal_envio_destinatarios.saida_hash = sha256(token)`.
+  Formato inválido ou não encontrado → `404` genérico. Rate limit por IP no
+  mesmo padrão da exclusão (Fase 2).
+- Saída: `INSERT INTO canal_optouts (lista_id, 'email', email_hash, envio_id)
+  ON CONFLICT DO NOTHING` com a lista de origem do destinatário.
+  `ja_saiu` = o opt-out já existia. Lista de origem apagada → `404`.
+- `lista_nome` = nome atual da lista de origem; `escola_nome` como na exclusão.
+
+**Mudanças em rotas existentes:**
+- `GET /api/canais/inscricao/:token` com resposta `200` → soma 1 em
+  `canal_qr_acessos (qrcode_id, dia)` (dia em America/Sao_Paulo; upsert). Não
+  conta `404`/`410`. Contrato da resposta inalterado.
+- `POST /api/canais/inscricao/:token` real (não honeypot) com e-mail →
+  `DELETE FROM canal_optouts WHERE lista_id = <lista> AND canal='email' AND
+  email_hash = sha256(email_norm)` (reinscrição = novo consentimento).
+  Resposta inalterada.
+
+### Gestão (Bearer + posse)
+
+- `GET /listas`, `GET /listas/:id`: + `n_optouts` (int).
+- `GET /listas/:id/inscricoes`: cada membro + `optout` (booleano: o e-mail
+  atual do contato tem opt-out nesta lista).
+- `GET /listas/:id/funil?de=YYYY-MM-DD&ate=YYYY-MM-DD` (padrão: `ate` = hoje,
+  `de` = `ate` − 29 dias; intervalo máx. 366 dias; `400` se inválido) →
+  ```json
+  { "de": "2026-09-13", "ate": "2026-10-12", "exige_confirmacao": true,
+    "totais": { "acessos": 120, "inscricoes": 48, "confirmados": 40, "optouts": 2 },
+    "taxas":  { "acesso_inscricao": 0.4, "inscricao_confirmacao": 0.8333 },
+    "serie":  [ { "dia": "2026-09-13", "acessos": 0, "inscricoes": 0, "confirmados": 0, "optouts": 0 } ] }
+  ```
+  `serie` tem **todos** os dias do intervalo (zeros incluídos). Dias em
+  America/Sao_Paulo. `acessos` = soma de `canal_qr_acessos` dos QRs da lista;
+  `inscricoes` = linhas de `canal_inscricoes` da lista criadas no dia;
+  `confirmados` = membros atuais com estado geral `confirmado`, no dia do
+  `GREATEST(confirmado_em, email_confirmado_em)` — **`null`** (totais e série)
+  se a lista não exige confirmação; `optouts` = `canal_optouts.created_at`.
+  Taxas com 4 casas, `null` quando o denominador é 0 ou `confirmados` é `null`.
+- `GET /envios/:id`: `contadores.optouts` = opt-outs com `envio_id` = este envio
+  (já no contrato da onda 1, agora preenchido de fato).
+
+### Admin (Bearer admin)
+
+| Método | Rota | Saída |
+|---|---|---|
+| GET | `/api/admin/canais/envios` | `200 {limites: {enabled, ritmo_por_minuto, cota_diaria, max_destinatarios, smtp_disponivel}, escolas: [ {cod_inep, escola_nome, enviados_hoje, enviados_30d, falhas_30d, optouts_30d, envios_em_curso, suspensao: null \| {id, motivo, suspenso_em, suspenso_por}} ]}` |
+| POST | `/api/admin/canais/envios/suspensoes` | `{cod_inep, motivo}` (motivo 1..500) → `201 {suspensao}` · `400` · `409` (já suspensa) |
+| POST | `/api/admin/canais/envios/suspensoes/:cod_inep/reativar` | `200 {ok:1, envios_retomados}` · `404` (sem suspensão ativa) |
+
+- `escolas`: as que têm envio nos últimos 30 dias **ou** suspensão ativa,
+  ordenadas por `enviados_30d` desc. `envios_em_curso` = envios em
+  `agendado`/`enviando`/`pausado_cota`/`suspenso`.
+- **Suspender**: grava a suspensão (`suspenso_por` = id do admin) e passa na
+  hora os envios `agendado`/`enviando`/`pausado_cota` da escola para
+  `suspenso` (o job, ao rodar, já sai).
+- **Reativar**: fecha a suspensão (`reativado_em/por`); cada envio `suspenso`
+  volta a `agendado` se nunca começou (`iniciado_em IS NULL`) ou a `enviando`
+  se já começou, e é reenfileirado (`canais_envio_enfileirar`) com o `delay`
+  até `agendado_para` (ou 0). `envios_retomados` = quantos.
+- **Job**: um envio `suspenso` sem suspensão ativa continua sendo retomado
+  (onda 1), mas o caminho normal agora é a reativação.
+
+### Anonimização (extensão do `anonimizar_contato`, RF-206)
+
+Na mesma transação, para o contato: `canal_envio_destinatarios` com
+`email = NULL`, `contato_id = NULL`; os `pendente` viram
+`ignorado_anonimizado` (+1 em `ignorados` do envio, `processado_em = NOW()`).
+`canal_optouts` fica (só hash). O teste de varredura de PII da Fase 2 passa a
+cobrir `canal_envio_destinatarios`.
+
+### Frontend (onda 2)
+
+- **`SairPage`** pública em `/privacidade/sair/:token` (fora do guard, como a
+  `ExclusaoPage`): escola e lista, o que acontece ("você deixa de receber
+  e-mails desta lista; seus dados continuam com a escola"), botão
+  "Não quero mais receber", estados concluído / já tinha saído / link inválido,
+  e orientação para a remoção completa (link pessoal da inscrição ou pedido à
+  escola) + link para `/privacidade`.
+- **ListasPage**: selo "Saiu dos envios" por membro (`optout`), contador
+  `n_optouts` por lista, e seção/aba **Funil** por lista: cartões (acessos,
+  inscrições, confirmados, saídas, taxas) + barras por dia (SVG/CSS, sem lib
+  nova), filtro de período (7/30/90 dias); confirmados "—" quando `null`.
+- **EnvioDetalhe**: mostrar "Saídas" (`contadores.optouts`).
+- **Admin**: painel **Envios** no `/config` ao selecionar uma folha
+  `canais.envio.*` (mesmo padrão do `RetencaoStatus`): limites, tabela de
+  escolas (volume hoje/30 dias, falhas, saídas, em curso, suspensão) e ações
+  Suspender (`ConfirmDialog` com motivo obrigatório) / Reativar.
 
 ## Log de decisões
 
@@ -232,3 +335,4 @@ envios), anonimização cobrindo as tabelas novas, selo "Saiu dos envios".
   → 78 arquivos / 489 testes; só os 6 pré-falhos conhecidos.
 - Frontend 92 arquivos / 682 testes; `vite build` OK. Rotas e JSON
   conferidos lado a lado (envio, contadores, limites, prévia, segmentos).
+- **2026-10-12 — Onda 2 aprovada.** Reativação devolve o envio a `agendado` quando ele nunca começou, para não antecipar um agendamento; funil com `confirmados = null` em listas sem exigência de confirmação.
