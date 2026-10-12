@@ -38,7 +38,17 @@ pesquisador, ele concentrará as análises mais profundas.
   - professores (quantidade, formação, vínculo);
   - perfil dos gestores escolares (estado e região);
   - tendência do IDEB (região);
-  - a escola do gestor diante do município e do estado.
+  - a escola do gestor diante do município e do estado;
+  - **IDEB escola a escola** no município, com mediana, intervalo, faixas e a
+    posição da escola do gestor, sempre como descrição e não como julgamento;
+  - **infraestrutura e IDEB** no estado: quais itens (biblioteca, internet,
+    laboratório, número de professores e de matrículas) andam junto com um
+    IDEB maior ou menor, com o grau de segurança estatística e o aviso de que
+    associação não é causa;
+  - **histórico da escola**: o IDEB da escola desde 2005 e os indicadores de
+    recursos;
+  - **escolas parecidas**: as escolas do país mais parecidas em
+    infraestrutura, porte, professores e gestão, para comparar.
 - Sistema pode apresentar o relatório em **seções**: resumo, indicadores
   principais com referência de comparação, tabelas, gráficos e um guia de
   "como ler" os números.
@@ -46,6 +56,10 @@ pesquisador, ele concentrará as análises mais profundas.
   usando só os números apresentados, sem fazer contas próprias e sem afirmar
   causa. Se a IA estiver indisponível, o relatório sai mesmo assim, com um
   resumo automático.
+- Sistema pode separar **análises aprofundadas** (escola a escola e
+  associações) das descritivas, mostrando primeiro a leitura em linguagem
+  simples e deixando os detalhes técnicos (coeficientes, margens, ajuste do
+  modelo) recolhidos para quem quiser conferir.
 - Sistema pode **citar a fonte de cada número** (edição do IDEB ou do Censo,
   recorte e quantidade de escolas ou municípios) e avisar quando os dados
   estão incompletos.

@@ -26,8 +26,11 @@ REPORT_LLM_MAX_ROWS <- 20
 REPORT_TEXT_MAX_CHARS <- 3000
 
 #' Complemento do system prompt (linguagem para o gestor)
+#'
+#' @param extras blocos de regras adicionais (temas profundos, listas de
+#'   escolas), inseridos antes do formato da resposta.
 #' @keywords internal
-report_prompt_complemento <- function() {
+report_prompt_complemento <- function(extras = NULL) {
   paste(
     "## Assistente de Relatório do EduMaps",
     "",
@@ -52,6 +55,7 @@ report_prompt_complemento <- function() {
     "- Markdown simples: parágrafos, listas com '-', **negrito**. Sem HTML,",
     "  links, imagens, tabelas ou títulos com '#'.",
     "",
+    if (length(extras)) paste0(paste(extras, collapse = "\n\n"), "\n"),
     "Formato da resposta (exatamente estes dois marcadores, nesta ordem):",
     "[RESUMO]",
     "Um a dois parágrafos curtos (até ~120 palavras) com o que mais importa.",
@@ -62,13 +66,53 @@ report_prompt_complemento <- function() {
   )
 }
 
+#' Complemento do prompt para temas profundos (regressão, listas de escolas)
+#'
+#' Contrato da Fase 2: associação não é causa, cite o n, não ranqueie como
+#' julgamento de qualidade.
+#'
+#' @keywords internal
+report_prompt_profunda <- function() {
+  paste(
+    "## Temas aprofundados",
+    "",
+    "- Associação NÃO é causa: diga \"anda junto com\", \"está associado a\";",
+    "  nunca \"melhora\", \"causa\", \"faz subir\" ou \"explica\".",
+    "- Cite o n (quantas escolas entraram) junto dos resultados principais.",
+    "- Não ranqueie escolas nem territórios como julgamento de qualidade",
+    "  (\"melhor\", \"pior\", \"fraca\"): a posição numa lista só descreve onde",
+    "  a nota está, e o IDEB não mede tudo o que a escola faz.",
+    "- Em associações, \"segurança baixa\" ou \"sem relação clara\" significa",
+    "  que os dados não permitem afirmar nada sobre aquele item.",
+    sep = "\n"
+  )
+}
+
+#' Complemento do prompt para relatórios com lista de escolas
+#' @keywords internal
+report_prompt_nomes <- function() {
+  paste(
+    "## Escolas citadas",
+    "",
+    "- NÃO cite nomes de escolas, exceto a do próprio gestor (marcada com",
+    "  \"sua_escola\": true nos DADOS). Fale das demais de forma agregada",
+    "  (quantas, faixa de notas, redes, municípios).",
+    sep = "\n"
+  )
+}
+
 #' System prompt do relatório (persona do eduBR + complemento)
 #'
 #' Sem o eduBR (ex.: testes com ferramentas falsas), usa um texto curto com
 #' as mesmas regras essenciais.
 #'
+#' @param profundidade `"descritiva"` ou `"profunda"` (acrescenta as regras
+#'   de [report_prompt_profunda()]).
+#' @param lista_escolas o relatório lista escolas de terceiros? Acrescenta
+#'   [report_prompt_nomes()].
+#'
 #' @keywords internal
-report_system_prompt <- function() {
+report_system_prompt <- function(profundidade = "descritiva", lista_escolas = FALSE) {
   persona <- if (edubr_available()) {
     tryCatch(eduBR::prompt_persona(REPORT_PERSONA), error = function(e) NULL)
   }
@@ -77,7 +121,17 @@ report_system_prompt <- function() {
     "cite edição, recorte e n; compare IDEB só na mesma edição, etapa e rede;",
     "associação não é causa."
   )
-  paste(persona, report_prompt_complemento(), sep = "\n\n")
+  extras <- c(
+    if (identical(profundidade, "profunda")) report_prompt_profunda(),
+    if (isTRUE(lista_escolas)) report_prompt_nomes()
+  )
+  paste(persona, report_prompt_complemento(extras), sep = "\n\n")
+}
+
+#' O relatório tem seção com nomes de escolas a ocultar do LLM?
+#' @keywords internal
+report_tem_lista_escolas <- function(report) {
+  any(vapply(report$secoes, function(s) length(s$.ocultar_llm) > 0, logical(1)))
 }
 
 #' Visão enxuta do relatório para o LLM (JSON)
@@ -96,9 +150,44 @@ report_round_formato <- function(x, formato) {
   round(x, d)
 }
 
+# Linhas de uma tabela para o LLM: arredondadas pelo formato, no máximo
+# REPORT_LLM_MAX_ROWS (as linhas `_destaque` entram sempre), com a marca
+# `_destaque` como `sua_escola` e sem as colunas `.ocultar_llm` (nomes de
+# escolas de terceiros) fora das linhas destacadas.
+report_llm_linhas <- function(s) {
+  linhas <- s$linhas
+  for (c in s$colunas) {
+    if (!is.null(c$id) && c$id %in% names(linhas)) {
+      linhas[[c$id]] <- report_round_formato(linhas[[c$id]], c$formato)
+    }
+  }
+  destaque <- if (REPORT_DESTAQUE %in% names(linhas)) {
+    linhas[[REPORT_DESTAQUE]] %in% TRUE
+  } else {
+    rep(FALSE, nrow(linhas))
+  }
+  idx <- seq_len(min(nrow(linhas), REPORT_LLM_MAX_ROWS))
+  idx <- sort(unique(c(idx, which(destaque))))
+  rows <- report_json_rows(linhas[idx, setdiff(names(linhas), REPORT_DESTAQUE), drop = FALSE])
+  ocultar <- s$.ocultar_llm %||% character()
+  lapply(seq_along(rows), function(k) {
+    r <- rows[[k]]
+    if (destaque[idx[k]]) {
+      r$sua_escola <- TRUE
+    } else if (length(ocultar)) {
+      r[intersect(ocultar, names(r))] <- NULL
+    }
+    r
+  })
+}
+
 report_llm_payload <- function(report) {
   secoes <- lapply(report$secoes, function(s) {
     out <- s[setdiff(names(s), c("linhas", "dados", "colunas", "series", "x", "itens"))]
+    out <- out[!startsWith(names(out), ".")]
+    if (identical(s$tipo, "associacoes")) {
+      out$itens <- unname(s$itens)
+    }
     if (identical(s$tipo, "indicadores")) {
       out$itens <- lapply(s$itens, function(it) {
         it$valor <- report_round_formato(it$valor, it$formato)
@@ -110,16 +199,9 @@ report_llm_payload <- function(report) {
     }
     if (identical(s$tipo, "tabela")) {
       out$colunas <- vapply(s$colunas, function(c) sprintf("%s=%s", c$id, c$rotulo), character(1))
-      linhas <- s$linhas
-      for (c in s$colunas) {
-        if (!is.null(c$id) && c$id %in% names(linhas)) {
-          linhas[[c$id]] <- report_round_formato(linhas[[c$id]], c$formato)
-        }
-      }
-      s$linhas <- linhas
-      out$linhas <- utils::head(s$linhas, REPORT_LLM_MAX_ROWS)
-      if (nrow(s$linhas) > REPORT_LLM_MAX_ROWS) {
-        out$linhas_omitidas <- nrow(s$linhas) - REPORT_LLM_MAX_ROWS
+      out$linhas <- report_llm_linhas(s)
+      if (nrow(s$linhas) > length(out$linhas)) {
+        out$linhas_omitidas <- nrow(s$linhas) - length(out$linhas)
       }
     }
     if (identical(s$tipo, "grafico")) {
@@ -141,7 +223,11 @@ report_llm_payload <- function(report) {
     secoes = secoes,
     # sem o nome interno da ferramenta: o LLM cita a fonte pela descrição
     fontes = lapply(report$fontes, function(f) f[setdiff(names(f), "ferramenta")]),
-    avisos = report$avisos
+    # sem o prefixo "[ferramenta] " das mensagens de aviso
+    avisos = lapply(report$avisos, function(a) {
+      a$mensagem <- sub("^\\[[A-Za-z0-9_]+\\] ", "", a$mensagem %||% "")
+      a
+    })
   )
   txt <- as.character(jsonlite::toJSON(
     payload, auto_unbox = TRUE, na = "null", null = "null", digits = 4,
@@ -255,10 +341,36 @@ report_resumo_deterministico <- function(report, prefixo = NULL) {
     sprintf("%s (%s; %s; n = %s)", f$descricao %||% f$edicao, f$edicao, f$escopo, f$n)
   }, character(1))
 
+  # Sem indicadores: associações (regressão) em palavras, ou só a menção
+  # às tabelas quando há outras seções de dados.
+  assoc <- Filter(function(s) identical(s$tipo, "associacoes"), report$secoes)
+  cabecalho <- paste0("Principais números de **", report$recorte_nome, "**:")
+  if (!length(linhas) && length(assoc)) {
+    cabecalho <- paste0(
+      "O que anda junto com o IDEB em **", report$recorte_nome,
+      "** (associação, não causa):"
+    )
+    dir_txt <- c(
+      maior = "IDEB maior", menor = "IDEB menor",
+      sem_relacao_clara = "sem relação clara"
+    )
+    linhas <- vapply(assoc[[1]]$itens, function(it) {
+      sprintf(
+        "- %s%s: %s (segurança %s; n = %s)",
+        it$rotulo, if (!is.null(it$corte)) sprintf(" (%s)", it$corte) else "",
+        dir_txt[[it$direcao]], sub("media", "média", it$seguranca, fixed = TRUE),
+        report_format_value(it$n, "inteiro")
+      )
+    }, character(1))
+  }
+  outras <- Filter(function(s) !s$tipo %in% c("texto", "indicadores"), report$secoes)
+
   partes <- c(
     prefixo,
     if (length(linhas)) {
-      paste0("Principais números de **", report$recorte_nome, "**:\n\n", paste(linhas, collapse = "\n"))
+      paste0(cabecalho, "\n\n", paste(linhas, collapse = "\n"))
+    } else if (length(outras)) {
+      sprintf("Os dados de **%s** estão nas tabelas e gráficos abaixo.", report$recorte_nome)
     } else {
       sprintf("Não há dados para **%s** neste tema com as opções escolhidas.", report$recorte_nome)
     },
@@ -304,7 +416,13 @@ report_write_text <- function(report, cfg, llm = NULL) {
 
   llm <- llm %||% report_llm_default(cfg)
   texto <- tryCatch(
-    llm(report_system_prompt(), report_user_prompt(report)),
+    llm(
+      report_system_prompt(
+        report$profundidade %||% "descritiva",
+        report_tem_lista_escolas(report)
+      ),
+      report_user_prompt(report)
+    ),
     error = function(e) {
       cat(sprintf(
         "[edumapsAnalytics] LLM indisponível no /report: %s\n",

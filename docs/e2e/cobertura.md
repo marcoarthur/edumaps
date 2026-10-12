@@ -774,3 +774,40 @@ da escola 35038751 (Ubatuba/SP). Driver CDP próprio em Perl (Chrome `:9222`).
 >   o cache;
 > - logo após o deploy do frontend, o service worker pode servir o bundle
 >   antigo (tela em branco até recarregar).
+
+### Rodada 2026-10-12 — Assistente de Relatório, Fase 2 (feat, issue #219)
+
+**Objetivo:** certificar os temas de aprofundamento em dev
+(`http://ubatexu.lan:8080`), com o **Gemini real**, gestor da escola 35038751
+(Ubatuba/SP) e sessão temporária. Driver CDP próprio em Perl, um caso por aba.
+
+| Verificação | Resultado |
+|---|---|
+| Catálogo: `ideb_escolas` (município, profunda); temas da escola (minha escola, histórico, parecidas) | 🟢 |
+| `ideb_escolas` Ubatuba (anos finais): 11 escolas com nota, mediana 4,7, **"7ª de 11"**, linha da escola destacada | 🟢 ~6–8 s |
+| `infraestrutura_ideb` BA e SP: seção de associações (10 itens urbano/rural), 2 tabelas técnicas recolhidas, aviso "associação" | 🟢 ~6 s |
+| `historico_escola`: gráfico de linhas, série, scores | 🟢 ~5 s |
+| `escolas_parecidas`: **10 escolas distintas**; "Todas as etapas" por padrão | 🟢 ~11 s |
+| Regressão: `ideb_territorio` (Fase 1) segue OK | 🟢 |
+| Avisos e fontes sem nome interno de ferramenta; sem PII; texto da regressão fala em associação | 🟢 |
+| Tela: tema certo por nível, associações, "Associação não é causa" no topo, `<details>` técnicos, "★ sua escola" | 🟢 11/11 |
+| R 29 / 1374 asserções; frontend 101 / 795; Perl dos relatórios 2 / 23 | 🟢 |
+
+> **Achados corrigidos na rodada:**
+> 1. **Pilha estourando no Plumber.** O `escolas_similares` estourava a pilha
+>    de C do R (8 MB) dentro do Plumber; agora a pilha é de 64 MB, via
+>    `LimitSTACK` na unit e `ulimits` no compose. A integração fora do
+>    Plumber não reproduzia o erro.
+> 2. **Etapa obrigatória sem padrão.** A etapa era sempre obrigatória e
+>    enviava "anos iniciais" a uma escola que não os oferece. O catálogo passou
+>    a expor `padroes`, e a etapa sem padrão vira "Todas as etapas".
+> 3. **Nomes internos na tela.** Os avisos e o rodapé de fontes mostravam
+>    nomes internos de ferramenta; foram removidos.
+> 4. **Menos escolas parecidas que o pedido.** A ferramenta devolvia 7 escolas
+>    distintas para `n = 10`; agora pede 20 linhas e fica com 10 escolas.
+> 5. **Cache entre versões.** Uma mudança do pacote R só aparecia depois de
+>    24 h de cache. Agora `edumapsAnalytics` 0.2.0 e `analytics_source_version`
+>    sobem juntos.
+>
+> **Nota do driver:** o Mojo limita mensagens de WebSocket a 256 KB e
+> derrubava as capturas grandes; use `max_websocket_size`.

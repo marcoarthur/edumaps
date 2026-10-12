@@ -21,6 +21,13 @@
 #     vem truncada, refaz a chamada em fatias (por rede, por localização...).
 #   - `docentes_rede` sem `colunas` estoura o limite de caracteres: o roteiro
 #     sempre pede as colunas necessárias.
+#
+# Complemento B (Fase 2): as ferramentas de UMA escola (`serie_ideb_escola`,
+# `scores_escola`, `resumo_escola`, `escolas_similares`) são só da persona
+# `gestora-escolar` no eduBR, e as territoriais só da `pesquisadora`. Por
+# isso o adapter monta TODAS as ferramentas (`persona = NULL`) e mantém só as
+# que os roteiros usam ([report_tool_names()]). A persona continua valendo
+# para o system prompt do LLM ([report_system_prompt()]).
 
 #' Persona do eduBR usada pelo Assistente de Relatório
 #'
@@ -39,6 +46,11 @@ REPORT_PERSONA <- "pesquisadora-educacional"
 #' de modelos locais) só atrapalharia.
 #'
 #' @keywords internal
+#' `max_amostra` vai ao teto do eduBR (30 mil): a regressão do tema
+#' `infraestrutura_ideb` conta TODAS as escolas em atividade da UF/rede antes
+#' de ajustar (SP, redes públicas: ~19 mil; BA, todas as redes: ~16 mil).
+#'
+#' @keywords internal
 report_limits <- function() {
   list(
     n_padrao = 100L,
@@ -46,9 +58,23 @@ report_limits <- function() {
     max_chamadas = 40L,
     max_linhas_total = 60000,
     timeout_s = 30,
+    max_amostra = 30000L,
     max_caracteres = 5000000L,
     persistir = FALSE
   )
+}
+
+#' Ferramentas do eduBR usadas pelos roteiros (complemento B)
+#'
+#' União das ferramentas do catálogo com as auxiliares (`municipios`, para o
+#' nome do município; `resumo_escola`, para o nome da escola).
+#'
+#' @keywords internal
+report_tool_names <- function() {
+  unique(c(
+    unlist(lapply(report_catalog(), `[[`, "ferramentas"), use.names = FALSE),
+    "municipios", "resumo_escola"
+  ))
 }
 
 #' Erro: eduBR indisponível (cliente, 400)
@@ -94,13 +120,16 @@ edubr_version <- function() {
 #' DataSource do eduBR
 #'
 #' Encapsula as ferramentas do eduBR de UMA sessão (um pedido de relatório):
-#' conexão injetada, persona e limites. `tools` permite injetar ferramentas
+#' conexão injetada, persona e limites. As ferramentas são montadas com
+#' `persona = NULL` e escolhidas por nome ([report_tool_names()]): os temas
+#' da escola usam ferramentas que, no eduBR, são só da `gestora-escolar`
+#' (complemento B). `persona` fica registrada para o prompt. `tools` permite injetar ferramentas
 #' falsas nos testes (lista nomeada de funções que devolvem a string JSON do
 #' envelope, como as do eduBR); nesse caso o eduBR não é exigido.
 #'
 #' @param con conexão DBI somente-leitura (role `edumaps_leitor`).
 #' @param limites lista de limites do eduBR (padrão [report_limits()]).
-#' @param persona persona do eduBR.
+#' @param persona persona do eduBR (do system prompt; não filtra ferramentas).
 #' @param tools lista nomeada opcional de ferramentas (injeção em testes).
 #'
 #' @return Objeto S3 da classe `edubr_source`.
@@ -114,7 +143,8 @@ edubr_source <- function(con = NULL,
     if (!edubr_available()) {
       stop_edubr_unavailable()
     }
-    tools <- eduBR::ferramentas_edubr(con, persona = persona, limites = limites)
+    todas <- eduBR::ferramentas_edubr(con, persona = NULL, limites = limites)
+    tools <- todas[intersect(report_tool_names(), names(todas))]
   }
   if (!is.list(tools) || is.null(names(tools))) {
     stop("`tools` deve ser uma lista nomeada de ferramentas")
@@ -148,11 +178,13 @@ edubr_call_count <- function(source) {
 #' @param source `edubr_source`.
 #' @param tool nome da ferramenta.
 #' @param args lista nomeada de argumentos.
+#' @param .tolerar tipos de erro que voltam no envelope em vez de parar o
+#'   relatório (o roteiro decide; ex.: `limite_excedido` na regressão).
 #'
 #' @return Envelope `list(dados, metadados, erro)`.
 #'
 #' @keywords internal
-edubr_call <- function(source, tool, args = list()) {
+edubr_call <- function(source, tool, args = list(), .tolerar = character()) {
   fn <- source$tools[[tool]]
   if (is.null(fn)) {
     stop_report_source(sprintf("Ferramenta do eduBR indisponível: %s", tool))
@@ -172,7 +204,8 @@ edubr_call <- function(source, tool, args = list()) {
   )
 
   tipo <- env$erro$tipo
-  if (!is.null(tipo) && tipo %in% c("conexao", "limite_excedido", "parametro_invalido")) {
+  if (!is.null(tipo) && tipo %in% c("conexao", "limite_excedido", "parametro_invalido") &&
+      !tipo %in% .tolerar) {
     stop_report_source(sprintf(
       "Ferramenta %s falhou (%s): %s",
       tool, tipo, env$erro$mensagem %||% ""
@@ -258,7 +291,9 @@ edubr_rows <- function(dados) {
 #'
 #' @keywords internal
 edubr_avisos <- function(env, ferramenta = NULL) {
-  pref <- if (is.null(ferramenta)) "" else sprintf("[%s] ", ferramenta)
+  # Sem prefixo com o nome interno da ferramenta: o aviso vai para a tela do
+  # gestor (e para o LLM), que não deve ver nomes técnicos.
+  pref <- ""
   avisos <- list()
   meta <- env$metadados %||% list()
 
@@ -317,8 +352,7 @@ edubr_fetch_within <- function(source, tool, args, keep = NULL, splits = list())
       avisos[[length(avisos) + 1L]] <- list(
         tipo = "truncado",
         mensagem = sprintf(
-          "[%s] A consulta passou do teto de linhas; o recorte pode estar incompleto.",
-          tool
+          "A consulta passou do teto de linhas; o recorte pode estar incompleto."
         )
       )
     }

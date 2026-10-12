@@ -4,7 +4,13 @@
 # formatação PT-BR para os textos determinísticos.
 #
 # Tipos de seção: `texto` | `indicadores` | `tabela` | `grafico`
-# (`grafico` ∈ `barras` | `linhas`). Formatos de valor: `texto`, `inteiro`,
+# (`grafico` ∈ `barras` | `linhas`) e, na Fase 2, `associacoes` (leitura
+# simplificada de uma regressão). Extensões da Fase 2 (opcionais e
+# retrocompatíveis): tabela `recolhida` (detalhes técnicos) e linha com
+# `_destaque` (ex.: a escola do gestor).
+#
+# Campos de seção que começam com ponto (ex.: `.ocultar_llm`) são INTERNOS:
+# orientam o pacote de dados do LLM e nunca saem no JSON. Formatos de valor: `texto`, `inteiro`,
 # `decimal1`, `decimal2`, `percentual` (fração 0–1). As seções guardam
 # data.frames; a View ([render_report_json()]) converte em linhas JSON.
 
@@ -72,25 +78,99 @@ report_section_kpis <- function(id, titulo, itens) {
   list(id = id, tipo = "indicadores", titulo = titulo, itens = unname(itens))
 }
 
+#' Coluna de linha destacada (não é coluna declarada da tabela)
+#' @keywords internal
+REPORT_DESTAQUE <- "_destaque"
+
 #' Seção de tabela
 #'
-#' Mantém só as colunas declaradas e arredonda pelos formatos.
+#' Mantém só as colunas declaradas (mais a marca `_destaque`, se houver) e
+#' arredonda pelos formatos.
 #'
 #' @param colunas lista de [report_col()].
-#' @param linhas data.frame com as colunas declaradas.
+#' @param linhas data.frame com as colunas declaradas; uma coluna lógica
+#'   `_destaque` marca as linhas a realçar (sai no JSON só quando `TRUE`).
+#' @param recolhida `TRUE` = detalhes técnicos (o frontend mostra dentro de
+#'   "Ver detalhes técnicos").
+#' @param ocultar_llm colunas que NÃO vão ao LLM (ex.: nomes de escolas de
+#'   terceiros), exceto nas linhas com `_destaque`. Campo interno.
 #' @keywords internal
-report_section_table <- function(id, titulo, colunas, linhas, nota = NULL) {
+report_section_table <- function(id, titulo, colunas, linhas, nota = NULL,
+                                 recolhida = FALSE, ocultar_llm = NULL) {
   if (!is.data.frame(linhas) || !nrow(linhas)) {
     return(NULL)
   }
   ids <- vapply(colunas, `[[`, character(1), "id")
   for (c in setdiff(ids, names(linhas))) linhas[[c]] <- NA
-  linhas <- linhas[, ids, drop = FALSE]
+  manter <- c(ids, intersect(REPORT_DESTAQUE, names(linhas)))
+  linhas <- linhas[, manter, drop = FALSE]
   for (col in colunas) {
     linhas[[col$id]] <- report_round(linhas[[col$id]], col$formato)
   }
+  if (REPORT_DESTAQUE %in% names(linhas)) {
+    linhas[[REPORT_DESTAQUE]] <- linhas[[REPORT_DESTAQUE]] %in% TRUE
+  }
   rownames(linhas) <- NULL
   sec <- list(id = id, tipo = "tabela", titulo = titulo, colunas = colunas, linhas = linhas)
+  if (!is.null(nota)) sec$nota <- nota
+  if (isTRUE(recolhida)) sec$recolhida <- TRUE
+  if (length(ocultar_llm)) sec$.ocultar_llm <- ocultar_llm
+  sec
+}
+
+#' Direções aceitas na seção `associacoes`
+#' @keywords internal
+REPORT_DIRECOES <- c("maior", "menor", "sem_relacao_clara")
+
+#' Seguranças aceitas na seção `associacoes`
+#' @keywords internal
+REPORT_SEGURANCAS <- c("alta", "media", "baixa")
+
+#' Direção de uma associação (contrato da Fase 2)
+#'
+#' Sinal da estimativa; `sem_relacao_clara` quando p ≥ 0,05 (ou sem p).
+#'
+#' @keywords internal
+report_direcao <- function(estimativa, p_valor) {
+  ifelse(
+    is.na(p_valor) | is.na(estimativa) | p_valor >= 0.05 | estimativa == 0,
+    "sem_relacao_clara",
+    ifelse(estimativa > 0, "maior", "menor")
+  )
+}
+
+#' Segurança de uma associação: `alta` (p < 0,01), `media` (p < 0,05) ou
+#' `baixa`
+#' @keywords internal
+report_seguranca <- function(p_valor) {
+  ifelse(
+    !is.na(p_valor) & p_valor < 0.01, "alta",
+    ifelse(!is.na(p_valor) & p_valor < 0.05, "media", "baixa")
+  )
+}
+
+#' Item da seção `associacoes`
+#'
+#' @param corte valor do corte (ex.: "Urbana") ou `NULL`.
+#' @keywords internal
+report_associacao <- function(rotulo, direcao, seguranca, n, corte = NULL) {
+  stopifnot(direcao %in% REPORT_DIRECOES, seguranca %in% REPORT_SEGURANCAS)
+  item <- list(rotulo = rotulo)
+  if (!is.null(corte) && !is.na(corte)) item$corte <- as.character(corte)
+  item$direcao <- direcao
+  item$seguranca <- seguranca
+  item$n <- as.integer(n)
+  item
+}
+
+#' Seção `associacoes` (leitura simplificada de uma regressão)
+#' @keywords internal
+report_section_associacoes <- function(id, titulo, itens, nota = NULL) {
+  itens <- Filter(Negate(is.null), itens)
+  if (!length(itens)) {
+    return(NULL)
+  }
+  sec <- list(id = id, tipo = "associacoes", titulo = titulo, itens = unname(itens))
   if (!is.null(nota)) sec$nota <- nota
   sec
 }
@@ -127,6 +207,37 @@ report_section_chart <- function(id, titulo, grafico, x, series, dados, formato 
   )
   if (!is.null(formato)) sec$formato <- formato
   sec
+}
+
+#' Formata em PT-BR com algarismos significativos (tabelas técnicas)
+#'
+#' Para estimativas e erros de regressão, cujas ordens de grandeza variam
+#' muito (0,0004 por matrícula; 0,3 por biblioteca): texto, não número.
+#'
+#' @keywords internal
+report_format_signif <- function(x, digits = 3L) {
+  vapply(x, function(v) {
+    if (is.na(v)) {
+      return(NA_character_)
+    }
+    out <- formatC(signif(v, digits), format = "fg", digits = digits,
+                   big.mark = ".", decimal.mark = ",")
+    trimws(out)
+  }, character(1), USE.NAMES = FALSE)
+}
+
+#' Formata um p-valor em PT-BR ("< 0,001", "0,034")
+#' @keywords internal
+report_format_p <- function(p) {
+  vapply(p, function(v) {
+    if (is.na(v)) {
+      return(NA_character_)
+    }
+    if (v < 0.001) {
+      return("< 0,001")
+    }
+    formatC(v, format = "f", digits = 3, decimal.mark = ",")
+  }, character(1), USE.NAMES = FALSE)
 }
 
 #' Fonte de dados de um relatório

@@ -42,7 +42,7 @@ describe("gestorRelatoriosApi", () => {
     const regiao = await listTemasRelatorio(INEP_RELATORIOS, "regiao");
     expect(regiao.map((t) => t.id)).toContain("tendencia_ideb");
     const escola = await listTemasRelatorio(INEP_RELATORIOS, "escola");
-    expect(escola.map((t) => t.id)).toEqual(["minha_escola"]);
+    expect(escola.map((t) => t.id)).toEqual(["minha_escola", "historico_escola", "escolas_parecidas"]);
     const municipio = await listTemasRelatorio(INEP_RELATORIOS, "municipio");
     expect(municipio.map((t) => t.id)).not.toContain("gestores_territorio");
   });

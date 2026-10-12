@@ -39,6 +39,8 @@ fake_sem_dados <- function(filtros = list()) {
 }
 
 fake_edubr_tools <- function(fail = character()) {
+  # Ferramentas da Fase 2 (complemento B): ideb, resumo_escola,
+  # serie_ideb_escola, scores_escola, escolas_similares, regressao_escolas.
   log <- new.env(parent = emptyenv())
   log$calls <- list()
   registra <- function(tool, args) {
@@ -63,7 +65,8 @@ fake_edubr_tools <- function(fail = character()) {
       if (!is.null(e)) return(e)
       fake_envelope(list(
         list(codigo_ibge = "3509502", nome = "Campinas", sigla_estado = "SP"),
-        list(codigo_ibge = "3550308", nome = "São Paulo", sigla_estado = "SP")
+        list(codigo_ibge = "3550308", nome = "São Paulo", sigla_estado = "SP"),
+        list(codigo_ibge = "3555406", nome = "Ubatuba", sigla_estado = "SP")
       ), filtros = list(uf = uf))
     },
 
@@ -250,6 +253,160 @@ fake_edubr_tools <- function(fail = character()) {
       ))
     }
   )
+  # --- Fase 2 ---------------------------------------------------------------
+  # Escolas falsas de Ubatuba (3555406) para a ferramenta `ideb`.
+  escolas_ideb <- list(
+    list(id = "35000001", nome = "ESCOLA ALFA EM", rede = "Municipal", ideb = 6.4),
+    list(id = "35000002", nome = "ESCOLA BETA EM", rede = "Municipal", ideb = 5.9),
+    list(id = "35038751", nome = "ESCOLA DO GESTOR EE", rede = "Estadual", ideb = 5.9),
+    list(id = "35000004", nome = "ESCOLA GAMA EE", rede = "Estadual", ideb = 4.2),
+    list(id = "35000005", nome = "ESCOLA DELTA EM", rede = "Municipal", ideb = 7.1),
+    list(id = "35000006", nome = "ESCOLA SEM NOTA EM", rede = "Municipal", ideb = NULL),
+    list(id = "35000007", nome = "ESCOLA EPSILON EM", rede = "Municipal", ideb = 3.8)
+  )
+  resumo_ok <- list(
+    codigo_inep = "35038751", escola = "ESCOLA DO GESTOR EE", rede = "Estadual",
+    municipio = "Ubatuba", uf = "SP", localizacao = "Urbana", etapas = "Fund. II, Médio",
+    matriculas = 368L, docentes = 20L,
+    ideb_fund_i = NULL, ano_fund_i = NULL, var_fund_i = NULL, oferta_fund_i = FALSE,
+    ideb_fund_ii = 4.5, ano_fund_ii = 2023L, var_fund_ii = -0.3, oferta_fund_ii = TRUE,
+    ideb_medio = 4.7, ano_medio = 2023L, var_medio = NULL, oferta_medio = TRUE
+  )
+
+  tools$ideb <- function(uf = NULL, municipio = NULL, etapa = NULL, rede = NULL, ano = NULL, n = NULL) {
+    e <- registra("ideb", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    filtros <- list(uf = uf, municipio = municipio, etapa = etapa, rede = rede, ano = ano)
+    if (!identical(municipio, "Ubatuba") && !identical(municipio, "Campinas")) return(fake_sem_dados(filtros))
+    # Campinas: sem rede a resposta vem truncada (força as fatias por rede).
+    if (identical(municipio, "Campinas") && is.null(rede)) {
+      return(fake_envelope(list(list(id_escola = "35999999", co_municipio = 3509502L, no_municipio = "Campinas",
+                                     no_escola = "TRUNCADA", rede = "Municipal", ideb_observado = 9.9)),
+                           filtros = filtros, truncado = TRUE,
+                           aviso = "Há mais linhas do que as 1000 devolvidas; refine os filtros para ver o restante."))
+    }
+    cod <- if (identical(municipio, "Ubatuba")) 3555406L else 3509502L
+    dados <- list()
+    for (x in escolas_ideb) {
+      if (!is.null(rede) && !identical(rede, x$rede)) next
+      dados[[length(dados) + 1L]] <- list(
+        id_escola = x$id, sg_uf = "SP", co_municipio = cod, no_municipio = municipio,
+        no_escola = x$nome, rede = x$rede, ano = ano %||% 2023L, etapa = etapa,
+        nota_media = 5.5, ideb_observado = x$ideb
+      )
+    }
+    # Homônimo de outra UF/município não deve entrar (filtro pelo código).
+    dados[[length(dados) + 1L]] <- list(
+      id_escola = "35123456", sg_uf = "SP", co_municipio = 3500105L, no_municipio = municipio,
+      no_escola = "ESCOLA DE OUTRO MUNICIPIO", rede = "Municipal", ano = 2023L, etapa = etapa,
+      nota_media = 5, ideb_observado = 9.5
+    )
+    if (!length(dados)) return(fake_sem_dados(filtros))
+    fake_envelope(dados, filtros = filtros)
+  }
+
+  tools$resumo_escola <- function(escola_id = NULL, ano_ideb = NULL) {
+    e <- registra("resumo_escola", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    if (!identical(escola_id, "35038751")) {
+      return(fake_envelope(erro = list(tipo = "sem_dados", mensagem = "escola inexistente")))
+    }
+    fake_envelope(list(resumo_ok), filtros = list(escola_id = escola_id))
+  }
+
+  tools$serie_ideb_escola <- function(escola_id = NULL, etapa = NULL) {
+    e <- registra("serie_ideb_escola", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    dados <- list(
+      list(etapa = "ensino_medio", ano = 2019L, ideb_observado = NULL, nota_media = NULL),
+      list(etapa = "ensino_medio", ano = 2021L, ideb_observado = 4.3, nota_media = 4.61),
+      list(etapa = "ensino_medio", ano = 2023L, ideb_observado = 4.7, nota_media = 4.82),
+      list(etapa = "fundamental_ii", ano = 2019L, ideb_observado = 4.6, nota_media = 5.01),
+      list(etapa = "fundamental_ii", ano = 2021L, ideb_observado = 4.8, nota_media = 5.12),
+      list(etapa = "fundamental_ii", ano = 2023L, ideb_observado = 4.5, nota_media = 4.98)
+    )
+    fake_envelope(dados, filtros = list(escola_id = escola_id))
+  }
+
+  tools$scores_escola <- function(escola_id = NULL) {
+    e <- registra("scores_escola", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    fake_envelope(list(list(
+      nu_ano_censo = 2025L, co_entidade = escola_id, score_capacidade_atendimento = 4.89,
+      score_infraestrutura = 6.94, score_capacitacao_docente = 5.6,
+      score_diversidade_discente = 6.77, score_capacidade_gestora = 4.79,
+      score_sustentabilidade = 0, data_atualizacao = "2026-06-05T23:03:00Z"
+    )), filtros = list(escola_id = escola_id))
+  }
+
+  tools$escolas_similares <- function(escola_id = NULL, n = 5L, etapa = NULL, publica = TRUE) {
+    e <- registra("escolas_similares", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    viz <- list(
+      list(co_entidade = "35030703", escola = "VIZINHA UM", municipio = "Pereira Barreto", uf = "SP",
+           rede = "Estadual", etapa = "ensino_medio", distancia = 2.4406),
+      list(co_entidade = "35030703", escola = "VIZINHA UM", municipio = "Pereira Barreto", uf = "SP",
+           rede = "Estadual", etapa = "fundamental_ii", distancia = 2.6183),
+      list(co_entidade = "35008254", escola = "VIZINHA DOIS", municipio = "Ubatuba", uf = "SP",
+           rede = "Estadual", etapa = "fundamental_ii", distancia = 2.7148),
+      list(co_entidade = "31000001", escola = "VIZINHA TRES", municipio = "Belo Horizonte", uf = "MG",
+           rede = "Municipal", etapa = "ensino_medio", distancia = 2.9)
+    )
+    if (!is.null(etapa)) viz <- Filter(function(v) identical(v$etapa, etapa), viz)
+    fake_envelope(utils::head(viz, n), filtros = list(escola_id = escola_id, n = n, etapa = etapa, publica = publica))
+  }
+
+  tools$regressao_escolas <- function(outcome, predictors, cuts = NULL, uf = NULL, rede = NULL,
+                                      ano = NULL, ano_ideb = NULL, ativas = NULL, modelo = "linear") {
+    e <- registra("regressao_escolas", argumentos(environment()))
+    if (!is.null(e)) return(e)
+    filtros <- list(outcome = outcome, predictors = predictors, cuts = cuts, uf = uf, rede = rede)
+    if (identical(uf, "RJ")) {
+      return(fake_envelope(erro = list(tipo = "limite_excedido", mensagem = "O recorte tem 31.000 linhas.")))
+    }
+    if (identical(uf, "AC")) return(fake_sem_dados(filtros))
+    # Estimativas e p-valores escolhidos para cobrir os limiares do contrato:
+    # p < 0,01 (alta), p < 0,05 (média), p >= 0,05 (sem relação clara).
+    est <- list(
+      Urbana = list(
+        "(Intercept)" = c(5.1, 0.1, 1e-50),
+        in_biblioteca = c(0.21, 0.03, 0.0005),
+        in_internet = c(-0.15, 0.07, 0.03),
+        in_laboratorio_informatica = c(0.05, 0.06, 0.40),
+        docentes = c(0.004, 0.002, 0.05),
+        matriculas = c(-0.0004, 0.0001, 0.009)
+      ),
+      Rural = list(
+        "(Intercept)" = c(4.8, 0.2, 1e-20),
+        in_biblioteca = c(0.10, 0.08, 0.20),
+        in_internet = c(0.30, 0.09, 0.001),
+        in_laboratorio_informatica = c(-0.02, 0.1, 0.80),
+        docentes = c(0.01, 0.004, 0.012),
+        matriculas = c(0.0001, 0.0003, 0.70)
+      )
+    )
+    dados <- list()
+    for (corte in names(est)) for (termo in names(est[[corte]])) {
+      v <- est[[corte]][[termo]]
+      dados[[length(dados) + 1L]] <- list(localizacao = corte, termo = termo, estimativa = v[1],
+                                          erro_padrao = v[2], estatistica = v[1] / v[2], p_valor = v[3])
+    }
+    fake_envelope(
+      dados, filtros = filtros,
+      aviso = "8.914 de 13.435 linhas do recorte foram descartadas por `null` no desfecho ou nos preditores (ex.: escolas sem IDEB na etapa).",
+      contexto = list(
+        formula = paste(outcome, "~", paste(unlist(predictors), collapse = " + ")),
+        modelo = modelo, n_recorte = 13435L, n_usado = 4521L,
+        cortes = list(list(localizacao = "Rural", n = 293L, ajustado = TRUE),
+                      list(localizacao = "Urbana", n = 4228L, ajustado = TRUE)),
+        metricas = list(
+          list(localizacao = "Urbana", r2 = 0.044, r2_ajustado = 0.0428, nobs = 4228L),
+          list(localizacao = "Rural", r2 = 0.025, r2_ajustado = 0.008, nobs = 293L)
+        )
+      )
+    )
+  }
+
   attr(tools, "log") <- log
   tools
 }
@@ -266,7 +423,7 @@ fake_report_config <- function(provider = "mock") {
   list(provider = provider, model = "modelo-teste", url = "http://localhost", api_key = "")
 }
 
-# Gera um relatório com ferramentas falsas.
+# Gera um relatório com ferramentas falsas. `contexto` = {cod_inep} do gestor.
 fake_report <- function(geotag, tema, opcoes = NULL, provider = "mock", llm = NULL,
                         tools = fake_edubr_tools(), contexto = NULL) {
   run_report(
@@ -284,8 +441,12 @@ report_secao <- function(report, id) {
   s <- s[[1]]
   as_df <- function(rows) {
     if (!length(rows)) return(data.frame())
+    # Chaves opcionais (ex.: `_destaque`, só nas linhas destacadas) viram NA.
+    chaves <- unique(unlist(lapply(rows, names)))
     do.call(rbind, lapply(rows, function(r) {
-      as.data.frame(lapply(r, function(v) if (is.null(v)) NA else v), stringsAsFactors = FALSE, optional = TRUE)
+      r <- lapply(chaves, function(k) if (is.null(r[[k]])) NA else r[[k]])
+      names(r) <- chaves
+      as.data.frame(r, stringsAsFactors = FALSE, optional = TRUE)
     }))
   }
   if (!is.null(s$linhas)) s$linhas <- as_df(s$linhas)

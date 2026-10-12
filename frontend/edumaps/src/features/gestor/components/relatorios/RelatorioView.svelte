@@ -3,18 +3,23 @@
   // Renderiza o ReportResult do Assistente de Relatório (#219): cabeçalho
   // (título, recorte, data, selo do cache), aviso quando a redação automática
   // não esteve disponível, as seções por tipo e o rodapé com fontes e avisos.
+  // Tipos de seção desconhecidos são ignorados (compatibilidade). O aviso
+  // `associacao` (fase 2) sai em destaque no topo: associação não é causa.
   import SecaoTexto from "./SecaoTexto.svelte";
   import SecaoIndicadores from "./SecaoIndicadores.svelte";
   import SecaoTabela from "./SecaoTabela.svelte";
   import SecaoGrafico from "./SecaoGrafico.svelte";
+  import SecaoAssociacoes from "./SecaoAssociacoes.svelte";
   import { formatarValor } from "../../utils/relatorioFormatos.js";
 
   /** @type {{relatorio: object}} */
   let { relatorio } = $props();
 
-  const secoes = $derived(relatorio?.secoes ?? []);
+  const secoes = $derived((relatorio?.secoes ?? []).filter((s) => s && typeof s === "object"));
   const fontes = $derived(relatorio?.fontes ?? []);
-  const avisos = $derived(relatorio?.avisos ?? []);
+  const todosAvisos = $derived(relatorio?.avisos ?? []);
+  const avisosAssociacao = $derived(todosAvisos.filter((a) => a?.tipo === "associacao"));
+  const avisos = $derived(todosAvisos.filter((a) => a?.tipo !== "associacao"));
   const llmIndisponivel = $derived(relatorio?.rastreio?.llm === "indisponivel");
 
   const geradoEm = $derived.by(() => {
@@ -58,7 +63,21 @@
     </div>
   {/if}
 
-  {#each secoes as secao (secao.id)}
+  {#if avisosAssociacao.length}
+    <div
+      class="rounded-md bg-blue-50 border border-blue-200 text-blue-900 text-sm p-3 space-y-1"
+      role="note"
+      aria-label="Associação não é causa"
+      data-testid="aviso-associacao"
+    >
+      <p class="font-semibold"><span aria-hidden="true">ℹ</span>{" "}Associação não é causa</p>
+      {#each avisosAssociacao as a, i (i)}
+        {#if a.mensagem}<p>{a.mensagem}</p>{/if}
+      {/each}
+    </div>
+  {/if}
+
+  {#each secoes as secao, i (i)}
     {#if secao.tipo === "texto"}
       <SecaoTexto {secao} />
     {:else if secao.tipo === "indicadores"}
@@ -67,6 +86,8 @@
       <SecaoTabela {secao} />
     {:else if secao.tipo === "grafico"}
       <SecaoGrafico {secao} />
+    {:else if secao.tipo === "associacoes"}
+      <SecaoAssociacoes {secao} />
     {/if}
   {/each}
 
@@ -77,11 +98,11 @@
         <ul class="mt-1 space-y-1 text-gray-600" data-testid="relatorio-fontes">
           {#each fontes as f, i (i)}
             <li>
-              <span class="font-medium text-gray-800">{f.descricao ?? f.ferramenta}</span>
+              <!-- sem o nome interno da ferramenta: o gestor vê a descrição -->
+              <span class="font-medium text-gray-800">{f.descricao ?? "Dados públicos"}</span>
               {#if f.edicao}{" · "}{f.edicao}{/if}
               {#if f.escopo}{" · "}{f.escopo}{/if}
               {#if f.n !== undefined && f.n !== null}{" · "}n = {formatarValor(f.n, "inteiro")}{/if}
-              <span class="text-xs text-gray-400">({f.ferramenta})</span>
             </li>
           {/each}
         </ul>

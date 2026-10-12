@@ -9,6 +9,7 @@ import {
   TEMAS_FIXTURE,
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_LLM_INDISPONIVEL_FIXTURE,
+  RELATORIOS_POR_TEMA_FIXTURE,
 } from "./relatoriosFixtures.js";
 
 const BASE = "/api/gestor/:cod_inep/relatorios";
@@ -107,7 +108,9 @@ export const gestorRelatoriosHandlers = [
       return HttpResponse.json({ state, progress: state === "active" ? 50 : 0 });
     }
     if (c.falha) return HttpResponse.json({ state: "failed", error: c.falha });
-    const base = c.llmIndisponivel ? RELATORIO_LLM_INDISPONIVEL_FIXTURE : RELATORIO_RESULT_FIXTURE;
+    const base = c.llmIndisponivel
+      ? RELATORIO_LLM_INDISPONIVEL_FIXTURE
+      : (RELATORIOS_POR_TEMA_FIXTURE[job.pedido?.tema] ?? RELATORIO_RESULT_FIXTURE);
     return HttpResponse.json({
       state: "finished",
       progress: 100,

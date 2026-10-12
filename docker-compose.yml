@@ -82,6 +82,10 @@ services:
       - DB_PASS=${DB_PASS}
       - DB_HOST=db
       - EDUMAPS_R_PORT=8000
+    # Pilha de 64 MB: o eduBR (escolas_similares) estoura os 8 MB padrão
+    # dentro do Plumber (#219).
+    ulimits:
+      stack: 67108864
     ports:
       - "8000:8000"
 

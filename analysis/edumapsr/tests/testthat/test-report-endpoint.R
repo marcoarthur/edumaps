@@ -59,7 +59,9 @@ test_that("GET /report/temas lista e filtra por nível", {
   pr <- report_router()
   r <- call_api(pr, "GET", "/report/temas")
   expect_equal(r$status, 200)
-  expect_length(r$body$temas, 6)
+  expect_length(r$body$temas, 10)
+  prof <- vapply(r$body$temas, `[[`, character(1), "profundidade")
+  expect_setequal(unique(prof), c("descritiva", "profunda"))
 
   r <- call_api(pr, "GET", "/report/temas", qs = "nivel=escola")
   expect_equal(r$status, 200)
@@ -97,4 +99,28 @@ test_that("POST /report com falha da fonte responde 500 sem detalhes", {
   expect_equal(r$status, 500)
   expect_equal(r$body$error, "Erro interno ao gerar o relatório")
   expect_equal(r$body$tipo, "internal")
+})
+
+test_that("POST /report dos temas da Fase 2 (associacoes, recolhida, _destaque)", {
+  pr <- report_router()
+  r <- call_api(pr, "POST", "/report",
+                body = '{"geotag":{"nivel":"uf","codigo":"SP"},"tema":"infraestrutura_ideb","opcoes":{"etapa":"fundamental_i"}}')
+  expect_equal(r$status, 200)
+  tipos <- vapply(r$body$secoes, `[[`, character(1), "tipo")
+  expect_true("associacoes" %in% tipos)
+  coef <- Filter(function(s) identical(s$id, "coeficientes"), r$body$secoes)[[1]]
+  expect_true(isTRUE(coef$recolhida))
+  expect_true("associacao" %in% vapply(r$body$avisos, `[[`, character(1), "tipo"))
+
+  r <- call_api(pr, "POST", "/report",
+                body = '{"geotag":{"nivel":"municipio","codigo":"3555406"},"tema":"ideb_escolas","contexto":{"cod_inep":"35038751"}}')
+  expect_equal(r$status, 200)
+  esc <- Filter(function(s) identical(s$id, "escolas"), r$body$secoes)[[1]]
+  dest <- Filter(function(l) isTRUE(l[["_destaque"]]), esc$linhas)
+  expect_length(dest, 1)
+
+  # Recorte grande demais para a regressão: 400 pedindo uma rede.
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"RJ"},"tema":"infraestrutura_ideb"}')
+  expect_equal(r$status, 400)
+  expect_match(r$body$error, "rede específica")
 })
