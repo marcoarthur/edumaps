@@ -32,7 +32,7 @@
     titulo: `Dados: ${secao.titulo ?? ""}`,
     colunas: [
       { id: secao.x?.id, rotulo: secao.x?.rotulo ?? secao.x?.id, formato: "texto" },
-      ...(secao.series ?? []).map((s) => ({ id: s.id, rotulo: s.rotulo ?? s.id, formato: s.formato })),
+      ...(secao.series ?? []).map((s) => ({ id: s.id, rotulo: s.rotulo ?? s.id, formato: s.formato ?? secao.formato })),
     ],
     linhas: secao.dados ?? [],
   });

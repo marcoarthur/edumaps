@@ -242,4 +242,16 @@ describe("download", () => {
     expect(await lerBlob(blob)).toBe(relatorioParaMarkdown(RELATORIO_RESULT_FIXTURE));
     spy.mockRestore();
   });
+
+  it("gráfico com formato na seção (percentual) aplica o formato à tabela de dados", () => {
+    const md = relatorioParaMarkdown({
+      titulo: "T", recorte: { nome: "BA" }, tema: { titulo: "Professores" },
+      secoes: [{ id: "g", tipo: "grafico", grafico: "barras", titulo: "G", formato: "percentual",
+        x: { id: "rede", rotulo: "Rede" }, series: [{ id: "sup", rotulo: "Com superior" }],
+        dados: [{ rede: "Municipal", sup: 0.803 }] }],
+      fontes: [], avisos: [],
+    });
+    expect(md).toContain("80,3%");
+    expect(md).not.toMatch(/\| 0,8 \|/);
+  });
 });

@@ -121,7 +121,7 @@ function secaoGrafico(s) {
     ...(s.series ?? []).map((serie) => ({
       id: serie.id,
       rotulo: serie.rotulo ?? serie.id,
-      formato: serie.formato,
+      formato: serie.formato ?? s.formato,
     })),
   ];
   const t = tabelaMarkdown(colunas, s.dados ?? []);
