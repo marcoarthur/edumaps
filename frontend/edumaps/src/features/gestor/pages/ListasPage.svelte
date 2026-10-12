@@ -9,6 +9,8 @@
   // geral ganha `parcial` (algum contato confirmado, outro não).
   // Onda 2 (#214): "Remover inscrito" (diálogo + motivo; anonimiza o contato em
   // todas as listas da escola) e a seção "Exclusões" com o histórico da escola.
+  // Issue #216: ação "Enviar e-mail" por lista (abre o editor de envio com o
+  // alvo preenchido) e links para Envios e Listas dinâmicas.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import {
@@ -385,6 +387,14 @@
         >Sair</button>
       {/if}
       <a
+        href="/gestor/envios"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Envios</a>
+      <a
+        href="/gestor/segmentos"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Listas dinâmicas</a>
+      <a
         href="/gestor/contatos"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Contatos →</a>
@@ -507,6 +517,11 @@
                   onclick={() => abrirQr(lista)}
                   class="px-2 py-1 rounded text-xs text-blue-700 hover:bg-blue-50 transition-colors"
                 >{lista.qrcode ? "Ver QR" : "Gerar QR"}</button>
+                <a
+                  href={`/gestor/envios?novo=1&alvo_tipo=lista&alvo_id=${lista.id}`}
+                  aria-label={`Enviar e-mail para ${lista.nome}`}
+                  class="px-2 py-1 rounded text-xs text-indigo-700 hover:bg-indigo-50 transition-colors"
+                >Enviar e-mail</a>
                 <button
                   type="button"
                   aria-label={`Excluir lista ${lista.nome}`}

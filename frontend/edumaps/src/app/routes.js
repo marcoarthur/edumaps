@@ -24,6 +24,8 @@ import {
   GestorRelacoesPage,
   GestorRelacaoDetailPage,
   GestorDocumentosPage,
+  GestorEnviosPage,
+  GestorSegmentosPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -61,6 +63,8 @@ export const routes = [
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/listas", component: GestorListasPage },
+  { path: "/gestor/envios", component: GestorEnviosPage },
+  { path: "/gestor/segmentos", component: GestorSegmentosPage },
   { path: "/gestor/reunioes", component: GestorReunioesPage },
   { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },
   { path: "/gestor/reunioes/:id", component: GestorReuniaoDetailPage },

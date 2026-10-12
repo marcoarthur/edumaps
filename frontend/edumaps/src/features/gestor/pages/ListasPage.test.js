@@ -452,4 +452,25 @@ describe("ListasPage", () => {
       await waitFor(() => expect(linha.textContent).toContain("1 contato(s)"));
     });
   });
+
+  describe("envio por e-mail (#216)", () => {
+    it("cada lista tem a ação Enviar e-mail com o alvo na query", async () => {
+      render(ListasPage);
+      await screen.findByText("Família 8ºC");
+      expect(screen.getByRole("link", { name: "Enviar e-mail para Família 8ºC" })).toHaveAttribute(
+        "href",
+        "/gestor/envios?novo=1&alvo_tipo=lista&alvo_id=4",
+      );
+    });
+
+    it("tem links para Envios e Listas dinâmicas", async () => {
+      render(ListasPage);
+      await screen.findByText("Responsáveis 6ºA");
+      expect(screen.getByRole("link", { name: "Envios" })).toHaveAttribute("href", "/gestor/envios");
+      expect(screen.getByRole("link", { name: "Listas dinâmicas" })).toHaveAttribute(
+        "href",
+        "/gestor/segmentos",
+      );
+    });
+  });
 });

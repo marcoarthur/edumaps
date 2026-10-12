@@ -408,6 +408,54 @@ export const CONFIG_TREE = {
           ],
         },
         {
+          // issue #216 (Fase 3): envio por e-mail para listas
+          key: "canais_envio",
+          label: "Envios",
+          children: [
+            {
+              key: "canais.envio.enabled",
+              label: "Envios por e-mail ativados",
+              description:
+                "Liga/desliga o envio de e-mails para listas. Desligado, o disparo responde 409 e os envios em andamento ficam parados.",
+              type: "boolean",
+              sensitive: 0,
+              enabled: 1,
+              value: 1,
+            },
+            {
+              key: "canais.envio.ritmo_por_minuto",
+              label: "Ritmo (e-mails por minuto)",
+              description: "Quantos e-mails cada envio despacha por minuto (1 a 600).",
+              example: "60",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 60,
+            },
+            {
+              key: "canais.envio.cota_diaria_escola",
+              label: "Cota diária por escola",
+              description:
+                "Máximo de e-mails que uma escola envia por dia. Ao esgotar, o envio pausa e retoma no dia seguinte.",
+              example: "500",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 500,
+            },
+            {
+              key: "canais.envio.max_destinatarios",
+              label: "Máximo de destinatários por envio",
+              description: "Teto de destinatários de um único envio.",
+              example: "2000",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 2000,
+            },
+          ],
+        },
+        {
           key: "canais_retencao",
           label: "Retenção (LGPD)",
           children: [
