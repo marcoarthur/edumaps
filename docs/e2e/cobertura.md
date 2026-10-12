@@ -836,3 +836,44 @@ versão de impressão.
 >
 > **Pendência visual:** o eixo do gráfico continua de 0 a 1 para séries
 > percentuais.
+
+### Rodada 2026-10-12 — Assistente de Relatório, Fase 4 (feat, issue #219)
+
+**Objetivo:** certificar os assistentes declarativos ("Relatório por tema" e
+"EDA do município") em dev (`http://ubatexu.lan:8080`), com o **Gemini real**,
+o gestor da escola 35038751 (Ubatuba/SP) e uma sessão temporária. Driver CDP
+próprio em Perl, um caso por aba; PDF por `Page.printToPDF` e download real
+do Markdown.
+
+| Verificação | Resultado |
+|---|---|
+| Assistentes listados: "Relatório por tema" e "EDA do município" | 🟢 |
+| EDA em nível UF → 400; assistente desconhecido → 400 | 🟢 |
+| EDA de Ubatuba: 5 capítulos, incluindo "Minha escola no município" | 🟢 ~34 s a frio; 1,6 s do cache |
+| Seções gerais `resumo` (primeira) e `leitura` (última), sem capítulo | 🟢 |
+| Etapa escolhida sobrepõe a etapa fixa dos capítulos de IDEB | 🟢 |
+| EDA salva com o assistente; salvos mostram o selo do assistente | 🟢 |
+| "Relatório por tema" intacto (comportamento das Fases 1–3) | 🟢 |
+| Tela: seletor de assistente, sumário com âncoras, `h2` por capítulo | 🟢 |
+| Markdown com sumário, `##` por capítulo e `###` por seção; PDF da versão de impressão | 🟢 |
+| "Gerar de novo" a partir de um salvo refaz a EDA | 🟢 |
+| R 30 arquivos / 1591 asserções / 0 falhas; backend 102 / 697 (só falhas antigas); frontend 106 / 899; `relatorios_salvos_assistente` verify OK | 🟢 22/22 |
+
+> **Achados corrigidos na rodada:**
+> 1. **Resumo da EDA truncado.** O saneamento de HTML do texto do LLM usava
+>    uma regex gananciosa que engolia o trecho entre comparações
+>    ("4,5 < 4,7 … > 4"); agora só remove o que parece tag.
+>    `edumapsAnalytics` 0.3.1 e `analytics_source_version` 0.3.1.
+> 2. **Bundle antigo após o deploy.** O primeiro carregamento depois do
+>    deploy do frontend veio do service worker antigo (problema já conhecido;
+>    recarregar resolve).
+>
+> **Pendências:**
+> - a EDA leva ~25–34 s por município (fatias de redes e docentes no eduBR);
+> - eixo percentual dos gráficos de 0 a 1;
+> - paginação de listas grandes;
+> - achados para o eduBR: filtro por município nas ferramentas agregadas,
+>   filtro em `regressao_escolas` e código do município na saída de
+>   perfil/resumo da escola;
+> - modelagem do perfil pesquisador (o catálogo já tem profundidade e
+>   público).

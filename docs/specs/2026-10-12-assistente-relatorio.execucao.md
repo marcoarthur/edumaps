@@ -733,7 +733,7 @@ retrocompatíveis):
 | R7 | T-R | Carregador YAML + `relatorio.yml` + `eda_municipio.yml` + modo composto + redação geral + `/report/assistentes` + testes (inclui o 3º assistente só com YAML) + versão 0.3.0 | 🟢 |
 | P3 | T-P | Migration `relatorios_salvos_assistente` + rotas (assistentes, `?assistente`, POST) + salvos com assistente + `analytics_source_version` 0.3.0 + testes | 🟢 |
 | F4 | T-F | Seletor de assistente, capítulos (view, impressão, Markdown), query `assistente`, salvos + testes | 🟢 |
-| C4 | coord. | Verificação, deploy, e2e, docs, nota do ciclo inteiro, PR | ⚪ |
+| C4 | coord. | Verificação, deploy, e2e, docs, nota do ciclo inteiro, PR | 🟢 |
 
 ## Log — Fase 4
 
@@ -776,3 +776,23 @@ retrocompatíveis):
 - **Integração da T-R pelo endpoint** (Plumber de uma cópia, provider mock):
   EDA de Ubatuba com 5 capítulos e de Campinas com 4, ~27 s cada.
   **Pendência:** a EDA leva ~25–28 s por município.
+- **2026-10-12 — Integração da Fase 4 (coordenador):**
+  - **Deploy:** banco, `analytic`, backend, minion, worker e frontend.
+  - **E2E 22/22 com o Gemini real:**
+    - EDA de Ubatuba com 5 capítulos, ~34 s a frio;
+    - 400 para nível e assistente inválidos;
+    - a opção de etapa sobrepõe a fixa;
+    - salvos com assistente;
+    - na tela: seletor, sumário e âncoras;
+    - Markdown com capítulos e PDF;
+    - "gerar de novo".
+  - **Achado corrigido:** a regex de remoção de HTML, gananciosa
+    (`<[^>]+>`), engolia o texto entre comparações com "<" e ">" e truncava o
+    resumo da EDA. Agora só remove o que é tag.
+    - `edumapsAnalytics` 0.3.1 + `analytics_source_version` 0.3.1.
+    - R: 30 arquivos / 1591 asserções.
+  - **Nota sobre números:** as contagens deste registro são as de cada
+    verificação. As notas técnicas e a rodada de e2e trazem as contagens finais,
+    depois dos ajustes do coordenador (ex.: R Fase 1 1075 → 1085; Fase 2
+    1360/794 → 1374/795; frontend Fase 3 863 → 864).
+  - **Nota técnica final do ciclo inteiro:** **117**.
