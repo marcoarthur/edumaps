@@ -619,3 +619,42 @@ export const CONSENTIMENTO_VERSOES = [
     created_at: "2026-10-12T10:00:00Z",
   },
 ];
+
+// Painel admin de envios (GET /api/admin/canais/envios, issue #216, onda 2).
+// Ordenadas por enviados_30d desc; a última só aparece por estar suspensa.
+export const ENVIOS_ADMIN = {
+  limites: {
+    enabled: 1,
+    ritmo_por_minuto: 60,
+    cota_diaria: 500,
+    max_destinatarios: 2000,
+    smtp_disponivel: 1,
+  },
+  escolas: [
+    {
+      cod_inep: 11000040,
+      escola_nome: "Escola Estadual Professora Maria de Lourdes",
+      enviados_hoje: 12,
+      enviados_30d: 340,
+      falhas_30d: 4,
+      optouts_30d: 2,
+      envios_em_curso: 2,
+      suspensao: null,
+    },
+    {
+      cod_inep: 35038751,
+      escola_nome: "EMEF Jardim das Flores",
+      enviados_hoje: 0,
+      enviados_30d: 120,
+      falhas_30d: 31,
+      optouts_30d: 9,
+      envios_em_curso: 1,
+      suspensao: {
+        id: 7,
+        motivo: "Muitas falhas de entrega",
+        suspenso_em: "2026-10-11T18:00:00Z",
+        suspenso_por: 1,
+      },
+    },
+  ],
+};

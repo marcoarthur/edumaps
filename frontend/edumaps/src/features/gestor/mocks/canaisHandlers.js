@@ -11,6 +11,8 @@
 //   - público /api/canais/consentimento             (texto vigente + retencao)
 //   - público /api/canais/exclusao/:token           (onda 2: exclusão pelo titular)
 //   - gestão  DELETE /listas/:id/membros/:membro_id e GET /canais/exclusoes (onda 2)
+//   - público /api/canais/sair/:token               (#216, onda 2: opt-out dos envios)
+//   - gestão  GET /listas/:id/funil, `n_optouts` e `optout` por membro (#216, onda 2)
 //
 // Helpers de teste: `ultimaRefConfirmacao()` devolve a última ref emitida e
 // `confirmarRefMock(ref, via)` simula a confirmação fora da página (Telegram);
@@ -18,7 +20,9 @@
 // `setEmailDisponivelMock(bool)` liga/desliga o canal e-mail (SMTP configurado);
 // `setConsentimentoVigenteMock({versao, texto})` publica outra versão;
 // `setRetencaoPublicaMock({...})` muda os prazos expostos no consentimento;
-// `getExclusoesMock(inep)` devolve o histórico de exclusões em memória.
+// `getExclusoesMock(inep)` devolve o histórico de exclusões em memória;
+// `getOptoutsMock(inep)` devolve os opt-outs (saídas dos envios) em memória;
+// `setFunilHojeMock("YYYY-MM-DD")` fixa o "hoje" do funil (padrão de `ate`).
 //
 // O estado é em memória por escola para as páginas criarem/rotacionarem QR sem
 // recarregar. `resetCanaisMockState()` volta tudo ao fixture inicial (chamar no
@@ -39,6 +43,11 @@ import {
   INSCRICAO_TOKEN_EMAIL,
   INSCRICAO_TOKEN_QUALQUER,
   INEP_CANAIS,
+  ACESSOS_QR_FIXTURE,
+  OPTOUTS_FIXTURE,
+  SAIDA_TOKEN_JA_SAIU,
+  SAIDA_TOKEN_LIMITE,
+  SAIDA_TOKEN_VALIDO,
   INSCRICAO_PUBLICA_FORM,
   INSCRICAO_TOKEN_CONFIRMACAO,
   INSCRICAO_TOKEN_EXPIRADO,
@@ -58,6 +67,7 @@ const CONFIRMACAO = "/api/canais/confirmacao/:ref";
 const CONSENTIMENTO = "/api/canais/consentimento";
 const EXCLUSAO = "/api/canais/exclusao/:token";
 const EXCLUSOES = "/api/gestor/:cod_inep/canais/exclusoes";
+const SAIR = "/api/canais/sair/:token";
 
 // Origem pública (no dev a SPA roda em 5173). O backend real monta a URL a
 // partir de $PUBLIC_BASE_URL.
@@ -87,6 +97,9 @@ let consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
 let retencaoPublica = { ...RETENCAO_PUBLICA };
 // token de exclusão -> { cod_inep, lista_id, contato_id, excluido }
 const exclusaoTokens = new Map();
+// token de saída -> { cod_inep, lista_id, email, envio_id, limite? }
+const saidaTokens = new Map();
+let funilHoje = null; // "YYYY-MM-DD" fixo nos testes; null = hoje em America/Sao_Paulo
 
 function baseState() {
   const listas = LISTAS_CANAIS_FIXTURE.map((l) => ({ ...l }));
@@ -95,10 +108,12 @@ function baseState() {
     membros[id] = rows.map((m) => ({ ...m }));
   }
   const exclusoes = EXCLUSOES_FIXTURE.map((e) => ({ ...e }));
+  const optouts = OPTOUTS_FIXTURE.map((o) => ({ ...o }));
   return {
     listas,
     membros,
     exclusoes,
+    optouts,
     proximos: { lista: 100, membro: 1000, contato: 2000, exclusao: 100 },
   };
 }
@@ -177,6 +192,26 @@ function semearTokens() {
     excluido: false,
     limite: true,
   });
+  saidaTokens.clear();
+  saidaTokens.set(SAIDA_TOKEN_VALIDO, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 4,
+    email: "ana@example.org",
+    envio_id: 2,
+  });
+  saidaTokens.set(SAIDA_TOKEN_JA_SAIU, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 4,
+    email: "clara@example.org",
+    envio_id: 2,
+  });
+  saidaTokens.set(SAIDA_TOKEN_LIMITE, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 4,
+    email: "bruno@example.org",
+    envio_id: 2,
+    limite: true,
+  });
   tokens.set(INSCRICAO_TOKEN_LIMITE, {
     lista_id: 1,
     cod_inep: INEP_CANAIS,
@@ -197,6 +232,17 @@ export function resetCanaisMockState() {
   emailDisponivel = true;
   consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
   retencaoPublica = { ...RETENCAO_PUBLICA };
+  funilHoje = null;
+}
+
+/** Opt-outs (saídas dos envios) em memória da escola. */
+export function getOptoutsMock(inep = INEP_CANAIS) {
+  return estadoFor(String(inep)).optouts.map((o) => ({ ...o }));
+}
+
+/** Fixa o "hoje" do funil (padrão de `ate`); null volta ao relógio. */
+export function setFunilHojeMock(dia) {
+  funilHoje = dia ?? null;
 }
 
 /** Muda os prazos de retenção expostos em GET /api/canais/consentimento. */
@@ -257,6 +303,15 @@ function negarPosse(params) {
   return null;
 }
 
+const DIA_RE = /^\d{4}-\d{2}-\d{2}$/;
+const hojeSaoPaulo = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+function somarDias(dia, n) {
+  const d = new Date(`${dia}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 const normalizar = (bruto) => String(bruto ?? "").replace(/\D/g, "");
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -292,10 +347,22 @@ function estadoMembro(lista, m) {
   return confirmados > 0 ? "parcial" : "pendente";
 }
 
-function comEstado(lista, m) {
+const emailNorm = (e) => String(e ?? "").trim().toLowerCase();
+
+// o e-mail atual do contato tem opt-out nesta lista?
+function temOptout(inep, listaId, email) {
+  if (!email) return false;
+  const alvo = emailNorm(email);
+  return estadoFor(inep).optouts.some(
+    (o) => o.lista_id === Number(listaId) && emailNorm(o.email) === alvo,
+  );
+}
+
+function comEstado(lista, m, inep = INEP_CANAIS) {
   const contatos = contatosDoMembro(lista, m);
   return {
     ...m,
+    optout: temOptout(inep, lista?.id, m.email),
     telefone: m.telefone ?? null,
     email: m.email ?? null,
     estado: estadoMembro(lista, m),
@@ -317,6 +384,7 @@ function comContadores(inep, lista) {
     coleta: lista.coleta ?? "telefone",
     exige_confirmacao: exige,
     n_membros: membros.length,
+    n_optouts: estadoFor(inep).optouts.filter((o) => o.lista_id === lista.id).length,
     membros_confirmados: confirmados,
     membros_pendentes: exige ? estados.filter((e) => e === "pendente" || e === "parcial").length : 0,
   };
@@ -659,7 +727,7 @@ export const gestorCanaisHandlers = [
       return HttpResponse.json({ error: "Lista não encontrada" }, { status: 404 });
     }
     const rows = estadoFor(params.cod_inep).membros[lista.id] ?? [];
-    return HttpResponse.json(rows.map((m) => comEstado(lista, m)));
+    return HttpResponse.json(rows.map((m) => comEstado(lista, m, params.cod_inep)));
   }),
 
   // ------------------------------ público ----------------------------------
@@ -744,6 +812,12 @@ export const gestorCanaisHandlers = [
     );
 
     entry.usos += 1;
+    // #216 onda 2: reinscrição com e-mail = novo consentimento → desfaz o opt-out
+    if (normEmail) {
+      estab.optouts = estab.optouts.filter(
+        (o) => !(o.lista_id === Number(entry.lista_id) && emailNorm(o.email) === emailNorm(normEmail)),
+      );
+    }
     const exige = Boolean(lista?.exige_confirmacao);
     if (existente) {
       const exclusao_url = exclusaoUrl(entry.cod_inep, entry.lista_id, existente.contato_id);
@@ -891,6 +965,110 @@ export const gestorCanaisHandlers = [
     if (entry.excluido) return HttpResponse.json({ ok: 1, ja_excluido: true });
     anonimizarContato(entry.cod_inep, entry.contato_id, { origem: "titular" });
     return HttpResponse.json({ ok: 1, ja_excluido: false });
+  }),
+
+  // ------------------- saída dos envios (#216, onda 2) --------------------
+  http.get(SAIR, ({ params }) => {
+    const entry = saidaTokens.get(params.token);
+    const lista = entry ? listaDe(entry.cod_inep, entry.lista_id) : null;
+    if (!entry || !lista) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    return HttpResponse.json({
+      escola_nome: CANAIS_ESCOLA_NOME,
+      lista_nome: lista.nome,
+      ja_saiu: temOptout(entry.cod_inep, entry.lista_id, entry.email),
+    });
+  }),
+
+  http.post(SAIR, async ({ request, params }) => {
+    const entry = saidaTokens.get(params.token);
+    const lista = entry ? listaDe(entry.cod_inep, entry.lista_id) : null;
+    if (!entry || !lista) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    if (entry.limite) {
+      return HttpResponse.json({ error: "Muitas tentativas. Aguarde um instante." }, { status: 429 });
+    }
+    // JSON {confirmar:true} ou form `List-Unsubscribe=One-Click` (RFC 8058)
+    const tipo = request.headers.get("Content-Type") ?? "";
+    const texto = await request.text();
+    let ok = false;
+    if (tipo.includes("application/x-www-form-urlencoded")) {
+      ok = new URLSearchParams(texto).get("List-Unsubscribe") === "One-Click";
+    } else {
+      try {
+        ok = JSON.parse(texto || "{}")?.confirmar === true;
+      } catch {
+        ok = false;
+      }
+    }
+    if (!ok) return HttpResponse.json({ error: "Confirme a saída." }, { status: 400 });
+    const ja_saiu = temOptout(entry.cod_inep, entry.lista_id, entry.email);
+    if (!ja_saiu) {
+      estadoFor(entry.cod_inep).optouts.push({
+        lista_id: entry.lista_id,
+        email: entry.email,
+        envio_id: entry.envio_id,
+        created_at: new Date().toISOString(),
+      });
+    }
+    return HttpResponse.json({ ok: 1, ja_saiu });
+  }),
+
+  // ------------------------- funil da lista (#216, onda 2) ----------------
+  http.get(`${BASE}/:id/funil`, ({ request, params }) => {
+    const denied = negarAuth(request) ?? negarPosse(params);
+    if (denied) return denied;
+    const lista = listaDe(params.cod_inep, params.id);
+    if (!lista) return HttpResponse.json({ error: "Lista não encontrada" }, { status: 404 });
+    const url = new URL(request.url);
+    const ate = url.searchParams.get("ate") || funilHoje || hojeSaoPaulo();
+    const de = url.searchParams.get("de") || somarDias(ate, -29);
+    if (!DIA_RE.test(de) || !DIA_RE.test(ate) || de > ate) {
+      return HttpResponse.json({ error: "Período inválido." }, { status: 400 });
+    }
+    const dias = [];
+    for (let d = de; d <= ate; d = somarDias(d, 1)) {
+      dias.push(d);
+      if (dias.length > 366) {
+        return HttpResponse.json({ error: "Período maior que 366 dias." }, { status: 400 });
+      }
+    }
+    const exige = Boolean(lista.exige_confirmacao);
+    const membros = estadoFor(params.cod_inep).membros[lista.id] ?? [];
+    const optouts = estadoFor(params.cod_inep).optouts.filter((o) => o.lista_id === lista.id);
+    const acessos = ACESSOS_QR_FIXTURE[lista.id] ?? {};
+    const diaDe = (iso) => (iso ? String(iso).slice(0, 10) : null);
+    const serie = dias.map((dia) => {
+      const confirmadosDia = membros.filter((m) => {
+        if (estadoMembro(lista, m) !== "confirmado") return false;
+        const quando = [m.confirmado_em, m.email_confirmado_em].filter(Boolean).sort().pop();
+        return diaDe(quando) === dia;
+      }).length;
+      return {
+        dia,
+        acessos: acessos[dia] ?? 0,
+        inscricoes: membros.filter((m) => diaDe(m.quando) === dia).length,
+        confirmados: exige ? confirmadosDia : null,
+        optouts: optouts.filter((o) => diaDe(o.created_at) === dia).length,
+      };
+    });
+    const soma = (k) => serie.reduce((a, s) => a + (s[k] ?? 0), 0);
+    const totais = {
+      acessos: soma("acessos"),
+      inscricoes: soma("inscricoes"),
+      confirmados: exige ? soma("confirmados") : null,
+      optouts: soma("optouts"),
+    };
+    const taxa = (n, d) => (n == null || !d ? null : Math.round((n / d) * 10000) / 10000);
+    return HttpResponse.json({
+      de,
+      ate,
+      exige_confirmacao: exige,
+      totais,
+      taxas: {
+        acesso_inscricao: taxa(totais.inscricoes, totais.acessos),
+        inscricao_confirmacao: taxa(totais.confirmados, totais.inscricoes),
+      },
+      serie,
+    });
   }),
 
   // ---------------------- exclusão pelo gestor (#214, onda 2) --------------

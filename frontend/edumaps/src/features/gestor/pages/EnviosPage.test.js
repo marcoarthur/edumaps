@@ -261,6 +261,14 @@ describe("EnviosPage", () => {
   });
 
   describe("detalhe", () => {
+    it("mostra as saídas (contadores.optouts) do envio", async () => {
+      irPara("?id=2");
+      render(EnviosPage);
+      const saidas = await screen.findByTestId("contador-optouts");
+      expect(saidas).toHaveTextContent("1");
+      expect(saidas.previousElementSibling).toHaveTextContent("Saídas");
+    });
+
     it("mostra contadores e destinatários mascarados, com filtro", async () => {
       irPara("?id=3");
       render(EnviosPage);

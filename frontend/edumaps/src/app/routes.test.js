@@ -107,6 +107,13 @@ describe("matchRoute", () => {
     expect(matchRoute("/privacidade")?.path).toBe("/privacidade");
   });
 
+  it("captura o token na rota pública de saída dos envios /privacidade/sair/:token", () => {
+    const match = matchRoute("/privacidade/sair/d1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(match?.path).toBe("/privacidade/sair/:token");
+    expect(match?.params.token).toBe("d1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(matchRoute("/privacidade/sair")).toBeNull();
+  });
+
   it("encontra a rota admin de versões do consentimento /config/consentimento", () => {
     expect(matchRoute("/config/consentimento")?.path).toBe("/config/consentimento");
   });

@@ -19,7 +19,12 @@
 
   // Páginas públicas abertas por link pessoal (token na URL): sem o menu da
   // plataforma e fora de qualquer sessão.
-  const PUBLICAS_SEM_MENU = new Set(["/p/:token", "/inscricao/:token", "/privacidade/exclusao/:token"]);
+  const PUBLICAS_SEM_MENU = new Set([
+    "/p/:token",
+    "/inscricao/:token",
+    "/privacidade/exclusao/:token",
+    "/privacidade/sair/:token",
+  ]);
 
   let match = $derived(matchRoute(router.path.split("?")[0]));
 

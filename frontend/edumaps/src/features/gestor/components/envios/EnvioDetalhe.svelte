@@ -149,7 +149,7 @@
     ["pendentes", "Pendentes"],
     ["falhas", "Falhas"],
     ["ignorados", "Ignorados"],
-    ["optouts", "Saíram da lista"],
+    ["optouts", "Saídas"],
     ["cancelados", "Cancelados"],
   ];
 </script>

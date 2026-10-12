@@ -473,4 +473,97 @@ describe("ListasPage", () => {
       );
     });
   });
+
+  describe("saídas e funil (#216, onda 2)", () => {
+    beforeEach(() => {
+      // só o Date é falso: o funil pede os últimos N dias até "hoje" (2026-10-12)
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-12T15:00:00Z"));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    async function abrirFamilia() {
+      render(ListasPage);
+      await screen.findByText("Família 8ºC");
+      await fireEvent.click(screen.getByRole("button", { name: "Ver inscrições de Família 8ºC" }));
+      await screen.findByText("Clara Pendente");
+    }
+
+    it("mostra o contador de saídas por lista", async () => {
+      render(ListasPage);
+      await screen.findByText("Família 8ºC");
+      const contadores = screen.getAllByTestId("lista-optouts");
+      expect(contadores).toHaveLength(1);
+      expect(contadores[0]).toHaveTextContent("1 saíram dos envios");
+    });
+
+    it("selo 'Saiu dos envios' só no membro com opt-out", async () => {
+      await abrirFamilia();
+      const selos = screen.getAllByTestId("membro-optout");
+      expect(selos).toHaveLength(1);
+      const linha = screen.getAllByTestId("membro-row").find((r) => r.textContent.includes("Clara Pendente"));
+      expect(linha).toHaveTextContent("Saiu dos envios");
+    });
+
+    it("aba Funil: cartões com totais e taxas, barras por dia e troca de período", async () => {
+      const pedidos = [];
+      server.events.on("request:start", ({ request }) => {
+        if (request.url.includes("/funil")) pedidos.push(new URL(request.url).search);
+      });
+      await abrirFamilia();
+      await fireEvent.click(screen.getByRole("tab", { name: "Funil" }));
+      expect(screen.getByRole("tab", { name: "Funil" })).toHaveAttribute("aria-selected", "true");
+
+      expect(await screen.findByTestId("funil-acessos")).toHaveTextContent("20");
+      expect(screen.getByTestId("funil-inscricoes")).toHaveTextContent("3");
+      expect(screen.getByTestId("funil-confirmados")).toHaveTextContent("1");
+      expect(screen.getByTestId("funil-optouts")).toHaveTextContent("1");
+      expect(screen.getByTestId("funil-taxa-acesso-inscricao")).toHaveTextContent("15%");
+      expect(screen.getByTestId("funil-taxa-inscricao-confirmacao")).toHaveTextContent("33,3%");
+      expect(pedidos.at(-1)).toBe("?de=2026-09-13&ate=2026-10-12");
+      expect(screen.getAllByTestId("funil-barra")).toHaveLength(30);
+      expect(screen.getByTestId("funil-grafico")).toHaveAttribute(
+        "aria-label",
+        expect.stringContaining("Acessos ao QR por dia"),
+      );
+      expect(screen.getByTestId("funil-tabela").querySelectorAll("tbody tr")).toHaveLength(30);
+
+      await fireEvent.click(screen.getByRole("button", { name: "7 dias" }));
+      await waitFor(() => expect(screen.getAllByTestId("funil-barra")).toHaveLength(7));
+      expect(pedidos.at(-1)).toBe("?de=2026-10-06&ate=2026-10-12");
+      expect(screen.getByRole("button", { name: "7 dias" })).toHaveAttribute("aria-pressed", "true");
+
+      await fireEvent.click(screen.getByRole("button", { name: "90 dias" }));
+      await waitFor(() => expect(screen.getAllByTestId("funil-barra")).toHaveLength(90));
+      expect(pedidos.at(-1)).toBe("?de=2026-07-15&ate=2026-10-12");
+      server.events.removeAllListeners();
+    });
+
+    it("lista sem exigência de confirmação: confirmados e taxa '—'", async () => {
+      render(ListasPage);
+      await screen.findByText("Professores");
+      await fireEvent.click(screen.getByRole("button", { name: "Ver inscrições de Professores" }));
+      await fireEvent.click(await screen.findByRole("tab", { name: "Funil" }));
+
+      expect(await screen.findByTestId("funil-confirmados")).toHaveTextContent("—");
+      expect(screen.getByText("lista não exige confirmação")).toBeInTheDocument();
+      expect(screen.getByTestId("funil-taxa-inscricao-confirmacao")).toHaveTextContent("—");
+      expect(screen.getByTestId("funil-taxa-acesso-inscricao")).toHaveTextContent("0%");
+
+      await fireEvent.click(screen.getByRole("button", { name: "Confirmados" }));
+      expect(screen.getByTestId("funil-sem-metrica")).toBeInTheDocument();
+      expect(screen.queryByTestId("funil-grafico")).not.toBeInTheDocument();
+    });
+
+    it("erro do funil aparece na aba", async () => {
+      server.use(
+        http.get("/api/gestor/:cod_inep/canais/listas/:id/funil", () =>
+          HttpResponse.json({ error: "Período inválido." }, { status: 400 }),
+        ),
+      );
+      await abrirFamilia();
+      await fireEvent.click(screen.getByRole("tab", { name: "Funil" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("Período inválido.");
+    });
+  });
 });

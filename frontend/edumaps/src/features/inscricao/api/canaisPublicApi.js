@@ -85,3 +85,19 @@ export function getExclusao(token) {
 export function confirmarExclusao(token) {
   return apiClient.post(EXCLUSAO(token), { confirmar: true });
 }
+
+// Saída dos envios por e-mail (issue #216, contrato da onda 2). O token é o do
+// rodapé do e-mail (32 hex) e funciona mesmo com a autoinscrição desligada.
+//   GET  /api/canais/sair/:token → 200 {escola_nome, lista_nome, ja_saiu} · 404
+//   POST /api/canais/sair/:token ← {confirmar:true} → 200 {ok, ja_saiu} · 400 · 404 · 429
+const SAIR = (token) => `/api/canais/sair/${encodeURIComponent(token)}`;
+
+/** @returns {Promise<{escola_nome: string, lista_nome: string, ja_saiu: boolean|number}>} */
+export function getSaida(token) {
+  return apiClient.get(SAIR(token));
+}
+
+/** Confirma a saída da lista (idempotente). @returns {Promise<{ok: number, ja_saiu: boolean|number}>} */
+export function confirmarSaida(token) {
+  return apiClient.post(SAIR(token), { confirmar: true });
+}

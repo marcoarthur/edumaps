@@ -180,7 +180,9 @@ function recontar(envio) {
     falhas: n("falhou"),
     pendentes: n("pendente"),
     cancelados: n("cancelado"),
-    optouts: n("ignorado_optout"),
+    // onda 2: `optouts` = saídas pelo link deste envio (canal_optouts.envio_id),
+    // não os `ignorado_optout`; o contador do fixture é mantido.
+    optouts: envio.contadores?.optouts ?? 0,
   };
 }
 
