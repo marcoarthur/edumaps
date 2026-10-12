@@ -189,13 +189,13 @@ listas excluídas depois → ignoradas, aparecem em `listas_ignoradas`); `estado
 | F2 | T-B | EnviosPage + editor + detalhe | 🟢 |
 | F3 | T-B | SegmentosPage + ação na ListasPage | 🟢 |
 | T1 | coord. | verificação, commits, deploy | 🟢 |
-| M6 | T-A | Opt-out público (GET/POST, One-Click, reinscrição desfaz) | ⚪ |
-| M7 | T-A | Funil (acessos ao QR + endpoint) + `n_optouts`/`optout` | ⚪ |
-| M8 | T-A | Admin (volume, suspender, reativar + retomada) | ⚪ |
-| M9 | T-A | Anonimização cobre os destinatários de envio | ⚪ |
-| F4 | T-B | `SairPage` | ⚪ |
-| F5 | T-B | ListasPage: selo, contador, Funil; Saídas no detalhe | ⚪ |
-| F6 | T-B | Painel admin de envios no `/config` | ⚪ |
+| M6 | T-A | Opt-out público (GET/POST, One-Click, reinscrição desfaz) | 🟢 |
+| M7 | T-A | Funil (acessos ao QR + endpoint) + `n_optouts`/`optout` | 🟢 |
+| M8 | T-A | Admin (volume, suspender, reativar + retomada) | 🟢 |
+| M9 | T-A | Anonimização cobre os destinatários de envio | 🟢 |
+| F4 | T-B | `SairPage` | 🟢 |
+| F5 | T-B | ListasPage: selo, contador, Funil; Saídas no detalhe | 🟢 |
+| F6 | T-B | Painel admin de envios no `/config` | 🟢 |
 
 Onda 2: opt-out público (página, One-Click, reinscrição desfaz), funil
 (acessos + endpoint + aba), admin (volume, suspender/reativar e retomada dos
@@ -336,3 +336,23 @@ cobrir `canal_envio_destinatarios`.
 - Frontend 92 arquivos / 682 testes; `vite build` OK. Rotas e JSON
   conferidos lado a lado (envio, contadores, limites, prévia, segmentos).
 - **2026-10-12 — Onda 2 aprovada.** Reativação devolve o envio a `agendado` quando ele nunca começou, para não antecipar um agendamento; funil com `confirmados = null` em listas sem exigência de confirmação.
+- **2026-10-12 — Desvios/interpretações da T-A aceitos (onda 2):** roles
+  novas `Canal::Optout` e `Canal::Funil`; `optout` por membro é booleano JSON;
+  `suspenso_por` é o id do admin (sem nome); painel admin inclui escolas com
+  envio em curso criado há mais de 30 dias; funil com `ate − de ≤ 365` e
+  `inscricao_confirmacao` = 0 possível; saída aceita lista de origem
+  **desativada** (só apagada dá `404`), `confirmar` também via form, rate limit
+  só no POST (como a exclusão); honeypot não desfaz opt-out, reinscrição
+  duplicada desfaz; **reativação remove o job antigo ainda na fila** antes de
+  reenfileirar (evita duas cadeias de lotes); anonimização também pega
+  destinatários pelo e-mail do titular dentro da escola.
+- **2026-10-12 — T-B (onda 2):** gráfico do funil mostra uma métrica por vez
+  (seletor), com tabela `sr-only`; `SairPage` sem menu (como a `ExclusaoPage`),
+  com `noindex`; mock de envios mantém `contadores.optouts` = saídas pelo link.
+
+## Verificação independente (coordenador, onda 2)
+
+- Backend 81 arquivos / 508 testes; só os 6 pré-falhos conhecidos.
+- Frontend 96 arquivos / 718 testes; `vite build` OK. Conferidos `optout`
+  booleano, `suspensao` sem nome, `getSaida`/`confirmarSaida` com
+  `{confirmar:true}`.
