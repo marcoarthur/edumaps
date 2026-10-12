@@ -78,14 +78,14 @@ e-mail já confirmado) · `429` (3 por ref; 3 por e-mail/h) · `502` (SMTP falho
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| M1 | T-A | Migration `canal_email_lgpd` (toda a modelagem da spec, inclusive exclusões; seed 1.0) | ⚪ |
-| M2 | T-A | Consentimento versionado (modelo + público + admin) | ⚪ |
-| M3 | T-A | `coleta` + e-mail na inscrição (dedupe, conflito) + `exclusao_url` | ⚪ |
-| M4 | T-A | Confirmação por contato + canal e-mail | ⚪ |
-| M5 | T-A | QR: validação de `expira_em`/`max_usos` | ⚪ |
-| F1 | T-B | ListasPage: `coleta`, e-mail, estado por contato, `parcial` | ⚪ |
-| F2 | T-B | Página pública: campos por `coleta`, consentimento vigente/409, confirmação por e-mail, `parcial`, link de exclusão | ⚪ |
-| F3 | T-B | QRModal: validade e limite; estados expirado/esgotado | ⚪ |
+| M1 | T-A | Migration `canal_email_lgpd` (toda a modelagem da spec, inclusive exclusões; seed 1.0) | 🟢 |
+| M2 | T-A | Consentimento versionado (modelo + público + admin) | 🟢 |
+| M3 | T-A | `coleta` + e-mail na inscrição (dedupe, conflito) + `exclusao_url` | 🟢 |
+| M4 | T-A | Confirmação por contato + canal e-mail | 🟢 |
+| M5 | T-A | QR: validação de `expira_em`/`max_usos` | 🟢 |
+| F1 | T-B | ListasPage: `coleta`, e-mail, estado por contato, `parcial` | 🟢 |
+| F2 | T-B | Página pública: campos por `coleta`, consentimento vigente/409, confirmação por e-mail, `parcial`, link de exclusão | 🟢 |
+| F3 | T-B | QRModal: validade e limite; estados expirado/esgotado | 🟢 |
 | T1 | coord. | verificação, commits, deploy | ⚪ |
 
 Onda 2: exclusão (titular + gestor + histórico), retenção (job + admin),
@@ -102,3 +102,32 @@ Onda 2: exclusão (titular + gestor + histórico), retenção (job + admin),
   para compatibilidade; presente e desatualizada → `409` com o texto vigente.
 - **2026-10-12 — `exclusao_url` já na onda 1** (o token nasce com a inscrição);
   as rotas que o consomem chegam na onda 2.
+- **2026-10-12 — Desvios da T-A aceitos (onda 1):** `canal_listas.desativada_em`
+  (o `updated_at` muda em PATCH de lista inativa; não serve de data de
+  desativação); `canal_confirmacao_refs.envios_email`; `contatos` também no
+  `confirmacao` do POST; `canais` só lista contatos ainda pendentes; os dois
+  `/verificar` devolvem `{estado, contatos}`; dedupe preenche o contato
+  reaproveitado sem sobrescrever; campos fora da `coleta` são ignorados;
+  `validado=true` só com o estado geral confirmado; código mascarado no
+  histórico (`******`), inclusive no WhatsApp em modo texto; SMTP injetável
+  (`canais_smtp`) para testes; `GET /api/canais/consentimento` não depende da
+  flag de autoinscrição; validação de `expira_em` aceita data ou data+hora.
+- **2026-10-12 — E-mail de código sem `exclusao_url`:** só o hash do token é
+  guardado; o e-mail orienta a usar o link mostrado na conclusão ou pedir à
+  escola. Aceito.
+- **2026-10-12 — Consentimento 1.0 = texto atual (só telefone).** É o texto que
+  as inscrições antigas aceitaram; publicar 1.1 citando e-mail (pela tela de
+  admin da onda 2) antes de usar listas `email`/`ambos`/`qualquer`.
+- **2026-10-12 — T-B:** `ApiError.data` guarda o corpo do erro (409 do
+  consentimento); `ConfirmacaoTelefone` virou `ConfirmacaoContatos`; markdown do
+  consentimento renderizado sem `{@html}`; formulários com `novalidate` e
+  validação própria.
+
+## Verificação independente (coordenador, onda 1)
+
+- `ci_db.sh verify` → `canal_email_lgpd .. ok`.
+- Backend `prove -l -r t/02-models/ t/04-api/canais/ t/04-api/admin/
+  t/04-api/gestor/ t/03-plugins/ t/05-tasks/{telegram_polling,bot_telegram,bot_notifier}.t`
+  → 69 arquivos / 449 testes; só os 6 pré-falhos conhecidos. `check_dependencies` OK.
+- Frontend 85 arquivos / 564 testes; `vite build` OK. Campos do contrato
+  conferidos lado a lado.
