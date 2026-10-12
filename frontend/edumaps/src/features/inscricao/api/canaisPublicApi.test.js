@@ -5,6 +5,8 @@ import {
   resetCanaisMockState,
   confirmarRefMock,
   setCanaisConfirmacaoMock,
+  setConsentimentoVigenteMock,
+  setEmailDisponivelMock,
 } from "@/features/gestor/mocks/canaisHandlers.js";
 import {
   INSCRICAO_TOKEN_CONFIRMACAO,
@@ -16,6 +18,11 @@ import {
   TELEFONE_PENDENTE,
   TELEGRAM_BOT_CONFIRMACAO,
   WHATSAPP_CODIGO_MOCK,
+  CONSENTIMENTO_VIGENTE,
+  EMAIL_CODIGO_MOCK,
+  INSCRICAO_TOKEN_AMBOS,
+  INSCRICAO_TOKEN_EMAIL,
+  INSCRICAO_TOKEN_QUALQUER,
 } from "@/features/gestor/mocks/canaisFixtures.js";
 import {
   getInscricaoPublica,
@@ -23,6 +30,9 @@ import {
   estadoConfirmacao,
   enviarCodigoWhatsapp,
   verificarCodigoWhatsapp,
+  enviarCodigoEmail,
+  verificarCodigoEmail,
+  consentimentoVigente,
 } from "./canaisPublicApi.js";
 
 const inscrever = (telefone = "+55 11 95555-0000", token = INSCRICAO_TOKEN_CONFIRMACAO) =>
@@ -100,7 +110,7 @@ describe("canaisPublicApi", () => {
   describe("confirmação de posse (#212)", () => {
     it("lista que não exige: resposta idêntica à Fase 0 (sem confirmacao)", async () => {
       const res = await inscrever("+55 11 95555-0001", INSCRICAO_TOKEN_VALIDO);
-      expect(res).toEqual({ ok: 1 });
+      expect(res).toEqual({ ok: 1, exclusao_url: expect.any(String) }); // #214: + exclusao_url
     });
 
     it("lista que exige: devolve ref, estado pendente e canais disponíveis", async () => {
@@ -174,6 +184,103 @@ describe("canaisPublicApi", () => {
       const { confirmacao } = await inscrever();
       await expect(verificarCodigoWhatsapp(confirmacao.ref, "123456")).rejects.toMatchObject({
         status: 410,
+      });
+    });
+  });
+  describe("e-mail e LGPD (#214)", () => {
+    const ambos = (extra = {}) =>
+      enviarInscricao(INSCRICAO_TOKEN_AMBOS, {
+        nome: "Pessoa Ambos",
+        telefone: "+55 11 94444-0000",
+        email: "pessoa@example.org",
+        consentimento: true,
+        ...extra,
+      });
+
+    it("GET traz campos, obrigatórios e o consentimento vigente por coleta", async () => {
+      const tel = await getInscricaoPublica(INSCRICAO_TOKEN_VALIDO);
+      expect(tel).toMatchObject({ campos: ["nome", "telefone"], obrigatorios: ["nome", "telefone"] });
+      expect(tel.consentimento).toEqual({
+        versao: CONSENTIMENTO_VIGENTE.versao,
+        texto: CONSENTIMENTO_VIGENTE.texto,
+      });
+      expect((await getInscricaoPublica(INSCRICAO_TOKEN_EMAIL)).campos).toEqual(["nome", "email"]);
+      expect(await getInscricaoPublica(INSCRICAO_TOKEN_QUALQUER)).toMatchObject({
+        campos: ["nome", "telefone", "email"],
+        obrigatorios: ["nome"],
+      });
+    });
+
+    it("consentimentoVigente devolve a versão publicada", async () => {
+      expect(await consentimentoVigente()).toMatchObject({ versao: "1.0" });
+    });
+
+    it("400 por obrigatório ausente, e-mail inválido e 'qualquer' sem contato", async () => {
+      await expect(ambos({ email: "" })).rejects.toMatchObject({ status: 400 });
+      await expect(ambos({ email: "não-é-email" })).rejects.toMatchObject({ status: 400 });
+      await expect(
+        enviarInscricao(INSCRICAO_TOKEN_QUALQUER, { nome: "Sem contato", consentimento: true }),
+      ).rejects.toMatchObject({ status: 400 });
+      const soEmail = await enviarInscricao(INSCRICAO_TOKEN_QUALQUER, {
+        nome: "Só e-mail",
+        email: "so@example.org",
+        consentimento: true,
+      });
+      expect(soEmail.ok).toBe(1);
+    });
+
+    it("409 quando a versão do consentimento mudou, com o texto vigente no corpo", async () => {
+      setConsentimentoVigenteMock({ versao: "2.0", texto: "Novo texto." });
+      const err = await ambos({ consentimento_versao: "1.0" }).catch((e) => e);
+      expect(err).toMatchObject({ status: 409 });
+      expect(err.data.consentimento).toEqual({ versao: "2.0", texto: "Novo texto." });
+      // ausente → grava a vigente (compatibilidade)
+      expect((await ambos()).ok).toBe(1);
+    });
+
+    it("201 traz exclusao_url; honeypot não", async () => {
+      const res = await ambos({ consentimento_versao: "1.0" });
+      expect(res.exclusao_url).toMatch(/\/privacidade\/exclusao\/[0-9a-f]{32}$/);
+      const bot = await ambos({ _hp: "x" });
+      expect(bot.exclusao_url).toBeUndefined();
+    });
+
+    it("confirmação por contato: telefone → parcial, e-mail → confirmado", async () => {
+      const { confirmacao } = await ambos();
+      expect(confirmacao.canais.map((c) => c.canal)).toEqual(["telegram", "whatsapp", "email"]);
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({
+        estado: "pendente",
+        contatos: { telefone: { estado: "pendente" }, email: { estado: "pendente" } },
+      });
+
+      confirmarRefMock(confirmacao.ref, "telegram");
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({
+        estado: "parcial",
+        contatos: { telefone: { estado: "confirmado", via: "telegram" } },
+      });
+
+      expect(await enviarCodigoEmail(confirmacao.ref)).toMatchObject({ enviado: 1 });
+      await expect(verificarCodigoEmail(confirmacao.ref, "000000")).rejects.toMatchObject({
+        status: 400,
+      });
+      const fim = await verificarCodigoEmail(confirmacao.ref, EMAIL_CODIGO_MOCK);
+      expect(fim).toMatchObject({ estado: "confirmado", contatos: { email: { estado: "confirmado" } } });
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({ estado: "confirmado" });
+    });
+
+    it("e-mail: indisponível (409), limite (429), sem código (410)", async () => {
+      const { confirmacao } = await ambos();
+      await expect(verificarCodigoEmail(confirmacao.ref, "123456")).rejects.toMatchObject({
+        status: 410,
+      });
+      for (let i = 0; i < 3; i += 1) await enviarCodigoEmail(confirmacao.ref);
+      await expect(enviarCodigoEmail(confirmacao.ref)).rejects.toMatchObject({ status: 429 });
+
+      setEmailDisponivelMock(false);
+      const outra = await ambos({ telefone: "+55 11 94444-0001", email: "outra@example.org" });
+      expect(outra.confirmacao.canais.map((c) => c.canal)).not.toContain("email");
+      await expect(enviarCodigoEmail(outra.confirmacao.ref)).rejects.toMatchObject({
+        status: 409,
       });
     });
   });

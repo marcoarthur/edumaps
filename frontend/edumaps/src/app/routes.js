@@ -1,11 +1,11 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
-import PrivacidadePage from "@/features/privacidade";
+import PrivacidadePage, { ExclusaoPage } from "@/features/privacidade";
 import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
-import { ConfigPage } from "@/features/config";
+import { ConfigPage, ConsentimentoVersoesPage } from "@/features/config";
 import { AdminTelemetryPage } from "@/features/admin";
 import { PublicaRespostaPage } from "@/features/resposta";
 import { InscricaoPublicaPage } from "@/features/inscricao";
@@ -39,6 +39,7 @@ export const routes = [
   { path: "/", component: HomePage },
   { path: "/about", component: AboutPage },
   { path: "/privacidade", component: PrivacidadePage },
+  { path: "/privacidade/exclusao/:token", component: ExclusaoPage },
   { path: "/municipio/compare", component: NetworkComparePage },
   { path: "/municipio/perfil", component: NetworkProfilePage },
   { path: "/cluster/geotag", component: ClusterGeotagPage },
@@ -56,6 +57,7 @@ export const routes = [
   { path: "/chat/censo", component: ChatPage },
   { path: "/chat/historico", component: ChatHistoricoPage },
   { path: "/config", component: ConfigPage },
+  { path: "/config/consentimento", component: ConsentimentoVersoesPage },
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/listas", component: GestorListasPage },

@@ -73,3 +73,57 @@ export function removerTelegramWebhook() {
 export function iniciarTelegramPolling() {
   return apiClient.post(`${TELEGRAM_BASE}/polling`);
 }
+
+// --- Retenção (LGPD) dos canais (canais.retencao.*, issue #214) ------------
+const RETENCAO_BASE = "/api/admin/canais/retencao";
+
+/** Prazos, última execução e agendamento da task de retenção.
+ * @returns {Promise<{enabled: number|boolean, metadados_dias: number, pendentes_dias: number,
+ *   listas_inativas_meses: number,
+ *   ultima_execucao: {em: string, metadados: number, pendentes: number, listas_inativas: number}|null,
+ *   agendado: number|boolean}>}
+ */
+export function getRetencaoStatus() {
+  return apiClient.get(RETENCAO_BASE);
+}
+
+/** Execução avulsa (não reagenda). 202 {ok, job_id}.
+ * @returns {Promise<{ok: 1, job_id: number}>}
+ */
+export function executarRetencao() {
+  return apiClient.post(`${RETENCAO_BASE}/executar`);
+}
+
+// --- Versões do texto de consentimento (issue #214) ------------------------
+const CONSENTIMENTO_BASE = "/api/admin/consentimento/versoes";
+
+/** @returns {Promise<Array<{id: number, versao: string, texto: string, texto_hash: string,
+ *   status: "rascunho"|"vigente"|"arquivada", publicada_em: string|null, created_at: string}>>}
+ */
+export function listConsentimentoVersoes() {
+  return apiClient.get(CONSENTIMENTO_BASE);
+}
+
+/** Cria um rascunho. 400 inválido · 409 versão repetida.
+ * @param {{versao: string, texto: string}} versao
+ */
+export function criarConsentimentoVersao({ versao, texto }) {
+  return apiClient.post(CONSENTIMENTO_BASE, { versao, texto });
+}
+
+/** Edita um rascunho (só os campos passados). 409 se não for rascunho · 404.
+ * @param {number} id
+ * @param {{versao?: string, texto?: string}} mudancas
+ */
+export function atualizarConsentimentoVersao(id, mudancas = {}) {
+  const body = {};
+  for (const campo of ["versao", "texto"]) {
+    if (mudancas[campo] !== undefined) body[campo] = mudancas[campo];
+  }
+  return apiClient.put(`${CONSENTIMENTO_BASE}/${id}`, body);
+}
+
+/** Publica o rascunho: vira vigente e a vigente anterior é arquivada. 409 se não for rascunho. */
+export function publicarConsentimentoVersao(id) {
+  return apiClient.post(`${CONSENTIMENTO_BASE}/${id}/publicar`);
+}

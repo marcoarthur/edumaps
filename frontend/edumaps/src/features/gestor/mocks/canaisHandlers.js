@@ -1,22 +1,43 @@
 // src/features/gestor/mocks/canaisHandlers.js
 // MSW handlers do módulo Listas & QR (issue #208, Fase 0) + confirmação de
-// posse do telefone (issue #212).
+// posse do telefone (issue #212) + e-mail e LGPD (issue #214, onda 1: `coleta`,
+// confirmação por contato, canal e-mail, consentimento versionado,
+// `exclusao_url`, QR com validade/limite).
 //
 // Cobre as faces do contrato congelado:
 //   - gestão  /api/gestor/:cod_inep/canais/listas  (Bearer SESSION_TOKEN + posse)
 //   - público /api/canais/inscricao/:token         (sem auth; capability = token)
-//   - público /api/canais/confirmacao/:ref[/whatsapp[/verificar]] (capability = ref)
+//   - público /api/canais/confirmacao/:ref[/whatsapp|/email[/verificar]] (capability = ref)
+//   - público /api/canais/consentimento             (texto vigente + retencao)
+//   - público /api/canais/exclusao/:token           (onda 2: exclusão pelo titular)
+//   - gestão  DELETE /listas/:id/membros/:membro_id e GET /canais/exclusoes (onda 2)
 //
 // Helpers de teste: `ultimaRefConfirmacao()` devolve a última ref emitida e
 // `confirmarRefMock(ref, via)` simula a confirmação fora da página (Telegram);
-// `setCanaisConfirmacaoMock([...])` escolhe os canais disponíveis.
+// `setCanaisConfirmacaoMock([...])` escolhe os canais disponíveis;
+// `setEmailDisponivelMock(bool)` liga/desliga o canal e-mail (SMTP configurado);
+// `setConsentimentoVigenteMock({versao, texto})` publica outra versão;
+// `setRetencaoPublicaMock({...})` muda os prazos expostos no consentimento;
+// `getExclusoesMock(inep)` devolve o histórico de exclusões em memória.
 //
 // O estado é em memória por escola para as páginas criarem/rotacionarem QR sem
 // recarregar. `resetCanaisMockState()` volta tudo ao fixture inicial (chamar no
 // `beforeEach` de quem muta estado).
 import { http, HttpResponse } from "msw";
 import {
+  CAMPOS_POR_COLETA,
   CANAIS_ESCOLA_NOME,
+  COLETAS_VALIDAS,
+  CONSENTIMENTO_VIGENTE,
+  EMAIL_CODIGO_MOCK,
+  EXCLUSAO_TOKEN_JA_EXCLUIDO,
+  EXCLUSAO_TOKEN_LIMITE,
+  EXCLUSAO_TOKEN_VALIDO,
+  EXCLUSOES_FIXTURE,
+  RETENCAO_PUBLICA,
+  INSCRICAO_TOKEN_AMBOS,
+  INSCRICAO_TOKEN_EMAIL,
+  INSCRICAO_TOKEN_QUALQUER,
   INEP_CANAIS,
   INSCRICAO_PUBLICA_FORM,
   INSCRICAO_TOKEN_CONFIRMACAO,
@@ -34,11 +55,20 @@ import { SESSION_TOKEN } from "./fixtures.js";
 const BASE = "/api/gestor/:cod_inep/canais/listas";
 const PUBLICO = "/api/canais/inscricao/:token";
 const CONFIRMACAO = "/api/canais/confirmacao/:ref";
+const CONSENTIMENTO = "/api/canais/consentimento";
+const EXCLUSAO = "/api/canais/exclusao/:token";
+const EXCLUSOES = "/api/gestor/:cod_inep/canais/exclusoes";
 
 // Origem pública (no dev a SPA roda em 5173). O backend real monta a URL a
 // partir de $PUBLIC_BASE_URL.
 const PUBLIC_BASE = "http://localhost:5173";
 const publicUrl = (token) => `${PUBLIC_BASE}/inscricao/${token}`;
+// Gera o token de exclusão da inscrição e o registra (onda 2 consome).
+function exclusaoUrl(inep, listaId, contatoId) {
+  const token = crypto.randomUUID().replace(/-/g, "");
+  exclusaoTokens.set(token, { cod_inep: inep, lista_id: listaId, contato_id: contatoId, excluido: false });
+  return `${PUBLIC_BASE}/privacidade/exclusao/${token}`;
+}
 
 // ---------------------------------------------------------------------------
 // estado em memória
@@ -46,11 +76,17 @@ const publicUrl = (token) => `${PUBLIC_BASE}/inscricao/${token}`;
 
 const mem = new Map(); // inep -> { listas, membros: {listaId: [...]}, proximos }
 const tokens = new Map(); // token -> { lista_id, cod_inep, usos, max_usos, status }
-// ref -> { cod_inep, lista_id, membro_id, expira_em, usada: bool, wa: {codigo, envios, tentativas} }
+// ref -> { cod_inep, lista_id, membro_id, expira_em, usada: bool,
+//          wa: {codigo, envios, tentativas}, em: {codigo, envios, tentativas} }
 const refs = new Map();
 let ultimaRef = null;
 const CANAIS_PADRAO = ["telegram", "whatsapp"];
 let canaisDisponiveis = [...CANAIS_PADRAO];
+let emailDisponivel = true;
+let consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
+let retencaoPublica = { ...RETENCAO_PUBLICA };
+// token de exclusão -> { cod_inep, lista_id, contato_id, excluido }
+const exclusaoTokens = new Map();
 
 function baseState() {
   const listas = LISTAS_CANAIS_FIXTURE.map((l) => ({ ...l }));
@@ -58,7 +94,13 @@ function baseState() {
   for (const [id, rows] of Object.entries(MEMBROS_CANAIS_FIXTURE)) {
     membros[id] = rows.map((m) => ({ ...m }));
   }
-  return { listas, membros, proximos: { lista: 100, membro: 1000, contato: 2000 } };
+  const exclusoes = EXCLUSOES_FIXTURE.map((e) => ({ ...e }));
+  return {
+    listas,
+    membros,
+    exclusoes,
+    proximos: { lista: 100, membro: 1000, contato: 2000, exclusao: 100 },
+  };
 }
 
 function estadoFor(inep) {
@@ -101,6 +143,40 @@ function semearTokens() {
     expira_em: null,
     status: "ativo",
   });
+  for (const [token, listaId] of [
+    [INSCRICAO_TOKEN_AMBOS, 4],
+    [INSCRICAO_TOKEN_QUALQUER, 5],
+    [INSCRICAO_TOKEN_EMAIL, 6],
+  ]) {
+    tokens.set(token, {
+      lista_id: listaId,
+      cod_inep: INEP_CANAIS,
+      usos: 0,
+      max_usos: null,
+      expira_em: null,
+      status: "ativo",
+    });
+  }
+  exclusaoTokens.clear();
+  exclusaoTokens.set(EXCLUSAO_TOKEN_VALIDO, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 101,
+    excluido: false,
+  });
+  exclusaoTokens.set(EXCLUSAO_TOKEN_JA_EXCLUIDO, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 199,
+    excluido: true,
+  });
+  exclusaoTokens.set(EXCLUSAO_TOKEN_LIMITE, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 102,
+    excluido: false,
+    limite: true,
+  });
   tokens.set(INSCRICAO_TOKEN_LIMITE, {
     lista_id: 1,
     cod_inep: INEP_CANAIS,
@@ -118,6 +194,29 @@ export function resetCanaisMockState() {
   refs.clear();
   ultimaRef = null;
   canaisDisponiveis = [...CANAIS_PADRAO];
+  emailDisponivel = true;
+  consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
+  retencaoPublica = { ...RETENCAO_PUBLICA };
+}
+
+/** Muda os prazos de retenção expostos em GET /api/canais/consentimento. */
+export function setRetencaoPublicaMock(retencao) {
+  retencaoPublica = { ...retencaoPublica, ...retencao };
+}
+
+/** Histórico de exclusões em memória da escola (para asserções). */
+export function getExclusoesMock(inep = INEP_CANAIS) {
+  return estadoFor(String(inep)).exclusoes.map((e) => ({ ...e }));
+}
+
+/** Liga/desliga o canal e-mail (canais.email.enabled + smtp_host + from). */
+export function setEmailDisponivelMock(disponivel) {
+  emailDisponivel = Boolean(disponivel);
+}
+
+/** Publica outra versão do consentimento (a anterior deixa de ser vigente). */
+export function setConsentimentoVigenteMock(versao) {
+  consentimentoVigente = { publicada_em: new Date().toISOString(), ...versao };
 }
 
 /** Escolhe os canais de confirmação "configurados" (ordem: telegram, whatsapp). */
@@ -159,43 +258,101 @@ function negarPosse(params) {
 }
 
 const normalizar = (bruto) => String(bruto ?? "").replace(/\D/g, "");
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// estado derivado do membro (contrato #212)
+// Contatos presentes na inscrição e o estado de cada um (contrato #214).
+// confirmado_em/confirmado_via = telefone; email_confirmado_em = e-mail.
+function contatosDoMembro(lista, m) {
+  const coleta = lista?.coleta ?? "telefone";
+  const exige = Boolean(lista?.exige_confirmacao);
+  const estadoDe = (confirmadoEm) =>
+    confirmadoEm ? "confirmado" : exige ? "pendente" : "nao_exigida";
+  const contatos = {};
+  if (coleta !== "email" && m.telefone) {
+    contatos.telefone = {
+      estado: estadoDe(m.confirmado_em),
+      via: m.confirmado_em ? (m.confirmado_via ?? null) : null,
+    };
+  }
+  if (coleta !== "telefone" && m.email) {
+    contatos.email = {
+      estado: estadoDe(m.email_confirmado_em),
+      via: m.email_confirmado_em ? "email" : null,
+    };
+  }
+  return contatos;
+}
+
+// estado geral do membro (contratos #212/#214)
 function estadoMembro(lista, m) {
-  if (m.confirmado_em) return "confirmado";
-  return lista?.exige_confirmacao ? "pendente" : "nao_exigida";
+  const contatos = Object.values(contatosDoMembro(lista, m));
+  const confirmados = contatos.filter((c) => c.estado === "confirmado").length;
+  if (contatos.length > 0 && confirmados === contatos.length) return "confirmado";
+  if (!lista?.exige_confirmacao) return confirmados > 0 ? "confirmado" : "nao_exigida";
+  return confirmados > 0 ? "parcial" : "pendente";
 }
 
 function comEstado(lista, m) {
+  const contatos = contatosDoMembro(lista, m);
   return {
     ...m,
+    telefone: m.telefone ?? null,
+    email: m.email ?? null,
     estado: estadoMembro(lista, m),
-    confirmado_via: m.confirmado_via ?? null,
-    confirmado_em: m.confirmado_em ?? null,
+    telefone_estado: contatos.telefone?.estado ?? null,
+    email_estado: contatos.email?.estado ?? null,
+    confirmado_via: m.confirmado_via ?? (m.email_confirmado_em ? "email" : null),
+    confirmado_em: m.confirmado_em ?? m.email_confirmado_em ?? null,
+    email_confirmado_em: m.email_confirmado_em ?? null,
   };
 }
 
 function comContadores(inep, lista) {
   const membros = estadoFor(inep).membros[lista.id] ?? [];
   const exige = Boolean(lista.exige_confirmacao);
-  const confirmados = membros.filter((m) => m.confirmado_em).length;
+  const estados = membros.map((m) => estadoMembro(lista, m));
+  const confirmados = estados.filter((e) => e === "confirmado").length;
   return {
     ...lista,
+    coleta: lista.coleta ?? "telefone",
     exige_confirmacao: exige,
     n_membros: membros.length,
     membros_confirmados: confirmados,
-    membros_pendentes: exige ? membros.length - confirmados : 0,
+    membros_pendentes: exige ? estados.filter((e) => e === "pendente" || e === "parcial").length : 0,
   };
 }
 
 const novaRef = () => crypto.randomUUID().replace(/-/g, "");
 
-function canaisDaRef(ref) {
-  return canaisDisponiveis.map((canal) =>
-    canal === "telegram"
-      ? { canal, url: `https://t.me/${TELEGRAM_BOT_CONFIRMACAO}?start=${ref}` }
-      : { canal },
+function membroDaRef(entry) {
+  return (estadoFor(entry.cod_inep).membros[entry.lista_id] ?? []).find(
+    (m) => m.id === entry.membro_id,
   );
+}
+
+// canais aplicáveis: telegram/whatsapp só com telefone; e-mail só com e-mail
+// e o canal disponível
+function canaisDaRef(ref, contatos) {
+  const canais = [];
+  if (contatos.telefone) {
+    for (const canal of canaisDisponiveis) {
+      canais.push(
+        canal === "telegram"
+          ? { canal, url: `https://t.me/${TELEGRAM_BOT_CONFIRMACAO}?start=${ref}` }
+          : { canal },
+      );
+    }
+  }
+  if (contatos.email && emailDisponivel) canais.push({ canal: "email" });
+  return canais;
+}
+
+function situacaoRef(ref, entry) {
+  const lista = listaDe(entry.cod_inep, entry.lista_id);
+  const membro = membroDaRef(entry);
+  const contatos = membro ? contatosDoMembro(lista, membro) : {};
+  const estado = membro ? estadoMembro(lista, membro) : "pendente";
+  return { estado, contatos, canais: canaisDaRef(ref, contatos) };
 }
 
 function abrirRef(inep, listaId, membroId) {
@@ -205,28 +362,39 @@ function abrirRef(inep, listaId, membroId) {
   }
   const ref = novaRef();
   const expira_em = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-  refs.set(ref, {
+  const entry = {
     cod_inep: inep,
     lista_id: listaId,
     membro_id: membroId,
     expira_em,
     usada: false,
     wa: { codigo: null, envios: 0, tentativas: 0 },
-  });
+    em: { codigo: null, envios: 0, tentativas: 0 },
+  };
+  refs.set(ref, entry);
   ultimaRef = ref;
-  return { ref, estado: "pendente", expira_em, canais: canaisDaRef(ref) };
+  const { estado, contatos, canais } = situacaoRef(ref, entry);
+  return { ref, estado, expira_em, canais, contatos };
 }
 
+// Confirma um contato da ref (via telegram/whatsapp = telefone; email = e-mail).
+// A ref só é marcada usada quando o estado geral fica `confirmado`.
 function concluirRef(entry, via) {
-  entry.usada = true;
-  const membro = (estadoFor(entry.cod_inep).membros[entry.lista_id] ?? []).find(
-    (m) => m.id === entry.membro_id,
-  );
+  const membro = membroDaRef(entry);
   if (membro) {
-    membro.confirmado_em = new Date().toISOString();
-    membro.confirmado_via = via;
+    const agora = new Date().toISOString();
+    if (via === "email") {
+      membro.email_confirmado_em = agora;
+    } else {
+      membro.confirmado_em = agora;
+      membro.confirmado_via = via;
+    }
     membro.validado = true;
   }
+  const lista = listaDe(entry.cod_inep, entry.lista_id);
+  const estado = membro ? estadoMembro(lista, membro) : "confirmado";
+  if (estado === "confirmado") entry.usada = true;
+  return { estado, contatos: membro ? contatosDoMembro(lista, membro) : {} };
 }
 
 const refNaoEncontrada = () =>
@@ -257,6 +425,43 @@ function tokenIndisponivel(entry) {
   return null;
 }
 
+// Anonimização (RF-206): remove o contato de TODAS as listas da escola,
+// invalida as refs e registra a exclusão sem dados pessoais.
+function anonimizarContato(inep, contatoId, { origem, motivo = null, gestor_id = null }) {
+  const estab = estadoFor(inep);
+  let membros = 0;
+  for (const [listaId, rows] of Object.entries(estab.membros)) {
+    const restantes = rows.filter((m) => m.contato_id !== contatoId);
+    const removidos = rows.length - restantes.length;
+    if (removidos > 0) {
+      membros += removidos;
+      for (const m of rows) {
+        if (m.contato_id !== contatoId) continue;
+        for (const [r, e] of refs) if (e.membro_id === m.id) refs.delete(r);
+      }
+      estab.membros[listaId] = restantes;
+      const lista = estab.listas.find((l) => l.id === Number(listaId));
+      if (lista) lista.n_membros = restantes.length;
+    }
+  }
+  for (const entry of exclusaoTokens.values()) {
+    if (entry.cod_inep === inep && entry.contato_id === contatoId) entry.excluido = true;
+  }
+  const registro = {
+    id: estab.proximos.exclusao++,
+    origem,
+    regra: null,
+    motivo: motivo || null,
+    gestor_id,
+    contatos: 1,
+    inscricoes: membros,
+    membros,
+    created_at: new Date().toISOString(),
+  };
+  estab.exclusoes.unshift(registro);
+  return registro;
+}
+
 // ---------------------------------------------------------------------------
 // handlers
 // ---------------------------------------------------------------------------
@@ -278,6 +483,10 @@ export const gestorCanaisHandlers = [
     if (!nome) {
       return HttpResponse.json({ error: "Informe o nome da lista." }, { status: 400 });
     }
+    const coleta = body.coleta ?? "telefone";
+    if (!COLETAS_VALIDAS.includes(coleta)) {
+      return HttpResponse.json({ error: "coleta inválida." }, { status: 400 });
+    }
     const estab = estadoFor(params.cod_inep);
     const repetida = estab.listas.some(
       (l) => l.nome.trim().toLowerCase() === nome.toLowerCase(),
@@ -290,6 +499,7 @@ export const gestorCanaisHandlers = [
       cod_inep: Number(params.cod_inep),
       nome,
       canal: "telefone",
+      coleta,
       descricao: body.descricao ?? null,
       ativo: true,
       n_membros: 0,
@@ -342,6 +552,12 @@ export const gestorCanaisHandlers = [
       }
       mudancas.exige_confirmacao = body.exige_confirmacao;
     }
+    if (body.coleta !== undefined) {
+      if (!COLETAS_VALIDAS.includes(body.coleta)) {
+        return HttpResponse.json({ error: "coleta inválida." }, { status: 400 });
+      }
+      mudancas.coleta = body.coleta;
+    }
     if (Object.keys(mudancas).length === 0) {
       return HttpResponse.json({ error: "Nada a alterar." }, { status: 400 });
     }
@@ -365,12 +581,31 @@ export const gestorCanaisHandlers = [
   }),
 
   // rotaciona: revoga o QR ativo e cria outro
-  http.post(`${BASE}/:id/qrcode`, ({ request, params }) => {
+  http.post(`${BASE}/:id/qrcode`, async ({ request, params }) => {
     const denied = negarAuth(request) ?? negarPosse(params);
     if (denied) return denied;
     const lista = listaDe(params.cod_inep, params.id);
     if (!lista) {
       return HttpResponse.json({ error: "Lista não encontrada" }, { status: 404 });
+    }
+    // #214: validade e limite opcionais
+    const body = await request.json().catch(() => ({}));
+    const expiraEm = body?.expira_em ?? null;
+    const maxUsos = body?.max_usos ?? null;
+    if (expiraEm != null) {
+      const t = Date.parse(expiraEm);
+      if (Number.isNaN(t) || t <= Date.now()) {
+        return HttpResponse.json(
+          { error: "expira_em deve ser uma data futura (ISO 8601)." },
+          { status: 400 },
+        );
+      }
+    }
+    if (maxUsos != null && !(Number.isInteger(maxUsos) && maxUsos > 0)) {
+      return HttpResponse.json(
+        { error: "max_usos deve ser um inteiro maior que zero." },
+        { status: 400 },
+      );
     }
     for (const [token, entry] of tokens) {
       if (entry.lista_id === lista.id && entry.status === "ativo") {
@@ -381,19 +616,19 @@ export const gestorCanaisHandlers = [
     const token = crypto.randomUUID();
     const entry = {
       lista_id: lista.id,
-      cod_inep: lista.cod_inep,
+      cod_inep: String(lista.cod_inep),
       usos: 0,
-      max_usos: null,
-      expira_em: null,
+      max_usos: maxUsos,
+      expira_em: expiraEm,
       status: "ativo",
     };
     tokens.set(token, entry);
     const qrcode = {
       token,
       url: publicUrl(token),
-      expira_em: null,
+      expira_em: expiraEm,
       usos: 0,
-      max_usos: null,
+      max_usos: maxUsos,
       status: "ativo",
     };
     lista.qrcode = qrcode;
@@ -433,11 +668,14 @@ export const gestorCanaisHandlers = [
     const indisponivel = tokenIndisponivel(entry);
     if (indisponivel) return indisponivel;
     const lista = listaDe(entry.cod_inep, entry.lista_id);
+    const coleta = lista?.coleta ?? "telefone";
     return HttpResponse.json({
       ...INSCRICAO_PUBLICA_FORM,
+      ...CAMPOS_POR_COLETA[coleta],
       lista_nome: lista?.nome ?? INSCRICAO_PUBLICA_FORM.lista_nome,
       escola_nome: CANAIS_ESCOLA_NOME,
       expira_em: entry.expira_em ?? null,
+      consentimento: { versao: consentimentoVigente.versao, texto: consentimentoVigente.texto },
     });
   }),
 
@@ -458,10 +696,23 @@ export const gestorCanaisHandlers = [
     if (body._hp) {
       return HttpResponse.json({ ok: 1 }, { status: 201 });
     }
+    const lista = listaDe(entry.cod_inep, entry.lista_id);
+    const coleta = lista?.coleta ?? "telefone";
+    const { campos, obrigatorios } = CAMPOS_POR_COLETA[coleta];
     const nome = String(body.nome ?? "").trim();
-    const telefone = String(body.telefone ?? "").trim();
-    if (!nome || nome.length > 120 || !telefone || normalizar(telefone).length < 8) {
+    const telefone = campos.includes("telefone") ? String(body.telefone ?? "").trim() : "";
+    const email = campos.includes("email") ? String(body.email ?? "").trim() : "";
+    if (!nome || nome.length > 120) {
+      return HttpResponse.json({ error: "Informe um nome válido." }, { status: 400 });
+    }
+    if ((obrigatorios.includes("telefone") && !telefone) || (telefone && normalizar(telefone).length < 8)) {
       return HttpResponse.json({ error: "Informe nome e telefone válidos." }, { status: 400 });
+    }
+    if ((obrigatorios.includes("email") && !email) || (email && !EMAIL_RE.test(email))) {
+      return HttpResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
+    }
+    if (coleta === "qualquer" && !telefone && !email) {
+      return HttpResponse.json({ error: "Informe telefone ou e-mail." }, { status: 400 });
     }
     if (body.consentimento !== true) {
       return HttpResponse.json(
@@ -469,55 +720,73 @@ export const gestorCanaisHandlers = [
         { status: 400 },
       );
     }
+    if (
+      body.consentimento_versao != null &&
+      body.consentimento_versao !== consentimentoVigente.versao
+    ) {
+      return HttpResponse.json(
+        {
+          error: "O texto de consentimento mudou. Leia e aceite a versão vigente.",
+          consentimento: { versao: consentimentoVigente.versao, texto: consentimentoVigente.texto },
+        },
+        { status: 409 },
+      );
+    }
 
     const estab = estadoFor(entry.cod_inep);
     const membros = estab.membros[entry.lista_id] ?? (estab.membros[entry.lista_id] = []);
-    const norm = normalizar(telefone);
-    const existente = membros.find((m) => normalizar(m.telefone) === norm);
+    const normTel = normalizar(telefone);
+    const normEmail = email.toLowerCase();
+    const existente = membros.find(
+      (m) =>
+        (normTel && normalizar(m.telefone) === normTel) ||
+        (normEmail && String(m.email ?? "").toLowerCase() === normEmail),
+    );
 
     entry.usos += 1;
-    const lista = listaDe(entry.cod_inep, entry.lista_id);
     const exige = Boolean(lista?.exige_confirmacao);
-
     if (existente) {
-      if (!exige) return HttpResponse.json({ ok: 1, duplicado: 1 }, { status: 201 });
-      const confirmacao = existente.confirmado_em
-        ? { estado: "confirmado" }
-        : abrirRef(entry.cod_inep, entry.lista_id, existente.id);
-      return HttpResponse.json({ ok: 1, duplicado: 1, confirmacao }, { status: 201 });
+      const exclusao_url = exclusaoUrl(entry.cod_inep, entry.lista_id, existente.contato_id);
+      if (!exige) return HttpResponse.json({ ok: 1, duplicado: 1, exclusao_url }, { status: 201 });
+      const confirmacao =
+        estadoMembro(lista, existente) === "confirmado"
+          ? { estado: "confirmado" }
+          : abrirRef(entry.cod_inep, entry.lista_id, existente.id);
+      return HttpResponse.json({ ok: 1, duplicado: 1, confirmacao, exclusao_url }, { status: 201 });
     }
 
     const novo = {
       id: estab.proximos.membro++,
       contato_id: estab.proximos.contato++,
       nome,
-      telefone,
+      telefone: telefone || null,
+      email: email || null,
       quando: new Date().toISOString(),
       validado: false,
       conflito: false,
       origem: "qrcode",
       confirmado_via: null,
       confirmado_em: null,
+      email_confirmado_em: null,
+      consentimento_versao: consentimentoVigente.versao,
     };
     membros.push(novo);
+    const exclusao_url = exclusaoUrl(entry.cod_inep, entry.lista_id, novo.contato_id);
     if (lista) lista.n_membros = membros.length;
-    if (!exige) return HttpResponse.json({ ok: 1 }, { status: 201 });
+    if (!exige) return HttpResponse.json({ ok: 1, exclusao_url }, { status: 201 });
     const confirmacao = abrirRef(entry.cod_inep, entry.lista_id, novo.id);
-    return HttpResponse.json({ ok: 1, confirmacao }, { status: 201 });
+    return HttpResponse.json({ ok: 1, confirmacao, exclusao_url }, { status: 201 });
   }),
 
   // --------------------- confirmação de posse (#212) -----------------------
   http.get(CONFIRMACAO, ({ params }) => {
     const entry = refs.get(params.ref);
     if (!entry || new Date(entry.expira_em).getTime() < Date.now()) return refNaoEncontrada();
+    const { estado, contatos, canais } = situacaoRef(params.ref, entry);
     if (entry.usada) {
-      return HttpResponse.json({ estado: "confirmado", canais: [], expira_em: entry.expira_em });
+      return HttpResponse.json({ estado: "confirmado", canais: [], expira_em: entry.expira_em, contatos });
     }
-    return HttpResponse.json({
-      estado: "pendente",
-      canais: canaisDaRef(params.ref),
-      expira_em: entry.expira_em,
-    });
+    return HttpResponse.json({ estado, canais, expira_em: entry.expira_em, contatos });
   }),
 
   // onda 2 (mock): envia o código de 6 dígitos pelo WhatsApp
@@ -551,8 +820,109 @@ export const gestorCanaisHandlers = [
       entry.wa.tentativas += 1;
       return HttpResponse.json({ error: "Código inválido." }, { status: 400 });
     }
-    concluirRef(entry, "whatsapp");
-    return HttpResponse.json({ estado: "confirmado" });
+    const { estado, contatos } = concluirRef(entry, "whatsapp");
+    // inscrição só com telefone: resposta idêntica à da #212
+    if (!contatos.email) return HttpResponse.json({ estado });
+    return HttpResponse.json({ estado, contatos });
+  }),
+
+  // ------------------------ confirmação por e-mail (#214) -----------------
+  http.post(`${CONFIRMACAO}/email`, ({ params }) => {
+    const entry = refValida(params.ref);
+    if (!entry) return refNaoEncontrada();
+    const membro = membroDaRef(entry);
+    if (!emailDisponivel || !membro?.email || membro.email_confirmado_em) {
+      return HttpResponse.json({ error: "E-mail indisponível para esta confirmação." }, { status: 409 });
+    }
+    if (entry.em.envios >= 3) {
+      return HttpResponse.json(
+        { error: "Muitas tentativas. Aguarde para pedir outro código." },
+        { status: 429 },
+      );
+    }
+    entry.em = { codigo: EMAIL_CODIGO_MOCK, envios: entry.em.envios + 1, tentativas: 0 };
+    const expira_em = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    return HttpResponse.json({ enviado: 1, expira_em }, { status: 202 });
+  }),
+
+  http.post(`${CONFIRMACAO}/email/verificar`, async ({ request, params }) => {
+    const entry = refValida(params.ref);
+    if (!entry || !entry.em.codigo) {
+      return HttpResponse.json({ error: "Código expirado." }, { status: 410 });
+    }
+    if (entry.em.tentativas >= 5) {
+      return HttpResponse.json({ error: "Tentativas excedidas." }, { status: 410 });
+    }
+    const body = await request.json().catch(() => ({}));
+    if (String(body.codigo ?? "") !== entry.em.codigo) {
+      entry.em.tentativas += 1;
+      return HttpResponse.json({ error: "Código inválido." }, { status: 400 });
+    }
+    return HttpResponse.json(concluirRef(entry, "email"));
+  }),
+
+  // ------------------------ consentimento vigente (#214) ------------------
+  http.get(CONSENTIMENTO, () =>
+    HttpResponse.json({ ...consentimentoVigente, retencao: { ...retencaoPublica } }),
+  ),
+
+  // ---------------------- exclusão pelo titular (#214, onda 2) -------------
+  http.get(EXCLUSAO, ({ params }) => {
+    const entry = exclusaoTokens.get(params.token);
+    if (!entry) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    const lista = listaDe(entry.cod_inep, entry.lista_id);
+    return HttpResponse.json({
+      escola_nome: CANAIS_ESCOLA_NOME,
+      lista_nome: lista?.nome ?? "Lista removida",
+      ja_excluido: entry.excluido,
+    });
+  }),
+
+  http.post(EXCLUSAO, async ({ request, params }) => {
+    const entry = exclusaoTokens.get(params.token);
+    if (!entry) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    if (entry.limite) {
+      return HttpResponse.json({ error: "Muitas tentativas. Aguarde um instante." }, { status: 429 });
+    }
+    const body = await request.json().catch(() => ({}));
+    if (body?.confirmar !== true) {
+      return HttpResponse.json({ error: "Confirme a exclusão." }, { status: 400 });
+    }
+    if (entry.excluido) return HttpResponse.json({ ok: 1, ja_excluido: true });
+    anonimizarContato(entry.cod_inep, entry.contato_id, { origem: "titular" });
+    return HttpResponse.json({ ok: 1, ja_excluido: false });
+  }),
+
+  // ---------------------- exclusão pelo gestor (#214, onda 2) --------------
+  http.delete(`${BASE}/:id/membros/:membro_id`, async ({ request, params }) => {
+    const denied = negarAuth(request) ?? negarPosse(params);
+    if (denied) return denied;
+    const lista = listaDe(params.cod_inep, params.id);
+    const membro = (estadoFor(params.cod_inep).membros[params.id] ?? []).find(
+      (m) => m.id === Number(params.membro_id),
+    );
+    if (!lista || !membro) {
+      return HttpResponse.json({ error: "Inscrito não encontrado." }, { status: 404 });
+    }
+    const texto = await request.text();
+    let body = {};
+    try {
+      body = texto ? JSON.parse(texto) : {};
+    } catch {
+      body = {};
+    }
+    const r = anonimizarContato(params.cod_inep, membro.contato_id, {
+      origem: "gestor",
+      motivo: body?.motivo ?? null,
+      gestor_id: 7,
+    });
+    return HttpResponse.json({ ok: 1, contatos: r.contatos, inscricoes: r.inscricoes, membros: r.membros });
+  }),
+
+  http.get(EXCLUSOES, ({ request, params }) => {
+    const denied = negarAuth(request) ?? negarPosse(params);
+    if (denied) return denied;
+    return HttpResponse.json(estadoFor(params.cod_inep).exclusoes.slice(0, 200));
   }),
 ];
 

@@ -5,6 +5,7 @@ use utf8;
 use Digest::SHA qw(hmac_sha256_hex sha256_hex);
 use Mojo::Util qw(secure_compare);
 use EduMaps::Channel::WhatsApp;
+use EduMaps::Channel::Email;
 use EduMaps::Channel::Confirmation;
 use EduMaps::Channel::Telegram::Updates;
 
@@ -23,6 +24,24 @@ use EduMaps::Channel::Telegram::Updates;
 #   POST /api/canais/confirmacao/:ref/whatsapp/verificar → 200 {estado}
 #                                          · 400/404/410/429 (#212, onda 2)
 #   POST /api/canais/telegram/webhook  → 200 {ok:1} · 401/404 (#212, onda 2)
+#
+# Fase 2 (#214 — e-mail e LGPD):
+#   GET  /api/canais/inscricao/:token  + campos/obrigatorios por `coleta` e
+#                                        consentimento {versao, texto} vigente
+#   POST /api/canais/inscricao/:token  + email, consentimento_versao (409 se ≠
+#                                        vigente); 201 + exclusao_url
+#   GET  /api/canais/confirmacao/:ref  estado pendente|parcial|confirmado +
+#                                        contatos {telefone?, email?}
+#   POST /api/canais/confirmacao/:ref/email           → 202 {enviado, expira_em}
+#                                        · 404/409/429/502
+#   POST /api/canais/confirmacao/:ref/email/verificar → 200 {estado, contatos}
+#                                        · 400/404/410/429
+#   GET  /api/canais/consentimento     → 200 {versao, texto, publicada_em,
+#                                        retencao {...}} (onda 2)
+#   GET  /api/canais/exclusao/:token   → 200 {escola_nome, lista_nome,
+#                                        ja_excluido} · 404 (onda 2)
+#   POST /api/canais/exclusao/:token   → {confirmar:true} → 200 {ok:1,
+#                                        ja_excluido} · 400/404/429 (onda 2)
 #
 # Regras: feature flag `canais.inscricao.enabled` (desligada → 404 genérico);
 # resposta mínima (NUNCA PII de terceiros); honeypot `_hp` (201 falso sem
@@ -44,11 +63,13 @@ sub inscricao_form($self) {
   # dados_publicos_token já devolve o envelope mínimo; redeclarado aqui para
   # deixar explícito o contrato congelado (sem PII, sem cod_inep/gestor).
   $self->render(json => {
-    lista_nome  => $pub->{lista_nome},
-    escola_nome => $pub->{escola_nome},
-    canal       => $pub->{canal},
-    campos      => $pub->{campos},
-    expira_em   => $pub->{expira_em},
+    lista_nome    => $pub->{lista_nome},
+    escola_nome   => $pub->{escola_nome},
+    canal         => $pub->{canal},
+    campos        => $pub->{campos},
+    obrigatorios  => $pub->{obrigatorios},
+    consentimento => $pub->{consentimento},
+    expira_em     => $pub->{expira_em},
   });
 }
 
@@ -81,14 +102,16 @@ sub inscricao_create($self) {
     token       => $token,
     nome        => $input->{nome},
     telefone    => $input->{telefone},
+    email       => $input->{email},
     consentimento => (defined $input->{consentimento} && $input->{consentimento} ? 1 : 0),
+    consentimento_versao => $input->{consentimento_versao},
     ip_anon     => $self->_ip_anon($ip),
     user_agent  => $self->req->headers->user_agent,
   );
 
   return $self->_render_inscricao_error($r) unless $r->{ok};
 
-  my $body = { ok => 1 };
+  my $body = { ok => 1, exclusao_url => $r->{exclusao_url} };
   $body->{duplicado} = 1 if $r->{duplicado};
   # Lista que exige confirmação de posse (#212): `confirmacao` com a ref e os
   # canais disponíveis (ou {estado:"confirmado"}). Sem exigência, a resposta é
@@ -101,8 +124,9 @@ sub inscricao_create($self) {
 # GET — estado da confirmação de posse (#212, RF-105)
 # ---------------------------------------------------------------------------
 
-# A `ref` é a capability (32 hex). Pendente → 200 {estado:"pendente", canais,
-# expira_em}; usada → 200 {estado:"confirmado", canais:[], expira_em};
+# A `ref` é a capability (32 hex). Pendente/parcial → 200 {estado, canais (dos
+# contatos pendentes), expira_em, contatos}; usada → 200 {estado:"confirmado",
+# canais:[], expira_em, contatos};
 # formato inválido, inexistente, expirada sem uso ou invalidada → 404 genérico.
 # Sem PII. A página pública consulta este GET periodicamente (polling), por
 # isso o rate limit tem orçamento próprio, maior que o do POST.
@@ -125,8 +149,9 @@ sub confirmacao_show($self) {
 
   $self->render(json => {
     estado    => $e->{estado},
-    canais    => $e->{estado} eq 'pendente' ? $model->canais_confirmacao(lc $ref) : [],
+    canais    => $e->{estado} ne 'confirmado' ? $model->canais_confirmacao(lc $ref, $e) : [],
     expira_em => $e->{expira_em},
+    contatos  => $e->{contatos},
   });
 }
 
@@ -136,8 +161,9 @@ sub confirmacao_show($self) {
 
 # Envia o código de 6 dígitos ao telefone da inscrição por template de
 # autenticação (Channel::WhatsApp + Channel::Confirmation: só hash, TTL 10 min,
-# 5 tentativas). 202 {enviado:1, expira_em do CÓDIGO}; ref inválida/não
-# pendente → 404; WhatsApp indisponível → 409; limite de envios (3 por ref;
+# 5 tentativas). 202 {enviado:1, expira_em do CÓDIGO}; ref inválida/confirmada
+# → 404; WhatsApp indisponível, inscrição sem telefone ou telefone já
+# confirmado (#214) → 409; limite de envios (3 por ref;
 # 3 por telefone/hora) ou rate limit por IP → 429; falha do provedor → 502
 # (registrada em canal_mensagens).
 sub confirmacao_whatsapp($self) {
@@ -154,10 +180,11 @@ sub confirmacao_whatsapp($self) {
 
   my $e = $model->estado_ref($ref);
   return $self->_render_confirmacao_not_found
-    unless $e && $e->{estado} eq 'pendente';
+    unless $e && $e->{estado} ne 'confirmado';
 
   return $self->_render_whatsapp_indisponivel
-    unless grep { $_->{canal} eq 'whatsapp' } @{ $model->canais_confirmacao_disponiveis };
+    unless $model->contato_pendente($e, 'telefone')
+        && grep { $_->{canal} eq 'whatsapp' } @{ $model->canais_confirmacao_disponiveis };
 
   my $wa = $self->_whatsapp($model);
   my $v  = $wa->validate_address($e->{telefone_norm});
@@ -184,9 +211,10 @@ sub confirmacao_whatsapp($self) {
   });
 }
 
-# Confere o código. 200 {estado:"confirmado"} (também se a ref já estava
-# confirmada — idempotente); código mal formado ou errado → 400; expirado,
-# tentativas excedidas ou sem pedido → 410; ref inválida → 404.
+# Confere o código. 200 {estado, contatos} — estado GERAL (#214: pode ficar
+# `parcial` se falta o e-mail); também se o telefone/ref já estava confirmado
+# (idempotente); código mal formado ou errado → 400; expirado, tentativas
+# excedidas ou sem pedido → 410; ref inválida → 404.
 sub confirmacao_whatsapp_verificar($self) {
   my $model = $self->_modelo_habilitado or return;
 
@@ -200,14 +228,12 @@ sub confirmacao_whatsapp_verificar($self) {
     unless $rl->{ok};
 
   my $e = $model->estado_ref($ref) or return $self->_render_confirmacao_not_found;
-  return $self->render(json => { estado => 'confirmado' })
-    if $e->{estado} eq 'confirmado';
+  return $self->_render_estado_ref($e)
+    if $e->{estado} eq 'confirmado' || !$model->contato_pendente($e, 'telefone');
 
-  my $codigo = $self->_input->{codigo};
-  $codigo = '' unless defined $codigo && !ref $codigo;
-  $codigo =~ s/\s+//g;
+  my $codigo = $self->_codigo_entrada;
   return $self->render(json => { error => 'Código inválido.' }, status => 400)
-    unless $codigo =~ /^\d{6}\z/;
+    unless defined $codigo;
 
   my $v = $self->_whatsapp($model)->validate_address($e->{telefone_norm});
   return $self->_render_codigo_expirado unless $v->{ok};
@@ -224,7 +250,184 @@ sub confirmacao_whatsapp_verificar($self) {
 
   my $c = $model->concluir(ref => $ref, via => 'whatsapp');
   return $self->_render_confirmacao_not_found unless $c->{ok};
-  $self->render(json => { estado => 'confirmado' });
+  $self->render(json => { estado => $c->{estado}, contatos => $c->{contatos} });
+}
+
+# ---------------------------------------------------------------------------
+# POST — código de confirmação por e-mail (#214, RF-203)
+# ---------------------------------------------------------------------------
+
+# Envia o código de 6 dígitos ao e-mail da inscrição (Channel::Email +
+# Channel::Confirmation: só hash, TTL 10 min, 5 tentativas). 202 {enviado:1,
+# expira_em do CÓDIGO}; ref inválida/confirmada → 404; e-mail indisponível,
+# inscrição sem e-mail ou e-mail já confirmado → 409; limite de envios (3 por
+# ref; 3 por e-mail/hora) ou rate limit por IP → 429; falha do SMTP → 502
+# (registrada em canal_mensagens, corpo sem o código).
+sub confirmacao_email($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+  $ref = lc $ref;
+
+  my $rl = $model->rate_limit_check(
+    token => "email:$ref", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref);
+  return $self->_render_confirmacao_not_found
+    unless $e && $e->{estado} ne 'confirmado';
+
+  return $self->_render_email_indisponivel
+    unless $model->contato_pendente($e, 'email') && $model->email_confirmacao_disponivel;
+
+  my $mail = $self->_email($model);
+  my $v    = $mail->validate_address($e->{email_norm});
+  return $self->_render_email_indisponivel unless $v->{ok};
+
+  my $max = $model->email_max_envios;
+  return $self->_render_too_many('Limite de envios do código atingido. Tente mais tarde.')
+    if $e->{envios_email} >= $max
+    || $model->envios_email_ultima_hora($v->{normalized}) >= $max;
+
+  my $r = $mail->confirm_start($v->{normalized},
+    contato_id    => $e->{contato_id},
+    cod_inep      => $e->{cod_inep},
+    lista_nome    => $e->{lista_nome},
+    escola_nome   => $e->{escola_nome},
+    # o token de exclusão só existe em claro na resposta da inscrição (o
+    # banco guarda o hash): o e-mail orienta onde encontrá-lo.
+    exclusao_info => 'Para remover seus dados, use o link "Remover meus dados" '
+                   . 'exibido ao concluir a inscrição, ou peça à escola.',
+  );
+  unless ($r->{ok}) {
+    $self->app->log->warn('E-mail: falha ao enviar código: ' . ($r->{error} // '?'));
+    return $self->render(
+      json   => { error => 'Não foi possível enviar o código agora. Tente novamente em instantes.' },
+      status => 502,
+    );
+  }
+  $model->contar_envio_email($e->{ref_id});
+
+  $self->render(status => 202, json => {
+    enviado   => 1,
+    expira_em => $model->expira_em_codigo($r->{confirmacao_id}),
+  });
+}
+
+# Confere o código do e-mail. 200 {estado, contatos} (estado GERAL, pode ser
+# `parcial`; idempotente se o e-mail/ref já está confirmado); código mal
+# formado ou errado → 400; expirado, tentativas excedidas ou sem pedido →
+# 410; ref inválida → 404.
+sub confirmacao_email_verificar($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+  $ref = lc $ref;
+
+  my $rl = $model->rate_limit_check(
+    token => "email_verificar:$ref", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref) or return $self->_render_confirmacao_not_found;
+  return $self->_render_estado_ref($e)
+    if $e->{estado} eq 'confirmado' || !$model->contato_pendente($e, 'email');
+
+  my $codigo = $self->_codigo_entrada;
+  return $self->render(json => { error => 'Código inválido.' }, status => 400)
+    unless defined $codigo;
+
+  my $v = $self->_email($model)->validate_address($e->{email_norm});
+  return $self->_render_codigo_expirado unless $v->{ok};
+
+  my $res = EduMaps::Channel::Confirmation->new(
+    schema => $model->schema, log => $self->app->log,
+  )->verify(canal => 'email', endereco => $v->{normalized}, codigo => $codigo);
+
+  unless ($res->{ok}) {
+    return $self->render(json => { error => 'Código inválido.' }, status => 400)
+      if ($res->{reason} // '') eq 'código inválido';
+    return $self->_render_codigo_expirado;
+  }
+
+  my $c = $model->concluir(ref => $ref, via => 'email');
+  return $self->_render_confirmacao_not_found unless $c->{ok};
+  $self->render(json => { estado => $c->{estado}, contatos => $c->{contatos} });
+}
+
+# ---------------------------------------------------------------------------
+# GET — texto de consentimento vigente (#214, RF-208)
+# ---------------------------------------------------------------------------
+
+# Público (para a página /privacidade). Não depende de canais.inscricao.enabled
+# (o texto da política é público). 200 {versao, texto, publicada_em,
+# retencao {metadados_dias, pendentes_dias, listas_inativas_meses, enabled}}.
+sub consentimento_show($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $vig   = $model->consentimento_vigente;
+  $self->render(json => {
+    versao       => $vig->{versao},
+    texto        => $vig->{texto},
+    publicada_em => $vig->{publicada_em},
+    retencao     => $model->retencao_publica,
+  });
+}
+
+# ---------------------------------------------------------------------------
+# Exclusão a pedido do titular (#214, RF-204)
+# ---------------------------------------------------------------------------
+# Independe de canais.inscricao.enabled (direito do titular). Erros genéricos
+# (sem enumeração): formato inválido ou token inexistente → 404.
+
+# GET — 200 {escola_nome, lista_nome, ja_excluido} (sem PII) · 404.
+sub exclusao_show($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $e = $model->exclusao_por_token($self->param('token'))
+    or return $self->_render_exclusao_not_found;
+  $self->render(json => {
+    escola_nome => $e->{escola_nome},
+    lista_nome  => $e->{lista_nome},
+    ja_excluido => $e->{ja_excluido} ? \1 : \0,
+  });
+}
+
+# POST {confirmar:true} — anonimiza (RF-206). 200 {ok:1, ja_excluido}
+# (idempotente) · 400 sem confirmar · 404 · 429 (rate limit por token+IP).
+sub exclusao_confirmar($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $token = $self->param('token');
+  return $self->_render_exclusao_not_found unless $model->exclusao_token_valido($token);
+  $token = lc $token;
+
+  my $rl = $model->rate_limit_check(
+    token => "exclusao:$token", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->exclusao_por_token($token)
+    or return $self->_render_exclusao_not_found;
+
+  my $confirmar = $self->_input->{confirmar};
+  return $self->render(
+    json   => { error => 'Confirme a exclusão (confirmar: true).' },
+    status => 400,
+  ) unless defined $confirmar && !(ref $confirmar && ref $confirmar ne 'JSON::PP::Boolean')
+        && $confirmar && $confirmar ne 'false';
+
+  my $r = eval { $model->excluir_por_token($token) };
+  unless ($r) {
+    $self->app->log->error("Exclusão (titular): $@") if $@;
+    return $@ ? $self->render(json => { error => 'Erro interno.' }, status => 500)
+              : $self->_render_exclusao_not_found;
+  }
+  $self->render(json => { ok => 1, ja_excluido => $r->{ja_excluido} ? \1 : \0 });
+}
+
+sub _render_exclusao_not_found($self) {
+  $self->render(json => { error => 'Link inválido.' }, status => 404);
 }
 
 # ---------------------------------------------------------------------------
@@ -282,6 +485,36 @@ sub _whatsapp($self, $model) {
   );
 }
 
+# Canal e-mail com a config efetiva (senha SMTP decifrada em memória) e o
+# transporte SMTP do helper `canais_smtp` (injetável em teste).
+sub _email($self, $model) {
+  my $cfg = $model->email_config;
+  return EduMaps::Channel::Email->new(
+    config         => $cfg,
+    enabled        => ($cfg->{enabled} ? 1 : 0),
+    schema         => $model->schema,
+    log            => $self->app->log,
+    smtp_transport => $self->canais_smtp,
+  );
+}
+
+sub _render_email_indisponivel($self) {
+  $self->render(json => { error => 'Confirmação por e-mail indisponível.' }, status => 409);
+}
+
+# Estado da ref (já confirmada ou contato já confirmado): 200 {estado, contatos}.
+sub _render_estado_ref($self, $e) {
+  $self->render(json => { estado => $e->{estado}, contatos => $e->{contatos} });
+}
+
+# Código de 6 dígitos do corpo (espaços ignorados); undef se mal formado.
+sub _codigo_entrada($self) {
+  my $codigo = $self->_input->{codigo};
+  $codigo = '' unless defined $codigo && !ref $codigo;
+  $codigo =~ s/\s+//g;
+  return $codigo =~ /^\d{6}\z/ ? $codigo : undef;
+}
+
 sub _render_whatsapp_indisponivel($self) {
   $self->render(json => { error => 'Confirmação pelo WhatsApp indisponível.' }, status => 409);
 }
@@ -333,12 +566,23 @@ sub _render_inscricao_error($self, $r) {
       status => 400,
     );
   }
+  if ($reason eq 'consentimento_versao') {
+    return $self->render(
+      json => {
+        error => 'O texto de consentimento foi atualizado. Leia a versão vigente e envie novamente.',
+        consentimento => $r->{consentimento},
+      },
+      status => 409,
+    );
+  }
   if ($reason eq 'campos') {
     return $self->render(
       json => { error => $r->{erro} // 'Informe nome e telefone válidos.' },
       status => 400,
     );
   }
+  $self->app->log->error('Inscrição: erro interno: ' . ($r->{detalhe} // '?'))
+    if $reason eq 'erro_interno';
   return $self->render(json => { error => 'Erro interno.' }, status => 500);
 }
 

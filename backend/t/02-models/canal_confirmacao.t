@@ -222,7 +222,11 @@ subtest 'concluir por ref: confirma, idempotente' => sub {
 
   # reinscrição de membro confirmado: sem ref nova
   my $r = inscreve('Maria Confirma', '11955551111');
-  is $r->{confirmacao}, { estado => 'confirmado' }, 'confirmado -> {estado:"confirmado"}';
+  # #214: + contatos (acrescentado ao contrato)
+  is $r->{confirmacao},
+    { estado => 'confirmado',
+      contatos => { telefone => { estado => 'confirmado', via => 'telegram' } } },
+    'confirmado -> {estado:"confirmado", contatos}';
 
   my $l = $model->listar_inscricoes($INEP, $lista_id);
   is $l->[0]{estado}, 'confirmado', 'estado confirmado na gestão';

@@ -32,12 +32,19 @@ pelo celular.
 - Sistema pode reconhecer quem já estava inscrito pelo telefone, evitando
   duplicatas sem descartar a submissão anterior.
 - Sistema pode listar os inscritos de cada lista para o gestor.
-- Gestor pode **exigir a confirmação do telefone** numa lista: quem se inscreve
+- Gestor pode escolher **o que cada lista coleta** — telefone, e-mail, os dois,
+  ou qualquer um deles — e definir **validade e limite de inscrições** do QR.
+- Gestor pode **exigir a confirmação dos contatos** numa lista (o e-mail é
+  confirmado por um código enviado por e-mail). Para o telefone: quem se inscreve
   confirma, no próprio celular, que o número é seu — pelo **Telegram**
   (compartilhando o contato da sua conta) ou por um **código enviado pelo
   WhatsApp**.
-- Sistema pode mostrar, para cada inscrito, se o telefone está **confirmado**
-  (e por qual canal) ou **pendente**, com filtro e contagem por estado.
+- Sistema pode mostrar, para cada inscrito, se cada contato está **confirmado**
+  (e por qual canal) ou **pendente**, e se a inscrição está completa ou
+  **parcial**, com filtro e contagem por estado.
+- Gestor pode **remover um inscrito** a pedido e consultar o histórico de
+  exclusões da escola (sem dados pessoais).
+- Inscrito recebe um **link pessoal para remover os próprios dados**.
 - Sistema pode manter na lista, como pendente, quem não concluiu a confirmação,
   e registrar como divergência quem tentou confirmar um número que não é o seu —
   sem descartar nada.

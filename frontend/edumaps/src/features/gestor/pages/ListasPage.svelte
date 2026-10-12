@@ -4,6 +4,11 @@
   // autoinscrição e vê os contatos que se inscreveram (issue #208, Fase 0).
   // Issue #212: a lista pode exigir a confirmação do telefone; o gestor liga/
   // desliga a opção, vê o estado de cada membro (selo) e filtra por estado.
+  // Issue #214: a lista escolhe o que coletar (telefone, e-mail, ambos ou
+  // qualquer um); a tabela mostra o e-mail e o estado por contato, e o estado
+  // geral ganha `parcial` (algum contato confirmado, outro não).
+  // Onda 2 (#214): "Remover inscrito" (diálogo + motivo; anonimiza o contato em
+  // todas as listas da escola) e a seção "Exclusões" com o histórico da escola.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import {
@@ -15,6 +20,9 @@
     gerarQrCode,
     revogarQrCode,
     listInscricoes,
+    removerMembro,
+    listExclusoes,
+    COLETAS,
   } from "../api/gestorCanaisApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
@@ -24,6 +32,9 @@
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import QRModal from "../components/canais/QRModal.svelte";
   import MembrosTable from "../components/canais/MembrosTable.svelte";
+  import ExclusoesHistorico from "../components/canais/ExclusoesHistorico.svelte";
+  import ConfirmDialog from "@/shared/ui/components/ConfirmDialog.svelte";
+  import { QR_ESTADOS, estadoQr } from "../utils/qrEstado.js";
 
   let inep = $state(null);
   let gestor = $state(null);
@@ -33,28 +44,59 @@
 
   let listas = $state([]);
   let novaAberto = $state(false);
-  let nova = $state({ nome: "", descricao: "", exige_confirmacao: false });
+  const NOVA_VAZIA = { nome: "", descricao: "", exige_confirmacao: false, coleta: "telefone" };
+  let nova = $state({ ...NOVA_VAZIA });
 
   let selecionada = $state(null);
   let membros = $state([]);
   let membrosCarregando = $state(false);
-  let filtroEstado = $state("todos"); // todos | confirmado | pendente | nao_exigida
+  let filtroEstado = $state("todos"); // todos | confirmado | parcial | pendente | nao_exigida
   let salvandoExige = $state(false);
+  let salvandoColeta = $state(false);
 
   const FILTROS = [
     { valor: "todos", rotulo: "Todos" },
     { valor: "confirmado", rotulo: "Confirmados" },
+    { valor: "parcial", rotulo: "Parciais" },
     { valor: "pendente", rotulo: "Pendentes" },
     { valor: "nao_exigida", rotulo: "Não exigida" },
   ];
+
+  // descrição curta do que a lista coleta (linha da lista)
+  const COLETA_RESUMO = {
+    telefone: "telefone",
+    email: "e-mail",
+    ambos: "telefone e e-mail",
+    qualquer: "telefone ou e-mail",
+  };
+
+  // rótulo da exigência conforme a coleta
+  const rotuloExige = (coleta) =>
+    (coleta ?? "telefone") === "telefone"
+      ? "Exigir confirmação do telefone"
+      : coleta === "email"
+        ? "Exigir confirmação do e-mail"
+        : "Exigir confirmação dos contatos";
+
+  let nParciais = $derived(membros.filter((m) => m.estado === "parcial").length);
 
   let membrosFiltrados = $derived(
     filtroEstado === "todos" ? membros : membros.filter((m) => m.estado === filtroEstado),
   );
 
+  // exclusão (onda 2)
+  let exclusoes = $state([]);
+  let exclusoesCarregando = $state(false);
+  let erroExclusoes = $state(null);
+  let removendo = $state(null); // { lista, membro }
+  let motivoRemocao = $state("");
+  let removendoOcupado = $state(false);
+  let erroRemocao = $state(null);
+
   let qrcodeAberto = $state(null); // { lista, qrcode }
   let gerando = $state(false);
   let revogando = $state(false);
+  let erroGerarQr = $state(null);
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && err.status === 401) {
@@ -78,11 +120,74 @@
       inep = me.cod_inep;
       gestor = me;
       listas = await listListas(me.cod_inep);
+      carregarExclusoes();
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar as listas.");
       if (msg) error = msg;
     } finally {
       carregando = false;
+    }
+  }
+
+  async function carregarExclusoes() {
+    if (!inep) return;
+    exclusoesCarregando = true;
+    erroExclusoes = null;
+    try {
+      exclusoes = await listExclusoes(inep);
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível carregar o histórico de exclusões.");
+      if (msg) erroExclusoes = msg;
+    } finally {
+      exclusoesCarregando = false;
+    }
+  }
+
+  function pedirRemocao(lista, membro) {
+    removendo = { lista, membro };
+    motivoRemocao = "";
+    erroRemocao = null;
+  }
+
+  function cancelarRemocao() {
+    removendo = null;
+    erroRemocao = null;
+  }
+
+  // recarrega membros da lista aberta, contadores das listas e o histórico
+  async function recarregarAposRemocao(listaId) {
+    const [rows, todas] = await Promise.all([
+      listInscricoes(inep, listaId).catch(() => null),
+      listListas(inep).catch(() => null),
+    ]);
+    if (rows && selecionada === listaId) membros = rows;
+    if (todas) listas = todas;
+    await carregarExclusoes();
+  }
+
+  async function confirmarRemocao() {
+    if (!removendo) return;
+    const { lista, membro } = removendo;
+    removendoOcupado = true;
+    erroRemocao = null;
+    try {
+      await removerMembro(inep, lista.id, membro.id, motivoRemocao);
+      removendo = null;
+      addToast("Inscrito removido. Os dados dele foram apagados de todas as listas da escola.", "success");
+      await recarregarAposRemocao(lista.id);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        erroRemocao = "Este inscrito não existe mais — talvez já tenha sido removido.";
+        await recarregarAposRemocao(lista.id);
+      } else if (err instanceof ApiError && err.status === 403) {
+        erroRemocao = "Você não tem acesso a esta escola.";
+      } else {
+        const msg = onApiError(err, "Não foi possível remover o inscrito.");
+        if (msg) erroRemocao = msg;
+        else removendo = null; // 401: volta ao login
+      }
+    } finally {
+      removendoOcupado = false;
     }
   }
 
@@ -98,9 +203,10 @@
         nome,
         descricao: nova.descricao.trim() || null,
         exige_confirmacao: nova.exige_confirmacao,
+        coleta: nova.coleta,
       });
-      listas = [criada, ...listas];
-      nova = { nome: "", descricao: "", exige_confirmacao: false };
+      listas = [{ coleta: nova.coleta, ...criada }, ...listas];
+      nova = { ...NOVA_VAZIA };
       novaAberto = false;
       addToast("Lista criada.", "success");
     } catch (err) {
@@ -132,10 +238,16 @@
     try {
       const detalhe = await atualizarLista(inep, lista.id, { exige_confirmacao: exige });
       atualizarListaLocal({ ...detalhe, id: lista.id, exige_confirmacao: exige });
+      const alvo =
+        (lista.coleta ?? "telefone") === "telefone"
+          ? "do telefone"
+          : lista.coleta === "email"
+            ? "do e-mail"
+            : "dos contatos";
       addToast(
         exige
-          ? "Confirmação do telefone passou a ser exigida."
-          : "Confirmação do telefone deixou de ser exigida.",
+          ? `Confirmação ${alvo} passou a ser exigida.`
+          : `Confirmação ${alvo} deixou de ser exigida.`,
         "success",
       );
       // o estado derivado dos membros muda (pendente ↔ não exigida)
@@ -148,6 +260,28 @@
       if (msg) addToast(msg, "error");
     } finally {
       salvandoExige = false;
+    }
+  }
+
+  async function alterarColeta(lista, coleta, el = null) {
+    const anterior = lista.coleta ?? "telefone";
+    if (coleta === anterior) return;
+    salvandoColeta = true;
+    try {
+      const detalhe = await atualizarLista(inep, lista.id, { coleta });
+      atualizarListaLocal({ ...detalhe, id: lista.id, coleta });
+      const rotulo = COLETAS.find((c) => c.valor === coleta)?.rotulo ?? coleta;
+      addToast(`A lista passou a coletar: ${rotulo}.`, "success");
+      // colunas e estados por contato dependem da coleta
+      if (selecionada === lista.id) {
+        membros = await listInscricoes(inep, lista.id);
+      }
+    } catch (err) {
+      if (el) el.value = anterior; // desfaz a escolha: a lista não mudou
+      const msg = onApiError(err, "Não foi possível atualizar a lista.");
+      if (msg) addToast(msg, "error");
+    } finally {
+      salvandoColeta = false;
     }
   }
 
@@ -172,19 +306,23 @@
   }
 
   async function abrirQr(lista) {
+    erroGerarQr = null;
     qrcodeAberto = { lista, qrcode: lista.qrcode ?? null };
   }
 
-  async function gerarQr(lista) {
+  async function gerarQr(lista, opcoes = {}) {
     gerando = true;
+    erroGerarQr = null;
     try {
-      const qr = await gerarQrCode(inep, lista.id);
+      const qr = await gerarQrCode(inep, lista.id, opcoes);
       atualizarListaLocal({ id: lista.id, qrcode: qr });
       qrcodeAberto = { lista: { ...lista, qrcode: qr }, qrcode: qr };
       addToast("QR code gerado.", "success");
     } catch (err) {
       const msg = onApiError(err, "Não foi possível gerar o QR code.");
-      if (msg) addToast(msg, "error");
+      // 400 (validade/limite recusados) fica dentro do modal, junto dos campos
+      if (msg && err instanceof ApiError && err.status === 400) erroGerarQr = msg;
+      else if (msg) addToast(msg, "error");
     } finally {
       gerando = false;
     }
@@ -290,6 +428,18 @@
             placeholder="Descrição (opcional)"
             class="w-full h-9 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <label class="flex items-center gap-2 text-sm text-gray-700">
+            Coletar
+            <select
+              bind:value={nova.coleta}
+              aria-label="Coletar"
+              class="h-9 px-2 rounded-md border border-gray-300 text-sm bg-white"
+            >
+              {#each COLETAS as c (c.valor)}
+                <option value={c.valor}>{c.rotulo}</option>
+              {/each}
+            </select>
+          </label>
           <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
             <input
               type="checkbox"
@@ -297,9 +447,16 @@
               class="mt-0.5 accent-blue-600"
             />
             <span>
-              Exigir confirmação do telefone
+              {rotuloExige(nova.coleta)}
               <span class="block text-xs text-gray-500">
-                Quem se inscrever confirma o número pelo Telegram ou WhatsApp.
+                {#if nova.coleta === "telefone"}
+                  Quem se inscrever confirma o número pelo Telegram ou WhatsApp.
+                {:else if nova.coleta === "email"}
+                  Quem se inscrever confirma o e-mail com um código enviado por e-mail.
+                {:else}
+                  Cada contato informado é confirmado: o telefone pelo Telegram ou WhatsApp,
+                  o e-mail por código.
+                {/if}
               </span>
             </span>
           </label>
@@ -321,9 +478,14 @@
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-900">{lista.nome}</p>
                 <p class="text-xs text-gray-500">
-                  {lista.n_membros ?? 0} contato(s) · {lista.canal ?? "telefone"}
+                  {lista.n_membros ?? 0} contato(s) · {COLETA_RESUMO[lista.coleta ?? "telefone"] ?? lista.coleta}
                   {#if lista.qrcode}
-                    · <span class="text-green-700 font-medium">QR ativo</span>
+                    {@const eq = estadoQr(lista.qrcode)}
+                    {#if eq === "ativo"}
+                      · <span class="text-green-700 font-medium">QR ativo</span>
+                    {:else}
+                      · <span class="text-amber-700 font-medium">QR {QR_ESTADOS[eq].rotulo.toLowerCase()}</span>
+                    {/if}
                   {:else}
                     · <span class="text-gray-400">sem QR</span>
                   {/if}
@@ -366,16 +528,32 @@
             Inscrições — {listaSel?.nome ?? ""}
           </h2>
           {#if listaSel}
-            <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={Boolean(listaSel.exige_confirmacao)}
-                disabled={salvandoExige}
-                onchange={(e) => alternarExigeConfirmacao(listaSel, e.currentTarget.checked, e.currentTarget)}
-                class="accent-blue-600"
-              />
-              Exigir confirmação do telefone
-            </label>
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="flex items-center gap-2 text-xs text-gray-700">
+                Coletar
+                <select
+                  value={listaSel.coleta ?? "telefone"}
+                  disabled={salvandoColeta}
+                  aria-label="Coletar nesta lista"
+                  onchange={(e) => alterarColeta(listaSel, e.currentTarget.value, e.currentTarget)}
+                  class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white"
+                >
+                  {#each COLETAS as c (c.valor)}
+                    <option value={c.valor}>{c.rotulo}</option>
+                  {/each}
+                </select>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(listaSel.exige_confirmacao)}
+                  disabled={salvandoExige}
+                  onchange={(e) => alternarExigeConfirmacao(listaSel, e.currentTarget.checked, e.currentTarget)}
+                  class="accent-blue-600"
+                />
+                {rotuloExige(listaSel.coleta)}
+              </label>
+            </div>
           {/if}
         </div>
 
@@ -384,6 +562,9 @@
             <p class="text-xs text-gray-600" data-testid="contadores-confirmacao">
               <span class="font-semibold text-green-700">{listaSel.membros_confirmados ?? 0}</span> confirmado(s)
               · <span class="font-semibold text-amber-700">{listaSel.membros_pendentes ?? 0}</span> pendente(s)
+              {#if nParciais > 0}
+                <span class="text-gray-500">(<span class="font-semibold text-orange-700">{nParciais}</span> parcial(is))</span>
+              {/if}
             </p>
           {/if}
           <label class="ml-auto flex items-center gap-2 text-xs text-gray-600">
@@ -401,14 +582,43 @@
         </div>
 
         <MembrosTable
+          coleta={listaSel?.coleta ?? "telefone"}
           membros={membrosFiltrados}
           carregando={membrosCarregando}
           mensagemVazia={membros.length > 0
             ? "Nenhuma inscrição neste estado."
             : undefined}
+          onRemover={listaSel ? (m) => pedirRemocao(listaSel, m) : null}
         />
       </section>
     {/if}
+
+    <ExclusoesHistorico {exclusoes} carregando={exclusoesCarregando} erro={erroExclusoes} />
+  {/if}
+
+  {#if removendo}
+    <ConfirmDialog
+      titulo="Remover inscrito"
+      descricao={`Os dados de ${removendo.membro.nome} (nome, telefone e e-mail) serão apagados de todas as listas desta escola. Fica só um registro sem dados pessoais. Não pode ser desfeito.`}
+      confirmarRotulo="Remover"
+      perigo
+      ocupado={removendoOcupado}
+      erro={erroRemocao}
+      onConfirmar={confirmarRemocao}
+      onCancelar={cancelarRemocao}
+      testid="remover-membro-dialog"
+    >
+      <label class="block text-sm text-gray-700">
+        Motivo (opcional)
+        <textarea
+          bind:value={motivoRemocao}
+          rows="2"
+          maxlength="500"
+          placeholder="Ex.: pedido feito na secretaria"
+          class="mt-1 w-full px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        ></textarea>
+      </label>
+    </ConfirmDialog>
   {/if}
 
   {#if qrcodeAberto}
@@ -417,8 +627,9 @@
       qrcode={qrcodeAberto.qrcode}
       {gerando}
       {revogando}
+      erroGerar={erroGerarQr}
       onFechar={() => (qrcodeAberto = null)}
-      onGerar={() => gerarQr(qrcodeAberto.lista)}
+      onGerar={(opcoes) => gerarQr(qrcodeAberto.lista, opcoes)}
       onRevogar={revogarQr}
     />
   {/if}

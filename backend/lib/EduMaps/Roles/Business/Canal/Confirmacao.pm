@@ -24,11 +24,21 @@ use Digest::SHA qw(sha256_hex);
 #
 # Composta no mesmo model que `Canal::Listas` (EduMaps::Model::Canal); usa os
 # helpers SQL `_rows/_row` de lá e a config dos canais do AppConfig
-# (`canais_confirmacao_disponiveis`).
+# (`canais_confirmacao_disponiveis`, `email_confirmacao_disponivel`).
+#
+# Fase 2 (#214) — estado POR CONTATO: o telefone usa `confirmado_em/via`
+# (telegram|whatsapp) e o e-mail usa `email_confirmado_em/via` (email). Os
+# contatos a confirmar são os PRESENTES na inscrição da ref. Estado geral:
+# confirmado (todos) | parcial (parte) | pendente. A ref só é marcada usada
+# (e membro/inscrição `validado`) quando o estado geral fica `confirmado`.
 
-requires qw(schema _rows _row canais_confirmacao_disponiveis);
+requires qw(schema _rows _row canais_confirmacao_disponiveis
+            email_confirmacao_disponivel estado_contatos contatos_publicos);
 
-our @VIAS = qw(telegram whatsapp);
+our @VIAS = qw(telegram whatsapp email);
+
+# Contato confirmado por cada via.
+my %CONTATO_DA_VIA = (telegram => 'telefone', whatsapp => 'telefone', email => 'email');
 
 # Validade da ref, em horas (decisão da spec: 24h).
 sub confirmacao_ttl_horas { return 24; }
@@ -79,81 +89,149 @@ sub abrir_ref ($self, $membro_id, $inscricao_id) {
 # inexistente, invalidada ou expirada sem uso (o chamador responde 404
 # genérico). Caso contrário:
 #
-#   { estado => 'pendente'|'confirmado', expira_em,
-#     ref_id, membro_id, inscricao_id, lista_id, telefone_norm }
+#   { estado => 'pendente'|'parcial'|'confirmado', expira_em,
+#     contatos => { telefone => {estado, via}?, email => {estado, via}? },
+#     ref_id, membro_id, inscricao_id, lista_id, contato_id, cod_inep,
+#     lista_nome, escola_nome,
+#     telefone_norm, email_norm, envios_whatsapp, envios_email,
+#     telegram_chat_pendente }
 #
-# Os ids e o telefone_norm são para consumo interno (bot/WhatsApp, onda 2);
-# a API pública devolve só estado/canais/expira_em.
+# `contatos` traz só os contatos presentes na inscrição da ref. Os ids e os
+# endereços são para consumo interno (bot/WhatsApp/e-mail); a API pública
+# devolve só estado/canais/expira_em/contatos.
 sub estado_ref ($self, $ref) {
   return unless $self->ref_valida($ref);
 
   my $r = $self->_row(
     sprintf(q{SELECT r.id AS ref_id, r.membro_id, r.inscricao_id,
                      r.usada_em, r.invalidada_em, r.telegram_chat_pendente,
-                     r.envios_whatsapp,
+                     r.envios_whatsapp, r.envios_email,
                      (r.expira_em <= NOW()) AS vencida,
                      %s AS expira_em,
-                     m.lista_id, m.confirmado_em,
-                     i.telefone_norm
+                     m.lista_id, m.contato_id,
+                     m.confirmado_em, m.confirmado_via,
+                     m.email_confirmado_em, m.email_confirmado_via,
+                     l.cod_inep, l.nome AS lista_nome, e.escola AS escola_nome,
+                     i.telefone_norm, i.email_norm
               FROM   clean.canal_confirmacao_refs r
               JOIN   clean.canal_lista_membros m ON m.id = r.membro_id
+              JOIN   clean.canal_listas l        ON l.id = m.lista_id
               JOIN   clean.canal_inscricoes i    ON i.id = r.inscricao_id
+              LEFT JOIN clean.escolas e          ON e.codigo_inep = l.cod_inep
               WHERE  r.ref_hash = ?}, sprintf($ISO, 'r.expira_em')),
     $self->_ref_hash($ref),
   ) or return;
 
-  my $estado;
-  if    (defined $r->{usada_em})      { $estado = 'confirmado'; }
-  elsif (defined $r->{invalidada_em}) { return; }
-  elsif ($r->{vencida})               { return; }
-  elsif (defined $r->{confirmado_em}) { $estado = 'confirmado'; } # por outro caminho
-  else                                { $estado = 'pendente'; }
+  return if !defined $r->{usada_em}
+         && (defined $r->{invalidada_em} || $r->{vencida});
+
+  my $ec = $self->estado_contatos(
+    exige        => 1,
+    tem_telefone => (defined $r->{telefone_norm} && length $r->{telefone_norm}),
+    tem_email    => (defined $r->{email_norm}    && length $r->{email_norm}),
+    map { $_ => $r->{$_} }
+      qw(confirmado_em confirmado_via email_confirmado_em email_confirmado_via),
+  );
+  # usada = confirmada (só é marcada com o estado geral confirmado)
+  my $estado = defined $r->{usada_em} ? 'confirmado' : $ec->{estado};
 
   return {
     estado                 => $estado,
     expira_em              => $r->{expira_em},
+    contatos               => $self->contatos_publicos($ec),
     ref_id                 => $r->{ref_id} + 0,
     membro_id              => $r->{membro_id} + 0,
     inscricao_id           => $r->{inscricao_id} + 0,
     lista_id               => $r->{lista_id} + 0,
+    contato_id             => $r->{contato_id} + 0,
+    cod_inep               => $r->{cod_inep} + 0,
+    lista_nome             => $r->{lista_nome},
+    escola_nome            => $r->{escola_nome},
     telefone_norm          => $r->{telefone_norm},
+    email_norm             => $r->{email_norm},
     telegram_chat_pendente => $r->{telegram_chat_pendente},
     envios_whatsapp        => $r->{envios_whatsapp} + 0,
+    envios_email           => $r->{envios_email} + 0,
   };
 }
 
+# Contato pendente na ref/estado? (`telefone`|`email`): presente e não
+# confirmado.
+sub contato_pendente ($self, $e, $contato) {
+  my $c = $e && $e->{contatos} ? $e->{contatos}{$contato} : undef;
+  return $c && $c->{estado} ne 'confirmado' ? 1 : 0;
+}
+
 # Canais de confirmação disponíveis para uma ref, no formato do contrato:
-# [ {canal=>'telegram', url=>'https://t.me/<bot>?start=<ref>'}, {canal=>'whatsapp'} ].
-sub canais_confirmacao ($self, $ref) {
+# [ {canal=>'telegram', url=>'https://t.me/<bot>?start=<ref>'}, {canal=>'whatsapp'},
+#   {canal=>'email'} ].
+#
+# Com o estado (`$e`, de estado_ref/_estado_membro_inscricao): telegram e
+# whatsapp só com o TELEFONE pendente; email só com o E-MAIL pendente e o
+# canal disponível (canais.email.enabled + smtp_host + from). Sem `$e`: só os
+# canais do telefone (comportamento da Fase 1).
+sub canais_confirmacao ($self, $ref, $e = undef) {
   my @out;
-  for my $c (@{ $self->canais_confirmacao_disponiveis }) {
-    if ($c->{canal} eq 'telegram') {
-      push @out, { canal => 'telegram',
-                   url   => "https://t.me/$c->{bot_username}?start=$ref" };
-    }
-    else {
-      push @out, { canal => $c->{canal} };
+  my $tel = !$e || $self->contato_pendente($e, 'telefone');
+  if ($tel) {
+    for my $c (@{ $self->canais_confirmacao_disponiveis }) {
+      if ($c->{canal} eq 'telegram') {
+        push @out, { canal => 'telegram',
+                     url   => "https://t.me/$c->{bot_username}?start=$ref" };
+      }
+      else {
+        push @out, { canal => $c->{canal} };
+      }
     }
   }
+  push @out, { canal => 'email' }
+    if $e && $self->contato_pendente($e, 'email') && $self->email_confirmacao_disponivel;
   return \@out;
 }
 
-# Objeto `confirmacao` da resposta do POST de inscrição (lista que exige):
-# membro já confirmado → { estado => 'confirmado' }; senão abre ref nova
-# (invalida a anterior) → { ref, estado => 'pendente', expira_em, canais }.
-sub confirmacao_da_inscricao ($self, $membro_id, $inscricao_id) {
-  my $m = $self->_row(
-    'SELECT confirmado_em FROM clean.canal_lista_membros WHERE id = ?',
-    $membro_id + 0,
+# Estado por contato de um membro, com os contatos presentes na inscrição
+# dada (sem inscrição: os do contato). Devolve o hash de estado_contatos.
+sub _estado_membro_inscricao ($self, $membro_id, $inscricao_id) {
+  my $r = $self->_row(
+    q{SELECT m.confirmado_em, m.confirmado_via,
+             m.email_confirmado_em, m.email_confirmado_via,
+             i.id AS inscricao_id, i.telefone_norm, i.email_norm,
+             c.telefone, c.email
+      FROM   clean.canal_lista_membros m
+      JOIN   clean.contatos c ON c.id = m.contato_id
+      LEFT JOIN clean.canal_inscricoes i ON i.id = ?
+      WHERE  m.id = ?},
+    (defined $inscricao_id ? $inscricao_id + 0 : undef), $membro_id + 0,
+  ) or return;
+  my $tem = sub ($v) { defined $v && length $v ? 1 : 0 };
+  my $com_insc = defined $r->{inscricao_id};
+  return $self->estado_contatos(
+    exige        => 1,
+    tem_telefone => $tem->($com_insc ? $r->{telefone_norm} : $r->{telefone}),
+    tem_email    => $tem->($com_insc ? $r->{email_norm}    : $r->{email}),
+    map { $_ => $r->{$_} }
+      qw(confirmado_em confirmado_via email_confirmado_em email_confirmado_via),
   );
-  return { estado => 'confirmado' } if $m && defined $m->{confirmado_em};
+}
+
+# Objeto `confirmacao` da resposta do POST de inscrição (lista que exige):
+# membro já confirmado (todos os contatos da inscrição) → { estado =>
+# 'confirmado', contatos }; senão abre ref nova (invalida a anterior) →
+# { ref, estado => 'pendente'|'parcial', expira_em, canais, contatos }.
+sub confirmacao_da_inscricao ($self, $membro_id, $inscricao_id) {
+  my $ec = $self->_estado_membro_inscricao($membro_id, $inscricao_id);
+  my $contatos = $ec ? $self->contatos_publicos($ec) : {};
+  return { estado => 'confirmado', contatos => $contatos }
+    if $ec && $ec->{estado} eq 'confirmado';
 
   my $r = $self->abrir_ref($membro_id, $inscricao_id);
+  my $e = { contatos => $contatos };
   return {
     ref       => $r->{ref},
-    estado    => 'pendente',
+    estado    => $ec ? $ec->{estado} : 'pendente',
     expira_em => $r->{expira_em},
-    canais    => $self->canais_confirmacao($r->{ref}),
+    canais    => $self->canais_confirmacao($r->{ref}, $e),
+    contatos  => $contatos,
   };
 }
 
@@ -161,17 +239,20 @@ sub confirmacao_da_inscricao ($self, $membro_id, $inscricao_id) {
 # concluir / conflito
 # ---------------------------------------------------------------------------
 
-# Conclui a confirmação. Parâmetros: `ref` OU `membro_id`; `via`
-# ('telegram'|'whatsapp'); `telegram_chat_id` opcional.
+# Conclui a confirmação DE UM CONTATO. Parâmetros: `ref` OU `membro_id`;
+# `via` ('telegram'|'whatsapp' → telefone; 'email' → e-mail);
+# `telegram_chat_id` opcional.
 #
-#   - por ref: a ref precisa estar pendente (não invalidada, não vencida); ref
-#     já usada → idempotente ({ ok => 1, ja_confirmado => 1 });
-#   - por membro: usa a ref pendente mais recente do membro, se houver (marca
-#     `usada_em`), e a inscrição dela (ou a última inscrição do membro).
+#   - por ref: a ref precisa estar pendente/parcial (não invalidada, não
+#     vencida); ref já usada → idempotente;
+#   - por membro: usa a ref pendente mais recente do membro, se houver, e a
+#     inscrição dela (ou a última inscrição do membro).
 #
-# Membro: confirmado_em/via preservados se já confirmado (idempotente);
-# `validado=true`. Inscrição: `validado=true`. Devolve
-# { ok => 1, estado => 'confirmado', membro_id, ja_confirmado } ou
+# Contato: confirmado_em/via (telefone) ou email_confirmado_em/via (e-mail)
+# preservados se já confirmado (idempotente). Se o estado geral fica
+# `confirmado`: marca a ref `usada_em` e `validado=true` no membro e na
+# inscrição. Devolve { ok => 1, estado => 'confirmado'|'parcial', contatos,
+# membro_id, ja_confirmado (o contato já estava confirmado) } ou
 # { ok => 0, reason => 'via'|'not_found' }.
 sub concluir ($self, %p) {
   my $via = $p{via} // '';
@@ -208,22 +289,45 @@ sub concluir ($self, %p) {
     return { ok => 0, reason => 'not_found' };
   }
 
-  my $ja;
+  my $contato = $CONTATO_DA_VIA{$via};
+  my ($ja, $ec);
   $self->schema->storage->txn_do(sub {
     my $antes = $self->_row(
-      'SELECT confirmado_em FROM clean.canal_lista_membros WHERE id = ? FOR UPDATE',
+      q{SELECT confirmado_em, email_confirmado_em
+        FROM   clean.canal_lista_membros WHERE id = ? FOR UPDATE},
       $membro_id + 0,
     );
-    $ja = $antes && defined $antes->{confirmado_em} ? 1 : 0;
+    $ja = $antes && defined $antes->{
+      $contato eq 'email' ? 'email_confirmado_em' : 'confirmado_em'
+    } ? 1 : 0;
+
+    if ($contato eq 'email') {
+      $self->_rows(
+        q{UPDATE clean.canal_lista_membros
+             SET email_confirmado_em  = COALESCE(email_confirmado_em, NOW()),
+                 email_confirmado_via = COALESCE(email_confirmado_via, ?)
+           WHERE id = ?},
+        $via, $membro_id + 0,
+      );
+    }
+    else {
+      $self->_rows(
+        q{UPDATE clean.canal_lista_membros
+             SET confirmado_em    = COALESCE(confirmado_em, NOW()),
+                 confirmado_via   = COALESCE(confirmado_via, ?),
+                 telegram_chat_id = COALESCE(?::bigint, telegram_chat_id)
+           WHERE id = ?},
+        $via, $chat_id, $membro_id + 0,
+      );
+    }
+
+    # estado geral com os contatos da inscrição: só "confirmado" fecha a ref
+    $ec = $self->_estado_membro_inscricao($membro_id, $inscricao_id);
+    return unless $ec && $ec->{estado} eq 'confirmado';
 
     $self->_rows(
-      q{UPDATE clean.canal_lista_membros
-           SET confirmado_em    = COALESCE(confirmado_em, NOW()),
-               confirmado_via   = COALESCE(confirmado_via, ?),
-               telegram_chat_id = COALESCE(?::bigint, telegram_chat_id),
-               validado         = true
-         WHERE id = ?},
-      $via, $chat_id, $membro_id + 0,
+      'UPDATE clean.canal_lista_membros SET validado = true WHERE id = ?',
+      $membro_id + 0,
     );
     $self->_rows(
       q{UPDATE clean.canal_confirmacao_refs
@@ -237,7 +341,10 @@ sub concluir ($self, %p) {
     ) if defined $inscricao_id;
   });
 
-  return { ok => 1, estado => 'confirmado', membro_id => $membro_id + 0,
+  return { ok => 1,
+           estado        => $ec ? $ec->{estado} : 'confirmado',
+           contatos      => $ec ? $self->contatos_publicos($ec) : {},
+           membro_id     => $membro_id + 0,
            ja_confirmado => $ja };
 }
 
@@ -248,7 +355,7 @@ sub concluir ($self, %p) {
 sub registrar_conflito ($self, $ref) {
   my $e = $self->estado_ref($ref);
   return { ok => 0, reason => 'not_found' }
-    unless $e && $e->{estado} eq 'pendente';
+    unless $e && $e->{estado} ne 'confirmado';
 
   $self->_rows(
     'UPDATE clean.canal_inscricoes SET conflito = true WHERE id = ?',
@@ -262,14 +369,16 @@ sub registrar_conflito ($self, $ref) {
 # ---------------------------------------------------------------------------
 
 # `/start <ref>`: grava o chat que abriu a ref (aguardando o contato). Só ref
-# pendente. Um chat aguarda UMA ref por vez: o vínculo do mesmo chat a outras
+# com o TELEFONE pendente (#214: a inscrição pode ter só e-mail). Um chat aguarda UMA ref por vez: o vínculo do mesmo chat a outras
 # refs pendentes é desfeito (a última aberta vale).
 # Devolve { ok => 1, ref_id } ou { ok => 0, reason => 'not_found'|'confirmado' }.
 sub vincular_chat_telegram ($self, $ref, $chat_id) {
   return { ok => 0, reason => 'not_found' }
     unless defined $chat_id && $chat_id =~ /^-?\d+\z/;
   my $e = $self->estado_ref($ref) or return { ok => 0, reason => 'not_found' };
-  return { ok => 0, reason => 'confirmado' } unless $e->{estado} eq 'pendente';
+  return { ok => 0, reason => 'not_found' } unless $e->{contatos}{telefone};
+  return { ok => 0, reason => 'confirmado' }
+    unless $e->{estado} ne 'confirmado' && $self->contato_pendente($e, 'telefone');
 
   $self->schema->storage->txn_do(sub {
     $self->_rows(
@@ -364,6 +473,34 @@ sub envios_whatsapp_ultima_hora ($self, $endereco) {
     q{SELECT count(*)::int AS n
       FROM   clean.canal_mensagens
       WHERE  canal = 'whatsapp' AND operacao = 'confirmacao'
+        AND  destinatario = ? AND status = 'sent'
+        AND  created_at > NOW() - interval '1 hour'},
+    $endereco,
+  );
+  return $r ? $r->{n} + 0 : 0;
+}
+
+# ---------------------------------------------------------------------------
+# E-mail: limites de envio do código (#214, RF-203 — iguais aos do WhatsApp)
+# ---------------------------------------------------------------------------
+
+sub email_max_envios { return 3; }
+
+sub contar_envio_email ($self, $ref_id) {
+  $self->_rows(
+    q{UPDATE clean.canal_confirmacao_refs
+         SET envios_email = envios_email + 1 WHERE id = ?},
+    $ref_id + 0,
+  );
+  return;
+}
+
+# Códigos de confirmação ENVIADOS (status sent) ao e-mail na última hora.
+sub envios_email_ultima_hora ($self, $endereco) {
+  my $r = $self->_row(
+    q{SELECT count(*)::int AS n
+      FROM   clean.canal_mensagens
+      WHERE  canal = 'email' AND operacao = 'confirmacao'
         AND  destinatario = ? AND status = 'sent'
         AND  created_at > NOW() - interval '1 hour'},
     $endereco,

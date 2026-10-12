@@ -31,7 +31,9 @@ sub queued ($self, $msg) {
     $msg->{operacao},
     $msg->{to},
     $msg->{assunto},
-    $msg->{corpo},
+    # `corpo_historico` (opcional): versão do corpo para o histórico — ex.:
+    # código de confirmação mascarado (#214). Senão, o corpo enviado.
+    $msg->{corpo_historico} // $msg->{corpo},
     $ref->{tipo},
     (defined $ref->{id} ? $ref->{id} + 0 : undef),
     (defined $msg->{contato_id} ? $msg->{contato_id} + 0 : undef),

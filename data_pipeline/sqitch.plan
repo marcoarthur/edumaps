@@ -120,3 +120,4 @@ canal_confirmacoes [gestor_reunioes] 2026-10-11T12:00:00Z Marco Arthur <arthurpb
 canal_mensagens [canal_confirmacoes] 2026-10-11T12:10:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: histórico de mensagens (canal, operação/motivo, destinatário, status)
 canal_listas_autoinscricao [canal_mensagens] 2026-10-11T13:00:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: listas nomeadas com QR para autoinscrição (lista, QR, membros, inscrições)
 canal_confirmacao_listas [canal_listas_autoinscricao] 2026-10-11T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: confirmação de posse nas listas com QR (exigência por lista, refs públicas, estado do bot Telegram)
+canal_email_lgpd [canal_confirmacao_listas] 2026-10-11T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: e-mail e LGPD nas listas com QR (coleta por lista, consentimento versionado, exclusão e auditoria)

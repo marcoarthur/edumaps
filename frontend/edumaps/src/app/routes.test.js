@@ -89,6 +89,17 @@ describe("matchRoute", () => {
     expect(match?.params.token).toBe("9f8f36e2-1234-4abc-8def-000000000000");
   });
 
+  it("captura o token na rota pública de exclusão /privacidade/exclusao/:token", () => {
+    const match = matchRoute("/privacidade/exclusao/a1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(match?.path).toBe("/privacidade/exclusao/:token");
+    expect(match?.params.token).toBe("a1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(matchRoute("/privacidade")?.path).toBe("/privacidade");
+  });
+
+  it("encontra a rota admin de versões do consentimento /config/consentimento", () => {
+    expect(matchRoute("/config/consentimento")?.path).toBe("/config/consentimento");
+  });
+
   it("não casa /p sem token nem token extra em outra rota", () => {
     expect(matchRoute("/p")).toBeNull();
     expect(matchRoute("/p/a/b")).toBeNull();

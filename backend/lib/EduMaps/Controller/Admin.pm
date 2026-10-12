@@ -213,6 +213,30 @@ sub telegram_publico_polling ($self) {
   $self->render(status => 202, json => { ok => 1, job_id => $r->{job_id} });
 }
 
+# ---------------------------------------------------------------------------
+# Retenção (LGPD) das listas com QR (#214, RF-207)
+# ---------------------------------------------------------------------------
+
+# GET /api/admin/canais/retencao — 200 {enabled, metadados_dias,
+# pendentes_dias, listas_inativas_meses, ultima_execucao {em, metadados,
+# pendentes, listas_inativas} | null, agendado}.
+sub canais_retencao_status ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $pub   = $model->retencao_publica;
+  $self->render(json => {
+    %$pub,
+    ultima_execucao => scalar($model->retencao_ultima_execucao),
+    agendado        => $self->canais_retencao_agendado ? \1 : \0,
+  });
+}
+
+# POST /api/admin/canais/retencao/executar — execução avulsa (não reagenda):
+# 202 {ok:1, job_id}.
+sub canais_retencao_executar ($self) {
+  my $id = $self->helpers->canais_retencao_executar;
+  $self->render(status => 202, json => { ok => 1, job_id => $id + 0 });
+}
+
 sub _tem ($v) { return defined $v && !ref $v && length $v ? 1 : 0 }
 
 sub _telegram_publico_bot ($self, $cfg) {
@@ -256,6 +280,66 @@ sub telemetry_overview ($self) {
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Consentimento versionado da autoinscrição (#214, RF-208)
+# ---------------------------------------------------------------------------
+# Versões em clean.consentimento_versoes (Canal::Consentimento). Erros do
+# modelo vêm como { error, status } (400 validação · 409 conflito).
+
+# GET /api/admin/consentimento/versoes — todas, mais recente primeiro.
+sub consentimento_versoes_index ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->consentimento_listar);
+}
+
+# POST /api/admin/consentimento/versoes {versao, texto} → 201 rascunho · 400 · 409.
+sub consentimento_versoes_create ($self) {
+  my $input = $self->_json_hash
+    // return $self->render(json => { error => 'Corpo JSON inválido.' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->consentimento_criar_rascunho(
+    versao     => $input->{versao},
+    texto      => $input->{texto},
+    criado_por => ($self->stash('gestor') // {})->{id},
+  );
+  return $self->render(json => { error => $r->{error} }, status => $r->{status} // 400)
+    if $r->{error};
+  $self->render(status => 201, json => $r);
+}
+
+# PUT /api/admin/consentimento/versoes/:id {versao?, texto?} → 200 · 400 · 404 · 409.
+sub consentimento_versoes_update ($self) {
+  my $input = $self->_json_hash
+    // return $self->render(json => { error => 'Corpo JSON inválido.' }, status => 400);
+  my %campos = map { $_ => $input->{$_} } grep { exists $input->{$_} } qw(versao texto);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->consentimento_editar_rascunho($self->param('id'), %campos);
+  return $self->_render_versao_not_found unless $r;
+  return $self->render(json => { error => $r->{error} }, status => $r->{status} // 400)
+    if $r->{error};
+  $self->render(json => $r);
+}
+
+# POST /api/admin/consentimento/versoes/:id/publicar → 200 (vigente) · 404 · 409.
+sub consentimento_versoes_publicar ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->consentimento_publicar($self->param('id'));
+  return $self->_render_versao_not_found unless $r;
+  return $self->render(json => { error => $r->{error} }, status => $r->{status} // 409)
+    if $r->{error};
+  $self->render(json => $r);
+}
+
+sub _render_versao_not_found ($self) {
+  $self->render(json => { error => 'Versão de consentimento não encontrada.' }, status => 404);
+}
+
+# Corpo JSON como hashref, ou undef se ausente/ inválido.
+sub _json_hash ($self) {
+  my $input = eval { $self->req->json };
+  return ref $input eq 'HASH' ? $input : undef;
+}
 
 sub _render_not_found_config ($self) {
   $self->render(json => { error => 'Chave de configuração não encontrada.' }, status => 404);

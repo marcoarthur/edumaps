@@ -1,4 +1,5 @@
 // src/features/config/mocks/configFixtures.js
+import { CONSENTIMENTO_VIGENTE } from "@/features/gestor/mocks/canaisFixtures.js";
 // Fixtures do Painel de Configuração (espelham EduMaps::Roles::Business::Config::AppConfig).
 
 export const CONFIG_TREE = {
@@ -406,6 +407,55 @@ export const CONFIG_TREE = {
             },
           ],
         },
+        {
+          key: "canais_retencao",
+          label: "Retenção (LGPD)",
+          children: [
+            {
+              key: "canais.retencao.enabled",
+              label: "Retenção ativada",
+              description:
+                "Liga/desliga a limpeza automática diária dos dados das listas conforme os prazos abaixo.",
+              type: "boolean",
+              sensitive: 0,
+              enabled: 1,
+              value: 1,
+            },
+            {
+              key: "canais.retencao.metadados_dias",
+              label: "Metadados técnicos (dias)",
+              description:
+                "Depois deste prazo, o IP anonimizado e o navegador das inscrições são apagados.",
+              example: "90",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 90,
+            },
+            {
+              key: "canais.retencao.pendentes_dias",
+              label: "Inscrições nunca confirmadas (dias)",
+              description:
+                "Em listas que exigem confirmação, inscritos que nunca confirmaram são removidos após este prazo.",
+              example: "180",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 180,
+            },
+            {
+              key: "canais.retencao.listas_inativas_meses",
+              label: "Listas desativadas (meses)",
+              description:
+                "Os inscritos de listas desativadas há mais que este prazo são removidos (se não estiverem em outra lista ativa).",
+              example: "12",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 12,
+            },
+          ],
+        },
       ],
     },
     {
@@ -480,3 +530,44 @@ export const TELEGRAM_STATUS_WEBHOOK = {
 };
 
 export const TELEGRAM_WEBHOOK_URL = "https://edumaps.exemplo.org/api/canais/telegram/webhook";
+
+// Status da retenção (GET /api/admin/canais/retencao, issue #214).
+export const RETENCAO_STATUS = {
+  enabled: 1,
+  metadados_dias: 90,
+  pendentes_dias: 180,
+  listas_inativas_meses: 12,
+  ultima_execucao: {
+    em: "2026-10-11T03:00:00",
+    metadados: 4,
+    pendentes: 2,
+    listas_inativas: 0,
+  },
+  agendado: 1,
+};
+
+export const RETENCAO_JOB_ID = 5151;
+
+// Versões do texto de consentimento (GET /api/admin/consentimento/versoes).
+export const CONSENTIMENTO_VERSOES = [
+  {
+    id: 1,
+    versao: "1.0",
+    texto: CONSENTIMENTO_VIGENTE.texto,
+    texto_hash: "3f1c0a1e9b2d4c5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6",
+    status: "vigente",
+    publicada_em: "2026-10-12T00:00:00Z",
+    created_at: "2026-10-12T00:00:00Z",
+  },
+  {
+    id: 2,
+    versao: "1.1",
+    texto:
+      "Ao se inscrever, você autoriza a **escola** a guardar seu nome, telefone e e-mail.\n\n" +
+      "Usamos esses dados para:\n\n- avisos da escola;\n- convites para reuniões.",
+    texto_hash: "9a8b7c6d5e4f30211203f4e5d6c7b8a99a8b7c6d5e4f30211203f4e5d6c7b8a9",
+    status: "rascunho",
+    publicada_em: null,
+    created_at: "2026-10-12T10:00:00Z",
+  },
+];

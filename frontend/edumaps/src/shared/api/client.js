@@ -15,19 +15,21 @@ export function getApiToken() {
 }
 
 export class ApiError extends Error {
-  constructor(message, { status, url } = {}) {
+  constructor(message, { status, url, data = null } = {}) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.url = url;
+    // corpo JSON do erro (quando houver) — ex.: 409 que devolve o estado vigente
+    this.data = data;
   }
 }
 
 // Erros >= 500 (falha do servidor) são também emitidos no eventBus como
 // EVENTS.API_ERROR — ponte para o Sentry/observabilidade sem acoplar o
 // cliente HTTP ao SDK. 4xx (erro do cliente/negócio) não sobem.
-function raiseApiError(message, status, url) {
-  const error = new ApiError(message, { status, url });
+function raiseApiError(message, status, url, data = null) {
+  const error = new ApiError(message, { status, url, data });
   if (status >= 500) {
     eventBus.emit(EVENTS.API_ERROR, { message, status, url, error });
   }
@@ -61,13 +63,14 @@ async function request(path, { method = "GET", params, body, headers } = {}) {
 
   if (!response.ok) {
     let message = `Erro ${response.status}`;
+    let data = null;
     try {
-      const data = await response.json();
-      message = data.error || message;
+      data = await response.json();
+      message = data?.error || message;
     } catch {
       // resposta sem corpo JSON (ex: 500 sem handler de erro)
     }
-    throw raiseApiError(message, response.status, url.pathname);
+    throw raiseApiError(message, response.status, url.pathname, data);
   }
 
   if (response.status === 204) return null;
@@ -111,7 +114,8 @@ export const apiClient = {
   post: (path, body) => request(path, { method: "POST", body }),
   put: (path, body) => request(path, { method: "PUT", body }),
   patch: (path, body) => request(path, { method: "PATCH", body }),
-  delete: (path) => request(path, { method: "DELETE" }),
+  // corpo opcional (ex.: DELETE de membro com {motivo}, issue #214)
+  delete: (path, body) => request(path, { method: "DELETE", body }),
   upload: (path, formData) => request(path, { method: "POST", body: formData }),
   download,
 };

@@ -372,6 +372,49 @@ my %TREE = (
           },
         ],
       },
+      {
+        # Retenção dos dados das listas com QR (#214, RF-207). Lidas pela
+        # task diária `canais_retencao` (retencao_config).
+        key      => 'canais_retencao',
+        label    => 'Retenção (LGPD)',
+        children => [
+          {
+            key         => 'canais.retencao.enabled',
+            label       => 'Expurgo automático ativado',
+            description => 'Liga/desliga a rotina diária de retenção (apaga metadados antigos e anonimiza pendentes e membros de listas inativas). Padrão: ligado.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.retencao.metadados_dias',
+            label       => 'Metadados da inscrição (dias)',
+            description => 'Após este prazo, o IP anonimizado e o navegador (user agent) das inscrições são apagados. Padrão: 90.',
+            example     => '90',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.retencao.pendentes_dias',
+            label       => 'Inscritos nunca confirmados (dias)',
+            description => 'Em listas que exigem confirmação, inscritos que nunca confirmaram nenhum contato são anonimizados após este prazo. Padrão: 180.',
+            example     => '180',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.retencao.listas_inativas_meses',
+            label       => 'Listas desativadas (meses)',
+            description => 'Membros de listas desativadas há mais que este prazo são anonimizados (exceto quem está em outra lista ativa da escola). Padrão: 12.',
+            example     => '12',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+        ],
+      },
     ],
   },
   aparencia => {
@@ -770,6 +813,14 @@ sub canais_confirmacao_disponiveis ($self) {
   return \@out;
 }
 
+# Canal e-mail disponível para a confirmação de posse do e-mail nas listas
+# (#214, RF-203): canais.email.enabled + smtp_host + from. Devolve 1/0.
+sub email_confirmacao_disponivel ($self) {
+  my $cfg = $self->email_config;
+  my $tem = sub ($v) { defined $v && !ref $v && length $v };
+  return ($cfg->{enabled} && $tem->($cfg->{smtp_host}) && $tem->($cfg->{from})) ? 1 : 0;
+}
+
 # Config efetiva da autoinscrição por QR (canais.inscricao.*). `enabled` é 0
 # por omissão — o endpoint público responde 404 sem decisão explícita do admin.
 # `rate_max`/`rate_window_seconds` alimentam o rate limit em memória.
@@ -782,6 +833,24 @@ sub inscricao_config ($self) {
   $cfg->{enabled}             = 0 unless defined $cfg->{enabled};
   $cfg->{rate_max}            = 10 unless defined $cfg->{rate_max};
   $cfg->{rate_window_seconds} = 60 unless defined $cfg->{rate_window_seconds};
+  return $cfg;
+}
+
+# Config efetiva da retenção (canais.retencao.*, #214 RF-207). Defaults:
+# enabled 1, metadados 90 dias, pendentes 180 dias, listas inativas 12 meses.
+# Prazo ausente ou < 1 vale o default (prazo 0 apagaria tudo de uma vez).
+sub retencao_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.retencao',
+    [qw/enabled metadados_dias pendentes_dias listas_inativas_meses/],
+    [],
+  );
+  my %def = (metadados_dias => 90, pendentes_dias => 180, listas_inativas_meses => 12);
+  for my $k (keys %def) {
+    my $v = $cfg->{$k};
+    $cfg->{$k} = (defined $v && !ref $v && $v =~ /^\d+\z/ && $v >= 1) ? $v + 0 : $def{$k};
+  }
+  $cfg->{enabled} = defined $cfg->{enabled} ? ($cfg->{enabled} ? 1 : 0) : 1;
   return $cfg;
 }
 

@@ -2,6 +2,8 @@ package EduMaps::Roles::Business::Canal::Listas;
 use Mojo::Base -role, -signatures;
 use utf8;
 use Mojo::JSON qw(true false);
+use Digest::SHA qw(sha256_hex);
+use EduMaps::Channel::Email;
 
 # ============================================================================
 # LISTAS NOMEADAS COM QR PARA AUTOINSCRIÇÃO DE CONTATOS (issue #208)
@@ -25,12 +27,127 @@ use Mojo::JSON qw(true false);
 # Consome a role de config `EduMaps::Roles::Business::Config::AppConfig` para
 # ler `canais.inscricao.*` (enabled, public_base_url, rate_max,
 # rate_window_seconds).
+#
+# Fase 2 (#214) — e-mail e LGPD:
+#
+#   - `coleta` por lista: telefone | email | ambos | qualquer (default
+#     telefone — Fases 0/1 intactas). Define os campos exibidos/obrigatórios;
+#   - e-mail validado pelo Channel::Email (sem SMTP), bruto + normalizado
+#     (minúsculas) na inscrição; dedupe NÃO destrutivo também por e-mail
+#     (índice uq_contatos_inep_email): telefone e e-mail apontando para
+#     contatos diferentes → reusa o do telefone e marca `conflito`;
+#   - consentimento versionado (Canal::Consentimento): grava a versão vigente
+#     + o hash do texto; versão enviada diferente da vigente → 409;
+#   - token pessoal de exclusão (128 bits; só o SHA-256 no banco) devolvido
+#     como `exclusao_url`;
+#   - estado da confirmação POR CONTATO (telefone: confirmado_em/via; e-mail:
+#     email_confirmado_em/via) e estado geral pendente|parcial|confirmado.
 
 requires qw(schema);
 
 has _rate_buckets => sub { {} };   # rate limit em memória (por processo)
 
-our $CONSENTIMENTO_VERSAO = '1.0'; # MVP: gancho de consentimento versionado
+# Fase 2 (#214): a versão gravada é a VIGENTE de clean.consentimento_versoes
+# (Canal::Consentimento). A constante fica só como FALLBACK, quando a tabela
+# não tem versão vigente.
+our $CONSENTIMENTO_VERSAO = '1.0';
+
+# Contatos coletados por lista (#214, RF-201). CHECK do banco é a fonte de
+# verdade; a ordem é a do contrato.
+our @COLETAS = qw(telefone email ambos qualquer);
+
+# campos exibidos / obrigatórios por `coleta` (contrato da onda 1).
+my %CAMPOS = (
+  telefone => [ [qw(nome telefone)],       [qw(nome telefone)] ],
+  email    => [ [qw(nome email)],          [qw(nome email)] ],
+  ambos    => [ [qw(nome telefone email)], [qw(nome telefone email)] ],
+  qualquer => [ [qw(nome telefone email)], [qw(nome)] ],
+);
+
+sub coleta_valida ($self, $coleta) {
+  return defined $coleta && !ref $coleta && grep({ $_ eq $coleta } @COLETAS) ? 1 : 0;
+}
+
+sub campos_coleta ($self, $coleta) {
+  my $c = $CAMPOS{ $coleta // 'telefone' } // $CAMPOS{telefone};
+  return { campos => [ @{ $c->[0] } ], obrigatorios => [ @{ $c->[1] } ] };
+}
+
+# ---------------------------------------------------------------------------
+# estado da confirmação por contato (#214, RF-203)
+# ---------------------------------------------------------------------------
+#
+# Um membro tem os contatos PRESENTES na sua última inscrição na lista (sem
+# inscrição — membro manual/importado — vale o que o contato tem). Cada
+# contato presente é confirmado (telefone: confirmado_em; e-mail:
+# email_confirmado_em) ou não. Estado geral: confirmado (todos), parcial
+# (parte), senão pendente (lista exige) / nao_exigida.
+
+# Última inscrição do membro `m` (alias `c` = contato) — LATERAL.
+my $SQL_ULTIMA_INSCRICAO = q{LEFT JOIN LATERAL (
+        SELECT i.id, i.telefone_norm, i.email, i.email_norm, i.conflito, i.duplicado_de
+        FROM   clean.canal_inscricoes i
+        WHERE  i.lista_id = m.lista_id AND i.contato_id = m.contato_id
+        ORDER  BY i.id DESC LIMIT 1
+      ) i ON TRUE};
+my $SQL_TEM_TEL = q{(CASE WHEN i.id IS NOT NULL THEN COALESCE(i.telefone_norm, '') <> ''
+                      ELSE COALESCE(c.telefone, '') <> '' END)};
+my $SQL_TEM_EMAIL = q{(CASE WHEN i.id IS NOT NULL THEN COALESCE(i.email_norm, '') <> ''
+                        ELSE COALESCE(c.email, '') <> '' END)};
+my $SQL_GERAL_CONFIRMADO = "((NOT $SQL_TEM_TEL OR m.confirmado_em IS NOT NULL)
+   AND (NOT $SQL_TEM_EMAIL OR m.email_confirmado_em IS NOT NULL)
+   AND ($SQL_TEM_TEL OR $SQL_TEM_EMAIL
+        OR m.confirmado_em IS NOT NULL OR m.email_confirmado_em IS NOT NULL))";
+
+# Contagem de membros com estado geral `confirmado` da lista `l`.
+my $SQL_N_CONFIRMADOS = "(SELECT count(*)::int
+         FROM   clean.canal_lista_membros m
+         JOIN   clean.contatos c ON c.id = m.contato_id
+         $SQL_ULTIMA_INSCRICAO
+         WHERE  m.lista_id = l.id AND $SQL_GERAL_CONFIRMADO)";
+
+# Estado por contato e geral. Parâmetros: exige, tem_telefone, tem_email,
+# confirmado_em, confirmado_via, email_confirmado_em, email_confirmado_via.
+# Devolve { estado => confirmado|parcial|pendente|nao_exigida,
+#           telefone => {estado, via, confirmado_em} | undef,
+#           email    => {estado, via, confirmado_em} | undef }.
+sub estado_contatos ($self, %p) {
+  my $base = $p{exige} ? 'pendente' : 'nao_exigida';
+  my %out;
+  my ($presentes, $confirmados) = (0, 0);
+  for my $k (qw(telefone email)) {
+    my ($em, $via) = $k eq 'telefone'
+      ? @p{qw(confirmado_em confirmado_via)}
+      : @p{qw(email_confirmado_em email_confirmado_via)};
+    unless ($p{"tem_$k"}) { $out{$k} = undef; next; }
+    $presentes++;
+    $confirmados++ if defined $em;
+    $out{$k} = {
+      estado        => defined $em ? 'confirmado' : $base,
+      via           => defined $em ? $via : undef,
+      confirmado_em => $em,
+    };
+  }
+
+  if (!$presentes) {
+    $out{estado} = (defined $p{confirmado_em} || defined $p{email_confirmado_em})
+      ? 'confirmado' : $base;
+  }
+  elsif ($confirmados == $presentes) { $out{estado} = 'confirmado'; }
+  elsif ($confirmados)               { $out{estado} = 'parcial'; }
+  else                               { $out{estado} = $base; }
+  return \%out;
+}
+
+# Só {estado, via} dos contatos presentes (formato `contatos` do contrato).
+sub contatos_publicos ($self, $ec) {
+  my %c;
+  for my $k (qw(telefone email)) {
+    next unless $ec->{$k};
+    $c{$k} = { estado => $ec->{$k}{estado}, via => $ec->{$k}{via} };
+  }
+  return \%c;
+}
 
 # ---------------------------------------------------------------------------
 # telefone: normalização (bruto + só dígitos)
@@ -60,11 +177,10 @@ sub _normaliza_nome ($self, $nome) {
 
 sub listar_listas ($self, $cod_inep) {
   my $rows = $self->_rows(
-    q{SELECT l.*,
+    qq{SELECT l.*,
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
-             (SELECT count(*)::int FROM clean.canal_lista_membros m
-               WHERE m.lista_id = l.id AND m.confirmado_em IS NOT NULL) AS membros_confirmados,
+             $SQL_N_CONFIRMADOS AS membros_confirmados,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
                WHERE q.lista_id = l.id AND q.status = 'ativo') AS n_qrcodes_ativos
       FROM   clean.canal_listas l
@@ -89,6 +205,7 @@ sub listar_listas ($self, $cod_inep) {
       gestor_id         => $r->{gestor_id} + 0,
       nome              => $r->{nome},
       canal             => $r->{canal},
+      coleta            => $r->{coleta},
       descricao         => $r->{descricao},
       ativo             => $r->{ativo} ? 1 : 0,
       n_membros         => $r->{n_membros} + 0,
@@ -120,6 +237,11 @@ sub criar_lista ($self, %p) {
   my $descricao = $p{descricao};
   $descricao = undef if defined $descricao && !length $descricao;
 
+  # contatos coletados (#214): default telefone (Fases 0/1 intactas).
+  my $coleta = $p{coleta} // 'telefone';
+  return { error => 'coleta inválida (telefone, email, ambos ou qualquer).', invalido => 1 }
+    unless $self->coleta_valida($coleta);
+
   # exigência de confirmação de posse (#212): default false (Fase 0 intacta).
   my $exige = 0;
   if (defined $p{exige_confirmacao}) {
@@ -130,16 +252,17 @@ sub criar_lista ($self, %p) {
 
   my $row = $self->_row(
     'INSERT INTO clean.canal_listas (cod_inep, gestor_id, nome, canal, descricao,
-                                     exige_confirmacao)
-     VALUES (?, ?, ?, ?, ?, ?)
+                                     exige_confirmacao, coleta)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (cod_inep, nome) DO UPDATE
        SET ativo = true, gestor_id = EXCLUDED.gestor_id,
            descricao = EXCLUDED.descricao,
-           exige_confirmacao = EXCLUDED.exige_confirmacao, updated_at = NOW()
+           exige_confirmacao = EXCLUDED.exige_confirmacao,
+           coleta = EXCLUDED.coleta, desativada_em = NULL, updated_at = NOW()
        WHERE clean.canal_listas.ativo = false
      RETURNING id',
     $cod_inep + 0, $gestor_id + 0, $nome, $canal, $descricao,
-    $exige ? 1 : 0,
+    $exige ? 1 : 0, $coleta,
   );
   return { error => 'Já existe uma lista com este nome nesta escola.' } unless $row;
 
@@ -149,11 +272,10 @@ sub criar_lista ($self, %p) {
 # Detalhe de uma lista + contagens (membros, inscrições, QRs ativos) + último QR.
 sub detalhe_lista ($self, $cod_inep, $lista_id) {
   my $r = $self->_row(
-    q{SELECT l.*, g.nome AS gestor_nome,
+    qq{SELECT l.*, g.nome AS gestor_nome,
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
-             (SELECT count(*)::int FROM clean.canal_lista_membros m
-               WHERE m.lista_id = l.id AND m.confirmado_em IS NOT NULL) AS membros_confirmados,
+             $SQL_N_CONFIRMADOS AS membros_confirmados,
              (SELECT count(*)::int FROM clean.canal_inscricoes i
                WHERE i.lista_id = l.id) AS n_inscricoes,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
@@ -179,6 +301,7 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
     gestor_id        => $r->{gestor_id} + 0,
     nome             => $r->{nome},
     canal            => $r->{canal},
+    coleta           => $r->{coleta},
     descricao        => $r->{descricao},
     ativo            => $r->{ativo} ? 1 : 0,
     gestor_nome      => $r->{gestor_nome},
@@ -192,7 +315,8 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
   };
 }
 
-# Edita uma lista (PATCH, #212): `nome`, `descricao`, `exige_confirmacao` —
+# Edita uma lista (PATCH, #212; `coleta` #214): `nome`, `descricao`,
+# `exige_confirmacao`, `coleta` —
 # só os campos presentes em %campos. Mudar `exige_confirmacao` NÃO altera os
 # membros já existentes (o estado é derivado na leitura). Devolve o detalhe;
 # undef se a lista não é da escola; { error, status => 400|409 } nos erros.
@@ -231,7 +355,13 @@ sub atualizar_lista ($self, $cod_inep, $lista_id, %campos) {
     push @set, 'exige_confirmacao = ?';
     push @binds, $exige ? 1 : 0;
   }
-  return { error => 'Nada a alterar (nome, descricao ou exige_confirmacao).', status => 400 }
+  if (exists $campos{coleta}) {
+    return { error => 'coleta inválida (telefone, email, ambos ou qualquer).', status => 400 }
+      unless $self->coleta_valida($campos{coleta});
+    push @set, 'coleta = ?';
+    push @binds, $campos{coleta};
+  }
+  return { error => 'Nada a alterar (nome, descricao, exige_confirmacao ou coleta).', status => 400 }
     unless @set;
 
   my $ok = eval {
@@ -268,11 +398,13 @@ sub parse_bool ($self, $v) {
 # "Excluir/desativar" a lista (contrato de gestão). Implementado como
 # DESATIVAÇÃO (ativo=false): preserva o histórico de inscrições e QRs (princípio
 # "sem descarte" da spec). O DELETE CASCADE do schema continua valendo como
-# fallback do banco para remoção física.
+# fallback do banco para remoção física. `desativada_em` (#214) marca a
+# desativação (base da retenção); idempotente — desativar de novo não a move.
 sub excluir_lista ($self, $cod_inep, $lista_id) {
   my $row = $self->_row(
     'UPDATE clean.canal_listas
-        SET ativo = false, updated_at = NOW()
+        SET ativo = false, updated_at = NOW(),
+            desativada_em = CASE WHEN ativo THEN NOW() ELSE desativada_em END
       WHERE id = ? AND cod_inep = ?
       RETURNING id',
     $lista_id + 0, $cod_inep + 0,
@@ -285,7 +417,9 @@ sub excluir_lista ($self, $cod_inep, $lista_id) {
 # ---------------------------------------------------------------------------
 
 # Gera (ou rotaciona) o QR da lista: revoga o ativo anterior e cria um novo
-# token. Devolve o QR criado ou { error => 'not_found'|'lista_inativa' }.
+# token. Devolve o QR criado ou { error => 'not_found'|'lista_inativa' } ou
+# { error => 'invalido', erro => <mensagem> } (#214, RF-209: `expira_em` ISO
+# 8601 no futuro; `max_usos` inteiro > 0; ausentes/vazios = sem limite).
 sub gerar_qrcode ($self, %p) {
   my ($cod_inep, $lista_id, $gestor_id) = @p{qw(cod_inep lista_id gestor_id)};
 
@@ -294,9 +428,20 @@ sub gerar_qrcode ($self, %p) {
   return { error => 'lista_inativa' } unless $lista->{ativo};
 
   my $expira_em = $p{expira_em};
-  $expira_em = undef if defined $expira_em && !length $expira_em;
-  my $max_usos = (defined $p{max_usos} && $p{max_usos} =~ /^\d+$/
-                  && $p{max_usos} + 0 > 0) ? $p{max_usos} + 0 : undef;
+  $expira_em = undef if defined $expira_em && !ref $expira_em && $expira_em !~ /\S/;
+  if (defined $expira_em) {
+    my $erro = $self->_valida_expira_em($expira_em);
+    return { error => 'invalido', erro => $erro } if $erro;
+  }
+
+  my $max_usos = $p{max_usos};
+  $max_usos = undef if defined $max_usos && !ref $max_usos && $max_usos !~ /\S/;
+  if (defined $max_usos) {
+    $max_usos =~ s/^\s+|\s+$//g unless ref $max_usos;
+    return { error => 'invalido', erro => 'max_usos deve ser um inteiro maior que zero.' }
+      unless !ref $max_usos && $max_usos =~ /^\d{1,9}\z/ && $max_usos + 0 > 0;
+    $max_usos += 0;
+  }
 
   my $token = $self->_novo_token;
   my ($qr_id, $qr);
@@ -331,6 +476,24 @@ sub gerar_qrcode ($self, %p) {
   return $self->_qr_publico($qr);
 }
 
+# `expira_em` do QR: data ISO 8601 (data, ou data e hora com fuso opcional —
+# sem fuso vale o do servidor) estritamente no futuro. Devolve a mensagem de
+# erro ou undef.
+sub _valida_expira_em ($self, $v) {
+  my $msg = 'expira_em deve ser uma data/hora ISO 8601 no futuro.';
+  return $msg if ref $v;
+  $v =~ s/^\s+|\s+$//g;
+  return $msg unless $v =~ /^\d{4}-\d\d-\d\d
+                            (?:[T\x20]\d\d:\d\d(?::\d\d(?:\.\d{1,6})?)?
+                               (?:Z|[+-]\d\d(?::?\d\d)?)?)?\z/xi;
+  my $r = eval {
+    $self->_row(q{SELECT (?::timestamptz > NOW()) AS futura}, $v);
+  };
+  return $msg unless $r;           # data impossível (ex.: mês 13)
+  return 'expira_em deve estar no futuro.' unless $r->{futura};
+  return;
+}
+
 # Revoga o QR ativo da lista (imediato). Devolve o QR revogado ou
 # { error => 'not_found'|'sem_qr_ativo' }.
 sub revogar_qrcode ($self, $cod_inep, $lista_id) {
@@ -358,19 +521,19 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
   my $lista = $self->_lista_da_escola($cod_inep, $lista_id);
   return unless $lista;
 
+  # e-mail exibido: o da agenda (contato) ou, se o contato não tem (ex.:
+  # conflito — o e-mail já é de outro contato), o informado na inscrição.
   my $rows = $self->_rows(
-    q{SELECT m.id, m.lista_id, m.contato_id, m.origem, m.validado,
+    qq{SELECT m.id, m.lista_id, m.contato_id, m.origem, m.validado,
              m.confirmado_em, m.confirmado_via,
+             m.email_confirmado_em, m.email_confirmado_via,
              m.created_at AS quando, c.nome, c.telefone,
-             i.conflito, i.duplicado_de
+             COALESCE(c.email, i.email) AS email,
+             i.conflito, i.duplicado_de,
+             $SQL_TEM_TEL AS tem_telefone, $SQL_TEM_EMAIL AS tem_email
       FROM   clean.canal_lista_membros m
       JOIN   clean.contatos c ON c.id = m.contato_id
-      LEFT JOIN LATERAL (
-        SELECT i.conflito, i.duplicado_de
-        FROM   clean.canal_inscricoes i
-        WHERE  i.lista_id = m.lista_id AND i.contato_id = m.contato_id
-        ORDER  BY i.id DESC LIMIT 1
-      ) i ON TRUE
+      $SQL_ULTIMA_INSCRICAO
       WHERE  m.lista_id = ?
       ORDER  BY m.created_at DESC, c.nome},
     $lista_id + 0,
@@ -382,20 +545,32 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
 
   my @out;
   for my $r (@$rows) {
+    # estado da confirmação de posse (#212), por contato e geral (#214) —
+    # derivado (não é coluna)
+    my $ec = $self->estado_contatos(
+      exige        => $exige,
+      tem_telefone => $r->{tem_telefone},
+      tem_email    => $r->{tem_email},
+      map { $_ => $r->{$_} }
+        qw(confirmado_em confirmado_via email_confirmado_em email_confirmado_via),
+    );
     push @out, {
       id           => $r->{id} + 0,
       contato_id   => $r->{contato_id} + 0,
       nome         => $r->{nome},
       telefone     => $r->{telefone},
+      email        => $r->{email},
       origem       => $r->{origem},
       validado     => $r->{validado} ? 1 : 0,
       conflito     => $r->{conflito} ? 1 : 0,
       duplicado_de => $r->{duplicado_de} ? $r->{duplicado_de} + 0 : undef,
       quando       => $r->{quando},
-      # estado da confirmação de posse (#212), derivado (não é coluna)
-      estado         => $self->estado_membro($exige, $r->{confirmado_em}),
-      confirmado_via => $r->{confirmado_via},
-      confirmado_em  => $r->{confirmado_em},
+      estado              => $ec->{estado},
+      telefone_estado     => $ec->{telefone} ? $ec->{telefone}{estado} : undef,
+      email_estado        => $ec->{email}    ? $ec->{email}{estado}    : undef,
+      confirmado_via      => $r->{confirmado_via},
+      confirmado_em       => $r->{confirmado_em},
+      email_confirmado_em => $r->{email_confirmado_em},
     };
   }
   return \@out;
@@ -418,7 +593,7 @@ sub validar_token ($self, $token) {
              (q.expira_em IS NOT NULL AND q.expira_em <= NOW()) AS vencido,
              (q.max_usos IS NOT NULL AND q.usos >= q.max_usos) AS esgotado,
              l.id AS lista_id, l.nome AS lista_nome, l.canal, l.ativo AS lista_ativa,
-             l.cod_inep, l.gestor_id, l.exige_confirmacao,
+             l.cod_inep, l.gestor_id, l.exige_confirmacao, l.coleta,
              e.escola AS escola_nome
       FROM   clean.canal_qrcodes q
       JOIN   clean.canal_listas l ON l.id = q.lista_id
@@ -453,17 +628,22 @@ sub validar_token ($self, $token) {
 }
 
 # Resposta mínima do GET público (RF-003): só o necessário para renderizar o
-# formulário. NUNCA lista contatos nem expõe PII de terceiros.
+# formulário. NUNCA lista contatos nem expõe PII de terceiros. #214: `campos`
+# e `obrigatorios` conforme a `coleta` da lista + consentimento vigente.
 sub dados_publicos_token ($self, $token) {
   my $v = $self->validar_token($token);
   return $v unless $v->{ok};   # { ok => 0, reason => ... }
+  my $c   = $self->campos_coleta($v->{coleta});
+  my $vig = $self->consentimento_vigente;
   return {
-    ok          => 1,
-    lista_nome  => $v->{lista_nome},
-    escola_nome => $v->{escola_nome},
-    canal       => $v->{canal},
-    campos      => [qw(nome telefone)],
-    expira_em   => $v->{expira_em},
+    ok           => 1,
+    lista_nome   => $v->{lista_nome},
+    escola_nome  => $v->{escola_nome},
+    canal        => $v->{canal},
+    campos       => $c->{campos},
+    obrigatorios => $c->{obrigatorios},
+    consentimento => { versao => $vig->{versao}, texto => $vig->{texto} },
+    expira_em    => $v->{expira_em},
   };
 }
 
@@ -473,60 +653,143 @@ sub dados_publicos_token ($self, $token) {
 
 # Registra uma submissão de autoinscrição. Nunca apaga e nunca sobrescreve:
 #
-#   1. telefone normalizado (só dígitos);
-#   2. procura contato existente na escola pelo telefone normalizado;
-#      - existe: NÃO sobrescreve — membro via ON CONFLICT DO NOTHING e a
+#   1. valida os campos conforme a `coleta` da lista (#214): telefone
+#      normalizado (só dígitos); e-mail validado pelo Channel::Email e
+#      normalizado (minúsculas); `qualquer` exige pelo menos um contato;
+#   2. consentimento: obrigatório; `consentimento_versao` presente e diferente
+#      da vigente → reason 'consentimento_versao' (409, com o texto vigente);
+#      ausente → grava a vigente (compatibilidade);
+#   3. dedupe na escola (telefone, depois e-mail):
+#      - telefone acha um contato: reusa-o; se o e-mail acha OUTRO contato,
+#        marca `conflito` e NÃO grava o e-mail no contato (índice único);
+#      - só o e-mail acha um contato: reusa-o;
+#      - reuso: NÃO sobrescreve — preenche só o que falta no contato
+#        (e-mail/telefone NULL); membro via ON CONFLICT DO NOTHING; a
 #        submissão vira histórico com duplicado_de=contato_id e
-#        conflito = (nome informado difere do armazenado);
-#      - não existe: cria o contato (validado=false — sem validação no MVP),
-#        insere o membro e a inscrição;
-#   3. incrementa `usos` do QR.
+#        conflito = (nome difere do armazenado) ou (contatos divergentes);
+#      - nenhum: cria o contato (validado=false), o membro e a inscrição;
+#   4. token pessoal de exclusão (128 bits; só o SHA-256 em exclusao_hash);
+#   5. incrementa `usos` do QR.
 #
-# Parâmetros: token, nome, telefone, consentimento (bool), ip_anon,
-# user_agent, consentimento_versao. Devolve { ok => 1, ... } ou
-# { ok => 0, reason => 'campos'|'consentimento'|'rate_limited'|'<token>' }.
+# Parâmetros: token, nome, telefone, email, consentimento (bool),
+# consentimento_versao, ip_anon, user_agent. Devolve { ok => 1, inscricao_id,
+# contato_id, membro_id, duplicado, conflito, exclusao_url, confirmacao? } ou
+# { ok => 0, reason => 'campos'|'consentimento'|'consentimento_versao'|
+#   'rate_limited'|'<token>', erro?, consentimento? }.
 sub registrar_inscricao ($self, %p) {
   my $token = $p{token};
   my $v = $self->validar_token($token);
   return $v unless $v->{ok};
 
+  my $coleta = $v->{coleta} // 'telefone';
+  my %obrig  = map { $_ => 1 } @{ $self->campos_coleta($coleta)->{obrigatorios} };
+  my %exibe  = map { $_ => 1 } @{ $self->campos_coleta($coleta)->{campos} };
+
   my $nome = $p{nome} // '';
+  $nome = '' if ref $nome;
   $nome =~ s/^\s+|\s+$//g;
   return { ok => 0, reason => 'campos', erro => 'nome é obrigatório (1..120).' }
     unless length $nome >= 1 && length $nome <= 120;
 
-  my $telefone = $p{telefone} // '';
-  $telefone =~ s/^\s+|\s+$//g;
-  return { ok => 0, reason => 'campos', erro => 'telefone é obrigatório.' }
-    unless length $telefone >= 1;
+  # telefone (só se a lista coleta telefone)
+  my ($telefone, $telefone_norm);
+  if ($exibe{telefone}) {
+    $telefone = $p{telefone} // '';
+    $telefone = '' if ref $telefone;
+    $telefone =~ s/^\s+|\s+$//g;
+    return { ok => 0, reason => 'campos', erro => 'telefone é obrigatório.' }
+      if $obrig{telefone} && !length $telefone;
+    if (length $telefone) {
+      $telefone_norm = $self->normalize_phone($telefone);
+      return { ok => 0, reason => 'campos',
+               erro => 'telefone precisa de pelo menos ' . $self->telefone_min_digits . ' dígitos.' }
+        unless length $telefone_norm >= $self->telefone_min_digits;
+    }
+    else { $telefone = undef; }
+  }
 
-  my $telefone_norm = $self->normalize_phone($telefone);
-  return { ok => 0, reason => 'campos',
-           erro => 'telefone precisa de pelo menos ' . $self->telefone_min_digits . ' dígitos.' }
-    unless length $telefone_norm >= $self->telefone_min_digits;
+  # e-mail (só se a lista coleta e-mail)
+  my ($email, $email_norm);
+  if ($exibe{email}) {
+    $email = $p{email} // '';
+    $email = '' if ref $email;
+    $email =~ s/^\s+|\s+$//g;
+    return { ok => 0, reason => 'campos', erro => 'e-mail é obrigatório.' }
+      if $obrig{email} && !length $email;
+    if (length $email) {
+      my $ev = EduMaps::Channel::Email->new(config => {}, schema => undef)
+                 ->validate_address($email);
+      return { ok => 0, reason => 'campos', erro => 'e-mail inválido.' } unless $ev->{ok};
+      $email_norm = $ev->{normalized};
+    }
+    else { $email = undef; }
+  }
+
+  return { ok => 0, reason => 'campos', erro => 'Informe pelo menos um contato (telefone ou e-mail).' }
+    unless defined $telefone_norm || defined $email_norm;
 
   return { ok => 0, reason => 'consentimento' } unless $p{consentimento};
+
+  # consentimento versionado (#214, RF-208)
+  my $vig = $self->consentimento_vigente;
+  my $versao_enviada = $p{consentimento_versao};
+  $versao_enviada = undef if defined $versao_enviada && !ref $versao_enviada
+                          && $versao_enviada !~ /\S/;
+  if (defined $versao_enviada
+      && (ref $versao_enviada || $versao_enviada ne $vig->{versao})) {
+    return { ok => 0, reason => 'consentimento_versao',
+             consentimento => { versao => $vig->{versao}, texto => $vig->{texto} } };
+  }
+
+  my $exclusao_token = $self->_row(
+    q{SELECT encode(gen_random_bytes(16), 'hex') AS t}
+  )->{t};
 
   my $resultado;
   my $ok = eval {
     $self->schema->storage->txn_do(sub {
       my ($contato_id, $duplicado_de, $conflito, $membro_id);
 
-      # dedupe na camada de modelo (MVP) — mesmo telefone normalizado na escola.
-      my $existente = $self->_row(
-        q{SELECT id, nome
+      # dedupe na camada de modelo — mesmo telefone normalizado na escola...
+      my $por_tel = defined $telefone_norm ? $self->_row(
+        q{SELECT id, nome, email, telefone
           FROM   clean.contatos
           WHERE  cod_inep = ? AND telefone IS NOT NULL
             AND regexp_replace(telefone, '\D', '', 'g') = ?
           ORDER  BY id LIMIT 1},
         $v->{cod_inep} + 0, $telefone_norm,
-      );
+      ) : undef;
+      # ... e mesmo e-mail (uq_contatos_inep_email, lower(email)).
+      my $por_email = defined $email_norm ? $self->_row(
+        q{SELECT id, nome, email, telefone
+          FROM   clean.contatos
+          WHERE  cod_inep = ? AND email IS NOT NULL AND lower(email) = ?
+          ORDER  BY id LIMIT 1},
+        $v->{cod_inep} + 0, $email_norm,
+      ) : undef;
 
+      my $existente = $por_tel // $por_email;
       if ($existente) {
         $contato_id   = $existente->{id} + 0;
         $duplicado_de = $contato_id;
         $conflito     = lc($self->_normaliza_nome($nome))
                       ne lc($self->_normaliza_nome($existente->{nome})) ? 1 : 0;
+        # telefone e e-mail apontam para contatos diferentes: reusa o do
+        # telefone e marca (nada é sobrescrito nem apagado).
+        $conflito = 1 if $por_tel && $por_email && $por_tel->{id} != $por_email->{id};
+
+        # preenche só o que falta no contato reusado (não destrutivo). O
+        # e-mail só entra se não pertence a outro contato da escola.
+        $self->_rows(
+          q{UPDATE clean.contatos SET email = ?, updated_at = NOW()
+             WHERE id = ? AND email IS NULL},
+          $email, $contato_id,
+        ) if defined $email && !$por_email;
+        $self->_rows(
+          q{UPDATE clean.contatos SET telefone = ?, updated_at = NOW()
+             WHERE id = ? AND telefone IS NULL},
+          $telefone, $contato_id,
+        ) if defined $telefone && !$por_tel;
 
         # idempotência do pertencimento (UNIQUE lista_id, contato_id)
         my $m = $self->_row(
@@ -543,10 +806,10 @@ sub registrar_inscricao ($self, %p) {
       }
       else {
         my $novo = $self->_row(
-          q{INSERT INTO clean.contatos (cod_inep, gestor_id, nome, telefone)
-            VALUES (?, ?, ?, ?)
+          q{INSERT INTO clean.contatos (cod_inep, gestor_id, nome, telefone, email)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING id},
-          $v->{cod_inep} + 0, $v->{gestor_id} + 0, $nome, $telefone,
+          $v->{cod_inep} + 0, $v->{gestor_id} + 0, $nome, $telefone, $email,
         );
         $contato_id = $novo->{id} + 0;
         my $m = $self->_row(
@@ -561,17 +824,22 @@ sub registrar_inscricao ($self, %p) {
       my $insc = $self->_row(
         q{INSERT INTO clean.canal_inscricoes
             (qrcode_id, lista_id, contato_id, nome, telefone, telefone_norm,
+             email, email_norm,
              validado, duplicado_de, conflito, ip_anon, user_agent,
-             consentimento_em, consentimento_versao)
-          VALUES (?, ?, ?, ?, ?, ?, false, ?, ?, ?, ?, NOW(), ?)
+             consentimento_em, consentimento_versao, consentimento_hash,
+             exclusao_hash)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?, ?, NOW(), ?, ?, ?)
           RETURNING id},
         $v->{qrcode_id} + 0, $v->{lista_id} + 0, $contato_id,
         $nome, $telefone, $telefone_norm,
+        $email, $email_norm,
         $duplicado_de,
         $conflito ? 1 : 0,
         $p{ip_anon} // undef,
         $p{user_agent} // undef,
-        $p{consentimento_versao} // $CONSENTIMENTO_VERSAO,
+        $vig->{versao} // $CONSENTIMENTO_VERSAO,
+        $vig->{texto_hash},
+        sha256_hex($exclusao_token),
       );
 
       $self->_rows(
@@ -586,6 +854,8 @@ sub registrar_inscricao ($self, %p) {
         membro_id    => $membro_id,
         duplicado    => $duplicado_de ? 1 : 0,
         conflito     => $conflito ? 1 : 0,
+        exclusao_url => $self->url_exclusao(
+          $self->inscricao_config->{public_base_url}, $exclusao_token),
       };
 
       # Lista que exige confirmação de posse (#212): na mesma transação, abre a
@@ -599,7 +869,7 @@ sub registrar_inscricao ($self, %p) {
   };
 
   return $resultado if $ok && $resultado;
-  return { ok => 0, reason => 'erro_interno' };
+  return { ok => 0, reason => 'erro_interno', detalhe => ($@ // '') };
 }
 
 # ---------------------------------------------------------------------------
@@ -651,6 +921,14 @@ sub url_inscricao ($self, $base_url, $token) {
   $base_url = '' unless defined $base_url;
   $base_url =~ s{/+$}{};
   return "$base_url/inscricao/$token";
+}
+
+# Link pessoal de exclusão do titular (#214, RF-204): a página pública
+# /privacidade/exclusao/<token32hex> (rotas de exclusão: onda 2).
+sub url_exclusao ($self, $base_url, $token) {
+  $base_url = '' unless defined $base_url;
+  $base_url =~ s{/+$}{};
+  return "$base_url/privacidade/exclusao/$token";
 }
 
 # ---------------------------------------------------------------------------
