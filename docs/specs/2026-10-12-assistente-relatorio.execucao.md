@@ -395,7 +395,7 @@ qualquer mudança. Os rótulos ao gestor ficam em pt-BR (ex.: "Biblioteca",
 | R5 | T-R | Complemento B no adapter + 4 roteiros + seções novas + catálogo com `profundidade` | 🟢 |
 | R6 | T-R | Regras de prompt dos temas profundos + testes (ferramentas falsas) + integração real no `analytic` | 🟢 |
 | F2 | T-F | `SecaoAssociacoes`, tabela `recolhida`/`_destaque`, tipos desconhecidos tolerados + fixtures + testes | 🟢 |
-| C2 | coord. | Verificação, deploy, e2e, docs, PR | ⚪ |
+| C2 | coord. | Verificação, deploy, e2e, docs, PR | 🟢 |
 
 ## Log — Fase 2
 
@@ -433,3 +433,16 @@ qualquer mudança. Os rótulos ao gestor ficam em pt-BR (ex.: "Biblioteca",
 - **Achado para o eduBR** (só registro): um argumento `filtro` em
   `regressao_escolas` (ex.: só escolas que ofertam a etapa) reduziria o
   recorte abaixo do teto.
+- **2026-10-12 — Onda de integração da Fase 2 (coordenador):**
+  - **Pilha de 64 MB no serviço R:** `LimitSTACK=64M` na unit e
+    `ulimits.stack` no compose. O `escolas_similares` estourava os 8 MB dentro
+    do Plumber.
+  - **Catálogo expõe `padroes`:** a opção sem padrão vira "Todas" no frontend.
+    Corrige a etapa forçada em `escolas_parecidas`.
+  - **Fontes sem nome de ferramenta** no rodapé.
+  - **`edumapsAnalytics` 0.2.0 e `analytics_source_version` =
+    `edumapsr-0.2.0`.** É o mecanismo existente para invalidar o cache. Regra
+    anotada no `edumaps_db.conf`: subir junto com o `Version` do pacote
+    sempre que o R mudar.
+  - **E2E com o Gemini real:** 13/13 pela API e 11/11 na tela; rodada em
+    `docs/e2e/cobertura.md`.
