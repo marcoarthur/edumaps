@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — CI do backend verde de novo (PR #218)
+
+- O `backend-tests` falhava no `main` desde 2026-10-10 só por
+  `t/03-plugins/middlewares/session.t`: a busca `escola=teste` devolve `[]` no
+  banco de fixtures do CI e o `Cache::SchoolSearch` não guarda resposta vazia,
+  então o 2º request nunca era HIT. Correção: busca `escola=escola` + checagem
+  de `X-Cache: HIT`. **PR #218**, merge `2dfc1b8`; nota técnica **113**.
+- Actions subidas para a **v5** (`checkout`, `cache`, `setup-node`): Node 24,
+  sem o aviso de depreciação do Node 20.
+- **CI verde** no `main` (backend 136 / 740, frontend). Imagens locais
+  `backend`/`minion` reconstruídas (só o teste mudou; sem deploy Rex — nada de
+  runtime).
+- **Correção de registro**: a lista de "6 pré-falhos" dos ciclos #212–#216
+  vale para o banco de CI **local**; no Actions (`EDUMAPS_FIXTURES=1`) só o
+  `session.t` falhava, e agora nenhum.
+
 ## Sessão 2026-10-12 — Envio por e-mail para listas com QR (PR #217, Fase 3)
 
 - **Issue:** [#216](https://github.com/marcoarthur/edumaps/issues/216) (fechada
