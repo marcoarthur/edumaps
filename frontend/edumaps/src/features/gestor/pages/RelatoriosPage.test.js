@@ -163,6 +163,22 @@ describe("RelatoriosPage", () => {
     });
   });
 
+  it("opção sem padrão no catálogo (escolas_parecidas) vem em \"Todas as etapas\" e não vai no pedido", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    await abrir();
+    await fireEvent.click(screen.getByRole("radio", { name: "Minha escola" }));
+    await waitFor(() => expect(temasVisiveis()).toContain("escolas_parecidas"));
+    await fireEvent.click(screen.getByRole("radio", { name: /Escolas parecidas/ }));
+    const etapa = await screen.findByLabelText("Etapa");
+    expect(etapa.value).toBe("");
+    expect(within(etapa).getByRole("option", { name: "Todas as etapas" })).toBeInTheDocument();
+    await gerarEPollar(0);
+    expect(getPedidosRelatorioMock()[0]).toEqual({
+      geotag: { nivel: "escola", codigo: "11000040" },
+      tema: "escolas_parecidas",
+    });
+  });
+
   describe("cascata (outro recorte)", () => {
     it("município: região → UF → município vira código de 7 dígitos", async () => {
       await abrir();

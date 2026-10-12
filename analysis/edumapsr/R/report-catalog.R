@@ -220,7 +220,7 @@ report_catalog <- function() {
 #' @param perfil perfil do usuário (hoje só `"gestor"`).
 #'
 #' @return Lista `{temas: [{id, titulo, descricao, niveis[], profundidade,
-#'   opcoes: {etapa?: [..], rede?: [..]}}]}`.
+#'   opcoes: {etapa?: [..], rede?: [..]}, padroes: {etapa?: ".."}}]}`.
 #'
 #' @export
 report_temas <- function(nivel = NULL, perfil = "gestor") {
@@ -251,12 +251,17 @@ report_temas <- function(nivel = NULL, perfil = "gestor") {
 report_tema_public <- function(tema) {
   opcoes <- lapply(tema$opcoes, function(o) as.list(o$valores))
   if (!length(opcoes)) opcoes <- structure(list(), names = character(0))
+  # Valor padrão de cada opção que tem um (ex.: etapa = fundamental_i). Opção
+  # sem padrão é livre: o frontend oferece "Todas" e pode omiti-la do pedido.
+  padroes <- Filter(Negate(is.null), lapply(tema$opcoes, function(o) o$padrao))
+  if (!length(padroes)) padroes <- structure(list(), names = character(0))
   list(
     id = tema$id,
     titulo = tema$titulo,
     descricao = tema$descricao,
     niveis = as.list(tema$niveis),
     profundidade = tema$profundidade,
-    opcoes = opcoes
+    opcoes = opcoes,
+    padroes = padroes
   )
 }

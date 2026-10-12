@@ -95,6 +95,8 @@ export const TEMAS_FIXTURE = [
     niveis: ["escola"],
     profundidade: "descritiva",
     opcoes: { etapa: ETAPAS },
+    // etapa SEM padrão (livre): a página oferece "Todas as etapas" (#219, F2)
+    padroes: {},
   },
 ];
 

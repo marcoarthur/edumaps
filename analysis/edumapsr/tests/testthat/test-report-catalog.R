@@ -48,7 +48,9 @@ test_that("nível inválido em report_temas é erro de cliente", {
 
 test_that("cada tema público tem os campos do contrato e opções como arrays", {
   for (t in report_temas()$temas) {
-    expect_setequal(names(t), c("id", "titulo", "descricao", "niveis", "profundidade", "opcoes"))
+    expect_setequal(names(t), c("id", "titulo", "descricao", "niveis", "profundidade", "opcoes", "padroes"))
+    # padrão só para opção existente
+    expect_true(all(names(t$padroes) %in% names(t$opcoes)))
     expect_true(t$profundidade %in% c("descritiva", "profunda"))
     expect_true(is.list(t$niveis))
     expect_true(all(names(t$opcoes) %in% c("etapa", "rede")))
@@ -61,6 +63,11 @@ test_that("cada tema público tem os campos do contrato e opções como arrays",
   expect_false("publica" %in% unlist(tema("ideb_territorio")$opcoes$rede))
   expect_true("publica" %in% unlist(tema("redes_territorio")$opcoes$rede))
   expect_length(tema("minha_escola")$opcoes, 0)
+  # Padrões expostos: etapa com padrão nos temas de IDEB; livre em escolas_parecidas.
+  expect_equal(tema("ideb_territorio")$padroes$etapa, "fundamental_i")
+  expect_equal(tema("infraestrutura_ideb")$padroes$rede, "publica")
+  expect_null(tema("escolas_parecidas")$padroes$etapa)
+  expect_true("etapa" %in% names(tema("escolas_parecidas")$opcoes))
 })
 
 test_that("o JSON de /report/temas tem arrays mesmo com um único valor", {

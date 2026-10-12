@@ -34,6 +34,19 @@
   // opções sem valor vazio (o R usa um default); as demais aceitam "todas"
   const OPCOES_OBRIGATORIAS = new Set(["etapa"]);
 
+  // Uma opção é obrigatória quando o tema declara um padrão para ela
+  // (`padroes`, vindo do catálogo do R); sem padrão, oferece "Todas". Sem o
+  // campo `padroes` (catálogo antigo), vale a regra fixa (etapa obrigatória).
+  function opcaoObrigatoria(t, chave) {
+    if (t && t.padroes && typeof t.padroes === "object") return chave in t.padroes;
+    return OPCOES_OBRIGATORIAS.has(chave);
+  }
+  function valorInicialOpcao(t, chave, valores) {
+    if (!opcaoObrigatoria(t, chave)) return "";
+    const padrao = t?.padroes?.[chave];
+    return valores.some((v) => v.valor === padrao) ? padrao : valores[0].valor;
+  }
+
   let inep = $state(null);
   let gestor = $state(null);
   let carregando = $state(true);
@@ -157,7 +170,7 @@
     for (const [chave, lista] of Object.entries(t?.opcoes ?? {})) {
       const valores = valoresOpcao(lista);
       if (!valores.length) continue;
-      novas[chave] = OPCOES_OBRIGATORIAS.has(chave) ? valores[0].valor : "";
+      novas[chave] = valorInicialOpcao(t, chave, valores);
     }
     opcoes = novas;
   }
@@ -517,8 +530,8 @@
                 bind:value={opcoes[o.chave]}
                 onchange={() => cancelarJob()}
               >
-                {#if !OPCOES_OBRIGATORIAS.has(o.chave)}
-                  <option value="">Todas</option>
+                {#if !opcaoObrigatoria(tema, o.chave)}
+                  <option value="">{o.chave === "etapa" ? "Todas as etapas" : "Todas"}</option>
                 {/if}
                 {#each o.valores as v (v.valor)}
                   <option value={v.valor}>{v.rotulo}</option>
