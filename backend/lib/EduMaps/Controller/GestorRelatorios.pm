@@ -11,6 +11,12 @@ use EduMaps::Roles::Business::Gestor::Relatorios ();
 #   GET  .../relatorios/temas?nivel=    catálogo do R (cache)
 #   POST .../relatorios                 valida e enfileira relatorio_gerar
 #   GET  .../relatorios/jobs/:job_id    estado/progresso/resultado do job
+#
+# Fase 3 — relatórios salvos (só os do gestor da sessão):
+#   POST   .../relatorios/salvos        {job_id} salva a fotografia do job
+#   GET    .../relatorios/salvos        lista paginada (?page, ?per_page)
+#   GET    .../relatorios/salvos/:id    resumo + relatorio (ReportResult)
+#   DELETE .../relatorios/salvos/:id    exclui
 
 use constant ERRO_R_INDISPONIVEL =>
   'O serviço de relatórios está indisponível no momento. Tente novamente em alguns minutos.';
@@ -94,21 +100,9 @@ sub criar($self) {
 
 sub job($self) {
   return unless $self->_gestor_inep_ok;
-  my $gestor   = $self->stash('gestor');
-  my $cod_inep = '' . $self->param('cod_inep');
 
-  my $job  = $self->minion->job($self->param('job_id'));
-  my $info = $job ? $job->info : undef;
-  my $args = $info && ref $info->{args} eq 'ARRAY' ? $info->{args}[0] : undef;
-
-  # 404 para job inexistente, de outra task ou de outro gestor/escola — sem
-  # distinguir os casos (não vaza a existência de jobs alheios).
-  return $self->_render_not_found('Relatório não encontrado.')
-    unless $info
-        && $info->{task} eq 'relatorio_gerar'
-        && ref $args eq 'HASH'
-        && ($args->{gestor_id} // '') eq ($gestor->{id} // '')
-        && ($args->{cod_inep}  // '') eq $cod_inep;
+  my $info = $self->_job_do_gestor($self->param('job_id'))
+    or return $self->_render_not_found('Relatório não encontrado.');
 
   my %resp = (state => $info->{state});
 
@@ -127,6 +121,95 @@ sub job($self) {
   }
 
   $self->render(json => \%resp);
+}
+
+# --- relatórios salvos (Fase 3) ---------------------------------------------
+
+sub salvos_criar($self) {
+  return unless $self->_gestor_inep_ok;
+  my $gestor   = $self->stash('gestor');
+  my $cod_inep = '' . $self->param('cod_inep');
+
+  my $input = $self->_input;
+  return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400)
+    unless ref $input eq 'HASH';
+  my $job_id = $input->{job_id};
+  return $self->render(json => { error => 'job_id é obrigatório (inteiro)' }, status => 400)
+    unless defined $job_id && !ref $job_id && $job_id =~ /^\d{1,18}\z/;
+
+  # Mesma checagem da rota do job: inexistente, de outra task ou alheio -> 404.
+  my $info = $self->_job_do_gestor($job_id)
+    or return $self->_render_not_found('Relatório não encontrado.');
+
+  return $self->render(
+    json   => { error => 'O relatório ainda não terminou ou falhou; só relatórios gerados com sucesso podem ser salvos.' },
+    status => 409,
+  ) unless $info->{state} eq 'finished';
+
+  # O conteúdo vem do resultado do job no servidor; o corpo só dá o job_id.
+  my ($salvo, $novo) = $self->model('Gestor')
+    ->salvar_relatorio($gestor->{id}, $cod_inep, $job_id, $info);
+  return $self->render(
+    json   => { error => 'O resultado deste relatório não pode ser salvo.' },
+    status => 409,
+  ) unless $salvo;
+
+  $self->res->headers->header(
+    Location => "/api/gestor/$cod_inep/relatorios/salvos/$salvo->{id}"
+  );
+  $self->render(status => ($novo ? 201 : 200), json => $salvo);
+}
+
+sub salvos_listar($self) {
+  return unless $self->_gestor_inep_ok;
+  my $gestor = $self->stash('gestor');
+
+  my $page     = $self->param('page')     // 1;
+  my $per_page = $self->param('per_page') // 20;
+  $page     = 1  unless $page =~ /^\d{1,9}\z/ && $page >= 1;
+  $per_page = 20 unless $per_page =~ /^\d{1,9}\z/ && $per_page >= 1;
+  $per_page = 100 if $per_page > 100;
+
+  $self->render(json => $self->model('Gestor')
+    ->listar_relatorios_salvos($gestor->{id}, $page + 0, $per_page + 0));
+}
+
+sub salvos_detalhe($self) {
+  return unless $self->_gestor_inep_ok;
+  my $gestor = $self->stash('gestor');
+
+  my $salvo = $self->model('Gestor')->relatorio_salvo($gestor->{id}, $self->param('id'))
+    or return $self->_render_not_found('Relatório salvo não encontrado.');
+  $self->render(json => $salvo);
+}
+
+sub salvos_excluir($self) {
+  return unless $self->_gestor_inep_ok;
+  my $gestor = $self->stash('gestor');
+
+  $self->model('Gestor')->excluir_relatorio_salvo($gestor->{id}, $self->param('id'))
+    or return $self->_render_not_found('Relatório salvo não encontrado.');
+  $self->render(json => { ok => 1 });
+}
+
+# info do job relatorio_gerar se ele é do gestor da sessão e do cod_inep da
+# rota; undef para job inexistente, de outra task ou de outro gestor/escola —
+# sem distinguir os casos (não vaza a existência de jobs alheios).
+sub _job_do_gestor($self, $job_id) {
+  my $gestor   = $self->stash('gestor');
+  my $cod_inep = '' . $self->param('cod_inep');
+
+  my $job  = $self->minion->job($job_id);
+  my $info = $job ? $job->info : undef;
+  my $args = $info && ref $info->{args} eq 'ARRAY' ? $info->{args}[0] : undef;
+
+  return undef
+    unless $info
+        && $info->{task} eq 'relatorio_gerar'
+        && ref $args eq 'HASH'
+        && ($args->{gestor_id} // '') eq ($gestor->{id} // '')
+        && ($args->{cod_inep}  // '') eq $cod_inep;
+  return $info;
 }
 
 # Catálogo de temas do nível (arrayref) ou undef se o R falhar.
