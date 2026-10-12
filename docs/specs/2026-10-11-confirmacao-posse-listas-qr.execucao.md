@@ -239,3 +239,16 @@ admin e, no boot do worker, se a config pedir polling.
 - **Frontend:** `vitest run` → 83 arquivos / 511 testes PASS; `vite build` OK.
 - **Contrato:** admin devolve `{error}` em 409/502 e `webhook.url` nulo quando
   não registrado, como o painel espera.
+
+## Onda 3 — integração, e2e e fecho (coordenador)
+
+- **Docs funcionais** atualizadas (`listas-autoinscricao`, `canais-de-comunicacao`,
+  `painel-configuracao`, índice).
+- **Achado de infra:** deploys do Rex sem `EDUMAPS_CONFIG_MASTER_KEY` na shell
+  gravavam a chave vazia nas units do `backend.edumaps` (segredos ilegíveis).
+  Corrigido com trava no Rexfile (aborta) + regra no AGENTS.md; dev usa chave
+  própria em `~/.config/edumaps/dev_master_key`.
+- **E2E (dev, CDP):** verde — ver `docs/e2e/cobertura.md`, rodada #212. Telegram
+  simulado pelo webhook com bot fictício; app real do Telegram e WhatsApp Cloud
+  não exercitados (credenciais externas).
+- **Validação visual** aprovada pelo developer.
