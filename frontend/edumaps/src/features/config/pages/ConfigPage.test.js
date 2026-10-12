@@ -6,7 +6,7 @@ import { setApiToken } from "@/shared/api/client.js";
 import { setSessaoToken } from "@/features/gestor/utils/gestorSession.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 import { addToast } from "@/shared/stores/toastStore.js";
-import { resetConfigMockState } from "../mocks/configHandlers.js";
+import { resetConfigMockState, getTelegramStatusChamadas } from "../mocks/configHandlers.js";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -115,5 +115,62 @@ describe("ConfigPage", () => {
     // nada marcado: validar lista vazia → erro do servidor
     await fireEvent.click(screen.getByRole("button", { name: "Validar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/A lista de ações não pode ser vazia/);
+  });
+
+  it("lista as folhas do bot público do Telegram e os templates do WhatsApp", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    expect(screen.getByText("Telegram (bot público)")).toBeInTheDocument();
+    for (const label of [
+      "Token do bot público",
+      "Usuário do bot",
+      "Modo de recebimento",
+      "Segredo do webhook",
+      "Bot público ativado",
+      "Template de confirmação",
+      "Idioma do template",
+    ]) {
+      expect(screen.getByRole("button", { name: `Configurar ${label}` })).toBeInTheDocument();
+    }
+    // nenhuma das folhas novas está "Em breve"
+    const tg = screen.getByRole("button", { name: "Configurar Modo de recebimento" });
+    expect(tg).not.toHaveTextContent("Em breve");
+  });
+
+  it("não mostra o status do bot público fora do grupo Telegram (bot público)", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Idioma do template" }));
+    expect(await screen.findByPlaceholderText("pt_BR")).toBeInTheDocument();
+    expect(screen.queryByText("Status do bot público")).not.toBeInTheDocument();
+  });
+
+  it("mostra o status do bot público ao abrir uma folha do grupo", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Modo de recebimento" }));
+
+    expect(await screen.findByText("Status do bot público")).toBeInTheDocument();
+    expect(await screen.findByTestId("tg-recebimento")).toHaveTextContent("polling");
+    expect(screen.getByRole("button", { name: "Iniciar polling" })).toBeInTheDocument();
+  });
+
+  it("recarrega o status do bot público ao salvar uma folha do grupo", async () => {
+    render(ConfigPage);
+    await screen.findByText(/Chave ainda não definida/);
+
+    await fireEvent.click(screen.getByRole("button", { name: "Configurar Usuário do bot" }));
+    await screen.findByTestId("tg-recebimento");
+    const antes = getTelegramStatusChamadas();
+
+    await fireEvent.input(await screen.findByPlaceholderText("EduMapsConfirmaBot"), {
+      target: { value: "OutroBot" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith("Configuração salva.", "success"));
+    await waitFor(() => expect(getTelegramStatusChamadas()).toBe(antes + 1));
   });
 });
