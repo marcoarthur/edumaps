@@ -4,6 +4,37 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — Assistente de Relatório, Fase 3 (PR #222)
+
+- **Issue** #219 (aberta, falta a Fase 4). **PR #222**, merge `f00e548`.
+  Nota técnica **116**.
+- **Decisões do developer:**
+  - exportar em **PDF pela impressão** e em **Markdown**;
+  - **salvar quando quiser**;
+  - retenção **até o gestor excluir**;
+  - reabrir como **fotografia + "gerar de novo"**.
+- **Entregas:**
+  - migration `relatorios_salvos` (o conteúdo vem do job no servidor; dedupe
+    `(gestor_id, job_id)`; cascade);
+  - rotas `/relatorios/salvos`;
+  - CSS de impressão;
+  - `relatorioParaMarkdown` no cliente;
+  - páginas "Meus relatórios" e da fotografia;
+  - preenchimento da `RelatoriosPage` por query (`gerar=1`).
+- **Armadilhas:**
+  - o formato do gráfico vem na **seção** (`secao.formato`), não na série;
+  - `ci_db.sh` **sem deploy incremental**: usar o contêiner `sqitch` na
+    rede `edumaps-ci-net`;
+  - e2e de downloads e PDF via CDP: `Browser.setDownloadBehavior` e
+    `Page.printToPDF`.
+- **Validação:**
+  - backend 102 / 690;
+  - frontend 105 / 864;
+  - E2E 21/21;
+  - validação visual.
+- **Próximo:** Fase 4 (generalização). A nota final deve cobrir o **ciclo
+  inteiro** do Assistente de Relatório.
+
 ## Sessão 2026-10-12 — Assistente de Relatório, Fase 2 (PR #221)
 
 - **Issue** #219 (aberta). **PR #221**, merge `0184bf2`. Nota técnica
