@@ -6,6 +6,10 @@
 # (como toda análise do pacote); quem decide o formato de saída é a View
 # ([render_report_json()]).
 #
+#   Fase 4: o pedido traz o assistente. No modo `tema` o fluxo é o de
+#   sempre (mais `assistente` no resultado); no modo `composto` a execução
+#   vai para [analyze_report_composto()] (analysis-report-composto.R).
+#
 #   AnalysisResult:
 #     data     = envelopes não são guardados; `data` traz as fontes
 #                (data.frame) para manter o contrato de `analysis_result`
@@ -13,7 +17,8 @@
 #     metadata = titulo, gerado_em, recorte, tema, secoes, fontes, avisos,
 #                rastreio
 
-#' Executa o relatório de um tema sobre um recorte
+#' Executa o relatório de um tema (ou de um assistente composto) sobre um
+#' recorte
 #'
 #' @param model `report_request_model` (de [new_report_request_model()]).
 #' @param source `edubr_source` (de [edubr_source()]).
@@ -35,6 +40,9 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
   } else {
     chat_config(override = config)
   }
+  if (identical(model$assistente$modo, "composto")) {
+    return(analyze_report_composto(model, source, cfg, llm))
+  }
   t0 <- proc.time()[["elapsed"]]
 
   tema <- model$tema
@@ -51,7 +59,8 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
     secoes = dados$secoes,
     fontes = dados$fontes,
     avisos = dados$avisos,
-    leitura_padrao = dados$leitura
+    leitura_padrao = dados$leitura,
+    prompt_complemento = model$assistente$prompt_complemento
   )
 
   texto <- report_write_text(report, cfg, llm)
@@ -90,6 +99,7 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
   new_analysis_result(
     analysis = "report",
     parameters = list(
+      assistente = report_assistente_ref(model)$id,
       nivel = model$nivel,
       codigo = model$codigo,
       tema = tema$id,
@@ -106,6 +116,7 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
       titulo = titulo,
       gerado_em = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
       recorte = dados$recorte,
+      assistente = report_assistente_ref(model),
       tema = report$tema,
       secoes = secoes,
       fontes = dados$fontes,
@@ -113,4 +124,14 @@ analyze_report <- function(model, source, config = NULL, llm = NULL) {
       rastreio = rastreio
     )
   )
+}
+
+#' Referência pública ao assistente do pedido (`{id, titulo, modo}`)
+#'
+#' Pedidos montados sem assistente (código antigo) valem como o padrão.
+#'
+#' @keywords internal
+report_assistente_ref <- function(model) {
+  ast <- model$assistente %||% report_assistente(REPORT_ASSISTENTE_PADRAO)
+  list(id = ast$id, titulo = ast$titulo, modo = ast$modo)
 }

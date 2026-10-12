@@ -583,12 +583,31 @@ function(req, res) {
   )
 }
 
-#* @get /report/temas
-function(req, res, nivel = NULL) {
+# Assistentes declarativos (Fase 4): um YAML por assistente. `publico`
+# (opcional) filtra pelo perfil; o backend Perl filtra por `gestor`.
+#* @get /report/assistentes
+function(req, res, publico = NULL) {
   res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
 
   tryCatch(
-    report_temas(nivel = nivel),
+    report_assistentes(publico = publico),
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /report/assistentes: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao listar os assistentes", tipo = "internal")
+    }
+  )
+}
+
+#* @get /report/temas
+function(req, res, nivel = NULL, assistente = NULL) {
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    report_temas(nivel = nivel, assistente = assistente),
     edumaps_client_error = function(e) {
       res$status <- 400
       list(error = conditionMessage(e), tipo = "invalid_request")
@@ -604,8 +623,10 @@ function(req, res, nivel = NULL) {
   )
 }
 
-# Assistente de Relatório (#219). Erros de cliente (tema/nível/geotag/opção
-# inválidos, eduBR ausente) → 400; qualquer outro (banco, eduBR, bug) → 500.
+# Assistente de Relatório (#219). Erros de cliente (assistente/tema/nível/
+# geotag/opção inválidos, eduBR ausente) → 400; qualquer outro (banco, eduBR,
+# bug) → 500. `assistente` (Fase 4) é opcional: padrão `relatorio`; no
+# assistente `composto`, `tema` é ignorado.
 # Falha do LLM não é erro: o relatório sai com resumo determinístico.
 #* @post /report
 function(req, res) {
@@ -618,7 +639,8 @@ function(req, res) {
       tema     = payload$tema %||% NULL,
       opcoes   = payload$opcoes %||% NULL,
       contexto = payload$contexto %||% NULL,
-      config   = payload$config %||% NULL
+      config   = payload$config %||% NULL,
+      assistente = payload$assistente %||% NULL
     ),
     edumaps_client_error = function(e) {
       res$status <- 400

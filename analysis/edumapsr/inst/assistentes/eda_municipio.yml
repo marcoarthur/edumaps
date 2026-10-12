@@ -1,0 +1,35 @@
+# Assistente "EDA do município" (#219, Fase 4).
+#
+# Relatório exploratório completo de UM município, em capítulos. Cada
+# capítulo é um tema do catálogo, rodado pelo próprio roteiro com a redação
+# desligada; o LLM escreve uma única vez o resumo e a leitura gerais.
+#
+# - A etapa escolhida pelo gestor (`opcoes.etapa`) sobrepõe a etapa fixa dos
+#   capítulos de IDEB.
+# - `minha_escola` usa `recorte: escola`: roda sobre a escola do gestor e só
+#   entra quando ela fica no município pedido (capítulo opcional).
+# - `limites.max_chamadas`: os capítulos dividem a mesma sessão do eduBR.
+id: eda_municipio
+titulo: EDA do município
+descricao: Relatório exploratório completo de um município, em capítulos (redes, professores, IDEB do município e de cada escola e, se for o caso, a sua escola).
+publico: [gestor]
+modo: composto
+niveis: [municipio]
+capitulos:
+  - { tema: redes_territorio,    titulo: "Redes de ensino" }
+  - { tema: docentes_territorio, titulo: "Professores" }
+  - { tema: ideb_territorio,     titulo: "IDEB do município",              opcoes: { etapa: fundamental_i } }
+  - { tema: ideb_escolas,        titulo: "Escolas do município pelo IDEB", opcoes: { etapa: fundamental_i } }
+  - { tema: minha_escola,        titulo: "Minha escola no município",      recorte: escola }
+opcoes:
+  etapa: { padrao: fundamental_i }
+prompt_complemento: |
+  ## Relatório exploratório do município
+
+  - Este é um relatório em capítulos sobre UM município. No [RESUMO], dê
+    primeiro uma visão geral e depois o ponto mais importante de cada
+    capítulo, na ordem em que aparecem.
+  - Não compare capítulos com números que não estejam nos DADOS (as bases e
+    as edições podem ser diferentes: Censo Escolar e IDEB).
+  - Se um capítulo não pôde ser gerado (avisos), diga isso em uma frase.
+limites: { max_chamadas: 80 }

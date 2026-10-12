@@ -1,0 +1,24 @@
+# Assistente "Relatório por tema" (#219, Fase 4).
+#
+# Reproduz exatamente o comportamento das Fases 1–3: o gestor escolhe o
+# recorte e UM tema do catálogo; o roteiro do tema monta as seções de dados
+# e o LLM redige o resumo e a leitura. As opções (etapa, rede) são as de
+# cada tema, por isso `opcoes` fica vazio.
+id: relatorio
+titulo: Relatório por tema
+descricao: Um relatório sobre um tema escolhido (IDEB, redes, professores, gestores, a sua escola...), para o recorte que você escolher.
+publico: [gestor]
+modo: tema
+niveis: [municipio, uf, regiao, escola]
+temas:
+  - ideb_territorio
+  - redes_territorio
+  - docentes_territorio
+  - gestores_territorio
+  - tendencia_ideb
+  - minha_escola
+  - ideb_escolas
+  - infraestrutura_ideb
+  - historico_escola
+  - escolas_parecidas
+opcoes: {}

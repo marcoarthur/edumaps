@@ -87,20 +87,67 @@ report_codigo_texto <- function(x) {
 
 #' Constrói um `report_request_model`
 #'
-#' Valida o recorte (`geotag`), o tema contra o catálogo (tema × nível) e as
-#' opções do tema (etapa/rede), aplicando os padrões.
+#' Valida o recorte (`geotag`), o assistente (Fase 4; padrão `relatorio`,
+#' o "Relatório por tema" das Fases 1–3) e:
+#'
+#' - no modo `tema`: o tema contra o catálogo e o assistente (tema × nível)
+#'   e as opções do tema (etapa/rede), aplicando os padrões;
+#' - no modo `composto`: as opções do assistente; `tema` é ignorado e os
+#'   capítulos são montados na execução ([analyze_report()]).
 #'
 #' @param geotag lista `{nivel, codigo}`.
-#' @param tema id do tema (ver [report_temas()]).
-#' @param opcoes lista opcional de opções do tema.
+#' @param tema id do tema (ver [report_temas()]); ignorado no `composto`.
+#' @param opcoes lista opcional de opções do tema (ou do assistente).
 #' @param contexto lista opcional (`cod_inep` da escola do gestor).
+#' @param assistente id do assistente (ver [report_assistentes()]); `NULL`
+#'   = `relatorio`.
 #'
 #' @return Objeto S3 da classe `report_request_model` com `nivel`, `codigo`,
 #'   `uf` (sigla, quando o recorte está numa UF), `regiao` (sigla), `tema`
-#'   (entrada do catálogo), `opcoes` e `contexto`.
+#'   (entrada do catálogo; `NULL` no composto), `opcoes`, `contexto` e
+#'   `assistente` (normalizado).
 #'
 #' @export
-new_report_request_model <- function(geotag, tema, opcoes = NULL, contexto = NULL) {
+new_report_request_model <- function(geotag, tema, opcoes = NULL, contexto = NULL,
+                                     assistente = NULL) {
+  geo <- report_validate_geotag(geotag, contexto)
+  ast <- report_assistente(assistente)
+  if (!geo$nivel %in% ast$niveis) {
+    stop_invalid_report(sprintf(
+      "O assistente \"%s\" não está disponível para o nível %s (níveis: %s).",
+      ast$titulo, geo$nivel, paste(ast$niveis, collapse = ", ")
+    ))
+  }
+
+  if (identical(ast$modo, "composto")) {
+    opcoes <- report_validate_opcoes(
+      opcoes, list(titulo = ast$titulo, opcoes = ast$opcoes), rotulo = "assistente"
+    )
+    model <- report_model_build(geo, NULL, opcoes, contexto)
+  } else {
+    if (!is.character(tema) || length(tema) != 1L || !nzchar(tema)) {
+      stop_invalid_report("Informe o tema do relatório.")
+    }
+    entry <- report_catalog()[[tema]]
+    if (is.null(entry)) {
+      stop_invalid_report(sprintf("Tema desconhecido: %s.", tema))
+    }
+    if (!tema %in% ast$temas) {
+      stop_invalid_report(sprintf(
+        "O tema \"%s\" não faz parte do assistente \"%s\".", entry$titulo, ast$titulo
+      ))
+    }
+    model <- report_model_tema(geo, entry, opcoes, contexto)
+  }
+  model$assistente <- ast
+  model
+}
+
+#' Valida o recorte (`geotag`) do pedido
+#'
+#' @return `list(nivel, codigo, uf, regiao)`.
+#' @keywords internal
+report_validate_geotag <- function(geotag, contexto = NULL) {
   if (!is.list(geotag) || is.null(geotag$nivel) || is.null(geotag$codigo)) {
     stop_invalid_report("Informe o recorte: geotag = {nivel, codigo}.")
   }
@@ -147,30 +194,36 @@ new_report_request_model <- function(geotag, tema, opcoes = NULL, contexto = NUL
       stop_invalid_report("O recorte por escola só vale para a escola do próprio gestor.")
     }
   }
+  list(nivel = nivel, codigo = codigo, uf = uf, regiao = regiao)
+}
 
-  if (!is.character(tema) || length(tema) != 1L || !nzchar(tema)) {
-    stop_invalid_report("Informe o tema do relatório.")
-  }
-  catalog <- report_catalog()
-  entry <- catalog[[tema]]
-  if (is.null(entry)) {
-    stop_invalid_report(sprintf("Tema desconhecido: %s.", tema))
-  }
-  if (!nivel %in% entry$niveis) {
+#' Modelo de UM tema sobre um recorte já validado
+#'
+#' Usado pelo modo `tema` e por cada capítulo do modo `composto`.
+#'
+#' @param geo recorte de [report_validate_geotag()].
+#' @param entry entrada do catálogo.
+#' @keywords internal
+report_model_tema <- function(geo, entry, opcoes = NULL, contexto = NULL) {
+  if (!geo$nivel %in% entry$niveis) {
     stop_invalid_report(sprintf(
       "O tema \"%s\" não está disponível para o nível %s (níveis: %s).",
-      entry$titulo, nivel, paste(entry$niveis, collapse = ", ")
+      entry$titulo, geo$nivel, paste(entry$niveis, collapse = ", ")
     ))
   }
-
   opcoes <- report_validate_opcoes(opcoes, entry)
+  report_model_build(geo, entry, opcoes, contexto)
+}
 
+#' Estrutura S3 do `report_request_model`
+#' @keywords internal
+report_model_build <- function(geo, entry, opcoes, contexto) {
   structure(
     list(
-      nivel = nivel,
-      codigo = codigo,
-      uf = uf,
-      regiao = regiao,
+      nivel = geo$nivel,
+      codigo = geo$codigo,
+      uf = geo$uf,
+      regiao = geo$regiao,
       tema = entry,
       opcoes = opcoes,
       contexto = contexto %||% list()
@@ -179,9 +232,11 @@ new_report_request_model <- function(geotag, tema, opcoes = NULL, contexto = NUL
   )
 }
 
-#' Valida e completa as opções de um tema
+#' Valida e completa as opções de um tema (ou de um assistente composto)
+#'
+#' @param rotulo `"tema"` ou `"assistente"` (só muda as mensagens).
 #' @keywords internal
-report_validate_opcoes <- function(opcoes, entry) {
+report_validate_opcoes <- function(opcoes, entry, rotulo = "tema") {
   if (is.null(opcoes) || (is.list(opcoes) && !length(opcoes))) {
     opcoes <- list()
   }
@@ -194,12 +249,12 @@ report_validate_opcoes <- function(opcoes, entry) {
   desconhecidas <- setdiff(names(opcoes), names(entry$opcoes))
   if (length(desconhecidas)) {
     stop_invalid_report(sprintf(
-      "Opção não aceita pelo tema \"%s\": %s.%s",
-      entry$titulo, paste(desconhecidas, collapse = ", "),
+      "Opção não aceita pelo %s \"%s\": %s.%s",
+      rotulo, entry$titulo, paste(desconhecidas, collapse = ", "),
       if (length(entry$opcoes)) {
         sprintf(" Aceitas: %s.", paste(names(entry$opcoes), collapse = ", "))
       } else {
-        " Este tema não tem opções."
+        sprintf(" Este %s não tem opções.", rotulo)
       }
     ))
   }
