@@ -596,3 +596,141 @@ CREATE INDEX idx_relatorios_salvos_gestor ON clean.relatorios_salvos (gestor_id,
   - E2E 21/21 com download real de Markdown e PDF via `printToPDF`;
   - correção: o formato da seção passou a valer nos dados do gráfico.
   - **Pendência:** eixo percentual dos gráficos.
+
+---
+
+# Fase 4 — Generalização (assistentes declarativos)
+
+- **Branch:** `feat/relatorio-fase4`.
+- **Trilhas:**
+  - T-R: `analysis/edumapsr/`;
+  - T-P: `data_pipeline/` + `backend/`;
+  - T-F: `frontend/`.
+
+## Decisões (developer, 2026-10-12)
+
+1. **Segundo assistente:** **EDA do município**. É um relatório exploratório
+   completo, composto por capítulos (temas existentes) e um resumo geral.
+2. **Declaração:** um **arquivo YAML por assistente** em
+   `inst/assistentes/<id>.yml`. Criar um assistente novo é escrever um YAML,
+   **sem código R**.
+3. **Tela:** um **seletor de assistente** no topo de `/gestor/relatorios`.
+   Salvos, exportação e "gerar de novo" continuam iguais.
+
+## Contrato da Fase 4 (congelado)
+
+### YAML do assistente
+
+```yaml
+id: eda_municipio                 # = nome do arquivo; [a-z0-9_]+
+titulo: EDA do município
+descricao: Relatório exploratório completo de um município, em capítulos.
+publico: [gestor]                 # perfis que veem o assistente
+modo: composto                    # tema | composto
+niveis: [municipio]
+# modo tema: lista de temas oferecidos (ids do catálogo), com escolha do gestor
+# modo composto: capítulos fixos, executados em ordem
+capitulos:
+  - { tema: ideb_territorio,     titulo: "IDEB do município",            opcoes: { etapa: fundamental_i } }
+  - { tema: ideb_escolas,        titulo: "Escolas do município pelo IDEB", opcoes: { etapa: fundamental_i } }
+  - { tema: redes_territorio,    titulo: "Redes de ensino" }
+  - { tema: docentes_territorio, titulo: "Professores" }
+opcoes: {}                        # opções que o gestor escolhe (mesmo formato do catálogo; ex.: etapa)
+prompt_complemento: |             # texto acrescentado ao system prompt
+  ...
+limites: { max_chamadas: 80 }     # sobrepõe os limites do adapter
+```
+
+- **`relatorio.yml`:** assistente "Relatório por tema" (`modo: tema`,
+  `temas:` com os 10 temas atuais, todos os níveis). Reproduz exatamente o
+  comportamento das Fases 1–3.
+- **Validação ao carregar:**
+  - os temas e capítulos existem no catálogo;
+  - o nível do assistente é compatível com o de cada tema;
+  - `id` é igual ao nome do arquivo;
+  - os campos obrigatórios estão presentes.
+
+  Um YAML inválido é **ignorado com log** e não derruba os outros. Há um
+  teste para cada YAML do pacote.
+- **Opções no `composto`:** as `opcoes` do assistente (ex.: `etapa`)
+  sobrepõem as `opcoes` fixas dos capítulos **que aceitam** aquela opção.
+
+### R — Plumber
+
+| Método | Rota | Mudança |
+|---|---|---|
+| GET | `/report/assistentes` | **novo** — `{assistentes: [{id, titulo, descricao, modo, niveis, publico, temas?, capitulos?: [{tema, titulo}], opcoes, padroes}]}` |
+| GET | `/report/temas` | + `?assistente` (padrão `relatorio`): temas do assistente no nível |
+| POST | `/report` | + `assistente` (padrão `relatorio`). No `tema`, igual a hoje; no `composto`, `tema` é ignorado |
+
+**ReportResult no modo composto** (as extensões são opcionais e
+retrocompatíveis):
+- `assistente: {id, titulo, modo}`, que também passa a vir no modo tema;
+- `tema: {id: <assistente.id>, titulo: <assistente.titulo>}`, para o
+  histórico e os salvos;
+- `capitulos: [{id, titulo, tema}]`;
+- cada seção de capítulo leva `capitulo: <id>`;
+- seções gerais sem `capitulo`: `resumo` (primeira), `leitura` (última),
+  redigidas por **uma** chamada de LLM para a EDA inteira, a partir de um
+  payload enxuto por capítulo;
+- os textos `resumo`/`leitura` de cada capítulo não são gerados pelo LLM: o
+  roteiro do tema roda com a redação desligada e o capítulo fica só com as
+  seções de dados;
+- `fontes` e `avisos` são a união de todos os capítulos;
+- capítulo que falha (ex.: `sem_dados`) vira um aviso e não derruba a EDA.
+
+**Generalização:**
+- o adapter e os roteiros **não mudam de interface**;
+- o código novo é o carregador de assistentes, a execução do `composto` e a
+  redação geral;
+- **critério de aceite:** um teste cria um **terceiro assistente só com um
+  YAML de teste** (em `tests/testthat/assistentes/`) e gera um relatório sem
+  código novo;
+- **versão:** `edumapsAnalytics` 0.3.0 e `analytics_source_version =
+  edumapsr-0.3.0` (deploy conf).
+
+### Perl
+
+- **`GET /api/gestor/:cod_inep/relatorios/assistentes`:** proxy do R, com
+  cache, filtrado por `publico` contendo `gestor`.
+- **`GET .../relatorios/temas`:** + `?assistente`, repassado ao R.
+- **`POST .../relatorios`:**
+  - + `assistente` opcional (padrão `relatorio`), validado contra a lista;
+  - no modo `tema` exige `tema` como hoje;
+  - no `composto` o `tema` é opcional e ignorado;
+  - o nível é validado contra os `niveis` do assistente;
+  - `assistente` entra nos `args` do job e nos `cache_params`.
+- **Migration nova `relatorios_salvos_assistente`:**
+  - `ALTER TABLE clean.relatorios_salvos ADD COLUMN assistente text NOT NULL
+    DEFAULT 'relatorio'`;
+  - o resumo e o detalhe dos salvos passam a trazer `assistente: {id,
+    titulo}`;
+  - salvar grava o assistente dos `args` do job.
+
+### Frontend
+
+- **Seletor de assistente** no topo de `/gestor/relatorios` (rádios ou abas,
+  a partir de `/assistentes`; padrão "Relatório por tema"). Ao trocar:
+  - os níveis disponíveis se ajustam ao `niveis` do assistente;
+  - no `tema`, a lista de temas vem como hoje (`/temas?assistente`);
+  - no `composto`, a lista de temas dá lugar ao **sumário dos capítulos** e às
+    `opcoes` do assistente.
+- **Query:** + `assistente`, para "gerar de novo" e links diretos.
+- **`RelatorioView` com `capitulos`:**
+  - **sumário** com âncoras no topo;
+  - seções agrupadas por capítulo, com um `h2` por capítulo e as seções
+    gerais antes e depois;
+  - a impressão e o Markdown seguem a mesma estrutura (`## Capítulo` e
+    `###` por seção);
+  - sem `capitulos`, é exatamente como hoje.
+- **Salvos:** mostram o título do assistente quando ele não é o padrão, e o
+  "gerar de novo" inclui `assistente`.
+
+## WBS (Fase 4)
+
+| ID | Trilha | Escopo | Status |
+|----|--------|--------|--------|
+| R7 | T-R | Carregador YAML + `relatorio.yml` + `eda_municipio.yml` + modo composto + redação geral + `/report/assistentes` + testes (inclui o 3º assistente só com YAML) + versão 0.3.0 | ⚪ |
+| P3 | T-P | Migration `relatorios_salvos_assistente` + rotas (assistentes, `?assistente`, POST) + salvos com assistente + `analytics_source_version` 0.3.0 + testes | ⚪ |
+| F4 | T-F | Seletor de assistente, capítulos (view, impressão, Markdown), query `assistente`, salvos + testes | ⚪ |
+| C4 | coord. | Verificação, deploy, e2e, docs, nota do ciclo inteiro, PR | ⚪ |
