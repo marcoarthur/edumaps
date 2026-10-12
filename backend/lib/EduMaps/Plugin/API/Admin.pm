@@ -21,6 +21,17 @@ sub register ($self, $app, @args) {
   # Bot Telegram: envio de mensagem de teste (Fase 1B — #183).
   $auth->post('/bot/telegram/test')->to('admin#bot_telegram_test')->name('admin_bot_telegram_test');
 
+  # Bot PÚBLICO do Telegram (confirmação de posse nas listas com QR, #212):
+  # status do recebimento, registro/remoção do webhook e início do polling.
+  $auth->get('/canais/telegram/status')
+    ->to('admin#telegram_publico_status')->name('admin_telegram_publico_status');
+  $auth->post('/canais/telegram/webhook')
+    ->to('admin#telegram_publico_webhook_set')->name('admin_telegram_publico_webhook_set');
+  $auth->delete('/canais/telegram/webhook')
+    ->to('admin#telegram_publico_webhook_delete')->name('admin_telegram_publico_webhook_delete');
+  $auth->post('/canais/telegram/polling')
+    ->to('admin#telegram_publico_polling')->name('admin_telegram_publico_polling');
+
   # Telemetria de sessão: KPIs do fluxo de acesso (só agregados).
   $auth->get('/telemetry/overview')->to('admin#telemetry_overview')->name('admin_telemetry_overview');
 }

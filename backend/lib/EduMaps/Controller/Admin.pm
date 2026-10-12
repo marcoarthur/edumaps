@@ -114,6 +114,126 @@ sub bot_telegram_test ($self) {
   $self->render(json => { ok => 1, status => $res->{status} });
 }
 
+# ---------------------------------------------------------------------------
+# Bot PÚBLICO do Telegram — confirmação de posse nas listas com QR (#212)
+# ---------------------------------------------------------------------------
+# Config em canais.telegram.* (AppConfig::telegram_publico_config); o token
+# sai decifrado só em memória. Independente do bot de notificações internas
+# (integrations.bot_telegram, acima).
+
+# GET /api/admin/canais/telegram/status
+#   { enabled, recebimento, bot_username,
+#     webhook: { url, pending_update_count, last_error_message }   (só webhook)
+#     polling: { ativo, offset } }
+sub telegram_publico_status ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $cfg   = $model->telegram_publico_config;
+  my $bot   = $cfg->{bot_username};
+
+  my $out = {
+    enabled      => $cfg->{enabled} ? 1 : 0,
+    recebimento  => $cfg->{recebimento},
+    bot_username => $bot,
+    polling      => {
+      ativo  => $self->telegram_polling_ativo,
+      offset => (defined $bot && length $bot ? $model->telegram_offset($bot) : 0),
+    },
+  };
+
+  if ($cfg->{recebimento} eq 'webhook' && _tem($cfg->{token})) {
+    my $r = $self->_telegram_publico_bot($cfg)->api_call(getWebhookInfo => {});
+    my $i = $r->{ok} && ref $r->{result} eq 'HASH' ? $r->{result} : {};
+    $out->{webhook} = {
+      url                  => (_tem($i->{url}) ? $i->{url} : undef),
+      pending_update_count => $i->{pending_update_count} // 0,
+      last_error_message   => $i->{last_error_message},
+    };
+    $out->{webhook}{erro} = $r->{error} unless $r->{ok};
+  }
+
+  $self->render(json => $out);
+}
+
+# POST /api/admin/canais/telegram/webhook — setWebhook com secret_token e
+# allowed_updates [message]. URL: <canais.inscricao.public_base_url>
+# /api/canais/telegram/webhook. 409 fora do modo webhook, bot desligado ou
+# sem token/public_base_url/segredo; 502 se o Telegram recusar.
+sub telegram_publico_webhook_set ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $cfg   = $model->telegram_publico_config;
+
+  return $self->_conflito_telegram('O modo de recebimento não é "webhook".')
+    unless $cfg->{recebimento} eq 'webhook';
+  return $self->_conflito_telegram('O bot público está desativado ou sem token.')
+    unless $cfg->{enabled} && _tem($cfg->{token});
+  return $self->_conflito_telegram('Defina o segredo do webhook (canais.telegram.webhook_secret).')
+    unless _tem($cfg->{webhook_secret});
+
+  my $base = $model->inscricao_config->{public_base_url};
+  return $self->_conflito_telegram('Defina a URL pública base (canais.inscricao.public_base_url).')
+    unless _tem($base);
+  $base =~ s{/+$}{};
+  my $url = "$base/api/canais/telegram/webhook";
+
+  my $r = $self->_telegram_publico_bot($cfg)->api_call(setWebhook => {
+    url             => $url,
+    secret_token    => $cfg->{webhook_secret},
+    allowed_updates => ['message'],
+  });
+  return $self->_telegram_recusou($r) unless $r->{ok};
+
+  $self->render(json => { ok => 1, url => $url });
+}
+
+# DELETE /api/admin/canais/telegram/webhook — deleteWebhook. 409 sem token;
+# 502 se o Telegram recusar.
+sub telegram_publico_webhook_delete ($self) {
+  my $cfg = $self->instantiate_model(model => 'Canal')->telegram_publico_config;
+  return $self->_conflito_telegram('O bot público está sem token.')
+    unless _tem($cfg->{token});
+
+  my $r = $self->_telegram_publico_bot($cfg)->api_call(deleteWebhook => {});
+  return $self->_telegram_recusou($r) unless $r->{ok};
+  $self->render(json => { ok => 1 });
+}
+
+# POST /api/admin/canais/telegram/polling — chama deleteWebhook e enfileira o
+# job `telegram_polling` se não houver outro: 202 {ok, job_id}; já ativo →
+# 200 {ok, ja_ativo:1}; fora do modo polling ou bot desligado/incompleto → 409.
+sub telegram_publico_polling ($self) {
+  my $cfg = $self->instantiate_model(model => 'Canal')->telegram_publico_config;
+
+  return $self->_conflito_telegram('O modo de recebimento não é "polling".')
+    unless $cfg->{recebimento} eq 'polling';
+  return $self->_conflito_telegram('O bot público está desativado ou incompleto (token e usuário do bot).')
+    unless $cfg->{enabled} && _tem($cfg->{token}) && _tem($cfg->{bot_username});
+
+  my $r = $self->telegram_polling_start(delete_webhook => 1, config => $cfg);
+  return $self->render(json => { ok => 1, ja_ativo => 1 }) if $r->{ja_ativo};
+  $self->render(status => 202, json => { ok => 1, job_id => $r->{job_id} });
+}
+
+sub _tem ($v) { return defined $v && !ref $v && length $v ? 1 : 0 }
+
+sub _telegram_publico_bot ($self, $cfg) {
+  return EduMaps::Bots::Telegram->new(
+    enabled => 1,
+    config  => { telegram_token => $cfg->{token} },
+    ua      => $self->canais_ua,
+  );
+}
+
+sub _conflito_telegram ($self, $msg) {
+  $self->render(json => { error => $msg }, status => 409);
+}
+
+sub _telegram_recusou ($self, $r) {
+  $self->render(json => {
+    error => 'A API do Telegram recusou o pedido: '
+      . ($r->{error} // "HTTP " . ($r->{status} // 0)),
+  }, status => 502);
+}
+
 # GET /api/admin/telemetry/overview — KPIs do fluxo de acesso de sessão
 # (logins, sessões, rotas, buscas, série temporal). Só agregados; nunca IP,
 # User-Agent, texto digitado ou sessão individual. `window` é validado contra

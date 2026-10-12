@@ -257,4 +257,128 @@ sub registrar_conflito ($self, $ref) {
   return { ok => 1, inscricao_id => $e->{inscricao_id} };
 }
 
+# ---------------------------------------------------------------------------
+# bot público do Telegram (onda 2)
+# ---------------------------------------------------------------------------
+
+# `/start <ref>`: grava o chat que abriu a ref (aguardando o contato). Só ref
+# pendente. Um chat aguarda UMA ref por vez: o vínculo do mesmo chat a outras
+# refs pendentes é desfeito (a última aberta vale).
+# Devolve { ok => 1, ref_id } ou { ok => 0, reason => 'not_found'|'confirmado' }.
+sub vincular_chat_telegram ($self, $ref, $chat_id) {
+  return { ok => 0, reason => 'not_found' }
+    unless defined $chat_id && $chat_id =~ /^-?\d+\z/;
+  my $e = $self->estado_ref($ref) or return { ok => 0, reason => 'not_found' };
+  return { ok => 0, reason => 'confirmado' } unless $e->{estado} eq 'pendente';
+
+  $self->schema->storage->txn_do(sub {
+    $self->_rows(
+      q{UPDATE clean.canal_confirmacao_refs
+           SET telegram_chat_pendente = NULL
+         WHERE telegram_chat_pendente = ?::bigint AND id <> ?},
+      $chat_id, $e->{ref_id},
+    );
+    $self->_rows(
+      q{UPDATE clean.canal_confirmacao_refs
+           SET telegram_chat_pendente = ?::bigint WHERE id = ?},
+      $chat_id, $e->{ref_id},
+    );
+  });
+  return { ok => 1, ref_id => $e->{ref_id} };
+}
+
+# Ref pendente (não usada, não invalidada, não vencida, membro não
+# confirmado) aguardando o contato deste chat. Devolve
+# { ref_id, membro_id, inscricao_id, telefone_norm } ou undef.
+sub ref_pendente_do_chat ($self, $chat_id) {
+  return unless defined $chat_id && $chat_id =~ /^-?\d+\z/;
+  my $r = $self->_row(
+    q{SELECT r.id AS ref_id, r.membro_id, r.inscricao_id, i.telefone_norm
+      FROM   clean.canal_confirmacao_refs r
+      JOIN   clean.canal_lista_membros m ON m.id = r.membro_id
+      JOIN   clean.canal_inscricoes i    ON i.id = r.inscricao_id
+      WHERE  r.telegram_chat_pendente = ?::bigint
+        AND  r.usada_em IS NULL AND r.invalidada_em IS NULL
+        AND  r.expira_em > NOW() AND m.confirmado_em IS NULL
+      ORDER  BY r.id DESC LIMIT 1},
+    $chat_id,
+  ) or return;
+  $r->{$_} += 0 for qw(ref_id membro_id inscricao_id);
+  return $r;
+}
+
+# Conflito pela inscrição (o bot não tem a ref em claro: acha a ref pelo chat).
+sub registrar_conflito_inscricao ($self, $inscricao_id) {
+  return { ok => 0, reason => 'not_found' }
+    unless defined $inscricao_id && $inscricao_id =~ /^\d+\z/;
+  $self->_rows(
+    'UPDATE clean.canal_inscricoes SET conflito = true WHERE id = ?',
+    $inscricao_id + 0,
+  );
+  return { ok => 1, inscricao_id => $inscricao_id + 0 };
+}
+
+# Offset do getUpdates (modo polling), por bot. 0 se nunca gravado.
+sub telegram_offset ($self, $bot_username) {
+  my $r = $self->_row(
+    'SELECT update_offset FROM clean.canal_telegram_estado WHERE bot_username = ?',
+    $bot_username,
+  );
+  return $r ? $r->{update_offset} + 0 : 0;
+}
+
+# Upsert do offset (= último update_id tratado + 1). Nunca retrocede.
+sub salvar_telegram_offset ($self, $bot_username, $offset) {
+  $self->_rows(
+    q{INSERT INTO clean.canal_telegram_estado (bot_username, update_offset, updated_at)
+      VALUES (?, ?, NOW())
+      ON CONFLICT (bot_username) DO UPDATE
+         SET update_offset = GREATEST(clean.canal_telegram_estado.update_offset,
+                                      EXCLUDED.update_offset),
+             updated_at    = NOW()},
+    $bot_username, $offset + 0,
+  );
+  return $offset + 0;
+}
+
+# ---------------------------------------------------------------------------
+# WhatsApp: limites de envio do código (onda 2)
+# ---------------------------------------------------------------------------
+
+# Máximo de envios do código por ref (total) e por telefone em 1h.
+sub whatsapp_max_envios { return 3; }
+
+# Conta mais um envio na ref.
+sub contar_envio_whatsapp ($self, $ref_id) {
+  $self->_rows(
+    q{UPDATE clean.canal_confirmacao_refs
+         SET envios_whatsapp = envios_whatsapp + 1 WHERE id = ?},
+    $ref_id + 0,
+  );
+  return;
+}
+
+# Códigos de confirmação ENVIADOS (status sent) ao telefone na última hora.
+sub envios_whatsapp_ultima_hora ($self, $endereco) {
+  my $r = $self->_row(
+    q{SELECT count(*)::int AS n
+      FROM   clean.canal_mensagens
+      WHERE  canal = 'whatsapp' AND operacao = 'confirmacao'
+        AND  destinatario = ? AND status = 'sent'
+        AND  created_at > NOW() - interval '1 hour'},
+    $endereco,
+  );
+  return $r ? $r->{n} + 0 : 0;
+}
+
+# Validade (ISO 8601 UTC) de um pedido de código (clean.canal_confirmacoes).
+sub expira_em_codigo ($self, $confirmacao_id) {
+  my $r = $self->_row(
+    sprintf(q{SELECT %s AS expira_em FROM clean.canal_confirmacoes WHERE id = ?},
+            sprintf($ISO, 'expira_em')),
+    $confirmacao_id + 0,
+  );
+  return $r ? $r->{expira_em} : undef;
+}
+
 1;
