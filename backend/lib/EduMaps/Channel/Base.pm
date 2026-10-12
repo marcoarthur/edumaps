@@ -25,7 +25,8 @@ use EduMaps::Channel::Confirmation;
 #   confirm.requested, confirm.verified, confirm.failed
 #
 # Mensagem (hashref): { to, operacao, assunto, corpo, referente => {tipo,id},
-#   contato_id, cod_inep, meta }.
+#   contato_id, cod_inep, meta, headers (e-mail: cabeçalhos extras, #216) }.
+# O resultado de `send_message` traz `mensagem_id` (id no histórico).
 
 has name    => 'base';
 has enabled => 1;
@@ -115,7 +116,9 @@ sub send_message ($self, $msg) {
   $res = { ok => 0, error => ("$@" || 'falha desconhecida') } unless ref $res eq 'HASH';
 
   $self->_finish($id, $m, $res);
-  return { %$res, canal => $self->name, to => $m->{to}, operacao => $operacao };
+  # `mensagem_id` (#216): linha do histórico (canal_mensagens), undef sem schema.
+  return { %$res, canal => $self->name, to => $m->{to}, operacao => $operacao,
+           mensagem_id => $id };
 }
 
 # Envia uma mensagem. Assíncrono (Mojo::Promise — nunca rejeita).

@@ -9,6 +9,11 @@
   // geral ganha `parcial` (algum contato confirmado, outro não).
   // Onda 2 (#214): "Remover inscrito" (diálogo + motivo; anonimiza o contato em
   // todas as listas da escola) e a seção "Exclusões" com o histórico da escola.
+  // Issue #216: ação "Enviar e-mail" por lista (abre o editor de envio com o
+  // alvo preenchido) e links para Envios e Listas dinâmicas.
+  // Onda 2 (#216): contador de saídas dos envios por lista (`n_optouts`), selo
+  // "Saiu dos envios" por membro e a aba "Funil" (acessos → inscrições →
+  // confirmados, saídas) no detalhe da lista.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import {
@@ -33,6 +38,7 @@
   import QRModal from "../components/canais/QRModal.svelte";
   import MembrosTable from "../components/canais/MembrosTable.svelte";
   import ExclusoesHistorico from "../components/canais/ExclusoesHistorico.svelte";
+  import FunilLista from "../components/canais/FunilLista.svelte";
   import ConfirmDialog from "@/shared/ui/components/ConfirmDialog.svelte";
   import { QR_ESTADOS, estadoQr } from "../utils/qrEstado.js";
 
@@ -53,6 +59,7 @@
   let filtroEstado = $state("todos"); // todos | confirmado | parcial | pendente | nao_exigida
   let salvandoExige = $state(false);
   let salvandoColeta = $state(false);
+  let aba = $state("inscricoes"); // inscricoes | funil
 
   const FILTROS = [
     { valor: "todos", rotulo: "Todos" },
@@ -287,6 +294,7 @@
 
   async function abrirMembros(lista) {
     selecionada = lista.id;
+    aba = "inscricoes";
     filtroEstado = "todos";
     membrosCarregando = true;
     membros = [];
@@ -384,6 +392,14 @@
           class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors"
         >Sair</button>
       {/if}
+      <a
+        href="/gestor/envios"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Envios</a>
+      <a
+        href="/gestor/segmentos"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Listas dinâmicas</a>
       <a
         href="/gestor/contatos"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
@@ -492,6 +508,9 @@
                   {#if lista.exige_confirmacao}
                     · <span class="text-blue-700 font-medium">exige confirmação</span>
                   {/if}
+                  {#if lista.n_optouts > 0}
+                    · <span class="text-slate-600" data-testid="lista-optouts">{lista.n_optouts} {lista.n_optouts === 1 ? "saiu" : "saíram"} dos envios</span>
+                  {/if}
                 </p>
               </div>
               <div class="flex items-center gap-1 shrink-0">
@@ -507,6 +526,11 @@
                   onclick={() => abrirQr(lista)}
                   class="px-2 py-1 rounded text-xs text-blue-700 hover:bg-blue-50 transition-colors"
                 >{lista.qrcode ? "Ver QR" : "Gerar QR"}</button>
+                <a
+                  href={`/gestor/envios?novo=1&alvo_tipo=lista&alvo_id=${lista.id}`}
+                  aria-label={`Enviar e-mail para ${lista.nome}`}
+                  class="px-2 py-1 rounded text-xs text-indigo-700 hover:bg-indigo-50 transition-colors"
+                >Enviar e-mail</a>
                 <button
                   type="button"
                   aria-label={`Excluir lista ${lista.nome}`}
@@ -525,7 +549,7 @@
       <section class="space-y-2" data-testid="lista-detalhe">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="text-sm font-semibold text-gray-900">
-            Inscrições — {listaSel?.nome ?? ""}
+            {aba === "funil" ? "Funil" : "Inscrições"} — {listaSel?.nome ?? ""}
           </h2>
           {#if listaSel}
             <div class="flex flex-wrap items-center gap-3">
@@ -557,6 +581,28 @@
           {/if}
         </div>
 
+        <div class="flex gap-1 border-b border-gray-200" role="tablist" aria-label="Detalhe da lista">
+          {#each [["inscricoes", "Inscrições"], ["funil", "Funil"]] as [valor, rotulo] (valor)}
+            <button
+              type="button"
+              role="tab"
+              id={`aba-${valor}`}
+              aria-selected={aba === valor}
+              aria-controls={`painel-${valor}`}
+              onclick={() => (aba = valor)}
+              class="px-3 py-1.5 -mb-px text-xs font-medium border-b-2 transition-colors {aba === valor
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'}"
+            >{rotulo}</button>
+          {/each}
+        </div>
+
+        {#if aba === "funil"}
+          <div role="tabpanel" id="painel-funil" aria-labelledby="aba-funil">
+            <FunilLista {inep} listaId={selecionada} onSessaoExpirada={() => (precisaLogin = true)} />
+          </div>
+        {:else}
+        <div role="tabpanel" id="painel-inscricoes" aria-labelledby="aba-inscricoes" class="space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           {#if listaSel?.exige_confirmacao}
             <p class="text-xs text-gray-600" data-testid="contadores-confirmacao">
@@ -590,6 +636,8 @@
             : undefined}
           onRemover={listaSel ? (m) => pedirRemocao(listaSel, m) : null}
         />
+        </div>
+        {/if}
       </section>
     {/if}
 

@@ -10,6 +10,7 @@ import {
   RETENCAO_STATUS,
   RETENCAO_JOB_ID,
   CONSENTIMENTO_VERSOES,
+  ENVIOS_ADMIN,
 } from "./configFixtures.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 import { setConsentimentoVigenteMock } from "@/features/gestor/mocks/canaisHandlers.js";
@@ -18,6 +19,7 @@ const BASE = "/api/admin/config";
 const TELEGRAM_BASE = "/api/admin/canais/telegram";
 const RETENCAO_BASE = "/api/admin/canais/retencao";
 const CONSENTIMENTO_BASE = "/api/admin/consentimento/versoes";
+const ENVIOS_BASE = "/api/admin/canais/envios";
 
 // Estado do bot público do Telegram (status + ações admin). Mutável pelos
 // testes via setTelegramMockState / setTelegramMockErro.
@@ -49,6 +51,17 @@ export const setRetencaoMockErro = (erro) => {
   retencaoErro = erro;
 };
 export const getRetencaoStatusChamadas = () => retencaoStatusChamadas;
+
+// Envios por e-mail (issue #216, onda 2): volume por escola + suspensões.
+// Os limites refletem as folhas canais.envio.* gravadas no PUT (outrosState).
+let enviosAdminState = clone(ENVIOS_ADMIN);
+let enviosAdminChamadas = 0;
+let proximaSuspensaoId = 100;
+export const setEnviosAdminMockState = (estado) => {
+  enviosAdminState = clone(estado);
+};
+export const getEnviosAdminMockState = () => clone(enviosAdminState);
+export const getEnviosAdminChamadas = () => enviosAdminChamadas;
 
 // Versões do consentimento (issue #214): rascunho → vigente → arquivada.
 let versoesState = clone(CONSENTIMENTO_VERSOES);
@@ -91,6 +104,9 @@ export const resetConfigMockState = () => {
   retencaoStatusChamadas = 0;
   versoesState = clone(CONSENTIMENTO_VERSOES);
   proximaVersaoId = 100;
+  enviosAdminState = clone(ENVIOS_ADMIN);
+  enviosAdminChamadas = 0;
+  proximaSuspensaoId = 100;
   botState = {
     "integrations.bot_telegram.token": null,
     "integrations.bot_telegram.chat_id": null,
@@ -187,6 +203,76 @@ export const retencaoHandlers = [
   }),
 ];
 
+const ENVIO_CHAVES = {
+  enabled: "canais.envio.enabled",
+  ritmo_por_minuto: "canais.envio.ritmo_por_minuto",
+  cota_diaria: "canais.envio.cota_diaria_escola",
+  max_destinatarios: "canais.envio.max_destinatarios",
+};
+
+export const enviosAdminHandlers = [
+  http.get(ENVIOS_BASE, ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    enviosAdminChamadas += 1;
+    const res = clone(enviosAdminState);
+    for (const [campo, chave] of Object.entries(ENVIO_CHAVES)) {
+      if (outrosState[chave] === undefined) continue;
+      const v = outrosState[chave];
+      res.limites[campo] = campo === "enabled" ? (v === true || v === 1 || v === "true" ? 1 : 0) : Number(v);
+    }
+    res.escolas.sort((a, b) => b.enviados_30d - a.enviados_30d);
+    return HttpResponse.json(res);
+  }),
+
+  http.post(`${ENVIOS_BASE}/suspensoes`, async ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    const body = await request.json().catch(() => ({}));
+    const motivo = String(body.motivo ?? "").trim();
+    const cod = Number(body.cod_inep);
+    if (!Number.isInteger(cod) || cod <= 0) {
+      return HttpResponse.json({ error: "cod_inep inválido." }, { status: 400 });
+    }
+    if (motivo.length < 1 || motivo.length > 500) {
+      return HttpResponse.json({ error: "Informe o motivo (até 500 caracteres)." }, { status: 400 });
+    }
+    let escola = enviosAdminState.escolas.find((e) => e.cod_inep === cod);
+    if (escola?.suspensao) {
+      return HttpResponse.json({ error: "A escola já está suspensa." }, { status: 409 });
+    }
+    const suspensao = {
+      id: proximaSuspensaoId++,
+      motivo,
+      suspenso_em: new Date().toISOString(),
+      suspenso_por: 1,
+    };
+    if (!escola) {
+      escola = {
+        cod_inep: cod,
+        escola_nome: `Escola ${cod}`,
+        enviados_hoje: 0,
+        enviados_30d: 0,
+        falhas_30d: 0,
+        optouts_30d: 0,
+        envios_em_curso: 0,
+        suspensao: null,
+      };
+      enviosAdminState.escolas.push(escola);
+    }
+    escola.suspensao = suspensao;
+    return HttpResponse.json({ suspensao }, { status: 201 });
+  }),
+
+  http.post(`${ENVIOS_BASE}/suspensoes/:cod_inep/reativar`, ({ request, params }) => {
+    if (!authed(request)) return naoAutorizado();
+    const escola = enviosAdminState.escolas.find((e) => e.cod_inep === Number(params.cod_inep));
+    if (!escola?.suspensao) {
+      return HttpResponse.json({ error: "A escola não tem suspensão ativa." }, { status: 404 });
+    }
+    escola.suspensao = null;
+    return HttpResponse.json({ ok: 1, envios_retomados: escola.envios_em_curso });
+  }),
+];
+
 const versaoNaoEncontrada = () =>
   HttpResponse.json({ error: "Versão não encontrada." }, { status: 404 });
 
@@ -266,6 +352,7 @@ export const consentimentoAdminHandlers = [
 export const configHandlers = [
   ...telegramHandlers,
   ...retencaoHandlers,
+  ...enviosAdminHandlers,
   ...consentimentoAdminHandlers,
   // árvore (exige sessão admin)
   http.get(`${BASE}/tree`, ({ request }) => {

@@ -15,6 +15,7 @@
   import ConfigEditor from "../components/ConfigEditor.svelte";
   import TelegramPublicoStatus from "../components/TelegramPublicoStatus.svelte";
   import RetencaoStatus from "../components/RetencaoStatus.svelte";
+  import EnviosAdmin from "../components/EnviosAdmin.svelte";
   import { link } from "@/app/router.svelte.js";
 
   let carregando = $state(true);
@@ -34,6 +35,9 @@
   // Folha do grupo "Retenção (LGPD)" → painel de prazos/última execução (#214).
   let grupoRetencao = $derived(selecionada?.startsWith("canais.retencao.") ?? false);
   let revisaoRetencao = $state(0);
+  // Folha do grupo "Envios" → painel de volume/suspensões por escola (#216).
+  let grupoEnvio = $derived(selecionada?.startsWith("canais.envio.") ?? false);
+  let revisaoEnvio = $state(0);
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && (err.status === 401)) {
@@ -81,6 +85,7 @@
       addToast("Configuração salva.", "success");
       if (key.startsWith("canais.telegram.")) revisaoTelegram += 1;
       if (key.startsWith("canais.retencao.")) revisaoRetencao += 1;
+      if (key.startsWith("canais.envio.")) revisaoEnvio += 1;
       await carregarTree();
     } finally {
       salvando = false;
@@ -221,6 +226,11 @@
         {#if grupoRetencao}
           {#key revisaoRetencao}
             <RetencaoStatus />
+          {/key}
+        {/if}
+        {#if grupoEnvio}
+          {#key revisaoEnvio}
+            <EnviosAdmin />
           {/key}
         {/if}
       </section>

@@ -65,6 +65,9 @@ sub register($self, $app, @args) {
     ->to('gestor#canais_qrcode_revoke')->name('gestor_canais_qrcode_revoke');
   $auth->get('/:cod_inep/canais/listas/:id/inscricoes' => $lista_check)
     ->to('gestor#canais_inscricoes_index')->name('gestor_canais_inscricoes');
+  # Funil de conversão da lista (#216, onda 2, RF-306): ?de&ate (YYYY-MM-DD).
+  $auth->get('/:cod_inep/canais/listas/:id/funil' => $lista_check)
+    ->to('gestor#canais_listas_funil')->name('gestor_canais_listas_funil');
   # Exclusão pelo gestor (#214, RF-205): anonimiza o contato do membro (sai de
   # todas as listas da escola) + histórico de exclusões da escola (sem PII).
   $auth->delete('/:cod_inep/canais/listas/:id/membros/:membro_id'
@@ -72,6 +75,48 @@ sub register($self, $app, @args) {
     ->to('gestor#canais_membro_destroy')->name('gestor_canais_membro_destroy');
   $auth->get('/:cod_inep/canais/exclusoes' => $check)
     ->to('gestor#canais_exclusoes_index')->name('gestor_canais_exclusoes_index');
+
+  # Envio por e-mail para listas (#216, Fase 3): envios em massa (rascunho,
+  # prévia, teste, disparo, cancelamento, destinatários mascarados, limites)
+  # e listas dinâmicas (segmentos). Literais antes de /:id.
+  my $envio_check = [ @$check, id => qr/\d+/ ];
+  $auth->get('/:cod_inep/canais/envios' => $check)
+    ->to('gestor#canais_envios_index')->name('gestor_canais_envios_index');
+  $auth->post('/:cod_inep/canais/envios' => $check)
+    ->to('gestor#canais_envios_create')->name('gestor_canais_envios_create');
+  $auth->get('/:cod_inep/canais/envios/limites' => $check)
+    ->to('gestor#canais_envios_limites')->name('gestor_canais_envios_limites');
+  $auth->get('/:cod_inep/canais/envios/:id' => $envio_check)
+    ->to('gestor#canais_envios_show')->name('gestor_canais_envios_show');
+  $auth->patch('/:cod_inep/canais/envios/:id' => $envio_check)
+    ->to('gestor#canais_envios_update')->name('gestor_canais_envios_update');
+  $auth->delete('/:cod_inep/canais/envios/:id' => $envio_check)
+    ->to('gestor#canais_envios_destroy')->name('gestor_canais_envios_destroy');
+  $auth->post('/:cod_inep/canais/envios/:id/previa' => $envio_check)
+    ->to('gestor#canais_envios_previa')->name('gestor_canais_envios_previa');
+  $auth->post('/:cod_inep/canais/envios/:id/teste' => $envio_check)
+    ->to('gestor#canais_envios_teste')->name('gestor_canais_envios_teste');
+  $auth->post('/:cod_inep/canais/envios/:id/disparar' => $envio_check)
+    ->to('gestor#canais_envios_disparar')->name('gestor_canais_envios_disparar');
+  $auth->post('/:cod_inep/canais/envios/:id/cancelar' => $envio_check)
+    ->to('gestor#canais_envios_cancelar')->name('gestor_canais_envios_cancelar');
+  $auth->get('/:cod_inep/canais/envios/:id/destinatarios' => $envio_check)
+    ->to('gestor#canais_envios_destinatarios')->name('gestor_canais_envios_destinatarios');
+
+  $auth->get('/:cod_inep/canais/segmentos' => $check)
+    ->to('gestor#canais_segmentos_index')->name('gestor_canais_segmentos_index');
+  $auth->post('/:cod_inep/canais/segmentos' => $check)
+    ->to('gestor#canais_segmentos_create')->name('gestor_canais_segmentos_create');
+  $auth->post('/:cod_inep/canais/segmentos/previa' => $check)
+    ->to('gestor#canais_segmentos_previa')->name('gestor_canais_segmentos_previa');
+  $auth->get('/:cod_inep/canais/segmentos/:id' => $envio_check)
+    ->to('gestor#canais_segmentos_show')->name('gestor_canais_segmentos_show');
+  $auth->put('/:cod_inep/canais/segmentos/:id' => $envio_check)
+    ->to('gestor#canais_segmentos_update')->name('gestor_canais_segmentos_update');
+  $auth->delete('/:cod_inep/canais/segmentos/:id' => $envio_check)
+    ->to('gestor#canais_segmentos_destroy')->name('gestor_canais_segmentos_destroy');
+  $auth->get('/:cod_inep/canais/segmentos/:id/previa' => $envio_check)
+    ->to('gestor#canais_segmentos_previa_salvo')->name('gestor_canais_segmentos_previa_salvo');
 
   # --- reuniões -----------------------------------------------------------
   $auth->get('/:cod_inep' => $check)->to('gestor#escola_perfil')->name('gestor_escola_perfil');

@@ -83,6 +83,17 @@ describe("matchRoute", () => {
     expect(matchRoute("/gestor/listas")?.path).toBe("/gestor/listas");
   });
 
+  it("encontra os envios por e-mail /gestor/envios (com query do alvo)", () => {
+    expect(matchRoute("/gestor/envios")?.path).toBe("/gestor/envios");
+    expect(matchRoute("/gestor/envios?novo=1&alvo_tipo=lista&alvo_id=4")?.path).toBe(
+      "/gestor/envios",
+    );
+  });
+
+  it("encontra as listas dinâmicas /gestor/segmentos", () => {
+    expect(matchRoute("/gestor/segmentos")?.path).toBe("/gestor/segmentos");
+  });
+
   it("captura o token na rota pública de inscrição /inscricao/:token", () => {
     const match = matchRoute("/inscricao/9f8f36e2-1234-4abc-8def-000000000000");
     expect(match?.path).toBe("/inscricao/:token");
@@ -94,6 +105,13 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/privacidade/exclusao/:token");
     expect(match?.params.token).toBe("a1b2c3d4e5f60718293a4b5c6d7e8f90");
     expect(matchRoute("/privacidade")?.path).toBe("/privacidade");
+  });
+
+  it("captura o token na rota pública de saída dos envios /privacidade/sair/:token", () => {
+    const match = matchRoute("/privacidade/sair/d1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(match?.path).toBe("/privacidade/sair/:token");
+    expect(match?.params.token).toBe("d1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(matchRoute("/privacidade/sair")).toBeNull();
   });
 
   it("encontra a rota admin de versões do consentimento /config/consentimento", () => {

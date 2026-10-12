@@ -693,3 +693,42 @@ Driver CDP próprio em Perl (Chrome `:9222`).
 > **Notas**: (1) envio real de código por e-mail não exercitado — não há SMTP
 > em dev; coberto por testes com SMTP simulado. (2) A versão 1.1 do
 > consentimento fica publicada em dev (pré-requisito para listas com e-mail).
+
+### Rodada 2026-10-12 — Envio por e-mail para listas com QR (feat, issue #216)
+
+**Objetivo**: certificar a Fase 3 em dev (`http://ubatexu.lan:8080`) com envio
+**real por SMTP**: um Mailpit temporário no `ubaxala` (`axllent/mailpit:v1.21.0`,
+só `127.0.0.1`) recebe os e-mails do backend por um túnel SSH reverso
+(`backend.edumaps:127.0.0.1:1025` → Mailpit); `canais.email.*` de dev apontou
+para ele só durante a rodada. Listas `E2E 216 A` e `B` (coleta e-mail, sem
+exigência), 4 inscritos pela API pública (Carla nas duas listas), sessões
+temporárias de gestor e admin. Driver CDP próprio em Perl (Chrome `:9222`).
+
+| Verificação | Resultado |
+|---|---|
+| Migração `canal_envios` em `database.edumaps` | 🟢 |
+| Limites: SMTP disponível, saldo 500/500 | 🟢 |
+| Lista dinâmica A+B: prévia com 4 destinatários (Carla deduplicada), amostra mascarada | 🟢 |
+| Rascunho → prévia (rodapé + estimativa 3) → teste (`[Teste]` no Mailpit) | 🟢 |
+| Disparo imediato → job `canais_envio` → **concluído, 3 enviados, 0 falhas** | 🟢 |
+| Cada e-mail: rodapé com lista e link pessoal; `List-Unsubscribe` = link, `List-Unsubscribe-Post: One-Click`, `Precedence: bulk` | 🟢 3/3 |
+| Destinatários mascarados na API | 🟢 |
+| SPA `/privacidade/sair/:token` pelo link do e-mail → "Pronto, você saiu" → recarregar → "já tinha saído" | 🟢 |
+| One-Click (RFC 8058, form) | 🟢 200 |
+| Selo de opt-out só em quem saiu; contador de saídas do envio = 2 | 🟢 |
+| Envio pela lista dinâmica: 2 opt-out + 1 duplicado ignorados; só Carla (uma vez) e Davi receberam | 🟢 |
+| Reinscrição pelo QR desfaz o opt-out (`n_optouts` 2 → 1) | 🟢 |
+| Funil: acessos, inscrições, saídas, `confirmados` null (lista sem exigência), série diária completa | 🟢 |
+| Agendado → admin suspende (201) → envio `suspenso`; disparo com escola suspensa → 409 `escola_suspensa` | 🟢 |
+| Reativar → envio volta a `agendado` (não antecipa); cancelar | 🟢 |
+| Cota da escola em 1 → disparo → 409 `cota_insuficiente` (saldo 0) | 🟢 |
+| Remoção pelo gestor → varredura de PII: destinatários de envio só com hash (sem e-mail/contato), mensagens/contatos/inscrições sem resto | 🟢 0 ocorrências |
+| Telas: `EnviosPage`, detalhe, `SegmentosPage`, `ListasPage` (+ aba Funil), painel Envios do admin no `/config` | 🟢 |
+| Backend 81 arquivos / 508 testes (6 pré-falhos idênticos no `main`); frontend 96 / 718 | 🟢 |
+
+> **Achados corrigidos na rodada**: (1) faltava espaço entre o nome da lista e
+> "da escola" na página de saída; (2) "1 saíram dos envios" → "1 saiu".
+> **Comportamento documentado**: a taxa acesso → inscrição pode passar de 100%
+> (inscrições sem abrir a página, ou várias a partir de um acesso).
+> **Não exercitado**: provedor SMTP real (só captura), WhatsApp/Telegram no
+> envio (fora do escopo).

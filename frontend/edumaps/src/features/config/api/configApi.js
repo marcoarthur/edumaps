@@ -94,6 +94,36 @@ export function executarRetencao() {
   return apiClient.post(`${RETENCAO_BASE}/executar`);
 }
 
+// --- Envios por e-mail (canais.envio.*, issue #216, onda 2) ----------------
+const ENVIOS_BASE = "/api/admin/canais/envios";
+
+/** Limites vigentes e volume por escola (envio nos últimos 30 dias ou suspensa).
+ * @returns {Promise<{limites: {enabled: number|boolean, ritmo_por_minuto: number, cota_diaria: number,
+ *   max_destinatarios: number, smtp_disponivel: number|boolean},
+ *   escolas: Array<{cod_inep: number, escola_nome: string, enviados_hoje: number, enviados_30d: number,
+ *   falhas_30d: number, optouts_30d: number, envios_em_curso: number,
+ *   suspensao: null|{id: number, motivo: string, suspenso_em: string, suspenso_por: number}}>}>}
+ */
+export function getEnviosAdmin() {
+  return apiClient.get(ENVIOS_BASE);
+}
+
+/** Suspende os envios de uma escola. 201 {suspensao} · 400 · 409 (já suspensa).
+ * @param {string|number} cod_inep
+ * @param {string} motivo 1..500
+ */
+export function suspenderEnvios(cod_inep, motivo) {
+  return apiClient.post(`${ENVIOS_BASE}/suspensoes`, { cod_inep: Number(cod_inep), motivo });
+}
+
+/** Reativa os envios da escola. 200 {ok, envios_retomados} · 404 (sem suspensão ativa).
+ * @param {string|number} cod_inep
+ * @returns {Promise<{ok: number, envios_retomados: number}>}
+ */
+export function reativarEnvios(cod_inep) {
+  return apiClient.post(`${ENVIOS_BASE}/suspensoes/${encodeURIComponent(cod_inep)}/reativar`);
+}
+
 // --- Versões do texto de consentimento (issue #214) ------------------------
 const CONSENTIMENTO_BASE = "/api/admin/consentimento/versoes";
 

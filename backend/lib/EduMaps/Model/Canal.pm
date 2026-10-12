@@ -24,4 +24,17 @@ with 'EduMaps::Roles::Business::Canal::Consentimento';
 # onda 2): requer os helpers SQL de Listas e a config de retenção do AppConfig.
 with 'EduMaps::Roles::Business::Canal::Exclusao';
 
+# Envio por e-mail para listas (issue #216, Fase 3): listas dinâmicas
+# (segmentos + resolução de membros com e-mail) e envios em massa (rascunho,
+# disparo, lote do job `canais_envio`). Envios requer Segmentos — compor
+# nesta ordem.
+with 'EduMaps::Roles::Business::Canal::Segmentos';
+with 'EduMaps::Roles::Business::Canal::Envios';
+
+# Onda 2 (#216): opt-out público por lista (link de saída dos e-mails) e
+# funil de conversão por lista (acessos ao QR, inscrições, confirmações,
+# saídas). Requerem os helpers SQL de Listas.
+with 'EduMaps::Roles::Business::Canal::Optout';
+with 'EduMaps::Roles::Business::Canal::Funil';
+
 1;

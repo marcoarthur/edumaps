@@ -99,6 +99,27 @@ my $SQL_GERAL_CONFIRMADO = "((NOT $SQL_TEM_TEL OR m.confirmado_em IS NOT NULL)
    AND ($SQL_TEM_TEL OR $SQL_TEM_EMAIL
         OR m.confirmado_em IS NOT NULL OR m.email_confirmado_em IS NOT NULL))";
 
+# Fragmentos SQL do estado do membro (aliases m = membro, c = contato,
+# i = última inscrição), para as roles que resolvem membros (#216: segmentos e
+# envios). Devolve (LATERAL da última inscrição, tem_telefone, tem_email).
+sub _sql_estado_membro ($self) {
+  return ($SQL_ULTIMA_INSCRICAO, $SQL_TEM_TEL, $SQL_TEM_EMAIL);
+}
+
+# Condição SQL "estado geral confirmado" do membro (mesmos aliases m, c, i;
+# exige o LATERAL de `_sql_estado_membro`). Usada pelo funil (#216, onda 2).
+sub _sql_geral_confirmado ($self) { return $SQL_GERAL_CONFIRMADO }
+
+# Opt-outs (saídas dos envios por e-mail) da lista `l` (#216, onda 2).
+my $SQL_N_OPTOUTS = q{(SELECT count(*)::int FROM clean.canal_optouts o
+                        WHERE o.lista_id = l.id)};
+
+# O e-mail ATUAL do contato `c` tem opt-out na lista do membro `m`?
+my $SQL_MEMBRO_OPTOUT = q{(c.email IS NOT NULL AND trim(c.email) <> '' AND EXISTS (
+         SELECT 1 FROM clean.canal_optouts o
+          WHERE o.lista_id = m.lista_id AND o.canal = 'email'
+            AND o.email_hash = encode(digest(lower(trim(c.email)), 'sha256'), 'hex')))};
+
 # Contagem de membros com estado geral `confirmado` da lista `l`.
 my $SQL_N_CONFIRMADOS = "(SELECT count(*)::int
          FROM   clean.canal_lista_membros m
@@ -181,6 +202,7 @@ sub listar_listas ($self, $cod_inep) {
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
              $SQL_N_CONFIRMADOS AS membros_confirmados,
+             $SQL_N_OPTOUTS AS n_optouts,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
                WHERE q.lista_id = l.id AND q.status = 'ativo') AS n_qrcodes_ativos
       FROM   clean.canal_listas l
@@ -210,6 +232,7 @@ sub listar_listas ($self, $cod_inep) {
       ativo             => $r->{ativo} ? 1 : 0,
       n_membros         => $r->{n_membros} + 0,
       n_qrcodes_ativos  => $r->{n_qrcodes_ativos} + 0,
+      n_optouts         => $r->{n_optouts} + 0,
       $self->_campos_confirmacao_lista($r),
       qrcode            => $qr ? $self->_qr_publico($qr) : undef,
       created_at        => $r->{created_at},
@@ -276,6 +299,7 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
              (SELECT count(*)::int FROM clean.canal_lista_membros m
                WHERE m.lista_id = l.id) AS n_membros,
              $SQL_N_CONFIRMADOS AS membros_confirmados,
+             $SQL_N_OPTOUTS AS n_optouts,
              (SELECT count(*)::int FROM clean.canal_inscricoes i
                WHERE i.lista_id = l.id) AS n_inscricoes,
              (SELECT count(*)::int FROM clean.canal_qrcodes q
@@ -308,6 +332,7 @@ sub detalhe_lista ($self, $cod_inep, $lista_id) {
     n_membros        => $r->{n_membros} + 0,
     n_inscricoes     => $r->{n_inscricoes} + 0,
     n_qrcodes_ativos => $r->{n_qrcodes_ativos} + 0,
+    n_optouts        => $r->{n_optouts} + 0,
     $self->_campos_confirmacao_lista($r),
     qrcode           => $qr ? $self->_qr_publico($qr) : undef,
     created_at       => $r->{created_at},
@@ -530,7 +555,8 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
              m.created_at AS quando, c.nome, c.telefone,
              COALESCE(c.email, i.email) AS email,
              i.conflito, i.duplicado_de,
-             $SQL_TEM_TEL AS tem_telefone, $SQL_TEM_EMAIL AS tem_email
+             $SQL_TEM_TEL AS tem_telefone, $SQL_TEM_EMAIL AS tem_email,
+             $SQL_MEMBRO_OPTOUT AS optout
       FROM   clean.canal_lista_membros m
       JOIN   clean.contatos c ON c.id = m.contato_id
       $SQL_ULTIMA_INSCRICAO
@@ -571,6 +597,8 @@ sub listar_inscricoes ($self, $cod_inep, $lista_id) {
       confirmado_via      => $r->{confirmado_via},
       confirmado_em       => $r->{confirmado_em},
       email_confirmado_em => $r->{email_confirmado_em},
+      # saiu dos envios por e-mail desta lista (#216, onda 2)
+      optout              => $r->{optout} ? true : false,
     };
   }
   return \@out;
@@ -637,6 +665,7 @@ sub dados_publicos_token ($self, $token) {
   my $vig = $self->consentimento_vigente;
   return {
     ok           => 1,
+    qrcode_id    => $v->{qrcode_id},   # interno (contagem de acessos, #216)
     lista_nome   => $v->{lista_nome},
     escola_nome  => $v->{escola_nome},
     canal        => $v->{canal},
@@ -846,6 +875,15 @@ sub registrar_inscricao ($self, %p) {
         'UPDATE clean.canal_qrcodes SET usos = usos + 1 WHERE id = ?',
         $v->{qrcode_id} + 0,
       );
+
+      # Reinscrição com e-mail = novo consentimento (#216, onda 2): desfaz o
+      # opt-out do endereço NESTA lista.
+      $self->_rows(
+        q{DELETE FROM clean.canal_optouts
+           WHERE lista_id = ? AND canal = 'email'
+             AND email_hash = encode(digest(?::text, 'sha256'), 'hex')},
+        $v->{lista_id} + 0, $email_norm,
+      ) if defined $email_norm;
 
       $resultado = {
         ok           => 1,

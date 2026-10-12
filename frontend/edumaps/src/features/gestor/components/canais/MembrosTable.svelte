@@ -5,6 +5,8 @@
   // Issue #214: conforme a `coleta` da lista, mostra telefone e/ou e-mail, o
   // estado de cada contato e o estado geral (inclui `parcial`).
   // Onda 2: com `onRemover`, cada linha ganha a ação "Remover inscrito".
+  // Issue #216 (onda 2): selo "Saiu dos envios" quando o e-mail atual do
+  // contato tem opt-out nesta lista (`optout`).
   /** @type {{membros?: Array, carregando?: boolean, mensagemVazia?: string, coleta?: string, onRemover?: ((membro: object) => void)|null}} */
   let {
     membros = [],
@@ -118,6 +120,13 @@
                 <span class="inline-block rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-[10px] font-semibold uppercase">validado</span>
               {:else}
                 <span class="inline-block rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-[10px] font-semibold uppercase">não validado</span>
+              {/if}
+              {#if m.optout}
+                <span
+                  class="inline-block ml-1 rounded-full bg-slate-200 text-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase"
+                  data-testid="membro-optout"
+                  title="Este e-mail pediu para não receber mais os envios desta lista."
+                >Saiu dos envios</span>
               {/if}
               {#if m.conflito}
                 <span class="inline-block ml-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase">conflito</span>

@@ -3,7 +3,7 @@ titulo: Painel de Configuração
 modulo: plataforma
 status: parcial
 audiencia: [administrador]
-relacionadas: [assistente-censo, fontes-de-dados]
+relacionadas: [assistente-censo, fontes-de-dados, canais-de-comunicacao, envios-email]
 ---
 
 # Painel de Configuração
@@ -16,9 +16,8 @@ relacionadas: [assistente-censo, fontes-de-dados]
 plataforma — nome da instalação, fuso horário, aparência, comportamento dos
 painéis, integrações e canais de comunicação — organizados em categorias e
 grupos. Hoje estão ativas as Integrações (chave de API do Assistente do Censo e
-Bot Telegram) e os Canais de comunicação (e-mail, WhatsApp e autoinscrição por
-QR); as demais
-categorias estão previstas.
+Bot Telegram) e os Canais de comunicação (e-mail, WhatsApp, autoinscrição por
+QR, retenção e limites de envio); as demais categorias estão previstas.
 
 ## Para quem
 
@@ -51,6 +50,14 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   pré-visualização e publicação; versões publicadas não mudam) e definir os
   **prazos de retenção** de dados das listas, acompanhando a última limpeza
   automática ou disparando uma na hora.
+- Administração pode definir os **limites dos envios por e-mail** das escolas —
+  ligar ou desligar os envios, ritmo por minuto, cota diária por escola e teto
+  de destinatários por envio.
+- Administração pode acompanhar, num painel, o **volume de envios por escola**
+  (hoje e nos últimos 30 dias, falhas, saídas e envios em andamento) e
+  **suspender** uma escola com o motivo registrado — o que segura na hora os
+  envios em curso e bloqueia novos — ou **reativá-la**, retomando os envios
+  suspensos sem antecipar os que estavam agendados.
 
 ## Valor
 
@@ -62,5 +69,6 @@ seguro, com segredos protegidos.
 
 - [Assistente do Censo](../analise/assistente-censo.md)
 - [Canais de comunicação](../plataforma/canais-de-comunicacao.md)
+- [Envios por e-mail para listas](../gestor/envios-email.md)
 - [Bot Telegram](../plataforma/bot-telegram.md)
 - [Fontes de dados](../plataforma/fontes-de-dados.md)

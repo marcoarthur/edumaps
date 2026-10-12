@@ -3,7 +3,7 @@ titulo: Canais de comunicação
 modulo: plataforma
 status: parcial
 audiencia: [administrador, gestor]
-relacionadas: [listas-autoinscricao, bot-telegram, painel-configuracao, privacidade-lgpd]
+relacionadas: [listas-autoinscricao, envios-email, bot-telegram, painel-configuracao, privacidade-lgpd]
 ---
 
 # Canais de comunicação
@@ -42,19 +42,43 @@ ferramentas externas, e quem responde pelo uso correto desses dados.
 - Administração pode configurar o **bot público do Telegram** (separado do bot
   de notificações internas), escolher como ele recebe mensagens e acompanhar
   seu estado no Painel de Configuração.
+- Sistema pode fazer **envios em massa por e-mail** para as listas da escola:
+  as mensagens saem **em fila**, aos poucos, num ritmo por minuto e dentro de
+  uma **cota diária por escola**, sem repetir endereço, e uma falha de entrega
+  nunca interrompe a plataforma.
+- Administração pode definir os **limites de envio** (ritmo, cota diária e
+  teto de destinatários por envio), acompanhar o volume enviado por escola e
+  **suspender ou reativar** uma escola, com o motivo registrado; a suspensão
+  segura na hora os envios em curso.
+- Sistema pode registrar o **resultado de cada envio** — destinatários,
+  enviados, falhas, ignorados e saídas — e a situação de cada destinatário,
+  além de guardar cada e-mail no histórico de mensagens.
+- Sistema pode incluir em todo e-mail de envio um **link para sair daquela
+  lista** e o pedido de descadastro em um clique reconhecido pelos programas de
+  e-mail; quem sai deixa de receber daquela lista sem perder seus dados.
+- Sistema **não rastreia** aberturas nem cliques dos e-mails enviados.
 - Sistema pode sustentar outras capacidades sobre esses canais — como as
-  **listas com autoinscrição por QR** — sem expor os contatos da escola.
+  **listas com autoinscrição por QR** e os **envios por e-mail para listas** —
+  sem expor os contatos da escola.
 
 ## Valor
 
 Dá à escola um caminho **próprio e recordável** para alcançar a comunidade, em
 vez de ações soltas e sem rastro. Centraliza credenciais e decisões de canal num
-lugar seguro, permite auditar o que foi comunicado e prepara o terreno para
-campanhas e confirmação de posse dos contatos, com atenção à privacidade (LGPD).
+lugar seguro, permite auditar o que foi comunicado e sustenta a confirmação de
+posse dos contatos e os envios para listas, com limites que protegem a
+reputação do remetente e atenção à privacidade (LGPD).
+
+## Nota
+
+O envio em massa é, por ora, **só por e-mail**. WhatsApp e Telegram seguem
+usados na confirmação de posse do telefone; o envio em massa por eles está
+previsto.
 
 ## Relacionadas
 
 - [Listas com autoinscrição por QR](../gestor/listas-autoinscricao.md)
+- [Envios por e-mail para listas](../gestor/envios-email.md)
 - [Painel de Configuração](../plataforma/painel-configuracao.md)
 - [Bot Telegram](../plataforma/bot-telegram.md)
 - [Privacidade e LGPD](../plataforma/privacidade-lgpd.md)

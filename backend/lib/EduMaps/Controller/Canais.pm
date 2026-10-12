@@ -43,6 +43,13 @@ use EduMaps::Channel::Telegram::Updates;
 #   POST /api/canais/exclusao/:token   → {confirmar:true} → 200 {ok:1,
 #                                        ja_excluido} · 400/404/429 (onda 2)
 #
+# Fase 3 (#216 — envio por e-mail, onda 2):
+#   GET  /api/canais/inscricao/:token  200 soma 1 acesso diário ao QR (funil)
+#   POST /api/canais/inscricao/:token  com e-mail desfaz o opt-out da lista
+#   GET  /api/canais/sair/:token       → 200 {escola_nome, lista_nome, ja_saiu} · 404
+#   POST /api/canais/sair/:token       → {confirmar:true} ou One-Click → 200
+#                                        {ok:1, ja_saiu} · 400/404/429
+#
 # Regras: feature flag `canais.inscricao.enabled` (desligada → 404 genérico);
 # resposta mínima (NUNCA PII de terceiros); honeypot `_hp` (201 falso sem
 # gravar); rate limit por token+IP; consentimento obrigatório; IP anonimizado
@@ -59,6 +66,11 @@ sub inscricao_form($self) {
   # no GET o contrato é 200/404/410: "esgotado" é link indisponível (410), não
   # rate limit (429, exclusivo do POST).
   return $self->_render_token_error($pub, esgotado_410 => 1) unless $pub->{ok};
+
+  # Funil (#216, onda 2): só o GET 200 conta um acesso (agregado diário por
+  # QR, sem PII). Falha na contagem nunca derruba a página.
+  eval { $model->qr_registrar_acesso($pub->{qrcode_id}); 1 }
+    or $self->app->log->warn("Funil: falha ao contar acesso: $@");
 
   # dados_publicos_token já devolve o envelope mínimo; redeclarado aqui para
   # deixar explícito o contrato congelado (sem PII, sem cod_inep/gestor).
@@ -428,6 +440,62 @@ sub exclusao_confirmar($self) {
 
 sub _render_exclusao_not_found($self) {
   $self->render(json => { error => 'Link inválido.' }, status => 404);
+}
+
+# ---------------------------------------------------------------------------
+# Opt-out por lista — link de saída dos e-mails (#216, onda 2, RF-303)
+# ---------------------------------------------------------------------------
+# Independe de canais.inscricao.enabled (direito do titular). Erros genéricos
+# (sem enumeração): formato inválido, token inexistente ou lista de origem
+# apagada → 404.
+
+# GET — 200 {escola_nome, lista_nome, ja_saiu} (sem PII) · 404.
+sub sair_show($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $s = $model->saida_por_token($self->param('token'))
+    or return $self->_render_exclusao_not_found;
+  $self->render(json => {
+    escola_nome => $s->{escola_nome},
+    lista_nome  => $s->{lista_nome},
+    ja_saiu     => $s->{ja_saiu} ? \1 : \0,
+  });
+}
+
+# POST JSON {confirmar:true} ou form `List-Unsubscribe=One-Click` (RFC 8058,
+# enviado pelo próprio cliente de e-mail) → 200 {ok:1, ja_saiu} (idempotente)
+# · 400 (sem nenhum dos dois) · 404 · 429 (rate limit por token+IP).
+sub sair_confirmar($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $token = $self->param('token');
+  return $self->_render_exclusao_not_found unless $model->saida_token_valido($token);
+  $token = lc $token;
+
+  my $rl = $model->rate_limit_check(
+    token => "sair:$token", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  $model->saida_por_token($token) or return $self->_render_exclusao_not_found;
+
+  my $input = $self->_input;
+  $input = {} unless ref $input eq 'HASH';
+  my $confirmar = $input->{confirmar};
+  my $one_click = $input->{'List-Unsubscribe'};
+  my $ok = (defined $one_click && !ref $one_click && $one_click eq 'One-Click')
+        || (defined $confirmar && !(ref $confirmar && ref $confirmar ne 'JSON::PP::Boolean')
+            && $confirmar && $confirmar ne 'false');
+  return $self->render(
+    json   => { error => 'Confirme a saída (confirmar: true).' },
+    status => 400,
+  ) unless $ok;
+
+  my $r = eval { $model->sair_por_token($token) };
+  unless ($r) {
+    $self->app->log->error("Opt-out: $@") if $@;
+    return $@ ? $self->render(json => { error => 'Erro interno.' }, status => 500)
+              : $self->_render_exclusao_not_found;
+  }
+  $self->render(json => { ok => 1, ja_saiu => $r->{ja_saiu} ? \1 : \0 });
 }
 
 # ---------------------------------------------------------------------------

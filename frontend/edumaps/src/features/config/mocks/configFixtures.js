@@ -408,6 +408,54 @@ export const CONFIG_TREE = {
           ],
         },
         {
+          // issue #216 (Fase 3): envio por e-mail para listas
+          key: "canais_envio",
+          label: "Envios",
+          children: [
+            {
+              key: "canais.envio.enabled",
+              label: "Envios por e-mail ativados",
+              description:
+                "Liga/desliga o envio de e-mails para listas. Desligado, o disparo responde 409 e os envios em andamento ficam parados.",
+              type: "boolean",
+              sensitive: 0,
+              enabled: 1,
+              value: 1,
+            },
+            {
+              key: "canais.envio.ritmo_por_minuto",
+              label: "Ritmo (e-mails por minuto)",
+              description: "Quantos e-mails cada envio despacha por minuto (1 a 600).",
+              example: "60",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 60,
+            },
+            {
+              key: "canais.envio.cota_diaria_escola",
+              label: "Cota diária por escola",
+              description:
+                "Máximo de e-mails que uma escola envia por dia. Ao esgotar, o envio pausa e retoma no dia seguinte.",
+              example: "500",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 500,
+            },
+            {
+              key: "canais.envio.max_destinatarios",
+              label: "Máximo de destinatários por envio",
+              description: "Teto de destinatários de um único envio.",
+              example: "2000",
+              type: "number",
+              sensitive: 0,
+              enabled: 1,
+              value: 2000,
+            },
+          ],
+        },
+        {
           key: "canais_retencao",
           label: "Retenção (LGPD)",
           children: [
@@ -571,3 +619,42 @@ export const CONSENTIMENTO_VERSOES = [
     created_at: "2026-10-12T10:00:00Z",
   },
 ];
+
+// Painel admin de envios (GET /api/admin/canais/envios, issue #216, onda 2).
+// Ordenadas por enviados_30d desc; a última só aparece por estar suspensa.
+export const ENVIOS_ADMIN = {
+  limites: {
+    enabled: 1,
+    ritmo_por_minuto: 60,
+    cota_diaria: 500,
+    max_destinatarios: 2000,
+    smtp_disponivel: 1,
+  },
+  escolas: [
+    {
+      cod_inep: 11000040,
+      escola_nome: "Escola Estadual Professora Maria de Lourdes",
+      enviados_hoje: 12,
+      enviados_30d: 340,
+      falhas_30d: 4,
+      optouts_30d: 2,
+      envios_em_curso: 2,
+      suspensao: null,
+    },
+    {
+      cod_inep: 35038751,
+      escola_nome: "EMEF Jardim das Flores",
+      enviados_hoje: 0,
+      enviados_30d: 120,
+      falhas_30d: 31,
+      optouts_30d: 9,
+      envios_em_curso: 1,
+      suspensao: {
+        id: 7,
+        motivo: "Muitas falhas de entrega",
+        suspenso_em: "2026-10-11T18:00:00Z",
+        suspenso_por: 1,
+      },
+    },
+  ],
+};

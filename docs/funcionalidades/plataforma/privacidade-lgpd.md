@@ -3,7 +3,7 @@ titulo: Privacidade e LGPD
 modulo: plataforma
 status: ativo
 audiencia: [gestor, comunidade, pesquisador]
-relacionadas: [contatos-grupos, resposta-pesquisa, relacoes-institucionais, listas-autoinscricao, painel-configuracao]
+relacionadas: [contatos-grupos, resposta-pesquisa, relacoes-institucionais, listas-autoinscricao, envios-email, painel-configuracao]
 ---
 
 # Privacidade e LGPD
@@ -36,6 +36,21 @@ Gestores e comunidade (titulares dos dados) e a própria plataforma.
   inscrever; o gestor também pode remover um inscrito a pedido. A remoção apaga
   nome, telefone e e-mail da pessoa naquela escola e mantém só um registro, sem
   dados pessoais, de que a exclusão aconteceu.
+  A remoção também alcança o **histórico de envios por e-mail**: o endereço da
+  pessoa deixa de constar nos envios já feitos, e ela não recebe envios que
+  ainda estavam pendentes.
+- Titular pode **deixar de receber comunicações de uma lista** sem apagar os
+  próprios dados: todo e-mail enviado pela escola traz um link para sair
+  daquela lista, e os programas de e-mail podem oferecer o **descadastro em um
+  clique**. A saída vale para os envios seguintes daquela lista (inclusive pelos
+  recortes que a incluem), é guardada sem dado pessoal legível e sobrevive a
+  uma remoção posterior dos dados. Só a própria pessoa a desfaz, ao se
+  inscrever de novo na lista, o que é um novo consentimento.
+- Sistema **não rastreia** a abertura nem os cliques dos e-mails enviados pela
+  escola.
+- Sistema pode medir quantas vezes a página de inscrição de uma lista foi aberta
+  apenas como **um total por dia**, sem guardar endereço de rede, navegador ou
+  qualquer identificador de quem acessou.
 - Sistema pode **apagar automaticamente** dados que já cumpriram sua finalidade,
   em prazos definidos pela administração: dados técnicos de acesso, inscrições
   nunca confirmadas e inscritos de listas encerradas.
@@ -52,5 +67,6 @@ um repositório exposto de dados pessoais.
 - [Contatos e grupos](../gestor/contatos-grupos.md)
 - [Resposta de pesquisa](../comunidade/resposta-pesquisa.md)
 - [Listas com autoinscrição por QR](../gestor/listas-autoinscricao.md)
+- [Envios por e-mail para listas](../gestor/envios-email.md)
 - [Painel de Configuração](painel-configuracao.md)
 - [Relações institucionais](../gestor/relacoes-institucionais.md)

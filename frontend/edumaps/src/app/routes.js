@@ -1,6 +1,6 @@
 // src/app/routes.js
 import AboutPage from "@/features/about";
-import PrivacidadePage, { ExclusaoPage } from "@/features/privacidade";
+import PrivacidadePage, { ExclusaoPage, SairPage } from "@/features/privacidade";
 import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
@@ -24,6 +24,8 @@ import {
   GestorRelacoesPage,
   GestorRelacaoDetailPage,
   GestorDocumentosPage,
+  GestorEnviosPage,
+  GestorSegmentosPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -40,6 +42,7 @@ export const routes = [
   { path: "/about", component: AboutPage },
   { path: "/privacidade", component: PrivacidadePage },
   { path: "/privacidade/exclusao/:token", component: ExclusaoPage },
+  { path: "/privacidade/sair/:token", component: SairPage },
   { path: "/municipio/compare", component: NetworkComparePage },
   { path: "/municipio/perfil", component: NetworkProfilePage },
   { path: "/cluster/geotag", component: ClusterGeotagPage },
@@ -61,6 +64,8 @@ export const routes = [
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/listas", component: GestorListasPage },
+  { path: "/gestor/envios", component: GestorEnviosPage },
+  { path: "/gestor/segmentos", component: GestorSegmentosPage },
   { path: "/gestor/reunioes", component: GestorReunioesPage },
   { path: "/gestor/reunioes/nova", component: GestorReunioesWizardPage },
   { path: "/gestor/reunioes/:id", component: GestorReuniaoDetailPage },

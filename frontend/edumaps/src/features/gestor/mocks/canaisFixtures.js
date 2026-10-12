@@ -409,3 +409,26 @@ export const EXCLUSOES_FIXTURE = [
     created_at: "2026-10-10T16:30:00",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Opt-out e funil (issue #216, onda 2)
+// ---------------------------------------------------------------------------
+
+// Tokens de saída (32 hex, os do rodapé dos envios: /privacidade/sair/:token).
+// Válido: Ana Parcial (lista 4), vinda do envio 2.
+export const SAIDA_TOKEN_VALIDO = "d1b2c3d4e5f60718293a4b5c6d7e8f90";
+// Clara Pendente (lista 4) já saiu (opt-out no estado inicial).
+export const SAIDA_TOKEN_JA_SAIU = "e1b2c3d4e5f60718293a4b5c6d7e8f90";
+// Antiabuso: o POST responde 429.
+export const SAIDA_TOKEN_LIMITE = "f1b2c3d4e5f60718293a4b5c6d7e8f90";
+
+// Opt-outs iniciais (canal_optouts), por lista: e-mail normalizado + envio.
+export const OPTOUTS_FIXTURE = [
+  { lista_id: 4, email: "clara@example.org", envio_id: 2, created_at: "2026-10-12T14:00:00Z" },
+];
+
+// Acessos ao QR por lista e dia (canal_qr_acessos), para o funil.
+export const ACESSOS_QR_FIXTURE = {
+  4: { "2026-10-10": 6, "2026-10-11": 9, "2026-10-12": 5 },
+  2: { "2026-10-11": 3 },
+};

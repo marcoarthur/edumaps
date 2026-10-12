@@ -30,6 +30,11 @@
 //   DELETE /listas/:id/membros/:membro_id  {motivo?} → 200 {ok, contatos, inscricoes, membros} · 403 · 404
 //   GET    /api/gestor/:cod_inep/canais/exclusoes → [{id, origem, regra, motivo, gestor_id,
 //                                      contatos, inscricoes, membros, created_at}] (recentes primeiro)
+//
+// Envio por e-mail (issue #216, contrato da onda 2):
+//   GET    /listas, /listas/:id        + n_optouts (saídas dos envios)
+//   GET    /listas/:id/inscricoes      + optout (o e-mail atual saiu dos envios desta lista)
+//   GET    /listas/:id/funil?de&ate    → {de, ate, exige_confirmacao, totais, taxas, serie} · 400
 
 import { apiClient } from "@/shared/api/client.js";
 
@@ -149,4 +154,19 @@ export function listExclusoes(inep) {
   return apiClient
     .get(`/api/gestor/${inep}/canais/exclusoes`)
     .then((d) => (Array.isArray(d) ? d : (d?.exclusoes ?? d?.itens ?? [])));
+}
+
+/**
+ * Funil da lista: acessos ao QR → inscrições → confirmados, mais as saídas.
+ * `de`/`ate` (YYYY-MM-DD) são opcionais (padrão: últimos 30 dias até hoje).
+ * `confirmados` vem `null` quando a lista não exige confirmação; as taxas vêm
+ * `null` quando o denominador é 0.
+ * @param {{de?: string, ate?: string}} [periodo]
+ * @returns {Promise<{de: string, ate: string, exige_confirmacao: boolean,
+ *   totais: {acessos: number, inscricoes: number, confirmados: number|null, optouts: number},
+ *   taxas: {acesso_inscricao: number|null, inscricao_confirmacao: number|null},
+ *   serie: Array<{dia: string, acessos: number, inscricoes: number, confirmados: number|null, optouts: number}>}>}
+ */
+export function getFunil(inep, id, { de, ate } = {}) {
+  return apiClient.get(`${BASE(inep)}/${id}/funil`, { de, ate });
 }

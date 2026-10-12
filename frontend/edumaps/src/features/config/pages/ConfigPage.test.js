@@ -222,6 +222,34 @@ describe("ConfigPage", () => {
       expect(await screen.findByTestId("ret-metadados-dias")).toHaveTextContent("30 dias");
     });
 
+    it("mostra o painel de envios só nas folhas canais.envio.* (#216)", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      expect(screen.queryByText("Envios por e-mail das escolas")).not.toBeInTheDocument();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Cota diária por escola" }));
+      expect(await screen.findByText("Envios por e-mail das escolas")).toBeInTheDocument();
+      expect(await screen.findByTestId("env-cota")).toHaveTextContent("500 e-mails");
+      expect(screen.queryByText("Retenção dos dados das listas")).not.toBeInTheDocument();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Metadados técnicos (dias)" }));
+      await screen.findByText("Retenção dos dados das listas");
+      expect(screen.queryByText("Envios por e-mail das escolas")).not.toBeInTheDocument();
+    });
+
+    it("salvar uma folha de envios recarrega o painel com o limite novo", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Cota diária por escola" }));
+      await screen.findByTestId("env-cota");
+
+      await fireEvent.input(await screen.findByPlaceholderText("500"), { target: { value: "800" } });
+      await fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Configuração salva.", "success"));
+      await waitFor(() => expect(screen.getByTestId("env-cota")).toHaveTextContent("800 e-mails"));
+    });
+
     it("tem o link para as versões do consentimento", async () => {
       render(ConfigPage);
       await screen.findByText(/Chave ainda não definida/);

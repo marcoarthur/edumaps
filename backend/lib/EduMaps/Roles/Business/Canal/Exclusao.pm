@@ -27,6 +27,10 @@ use Mojo::JSON qw(true false);
 #   canal_mensagens           do contato (contato_id, endereços, refs e
 #                             códigos dele): destinatário '[removido]', corpo
 #                             e erro NULL;
+#   canal_envio_destinatarios (#216) dos envios da escola, do contato ou do
+#                             e-mail dele: email e contato_id NULL; pendentes
+#                             → ignorado_anonimizado (+1 em `ignorados` do
+#                             envio). canal_optouts fica (só hash);
 #   canal_exclusoes           registro SEM PII (origem, regra, gestor, motivo,
 #                             contagens).
 #
@@ -337,6 +341,37 @@ sub _anonimizar ($self, $cod_inep, $contato_id, %p) {
        WHERE l.id = i.lista_id AND l.cod_inep = ? AND i.email_norm = ANY(?::text[])},
     $cod_inep, \@mail,
   ) if @mail;
+
+  # destinatários de envio da escola (#216, onda 2): pendentes do titular
+  # viram ignorado_anonimizado (+1 em `ignorados` do envio); em todos, e-mail
+  # em claro e contato_id saem (fica o hash — base do opt-out, sem PII)
+  my $dest_where = q{d.envio_id = e.id AND e.cod_inep = ?
+         AND ((d.contato_id IS NOT NULL AND d.contato_id = ?)
+              OR d.email = ANY(?::text[]))};
+  my $ignorados = $self->_rows(
+    qq{UPDATE clean.canal_envio_destinatarios d
+          SET status = 'ignorado_anonimizado', processado_em = NOW()
+         FROM clean.canal_envios e
+        WHERE $dest_where AND d.status = 'pendente'
+       RETURNING d.envio_id},
+    $cod_inep, $cid, \@mail,
+  );
+  my %por_envio;
+  $por_envio{ $_->{envio_id} }++ for @$ignorados;
+  for my $envio_id (sort { $a <=> $b } keys %por_envio) {
+    $self->_exec(
+      q{UPDATE clean.canal_envios SET ignorados = ignorados + ?, updated_at = NOW()
+         WHERE id = ?},
+      $por_envio{$envio_id}, $envio_id + 0,
+    );
+  }
+  $self->_exec(
+    qq{UPDATE clean.canal_envio_destinatarios d
+          SET email = NULL, contato_id = NULL
+         FROM clean.canal_envios e
+        WHERE $dest_where AND (d.email IS NOT NULL OR d.contato_id IS NOT NULL)},
+    $cod_inep, $cid, \@mail,
+  );
 
   # o contato da escola
   my $n_contatos = $cid ? $self->_exec(
