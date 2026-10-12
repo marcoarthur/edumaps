@@ -99,6 +99,13 @@ my $SQL_GERAL_CONFIRMADO = "((NOT $SQL_TEM_TEL OR m.confirmado_em IS NOT NULL)
    AND ($SQL_TEM_TEL OR $SQL_TEM_EMAIL
         OR m.confirmado_em IS NOT NULL OR m.email_confirmado_em IS NOT NULL))";
 
+# Fragmentos SQL do estado do membro (aliases m = membro, c = contato,
+# i = última inscrição), para as roles que resolvem membros (#216: segmentos e
+# envios). Devolve (LATERAL da última inscrição, tem_telefone, tem_email).
+sub _sql_estado_membro ($self) {
+  return ($SQL_ULTIMA_INSCRICAO, $SQL_TEM_TEL, $SQL_TEM_EMAIL);
+}
+
 # Contagem de membros com estado geral `confirmado` da lista `l`.
 my $SQL_N_CONFIRMADOS = "(SELECT count(*)::int
          FROM   clean.canal_lista_membros m

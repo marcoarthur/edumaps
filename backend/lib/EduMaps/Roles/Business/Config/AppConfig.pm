@@ -415,6 +415,49 @@ my %TREE = (
           },
         ],
       },
+      {
+        # Envio em massa por e-mail para listas (#216, RF-304). Lidas pelo
+        # disparo e pelo job `canais_envio` (envio_config).
+        key      => 'canais_envio',
+        label    => 'Envios',
+        children => [
+          {
+            key         => 'canais.envio.enabled',
+            label       => 'Envio para listas ativado',
+            description => 'Liga/desliga o envio de e-mails para as listas pelos gestores. Desligado, nenhum envio é disparado e os em curso ficam parados. Sem SMTP configurado, nada é enviado. Padrão: ligado.',
+            type        => 'boolean',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.envio.ritmo_por_minuto',
+            label       => 'Ritmo (e-mails por minuto)',
+            description => 'Quantos e-mails um envio entrega por minuto (lote do job). Entre 1 e 600. Padrão: 60.',
+            example     => '60',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.envio.cota_diaria_escola',
+            label       => 'Cota diária por escola',
+            description => 'Máximo de e-mails que cada escola envia por dia (fuso de São Paulo). Um envio que atinge a cota pausa e retoma no dia seguinte. Padrão: 500.',
+            example     => '500',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
+            key         => 'canais.envio.max_destinatarios',
+            label       => 'Máximo de destinatários por envio',
+            description => 'Teto de destinatários de um único envio. Padrão: 2000.',
+            example     => '2000',
+            type        => 'number',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+        ],
+      },
     ],
   },
   aparencia => {
@@ -850,6 +893,26 @@ sub retencao_config ($self) {
     my $v = $cfg->{$k};
     $cfg->{$k} = (defined $v && !ref $v && $v =~ /^\d+\z/ && $v >= 1) ? $v + 0 : $def{$k};
   }
+  $cfg->{enabled} = defined $cfg->{enabled} ? ($cfg->{enabled} ? 1 : 0) : 1;
+  return $cfg;
+}
+
+# Config efetiva do envio para listas (canais.envio.*, #216 RF-304). Defaults:
+# enabled 1, ritmo 60/min (1..600), cota diária 500, teto 2000 por envio.
+# Valor ausente ou fora da faixa vale o default (ritmo acima de 600 é cortado
+# em 600).
+sub envio_config ($self) {
+  my $cfg = $self->_canais_group_config(
+    'canais.envio',
+    [qw/enabled ritmo_por_minuto cota_diaria_escola max_destinatarios/],
+    [],
+  );
+  my %def = (ritmo_por_minuto => 60, cota_diaria_escola => 500, max_destinatarios => 2000);
+  for my $k (keys %def) {
+    my $v = $cfg->{$k};
+    $cfg->{$k} = (defined $v && !ref $v && $v =~ /^\d+\z/ && $v >= 1) ? $v + 0 : $def{$k};
+  }
+  $cfg->{ritmo_por_minuto} = 600 if $cfg->{ritmo_por_minuto} > 600;
   $cfg->{enabled} = defined $cfg->{enabled} ? ($cfg->{enabled} ? 1 : 0) : 1;
   return $cfg;
 }

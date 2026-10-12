@@ -64,6 +64,7 @@ sub _deliver ($self, $msg) {
     "From: $from_hdr",
     "To: $msg->{to}",
     "Subject: $assunto",
+    $self->_extra_headers($msg->{headers}),
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
@@ -72,6 +73,32 @@ sub _deliver ($self, $msg) {
   ) . "\r\n";
 
   return $self->_smtp_transaction($cfg, $msg->{to}, $from, $envelope);
+}
+
+# Cabeçalhos extras da mensagem (#216: List-Unsubscribe,
+# List-Unsubscribe-Post, Precedence). `headers` é arrayref de pares
+# [nome, valor] (ordem preservada) ou hashref (ordem alfabética). Nome só com
+# [A-Za-z0-9-]; quebras de linha no valor são removidas (sem injeção de
+# cabeçalho); os cabeçalhos fixos (From, To, Subject, MIME/Content-*) não são
+# sobrescritos. Sem `headers`, nada muda.
+my %FIXOS = map { lc($_) => 1 }
+  qw(From To Subject MIME-Version Content-Type Content-Transfer-Encoding);
+
+sub _extra_headers ($self, $headers) {
+  return () unless $headers;
+  my @pares = ref $headers eq 'ARRAY' ? @$headers
+            : ref $headers eq 'HASH'  ? map { [ $_, $headers->{$_} ] } sort keys %$headers
+            : ();
+  my @out;
+  for my $p (@pares) {
+    next unless ref $p eq 'ARRAY';
+    my ($nome, $valor) = @$p;
+    next unless defined $nome && $nome =~ /^[A-Za-z0-9-]+\z/ && !$FIXOS{ lc $nome };
+    next unless defined $valor && !ref $valor;
+    $valor =~ s/[\r\n]+/ /g;
+    push @out, "$nome: " . $self->_mime_word($valor);
+  }
+  return @out;
 }
 
 # Fronteira de teste: subclasse/objeto de teste pode sobrescrever para não

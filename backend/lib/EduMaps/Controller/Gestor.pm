@@ -504,6 +504,233 @@ sub canais_exclusoes_index($self) {
 }
 
 # ---------------------------------------------------------------------------
+# canais: envio por e-mail para listas (#216, Fase 3)
+# ---------------------------------------------------------------------------
+# Bearer + posse do cod_inep. A regra de negócio vive em Canal::Envios e
+# Canal::Segmentos; aqui só a tradução para HTTP. Erros do modelo vêm como
+# { error, status, motivo?, saldo?, teto? }.
+
+sub _canal_erro($self, $res) {
+  my %body = (error => $res->{error});
+  $body{$_} = $res->{$_} for grep { defined $res->{$_} } qw(motivo saldo teto);
+  $self->render(json => \%body, status => $res->{status} // 400);
+}
+
+sub _json_obj($self) {
+  my $input = $self->_input;
+  return ref $input eq 'HASH' ? $input : undef;
+}
+
+sub canais_envios_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_listar($self->param('cod_inep'),
+    map { $_ => $self->param($_) } qw(status page per_page));
+  return $self->render(json => { error => $r->{error} }, status => 400) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_envios_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $self->_guard_api(sub {
+    $model->envio_criar(
+      cod_inep  => $self->param('cod_inep'),
+      gestor_id => $self->stash('gestor')->{id},
+      map { $_ => $in->{$_} } qw(alvo_tipo alvo_id operacao assunto corpo),
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(status => 201, json => $r);
+}
+
+sub canais_envios_limites($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->envio_limites($self->param('cod_inep')));
+}
+
+sub canais_envios_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $e = $model->envio_detalhe($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Envio não encontrado') unless $e;
+  $self->render(json => $e);
+}
+
+sub canais_envios_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my %campos = map { $_ => $in->{$_} }
+               grep { exists $in->{$_} } qw(alvo_tipo alvo_id operacao assunto corpo);
+  my $r = $self->_guard_api(sub {
+    $model->envio_atualizar($self->param('cod_inep'), $self->param('id'), %campos);
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_envios_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_apagar($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(json => { ok => 1 });
+}
+
+sub canais_envios_previa($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_previa($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  $self->render(json => $r);
+}
+
+# E-mail de teste ao próprio gestor: 202 {enviado:1, para} · 409 {motivo} ·
+# 429 (5 por envio) · 502 (falha do SMTP).
+sub canais_envios_teste($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_teste(
+    cod_inep       => $self->param('cod_inep'),
+    id             => $self->param('id'),
+    gestor_id      => $self->stash('gestor')->{id},
+    smtp_transport => $self->canais_smtp,
+    log            => $self->app->log,
+  );
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  if ($r->{error}) {
+    $self->app->log->warn('Envio de teste falhou: ' . ($r->{detalhe} // '?'))
+      if ($r->{status} // 0) == 502;
+    return $self->_canal_erro($r);
+  }
+  $self->render(status => 202, json => $r);
+}
+
+# Disparo {agendado_para?}: 202 envio · 400 (data) · 409 {error, motivo,
+# saldo?, teto?}. Enfileira o job `canais_envio` com o delay do agendamento.
+sub canais_envios_disparar($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj // {};
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_disparar(
+    cod_inep      => $self->param('cod_inep'),
+    id            => $self->param('id'),
+    agendado_para => $in->{agendado_para},
+    secret        => $self->app->secrets->[0],
+    enqueue       => sub ($id, $delay) { $self->canais_envio_enfileirar($id, $delay) },
+  );
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(status => 202, json => $r);
+}
+
+sub canais_envios_cancelar($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_cancelar($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_envios_destinatarios($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_destinatarios($self->param('cod_inep'), $self->param('id'),
+    map { $_ => $self->param($_) } qw(status page per_page));
+  return $self->_render_not_found('Envio não encontrado') unless $r;
+  return $self->render(json => { error => $r->{error} }, status => 400) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_segmentos_index($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->segmentos_listar($self->param('cod_inep')));
+}
+
+sub canais_segmentos_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $self->_guard_api(sub {
+    $model->segmento_criar(
+      cod_inep  => $self->param('cod_inep'),
+      gestor_id => $self->stash('gestor')->{id},
+      nome      => $in->{nome},
+      criterios => $in->{criterios},
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(status => 201, json => $r);
+}
+
+sub canais_segmentos_show($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $s = $model->segmento_detalhe($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista dinâmica não encontrada') unless $s;
+  $self->render(json => $s);
+}
+
+sub canais_segmentos_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $self->_guard_api(sub {
+    $model->segmento_atualizar($self->param('cod_inep'), $self->param('id'),
+      nome      => $in->{nome},
+      criterios => $in->{criterios},
+      gestor_id => $self->stash('gestor')->{id},
+    );
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Lista dinâmica não encontrada') unless $r;
+  return $self->_canal_erro($r) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_segmentos_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->segmento_apagar($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista dinâmica não encontrada') unless $r;
+  $self->render(json => { ok => 1 });
+}
+
+# Prévia de critérios ainda não salvos: {criterios} -> 200 · 400.
+sub canais_segmentos_previa($self) {
+  return unless $self->_gestor_inep_ok;
+  my $in = $self->_json_obj
+    or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->segmento_previa($self->param('cod_inep'), $in->{criterios});
+  return $self->render(json => { error => $r->{error} }, status => 400) if $r->{error};
+  $self->render(json => $r);
+}
+
+sub canais_segmentos_previa_salvo($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->segmento_previa_salvo($self->param('cod_inep'), $self->param('id'));
+  return $self->_render_not_found('Lista dinâmica não encontrada') unless $r;
+  return $self->render(json => { error => $r->{error} }, status => 400) if $r->{error};
+  $self->render(json => $r);
+}
+
+# ---------------------------------------------------------------------------
 # gestor responsável pela agenda
 # ---------------------------------------------------------------------------
 

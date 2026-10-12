@@ -59,6 +59,36 @@ subtest 'envelope montado a partir da config' => sub {
   like $c->{envelope}, qr/^To: dest\@exemplo\.com/m, 'header To';
   like $c->{envelope}, qr/^Subject: =\?UTF-8\?B\?/m, 'assunto com acento é MIME codificado';
   like $c->{envelope}, qr/charset=UTF-8/, 'corpo UTF-8';
+  unlike $c->{envelope}, qr/^List-Unsubscribe/m, 'sem headers: nenhum cabeçalho extra';
+};
+
+subtest 'cabeçalhos extras (#216)' => sub {
+  my $cap = EmailTest::Capture->new(
+    config => { smtp_host => 'smtp.exemplo.org', from => 'nao-responda@exemplo.org' },
+    schema => undef,
+  );
+  my $res = $cap->send_message({
+    to => 'dest@exemplo.com', operacao => 'aviso', assunto => 'A', corpo => 'B',
+    headers => [
+      [ 'List-Unsubscribe'      => '<https://e.org/privacidade/sair/abc>' ],
+      [ 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click' ],
+      [ 'Precedence'            => 'bulk' ],
+      [ 'X-Injecao'             => "a\r\nBcc: alguem\@x.org" ],
+      [ 'Subject'               => 'sobrescrito' ],
+      [ 'Nome Ruim'             => 'x' ],
+    ],
+  });
+  ok $res->{ok}, 'envio ok';
+  ok exists $res->{mensagem_id}, 'resultado traz mensagem_id';
+  my $e = $EmailTest::Capture::CAPTURED->{envelope};
+  like $e, qr{^List-Unsubscribe: <https://e\.org/privacidade/sair/abc>\r$}m, 'List-Unsubscribe';
+  like $e, qr{^List-Unsubscribe-Post: List-Unsubscribe=One-Click\r$}m, 'List-Unsubscribe-Post';
+  like $e, qr{^Precedence: bulk\r$}m, 'Precedence';
+  unlike $e, qr/^Bcc:/m, 'quebra de linha no valor não injeta cabeçalho';
+  is scalar(() = $e =~ /^Subject:/mg), 1, 'cabeçalho fixo não é sobrescrito';
+  unlike $e, qr/^Nome Ruim/m, 'nome inválido descartado';
+  my ($hdr) = split /\r\n\r\n/, $e, 2;
+  like $hdr, qr/Precedence: bulk/, 'extras ficam no bloco de cabeçalhos';
 };
 
 done_testing;
