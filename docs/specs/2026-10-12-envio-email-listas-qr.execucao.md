@@ -180,14 +180,14 @@ listas excluídas depois → ignoradas, aparecem em `listas_ignoradas`); `estado
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| M1 | T-A | Migration `canal_envios` (toda a modelagem) | ⚪ |
-| M2 | T-A | Config `canais.envio.*` + cabeçalhos extras no `Channel::Email` | ⚪ |
-| M3 | T-A | Segmentos (CRUD, critérios, prévia) | ⚪ |
-| M4 | T-A | Envios (rascunho, prévia, teste, disparo, cancelar, destinatários, limites) | ⚪ |
-| M5 | T-A | Job `canais_envio` (lotes, ritmo, cota, suspensão, idempotência) | ⚪ |
-| F1 | T-B | API + fixtures | ⚪ |
-| F2 | T-B | EnviosPage + editor + detalhe | ⚪ |
-| F3 | T-B | SegmentosPage + ação na ListasPage | ⚪ |
+| M1 | T-A | Migration `canal_envios` (toda a modelagem) | 🟢 |
+| M2 | T-A | Config `canais.envio.*` + cabeçalhos extras no `Channel::Email` | 🟢 |
+| M3 | T-A | Segmentos (CRUD, critérios, prévia) | 🟢 |
+| M4 | T-A | Envios (rascunho, prévia, teste, disparo, cancelar, destinatários, limites) | 🟢 |
+| M5 | T-A | Job `canais_envio` (lotes, ritmo, cota, suspensão, idempotência) | 🟢 |
+| F1 | T-B | API + fixtures | 🟢 |
+| F2 | T-B | EnviosPage + editor + detalhe | 🟢 |
+| F3 | T-B | SegmentosPage + ação na ListasPage | 🟢 |
 | T1 | coord. | verificação, commits, deploy | ⚪ |
 
 Onda 2: opt-out público (página, One-Click, reinscrição desfaz), funil
@@ -205,3 +205,30 @@ envios), anonimização cobrindo as tabelas novas, selo "Saiu dos envios".
   permite a linha).
 - **2026-10-12 — Token de saída derivado por HMAC** do id do destinatário:
   nada em claro no banco, e o job reconstrói o link a cada lote.
+- **2026-10-12 — Desvios da T-A aceitos (onda 1):** `send_message` devolve
+  também `mensagem_id` (id do histórico); `Canal::Listas` expõe
+  `_sql_estado_membro` para as roles novas; índice extra
+  `idx_canal_envio_dest_processado` (cota diária); assunto do teste com
+  prefixo `[Teste] `. Interpretações: lista **inativa** conta como alvo
+  inexistente (`existe:false`, `listas_ignoradas`); `destinatarios` inclui as
+  linhas `ignorado_optout`; `409 cota_insuficiente` de envio agendado traz
+  `saldo` = cota diária; destinatários mascaram `COALESCE(d.email,
+  contato.email)`; job rodado antes de `agendado_para` reagenda pelo tempo que
+  falta; `suspenso` com escola reativada é retomado quando o job roda (o
+  reenfileiramento na reativação é da onda 2).
+- **2026-10-12 — Desvios da T-B aceitos (onda 1):** `EnviosPage` também abre
+  `?id=N` (editor se rascunho, senão detalhe); o editor salva o rascunho antes
+  de prévia/teste/disparo e pede `/previa` para a contagem do `ConfirmDialog`;
+  ao salvar uma lista dinâmica, ids de listas excluídas saem dos critérios;
+  botões de envio desabilitados com escola suspensa, envio desligado ou SMTP
+  indisponível; "Enviar e-mail" também por lista dinâmica.
+
+## Verificação independente (coordenador, onda 1)
+
+- Banco de CI recriado do zero (`ci_db.sh up` na 5433) + `verify` →
+  `canal_envios .. ok`.
+- Backend `prove -l -r t/01-app t/02-models/ t/04-api/canais/ t/04-api/admin/
+  t/04-api/gestor/ t/03-plugins/ t/05-tasks/{canais_envio,canais_retencao,telegram_polling}.t`
+  → 78 arquivos / 489 testes; só os 6 pré-falhos conhecidos.
+- Frontend 92 arquivos / 682 testes; `vite build` OK. Rotas e JSON
+  conferidos lado a lado (envio, contadores, limites, prévia, segmentos).
