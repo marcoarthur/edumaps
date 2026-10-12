@@ -131,3 +131,78 @@ Onda 2: exclusão (titular + gestor + histórico), retenção (job + admin),
   → 69 arquivos / 449 testes; só os 6 pré-falhos conhecidos. `check_dependencies` OK.
 - Frontend 85 arquivos / 564 testes; `vite build` OK. Campos do contrato
   conferidos lado a lado.
+
+## Onda 2 — contrato (congelado)
+
+### Público (independente de `canais.inscricao.enabled` — direito do titular)
+
+| Método | Rota | Entrada | Saída |
+|---|---|---|---|
+| GET | `/api/canais/exclusao/:token` | — | `200 {escola_nome, lista_nome, ja_excluido}` · `404` genérico |
+| POST | `/api/canais/exclusao/:token` | `{confirmar:true}` | `200 {ok:1, ja_excluido}` (idempotente) · `400` (sem `confirmar`) · `404` · `429` |
+| GET | `/api/canais/consentimento` | — | (onda 1) + `retencao {metadados_dias, pendentes_dias, listas_inativas_meses, enabled}` |
+
+`ja_excluido` = a inscrição do token já foi anonimizada. O token é o da
+`exclusao_url` (32 hex; só o sha256 em `canal_inscricoes.exclusao_hash`).
+
+### Gestão (Bearer + posse)
+
+| Método | Rota | Saída |
+|---|---|---|
+| DELETE | `/api/gestor/:cod_inep/canais/listas/:id/membros/:membro_id` | corpo opcional `{motivo}` → `200 {ok:1, contatos, inscricoes, membros}` · `403` · `404` |
+| GET | `/api/gestor/:cod_inep/canais/exclusoes` | `200 [ {id, origem, regra, motivo, gestor_id, contatos, inscricoes, membros, created_at} ]` (mais recentes primeiro, até 200) |
+
+### Admin (Bearer admin)
+
+| Método | Rota | Saída |
+|---|---|---|
+| GET | `/api/admin/canais/retencao` | `200 {enabled, metadados_dias, pendentes_dias, listas_inativas_meses, ultima_execucao: {em, metadados, pendentes, listas_inativas} \| null, agendado}` |
+| POST | `/api/admin/canais/retencao/executar` | `202 {ok:1, job_id}` (execução avulsa, não reagenda) |
+
+As versões de consentimento (onda 1) ganham tela de admin nesta onda.
+
+### Anonimização (`anonimizar_contato`, RF-206)
+
+Conforme o inventário de PII da spec, numa transação: contato da escola
+(`nome='[removido]'`, telefone/e-mail `NULL`); todas as inscrições do contato
+(nome `[removido]`, telefone/telefone_norm/email/email_norm/ip_anon/user_agent
+`NULL`, `anonimizado_em`); membros do contato removidos de **todas** as listas da
+escola; refs invalidadas (`invalidada_em`, `telegram_chat_pendente NULL`);
+`canal_confirmacoes` pendentes do endereço expiradas e `endereco` trocado por
+hash; `canal_mensagens` do contato com destinatário e corpo apagados; registro
+em `canal_exclusoes` sem PII. Idempotente.
+
+### Retenção
+
+- Folhas `canais.retencao.enabled` (boolean, default true),
+  `metadados_dias` (90), `pendentes_dias` (180), `listas_inativas_meses` (12) no
+  AppConfig, grupo "Retenção (LGPD)" na categoria Canais.
+- Task Minion `canais_retencao`: diária, autorreagendável, lock único, início no
+  boot do worker (mesmo padrão da `telegram_polling`); `{manual:1}` executa uma
+  vez sem reagendar. Três regras (spec RF-207), cada uma registra uma linha em
+  `canal_exclusoes` (`origem='retencao'`, `regra`) **mesmo com contagem zero**,
+  para a última execução ser visível. Contato em outra lista ativa não é
+  anonimizado pela regra de lista inativa.
+
+### Frontend (onda 2)
+
+- `ExclusaoPage` pública em `/privacidade/exclusao/:token` (fora do guard):
+  escola/lista, o que será removido, confirmar, estados concluído/já excluído/
+  inválido.
+- `ListasPage`: ação "Remover inscrito" (diálogo de confirmação + motivo) e
+  seção "Exclusões" (histórico da escola: data, origem, regra/motivo, contagens).
+- `PrivacidadePage`: texto vigente do consentimento (markdown seguro já
+  existente), prazos de retenção e como excluir.
+- Admin: tela de **versões de consentimento** (listar, criar rascunho, editar,
+  publicar com confirmação) em rota admin própria, linkada do `/config`; painel
+  de **retenção** (prazos, última execução, "Executar agora") ao selecionar uma
+  folha `canais.retencao.*` no `/config` (mesmo padrão do painel do bot).
+
+| ID | Trilha | Escopo | Status |
+|----|--------|--------|--------|
+| E1 | T-A | `anonimizar_contato` + varredura de PII em teste | ⚪ |
+| E2 | T-A | Exclusão pública + pelo gestor + histórico | ⚪ |
+| E3 | T-A | Retenção: config, task, endpoints admin | ⚪ |
+| G1 | T-B | `ExclusaoPage` + `PrivacidadePage` | ⚪ |
+| G2 | T-B | ListasPage: remover inscrito + histórico | ⚪ |
+| G3 | T-B | Admin: versões de consentimento + painel de retenção | ⚪ |
