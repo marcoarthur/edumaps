@@ -52,3 +52,56 @@ export function gerarRelatorio(inep, { geotag, tema, opcoes } = {}) {
 export function getJobRelatorio(inep, jobId) {
   return apiClient.get(`${BASE(inep)}/jobs/${jobId}`);
 }
+
+// ---------------------------------------------------------------- salvos (fase 3)
+//
+//   POST   /salvos          {job_id} → 201 {salvo} (novo) · 200 {salvo} (já salvo)
+//                                     · 404 (job alheio/inexistente) · 409 (job não terminou bem)
+//   GET    /salvos          ?page&per_page → {items:[resumo], total, page, per_page}
+//   GET    /salvos/:id      → resumo + relatorio (ReportResult gravado) · 404
+//   DELETE /salvos/:id      → {ok:1} · 404
+//
+// O conteúdo salvo vem do resultado do job no servidor, nunca do cliente: o
+// POST só leva o job_id.
+
+/**
+ * Aceita tanto `{salvo: {...}, relatorio?}` quanto o resumo "achatado" com
+ * `relatorio` — o contrato descreve o detalhe como "salvo + relatorio".
+ */
+function desembrulharSalvo(d) {
+  if (d && typeof d === "object" && d.salvo && typeof d.salvo === "object") {
+    const relatorio = d.relatorio ?? d.salvo.relatorio;
+    return relatorio ? { ...d.salvo, relatorio } : { ...d.salvo };
+  }
+  return d;
+}
+
+/** Salva o relatório gerado pelo job (dedupe pelo job_id no servidor). */
+export function salvarRelatorio(inep, jobId) {
+  return apiClient
+    .post(`${BASE(inep)}/salvos`, { job_id: Number(jobId) })
+    .then(desembrulharSalvo);
+}
+
+/**
+ * Lista paginada dos relatórios salvos do gestor (mais recentes primeiro).
+ * @returns {Promise<{items: Array<object>, total: number, page: number, per_page: number}>}
+ */
+export function listarSalvos(inep, { page = 1, per_page = 20 } = {}) {
+  return apiClient.get(`${BASE(inep)}/salvos`, { page, per_page }).then((d) => ({
+    items: d?.items ?? [],
+    total: Number(d?.total ?? 0),
+    page: Number(d?.page ?? page),
+    per_page: Number(d?.per_page ?? per_page),
+  }));
+}
+
+/** Detalhe do salvo: o resumo mais o `relatorio` (fotografia). */
+export function getSalvo(inep, id) {
+  return apiClient.get(`${BASE(inep)}/salvos/${id}`).then(desembrulharSalvo);
+}
+
+/** Exclui o relatório salvo. */
+export function excluirSalvo(inep, id) {
+  return apiClient.delete(`${BASE(inep)}/salvos/${id}`);
+}

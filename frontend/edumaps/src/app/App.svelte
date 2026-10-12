@@ -52,7 +52,7 @@
       <match.component token={match.params.token} />
     {/if}
   {:else}
-  <nav class="bg-brand-700 text-white shadow-sm">
+  <nav class="bg-brand-700 text-white shadow-sm print:hidden">
     <div class="max-w-5xl mx-auto px-6 py-4 flex items-center gap-6">
       <a href="/" use:link class="flex items-center gap-2" aria-label="EduMaps — início">
         <Logo size={28} variant="light" />
@@ -67,8 +67,8 @@
       </div>
     </div>
   </nav>
-  <Toast />
-  <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
+  <div class="print:hidden"><Toast /></div>
+  <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-8 print:max-w-none print:p-0">
     {#if match}
       <match.component {...(match.params ?? {})} />
     {:else}

@@ -11,9 +11,73 @@
   import SecaoGrafico from "./SecaoGrafico.svelte";
   import SecaoAssociacoes from "./SecaoAssociacoes.svelte";
   import { formatarValor } from "../../utils/relatorioFormatos.js";
+  import { baixarMarkdown } from "../../utils/relatorioMarkdown.js";
+  import { ApiError } from "@/shared/api/client.js";
 
-  /** @type {{relatorio: object}} */
-  let { relatorio } = $props();
+  /**
+   * @type {{
+   *   relatorio: object,
+   *   acoes?: boolean,
+   *   onSalvar?: (() => Promise<unknown>) | null,
+   *   salvo?: boolean,
+   * }}
+   */
+  let { relatorio, acoes = false, onSalvar = null, salvo = false } = $props();
+
+  let artigo = $state(null);
+  let estadoSalvar = $state("ocioso"); // ocioso | salvando | salvo | erro
+  let erroSalvar = $state(null);
+
+  const mostrarSalvar = $derived(typeof onSalvar === "function" && !salvo);
+  const temAcoes = $derived(acoes || mostrarSalvar);
+
+  // <details> abertos só para a impressão (restaurados no afterprint)
+  let abertosParaImprimir = [];
+
+  function abrirDetalhes() {
+    if (!artigo || abertosParaImprimir.length) return;
+    abertosParaImprimir = [...artigo.querySelectorAll("details:not([open])")];
+    for (const d of abertosParaImprimir) d.open = true;
+  }
+
+  function restaurarDetalhes() {
+    for (const d of abertosParaImprimir) d.open = false;
+    abertosParaImprimir = [];
+  }
+
+  $effect(() => {
+    window.addEventListener("beforeprint", abrirDetalhes);
+    window.addEventListener("afterprint", restaurarDetalhes);
+    return () => {
+      window.removeEventListener("beforeprint", abrirDetalhes);
+      window.removeEventListener("afterprint", restaurarDetalhes);
+    };
+  });
+
+  function imprimir() {
+    window.print();
+  }
+
+  function baixar() {
+    baixarMarkdown(relatorio);
+  }
+
+  async function salvar() {
+    if (!mostrarSalvar || estadoSalvar === "salvando" || estadoSalvar === "salvo") return;
+    estadoSalvar = "salvando";
+    erroSalvar = null;
+    try {
+      await onSalvar();
+      estadoSalvar = "salvo";
+    } catch (err) {
+      estadoSalvar = "erro";
+      erroSalvar =
+        err instanceof ApiError && err.message ? err.message : "Não foi possível salvar o relatório.";
+    }
+  }
+
+  const BOTAO =
+    "px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   const secoes = $derived((relatorio?.secoes ?? []).filter((s) => s && typeof s === "object"));
   const fontes = $derived(relatorio?.fontes ?? []);
@@ -35,7 +99,43 @@
   });
 </script>
 
-<article class="space-y-6" data-testid="relatorio-view" aria-labelledby="relatorio-titulo">
+<article
+  class="relatorio-imprimivel space-y-6"
+  data-testid="relatorio-view"
+  aria-labelledby="relatorio-titulo"
+  bind:this={artigo}
+>
+  {#if temAcoes}
+    <div class="flex flex-wrap items-center gap-2 print:hidden" role="group" aria-label="Ações do relatório" data-testid="relatorio-acoes">
+      {#if acoes}
+        <button type="button" onclick={imprimir} class="{BOTAO} bg-gray-200 text-gray-800 hover:bg-gray-300">
+          Imprimir / salvar PDF
+        </button>
+        <button type="button" onclick={baixar} class="{BOTAO} bg-gray-200 text-gray-800 hover:bg-gray-300">
+          Baixar Markdown
+        </button>
+      {/if}
+      {#if mostrarSalvar}
+        {#if estadoSalvar === "salvo"}
+          <span class="text-sm font-medium text-emerald-700" role="status" data-testid="relatorio-salvo">
+            <span aria-hidden="true">✓</span>{" "}Salvo
+          </span>
+          <a href="/gestor/relatorios/salvos" class="text-sm text-blue-700 hover:underline">Ver meus relatórios</a>
+        {:else}
+          <button
+            type="button"
+            onclick={salvar}
+            disabled={estadoSalvar === "salvando"}
+            class="{BOTAO} bg-blue-600 text-white hover:bg-blue-700"
+          >{estadoSalvar === "salvando" ? "Salvando…" : "Salvar relatório"}</button>
+        {/if}
+      {/if}
+    </div>
+    {#if estadoSalvar === "erro" && erroSalvar}
+      <p class="text-sm text-red-700 print:hidden" role="alert" data-testid="erro-salvar">{erroSalvar}</p>
+    {/if}
+  {/if}
+
   <header class="space-y-2">
     <div class="flex flex-wrap items-center gap-2">
       <h2 id="relatorio-titulo" class="text-xl font-bold text-gray-900">{relatorio?.titulo}</h2>

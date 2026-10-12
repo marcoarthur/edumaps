@@ -1,5 +1,5 @@
 // src/features/gestor/mocks/relatoriosHandlers.js
-// MSW do Assistente de Relatório (issue #219): recorte-padrão, temas por
+// MSW do Assistente de Relatório (issue #219; salvos na fase 3): recorte-padrão, temas por
 // nível, POST de geração (202 {job_id}) e o job, que passa por
 // inactive → active → finished (ou failed) a cada consulta.
 import { http, HttpResponse } from "msw";
@@ -33,12 +33,68 @@ let config = PADRAO();
 let jobs = new Map();
 let proximoJob = 900;
 let pedidos = [];
+// fase 3: relatórios salvos do gestor da sessão (mais recentes no fim)
+let salvos = [];
+let proximoSalvo = 1;
 
 export function resetRelatoriosMockState() {
   config = PADRAO();
   jobs = new Map();
   proximoJob = 900;
   pedidos = [];
+  salvos = [];
+  proximoSalvo = 1;
+}
+
+/** Relatórios salvos no mock (para os testes conferirem). */
+export function getSalvosMock() {
+  return salvos;
+}
+
+function resumoSalvo(s) {
+  const { relatorio, job_id, ...resumo } = s;
+  return resumo;
+}
+
+function criarSalvo({ jobId, pedido, relatorio, salvoEm }) {
+  const { cache_hit, ...conteudo } = relatorio ?? {};
+  const salvo = {
+    id: proximoSalvo++,
+    job_id: jobId,
+    titulo: conteudo.titulo,
+    tema: { id: pedido?.tema ?? conteudo.tema?.id, titulo: conteudo.tema?.titulo },
+    recorte: {
+      nivel: pedido?.geotag?.nivel ?? conteudo.recorte?.nivel,
+      codigo: String(pedido?.geotag?.codigo ?? conteudo.recorte?.codigo ?? ""),
+      nome: conteudo.recorte?.nome ?? null,
+    },
+    opcoes: pedido?.opcoes ?? {},
+    gerado_em: conteudo.gerado_em,
+    salvo_em: salvoEm ?? new Date(Date.UTC(2026, 9, 12, 13, 0, 0) + salvos.length * 60000).toISOString(),
+    relatorio: conteudo,
+  };
+  salvos.push(salvo);
+  return salvo;
+}
+
+/**
+ * Semeia relatórios salvos (sem passar por um job). Cada item:
+ * {relatorio, pedido?: {geotag, tema, opcoes}, salvoEm?}.
+ * @returns {Array<object>} os salvos criados
+ */
+export function semearSalvosMock(itens = []) {
+  return itens.map((item, i) =>
+    criarSalvo({
+      jobId: 5000 + proximoSalvo + i,
+      pedido: item.pedido ?? {
+        geotag: { nivel: item.relatorio?.recorte?.nivel, codigo: item.relatorio?.recorte?.codigo },
+        tema: item.relatorio?.tema?.id,
+        opcoes: item.opcoes ?? {},
+      },
+      relatorio: item.relatorio,
+      salvoEm: item.salvoEm,
+    }),
+  );
 }
 
 /** Ajusta o comportamento dos próximos jobs (falha, llm, cache, ritmo). */
@@ -61,6 +117,16 @@ const naoAutorizado = (request) =>
 
 const erro401 = () => HttpResponse.json({ error: "Faça login como gestor." }, { status: 401 });
 const erro400 = (msg) => HttpResponse.json({ error: msg }, { status: 400 });
+const erro404 = (msg) => HttpResponse.json({ error: msg }, { status: 404 });
+
+/** Resultado final do job (o mesmo que o GET do job devolve ao terminar). */
+function resultadoJob(job) {
+  const c = job.config;
+  const base = c.llmIndisponivel
+    ? RELATORIO_LLM_INDISPONIVEL_FIXTURE
+    : (RELATORIOS_POR_TEMA_FIXTURE[job.pedido?.tema] ?? RELATORIO_RESULT_FIXTURE);
+  return { ...base, cache_hit: !!c.cacheHit };
+}
 
 export const gestorRelatoriosHandlers = [
   http.get(`${BASE}/recorte-padrao`, ({ request, params }) => {
@@ -108,13 +174,52 @@ export const gestorRelatoriosHandlers = [
       return HttpResponse.json({ state, progress: state === "active" ? 50 : 0 });
     }
     if (c.falha) return HttpResponse.json({ state: "failed", error: c.falha });
-    const base = c.llmIndisponivel
-      ? RELATORIO_LLM_INDISPONIVEL_FIXTURE
-      : (RELATORIOS_POR_TEMA_FIXTURE[job.pedido?.tema] ?? RELATORIO_RESULT_FIXTURE);
-    return HttpResponse.json({
-      state: "finished",
-      progress: 100,
-      result: { ...base, cache_hit: !!c.cacheHit },
-    });
+    return HttpResponse.json({ state: "finished", progress: 100, result: resultadoJob(job) });
+  }),
+
+  // ------------------------------------------------------------ salvos (fase 3)
+
+  http.post(`${BASE}/salvos`, async ({ request }) => {
+    if (naoAutorizado(request)) return erro401();
+    const body = await request.json().catch(() => ({}));
+    const jobId = Number(body?.job_id);
+    const job = jobs.get(jobId);
+    if (!job) return erro404("Relatório não encontrado.");
+    const terminou = job.consultas >= job.config.consultasAteFim && !job.config.falha;
+    if (!terminou) {
+      return HttpResponse.json(
+        { error: "O relatório ainda não terminou de ser gerado." },
+        { status: 409 },
+      );
+    }
+    const existente = salvos.find((s) => s.job_id === jobId);
+    if (existente) return HttpResponse.json(resumoSalvo(existente), { status: 200 });
+    const salvo = criarSalvo({ jobId, pedido: job.pedido, relatorio: resultadoJob(job) });
+    return HttpResponse.json(resumoSalvo(salvo), { status: 201 });
+  }),
+
+  http.get(`${BASE}/salvos`, ({ request }) => {
+    if (naoAutorizado(request)) return erro401();
+    const q = new URL(request.url).searchParams;
+    const page = Math.max(1, Number(q.get("page") ?? 1) || 1);
+    const perPage = Math.min(100, Math.max(1, Number(q.get("per_page") ?? 20) || 20));
+    const ordenados = [...salvos].reverse(); // mais recentes primeiro
+    const items = ordenados.slice((page - 1) * perPage, page * perPage).map(resumoSalvo);
+    return HttpResponse.json({ items, total: salvos.length, page, per_page: perPage });
+  }),
+
+  http.get(`${BASE}/salvos/:id`, ({ request, params }) => {
+    if (naoAutorizado(request)) return erro401();
+    const s = salvos.find((x) => x.id === Number(params.id));
+    if (!s) return erro404("Relatório não encontrado.");
+    return HttpResponse.json({ ...resumoSalvo(s), relatorio: s.relatorio });
+  }),
+
+  http.delete(`${BASE}/salvos/:id`, ({ request, params }) => {
+    if (naoAutorizado(request)) return erro401();
+    const i = salvos.findIndex((x) => x.id === Number(params.id));
+    if (i < 0) return erro404("Relatório não encontrado.");
+    salvos.splice(i, 1);
+    return HttpResponse.json({ ok: 1 });
   }),
 ];

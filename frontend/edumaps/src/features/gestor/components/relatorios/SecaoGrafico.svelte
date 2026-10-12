@@ -40,7 +40,7 @@
 
 <section class="space-y-2" data-testid="secao-grafico" data-grafico={linhas ? "linhas" : "barras"}>
   <figure
-    class="bg-white border border-gray-200 rounded-card shadow-card p-4"
+    class="bg-white border border-gray-200 rounded-card shadow-card p-4 print:shadow-none print:break-inside-avoid"
     aria-describedby="grafico-desc-{secao.id}"
   >
     {#if rows.length > 0}
@@ -59,7 +59,7 @@
   </figure>
   {#if rows.length > 0}
     <details class="text-sm">
-      <summary class="cursor-pointer text-blue-700 hover:underline">Ver os dados do gráfico em tabela</summary>
+      <summary class="cursor-pointer text-blue-700 hover:underline print:hidden">Ver os dados do gráfico em tabela</summary>
       <div class="mt-2"><SecaoTabela secao={tabela} /></div>
     </details>
   {/if}

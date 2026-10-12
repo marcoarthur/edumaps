@@ -11,6 +11,7 @@ import {
   configurarRelatoriosMock,
   getPedidosRelatorioMock,
   getConsultasJobMock,
+  getSalvosMock,
 } from "../mocks/relatoriosHandlers.js";
 import { server } from "../../../mocks/server.js";
 import RelatoriosPage from "./RelatoriosPage.svelte";
@@ -61,6 +62,7 @@ describe("RelatoriosPage", () => {
   afterEach(() => {
     setApiToken(null);
     vi.useRealTimers();
+    window.history.replaceState({}, "", "/");
   });
 
   it("sem sessão mostra o login", async () => {
@@ -370,6 +372,176 @@ describe("RelatoriosPage", () => {
       await vi.advanceTimersByTimeAsync(6000);
       expect(getConsultasJobMock(900)).toBe(0);
       expect(screen.queryByTestId("relatorio-view")).toBeNull();
+    });
+  });
+
+  it("cabeçalho tem o link \"Meus relatórios\"", async () => {
+    await abrir();
+    expect(screen.getByRole("link", { name: "Meus relatórios" })).toHaveAttribute(
+      "href",
+      "/gestor/relatorios/salvos",
+    );
+  });
+
+  describe("fase 3: salvar e preenchimento por query", () => {
+    it("o relatório gerado traz as ações e salva pelo job_id", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      await abrir();
+      await gerarEPollar();
+      const view = await screen.findByTestId("relatorio-view");
+      expect(within(view).getByRole("button", { name: "Imprimir / salvar PDF" })).toBeInTheDocument();
+      expect(within(view).getByRole("button", { name: "Baixar Markdown" })).toBeInTheDocument();
+      await fireEvent.click(within(view).getByRole("button", { name: "Salvar relatório" }));
+      expect(await screen.findByTestId("relatorio-salvo")).toHaveTextContent("Salvo");
+      expect(screen.getByRole("link", { name: "Ver meus relatórios" })).toHaveAttribute(
+        "href",
+        "/gestor/relatorios/salvos",
+      );
+      expect(getSalvosMock()).toHaveLength(1);
+      expect(getSalvosMock()[0]).toMatchObject({ job_id: 900, tema: { id: "ideb_territorio" } });
+    });
+
+    it("gerar outro relatório volta o botão \"Salvar relatório\"", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      configurarRelatoriosMock({ consultasAteFim: 1 });
+      await abrir();
+      await gerarEPollar(1);
+      await fireEvent.click(await screen.findByRole("button", { name: "Salvar relatório" }));
+      await screen.findByTestId("relatorio-salvo");
+      await fireEvent.click(screen.getByRole("button", { name: "Gerar relatório" }));
+      await ate(() => getPedidosRelatorioMock().length === 2);
+      await ate(() => vi.getTimerCount() > 0);
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(await screen.findByRole("button", { name: "Salvar relatório" })).toBeInTheDocument();
+      expect(screen.queryByTestId("relatorio-salvo")).toBeNull();
+    });
+
+    it("409 ao salvar mostra a mensagem", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      configurarRelatoriosMock({ consultasAteFim: 1 });
+      server.use(
+        http.post("/api/gestor/:cod_inep/relatorios/salvos", () =>
+          HttpResponse.json({ error: "O relatório ainda não terminou de ser gerado." }, { status: 409 }),
+        ),
+      );
+      await abrir();
+      await gerarEPollar(1);
+      await fireEvent.click(await screen.findByRole("button", { name: "Salvar relatório" }));
+      expect(await screen.findByTestId("erro-salvar")).toHaveTextContent("ainda não terminou");
+    });
+
+    it("gerar de novo: recorte de fora da escola, tema e opções da query; gera uma vez", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      window.history.replaceState(
+        {},
+        "",
+        "/gestor/relatorios?nivel=municipio&codigo=1200401&nome=Rio%20Branco&tema=ideb_territorio&etapa=ensino_medio&rede=Municipal&gerar=1",
+      );
+      render(RelatoriosPage);
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      expect(getPedidosRelatorioMock()[0]).toEqual({
+        geotag: { nivel: "municipio", codigo: "1200401" },
+        tema: "ideb_territorio",
+        opcoes: { etapa: "ensino_medio", rede: "Municipal" },
+      });
+      expect(screen.getByTestId("recorte-query")).toHaveTextContent("Recorte: Rio Branco");
+      expect(screen.getByRole("radio", { name: "Município" })).toBeChecked();
+      expect(screen.getByLabelText("Etapa")).toHaveValue("ensino_medio");
+      expect(screen.getByLabelText("Rede")).toHaveValue("Municipal");
+      // a query sai da URL: recarregar não gera outra vez
+      expect(window.location.search).toBe("");
+      expect(window.location.pathname).toBe("/gestor/relatorios");
+      await ate(() => vi.getTimerCount() > 0);
+      for (let i = 0; i < 3; i += 1) await vi.advanceTimersByTimeAsync(1500);
+      expect(await screen.findByTestId("relatorio-view")).toBeInTheDocument();
+      expect(getPedidosRelatorioMock()).toHaveLength(1);
+    });
+
+    it("sem gerar=1 só preenche; \"Trocar recorte\" volta ao da escola", async () => {
+      window.history.replaceState(
+        {},
+        "",
+        "/gestor/relatorios?nivel=uf&codigo=AC&nome=Acre&tema=infraestrutura_ideb&etapa=fundamental_ii",
+      );
+      render(RelatoriosPage);
+      await screen.findByTestId("temas");
+      expect(screen.getByRole("radio", { name: "Estado" })).toBeChecked();
+      expect(screen.getByTestId("recorte-query")).toHaveTextContent("Recorte: Acre");
+      expect(screen.getByRole("radio", { name: /Infraestrutura e IDEB/ })).toBeChecked();
+      expect(screen.getByLabelText("Etapa")).toHaveValue("fundamental_ii");
+      expect(screen.getByTestId("geotag-resumo")).toHaveTextContent("Acre");
+      expect(screen.queryByLabelText("Escolher outro")).toBeNull();
+      expect(getPedidosRelatorioMock()).toHaveLength(0);
+
+      await fireEvent.click(screen.getByRole("button", { name: "Trocar recorte" }));
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+      expect(screen.getByLabelText(/Da minha escola: Rondônia/)).toBeChecked();
+      expect(screen.getByTestId("geotag-resumo")).toHaveTextContent("Rondônia");
+
+      await fireEvent.click(screen.getByRole("button", { name: "Gerar relatório" }));
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      expect(getPedidosRelatorioMock()[0].geotag).toEqual({ nivel: "uf", codigo: "RO" });
+    });
+
+    it("trocar o nível descarta o recorte da query", async () => {
+      window.history.replaceState({}, "", "/gestor/relatorios?nivel=regiao&codigo=NE&nome=Nordeste");
+      render(RelatoriosPage);
+      await screen.findByTestId("temas");
+      expect(screen.getByTestId("recorte-query")).toHaveTextContent("Recorte: Nordeste");
+      await fireEvent.click(screen.getByRole("radio", { name: "Município" }));
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+      expect(screen.getByLabelText(/Da minha escola: Porto Velho/)).toBeChecked();
+    });
+
+    it("recorte igual ao da escola fica como \"Da minha escola\"; escola usa o INEP do gestor", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      window.history.replaceState(
+        {},
+        "",
+        "/gestor/relatorios?nivel=escola&codigo=99999999&tema=historico_escola&gerar=1",
+      );
+      render(RelatoriosPage);
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      expect(getPedidosRelatorioMock()[0]).toEqual({
+        geotag: { nivel: "escola", codigo: "11000040" },
+        tema: "historico_escola",
+      });
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+    });
+
+    it("município da própria escola pela query não vira recorte externo", async () => {
+      window.history.replaceState({}, "", "/gestor/relatorios?nivel=municipio&codigo=1100205&nome=Porto%20Velho");
+      render(RelatoriosPage);
+      await screen.findByTestId("temas");
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+      expect(screen.getByLabelText(/Da minha escola: Porto Velho/)).toBeChecked();
+    });
+
+    it("query inválida é ignorada (nível, código, tema e opção)", async () => {
+      window.history.replaceState(
+        {},
+        "",
+        "/gestor/relatorios?nivel=uf&codigo=acre&tema=nao_existe&etapa=xyz&gerar=1",
+      );
+      render(RelatoriosPage);
+      await screen.findByTestId("temas");
+      expect(screen.getByRole("radio", { name: "Estado" })).toBeChecked();
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+      expect(screen.getByRole("radio", { name: /IDEB do território/ })).toBeChecked();
+      expect(screen.getByLabelText("Etapa")).toHaveValue("fundamental_i");
+      // gerar=1 com recorte-padrão válido ainda gera (o recorte da escola)
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      expect(getPedidosRelatorioMock()[0].geotag).toEqual({ nivel: "uf", codigo: "RO" });
+    });
+
+    it("sem sessão, a query fica na URL para depois do login", async () => {
+      window.localStorage.clear();
+      setApiToken(null);
+      window.history.replaceState({}, "", "/gestor/relatorios?nivel=regiao&codigo=NE&nome=Nordeste");
+      render(RelatoriosPage);
+      expect(await screen.findByText("Entre para gerar relatórios.")).toBeInTheDocument();
+      // a query continua lá para depois do login
+      expect(window.location.search).toContain("nivel=regiao");
     });
   });
 });

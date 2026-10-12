@@ -21,7 +21,9 @@
 
 {#snippet tabela()}
   <div
-    class="overflow-x-auto bg-white border border-gray-200 rounded-card shadow-card {longa ? 'max-h-[36rem] overflow-y-auto' : ''}"
+    class="overflow-x-auto bg-white border border-gray-200 rounded-card shadow-card print:shadow-none print:overflow-visible {longa
+      ? 'max-h-[36rem] overflow-y-auto print:max-h-none'
+      : 'print:break-inside-avoid'}"
     data-longa={longa ? "true" : undefined}
   >
     <table class="min-w-full text-sm">
@@ -73,7 +75,7 @@
 <section class="space-y-2" data-testid="secao-tabela" data-recolhida={secao.recolhida === true ? "true" : undefined}>
   {#if secao.recolhida === true}
     <details class="space-y-2" data-testid="tabela-recolhida">
-      <summary class="cursor-pointer text-sm text-blue-700 hover:underline">
+      <summary class="cursor-pointer text-sm text-blue-700 hover:underline print:hidden">
         Ver detalhes técnicos{#if secao.titulo}{": "}<span class="font-medium">{secao.titulo}</span>{/if}
       </summary>
       <div class="mt-2 space-y-2">{@render tabela()}</div>

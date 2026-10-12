@@ -7,12 +7,20 @@
   // 1,5 s até finished/failed. O polling para ao desmontar, ao gerar outro e
   // ao trocar nível/recorte/tema.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
+  //
+  // Fase 3: o relatório pronto ganha as ações de imprimir, baixar Markdown e
+  // salvar (pelo job_id). A página aceita preenchimento por query — `nivel`,
+  // `codigo`, `nome`, `tema`, `etapa`, `rede` e `gerar=1` — vindo do "Gerar de
+  // novo com os dados atuais" de um relatório salvo: o recorte da query pode
+  // ser outro que não o da escola ("Recorte: <nome>", com a opção de trocar) e,
+  // com `gerar=1`, a geração dispara uma vez (a query sai da URL em seguida).
   import { onMount, onDestroy } from "svelte";
   import {
     getRecortePadrao,
     listTemasRelatorio,
     gerarRelatorio,
     getJobRelatorio,
+    salvarRelatorio,
   } from "../api/gestorRelatoriosApi.js";
   import { getRegions, getUfs, getMunicipalities } from "@/features/cluster-geotag/api/clusterApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
@@ -41,6 +49,33 @@
     if (t && t.padroes && typeof t.padroes === "object") return chave in t.padroes;
     return OPCOES_OBRIGATORIAS.has(chave);
   }
+  // Formato do `codigo` por nível (o mesmo do geotag do contrato).
+  const CODIGO_RE = {
+    municipio: /^\d{7}$/,
+    uf: /^[A-Z]{2}$/,
+    regiao: /^(N|NE|SE|S|CO)$/,
+  };
+
+  /** Lê o preenchimento por query (uma vez, na montagem). */
+  function lerQuery() {
+    const q = new URLSearchParams(window.location.search);
+    const nivelQ = q.get("nivel");
+    if (!NIVEIS.some((n) => n.valor === nivelQ)) return null;
+    const opcoesQ = {};
+    for (const [k, v] of q.entries()) {
+      if (!["nivel", "codigo", "nome", "tema", "gerar"].includes(k)) opcoesQ[k] = v;
+    }
+    const codigoQ = q.get("codigo") ?? "";
+    return {
+      nivel: nivelQ,
+      codigo: CODIGO_RE[nivelQ]?.test(codigoQ) ? codigoQ : null,
+      nome: q.get("nome") || null,
+      tema: q.get("tema") || null,
+      opcoes: opcoesQ,
+      gerar: q.get("gerar") === "1",
+    };
+  }
+
   function valorInicialOpcao(t, chave, valores) {
     if (!opcaoObrigatoria(t, chave)) return "";
     const padrao = t?.padroes?.[chave];
@@ -55,7 +90,8 @@
 
   let padrao = $state(null);
   let nivel = $state("municipio");
-  let origem = $state("padrao"); // "padrao" | "outro"
+  let origem = $state("padrao"); // "padrao" | "outro" | "query"
+  let recorteQuery = $state(null); // {nivel, codigo, nome} vindo da query
 
   let regioes = $state([]);
   let ufs = $state([]);
@@ -76,6 +112,9 @@
   let progresso = $state(null);
   let erroGerar = $state(null);
   let relatorio = $state(null);
+  let relatorioJobId = $state(null); // job que gerou o relatório exibido (para salvar)
+
+  let queryPendente = lerQuery();
 
   let timer = null;
   let jobAtual = null;
@@ -94,6 +133,9 @@
     if (!padrao) return null;
     if (nivel === "escola") {
       return { nivel, codigo: String(padrao.escola?.cod_inep ?? inep), nome: padrao.escola?.nome };
+    }
+    if (origem === "query") {
+      return recorteQuery?.nivel === nivel ? { ...recorteQuery } : null;
     }
     if (origem === "padrao") {
       const p = padrao[nivel];
@@ -128,18 +170,71 @@
     carregando = true;
     error = null;
     precisaLogin = false;
+    let gerarAgora = false;
     try {
       const me = await fetchMe();
       inep = me.cod_inep;
       gestor = me;
       padrao = await getRecortePadrao(inep);
+      const q = queryPendente;
+      if (q) aplicarRecorteDaQuery(q);
       await carregarTemas();
+      if (q) {
+        aplicarTemaDaQuery(q);
+        queryPendente = null;
+        gerarAgora = q.gerar;
+        limparQueryDaUrl();
+      }
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar o Assistente de Relatório.");
       if (msg) error = msg;
     } finally {
       carregando = false;
     }
+    if (gerarAgora && !error && !precisaLogin) gerar();
+  }
+
+  // ------------------------------------------------------------- query
+
+  function aplicarRecorteDaQuery(q) {
+    nivel = q.nivel;
+    if (nivel === "escola" || !q.codigo) {
+      origem = "padrao";
+      return;
+    }
+    // o mesmo recorte da escola: fica como "Da minha escola"
+    if (String(padrao?.[nivel]?.codigo ?? "") === q.codigo) {
+      origem = "padrao";
+      return;
+    }
+    recorteQuery = { nivel, codigo: q.codigo, nome: q.nome ?? q.codigo };
+    origem = "query";
+  }
+
+  function aplicarTemaDaQuery(q) {
+    if (!q.tema || !temas.some((t) => t.id === q.tema)) return;
+    escolherTema(q.tema);
+    const t = temas.find((x) => x.id === q.tema);
+    const novas = { ...opcoes };
+    for (const [chave, lista] of Object.entries(t?.opcoes ?? {})) {
+      if (!(chave in q.opcoes)) continue;
+      const v = q.opcoes[chave];
+      const valido = v === "" ? !opcaoObrigatoria(t, chave) : valoresOpcao(lista).some((x) => x.valor === v);
+      if (valido) novas[chave] = v;
+    }
+    opcoes = novas;
+  }
+
+  function limparQueryDaUrl() {
+    if (window.location.search) {
+      window.history.replaceState(window.history.state, "", window.location.pathname);
+    }
+  }
+
+  function trocarRecorteDaQuery() {
+    cancelarJob();
+    recorteQuery = null;
+    origem = "padrao";
   }
 
   async function carregarTemas() {
@@ -181,7 +276,8 @@
     if (novo === nivel) return;
     cancelarJob();
     nivel = novo;
-    if (nivel === "escola") origem = "padrao";
+    if (nivel === "escola" || origem === "query") origem = "padrao";
+    recorteQuery = null;
     await Promise.all([carregarTemas(), garantirCascata()]);
   }
 
@@ -262,6 +358,7 @@
       progresso = job?.progress ?? null;
       if (job?.state === "finished") {
         relatorio = job.result ?? null;
+        relatorioJobId = relatorio ? jobId : null;
         cancelarJob();
       } else if (job?.state === "failed") {
         erroGerar = job.error || "Não foi possível gerar o relatório.";
@@ -282,6 +379,7 @@
     cancelarJob();
     erroGerar = null;
     relatorio = null;
+    relatorioJobId = null;
     gerando = true;
     estadoJob = "inactive";
     try {
@@ -298,6 +396,10 @@
       const msg = onApiError(err, "Não foi possível gerar o relatório.");
       if (msg) erroGerar = msg;
     }
+  }
+
+  function salvarAtual() {
+    return salvarRelatorio(inep, relatorioJobId);
   }
 
   // ------------------------------------------------------------- sessão
@@ -336,7 +438,7 @@
 </script>
 
 <div class="space-y-6">
-  <header class="flex flex-wrap items-center justify-between gap-3">
+  <header class="flex flex-wrap items-center justify-between gap-3 print:hidden">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Relatórios</h1>
       <p class="text-sm text-gray-600 mt-1">
@@ -353,6 +455,10 @@
         >Sair</button>
       {/if}
       <a
+        href="/gestor/relatorios/salvos"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Meus relatórios</a>
+      <a
         href={inep ? `/gestor/painel?inep=${inep}` : "/gestor/painel"}
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >← Painel</a>
@@ -367,7 +473,7 @@
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4" role="alert">{error}</div>
   {:else if padrao}
     <form
-      class="bg-white border border-gray-200 rounded-card shadow-card p-5 space-y-5"
+      class="bg-white border border-gray-200 rounded-card shadow-card p-5 space-y-5 print:hidden"
       onsubmit={(e) => {
         e.preventDefault();
         gerar();
@@ -399,6 +505,15 @@
         {#if nivel === "escola"}
           <p class="text-sm text-gray-600" data-testid="recorte-atual">
             {padrao.escola?.nome} (INEP {padrao.escola?.cod_inep})
+          </p>
+        {:else if origem === "query"}
+          <p class="text-sm text-gray-700 flex flex-wrap items-center gap-2" data-testid="recorte-query">
+            <span>Recorte: <strong>{recorteQuery?.nome ?? recorteQuery?.codigo}</strong></span>
+            <button
+              type="button"
+              onclick={trocarRecorteDaQuery}
+              class="text-sm text-blue-700 hover:underline"
+            >Trocar recorte</button>
           </p>
         {:else}
           <div class="flex flex-wrap gap-4 text-sm">
@@ -570,8 +685,10 @@
     </form>
 
     {#if relatorio}
-      <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
-        <RelatorioView {relatorio} />
+      <div class="bg-white border border-gray-200 rounded-card shadow-card p-5 print:border-0 print:shadow-none print:p-0">
+        {#key relatorioJobId}
+          <RelatorioView {relatorio} acoes onSalvar={relatorioJobId ? salvarAtual : null} />
+        {/key}
       </div>
     {/if}
   {/if}
