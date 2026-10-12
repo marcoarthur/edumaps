@@ -241,6 +241,16 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/osm/pois' => $check)
     ->to('gestor#osm_pois_status')->name('gestor_osm_pois_status');
 
+  # --- Assistente de Relatório (#219): recorte, temas, job assíncrono --------
+  $auth->get('/:cod_inep/relatorios/recorte-padrao' => $check)
+    ->to('gestor_relatorios#recorte_padrao')->name('gestor_relatorios_recorte_padrao');
+  $auth->get('/:cod_inep/relatorios/temas' => $check)
+    ->to('gestor_relatorios#temas')->name('gestor_relatorios_temas');
+  $auth->post('/:cod_inep/relatorios' => $check)
+    ->to('gestor_relatorios#criar')->name('gestor_relatorios_criar');
+  $auth->get('/:cod_inep/relatorios/jobs/:job_id' => [ @$check, job_id => qr/\d+/ ])
+    ->to('gestor_relatorios#job')->name('gestor_relatorios_job');
+
   # --- documentos e planos escolares (pastas, versões, tags, auditoria) -----
   my $doc_id_check = [ @$check, id => qr/\d+/ ];
 
