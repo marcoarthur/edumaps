@@ -274,6 +274,88 @@ export const CONFIG_TREE = {
               enabled: 1,
               value: 0,
             },
+            {
+              key: "canais.whatsapp.template_confirmacao",
+              label: "Template de confirmação",
+              description:
+                "Nome do template de autenticação (aprovado na Meta) usado para enviar o código de confirmação do telefone nas listas com QR. Sem template, o WhatsApp não é oferecido como canal de confirmação.",
+              example: "edumaps_codigo_confirmacao",
+              type: "text",
+              sensitive: 0,
+              enabled: 1,
+              value: null,
+            },
+            {
+              key: "canais.whatsapp.template_idioma",
+              label: "Idioma do template",
+              description: "Código de idioma do template de confirmação, como cadastrado na Meta.",
+              example: "pt_BR",
+              type: "text",
+              sensitive: 0,
+              enabled: 1,
+              value: null,
+            },
+          ],
+        },
+        {
+          key: "canais_telegram",
+          label: "Telegram (bot público)",
+          children: [
+            {
+              key: "canais.telegram.token",
+              label: "Token do bot público",
+              description:
+                "Token do bot público do Telegram (fornecido pelo @BotFather), usado para confirmar o telefone dos inscritos nas listas com QR. É um bot DIFERENTE do bot de notificações internas. Guardado cifrado — nunca exibido em claro.",
+              example: "123456789:ABCdefGHI...",
+              type: "secret",
+              sensitive: 1,
+              enabled: 1,
+              value: { set: 0 },
+            },
+            {
+              key: "canais.telegram.bot_username",
+              label: "Usuário do bot",
+              description:
+                "Nome de usuário do bot público (sem @), usado no link https://t.me/<usuário>?start=<ref>.",
+              example: "EduMapsConfirmaBot",
+              type: "text",
+              sensitive: 0,
+              enabled: 1,
+              value: null,
+            },
+            {
+              key: "canais.telegram.recebimento",
+              label: "Modo de recebimento",
+              description:
+                "polling = um worker consulta o Telegram (getUpdates; bom para desenvolvimento); webhook = o Telegram chama o EduMaps por HTTPS público.",
+              example: "polling",
+              type: "select",
+              options: ["polling", "webhook"],
+              sensitive: 0,
+              enabled: 1,
+              value: null,
+            },
+            {
+              key: "canais.telegram.webhook_secret",
+              label: "Segredo do webhook",
+              description:
+                "Valor esperado no header X-Telegram-Bot-Api-Secret-Token (modo webhook). Guardado cifrado — nunca exibido em claro.",
+              example: "um-segredo-longo-e-aleatorio",
+              type: "secret",
+              sensitive: 1,
+              enabled: 1,
+              value: { set: 0 },
+            },
+            {
+              key: "canais.telegram.enabled",
+              label: "Bot público ativado",
+              description:
+                "Liga/desliga a confirmação pelo Telegram. Desligado, o Telegram não é oferecido como canal de confirmação.",
+              type: "boolean",
+              sensitive: 0,
+              enabled: 1,
+              value: 0,
+            },
           ],
         },
         {
@@ -381,3 +463,20 @@ export const CONFIG_SAVED_ITEM = {
   updated_by: "marina@edu.gov.br",
   updated_at: "2026-09-25T12:00:00",
 };
+// Status do bot público do Telegram (GET /api/admin/canais/telegram/status).
+export const TELEGRAM_STATUS_POLLING = {
+  enabled: 1,
+  recebimento: "polling",
+  bot_username: "EduMapsConfirmaBot",
+  polling: { ativo: 0, offset: 0 },
+};
+
+export const TELEGRAM_STATUS_WEBHOOK = {
+  enabled: 1,
+  recebimento: "webhook",
+  bot_username: "EduMapsConfirmaBot",
+  webhook: { url: "", pending_update_count: 0, last_error_message: null },
+  polling: { ativo: 0, offset: 0 },
+};
+
+export const TELEGRAM_WEBHOOK_URL = "https://edumaps.exemplo.org/api/canais/telegram/webhook";

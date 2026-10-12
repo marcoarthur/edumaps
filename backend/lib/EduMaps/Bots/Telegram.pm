@@ -1,5 +1,6 @@
 package EduMaps::Bots::Telegram;
 use Mojo::Base 'EduMaps::Bots::Base', -signatures;
+use utf8;
 use Role::Tiny::With;
 
 use Mojo::UserAgent;
@@ -45,12 +46,20 @@ sub _build_request ($self, $text, $opts) {
 
   my $url  = "https://api.telegram.org/bot$token/sendMessage";
   my $form = { chat_id => $chat_id, text => $text };
+  # Teclado/remoção de teclado (bot público da confirmação de posse, #212).
+  # Opcional: sem `reply_markup` o payload é idêntico ao de antes.
+  $form->{reply_markup} = $opts->{reply_markup} if ref $opts->{reply_markup};
   return ($url, $form);
 }
 
 sub _map_response ($self, $tx) {
   if ($tx->res->is_success) {
-    return { ok => 1, status => $tx->res->code };
+    my $res = { ok => 1, status => $tx->res->code };
+    my $json = eval { $tx->res->json };
+    $res->{provider_message_id} = $json->{result}{message_id}
+      if ref $json eq 'HASH' && ref $json->{result} eq 'HASH'
+        && defined $json->{result}{message_id};
+    return $res;
   }
   # Falha de conexão vs recusa HTTP: `res` fica vazio (code/message undef) e
   # a causa real está em $tx->error — não perder o diagnóstico.
@@ -59,6 +68,40 @@ sub _map_response ($self, $tx) {
     return { ok => 0, status => 0, error => $conn->{message} };
   }
   return { ok => 0, status => $tx->res->code, error => $tx->res->message };
+}
+
+# Chamada genérica à Bot API (síncrona): POST JSON em
+# https://api.telegram.org/bot<token>/<method>. Usada pelo bot público da
+# confirmação de posse (#212): getUpdates, setWebhook, deleteWebhook,
+# getWebhookInfo. Nunca morre por erro HTTP — devolve
+#   { ok => 1, status, result }  ou  { ok => 0, status, error, error_code }.
+# O token vem de $opts->{token} ou da config (`telegram_token`).
+sub api_call ($self, $method, $params = {}, $opts = {}) {
+  my $token = $opts->{token} // $self->config->{telegram_token} // '';
+  return { ok => 0, status => 0, error => 'Telegram: token em falta' }
+    unless length $token;
+  return { ok => 0, status => 0, error => 'Telegram: método inválido' }
+    unless defined $method && $method =~ /^[A-Za-z]+\z/;
+
+  my $tx = eval {
+    $self->ua->post("https://api.telegram.org/bot$token/$method" => json => $params);
+  };
+  return { ok => 0, status => 0, error => "Telegram: $@" } unless $tx;
+
+  my $json = eval { $tx->res->json };
+  if ($tx->res->is_success && ref $json eq 'HASH' && $json->{ok}) {
+    return { ok => 1, status => $tx->res->code, result => $json->{result} };
+  }
+  if (my $conn = $tx->error and !$tx->res->code) {
+    return { ok => 0, status => 0, error => $conn->{message} };
+  }
+  return {
+    ok         => 0,
+    status     => $tx->res->code // 0,
+    error_code => (ref $json eq 'HASH' ? $json->{error_code} : undef),
+    error      => (ref $json eq 'HASH' && $json->{description})
+                    ? $json->{description} : ($tx->res->message // 'erro desconhecido'),
+  };
 }
 
 # Estrutura preparada para receber (fase futura), não ativada na fase 1

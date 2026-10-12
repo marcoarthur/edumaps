@@ -3,12 +3,25 @@
   // Página pública de autoinscrição (rota /inscricao/:token). Abre pelo QR code,
   // sem conta: o token na URL é a capability. Mobile-first. noindex (não deve
   // ser indexada). O backend é a autoridade; aqui só espelhamos a validação.
+  // Issue #212: se a lista exige confirmação do telefone, a resposta do POST
+  // traz `confirmacao` e a página segue para o passo 2 (ConfirmacaoTelefone).
   import { onMount } from "svelte";
   import { getInscricaoPublica, enviarInscricao } from "../api/canaisPublicApi.js";
   import { ApiError } from "@/shared/api/client.js";
+  import ConfirmacaoTelefone, {
+    POLL_INTERVALO_MS,
+    POLL_DURACAO_MS,
+  } from "../components/ConfirmacaoTelefone.svelte";
 
-  /** @type {{token: string, politicaUrl?: string}} */
-  let { token, politicaUrl = "/privacidade" } = $props();
+  /**
+   * @type {{token: string, politicaUrl?: string, intervaloPolling?: number, duracaoPolling?: number}}
+   */
+  let {
+    token,
+    politicaUrl = "/privacidade",
+    intervaloPolling = POLL_INTERVALO_MS,
+    duracaoPolling = POLL_DURACAO_MS,
+  } = $props();
 
   let form = $state(null);
   let loading = $state(true);
@@ -18,6 +31,7 @@
   let enviado = $state(false);
   let duplicado = $state(false);
   let enviando = $state(false);
+  let confirmacao = $state(null); // passo 2 (issue #212)
 
   let nome = $state("");
   let telefone = $state("");
@@ -62,7 +76,9 @@
         consentimento: true,
         _hp,
       });
-      if (res?.duplicado) duplicado = true;
+      // `confirmacao` tem precedência: reinscrição de pendente reabre o passo 2
+      if (res?.confirmacao) confirmacao = res.confirmacao;
+      else if (res?.duplicado) duplicado = true;
       else enviado = true;
     } catch (err) {
       if (err instanceof ApiError && (err.status === 404 || err.status === 410)) {
@@ -123,6 +139,9 @@
           Este QR code expirou ou foi revogado. Peça um novo link ao gestor da escola.
         </p>
       </div>
+
+    {:else if confirmacao}
+      <ConfirmacaoTelefone {confirmacao} {intervaloPolling} {duracaoPolling} />
 
     {:else if enviado}
       <div

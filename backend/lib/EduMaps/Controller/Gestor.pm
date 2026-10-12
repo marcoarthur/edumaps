@@ -355,6 +355,11 @@ sub canais_listas_create($self) {
   return $self->_render_validation($v) if $v->has_error;
 
   my $model = $self->instantiate_model(model => 'Canal');
+  # exige_confirmacao (#212): booleano; default false. Inválido -> 400.
+  return $self->render(json => { error => 'exige_confirmacao inválido (true/false).' }, status => 400)
+    if defined $input->{exige_confirmacao}
+      && !defined $model->parse_bool($input->{exige_confirmacao});
+
   my $lista = $self->_guard_api(sub {
     $model->criar_lista(
       cod_inep  => $self->param('cod_inep'),
@@ -362,6 +367,7 @@ sub canais_listas_create($self) {
       nome      => $v->param('nome'),
       canal     => $v->param('canal'),
       descricao => $input->{descricao},
+      exige_confirmacao => $input->{exige_confirmacao},
     );
   });
   return if $self->stash('guard_rendered');
@@ -378,6 +384,28 @@ sub canais_listas_show($self) {
   my $lista = $model->detalhe_lista($self->param('cod_inep'), $self->param('id'));
   return $self->_render_not_found('Lista não encontrada') unless $lista;
   $self->render(json => $lista);
+}
+
+# Edita a lista (#212): {nome?, descricao?, exige_confirmacao?} -> 200 detalhe ·
+# 400 (nada a alterar / inválido) · 409 (nome duplicado) · 404 (não é da escola).
+sub canais_listas_update($self) {
+  return unless $self->_gestor_inep_ok;
+  my $input = $self->_input;
+  return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400)
+    unless ref $input eq 'HASH';
+
+  my %campos = map { $_ => $input->{$_} }
+               grep { exists $input->{$_} } qw(nome descricao exige_confirmacao);
+
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $res = $self->_guard_api(sub {
+    $model->atualizar_lista($self->param('cod_inep'), $self->param('id'), %campos);
+  });
+  return if $self->stash('guard_rendered');
+  return $self->_render_not_found('Lista não encontrada') unless $res;
+  return $self->render(json => { error => $res->{error} }, status => $res->{status} // 400)
+    if $res->{error};
+  $self->render(json => $res);
 }
 
 # "Excluir" = desativar (soft delete, sem descarte do histórico). Idempotente

@@ -173,6 +173,10 @@ sub confirm_start ($self, $addr, %ctx) {
     referente => { tipo => 'confirmacao', id => $started->{id} },
     contato_id => $ctx{contato_id},
     cod_inep   => $ctx{cod_inep},
+    # o código em claro segue SÓ em memória para o transporte que o envia
+    # como parâmetro (ex.: template de autenticação do WhatsApp, #212); o
+    # histórico não grava esta chave.
+    codigo     => $started->{codigo},
   });
   return { ok => 0, error => 'falha ao enviar o código de confirmação' }
     unless $res->{ok};

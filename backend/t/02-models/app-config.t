@@ -60,6 +60,23 @@ subtest 'config_tree expõe categorias e folhas' => sub {
   is scalar(grep { $_->{enabled} } @{ $insc_grp->{children} }), 4,
     'folhas de canais.inscricao.* habilitadas';
 
+  # Confirmação de posse nas listas (#212): bot público do Telegram e template
+  # de confirmação do WhatsApp.
+  my ($tg_grp) = grep { $_->{key} eq 'canais_telegram' } @{ $canais->{children} };
+  ok $tg_grp, 'grupo telegram (bot público)';
+  is $tg_grp->{label}, 'Telegram (bot público)', 'label do grupo';
+  my %tg = map { $_->{key} => $_ } @{ $tg_grp->{children} };
+  is [sort keys %tg], [map { "canais.telegram.$_" } qw(bot_username enabled recebimento token webhook_secret)],
+    'folhas canais.telegram.*';
+  is scalar(grep { $_->{enabled} } values %tg), 5, 'folhas do telegram habilitadas';
+  is $tg{'canais.telegram.token'}{type}, 'secret', 'token secret';
+  ok $tg{'canais.telegram.token'}{sensitive}, 'token sensitive';
+  ok $tg{'canais.telegram.webhook_secret'}{sensitive}, 'webhook_secret sensitive';
+  is $tg{'canais.telegram.recebimento'}{options}, [qw(polling webhook)], 'opções de recebimento';
+  my %wa = map { $_->{key} => $_ } @{ $wa_grp->{children} };
+  ok $wa{'canais.whatsapp.template_confirmacao'}, 'folha template_confirmacao';
+  is $wa{'canais.whatsapp.template_idioma'}{example}, 'pt_BR', 'idioma exemplo pt_BR';
+
   my ($integ) = grep { $_->{key} eq 'integracoes' } @{ $tree->{categories} };
   ok $integ, 'categoria integracoes';
   my ($assistente) = grep { $_->{key} eq 'assistant_censo' } @{ $integ->{children} };

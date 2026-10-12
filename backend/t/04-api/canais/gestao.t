@@ -2,13 +2,16 @@
 # Testes da API de gestão dos canais (issue #208 — Fase 0): listas nomeadas,
 # QR de autoinscrição e membros.
 #   GET/POST   /api/gestor/:cod_inep/canais/listas
-#   GET/DELETE /api/gestor/:cod_inep/canais/listas/:id
+#   GET/PATCH/DELETE /api/gestor/:cod_inep/canais/listas/:id
 #   POST/DELETE /api/gestor/:cod_inep/canais/listas/:id/qrcode
 #   GET        /api/gestor/:cod_inep/canais/listas/:id/inscricoes
 # Exige sessão do gestor da escola (Bearer) e posse do cod_inep.
+# Fase 1 (#212): exige_confirmacao no POST/PATCH, contadores
+# membros_confirmados/membros_pendentes e estado da confirmação por membro.
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use JSON::PP ();
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -241,6 +244,126 @@ subtest 'inscricoes: membros da lista' => sub {
 
   $t->get_ok("/api/gestor/$INEP/canais/listas/999999999/inscricoes", $auth->())
     ->status_is(404)->json_has('/error');
+};
+
+subtest 'confirmação (#212): POST com exige_confirmacao' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Exige Confirmação', exige_confirmacao => JSON::PP::true,
+  })->status_is(201)->tx->res->json;
+  is $l->{exige_confirmacao}, T(), 'exige_confirmacao=true';
+  is $l->{membros_confirmados}, 0, 'membros_confirmados';
+  is $l->{membros_pendentes}, 0, 'membros_pendentes';
+
+  my $s = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Exige String', exige_confirmacao => 'true',
+  })->status_is(201)->tx->res->json;
+  is $s->{exige_confirmacao}, T(), '"true" aceito';
+
+  my $d = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Default Sem Exigir',
+  })->status_is(201)->tx->res->json;
+  is $d->{exige_confirmacao}, F(), 'default false';
+
+  $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Booleano Ruim', exige_confirmacao => 'talvez',
+  })->status_is(400)->json_has('/error');
+
+  my $lista = $t->get_ok("/api/gestor/$INEP/canais/listas", $auth->())
+    ->status_is(200)->tx->res->json;
+  my ($na) = grep { $_->{id} == $l->{id} } @$lista;
+  is $na->{exige_confirmacao}, T(), 'exige_confirmacao na listagem';
+  ok exists $na->{membros_confirmados} && exists $na->{membros_pendentes}, 'contadores na listagem';
+};
+
+subtest 'confirmação (#212): PATCH da lista' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Para Editar',
+  })->status_is(201)->tx->res->json;
+  my $id = $l->{id};
+
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", json => { nome => 'X' })
+    ->status_is(401);
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $out_auth->(), json => { nome => 'X' })
+    ->status_is(403)->json_has('/error');
+  $t->patch_ok("/api/gestor/$OUTRA/canais/listas/$id", $out_auth->(), json => { nome => 'X' })
+    ->status_is(404)->json_has('/error');
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/999999999", $auth->(), json => { nome => 'X' })
+    ->status_is(404)->json_has('/error');
+
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => {})
+    ->status_is(400)->json_has('/error');
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => { exige_confirmacao => 'talvez' })
+    ->status_is(400)->json_has('/error');
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => { nome => '' })
+    ->status_is(400)->json_has('/error');
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => { nome => 'Exige Confirmação' })
+    ->status_is(409)->json_has('/error');
+
+  my $u = $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => {
+    nome => 'Editada', descricao => 'Nova descrição', exige_confirmacao => JSON::PP::true,
+  })->status_is(200)->tx->res->json;
+  is $u->{id}, $id, 'detalhe da mesma lista';
+  is $u->{nome}, 'Editada', 'nome';
+  is $u->{descricao}, 'Nova descrição', 'descricao';
+  is $u->{exige_confirmacao}, T(), 'exige_confirmacao ligada';
+  ok exists $u->{n_inscricoes}, 'resposta é o detalhe';
+
+  my $u2 = $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => {
+    exige_confirmacao => 0,
+  })->status_is(200)->tx->res->json;
+  is $u2->{exige_confirmacao}, F(), 'exige_confirmacao desligada (0)';
+  is $u2->{nome}, 'Editada', 'nome intacto';
+};
+
+subtest 'confirmação (#212): contadores e estado por membro' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+  my $has_refs = $dbh->selectrow_array("SELECT to_regclass('clean.canal_confirmacao_refs')");
+  plan skip_all => 'clean.canal_confirmacao_refs ausente' unless $has_refs;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Com Estado', exige_confirmacao => JSON::PP::true,
+  })->status_is(201)->tx->res->json;
+  my $id = $l->{id};
+  my $qr = $t->post_ok("/api/gestor/$INEP/canais/listas/$id/qrcode", $auth->())
+    ->status_is(201)->tx->res->json;
+
+  my $model = $t->app->model('Canal');
+  my $a = $model->registrar_inscricao(token => $qr->{token}, nome => 'Pendente',
+                                      telefone => '11966661111', consentimento => 1);
+  my $b = $model->registrar_inscricao(token => $qr->{token}, nome => 'Confirmada',
+                                      telefone => '11966662222', consentimento => 1);
+  ok $a->{ok} && $b->{ok}, 'duas inscrições';
+  ok $model->concluir(ref => $b->{confirmacao}{ref}, via => 'whatsapp')->{ok}, 'uma confirmada';
+
+  my $d = $t->get_ok("/api/gestor/$INEP/canais/listas/$id", $auth->())
+    ->status_is(200)->tx->res->json;
+  is $d->{membros_confirmados}, 1, 'detalhe: 1 confirmado';
+  is $d->{membros_pendentes}, 1, 'detalhe: 1 pendente';
+
+  my $rows = $t->get_ok("/api/gestor/$INEP/canais/listas/$id/inscricoes", $auth->())
+    ->status_is(200)->tx->res->json;
+  my %por_nome = map { $_->{nome} => $_ } @$rows;
+  is $por_nome{Pendente}{estado}, 'pendente', 'estado pendente';
+  ok !defined $por_nome{Pendente}{confirmado_via}, 'pendente sem via';
+  ok !defined $por_nome{Pendente}{confirmado_em}, 'pendente sem data';
+  is $por_nome{Confirmada}{estado}, 'confirmado', 'estado confirmado';
+  is $por_nome{Confirmada}{confirmado_via}, 'whatsapp', 'via';
+  ok $por_nome{Confirmada}{confirmado_em}, 'data da confirmação';
+  is $por_nome{Confirmada}{validado}, 1, 'validado=1 após confirmar';
+
+  # desligar a exigência: pendente vira nao_exigida; confirmado continua
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$id", $auth->(), json => {
+    exige_confirmacao => JSON::PP::false,
+  })->status_is(200)->json_is('/membros_pendentes', 0)->json_is('/membros_confirmados', 1);
+  my $rows2 = $t->get_ok("/api/gestor/$INEP/canais/listas/$id/inscricoes", $auth->())
+    ->status_is(200)->tx->res->json;
+  my %p2 = map { $_->{nome} => $_ } @$rows2;
+  is $p2{Pendente}{estado}, 'nao_exigida', 'sem exigência -> nao_exigida';
+  is $p2{Confirmada}{estado}, 'confirmado', 'confirmado preservado';
 };
 
 done_testing;

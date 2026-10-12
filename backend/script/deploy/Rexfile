@@ -26,6 +26,18 @@ set sentry_release => $ENV{EDUMAPS_SENTRY_RELEASE}
 
 group all => qw( backend.edumaps database.edumaps analytic.edumaps );
 
+# Trava da master key (#212): as tasks que renderizam as units systemd gravam
+# `EDUMAPS_CONFIG_MASTER_KEY` a partir do ambiente LOCAL de quem roda o rex.
+# Sem a variável, a unit era reescrita com a chave vazia e todos os segredos
+# do AppConfig (tokens de bot, WhatsApp, chave do Assistente) ficavam
+# ilegíveis no servidor, sem nenhum aviso. Agora o deploy aborta antes.
+sub _require_master_key {
+  return if length get('config_master_key');
+  die "EDUMAPS_CONFIG_MASTER_KEY vazia: exporte a master key antes do deploy "
+    . "(sem ela a unit systemd perde a chave e os segredos do AppConfig ficam "
+    . "ilegíveis). Deploy abortado.\n";
+}
+
 desc "Update Debian, install minimum dev tools, Rsync your code";
 task "prepare" => group => all => sub {
   # Update system and install basics
@@ -58,6 +70,7 @@ task "prepare" => group => all => sub {
 
 desc "Configure and Install Perl backend";
 task deploy_backend_dev => 'backend.edumaps' => sub {
+  _require_master_key();
   pkg $_, ensure => 'present' for qw<
     libpq-dev build-essential cpanminus  
     libio-socket-ssl-perl liblwp-protocol-https-perl carton
@@ -169,6 +182,7 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
 
 desc "Configure and Install Minion Jobs and its dependencies";
 task deploy_minion_dev => 'backend.edumaps' => sub {
+  _require_master_key();
   pkg $_, ensure => 'present' for qw(
     cmake
     make
@@ -221,6 +235,7 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
 
 desc "Configure and Install minion worker dedicado a fila analytics";
 task deploy_analytics_worker_dev => 'backend.edumaps' => sub {
+  _require_master_key();
   chomp(my $carton = run qq{which carton});
   my $path = get('edumaps_dir') . '/backend';
 

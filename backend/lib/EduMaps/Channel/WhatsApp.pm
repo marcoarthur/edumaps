@@ -16,6 +16,14 @@ use Mojo::URL;
 #
 # Confirmação só é possível com o provedor `cloud` (com token e número): no
 # modo `link` não há entrega, logo não há como conferir a posse do número.
+#
+# Confirmação de posse nas listas com QR (#212): com `template_confirmacao`
+# configurado, o código vai por TEMPLATE DE AUTENTICAÇÃO da Meta (type
+# template; body com o código e botão "copiar código" — sub_type url, index 0,
+# com o mesmo código). Sem template, a confirmação continua por texto (uso
+# genérico); a disponibilidade do canal nas listas exige o template
+# (AppConfig::canais_confirmacao_disponiveis). Com template, o corpo gravado no
+# histórico NÃO contém o código.
 
 sub name         { 'whatsapp' }
 sub address_kind { 'phone' }
@@ -45,8 +53,48 @@ sub _compose_text ($self, $msg) {
   return $prefix . ($msg->{corpo} // '');
 }
 
+# Nome do template de autenticação configurado (ou undef).
+sub template_confirmacao ($self) {
+  my $t = $self->config->{template_confirmacao};
+  return (defined $t && length $t) ? $t : undef;
+}
+
+sub template_idioma ($self) {
+  my $l = $self->config->{template_idioma};
+  return (defined $l && length $l) ? $l : 'pt_BR';
+}
+
+# Confirmação por template disponível: provedor cloud completo + template.
+sub supports_template_confirm ($self) {
+  return ($self->supports_confirm && $self->template_confirmacao) ? 1 : 0;
+}
+
 sub _confirm_template ($self, $codigo, %ctx) {
+  # Com template, o texto é só o registro do histórico: sem o código.
+  if (my $t = $self->template_confirmacao) {
+    return "Código de confirmação enviado pelo template \"$t\".";
+  }
   return "EduMaps: seu código de confirmação é $codigo. Ele expira em poucos minutos.";
+}
+
+# Payload da Cloud API para o template de autenticação com botão "copiar
+# código" (formato padrão da Meta): o código vai no body e no botão url.
+sub template_payload ($self, $to, $codigo) {
+  return {
+    messaging_product => 'whatsapp',
+    to                => $to,
+    type              => 'template',
+    template          => {
+      name       => $self->template_confirmacao,
+      language   => { code => $self->template_idioma },
+      components => [
+        { type => 'body',
+          parameters => [ { type => 'text', text => "$codigo" } ] },
+        { type => 'button', sub_type => 'url', index => '0',
+          parameters => [ { type => 'text', text => "$codigo" } ] },
+      ],
+    },
+  };
 }
 
 sub _deliver ($self, $msg) {
@@ -63,17 +111,30 @@ sub _deliver_cloud ($self, $msg) {
   return { ok => 0, error => 'WhatsApp Cloud: token ausente' } unless $cfg->{token};
   return { ok => 0, error => 'WhatsApp Cloud: número ausente' } unless $cfg->{phone_number_id};
 
-  my $url = "https://graph.facebook.com/v20.0/$cfg->{phone_number_id}/messages";
-  my $tx  = $self->ua->post($url, { Authorization => 'Bearer ' . $cfg->{token} } => json => {
-    messaging_product => 'whatsapp',
-    to                => $msg->{to},
-    type              => 'text',
-    text              => { body => $self->_compose_text($msg) },
-  });
+  # Código de confirmação com template configurado → template de
+  # autenticação; demais mensagens → texto.
+  my $payload = (defined $msg->{codigo} && $self->template_confirmacao)
+    ? $self->template_payload($msg->{to}, $msg->{codigo})
+    : {
+        messaging_product => 'whatsapp',
+        to                => $msg->{to},
+        type              => 'text',
+        text              => { body => $self->_compose_text($msg) },
+      };
 
-  return { ok => 1, status => $tx->res->code } if $tx->res->is_success;
+  my $url = "https://graph.facebook.com/v20.0/$cfg->{phone_number_id}/messages";
+  my $tx  = $self->ua->post($url, { Authorization => 'Bearer ' . $cfg->{token} } => json => $payload);
+
+  if ($tx->res->is_success) {
+    my $res  = { ok => 1, status => $tx->res->code };
+    my $json = eval { $tx->res->json };
+    $res->{provider_message_id} = $json->{messages}[0]{id}
+      if ref $json eq 'HASH' && ref $json->{messages} eq 'ARRAY'
+        && ref $json->{messages}[0] eq 'HASH';
+    return $res;
+  }
   my $err = $tx->error ? $tx->error->{message} : $tx->res->message;
-  return { ok => 0, status => 0, error => $err };
+  return { ok => 0, status => $tx->res->code // 0, error => $err };
 }
 
 1;

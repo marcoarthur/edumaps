@@ -1,14 +1,32 @@
 // src/features/inscricao/api/canaisPublicApi.test.js
 // Contrato público (sem auth): GET/POST /api/canais/inscricao/:token.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { resetCanaisMockState } from "@/features/gestor/mocks/canaisHandlers.js";
 import {
+  resetCanaisMockState,
+  confirmarRefMock,
+  setCanaisConfirmacaoMock,
+} from "@/features/gestor/mocks/canaisHandlers.js";
+import {
+  INSCRICAO_TOKEN_CONFIRMACAO,
   INSCRICAO_TOKEN_EXPIRADO,
   INSCRICAO_TOKEN_LIMITE,
   INSCRICAO_TOKEN_VALIDO,
+  TELEFONE_CONFIRMADO,
   TELEFONE_DUPLICADO,
+  TELEFONE_PENDENTE,
+  TELEGRAM_BOT_CONFIRMACAO,
+  WHATSAPP_CODIGO_MOCK,
 } from "@/features/gestor/mocks/canaisFixtures.js";
-import { getInscricaoPublica, enviarInscricao } from "./canaisPublicApi.js";
+import {
+  getInscricaoPublica,
+  enviarInscricao,
+  estadoConfirmacao,
+  enviarCodigoWhatsapp,
+  verificarCodigoWhatsapp,
+} from "./canaisPublicApi.js";
+
+const inscrever = (telefone = "+55 11 95555-0000", token = INSCRICAO_TOKEN_CONFIRMACAO) =>
+  enviarInscricao(token, { nome: "Pessoa Teste", telefone, consentimento: true });
 
 describe("canaisPublicApi", () => {
   beforeEach(() => resetCanaisMockState());
@@ -77,5 +95,86 @@ describe("canaisPublicApi", () => {
         consentimento: true,
       }),
     ).rejects.toMatchObject({ status: 429 });
+  });
+
+  describe("confirmação de posse (#212)", () => {
+    it("lista que não exige: resposta idêntica à Fase 0 (sem confirmacao)", async () => {
+      const res = await inscrever("+55 11 95555-0001", INSCRICAO_TOKEN_VALIDO);
+      expect(res).toEqual({ ok: 1 });
+    });
+
+    it("lista que exige: devolve ref, estado pendente e canais disponíveis", async () => {
+      const { confirmacao } = await inscrever();
+      expect(confirmacao.ref).toMatch(/^[0-9a-f]{32}$/);
+      expect(confirmacao.estado).toBe("pendente");
+      expect(confirmacao.expira_em).toBeTruthy();
+      expect(confirmacao.canais).toEqual([
+        {
+          canal: "telegram",
+          url: `https://t.me/${TELEGRAM_BOT_CONFIRMACAO}?start=${confirmacao.ref}`,
+        },
+        { canal: "whatsapp" },
+      ]);
+    });
+
+    it("reinscrição: pendente gera nova ref (a anterior some); confirmado não gera", async () => {
+      const a = await inscrever(TELEFONE_PENDENTE);
+      const b = await inscrever(TELEFONE_PENDENTE);
+      expect(b.confirmacao.ref).not.toBe(a.confirmacao.ref);
+      await expect(estadoConfirmacao(a.confirmacao.ref)).rejects.toMatchObject({ status: 404 });
+
+      const c = await inscrever(TELEFONE_CONFIRMADO);
+      expect(c.confirmacao).toEqual({ estado: "confirmado" });
+    });
+
+    it("estadoConfirmacao: pendente → confirmado; ref desconhecida → 404", async () => {
+      const { confirmacao } = await inscrever();
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({ estado: "pendente" });
+      confirmarRefMock(confirmacao.ref, "telegram");
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({
+        estado: "confirmado",
+        canais: [],
+      });
+      await expect(estadoConfirmacao("f".repeat(32))).rejects.toMatchObject({ status: 404 });
+    });
+
+    it("canais vazio quando nenhum canal está configurado", async () => {
+      setCanaisConfirmacaoMock([]);
+      const { confirmacao } = await inscrever();
+      expect(confirmacao.canais).toEqual([]);
+    });
+
+    it("WhatsApp: envia (202), recusa código inválido (400) e confirma (200)", async () => {
+      const { confirmacao } = await inscrever();
+      const envio = await enviarCodigoWhatsapp(confirmacao.ref);
+      expect(envio.enviado).toBe(1);
+      await expect(verificarCodigoWhatsapp(confirmacao.ref, "000000")).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(await verificarCodigoWhatsapp(confirmacao.ref, WHATSAPP_CODIGO_MOCK)).toEqual({
+        estado: "confirmado",
+      });
+      expect(await estadoConfirmacao(confirmacao.ref)).toMatchObject({ estado: "confirmado" });
+    });
+
+    it("WhatsApp: limita reenvios (429), canal indisponível (409) e ref inválida (404)", async () => {
+      const { confirmacao } = await inscrever();
+      for (let i = 0; i < 3; i += 1) await enviarCodigoWhatsapp(confirmacao.ref);
+      await expect(enviarCodigoWhatsapp(confirmacao.ref)).rejects.toMatchObject({ status: 429 });
+
+      setCanaisConfirmacaoMock(["telegram"]);
+      const outra = await inscrever("+55 11 95555-0009");
+      await expect(enviarCodigoWhatsapp(outra.confirmacao.ref)).rejects.toMatchObject({
+        status: 409,
+      });
+      await expect(enviarCodigoWhatsapp("0".repeat(32))).rejects.toMatchObject({ status: 404 });
+    });
+
+    it("WhatsApp: verificação sem código enviado → 410", async () => {
+      const { confirmacao } = await inscrever();
+      await expect(verificarCodigoWhatsapp(confirmacao.ref, "123456")).rejects.toMatchObject({
+        status: 410,
+      });
+    });
   });
 });

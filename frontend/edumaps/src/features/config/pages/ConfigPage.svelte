@@ -13,6 +13,7 @@
   import GestorLoginCard from "@/features/gestor/components/survey/GestorLoginCard.svelte";
   import ConfigArvore from "../components/ConfigArvore.svelte";
   import ConfigEditor from "../components/ConfigEditor.svelte";
+  import TelegramPublicoStatus from "../components/TelegramPublicoStatus.svelte";
 
   let carregando = $state(true);
   let precisaLogin = $state(false);
@@ -24,6 +25,10 @@
   let selecionada = $state(null);
   let item = $state(null);
   let salvando = $state(false);
+  // Folha do grupo "Telegram (bot público)" → painel de status/ações do bot.
+  let grupoTelegramPublico = $derived(selecionada?.startsWith("canais.telegram.") ?? false);
+  // Incrementa ao salvar uma folha do bot público: remonta o painel de status.
+  let revisaoTelegram = $state(0);
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && (err.status === 401)) {
@@ -69,6 +74,7 @@
     try {
       item = await updateConfigItem(key, valor);
       addToast("Configuração salva.", "success");
+      if (key.startsWith("canais.telegram.")) revisaoTelegram += 1;
       await carregarTree();
     } finally {
       salvando = false;
@@ -164,7 +170,7 @@
   <div class="bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm rounded-md p-3">
     Em desenvolvimento: já é possível configurar <strong>Integrações</strong>
     (Assistente do Censo e Bot Telegram) e <strong>Canais de comunicação</strong>
-    (E-mail e WhatsApp). As demais categorias entram em breve.
+    (E-mail, WhatsApp e o bot público do Telegram). As demais categorias entram em breve.
   </div>
 
   {#if carregando}
@@ -192,6 +198,11 @@
       </section>
       <section class="lg:col-span-2 border border-gray-200 rounded-lg p-4 bg-white">
         <ConfigEditor {item} {salvando} onSalvar={salvar} onValidar={validar} />
+        {#if grupoTelegramPublico}
+          {#key revisaoTelegram}
+            <TelegramPublicoStatus />
+          {/key}
+        {/if}
       </section>
     </div>
   {/if}

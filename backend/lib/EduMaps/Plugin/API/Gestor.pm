@@ -55,6 +55,8 @@ sub register($self, $app, @args) {
     ->to('gestor#canais_listas_create')->name('gestor_canais_listas_create');
   $auth->get('/:cod_inep/canais/listas/:id' => $lista_check)
     ->to('gestor#canais_listas_show')->name('gestor_canais_listas_show');
+  $auth->patch('/:cod_inep/canais/listas/:id' => $lista_check)
+    ->to('gestor#canais_listas_update')->name('gestor_canais_listas_update');
   $auth->delete('/:cod_inep/canais/listas/:id' => $lista_check)
     ->to('gestor#canais_listas_destroy')->name('gestor_canais_listas_destroy');
   $auth->post('/:cod_inep/canais/listas/:id/qrcode' => $lista_check)

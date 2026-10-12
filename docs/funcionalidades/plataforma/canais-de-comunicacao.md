@@ -35,6 +35,13 @@ ferramentas externas, e quem responde pelo uso correto desses dados.
   informação, pedido, convite, confirmação, lembrete, alerta).
 - Administração pode **ligar, desligar e parametrizar** cada canal (credenciais,
   remetente, provedor) no Painel de Configuração, com os segredos protegidos.
+- Sistema pode **confirmar a posse do telefone** de quem se inscreve numa
+  lista: pelo **Telegram**, com um bot próprio da instalação que recebe o
+  contato compartilhado pela pessoa e confere o número, ou pelo **WhatsApp**,
+  com um código de verificação enviado por mensagem oficial.
+- Administração pode configurar o **bot público do Telegram** (separado do bot
+  de notificações internas), escolher como ele recebe mensagens e acompanhar
+  seu estado no Painel de Configuração.
 - Sistema pode sustentar outras capacidades sobre esses canais — como as
   **listas com autoinscrição por QR** — sem expor os contatos da escola.
 

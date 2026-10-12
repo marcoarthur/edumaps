@@ -395,6 +395,17 @@ plano → execução → aprovação
    **Atenção**: `deploy_backend_dev` NÃO faz rsync (quem faz é o `prepare`) —
    rodar `rex prepare` antes de qualquer task de código.
 
+   **Master key obrigatória**: `deploy_backend_dev`, `deploy_minion_dev` e
+   `deploy_analytics_worker_dev` renderizam as units systemd com
+   `EDUMAPS_CONFIG_MASTER_KEY` **do ambiente local de quem roda o `rex`**. Sem
+   ela, a unit ficava com a chave vazia e todos os segredos do AppConfig
+   (tokens de bot, WhatsApp, chave do Assistente) ficavam ilegíveis, sem aviso.
+   Desde a #212 essas tasks **abortam** se a variável estiver vazia. Em dev a
+   chave é só de teste e fica fora do repositório
+   (`~/.config/edumaps/dev_master_key`, modo 600):
+   `export EDUMAPS_CONFIG_MASTER_KEY="$(cat ~/.config/edumaps/dev_master_key)"`.
+   Chaves reais só existem no deploy de nuvem.
+
    **As imagens Docker locais também são parte do deploy.** O `rex` sincroniza
    os contentores LXC; a stack local do `ubaxala` é uma *outra* ambiente, com
    as suas próprias imagens, e `docker compose up` **não as reconstrói**. Um

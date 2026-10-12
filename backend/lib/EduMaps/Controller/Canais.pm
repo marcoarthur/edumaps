@@ -2,7 +2,11 @@ package EduMaps::Controller::Canais;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 
-use Digest::SHA qw(hmac_sha256_hex);
+use Digest::SHA qw(hmac_sha256_hex sha256_hex);
+use Mojo::Util qw(secure_compare);
+use EduMaps::Channel::WhatsApp;
+use EduMaps::Channel::Confirmation;
+use EduMaps::Channel::Telegram::Updates;
 
 # Face pública da autoinscrição por QR (issue #208 — Fase 0, canal telefone).
 # O token na URL é a capability: não há sessão. Duas rotas, mesma rota-base
@@ -10,7 +14,15 @@ use Digest::SHA qw(hmac_sha256_hex);
 #
 #   GET  /api/canais/inscricao/:token  → 200 {lista_nome, escola_nome, canal,
 #                                          campos, expira_em} · 404/410
-#   POST /api/canais/inscricao/:token  → 201 {ok:1, duplicado?} · 400/404/410/429
+#   POST /api/canais/inscricao/:token  → 201 {ok:1, duplicado?, confirmacao?}
+#                                          · 400/404/410/429
+#   GET  /api/canais/confirmacao/:ref  → 200 {estado, canais, expira_em} · 404
+#                                          (#212 — confirmação de posse)
+#   POST /api/canais/confirmacao/:ref/whatsapp           → 202 {enviado, expira_em}
+#                                          · 404/409/429 (#212, onda 2)
+#   POST /api/canais/confirmacao/:ref/whatsapp/verificar → 200 {estado}
+#                                          · 400/404/410/429 (#212, onda 2)
+#   POST /api/canais/telegram/webhook  → 200 {ok:1} · 401/404 (#212, onda 2)
 #
 # Regras: feature flag `canais.inscricao.enabled` (desligada → 404 genérico);
 # resposta mínima (NUNCA PII de terceiros); honeypot `_hp` (201 falso sem
@@ -78,12 +90,208 @@ sub inscricao_create($self) {
 
   my $body = { ok => 1 };
   $body->{duplicado} = 1 if $r->{duplicado};
+  # Lista que exige confirmação de posse (#212): `confirmacao` com a ref e os
+  # canais disponíveis (ou {estado:"confirmado"}). Sem exigência, a resposta é
+  # idêntica à da Fase 0 (sem a chave).
+  $body->{confirmacao} = $r->{confirmacao} if $r->{confirmacao};
   $self->render(status => 201, json => $body);
+}
+
+# ---------------------------------------------------------------------------
+# GET — estado da confirmação de posse (#212, RF-105)
+# ---------------------------------------------------------------------------
+
+# A `ref` é a capability (32 hex). Pendente → 200 {estado:"pendente", canais,
+# expira_em}; usada → 200 {estado:"confirmado", canais:[], expira_em};
+# formato inválido, inexistente, expirada sem uso ou invalidada → 404 genérico.
+# Sem PII. A página pública consulta este GET periodicamente (polling), por
+# isso o rate limit tem orçamento próprio, maior que o do POST.
+sub confirmacao_show($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+
+  my $rl = $model->rate_limit_check(
+    token => 'confirmacao:' . lc $ref,
+    ip    => $self->tx->remote_address,
+    max   => $model->inscricao_config->{rate_max} * 6,
+  );
+  return $self->_render_too_many('Muitas consultas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref)
+    or return $self->_render_confirmacao_not_found;
+
+  $self->render(json => {
+    estado    => $e->{estado},
+    canais    => $e->{estado} eq 'pendente' ? $model->canais_confirmacao(lc $ref) : [],
+    expira_em => $e->{expira_em},
+  });
+}
+
+# ---------------------------------------------------------------------------
+# POST — código de confirmação pelo WhatsApp (#212, RF-104, onda 2)
+# ---------------------------------------------------------------------------
+
+# Envia o código de 6 dígitos ao telefone da inscrição por template de
+# autenticação (Channel::WhatsApp + Channel::Confirmation: só hash, TTL 10 min,
+# 5 tentativas). 202 {enviado:1, expira_em do CÓDIGO}; ref inválida/não
+# pendente → 404; WhatsApp indisponível → 409; limite de envios (3 por ref;
+# 3 por telefone/hora) ou rate limit por IP → 429; falha do provedor → 502
+# (registrada em canal_mensagens).
+sub confirmacao_whatsapp($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+  $ref = lc $ref;
+
+  my $rl = $model->rate_limit_check(
+    token => "whatsapp:$ref", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref);
+  return $self->_render_confirmacao_not_found
+    unless $e && $e->{estado} eq 'pendente';
+
+  return $self->_render_whatsapp_indisponivel
+    unless grep { $_->{canal} eq 'whatsapp' } @{ $model->canais_confirmacao_disponiveis };
+
+  my $wa = $self->_whatsapp($model);
+  my $v  = $wa->validate_address($e->{telefone_norm});
+  return $self->_render_whatsapp_indisponivel unless $v->{ok};
+
+  my $max = $model->whatsapp_max_envios;
+  return $self->_render_too_many('Limite de envios do código atingido. Tente mais tarde.')
+    if $e->{envios_whatsapp} >= $max
+    || $model->envios_whatsapp_ultima_hora($v->{normalized}) >= $max;
+
+  my $r = $wa->confirm_start($v->{normalized});
+  unless ($r->{ok}) {
+    $self->app->log->warn('WhatsApp: falha ao enviar código: ' . ($r->{error} // '?'));
+    return $self->render(
+      json   => { error => 'Não foi possível enviar o código agora. Tente novamente em instantes.' },
+      status => 502,
+    );
+  }
+  $model->contar_envio_whatsapp($e->{ref_id});
+
+  $self->render(status => 202, json => {
+    enviado   => 1,
+    expira_em => $model->expira_em_codigo($r->{confirmacao_id}),
+  });
+}
+
+# Confere o código. 200 {estado:"confirmado"} (também se a ref já estava
+# confirmada — idempotente); código mal formado ou errado → 400; expirado,
+# tentativas excedidas ou sem pedido → 410; ref inválida → 404.
+sub confirmacao_whatsapp_verificar($self) {
+  my $model = $self->_modelo_habilitado or return;
+
+  my $ref = $self->param('ref');
+  return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
+  $ref = lc $ref;
+
+  my $rl = $model->rate_limit_check(
+    token => "whatsapp_verificar:$ref", ip => $self->tx->remote_address);
+  return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
+    unless $rl->{ok};
+
+  my $e = $model->estado_ref($ref) or return $self->_render_confirmacao_not_found;
+  return $self->render(json => { estado => 'confirmado' })
+    if $e->{estado} eq 'confirmado';
+
+  my $codigo = $self->_input->{codigo};
+  $codigo = '' unless defined $codigo && !ref $codigo;
+  $codigo =~ s/\s+//g;
+  return $self->render(json => { error => 'Código inválido.' }, status => 400)
+    unless $codigo =~ /^\d{6}\z/;
+
+  my $v = $self->_whatsapp($model)->validate_address($e->{telefone_norm});
+  return $self->_render_codigo_expirado unless $v->{ok};
+
+  my $res = EduMaps::Channel::Confirmation->new(
+    schema => $model->schema, log => $self->app->log,
+  )->verify(canal => 'whatsapp', endereco => $v->{normalized}, codigo => $codigo);
+
+  unless ($res->{ok}) {
+    return $self->render(json => { error => 'Código inválido.' }, status => 400)
+      if ($res->{reason} // '') eq 'código inválido';
+    return $self->_render_codigo_expirado;
+  }
+
+  my $c = $model->concluir(ref => $ref, via => 'whatsapp');
+  return $self->_render_confirmacao_not_found unless $c->{ok};
+  $self->render(json => { estado => 'confirmado' });
+}
+
+# ---------------------------------------------------------------------------
+# POST — webhook do bot público do Telegram (#212, RF-107, onda 2)
+# ---------------------------------------------------------------------------
+
+# Só no modo webhook com o bot público ligado (senão 404). Header
+# X-Telegram-Bot-Api-Secret-Token comparado em tempo constante com
+# canais.telegram.webhook_secret (ausente/errado, ou segredo não configurado →
+# 401). Update válido → sempre 200 {ok:1}, mesmo ignorado ou com erro interno
+# (o Telegram não deve reenviar).
+sub telegram_webhook($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $cfg   = $model->telegram_publico_config;
+
+  return $self->render(json => { error => 'Não encontrado.' }, status => 404)
+    unless $cfg->{enabled} && defined $cfg->{token} && length $cfg->{token}
+        && ($cfg->{recebimento} // '') eq 'webhook';
+
+  my $secret = $cfg->{webhook_secret};
+  my $header = $self->req->headers->header('X-Telegram-Bot-Api-Secret-Token');
+  # sha256 dos dois lados: comprimento igual, comparação em tempo constante
+  return $self->render(json => { error => 'Não autorizado.' }, status => 401)
+    unless defined $secret && length $secret && defined $header && length $header
+        && secure_compare(sha256_hex($header), sha256_hex($secret));
+
+  my $update = eval { $self->req->json };
+  if (ref $update eq 'HASH') {
+    my $ok = eval {
+      EduMaps::Channel::Telegram::Updates->new(
+        model => $model, config => $cfg, log => $self->app->log,
+        ua    => $self->canais_ua,
+      )->handle($update);
+      1;
+    };
+    $self->app->log->error("Telegram webhook: $@") unless $ok;
+  }
+  $self->render(json => { ok => 1 });
 }
 
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
+# Canal WhatsApp com a config efetiva (token decifrado em memória) e o UA dos
+# canais (injetável em teste).
+sub _whatsapp($self, $model) {
+  my $cfg = $model->whatsapp_config;
+  return EduMaps::Channel::WhatsApp->new(
+    config  => $cfg,
+    enabled => ($cfg->{enabled} ? 1 : 0),
+    schema  => $model->schema,
+    log     => $self->app->log,
+    ua      => $self->canais_ua,
+  );
+}
+
+sub _render_whatsapp_indisponivel($self) {
+  $self->render(json => { error => 'Confirmação pelo WhatsApp indisponível.' }, status => 409);
+}
+
+sub _render_codigo_expirado($self) {
+  $self->render(
+    json   => { error => 'Código expirado ou tentativas esgotadas. Peça um novo código.' },
+    status => 410,
+  );
+}
 
 # Com a flag desligada o endpoint inteiro é inexistente (404 genérico) — não
 # revela que existe uma lista/token. Devolve o modelo ou undef (já renderizado).
@@ -136,6 +344,10 @@ sub _render_inscricao_error($self, $r) {
 
 sub _render_not_found($self) {
   $self->render(json => { error => 'Link inválido ou expirado.' }, status => 404);
+}
+
+sub _render_confirmacao_not_found($self) {
+  $self->render(json => { error => 'Confirmação não encontrada.' }, status => 404);
 }
 
 sub _render_gone($self) {

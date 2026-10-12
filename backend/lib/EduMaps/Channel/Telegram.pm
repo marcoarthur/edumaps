@@ -47,19 +47,29 @@ sub _bot ($self) {
   require EduMaps::Bots::Telegram;
   return $self->bot_class->new(
     config => { telegram_token => $self->config->{token} // '' },
+    # o UA do canal (injetável em teste) é o do bot
+    ua     => $self->ua,
   );
+}
+
+# Opções de envio: chat_id e, opcionalmente, o teclado (`reply_markup`) do bot
+# público da confirmação de posse (#212).
+sub _send_opts ($self, $msg) {
+  my %o = (chat_id => $msg->{to});
+  $o{reply_markup} = $msg->{reply_markup} if ref $msg->{reply_markup};
+  return \%o;
 }
 
 sub _deliver ($self, $msg) {
   return { ok => 0, error => 'Telegram: token ausente' }
     unless length($self->config->{token} // '');
-  return $self->_bot->send_text($self->_compose_text($msg), { chat_id => $msg->{to} });
+  return $self->_bot->send_text($self->_compose_text($msg), $self->_send_opts($msg));
 }
 
 sub _deliver_p ($self, $msg) {
   return Mojo::Promise->resolve({ ok => 0, error => 'Telegram: token ausente' })
     unless length($self->config->{token} // '');
-  return $self->_bot->send_text_p($self->_compose_text($msg), { chat_id => $msg->{to} });
+  return $self->_bot->send_text_p($self->_compose_text($msg), $self->_send_opts($msg));
 }
 
 1;
