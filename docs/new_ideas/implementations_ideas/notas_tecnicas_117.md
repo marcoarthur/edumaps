@@ -28,7 +28,7 @@ todas as fases).
 | 1 — MVP | #219 · PR #220 · `c62d730` | 114 | adapter do eduBR, 6 temas descritivos, `/report` e `/report/temas`, task Minion `relatorio_gerar`, rotas do gestor, página `/gestor/relatorios`; correção do cache de análises que nunca ligava |
 | 2 — Aprofundamento | #219 · PR #221 · `0184bf2` | 115 | 4 temas (IDEB escola a escola, infraestrutura × IDEB, histórico da escola, escolas parecidas), complemento B, seção `associacoes`, tabelas recolhidas, `_destaque`, catálogo com `profundidade`/`padroes` |
 | 3 — Rico e exportável | #219 · PR #222 · `f00e548` | 116 | PDF pela impressão do navegador, Markdown no cliente, relatórios salvos (`clean.relatorios_salvos`), fotografia + "gerar de novo" |
-| 4 — Generalização | #219 · PR a abrir (Fase 4) | 117 | assistentes declarativos em YAML (`relatorio`, `eda_municipio`), modo composto com capítulos e redação geral, seletor de assistente, salvos com assistente |
+| 4 — Generalização | #219 · PR #223 · `4f7b0e9` | 117 | assistentes declarativos em YAML (`relatorio`, `eda_municipio`), modo composto com capítulos e redação geral, seletor de assistente, salvos com assistente |
 
 Branches: `feat/assistente-relatorio` (Fases 0–1), `feat/relatorio-fase2`,
 `feat/relatorio-fase3`, `feat/relatorio-fase4`.

@@ -4,6 +4,43 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — Assistente de Relatório, Fase 4 e fecho do ciclo (PR #223)
+
+- **Issue #219 FECHADA** pelo PR #223 (merge `4f7b0e9`). Nota técnica
+  **117** cobre o **ciclo inteiro** (Fases 0–4). As notas 114–116 são das
+  fases.
+- **Decisões do developer:**
+  - segundo assistente = **EDA do município**;
+  - assistentes declarados em **YAML no pacote**;
+  - **seletor de assistente** na página de relatórios.
+- **Entregas:**
+  - carregador e validação de `inst/assistentes/*.yml`;
+  - `relatorio.yml` (por tema) e `eda_municipio.yml` (5 capítulos + resumo
+    geral numa única chamada de LLM);
+  - rotas `/assistentes` e `?assistente`;
+  - migration `relatorios_salvos_assistente`;
+  - seletor, sumário e capítulos na tela, na impressão e no Markdown.
+  - **Critério de aceite:** um 3º assistente só com YAML (teste).
+- **Armadilha nova:** a regex gananciosa `<[^>]+>` no saneamento do LLM
+  truncava textos com comparações "<"/">". Use só tags
+  (`</?[A-Za-z][^<>\n]*>`).
+- **Versões:** `edumapsAnalytics` **0.3.1** = `analytics_source_version`
+  `edumapsr-0.3.1` (sobem juntas).
+- **Validação:**
+  - R 30 / 1591;
+  - backend 102 / 697;
+  - frontend 106 / 899;
+  - E2E 22/22 com o Gemini real;
+  - validação visual.
+- **Pendências do assistente:**
+  - EDA ~25–34 s a frio;
+  - eixo percentual dos gráficos;
+  - paginação de listas grandes;
+  - achados para o eduBR (filtro por município; filtro na regressão; código
+    do município na saída da escola);
+  - modelar o perfil **pesquisador** (catálogo já tem `profundidade` e
+    `publico`).
+
 ## Sessão 2026-10-12 — Assistente de Relatório, Fase 3 (PR #222)
 
 - **Issue** #219 (aberta, falta a Fase 4). **PR #222**, merge `f00e548`.
