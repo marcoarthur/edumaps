@@ -392,7 +392,44 @@ qualquer mudança. Os rótulos ao gestor ficam em pt-BR (ex.: "Biblioteca",
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| R5 | T-R | Complemento B no adapter + 4 roteiros + seções novas + catálogo com `profundidade` | ⚪ |
-| R6 | T-R | Regras de prompt dos temas profundos + testes (ferramentas falsas) + integração real no `analytic` | ⚪ |
-| F2 | T-F | `SecaoAssociacoes`, tabela `recolhida`/`_destaque`, tipos desconhecidos tolerados + fixtures + testes | ⚪ |
+| R5 | T-R | Complemento B no adapter + 4 roteiros + seções novas + catálogo com `profundidade` | 🟢 |
+| R6 | T-R | Regras de prompt dos temas profundos + testes (ferramentas falsas) + integração real no `analytic` | 🟢 |
+| F2 | T-F | `SecaoAssociacoes`, tabela `recolhida`/`_destaque`, tipos desconhecidos tolerados + fixtures + testes | 🟢 |
 | C2 | coord. | Verificação, deploy, e2e, docs, PR | ⚪ |
+
+## Log — Fase 2
+
+- **2026-10-12 — Desvios da T-R aceitos:**
+  - **Rede no `infraestrutura_ideb`:** `publica` (padrão), Municipal,
+    Estadual ou Federal; **sem Privada**.
+    - A regressão conta todas as escolas ativas da UF: SP com todas as redes
+      dá 30.817, acima do teto absoluto do eduBR (30.000).
+    - `max_amostra` subiu para 30.000.
+    - Recorte acima do teto → 400, pedindo uma rede específica.
+  - **`escolas_parecidas`:** também chama `resumo_escola`, para nome, rede e
+    etapa ofertada. Etapa não ofertada → 400. Linhas escola × etapa
+    agregadas por escola.
+  - **Coeficientes:** estimativa, erro e p-valor saem em formato `texto`, com
+    3 algarismos significativos e "< 0,001". Os formatos numéricos zerariam
+    efeitos pequenos.
+  - **Campos extras opcionais:**
+    - `texto` no item de posição ("7ª de 11");
+    - seções `kpis_ideb` (`historico_escola`) e `kpis` (`escolas_parecidas`).
+  - **Nomes de escola:** os de terceiros **não vão ao LLM** nos temas com
+    lista; a escola do gestor vai.
+- **2026-10-12 — Ajustes do coordenador:**
+  - `escolas_parecidas` pede **20 linhas** e fica com até **10 escolas
+    distintas** (com `n = 10`, a escola 35038751 rendia 7);
+  - os avisos deixam de levar o prefixo `[ferramenta]`, também na tela;
+  - tabelas com mais de 25 linhas rolam dentro da própria caixa, com
+    cabeçalho fixo (São Paulo capital tem 1.128 escolas).
+- **2026-10-12 — T-F:** `{#each}` das seções indexado pela posição; o aviso
+  `associacao` aparece só no topo; textos dos selos a validar.
+- **Verificação (coordenador):**
+  - R: 29 arquivos / 1360 asserções / 0 falhas (no `analytic`,
+    `LC_ALL=C.UTF-8`);
+  - frontend: 101 / 794, build OK;
+  - Perl: relatórios 2 arquivos / 23 testes.
+- **Achado para o eduBR** (só registro): um argumento `filtro` em
+  `regressao_escolas` (ex.: só escolas que ofertam a etapa) reduziria o
+  recorte abaixo do teto.
