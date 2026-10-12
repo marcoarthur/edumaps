@@ -188,13 +188,13 @@ O R resolve o `nome` do recorte.
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| R1 | T-R | Adapter eduBR (`edubr_source`, chamada de ferramenta, envelope → dados/avisos/fontes) | ⚪ |
-| R2 | T-R | Catálogo de temas + roteiros dos 6 temas + seções | ⚪ |
-| R3 | T-R | Redação LLM (persona + complemento; mock; degradação) | ⚪ |
-| R4 | T-R | Plumber `/report` e `/report/temas` + `api.json` + testes testthat + Dockerfile com o eduBR fixado | ⚪ |
-| P1 | T-P | Client `run_report`/`run_report_temas`, task `relatorio_gerar`, rotas e recorte-padrão + testes | ⚪ |
-| F1 | T-F | `RelatoriosPage`, seletor de recorte, temas, `RelatorioView` e seções + MSW + testes | ⚪ |
-| C1 | coord. | Rexfile (eduBR fixado + `dbplyr`/`parsnip`/`broom`), verificação, deploy | ⚪ |
+| R1 | T-R | Adapter eduBR (`edubr_source`, chamada de ferramenta, envelope → dados/avisos/fontes) | 🟢 |
+| R2 | T-R | Catálogo de temas + roteiros dos 6 temas + seções | 🟢 |
+| R3 | T-R | Redação LLM (persona + complemento; mock; degradação) | 🟢 |
+| R4 | T-R | Plumber `/report` e `/report/temas` + `api.json` + testes testthat + Dockerfile com o eduBR fixado | 🟢 |
+| P1 | T-P | Client `run_report`/`run_report_temas`, task `relatorio_gerar`, rotas e recorte-padrão + testes | 🟢 |
+| F1 | T-F | `RelatoriosPage`, seletor de recorte, temas, `RelatorioView` e seções + MSW + testes | 🟢 |
+| C1 | coord. | Rexfile (eduBR fixado + `dbplyr`/`parsnip`/`broom`), verificação, deploy | 🟢 |
 
 Onda 2: e2e em dev, docs funcionais, nota técnica e PR.
 
@@ -202,3 +202,58 @@ Onda 2: e2e em dev, docs funcionais, nota técnica e PR.
 
 - **2026-10-12 — Fase 0 aprovada** pelos resultados acima. A Fase 1 começa com
   a branch `feat/assistente-relatorio`.
+- **2026-10-12 — Desvios da T-R aceitos:**
+  - **`rede` por tema:** `ideb_territorio` e `tendencia_ideb` não aceitam
+    `publica` (o eduBR não aceita); não há opção `ano` (IDEB 2023, Censo 2025).
+  - **Tendência:** `tendencia_ideb` também chama `ideb_agregado` por edição,
+    para o gráfico de linhas.
+  - **Comparação com o nível de cima:** município → UF → região → Brasil,
+    conforme a ferramenta.
+  - **Campos opcionais a mais:** `recorte.municipio` (nível escola) e
+    `formato` nas seções `grafico`.
+  - **Erros:** 400 com `tipo: "invalid_request"`; erros
+    `conexao`/`limite_excedido`/`parametro_invalido` do eduBR → 500 (o Perl
+    não guarda em cache); `sem_dados` vira aviso.
+  - **Limites do relatório:** `max_linhas` 1000, `max_chamadas` 40,
+    `max_linhas_total` 60000; ao LLM só vai um JSON enxuto (≤ 9 mil
+    caracteres, 20 linhas por tabela).
+  - **Fatias:** respostas truncadas são refeitas por rede/localização.
+  - **Lentidão:** `redes_territorio` é o tema lento (região SE: 28 s).
+  - **Achado sobre o eduBR** (só registro): um filtro por código de município
+    em `redes_municipio`/`ideb_agregado`/`docentes_rede` eliminaria as fatias.
+- **2026-10-12 — Desvios da T-P aceitos:**
+  - fila configurável (`relatorio_queue`);
+  - `cache_hit` booleano;
+  - `Location` no 202;
+  - erros HTTP do cliente R viram exceção estruturada (o texto continua o
+    mesmo);
+  - 502 se o R falhar ao validar o tema;
+  - `opcoes` validadas só no R.
+- **2026-10-12 — ⚠️ Correção fora do escopo (T-P):** o cache
+  `analytics.analysis_cache` **nunca funcionou no app real**. O
+  `Client::_db` testava `$app->can('pg')`, mas `pg` é helper, não método;
+  desde `5f110c6` a tabela ficava vazia (confirmado em dev: 0 linhas). Com a
+  correção, o cache de 24 h passa a valer para **todas** as análises
+  "cacheáveis" (Assistente do Censo, cluster, summary, school_profile,
+  network_profile, evolution). Comportamento novo a validar com o developer.
+- **2026-10-12 — T-F:**
+  - o nível inicial é o município da escola;
+  - `etapa` sem valor vazio, `rede` com "Todas";
+  - opções aceitas como string ou `{valor, rotulo}`;
+  - polling com `setInterval`;
+  - gráfico com descrição `sr-only` e tabela com os mesmos dados;
+  - link "Relatórios" no painel, nas listas e nos envios.
+
+## Verificação independente (coordenador, onda 1)
+
+- **JSON real do R** (integração no `analytic`, provider mock) conferido
+  contra o contrato e o frontend: chaves, tipos de seção, fontes, rastreio.
+- **R** (no `analytic`, cópia limpa da branch): 28 arquivos / 1075
+  asserções, **0 falhas**, 11 pulados (banco de teste).
+- **Perl:** 103 arquivos / 676 testes. Só falhas antigas: `City.t`,
+  `domain/quality.t`, `indicators/quality.t`, `indicators_quality.t`,
+  `03-plugins/analytics.t`, `04-api/municipio.t`, `04-api/network/schools.t`
+  (as duas últimas citadas no AGENTS.md).
+- **Frontend:** 101 arquivos / 779 testes; `vite build` OK.
+- **Rexfile:** a instalação fixada do eduBR rodou no `analytic` (instala e,
+  na segunda vez, pula).
