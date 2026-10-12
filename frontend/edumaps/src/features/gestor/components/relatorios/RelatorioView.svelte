@@ -42,8 +42,8 @@
       {/if}
     </div>
     <p class="text-sm text-gray-600">
-      {#if relatorio?.tema?.titulo}{relatorio.tema.titulo} · {/if}{recorteTexto}{#if geradoEm}
-        · gerado em {geradoEm}{/if}
+      {#if relatorio?.tema?.titulo}{relatorio.tema.titulo}{" · "}{/if}{recorteTexto}{#if geradoEm}{" · "}gerado
+        em {geradoEm}{/if}
     </p>
   </header>
 
@@ -78,9 +78,9 @@
           {#each fontes as f, i (i)}
             <li>
               <span class="font-medium text-gray-800">{f.descricao ?? f.ferramenta}</span>
-              {#if f.edicao} · {f.edicao}{/if}
-              {#if f.escopo} · {f.escopo}{/if}
-              {#if f.n !== undefined && f.n !== null} · n = {formatarValor(f.n, "inteiro")}{/if}
+              {#if f.edicao}{" · "}{f.edicao}{/if}
+              {#if f.escopo}{" · "}{f.escopo}{/if}
+              {#if f.n !== undefined && f.n !== null}{" · "}n = {formatarValor(f.n, "inteiro")}{/if}
               <span class="text-xs text-gray-400">({f.ferramenta})</span>
             </li>
           {/each}
@@ -102,7 +102,7 @@
     {#if relatorio?.rastreio}
       <p class="text-xs text-gray-400">
         Redação: {relatorio.rastreio.provedor ?? "—"}{#if relatorio.rastreio.modelo} / {relatorio.rastreio.modelo}{/if}
-        {#if relatorio.rastreio.versao_edubr} · eduBR {relatorio.rastreio.versao_edubr}{/if}
+        {#if relatorio.rastreio.versao_edubr}{" · "}eduBR {relatorio.rastreio.versao_edubr}{/if}
       </p>
     {/if}
   </footer>
