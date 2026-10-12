@@ -65,6 +65,13 @@ pesquisador, ele concentrará as análises mais profundas.
   estão incompletos.
 - Sistema pode **reaproveitar relatórios já gerados** no mesmo dia, entregando
   na hora o mesmo pedido repetido.
+- Gestor pode **exportar** o relatório em **PDF**, pela impressão do
+  navegador, numa versão limpa (sem menus, com os detalhes técnicos abertos e
+  as fontes), ou em **Markdown**, para colar em documentos e apresentações.
+- Gestor pode **salvar** os relatórios que quiser em "Meus relatórios",
+  reabri-los depois exatamente como foram gerados (uma fotografia da data,
+  sem novo custo de IA) e **gerar de novo** com os dados atuais. Os salvos
+  ficam até o gestor excluir e são visíveis só para ele.
 - Sistema garante que **nenhum dado pessoal** aparece nos relatórios, que
   trazem só dados públicos e agregados.
 

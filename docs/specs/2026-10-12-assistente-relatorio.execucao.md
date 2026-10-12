@@ -564,7 +564,7 @@ CREATE INDEX idx_relatorios_salvos_gestor ON clean.relatorios_salvos (gestor_id,
 |----|--------|--------|--------|
 | P2 | T-P | Migration `relatorios_salvos` + 4 rotas + testes | 🟢 |
 | F3 | T-F | Ações (imprimir, Markdown, salvar), CSS de impressão, páginas de salvos, "gerar de novo" por query + testes | 🟢 |
-| C3 | coord. | Verificação, deploy, e2e, docs, PR | ⚪ |
+| C3 | coord. | Verificação, deploy, e2e, docs, PR | 🟢 |
 
 ## Log — Fase 3
 
@@ -590,3 +590,9 @@ CREATE INDEX idx_relatorios_salvos_gestor ON clean.relatorios_salvos (gestor_id,
   - `ci_db.sh verify`: `relatorios_salvos .. ok`;
   - backend: 102 / 690, só as 7 falhas antigas;
   - frontend: 105 / 863, build OK.
+- **2026-10-12 — Integração da Fase 3 (coordenador):**
+  - deploy de banco, backend, minion e frontend;
+  - imagens locais `sqitch`, `backend`, `minion` e `frontend`;
+  - E2E 21/21 com download real de Markdown e PDF via `printToPDF`;
+  - correção: o formato da seção passou a valer nos dados do gráfico.
+  - **Pendência:** eixo percentual dos gráficos.
