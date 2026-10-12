@@ -490,6 +490,12 @@
                   />
                   <span>
                     <span class="font-medium text-gray-900">{t.titulo}</span>
+                    {#if t.profundidade === "profunda"}
+                      {" "}<span
+                        class="ml-1 inline-block align-middle text-[11px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
+                        data-testid="selo-profunda"
+                      >Análise aprofundada</span>
+                    {/if}
                     {#if t.descricao}
                       <span id="tema-desc-{t.id}" class="block text-gray-500">{t.descricao}</span>
                     {/if}

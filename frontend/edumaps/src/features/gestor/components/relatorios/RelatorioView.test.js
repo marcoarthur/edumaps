@@ -5,6 +5,7 @@ import RelatorioView from "./RelatorioView.svelte";
 import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_LLM_INDISPONIVEL_FIXTURE,
+  RELATORIO_INFRAESTRUTURA_FIXTURE,
 } from "../../mocks/relatoriosFixtures.js";
 
 vi.mock("@carbon/charts-svelte", async () => {
@@ -63,5 +64,48 @@ describe("RelatorioView", () => {
     expect(screen.getByRole("heading", { name: "Só título" })).toBeInTheDocument();
     expect(screen.queryByTestId("relatorio-fontes")).toBeNull();
     expect(screen.queryByTestId("relatorio-avisos")).toBeNull();
+  });
+
+  it("ignora tipo desconhecido entre seções conhecidas, sem erro", () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(RelatorioView, {
+      props: {
+        relatorio: {
+          titulo: "Misto",
+          secoes: [
+            { id: "a", tipo: "texto", titulo: "Antes", markdown: "oi" },
+            { id: "b", tipo: "radar_futuro", titulo: "Não sei desenhar" },
+            null,
+            { id: "c", tipo: "texto", titulo: "Depois", markdown: "tchau" },
+          ],
+        },
+      },
+    });
+    expect(screen.getByRole("heading", { name: "Antes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Depois" })).toBeInTheDocument();
+    expect(screen.queryByText("Não sei desenhar")).toBeNull();
+    expect(erro).not.toHaveBeenCalled();
+    erro.mockRestore();
+  });
+
+  it("fase 2: associações, tabelas recolhidas e aviso de associação em destaque", () => {
+    render(RelatorioView, { props: { relatorio: RELATORIO_INFRAESTRUTURA_FIXTURE } });
+    const ids = [...document.querySelectorAll("[data-testid^='secao-']")].map((e) =>
+      e.getAttribute("data-testid"),
+    );
+    expect(ids).toEqual(["secao-texto", "secao-associacoes", "secao-tabela", "secao-tabela"]);
+    expect(screen.getAllByTestId("tabela-recolhida")).toHaveLength(2);
+    const aviso = screen.getByTestId("aviso-associacao");
+    expect(aviso).toHaveAttribute("role", "note");
+    expect(aviso).toHaveTextContent("Associação não é causa");
+    expect(aviso).toHaveTextContent("não causas");
+    // não repete no rodapé
+    expect(screen.queryByTestId("relatorio-avisos")).toBeNull();
+    expect(screen.getByTestId("relatorio-fontes")).toHaveTextContent("n = 8.535");
+  });
+
+  it("sem aviso de associação, não há destaque", () => {
+    render(RelatorioView, { props: { relatorio: RELATORIO_RESULT_FIXTURE } });
+    expect(screen.queryByTestId("aviso-associacao")).toBeNull();
   });
 });

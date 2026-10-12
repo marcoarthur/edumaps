@@ -63,6 +63,39 @@ export const TEMAS_FIXTURE = [
     profundidade: "descritiva",
     opcoes: {},
   },
+  // Fase 2 (temas novos; `profundidade` no catálogo)
+  {
+    id: "ideb_escolas",
+    titulo: "IDEB escola a escola",
+    descricao: "IDEB de cada escola do município, ordenado.",
+    niveis: ["municipio"],
+    profundidade: "profunda",
+    opcoes: { etapa: ETAPAS, rede: REDES },
+  },
+  {
+    id: "infraestrutura_ideb",
+    titulo: "Infraestrutura e IDEB",
+    descricao: "O que da infraestrutura anda junto com o IDEB no estado.",
+    niveis: ["uf"],
+    profundidade: "profunda",
+    opcoes: { etapa: ETAPAS, rede: REDES },
+  },
+  {
+    id: "historico_escola",
+    titulo: "Histórico da minha escola",
+    descricao: "IDEB da escola ao longo das edições.",
+    niveis: ["escola"],
+    profundidade: "descritiva",
+    opcoes: {},
+  },
+  {
+    id: "escolas_parecidas",
+    titulo: "Escolas parecidas com a minha",
+    descricao: "Escolas públicas com perfil semelhante.",
+    niveis: ["escola"],
+    profundidade: "descritiva",
+    opcoes: { etapa: ETAPAS },
+  },
 ];
 
 /** ReportResult completo: as 4 seções, fontes, avisos e rastreio com LLM ok. */
@@ -173,4 +206,126 @@ export const RELATORIO_LLM_INDISPONIVEL_FIXTURE = {
   ],
   avisos: [{ tipo: "llm", mensagem: "O serviço de redação não respondeu." }],
   rastreio: { ...RELATORIO_RESULT_FIXTURE.rastreio, llm: "indisponivel" },
+};
+
+// ---------------------------------------------------------------- fase 2
+
+/** infraestrutura_ideb: resumo, associações, tabelas recolhidas e aviso. */
+export const RELATORIO_INFRAESTRUTURA_FIXTURE = {
+  titulo: "Infraestrutura e IDEB — Rondônia",
+  gerado_em: "2026-10-12T12:00:00Z",
+  recorte: { nivel: "uf", codigo: "RO", nome: "Rondônia" },
+  tema: { id: "infraestrutura_ideb", titulo: "Infraestrutura e IDEB" },
+  secoes: [
+    {
+      id: "resumo",
+      tipo: "texto",
+      titulo: "Resumo",
+      markdown: "Nas escolas urbanas de RO, ter **biblioteca** anda junto com IDEB maior.",
+    },
+    {
+      id: "associacoes",
+      tipo: "associacoes",
+      titulo: "O que anda junto com o IDEB",
+      itens: [
+        { rotulo: "Biblioteca", corte: "Urbana", direcao: "maior", seguranca: "alta", n: 8123 },
+        { rotulo: "Internet", corte: "Rural", direcao: "menor", seguranca: "media", n: 412 },
+        { rotulo: "Nº de matrículas", direcao: "sem_relacao_clara", seguranca: "baixa", n: 8535 },
+      ],
+      nota: "Associação, não causa: escolas com biblioteca também diferem em outros aspectos.",
+    },
+    {
+      id: "coeficientes",
+      tipo: "tabela",
+      recolhida: true,
+      titulo: "Coeficientes do modelo",
+      colunas: [
+        { id: "termo", rotulo: "Termo", formato: "texto" },
+        { id: "corte", rotulo: "Corte", formato: "texto" },
+        { id: "estimativa", rotulo: "Estimativa", formato: "decimal2" },
+        { id: "erro", rotulo: "Erro padrão", formato: "decimal2" },
+        { id: "p_valor", rotulo: "p-valor", formato: "decimal2" },
+      ],
+      linhas: [
+        { termo: "in_biblioteca", corte: "Urbana", estimativa: 0.31, erro: 0.05, p_valor: 0.001 },
+        { termo: "in_internet", corte: "Rural", estimativa: -0.22, erro: 0.1, p_valor: 0.03 },
+      ],
+    },
+    {
+      id: "metricas",
+      tipo: "tabela",
+      recolhida: true,
+      titulo: "Ajuste por corte",
+      colunas: [
+        { id: "corte", rotulo: "Corte", formato: "texto" },
+        { id: "n", rotulo: "n", formato: "inteiro" },
+        { id: "r2", rotulo: "R²", formato: "decimal2" },
+        { id: "r2_aj", rotulo: "R² ajustado", formato: "decimal2" },
+      ],
+      linhas: [
+        { corte: "Urbana", n: 8123, r2: 0.12, r2_aj: 0.11 },
+        { corte: "Rural", n: 412, r2: 0.08, r2_aj: 0.06 },
+      ],
+    },
+  ],
+  fontes: [
+    {
+      ferramenta: "regressao_escolas",
+      descricao: "Regressão linear por escola",
+      edicao: "IDEB 2023",
+      escopo: "escolas ativas de RO",
+      n: 8535,
+    },
+  ],
+  avisos: [
+    {
+      tipo: "associacao",
+      mensagem: "Os resultados mostram associações entre fatores e o IDEB, não causas.",
+    },
+  ],
+  rastreio: { provedor: "mock", modelo: "mock-1", llm: "ok", versao_edubr: "0.0.0.9000" },
+};
+
+/** ideb_escolas: lista com a escola do gestor em destaque. */
+export const RELATORIO_IDEB_ESCOLAS_FIXTURE = {
+  titulo: "IDEB escola a escola — Porto Velho (RO)",
+  gerado_em: "2026-10-12T12:00:00Z",
+  recorte: { nivel: "municipio", codigo: "1100205", nome: "Porto Velho", uf: "RO" },
+  tema: { id: "ideb_escolas", titulo: "IDEB escola a escola" },
+  secoes: [
+    {
+      id: "indicadores",
+      tipo: "indicadores",
+      titulo: "Visão geral",
+      itens: [
+        { rotulo: "Escolas com nota", valor: 3, formato: "inteiro" },
+        { rotulo: "Mediana", valor: 5.6, formato: "decimal1" },
+        { rotulo: "Posição da sua escola", valor: "2ª de 3", formato: "texto" },
+      ],
+    },
+    {
+      id: "escolas",
+      tipo: "tabela",
+      titulo: "Escolas do município",
+      colunas: [
+        { id: "nome", rotulo: "Escola", formato: "texto" },
+        { id: "rede", rotulo: "Rede", formato: "texto" },
+        { id: "ideb", rotulo: "IDEB", formato: "decimal1" },
+      ],
+      linhas: [
+        { nome: "EMEF Rio Madeira", rede: "Municipal", ideb: 6.1 },
+        { nome: "EEEF Professora Maria de Lourdes", rede: "Estadual", ideb: 5.6, _destaque: true },
+        { nome: "EMEF Candelária", rede: "Municipal", ideb: 4.9 },
+      ],
+    },
+  ],
+  fontes: [{ ferramenta: "ideb", descricao: "IDEB por escola", edicao: "IDEB 2023", n: 3 }],
+  avisos: [],
+  rastreio: { provedor: "mock", modelo: "mock-1", llm: "ok" },
+};
+
+/** Resultado por tema (os demais usam o RELATORIO_RESULT_FIXTURE). */
+export const RELATORIOS_POR_TEMA_FIXTURE = {
+  infraestrutura_ideb: RELATORIO_INFRAESTRUTURA_FIXTURE,
+  ideb_escolas: RELATORIO_IDEB_ESCOLAS_FIXTURE,
 };

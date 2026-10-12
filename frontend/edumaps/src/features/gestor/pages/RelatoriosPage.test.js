@@ -85,7 +85,12 @@ describe("RelatoriosPage", () => {
     expect(screen.getByRole("heading", { name: "Relatórios" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Município" })).toBeChecked();
     expect(screen.getByLabelText(/Da minha escola: Porto Velho/)).toBeChecked();
-    expect(temasVisiveis()).toEqual(["ideb_territorio", "redes_territorio", "docentes_territorio"]);
+    expect(temasVisiveis()).toEqual([
+      "ideb_territorio",
+      "redes_territorio",
+      "docentes_territorio",
+      "ideb_escolas",
+    ]);
     const primeiro = screen.getByRole("radio", { name: /IDEB do território/ });
     expect(primeiro).toBeChecked();
     expect(primeiro).toHaveAccessibleDescription("IDEB do recorte comparado ao nível de cima.");
@@ -107,10 +112,27 @@ describe("RelatoriosPage", () => {
     expect(screen.getByLabelText("Rede")).toBeInTheDocument();
 
     await fireEvent.click(screen.getByRole("radio", { name: "Minha escola" }));
-    await waitFor(() => expect(temasVisiveis()).toEqual(["minha_escola"]));
+    await waitFor(() =>
+      expect(temasVisiveis()).toEqual(["minha_escola", "historico_escola", "escolas_parecidas"]),
+    );
     expect(screen.getByTestId("recorte-atual")).toHaveTextContent("INEP 11000040");
     expect(screen.queryByTestId("opcoes-tema")).toBeNull();
     expect(screen.queryByLabelText("Escolher outro")).toBeNull();
+  });
+
+  it("temas profundos levam o selo \"Análise aprofundada\"; descritivos não", async () => {
+    await abrir();
+    const itemDe = (id) =>
+      screen.getByTestId("temas").querySelector(`input[value="${id}"]`).closest("li");
+    expect(within(itemDe("ideb_escolas")).getByTestId("selo-profunda")).toHaveTextContent(
+      "Análise aprofundada",
+    );
+    expect(within(itemDe("ideb_territorio")).queryByTestId("selo-profunda")).toBeNull();
+    expect(within(screen.getByTestId("temas")).getAllByTestId("selo-profunda")).toHaveLength(1);
+
+    await fireEvent.click(screen.getByRole("radio", { name: "Estado" }));
+    await waitFor(() => expect(temasVisiveis()).toContain("infraestrutura_ideb"));
+    expect(within(itemDe("infraestrutura_ideb")).getByTestId("selo-profunda")).toBeInTheDocument();
   });
 
   it("gera com o recorte-padrão e as opções escolhidas", async () => {
@@ -131,7 +153,9 @@ describe("RelatoriosPage", () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
     await abrir();
     await fireEvent.click(screen.getByRole("radio", { name: "Minha escola" }));
-    await waitFor(() => expect(temasVisiveis()).toEqual(["minha_escola"]));
+    await waitFor(() =>
+      expect(temasVisiveis()).toEqual(["minha_escola", "historico_escola", "escolas_parecidas"]),
+    );
     await gerarEPollar(0);
     expect(getPedidosRelatorioMock()[0]).toEqual({
       geotag: { nivel: "escola", codigo: "11000040" },
@@ -191,6 +215,36 @@ describe("RelatoriosPage", () => {
       await ate(() => getPedidosRelatorioMock().length === 2);
       expect(getPedidosRelatorioMock()[1].geotag).toEqual({ nivel: "regiao", codigo: "NE" });
     });
+  });
+
+  it("infraestrutura_ideb: associações, aviso e detalhes técnicos recolhidos", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    await abrir();
+    await fireEvent.click(screen.getByRole("radio", { name: "Estado" }));
+    await waitFor(() => expect(temasVisiveis()).toContain("infraestrutura_ideb"));
+    await fireEvent.click(screen.getByRole("radio", { name: /Infraestrutura e IDEB/ }));
+    await gerarEPollar();
+    expect(getPedidosRelatorioMock()[0]).toMatchObject({
+      geotag: { nivel: "uf", codigo: "RO" },
+      tema: "infraestrutura_ideb",
+    });
+    await screen.findByTestId("relatorio-view");
+    expect(screen.getByTestId("secao-associacoes")).toBeInTheDocument();
+    expect(screen.getByTestId("aviso-associacao")).toHaveTextContent("Associação não é causa");
+    const recolhidas = screen.getAllByTestId("tabela-recolhida");
+    expect(recolhidas).toHaveLength(2);
+    recolhidas.forEach((d) => expect(d.open).toBe(false));
+  });
+
+  it("ideb_escolas: a escola do gestor sai destacada", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    await abrir();
+    await fireEvent.click(screen.getByRole("radio", { name: /IDEB escola a escola/ }));
+    await gerarEPollar();
+    await screen.findByTestId("relatorio-view");
+    const destaque = screen.getByRole("rowheader", { name: /\(sua escola\)/ });
+    expect(destaque).toHaveTextContent("EEEF Professora Maria de Lourdes");
+    expect(destaque.closest("tr")).toHaveAttribute("data-destaque", "true");
   });
 
   describe("geração e polling (1,5 s)", () => {

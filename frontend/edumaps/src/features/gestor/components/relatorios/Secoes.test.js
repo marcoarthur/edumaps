@@ -6,7 +6,12 @@ import SecaoTexto from "./SecaoTexto.svelte";
 import SecaoIndicadores from "./SecaoIndicadores.svelte";
 import SecaoTabela from "./SecaoTabela.svelte";
 import SecaoGrafico from "./SecaoGrafico.svelte";
-import { RELATORIO_RESULT_FIXTURE } from "../../mocks/relatoriosFixtures.js";
+import SecaoAssociacoes from "./SecaoAssociacoes.svelte";
+import {
+  RELATORIO_RESULT_FIXTURE,
+  RELATORIO_INFRAESTRUTURA_FIXTURE,
+  RELATORIO_IDEB_ESCOLAS_FIXTURE,
+} from "../../mocks/relatoriosFixtures.js";
 
 vi.mock("@carbon/charts-svelte", async () => {
   const stub = (await import("@/features/network-compare/__tests__/CarbonChartStub.svelte")).default;
@@ -73,6 +78,126 @@ describe("SecaoTabela", () => {
       props: { secao: { id: "v", titulo: "Vazia", colunas: [{ id: "a", rotulo: "A" }], linhas: [] } },
     });
     expect(screen.getByText("Sem dados para este recorte.")).toBeInTheDocument();
+  });
+});
+
+describe("SecaoTabela (fase 2)", () => {
+  it("tabela longa (> 25 linhas) rola na própria caixa; curta não", () => {
+    const linhasLongas = Array.from({ length: 30 }, (_, k) => ({ escola: `Escola ${k}`, ideb: 5 }));
+    const colunas = [
+      { id: "escola", rotulo: "Escola", formato: "texto" },
+      { id: "ideb", rotulo: "IDEB", formato: "decimal1" },
+    ];
+    const { container, unmount } = render(SecaoTabela, {
+      props: { secao: { id: "t", tipo: "tabela", titulo: "Longa", colunas, linhas: linhasLongas } },
+    });
+    expect(container.querySelector('[data-longa="true"]')).not.toBeNull();
+    unmount();
+    const curta = render(SecaoTabela, {
+      props: { secao: { id: "t2", tipo: "tabela", titulo: "Curta", colunas, linhas: linhasLongas.slice(0, 3) } },
+    });
+    expect(curta.container.querySelector('[data-longa="true"]')).toBeNull();
+  });
+
+  const infra = (id) => RELATORIO_INFRAESTRUTURA_FIXTURE.secoes.find((s) => s.id === id);
+  const escolas = RELATORIO_IDEB_ESCOLAS_FIXTURE.secoes.find((s) => s.id === "escolas");
+
+  it("recolhida: dentro de <details> fechado, com o título no summary", () => {
+    render(SecaoTabela, { props: { secao: infra("coeficientes") } });
+    const details = screen.getByTestId("tabela-recolhida");
+    expect(details.tagName).toBe("DETAILS");
+    expect(details.open).toBe(false);
+    const summary = details.querySelector("summary");
+    expect(summary).toHaveTextContent("Ver detalhes técnicos: Coeficientes do modelo");
+    // continua acessível como tabela (só recolhida)
+    const tabela = within(details).getByRole("table", { name: "Coeficientes do modelo", hidden: true });
+    expect(within(tabela).getAllByRole("row", { hidden: true })).toHaveLength(3);
+  });
+
+  it("não recolhida: sem <details>", () => {
+    render(SecaoTabela, { props: { secao: secao("tabela_redes") } });
+    expect(screen.queryByTestId("tabela-recolhida")).toBeNull();
+    expect(screen.getByRole("table", { name: "IDEB por rede" })).toBeInTheDocument();
+  });
+
+  it("_destaque: realça a linha, anuncia \"(sua escola)\" e não vira coluna", () => {
+    render(SecaoTabela, { props: { secao: escolas } });
+    const tabela = screen.getByRole("table", { name: "Escolas do município" });
+    expect(within(tabela).getAllByRole("columnheader").map((c) => c.textContent.trim())).toEqual([
+      "Escola",
+      "Rede",
+      "IDEB",
+    ]);
+    expect(tabela).not.toHaveTextContent("true");
+    const destacada = within(tabela).getByRole("rowheader", {
+      name: "EEEF Professora Maria de Lourdes (sua escola)",
+    });
+    const tr = destacada.closest("tr");
+    expect(tr).toHaveAttribute("data-destaque", "true");
+    expect(tr).toHaveClass("bg-amber-50");
+    const outra = within(tabela).getByRole("rowheader", { name: "EMEF Rio Madeira" }).closest("tr");
+    expect(outra).not.toHaveAttribute("data-destaque");
+    expect(outra).not.toHaveClass("bg-amber-50");
+    expect(tabela.querySelectorAll("[data-destaque]")).toHaveLength(1);
+  });
+
+  it("coluna \"_destaque\" declarada por engano é descartada", () => {
+    render(SecaoTabela, {
+      props: {
+        secao: {
+          ...escolas,
+          colunas: [...escolas.colunas, { id: "_destaque", rotulo: "_destaque" }],
+        },
+      },
+    });
+    const tabela = screen.getByRole("table", { name: "Escolas do município" });
+    expect(within(tabela).getAllByRole("columnheader")).toHaveLength(3);
+  });
+});
+
+describe("SecaoAssociacoes", () => {
+  const assoc = RELATORIO_INFRAESTRUTURA_FIXTURE.secoes.find((s) => s.id === "associacoes");
+
+  it("título, um cartão por item, corte e n em pt-BR, e a nota", () => {
+    render(SecaoAssociacoes, { props: { secao: assoc } });
+    expect(screen.getByRole("heading", { name: "O que anda junto com o IDEB" })).toBeInTheDocument();
+    const cards = screen.getAllByTestId("associacao");
+    expect(cards).toHaveLength(3);
+    expect(cards[0]).toHaveTextContent("Biblioteca");
+    expect(cards[0]).toHaveTextContent("Urbana");
+    expect(within(cards[0]).getByTestId("associacao-n")).toHaveTextContent("8.123 escolas analisadas");
+    expect(cards[2]).not.toHaveTextContent("·"); // sem corte
+    expect(screen.getByTestId("associacoes-nota")).toHaveTextContent(/^Associação, não causa/);
+  });
+
+  it("direção com texto (não só cor) e seta decorativa", () => {
+    render(SecaoAssociacoes, { props: { secao: assoc } });
+    const dirs = screen.getAllByTestId("associacao-direcao");
+    expect(dirs[0]).toHaveTextContent("Associado a resultado maior");
+    expect(dirs[1]).toHaveTextContent("Associado a resultado menor");
+    expect(dirs[2]).toHaveTextContent("Sem relação clara");
+    dirs.forEach((d) => expect(d.querySelector("[aria-hidden='true']")).not.toBeNull());
+  });
+
+  it("selo de segurança com texto explicativo", () => {
+    render(SecaoAssociacoes, { props: { secao: assoc } });
+    const segs = screen.getAllByTestId("associacao-seguranca");
+    expect(segs[0]).toHaveTextContent("Segurança alta — é muito pouco provável que seja acaso.");
+    expect(segs[1]).toHaveTextContent("Segurança média — é pouco provável que seja acaso.");
+    expect(segs[2]).toHaveTextContent("Segurança baixa — pode ser acaso.");
+  });
+
+  it("valores fora do contrato caem no neutro; sem itens mostra mensagem", () => {
+    const { unmount } = render(SecaoAssociacoes, {
+      props: { secao: { id: "a", tipo: "associacoes", itens: [{ rotulo: "X", direcao: "??" }] } },
+    });
+    expect(screen.getByRole("heading", { name: "Associações" })).toBeInTheDocument();
+    expect(screen.getByTestId("associacao-direcao")).toHaveTextContent("Sem relação clara");
+    expect(screen.getByTestId("associacao-seguranca")).toHaveTextContent("Segurança baixa");
+    expect(screen.queryByTestId("associacao-n")).toBeNull();
+    unmount();
+    render(SecaoAssociacoes, { props: { secao: { id: "b", tipo: "associacoes", itens: [] } } });
+    expect(screen.getByText("Sem associações para este recorte.")).toBeInTheDocument();
   });
 });
 
