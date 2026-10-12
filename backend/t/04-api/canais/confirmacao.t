@@ -95,10 +95,13 @@ subtest 'lista sem exigência: resposta idêntica à Fase 0' => sub {
   plan skip_all => 'migration nao aplicada' unless $has && $has_config;
   habilita_flag();
 
+  # #214: toda inscrição real acrescenta `exclusao_url` (link pessoal)
+  my $url = qr{/privacidade/exclusao/[0-9a-f]{32}\z};
   my $r = inscreve($tk_livre, 'Livre Um', '11944440001')->status_is(201)->tx->res->json;
-  is $r, { ok => 1 }, 'só {ok:1}, sem confirmacao';
+  is $r, { ok => 1, exclusao_url => match($url) }, 'só {ok:1, exclusao_url}, sem confirmacao';
   my $d = inscreve($tk_livre, 'Livre Um', '11944440001')->status_is(201)->tx->res->json;
-  is $d, { ok => 1, duplicado => 1 }, 'duplicado, sem confirmacao';
+  is $d, { ok => 1, duplicado => 1, exclusao_url => match($url) }, 'duplicado, sem confirmacao';
+  isnt $d->{exclusao_url}, $r->{exclusao_url}, 'um link por inscrição';
 };
 
 subtest 'lista que exige, sem canais configurados: pendente com canais []' => sub {
@@ -114,7 +117,9 @@ subtest 'lista que exige, sem canais configurados: pendente com canais []' => su
   is $c->{canais}, [], 'canais vazio';
 
   my $g = $t->get_ok("/api/canais/confirmacao/$c->{ref}")->status_is(200)->tx->res->json;
-  is $g, { estado => 'pendente', canais => [], expira_em => $c->{expira_em} }, 'GET pendente';
+  # #214: + contatos (só os presentes na inscrição)
+  is $g, { estado => 'pendente', canais => [], expira_em => $c->{expira_em},
+           contatos => { telefone => { estado => 'pendente', via => undef } } }, 'GET pendente';
 };
 
 subtest 'honeypot: 201 sem gravar e sem confirmacao' => sub {
@@ -147,7 +152,7 @@ subtest 'canais disponíveis, reinscrição e GET de confirmação' => sub {
   my $g = $t->get_ok("/api/canais/confirmacao/$c1->{ref}")->status_is(200)->tx->res->json;
   is $g->{estado}, 'pendente', 'GET pendente';
   is $g->{canais}, $c1->{canais}, 'GET com os mesmos canais';
-  is [sort keys %$g], [qw(canais estado expira_em)], 'GET sem PII nem ids';
+  is [sort keys %$g], [qw(canais contatos estado expira_em)], 'GET sem PII nem ids';
 
   # reinscrição do pendente: ref nova; a anterior vira 404
   my $r2 = inscreve($tk_exige, 'Ana Canais', '11944440003')->status_is(201)->tx->res->json;
@@ -168,7 +173,10 @@ subtest 'canais disponíveis, reinscrição e GET de confirmação' => sub {
 
   # reinscrição de confirmado: só {estado:"confirmado"}
   my $r3 = inscreve($tk_exige, 'Ana Canais', '11944440003')->status_is(201)->tx->res->json;
-  is $r3->{confirmacao}, { estado => 'confirmado' }, 'confirmado sem ref';
+  is $r3->{confirmacao},
+    { estado => 'confirmado',
+      contatos => { telefone => { estado => 'confirmado', via => 'telegram' } } },
+    'confirmado sem ref';
 };
 
 subtest 'GET: formato inválido, inexistente, expirada -> 404' => sub {

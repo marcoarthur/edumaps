@@ -770,6 +770,14 @@ sub canais_confirmacao_disponiveis ($self) {
   return \@out;
 }
 
+# Canal e-mail disponível para a confirmação de posse do e-mail nas listas
+# (#214, RF-203): canais.email.enabled + smtp_host + from. Devolve 1/0.
+sub email_confirmacao_disponivel ($self) {
+  my $cfg = $self->email_config;
+  my $tem = sub ($v) { defined $v && !ref $v && length $v };
+  return ($cfg->{enabled} && $tem->($cfg->{smtp_host}) && $tem->($cfg->{from})) ? 1 : 0;
+}
+
 # Config efetiva da autoinscrição por QR (canais.inscricao.*). `enabled` é 0
 # por omissão — o endpoint público responde 404 sem decisão explícita do admin.
 # `rate_max`/`rate_window_seconds` alimentam o rate limit em memória.

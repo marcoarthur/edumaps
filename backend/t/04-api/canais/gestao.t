@@ -8,6 +8,9 @@
 # Exige sessão do gestor da escola (Bearer) e posse do cod_inep.
 # Fase 1 (#212): exige_confirmacao no POST/PATCH, contadores
 # membros_confirmados/membros_pendentes e estado da confirmação por membro.
+# Fase 2 (#214): `coleta` no POST/PATCH/GET, e-mail e estado por contato
+# (telefone_estado/email_estado, `parcial`) nos membros, validação de
+# expira_em/max_usos do QR.
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -364,6 +367,150 @@ subtest 'confirmação (#212): contadores e estado por membro' => sub {
   my %p2 = map { $_->{nome} => $_ } @$rows2;
   is $p2{Pendente}{estado}, 'nao_exigida', 'sem exigência -> nao_exigida';
   is $p2{Confirmada}{estado}, 'confirmado', 'confirmado preservado';
+};
+
+subtest 'coleta (#214): POST, PATCH, listar, detalhe; inválida -> 400' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Coleta Default',
+  })->status_is(201)->json_is('/coleta', 'telefone')->tx->res->json;
+
+  my $e = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Coleta Email', coleta => 'email',
+  })->status_is(201)->json_is('/coleta', 'email')->tx->res->json;
+
+  $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Coleta Ruim', coleta => 'sms',
+  })->status_is(400)->json_like('/error', qr/coleta/);
+  ok !$dbh->selectrow_array(
+    'SELECT 1 FROM clean.canal_listas WHERE cod_inep = ? AND nome = ?', {}, $INEP, 'Coleta Ruim'),
+    'lista inválida não criada';
+
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$l->{id}", $auth->(), json => {
+    coleta => 'ambos',
+  })->status_is(200)->json_is('/coleta', 'ambos');
+  $t->patch_ok("/api/gestor/$INEP/canais/listas/$l->{id}", $auth->(), json => {
+    coleta => 'nenhum',
+  })->status_is(400)->json_like('/error', qr/coleta/);
+  $t->get_ok("/api/gestor/$INEP/canais/listas/$l->{id}", $auth->())
+    ->status_is(200)->json_is('/coleta', 'ambos');
+
+  my $todas = $t->get_ok("/api/gestor/$INEP/canais/listas", $auth->())
+    ->status_is(200)->tx->res->json;
+  my %c = map { $_->{nome} => $_->{coleta} } @$todas;
+  is $c{'Coleta Default'}, 'ambos', 'listagem com coleta';
+  is $c{'Coleta Email'}, 'email', 'listagem com coleta (email)';
+
+  # desativar marca desativada_em; recriar com o mesmo nome reativa e limpa
+  $t->delete_ok("/api/gestor/$INEP/canais/listas/$e->{id}", $auth->())->status_is(204);
+  my $da = $dbh->selectrow_array(
+    'SELECT desativada_em FROM clean.canal_listas WHERE id = ?', {}, $e->{id});
+  ok $da, 'desativada_em preenchida';
+  $t->delete_ok("/api/gestor/$INEP/canais/listas/$e->{id}", $auth->())->status_is(204);
+  is $dbh->selectrow_array(
+    'SELECT desativada_em FROM clean.canal_listas WHERE id = ?', {}, $e->{id}), $da,
+    'desativar de novo não move desativada_em';
+  $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Coleta Email', coleta => 'qualquer',
+  })->status_is(201)->json_is('/id', $e->{id})->json_is('/coleta', 'qualquer');
+  ok !defined $dbh->selectrow_array(
+    'SELECT desativada_em FROM clean.canal_listas WHERE id = ?', {}, $e->{id}),
+    'reativação limpa desativada_em';
+};
+
+subtest 'membros (#214): e-mail, estado por contato e parcial' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Ambos Exige', coleta => 'ambos', exige_confirmacao => JSON::PP::true,
+  })->status_is(201)->tx->res->json;
+  my $id = $l->{id};
+  my $qr = $t->post_ok("/api/gestor/$INEP/canais/listas/$id/qrcode", $auth->())
+    ->status_is(201)->tx->res->json;
+
+  my $model = $t->app->model('Canal');
+  my %r;
+  for my $n (1 .. 3) {
+    $r{$n} = $model->registrar_inscricao(
+      token => $qr->{token}, nome => "Pessoa $n", telefone => "1196000000$n",
+      email => "pessoa$n.$$\@exemplo.org", consentimento => 1);
+    ok $r{$n}{ok}, "inscrição $n";
+  }
+  # 2: só o telefone (parcial); 3: telefone + e-mail (confirmado)
+  $model->concluir(ref => $r{2}{confirmacao}{ref}, via => 'telegram');
+  $model->concluir(ref => $r{3}{confirmacao}{ref}, via => 'whatsapp');
+  $model->concluir(ref => $r{3}{confirmacao}{ref}, via => 'email');
+
+  my $d = $t->get_ok("/api/gestor/$INEP/canais/listas/$id", $auth->())
+    ->status_is(200)->tx->res->json;
+  is $d->{membros_confirmados}, 1, 'confirmados = estado geral confirmado';
+  is $d->{membros_pendentes}, 2, 'pendentes = pendente + parcial';
+
+  my $rows = $t->get_ok("/api/gestor/$INEP/canais/listas/$id/inscricoes", $auth->())
+    ->status_is(200)->tx->res->json;
+  my %p = map { $_->{nome} => $_ } @$rows;
+  is $p{'Pessoa 1'}{email}, "pessoa1.$$\@exemplo.org", 'e-mail do membro';
+  is [@{ $p{'Pessoa 1'} }{qw(estado telefone_estado email_estado)}],
+     [qw(pendente pendente pendente)], 'pendente nos dois';
+  is [@{ $p{'Pessoa 2'} }{qw(estado telefone_estado email_estado)}],
+     [qw(parcial confirmado pendente)], 'parcial';
+  ok !defined $p{'Pessoa 2'}{email_confirmado_em}, 'e-mail sem data';
+  is [@{ $p{'Pessoa 3'} }{qw(estado telefone_estado email_estado)}],
+     [qw(confirmado confirmado confirmado)], 'confirmado nos dois';
+  ok $p{'Pessoa 3'}{email_confirmado_em}, 'email_confirmado_em';
+  ok exists $p{'Pessoa 1'}{email_confirmado_em}, 'chave email_confirmado_em presente';
+
+  # lista só de telefone: email_estado null (não coletado)
+  my $lt = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'Só Tel',
+  })->status_is(201)->tx->res->json;
+  my $qt = $t->post_ok("/api/gestor/$INEP/canais/listas/$lt->{id}/qrcode", $auth->())
+    ->status_is(201)->tx->res->json;
+  ok $model->registrar_inscricao(token => $qt->{token}, nome => 'Tel Só',
+    telefone => '11960009999', email => 'ignorado@exemplo.org', consentimento => 1)->{ok},
+    'inscrição (e-mail ignorado em lista de telefone)';
+  my $rt = $t->get_ok("/api/gestor/$INEP/canais/listas/$lt->{id}/inscricoes", $auth->())
+    ->status_is(200)->tx->res->json;
+  is $rt->[0]{telefone_estado}, 'nao_exigida', 'telefone não exigido';
+  ok !defined $rt->[0]{email_estado}, 'email_estado null (não coletado)';
+  ok !defined $rt->[0]{email}, 'e-mail não gravado';
+  is $rt->[0]{estado}, 'nao_exigida', 'estado geral';
+};
+
+subtest 'qrcode (#214): validação de expira_em e max_usos -> 400' => sub {
+  plan skip_all => 'clean.canal_listas ausente (migration nao aplicada)' unless $has;
+
+  my $l = $t->post_ok("/api/gestor/$INEP/canais/listas", $auth->(), json => {
+    nome => 'QR Validado',
+  })->status_is(201)->tx->res->json;
+  my $url = "/api/gestor/$INEP/canais/listas/$l->{id}/qrcode";
+
+  $t->post_ok($url, $auth->(), json => { expira_em => 'amanhã' })
+    ->status_is(400)->json_like('/error', qr/expira_em/);
+  $t->post_ok($url, $auth->(), json => { expira_em => '2026-13-45T10:00:00Z' })
+    ->status_is(400)->json_like('/error', qr/expira_em/);
+  $t->post_ok($url, $auth->(), json => { expira_em => '2020-01-01T00:00:00Z' })
+    ->status_is(400)->json_is('/error', 'expira_em deve estar no futuro.');
+  for my $m (0, -1, '1.5', 'abc', '10x') {
+    $t->post_ok($url, $auth->(), json => { max_usos => $m })
+      ->status_is(400, "max_usos $m")->json_like('/error', qr/max_usos/);
+  }
+  ok !$dbh->selectrow_array(
+    'SELECT count(*) FROM clean.canal_qrcodes WHERE lista_id = ?', {}, $l->{id}),
+    'nenhum QR criado com entrada inválida';
+
+  my $qr = $t->post_ok($url, $auth->(), json => {
+    expira_em => '2099-12-31T23:59:00Z', max_usos => 30,
+  })->status_is(201)->tx->res->json;
+  is $qr->{max_usos}, 30, 'max_usos';
+  like $qr->{expira_em}, qr/^2099-12-31/, 'expira_em';
+  is $qr->{status}, 'ativo', 'status';
+  is $qr->{usos}, 0, 'usos';
+  $t->post_ok($url, $auth->(), json => { max_usos => '5', expira_em => '' })
+    ->status_is(201)->json_is('/max_usos', 5)->json_is('/expira_em', undef);
+  $t->post_ok($url, $auth->(), json => { expira_em => '2099-01-01' })
+    ->status_is(201, 'só a data (ISO 8601)');
 };
 
 done_testing;

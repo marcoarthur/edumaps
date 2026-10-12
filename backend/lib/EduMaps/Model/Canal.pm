@@ -16,4 +16,8 @@ with 'EduMaps::Roles::Business::Canal::Listas';
 with 'EduMaps::Roles::Business::Config::AppConfig';
 with 'EduMaps::Roles::Business::Canal::Confirmacao';
 
+# E-mail e LGPD nas listas (issue #214, Fase 2): consentimento versionado
+# (clean.consentimento_versoes), usado pela inscrição pública e pelo admin.
+with 'EduMaps::Roles::Business::Canal::Consentimento';
+
 1;

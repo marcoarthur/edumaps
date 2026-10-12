@@ -12,6 +12,11 @@ use utf8;
 # `canais.email.*` (Painel de Configuração; senha cifrada). Sem SMTP
 # configurado a entrega falha com erro explícito — nunca silencioso.
 
+# Transporte SMTP injetável (coderef `($cfg, $to, $from, $envelope) -> {ok,...}`):
+# quando definido, substitui a transação Net::SMTP (testes e ambientes sem
+# rede). O app o expõe pelo helper `canais_smtp` (Plugin::API::Canais).
+has smtp_transport => undef;
+
 sub name         { 'email' }
 sub address_kind { 'email' }
 sub max_len      { 254 }
@@ -26,9 +31,20 @@ sub _normalize_address ($self, $addr) {
   return lc $addr;
 }
 
+# %ctx opcional: `lista_nome`/`escola_nome` (contexto da inscrição) e
+# `exclusao_info` (texto sobre como remover os dados — #214, RF-204).
 sub _confirm_template ($self, $codigo, %ctx) {
-  return "EduMaps\n\nSeu código de confirmação de e-mail é: $codigo\n\n"
-    . "Ele expira em poucos minutos. Se você não solicitou, ignore esta mensagem.";
+  my $txt = "EduMaps\n\nSeu código de confirmação de e-mail é: $codigo\n\n";
+  if (defined $ctx{lista_nome} && length $ctx{lista_nome}) {
+    $txt .= "Inscrição na lista \"$ctx{lista_nome}\""
+      . (defined $ctx{escola_nome} && length $ctx{escola_nome}
+         ? " da escola $ctx{escola_nome}" : '')
+      . ".\n\n";
+  }
+  $txt .= "Ele expira em poucos minutos. Se você não solicitou, ignore esta mensagem.";
+  $txt .= "\n\n$ctx{exclusao_info}"
+    if defined $ctx{exclusao_info} && length $ctx{exclusao_info};
+  return $txt;
 }
 
 sub _deliver ($self, $msg) {
@@ -61,6 +77,10 @@ sub _deliver ($self, $msg) {
 # Fronteira de teste: subclasse/objeto de teste pode sobrescrever para não
 # abrir socket. Faz a transação SMTP de facto.
 sub _smtp_transaction ($self, $cfg, $to, $from, $envelope) {
+  if (my $tr = $self->smtp_transport) {
+    my $res = eval { $tr->($cfg, $to, $from, $envelope) };
+    return ref $res eq 'HASH' ? $res : { ok => 0, error => ($@ || 'falha no transporte SMTP') };
+  }
   require Net::SMTP;
   my $port = $cfg->{smtp_port} // 25;
   my %args = (Port => $port, Timeout => 10);

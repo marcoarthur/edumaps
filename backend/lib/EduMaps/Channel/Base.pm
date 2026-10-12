@@ -165,11 +165,15 @@ sub confirm_start ($self, $addr, %ctx) {
   );
   return { ok => 0, error => $started->{error} } unless $started->{ok};
 
+  my $corpo = $self->_confirm_template($started->{codigo}, %ctx);
   my $res = $self->send_message({
     to        => $v->{normalized},
     operacao  => 'confirmacao',
     assunto   => 'Confirmação de contato',
-    corpo     => $self->_confirm_template($started->{codigo}, %ctx),
+    corpo     => $corpo,
+    # o histórico (canal_mensagens) NUNCA grava o código em claro (#214,
+    # RNF-205): corpo com o código mascarado.
+    corpo_historico => ($corpo =~ s/\Q$started->{codigo}\E/******/gr),
     referente => { tipo => 'confirmacao', id => $started->{id} },
     contato_id => $ctx{contato_id},
     cod_inep   => $ctx{cod_inep},

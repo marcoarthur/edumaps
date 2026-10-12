@@ -35,6 +35,16 @@ sub register ($self, $app, @args) {
   $api->post('/confirmacao/:ref/whatsapp/verificar')
     ->to('canais#confirmacao_whatsapp_verificar')
     ->name('canais_confirmacao_whatsapp_verificar');
+  # Fase 2 (#214): código por e-mail (Channel::Email, SMTP) — mesmo par do
+  # WhatsApp — e o texto de consentimento vigente (página /privacidade).
+  $api->post('/confirmacao/:ref/email')
+    ->to('canais#confirmacao_email')->name('canais_confirmacao_email');
+  $api->post('/confirmacao/:ref/email/verificar')
+    ->to('canais#confirmacao_email_verificar')
+    ->name('canais_confirmacao_email_verificar');
+  $api->get('/consentimento')
+    ->to('canais#consentimento_show')->name('canais_consentimento_show');
+
   $api->post('/telegram/webhook')
     ->to('canais#telegram_webhook')->name('canais_telegram_webhook');
 
@@ -49,6 +59,10 @@ sub register ($self, $app, @args) {
       request_timeout    => 45,
     );
   });
+
+  # Transporte SMTP do canal e-mail (#214): undef = Net::SMTP de verdade.
+  # Testes sobrescrevem com um coderef que captura o envelope (sem rede).
+  $app->helper(canais_smtp => sub ($c) { undef });
 }
 
 1;

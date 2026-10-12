@@ -359,6 +359,9 @@ sub canais_listas_create($self) {
   return $self->render(json => { error => 'exige_confirmacao inválido (true/false).' }, status => 400)
     if defined $input->{exige_confirmacao}
       && !defined $model->parse_bool($input->{exige_confirmacao});
+  # coleta (#214): telefone|email|ambos|qualquer; default telefone. Inválido -> 400.
+  return $self->render(json => { error => 'coleta inválida (telefone, email, ambos ou qualquer).' }, status => 400)
+    if defined $input->{coleta} && !$model->coleta_valida($input->{coleta});
 
   my $lista = $self->_guard_api(sub {
     $model->criar_lista(
@@ -368,6 +371,7 @@ sub canais_listas_create($self) {
       canal     => $v->param('canal'),
       descricao => $input->{descricao},
       exige_confirmacao => $input->{exige_confirmacao},
+      coleta    => $input->{coleta},
     );
   });
   return if $self->stash('guard_rendered');
@@ -386,7 +390,8 @@ sub canais_listas_show($self) {
   $self->render(json => $lista);
 }
 
-# Edita a lista (#212): {nome?, descricao?, exige_confirmacao?} -> 200 detalhe ·
+# Edita a lista (#212; coleta #214): {nome?, descricao?, exige_confirmacao?,
+# coleta?} -> 200 detalhe ·
 # 400 (nada a alterar / inválido) · 409 (nome duplicado) · 404 (não é da escola).
 sub canais_listas_update($self) {
   return unless $self->_gestor_inep_ok;
@@ -395,7 +400,7 @@ sub canais_listas_update($self) {
     unless ref $input eq 'HASH';
 
   my %campos = map { $_ => $input->{$_} }
-               grep { exists $input->{$_} } qw(nome descricao exige_confirmacao);
+               grep { exists $input->{$_} } qw(nome descricao exige_confirmacao coleta);
 
   my $model = $self->instantiate_model(model => 'Canal');
   my $res = $self->_guard_api(sub {
@@ -419,15 +424,13 @@ sub canais_listas_destroy($self) {
 }
 
 # Gera (ou rotaciona) o QR público da lista. Resposta: {token,url,expira_em,...}.
+# {expira_em?, max_usos?}: ISO 8601 no futuro / inteiro > 0, senão 400 (#214).
 sub canais_qrcode_create($self) {
   return unless $self->_gestor_inep_ok;
   my $input = $self->_input
     or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
-
-  my $v = $self->app->validator->validation;
-  $v->input($input);
-  $v->optional('max_usos', 'trim')->num;
-  return $self->_render_validation($v) if $v->has_error;
+  return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400)
+    unless ref $input eq 'HASH';
 
   my $model = $self->instantiate_model(model => 'Canal');
   my $qr = $self->_guard_api(sub {
@@ -436,10 +439,12 @@ sub canais_qrcode_create($self) {
       lista_id  => $self->param('id'),
       gestor_id => $self->stash('gestor')->{id},
       expira_em => $input->{expira_em},
-      max_usos  => $v->param('max_usos'),
+      max_usos  => $input->{max_usos},
     );
   });
   return if $self->stash('guard_rendered');
+  return $self->render(json => { error => $qr->{erro} }, status => 400)
+    if ref $qr eq 'HASH' && ($qr->{error} // '') eq 'invalido';
   return $self->_render_not_found('Lista não encontrada ou inativa')
     if ref $qr eq 'HASH' && $qr->{error};
   $self->render(status => 201, json => $qr);

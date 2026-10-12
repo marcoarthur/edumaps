@@ -32,6 +32,18 @@ sub register ($self, $app, @args) {
   $auth->post('/canais/telegram/polling')
     ->to('admin#telegram_publico_polling')->name('admin_telegram_publico_polling');
 
+  # Consentimento versionado da autoinscrição (#214, RF-208): rascunho ->
+  # publicar (vira vigente; a anterior é arquivada). Publicada é imutável.
+  my $versao_id = [ id => qr/\d+/ ];
+  $auth->get('/consentimento/versoes')
+    ->to('admin#consentimento_versoes_index')->name('admin_consentimento_versoes_index');
+  $auth->post('/consentimento/versoes')
+    ->to('admin#consentimento_versoes_create')->name('admin_consentimento_versoes_create');
+  $auth->put('/consentimento/versoes/:id' => $versao_id)
+    ->to('admin#consentimento_versoes_update')->name('admin_consentimento_versoes_update');
+  $auth->post('/consentimento/versoes/:id/publicar' => $versao_id)
+    ->to('admin#consentimento_versoes_publicar')->name('admin_consentimento_versoes_publicar');
+
   # Telemetria de sessão: KPIs do fluxo de acesso (só agregados).
   $auth->get('/telemetry/overview')->to('admin#telemetry_overview')->name('admin_telemetry_overview');
 }
