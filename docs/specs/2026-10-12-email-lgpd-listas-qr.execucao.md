@@ -200,9 +200,40 @@ em `canal_exclusoes` sem PII. Idempotente.
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| E1 | T-A | `anonimizar_contato` + varredura de PII em teste | ⚪ |
-| E2 | T-A | Exclusão pública + pelo gestor + histórico | ⚪ |
-| E3 | T-A | Retenção: config, task, endpoints admin | ⚪ |
-| G1 | T-B | `ExclusaoPage` + `PrivacidadePage` | ⚪ |
-| G2 | T-B | ListasPage: remover inscrito + histórico | ⚪ |
-| G3 | T-B | Admin: versões de consentimento + painel de retenção | ⚪ |
+| E1 | T-A | `anonimizar_contato` + varredura de PII em teste | 🟢 |
+| E2 | T-A | Exclusão pública + pelo gestor + histórico | 🟢 |
+| E3 | T-A | Retenção: config, task, endpoints admin | 🟢 |
+| G1 | T-B | `ExclusaoPage` + `PrivacidadePage` | 🟢 |
+| G2 | T-B | ListasPage: remover inscrito + histórico | 🟢 |
+| G3 | T-B | Admin: versões de consentimento + painel de retenção | 🟢 |
+
+### Log de decisões — onda 2
+
+- **Retenção só anonimiza contatos criados pela autoinscrição** (primeira
+  inscrição sem `duplicado_de`): contato que já existia na agenda do gestor
+  nunca é apagado por prazo. Restringe o RF-207 a favor da agenda; aceito.
+- **Pendente preservado** se confirmou algum contato em qualquer lista, se é
+  membro de lista ativa sem exigência, ou se tem inscrição mais nova que o prazo.
+- **Linhas de retenção:** resumo da instalação com `cod_inep = 0` (sempre, mesmo
+  zero; é o que `ultima_execucao` lê) + uma linha por escola afetada (histórico
+  do gestor).
+- **Anonimização além do inventário:** apaga também `canal_mensagens.erro` (o erro
+  SMTP pode conter o e-mail) e o telefone/e-mail do titular em inscrições de
+  outros contatos (caso de conflito); mensagens localizadas por contato,
+  endereços e refs; repetição devolve zeros sem novo registro.
+- **`{manual:1}` executa mesmo com `enabled=false`** (ação explícita do admin);
+  boot agenda a primeira diária para +1h; sem lock reagenda +10min; erro +1h;
+  prazo < 1 usa o default.
+- **Exclusão pública:** formato do token validado no controller (404
+  genérico); rate limit só no POST. Booleanos JSON em `ja_excluido`,
+  `agendado`, `retencao.enabled`.
+- **T-B:** `apiClient.delete(path, body?)`; `ConfirmDialog` acessível em
+  `shared/ui`; versões de consentimento em `/config/consentimento` (mesma guarda
+  do `/config`), sem mexer no menu; 429 da exclusão como aviso.
+
+## Verificação independente (coordenador, onda 2)
+
+- Backend 74 arquivos / 476 testes; só os 6 pré-falhos. `check_dependencies` OK.
+- Frontend 88 arquivos / 611 testes; `vite build` OK.
+- Alinhamento conferido: `regra` = `metadados`|`pendentes`|`lista_inativa`
+  (o front aceita as duas grafias); contagens numéricas; DELETE sem corpo aceito.
