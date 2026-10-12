@@ -4,6 +4,61 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — Envio por e-mail para listas com QR (PR #217, Fase 3)
+
+- **Issue:** [#216](https://github.com/marcoarthur/edumaps/issues/216) (fechada
+  pelo PR). **Spec:** `docs/specs/2026-10-12-envio-email-listas-qr.md`;
+  **execução:** `…-listas-qr.execucao.md` (contratos por onda + log).
+  **Nota técnica 112** cobre o **ciclo inteiro** das listas com QR (Fases 0–3),
+  a pedido do developer.
+- **Decisões do developer**: escopo = envio em massa + opt-out, analytics de
+  conversão e listas dinâmicas (**sem** vários QR por lista); recebem
+  **confirmados e pendentes**; **só e-mail**; envio direto pelo gestor **com
+  limites** da administração (ritmo, cota diária, suspensão); opt-out **por
+  lista**; lista dinâmica = **filtro sobre membros** das listas da escola;
+  texto (markdown simples) + prévia + teste + **agendamento**; funil + entrega
+  **sem rastreio** de abertura/clique.
+- **Entregas** (branch `feat/canais-envio-email` → **PR #217**, merge
+  `0960418`), 3 ondas, duas trilhas paralelas (subagentes só código/teste):
+  - **Onda 1**: change `canal_envios` (segmentos, envios, destinatários,
+    opt-outs, acessos ao QR, suspensões); roles `Canal::Segmentos` e
+    `Canal::Envios`; task Minion `canais_envio` (lotes por ritmo, cota no fuso
+    de SP, `pausado_cota` → 00:05, suspensão, idempotente); `canais.envio.*`;
+    `List-Unsubscribe`/`-Post`/`Precedence`; telas `/gestor/envios` e
+    `/gestor/segmentos`.
+  - **Onda 2**: roles `Canal::Optout` e `Canal::Funil`; saída pública
+    `/api/canais/sair/:token` (+ One-Click RFC 8058) e `SairPage`; reinscrição
+    desfaz opt-out; funil por lista; admin volume/suspender/reativar (reativar
+    devolve a `agendado` e remove o job antigo da fila); anonimização cobre os
+    destinatários.
+  - **Onda 3**: e2e, docs funcionais (capacidade nova `gestor/envios-email.md`),
+    nota 112, correções de texto achadas no e2e (`2babb37`).
+- **Decisões técnicas relevantes**: duplicados **sem linha** (só contador;
+  `UNIQUE (envio_id, email_hash)`); token de saída = HMAC do id do
+  destinatário com o secret do app (só o hash no banco); opt-out por
+  `sha256(email)` (sobrevive à anonimização); destinatários fixados no
+  disparo; `email` cru zerado ao concluir; lista **inativa** conta como alvo
+  inexistente; `send_message` devolve `mensagem_id`.
+- **E2E com SMTP real em dev**: Mailpit temporário no `ubaxala`
+  (`axllent/mailpit:v1.21.0`, só `127.0.0.1`) + **túnel SSH reverso**
+  `ssh -f -N -R 127.0.0.1:1025:127.0.0.1:1025 root@backend.edumaps` (o LXC não
+  alcança o `ubaxala` pela LAN — timeout); `canais.email.*` de dev apontado
+  só durante a rodada. 41/41 + varredura de PII + `409` de cota + painel admin.
+  Sessões temporárias de gestor/admin direto em `clean.sessoes` — o token tem
+  de ter **≤ 64 caracteres** (`sessao_valida`). Tudo limpo depois (listas,
+  contatos, envios, segmentos, suspensões, mensagens, config, sessões).
+- **Armadilhas desta sessão**: `db/fixtures/ci_db.sh` **sem argumentos faz
+  `up`** e sem `EDUMAPS_CI_PORT=5433` tenta a 5432 (derrubou o banco de CI;
+  recriado com `EDUMAPS_CI_PORT=5433 … up`). `pkill -f <padrão>` dentro de um
+  `bash -c` casa com a própria linha de comando e mata a sequência.
+- **Validação**: backend 81 / 508 (6 pré-falhos idênticos no `main`); frontend
+  96 / 718; `sqitch verify` do zero; validação visual do developer.
+- **Não exercitado**: provedor SMTP real (só captura).
+- **Próximo no roadmap**: WhatsApp/Telegram no envio, vários QR por lista,
+  modelos com variáveis, nova tentativa automática de falhas, e-mail HTML,
+  consentimento 1.2 citando envios, direito de acesso/portabilidade, textos
+  jurídicos.
+
 ## Sessão 2026-10-12 — E-mail e LGPD nas listas com QR (PR #215, Fase 2)
 
 - **Issue:** [#214](https://github.com/marcoarthur/edumaps/issues/214) (fechada

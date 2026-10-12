@@ -31,7 +31,7 @@ coordenador.
 | Config | PR #211 · `c424ae4` | 109 | Folhas `canais.inscricao.*` habilitadas no painel (`enabled` da folha é só apresentação) |
 | **1** — Posse do telefone | #212 · PR #213 · `8d5c502` | 110 | Exigência por lista, refs públicas, bot público do Telegram (webhook e polling), código por WhatsApp, estado por membro; trava da master key no Rexfile |
 | **2** — E-mail + LGPD | #214 · PR #215 · `a09f3b5` | 111 | Coleta por lista, confirmação por código de e-mail e estado `parcial`, consentimento versionado, exclusão pelo titular e pelo gestor, retenção automática |
-| **3** — Envio por e-mail | #216 · PR a abrir (#216) | 112 | Envio em massa para lista ou lista dinâmica (fila, ritmo, cota, agendamento, cancelamento, teste), opt-out por lista com One-Click, limites e suspensão pela administração, funil de conversão, resultado por envio |
+| **3** — Envio por e-mail | #216 · PR #217 · `0960418` | 112 | Envio em massa para lista ou lista dinâmica (fila, ritmo, cota, agendamento, cancelamento, teste), opt-out por lista com One-Click, limites e suspensão pela administração, funil de conversão, resultado por envio |
 
 A Fase 3 foi entregue em duas ondas na branch `feat/canais-envio-email`: onda 1
 (`58ac51a` migration, `67ff61e` backend, `cd4b8ec` frontend) e onda 2
