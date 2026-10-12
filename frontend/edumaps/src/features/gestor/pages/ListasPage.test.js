@@ -494,7 +494,7 @@ describe("ListasPage", () => {
       await screen.findByText("Família 8ºC");
       const contadores = screen.getAllByTestId("lista-optouts");
       expect(contadores).toHaveLength(1);
-      expect(contadores[0]).toHaveTextContent("1 saíram dos envios");
+      expect(contadores[0]).toHaveTextContent("1 saiu dos envios");
     });
 
     it("selo 'Saiu dos envios' só no membro com opt-out", async () => {

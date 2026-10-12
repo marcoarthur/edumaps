@@ -509,7 +509,7 @@
                     · <span class="text-blue-700 font-medium">exige confirmação</span>
                   {/if}
                   {#if lista.n_optouts > 0}
-                    · <span class="text-slate-600" data-testid="lista-optouts">{lista.n_optouts} saíram dos envios</span>
+                    · <span class="text-slate-600" data-testid="lista-optouts">{lista.n_optouts} {lista.n_optouts === 1 ? "saiu" : "saíram"} dos envios</span>
                   {/if}
                 </p>
               </div>

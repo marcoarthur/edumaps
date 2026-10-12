@@ -60,6 +60,8 @@ describe("SairPage", () => {
     const ok = await screen.findByTestId("sair-concluido");
     expect(ok).toHaveTextContent("Pronto, você saiu dos envios");
     expect(ok).toHaveTextContent("Família 8ºC");
+    // espaço entre o nome da lista e "da escola" (bug visto no e2e)
+    expect(ok.textContent).toMatch(/Família 8ºC\s+da\s+escola/);
     expect(screen.getByTestId("sair-remocao")).toBeInTheDocument();
     expect(corpo).toEqual({ confirmar: true });
     expect(getOptoutsMock().some((o) => o.email === "ana@example.org" && o.lista_id === 4)).toBe(true);

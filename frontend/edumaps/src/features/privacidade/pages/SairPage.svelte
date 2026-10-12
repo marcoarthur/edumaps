@@ -126,8 +126,8 @@
         </h1>
         <p class="text-sm text-gray-600">
           Você não vai mais receber e-mails da lista
-          {#if info?.lista_nome}<strong>{info.lista_nome}</strong>{/if}{#if info?.escola_nome}
-            da escola <strong>{info.escola_nome}</strong>{/if}.
+          {#if info?.lista_nome}<strong>{info.lista_nome}</strong>{/if}{#if info?.escola_nome}{" "}da
+            escola <strong>{info.escola_nome}</strong>{/if}.
         </p>
         <p class="text-xs text-gray-500">
           Se você se inscrever de novo nesta lista, voltará a receber os e-mails.
