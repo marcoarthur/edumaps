@@ -333,9 +333,12 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
   #  pacote é instalado via R CMD INSTALL, então devtools nunca é necessário)
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
   # ellmer: agente LLM do assistente NL/SQL (chartml opcional, não usado).
+  # dbplyr/parsnip/broom/remotes: eduBR (Assistente de Relatório, #219) —
+  # dbplyr é Import dele; parsnip/broom são Suggests exigidos pela tendência
+  # do IDEB; remotes instala o eduBR fixado no GitHub (abaixo).
   my $deps = q{'plumber','ggplot2','plotly','jsonlite',
       'DBI','RPostgres','cluster','dbscan','mclust','kernlab',
-      'ellmer','yaml'};
+      'ellmer','yaml','dbplyr','parsnip','broom','remotes'};
 
   run qq{
     set -e
@@ -347,6 +350,22 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
       echo "Dependências R já instaladas — pulando install.packages"
     fi
   };
+
+  # eduBR (#219): pacote de outro repositório, instalado do GitHub público em
+  # COMMIT FIXO — reprodutível e independente do clone local. Para atualizar,
+  # troque $edubr_ref (e registre no memory.md). Reinstala só se o commit
+  # instalado (RemoteSha) for outro.
+  my $edubr_ref = '2dc9af929742896d575e2e147e7e2c253a346ba8';
+  run qq{
+    set -e
+    ATUAL=\$(Rscript -e "cat(tryCatch(utils::packageDescription('eduBR')\\\$RemoteSha, error=function(e) ''))" 2>/dev/null || true)
+    if [ "\$ATUAL" != "$edubr_ref" ]; then
+      echo "Instalando eduBR\@$edubr_ref (instalado: \${ATUAL:-nenhum})"
+      Rscript -e "remotes::install_github('marcoarthur/eduBR', ref='$edubr_ref', upgrade='never', dependencies=FALSE, force=TRUE)"
+    else
+      echo "eduBR já no commit fixado — pulando"
+    fi
+  }, env => $env;
 
   # instala o edumapsr na site-library APENAS quando o código mudar
   # (marcador hashado dos fontes do package; evita recompilar todo deploy)
