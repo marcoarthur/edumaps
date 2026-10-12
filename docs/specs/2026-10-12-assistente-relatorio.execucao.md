@@ -562,6 +562,31 @@ CREATE INDEX idx_relatorios_salvos_gestor ON clean.relatorios_salvos (gestor_id,
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| P2 | T-P | Migration `relatorios_salvos` + 4 rotas + testes | ⚪ |
-| F3 | T-F | Ações (imprimir, Markdown, salvar), CSS de impressão, páginas de salvos, "gerar de novo" por query + testes | ⚪ |
+| P2 | T-P | Migration `relatorios_salvos` + 4 rotas + testes | 🟢 |
+| F3 | T-F | Ações (imprimir, Markdown, salvar), CSS de impressão, páginas de salvos, "gerar de novo" por query + testes | 🟢 |
 | C3 | coord. | Verificação, deploy, e2e, docs, PR | ⚪ |
+
+## Log — Fase 3
+
+- **2026-10-12 — Desvios da T-P aceitos:**
+  - 400 para `job_id` inválido;
+  - 409 também para resultado de job inválido;
+  - fallbacks de `tema_titulo`/`titulo`/`gerado_em` (este cai na hora em
+    que o job terminou);
+  - paginação permissiva (valores inválidos voltam ao padrão, máx. 100);
+  - `Location` no POST;
+  - a resposta do POST traz o resumo **sem envelope** `{salvo}`. O cliente
+    aceita as duas formas.
+  - **Migration no CI:** `ci_db.sh` não tem deploy incremental; a T-P usou o
+    contêiner `sqitch` na rede do CI. Verify, revert e deploy OK.
+- **2026-10-12 — T-F:**
+  - o `beforeprint` abre **todos** os `<details>` (inclusive a tabela de
+    dados dos gráficos) e o `afterprint` restaura;
+  - o "Salvo" é igual para 201 e 200;
+  - no nível escola vindo da query, vale sempre o INEP do próprio gestor;
+  - a query `gerar=1` dispara uma vez e é removida; sem sessão, fica
+    guardada até o login.
+- **Verificação (coordenador):**
+  - `ci_db.sh verify`: `relatorios_salvos .. ok`;
+  - backend: 102 / 690, só as 7 falhas antigas;
+  - frontend: 105 / 863, build OK.
