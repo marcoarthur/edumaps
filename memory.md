@@ -4,6 +4,37 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — Assistente de Relatório, Fase 2 (PR #221)
+
+- **Issue** #219 (aberta). **PR #221**, merge `0184bf2`. Nota técnica
+  **115**.
+- **Decisões do developer:**
+  - temas: IDEB escola a escola, infraestrutura × IDEB, histórico da escola,
+    escolas parecidas;
+  - regressão com **especificação fixa**;
+  - leitura **simplificada com o técnico recolhido**.
+- **Entregas:**
+  - 4 roteiros + complemento B (ferramentas de escola do eduBR via
+    `persona = NULL`, escolhidas por nome);
+  - seção `associacoes`, `tabela.recolhida`, `_destaque`, aviso
+    `associacao`;
+  - catálogo com `profundidade` e `padroes`.
+- **Armadilhas novas:**
+  - **pilha de C do R estoura dentro do Plumber** (`escolas_similares`):
+    `LimitSTACK=64M` na unit e `ulimits.stack` no compose. Testar sempre pelo
+    endpoint, não só pela função;
+  - **cache de análises entre versões do R:** subir `Version` do
+    `analysis/edumapsr/DESCRIPTION` **e** `analytics_source_version` (deploy
+    `edumaps_db.conf`) juntos; hoje 0.2.0;
+  - **driver CDP:** Mojo WebSocket limita a 256 KB (`max_websocket_size`);
+    esperar o recorte padrão antes de clicar; um caso por aba.
+- **Validação:**
+  - R 29 / 1374;
+  - frontend 101 / 795;
+  - E2E com o Gemini real: 13/13 pela API e 11/11 na tela;
+  - validação visual.
+- **Próximo:** Fase 3 (relatório rico e exportável: exportação e histórico).
+
 ## Sessão 2026-10-12 — Assistente de Relatório, Fases 0 e 1 (PR #220)
 
 - **Issue:** [#219](https://github.com/marcoarthur/edumaps/issues/219)
