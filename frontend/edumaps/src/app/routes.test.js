@@ -94,6 +94,11 @@ describe("matchRoute", () => {
     expect(matchRoute("/gestor/segmentos")?.path).toBe("/gestor/segmentos");
   });
 
+  it("encontra o Assistente de Relatório /gestor/relatorios", () => {
+    expect(matchRoute("/gestor/relatorios")?.path).toBe("/gestor/relatorios");
+    expect(matchRoute("/gestor/relatorios/")?.path).toBe("/gestor/relatorios");
+  });
+
   it("captura o token na rota pública de inscrição /inscricao/:token", () => {
     const match = matchRoute("/inscricao/9f8f36e2-1234-4abc-8def-000000000000");
     expect(match?.path).toBe("/inscricao/:token");

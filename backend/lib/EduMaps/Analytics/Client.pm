@@ -4,6 +4,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::UserAgent;
 use Mojo::JSON;
 use Mojo::Util;
+use Mojo::Parameters;
 use JSON::PP;
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
@@ -20,6 +21,7 @@ my %CACHEABLE_PREFIX = (
   cluster_      => 1,
   city_summary  => 1,
   chat_         => 1,
+  report_       => 1,
 );
 
 sub new ($class, %args) {
@@ -204,6 +206,57 @@ sub run_chat ($self, $args) {
   });
 }
 
+# Assistente de Relatório (#219). POST /report com recorte (geotag), tema e
+# opções; o R roda o roteiro fixo do tema sobre as ferramentas do eduBR e o
+# LLM só redige. Cacheável por 24 h: a chave é {geotag, tema, opcoes,
+# config_version} — a `config` (com api_key) vai só no body, nunca na chave,
+# e uma troca de provedor/modelo/chave invalida o cache via config_version.
+# O `contexto` (cod_inep do gestor) não entra na chave: o relatório de um
+# território é o mesmo para qualquer gestor.
+sub run_report ($self, $args) {
+  my $geotag  = $args->{geotag}  // {};
+  my $tema    = $args->{tema};
+  my $opcoes  = $args->{opcoes}  // {};
+  my $config  = $args->{config}  // {};
+
+  $self->_run('report', {
+    geotag   => $geotag,
+    tema     => $tema,
+    opcoes   => $opcoes,
+    contexto => $args->{contexto} // {},
+    config   => $config,
+  }, 'report_' . ($tema // ''), {
+    cacheable    => 1,
+    cache_params => $self->report_cache_params($args),
+  });
+}
+
+# Chave de cache do relatório (exposta para testes e para flush_cache).
+sub report_cache_params ($self, $args) {
+  my $config = $args->{config} // {};
+  return {
+    geotag         => $args->{geotag} // {},
+    tema           => $args->{tema},
+    opcoes         => $args->{opcoes} // {},
+    config_version => Mojo::Util::sha1_hex(JSON::PP->new->canonical->encode($config)),
+  };
+}
+
+# Catálogo de temas do Assistente de Relatório: GET /report/temas?nivel=.
+# Cacheável (por nível); `nivel` ausente devolve o catálogo inteiro.
+sub run_report_temas ($self, $nivel = undef) {
+  my $endpoint = 'report/temas';
+  if (defined $nivel && length $nivel) {
+    $endpoint .= '?' . Mojo::Parameters->new(nivel => $nivel)->to_string;
+  }
+
+  $self->_run($endpoint, undef, 'report_temas', {
+    cacheable    => 1,
+    get          => 1,
+    cache_params => { nivel => $nivel },
+  });
+}
+
 sub flush_cache ($self, $analysis, $params) {
   return unless $self->cache_enabled;
   my $key = $self->_cache_key($analysis, $params);
@@ -219,7 +272,7 @@ sub flush_cache ($self, $analysis, $params) {
 
 sub _run ($self, $endpoint, $body, $analysis, $opts = {}) {
   my $cacheable    = $opts->{cacheable};
-  my $cache_params = $opts->{cache_params} // $body->{parameters} // {};
+  my $cache_params = $opts->{cache_params} // ($body // {})->{parameters} // {};
 
   if ($self->cache_enabled && $cacheable) {
     my $cached = $self->_cache_read($analysis, $cache_params);
@@ -229,7 +282,7 @@ sub _run ($self, $endpoint, $body, $analysis, $opts = {}) {
     }
   }
 
-  my $response = $self->_post($endpoint, $body);
+  my $response = $self->_post($endpoint, $body, { get => $opts->{get} });
 
   if ($self->cache_enabled && $cacheable && defined $response) {
     $self->_cache_write($analysis, $cache_params, $response);
@@ -248,8 +301,12 @@ sub _post ($self, $endpoint, $body, $opts = {}) {
     : $self->ua->post($url => json => $body);
 
   my $error = $tx->error;
-  croak "Analytics: falha de conexão ($url): $error->{message}"
-    if $error && !$error->{code};
+  die EduMaps::Analytics::Client::Error->new(
+    endpoint => $endpoint,
+    code     => undef,
+    message  => "falha de conexão ($url): $error->{message}",
+    text     => "Analytics: falha de conexão ($url): $error->{message}",
+  ) if $error && !$error->{code};
 
   my $res = $tx->res;
   unless ($res->is_success) {
@@ -261,7 +318,16 @@ sub _post ($self, $endpoint, $body, $opts = {}) {
     else {
       $message = $decoded // $res->message;
     }
-    croak "Analytics: $endpoint retornou " . $res->code . ": $message";
+    # Exceção estruturada: stringifica igual à mensagem antiga (os callers
+    # que fazem "$err" não mudam), mas expõe `code` e `message` do R — a task
+    # do relatório distingue 400 (erro de entrada, mensagem do R ao usuário)
+    # dos demais (mensagem genérica).
+    die EduMaps::Analytics::Client::Error->new(
+      endpoint => $endpoint,
+      code     => $res->code,
+      message  => $message,
+      text     => "Analytics: $endpoint retornou " . $res->code . ": $message",
+    );
   }
 
   my $data = eval { Mojo::JSON::decode_json($res->body) }
@@ -337,7 +403,13 @@ sub _cache_write ($self, $analysis, $params, $response) {
 
 sub _db ($self) {
   my $app = $self->app;
-  return unless $app && ref($app) && $app->can('pg');
+  return unless $app && ref($app);
+  # `pg` é um helper (Plugin::Helpers), não um método: `$app->can('pg')` é
+  # sempre falso no app real (helpers vêm por AUTOLOAD) e desligava o cache
+  # em silêncio. Aceita os dois: método (apps de teste) ou helper registrado.
+  my $has_pg = $app->can('pg')
+    || ($app->can('renderer') && $app->renderer->get_helper('pg'));
+  return unless $has_pg;
   eval { $app->pg->db };
 }
 
@@ -346,6 +418,18 @@ sub _log_warn ($self, $message) {
   return unless $app && $app->can('log');
   $app->log->debug($message);
 }
+
+# ---------------------------------------------------------------------------
+# Exceção das chamadas HTTP ao Plumber
+# ---------------------------------------------------------------------------
+package EduMaps::Analytics::Client::Error;
+use Mojo::Base -base, -signatures;
+use overload
+  '""'     => sub ($self, @) { $self->{text} // $self->{message} // 'Analytics: erro' },
+  bool     => sub { 1 },
+  fallback => 1;
+
+has [qw(endpoint code message text)];
 
 1;
 

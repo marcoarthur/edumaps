@@ -15,3 +15,4 @@ export { default as GestorRelacaoDetailPage } from "./pages/RelacaoDetailPage.sv
 export { default as GestorDocumentosPage } from "./pages/DocumentosPage.svelte";
 export { default as GestorEnviosPage } from "./pages/EnviosPage.svelte";
 export { default as GestorSegmentosPage } from "./pages/SegmentosPage.svelte";
+export { default as GestorRelatoriosPage } from "./pages/RelatoriosPage.svelte";

@@ -1,0 +1,109 @@
+<!-- src/features/gestor/components/relatorios/RelatorioView.svelte -->
+<script>
+  // Renderiza o ReportResult do Assistente de Relatório (#219): cabeçalho
+  // (título, recorte, data, selo do cache), aviso quando a redação automática
+  // não esteve disponível, as seções por tipo e o rodapé com fontes e avisos.
+  import SecaoTexto from "./SecaoTexto.svelte";
+  import SecaoIndicadores from "./SecaoIndicadores.svelte";
+  import SecaoTabela from "./SecaoTabela.svelte";
+  import SecaoGrafico from "./SecaoGrafico.svelte";
+  import { formatarValor } from "../../utils/relatorioFormatos.js";
+
+  /** @type {{relatorio: object}} */
+  let { relatorio } = $props();
+
+  const secoes = $derived(relatorio?.secoes ?? []);
+  const fontes = $derived(relatorio?.fontes ?? []);
+  const avisos = $derived(relatorio?.avisos ?? []);
+  const llmIndisponivel = $derived(relatorio?.rastreio?.llm === "indisponivel");
+
+  const geradoEm = $derived.by(() => {
+    const d = relatorio?.gerado_em ? new Date(relatorio.gerado_em) : null;
+    if (!d || Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  });
+
+  const recorteTexto = $derived.by(() => {
+    const r = relatorio?.recorte;
+    if (!r) return "";
+    return r.uf && r.nivel === "municipio" ? `${r.nome} (${r.uf})` : (r.nome ?? r.codigo ?? "");
+  });
+</script>
+
+<article class="space-y-6" data-testid="relatorio-view" aria-labelledby="relatorio-titulo">
+  <header class="space-y-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <h2 id="relatorio-titulo" class="text-xl font-bold text-gray-900">{relatorio?.titulo}</h2>
+      {#if relatorio?.cache_hit}
+        <span
+          class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200"
+          data-testid="selo-cache"
+        >Gerado a partir do cache</span>
+      {/if}
+    </div>
+    <p class="text-sm text-gray-600">
+      {#if relatorio?.tema?.titulo}{relatorio.tema.titulo}{" · "}{/if}{recorteTexto}{#if geradoEm}{" · "}gerado
+        em {geradoEm}{/if}
+    </p>
+  </header>
+
+  {#if llmIndisponivel}
+    <div
+      class="rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3"
+      role="note"
+      data-testid="aviso-llm"
+    >
+      A redação automática não estava disponível. O resumo abaixo é uma versão
+      curta gerada sem o assistente; os dados das seções não foram afetados.
+    </div>
+  {/if}
+
+  {#each secoes as secao (secao.id)}
+    {#if secao.tipo === "texto"}
+      <SecaoTexto {secao} />
+    {:else if secao.tipo === "indicadores"}
+      <SecaoIndicadores {secao} />
+    {:else if secao.tipo === "tabela"}
+      <SecaoTabela {secao} />
+    {:else if secao.tipo === "grafico"}
+      <SecaoGrafico {secao} />
+    {/if}
+  {/each}
+
+  <footer class="border-t border-gray-200 pt-4 space-y-4 text-sm">
+    {#if fontes.length}
+      <section aria-labelledby="relatorio-fontes">
+        <h3 id="relatorio-fontes" class="font-semibold text-gray-900">Fontes</h3>
+        <ul class="mt-1 space-y-1 text-gray-600" data-testid="relatorio-fontes">
+          {#each fontes as f, i (i)}
+            <li>
+              <span class="font-medium text-gray-800">{f.descricao ?? f.ferramenta}</span>
+              {#if f.edicao}{" · "}{f.edicao}{/if}
+              {#if f.escopo}{" · "}{f.escopo}{/if}
+              {#if f.n !== undefined && f.n !== null}{" · "}n = {formatarValor(f.n, "inteiro")}{/if}
+              <span class="text-xs text-gray-400">({f.ferramenta})</span>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
+    {#if avisos.length}
+      <section aria-labelledby="relatorio-avisos">
+        <h3 id="relatorio-avisos" class="font-semibold text-gray-900">Avisos</h3>
+        <ul class="mt-1 space-y-1 text-amber-800" data-testid="relatorio-avisos">
+          {#each avisos as a, i (i)}
+            <li>{a.mensagem}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
+    {#if relatorio?.rastreio}
+      <p class="text-xs text-gray-400">
+        Redação: {relatorio.rastreio.provedor ?? "—"}{#if relatorio.rastreio.modelo} / {relatorio.rastreio.modelo}{/if}
+        {#if relatorio.rastreio.versao_edubr}{" · "}eduBR {relatorio.rastreio.versao_edubr}{/if}
+      </p>
+    {/if}
+  </footer>
+</article>

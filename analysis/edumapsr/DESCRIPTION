@@ -27,6 +27,9 @@ Suggests:
     testthat (>= 3.0.0),
     plumber,
     devtools,
+    eduBR
+Remotes:
+    marcoarthur/eduBR@2dc9af929742896d575e2e147e7e2c253a346ba8
 Config/testthat/edition: 3
 Collate:
     'config.R'
@@ -74,7 +77,17 @@ Collate:
     'model-datasource-postgres-school-evolution-source.R'
     'model-semantic-network-profile-model.R'
     'model-datasource-postgres-network-profile-source.R'
+    'censo-dictionary.R'
     'chat-dictionary.R'
     'chat-plotly.R'
     'chat-translate.R'
+    'adapter-edubr.R'
+    'model-semantic-report-request-model.R'
+    'report-sections.R'
+    'report-roteiros.R'
+    'report-catalog.R'
+    'report-writer.R'
+    'analysis-report.R'
+    'view-report-json.R'
+    'app-report.R'
 Config/roxygen2/version: 8.0.0
