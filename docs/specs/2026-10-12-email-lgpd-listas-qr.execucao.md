@@ -237,3 +237,12 @@ em `canal_exclusoes` sem PII. Idempotente.
 - Frontend 88 arquivos / 611 testes; `vite build` OK.
 - Alinhamento conferido: `regra` = `metadados`|`pendentes`|`lista_inativa`
   (o front aceita as duas grafias); contagens numéricas; DELETE sem corpo aceito.
+
+## Onda 3 — integração, e2e e fecho (coordenador)
+
+- Docs funcionais: `privacidade-lgpd`, `listas-autoinscricao`,
+  `painel-configuracao`, índice.
+- E2E (dev, CDP): verde — `docs/e2e/cobertura.md`, rodada #214. Consentimento
+  1.1 publicado em dev (cita e-mail). Envio real de e-mail não exercitado (sem
+  SMTP em dev).
+- Validação visual aprovada pelo developer.
