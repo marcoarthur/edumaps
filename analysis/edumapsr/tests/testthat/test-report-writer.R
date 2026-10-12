@@ -49,6 +49,33 @@ test_that("o LLM recebe persona + complemento e os dados estruturados", {
   expect_false("texto" %in% tipos)
 })
 
+test_that("o LLM vê números arredondados pelo formato e sem nome de ferramenta", {
+  visto <- new.env()
+  llm <- function(system, prompt) { visto$prompt <- prompt; "[RESUMO]\nok\n\n[LEITURA]\n- ok" }
+  fake_report(geo_sp, "ideb_territorio", provider = "gemini", llm = llm)
+  expect_match(visto$prompt, "vírgula decimal|DADOS")
+  dados <- jsonlite::fromJSON(sub("^.*DADOS \\(JSON\\):\n", "", visto$prompt), simplifyVector = FALSE)
+  # fontes sem o nome interno da ferramenta
+  expect_true(all(vapply(dados$fontes, function(f) is.null(f$ferramenta), logical(1))))
+  expect_false(grepl("ideb_agregado", visto$prompt, fixed = TRUE))
+  # valores decimal1 com no máximo uma casa
+  kpis <- Filter(function(s) identical(s$tipo, "indicadores"), dados$secoes)
+  for (k in kpis) for (it in k$itens) {
+    if (identical(it$formato, "decimal1") && is.numeric(it$valor)) {
+      expect_equal(it$valor, round(it$valor, 1))
+    }
+  }
+})
+
+test_that("report_round_formato arredonda conforme o formato", {
+  expect_equal(report_round_formato(5.94, "decimal1"), 5.9)
+  expect_equal(report_round_formato(5.946, "decimal2"), 5.95)
+  expect_equal(report_round_formato(21.4, "inteiro"), 21)
+  expect_equal(report_round_formato("Municipal", "texto"), "Municipal")
+  expect_equal(report_round_formato(0.12345, "percentual"), 0.123)
+  expect_equal(report_round_formato(3.14159, NULL), 3.14159)
+})
+
 test_that("falha do LLM não derruba o relatório (degradação)", {
   llm <- function(system, prompt) stop("HTTP 503")
   r <- suppressMessages(capture.output(

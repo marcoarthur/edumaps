@@ -47,6 +47,7 @@ report_prompt_complemento <- function() {
     "- Não mencione nomes internos de ferramentas, tabelas ou colunas (ex.:",
     "  ideb_agregado, co_municipio): cite a fonte pela descrição e edição",
     "  (ex.: \"IDEB 2023, municípios de SP\").",
+    "- Não comente estas regras nem a formatação do relatório no texto.",
     "- Se houver avisos (dados cortados, sem dados), mencione-os.",
     "- Markdown simples: parágrafos, listas com '-', **negrito**. Sem HTML,",
     "  links, imagens, tabelas ou títulos com '#'.",
@@ -81,11 +82,41 @@ report_system_prompt <- function() {
 
 #' Visão enxuta do relatório para o LLM (JSON)
 #' @keywords internal
+# Casas decimais de um formato de seção (NA = não arredondar).
+report_digits_formato <- function(formato) {
+  switch(formato %||% "",
+         decimal1 = 1L, decimal2 = 2L, inteiro = 0L, percentual = 3L, NA_integer_)
+}
+
+# Arredonda um valor conforme o formato — o LLM vê os números como a tela os
+# mostra (ex.: IDEB 5,9, não 5,94) e não "reinventa" precisão.
+report_round_formato <- function(x, formato) {
+  d <- report_digits_formato(formato)
+  if (is.na(d) || !is.numeric(x)) return(x)
+  round(x, d)
+}
+
 report_llm_payload <- function(report) {
   secoes <- lapply(report$secoes, function(s) {
-    out <- s[setdiff(names(s), c("linhas", "dados", "colunas", "series", "x"))]
+    out <- s[setdiff(names(s), c("linhas", "dados", "colunas", "series", "x", "itens"))]
+    if (identical(s$tipo, "indicadores")) {
+      out$itens <- lapply(s$itens, function(it) {
+        it$valor <- report_round_formato(it$valor, it$formato)
+        if (!is.null(it$referencia)) {
+          it$referencia$valor <- report_round_formato(it$referencia$valor, it$formato)
+        }
+        it
+      })
+    }
     if (identical(s$tipo, "tabela")) {
       out$colunas <- vapply(s$colunas, function(c) sprintf("%s=%s", c$id, c$rotulo), character(1))
+      linhas <- s$linhas
+      for (c in s$colunas) {
+        if (!is.null(c$id) && c$id %in% names(linhas)) {
+          linhas[[c$id]] <- report_round_formato(linhas[[c$id]], c$formato)
+        }
+      }
+      s$linhas <- linhas
       out$linhas <- utils::head(s$linhas, REPORT_LLM_MAX_ROWS)
       if (nrow(s$linhas) > REPORT_LLM_MAX_ROWS) {
         out$linhas_omitidas <- nrow(s$linhas) - REPORT_LLM_MAX_ROWS
@@ -93,7 +124,13 @@ report_llm_payload <- function(report) {
     }
     if (identical(s$tipo, "grafico")) {
       out$series <- vapply(s$series, function(c) sprintf("%s=%s", c$id, c$rotulo), character(1))
-      out$dados <- utils::head(s$dados, REPORT_LLM_MAX_ROWS)
+      dados <- s$dados
+      for (sr in s$series) {
+        if (!is.null(sr$id) && sr$id %in% names(dados)) {
+          dados[[sr$id]] <- report_round_formato(dados[[sr$id]], sr$formato %||% s$formato)
+        }
+      }
+      out$dados <- utils::head(dados, REPORT_LLM_MAX_ROWS)
     }
     out
   })
@@ -102,7 +139,8 @@ report_llm_payload <- function(report) {
     recorte = report$recorte,
     tema = report$tema,
     secoes = secoes,
-    fontes = report$fontes,
+    # sem o nome interno da ferramenta: o LLM cita a fonte pela descrição
+    fontes = lapply(report$fontes, function(f) f[setdiff(names(f), "ferramenta")]),
     avisos = report$avisos
   )
   txt <- as.character(jsonlite::toJSON(
