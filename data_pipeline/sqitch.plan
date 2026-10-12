@@ -123,3 +123,4 @@ canal_confirmacao_listas [canal_listas_autoinscricao] 2026-10-11T18:00:00Z Marco
 canal_email_lgpd [canal_confirmacao_listas] 2026-10-11T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: e-mail e LGPD nas listas com QR (coleta por lista, consentimento versionado, exclusão e auditoria)
 canal_envios [canal_email_lgpd] 2026-10-12T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # Canais: envio por e-mail para listas (segmentos, envios, destinatários, opt-outs, acessos ao QR, suspensões)
 relatorios_salvos [canal_envios] 2026-10-12T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # Assistente de Relatório: relatórios salvos pelo gestor (fotografia do ReportResult, dedupe por job)
+relatorios_salvos_assistente [relatorios_salvos] 2026-10-12T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # Assistente de Relatório: relatórios salvos registram o assistente (Fase 4)

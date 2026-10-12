@@ -28,9 +28,13 @@ REPORT_TEXT_MAX_CHARS <- 3000
 #' Complemento do system prompt (linguagem para o gestor)
 #'
 #' @param extras blocos de regras adicionais (temas profundos, listas de
-#'   escolas), inseridos antes do formato da resposta.
+#'   escolas, complemento do assistente), inseridos antes do formato da
+#'   resposta.
+#' @param formato_resumo instrução de tamanho do [RESUMO] (o relatório em
+#'   capítulos pede um resumo mais longo).
 #' @keywords internal
-report_prompt_complemento <- function(extras = NULL) {
+report_prompt_complemento <- function(extras = NULL,
+                                      formato_resumo = "Um a dois parágrafos curtos (até ~120 palavras) com o que mais importa.") {
   paste(
     "## Assistente de Relatório do EduMaps",
     "",
@@ -58,7 +62,7 @@ report_prompt_complemento <- function(extras = NULL) {
     if (length(extras)) paste0(paste(extras, collapse = "\n\n"), "\n"),
     "Formato da resposta (exatamente estes dois marcadores, nesta ordem):",
     "[RESUMO]",
-    "Um a dois parágrafos curtos (até ~120 palavras) com o que mais importa.",
+    formato_resumo,
     "[LEITURA]",
     "Três a cinco itens em lista explicando como ler os números e os seus",
     "limites.",
@@ -110,9 +114,13 @@ report_prompt_nomes <- function() {
 #'   de [report_prompt_profunda()]).
 #' @param lista_escolas o relatório lista escolas de terceiros? Acrescenta
 #'   [report_prompt_nomes()].
+#' @param complemento blocos extras (ex.: regras do relatório em capítulos e
+#'   o `prompt_complemento` do assistente, Fase 4).
+#' @param formato_resumo ver [report_prompt_complemento()]; `NULL` = padrão.
 #'
 #' @keywords internal
-report_system_prompt <- function(profundidade = "descritiva", lista_escolas = FALSE) {
+report_system_prompt <- function(profundidade = "descritiva", lista_escolas = FALSE,
+                                 complemento = NULL, formato_resumo = NULL) {
   persona <- if (edubr_available()) {
     tryCatch(eduBR::prompt_persona(REPORT_PERSONA), error = function(e) NULL)
   }
@@ -123,9 +131,15 @@ report_system_prompt <- function(profundidade = "descritiva", lista_escolas = FA
   )
   extras <- c(
     if (identical(profundidade, "profunda")) report_prompt_profunda(),
-    if (isTRUE(lista_escolas)) report_prompt_nomes()
+    if (isTRUE(lista_escolas)) report_prompt_nomes(),
+    complemento
   )
-  paste(persona, report_prompt_complemento(extras), sep = "\n\n")
+  comp <- if (is.null(formato_resumo)) {
+    report_prompt_complemento(extras)
+  } else {
+    report_prompt_complemento(extras, formato_resumo)
+  }
+  paste(persona, comp, sep = "\n\n")
 }
 
 #' O relatório tem seção com nomes de escolas a ocultar do LLM?
@@ -154,7 +168,7 @@ report_round_formato <- function(x, formato) {
 # REPORT_LLM_MAX_ROWS (as linhas `_destaque` entram sempre), com a marca
 # `_destaque` como `sua_escola` e sem as colunas `.ocultar_llm` (nomes de
 # escolas de terceiros) fora das linhas destacadas.
-report_llm_linhas <- function(s) {
+report_llm_linhas <- function(s, max_rows = REPORT_LLM_MAX_ROWS) {
   linhas <- s$linhas
   for (c in s$colunas) {
     if (!is.null(c$id) && c$id %in% names(linhas)) {
@@ -166,7 +180,7 @@ report_llm_linhas <- function(s) {
   } else {
     rep(FALSE, nrow(linhas))
   }
-  idx <- seq_len(min(nrow(linhas), REPORT_LLM_MAX_ROWS))
+  idx <- seq_len(min(nrow(linhas), max_rows))
   idx <- sort(unique(c(idx, which(destaque))))
   rows <- report_json_rows(linhas[idx, setdiff(names(linhas), REPORT_DESTAQUE), drop = FALSE])
   ocultar <- s$.ocultar_llm %||% character()
@@ -181,8 +195,10 @@ report_llm_linhas <- function(s) {
   })
 }
 
-report_llm_payload <- function(report) {
-  secoes <- lapply(report$secoes, function(s) {
+# Seções de dados no formato enxuto do LLM (sem campos internos, números
+# arredondados pelo formato, no máximo `max_rows` linhas por tabela/gráfico).
+report_llm_secoes <- function(secoes, max_rows = REPORT_LLM_MAX_ROWS) {
+  lapply(secoes, function(s) {
     out <- s[setdiff(names(s), c("linhas", "dados", "colunas", "series", "x", "itens"))]
     out <- out[!startsWith(names(out), ".")]
     if (identical(s$tipo, "associacoes")) {
@@ -199,7 +215,7 @@ report_llm_payload <- function(report) {
     }
     if (identical(s$tipo, "tabela")) {
       out$colunas <- vapply(s$colunas, function(c) sprintf("%s=%s", c$id, c$rotulo), character(1))
-      out$linhas <- report_llm_linhas(s)
+      out$linhas <- report_llm_linhas(s, max_rows)
       if (nrow(s$linhas) > length(out$linhas)) {
         out$linhas_omitidas <- nrow(s$linhas) - length(out$linhas)
       }
@@ -212,22 +228,35 @@ report_llm_payload <- function(report) {
           dados[[sr$id]] <- report_round_formato(dados[[sr$id]], sr$formato %||% s$formato)
         }
       }
-      out$dados <- utils::head(dados, REPORT_LLM_MAX_ROWS)
+      out$dados <- utils::head(dados, max_rows)
     }
     out
   })
+}
+
+# Fontes e avisos para o LLM: sem o nome interno da ferramenta e sem o
+# prefixo "[ferramenta] " das mensagens de aviso.
+report_llm_fontes <- function(fontes) {
+  lapply(fontes, function(f) f[setdiff(names(f), "ferramenta")])
+}
+
+report_llm_avisos <- function(avisos) {
+  lapply(avisos, function(a) {
+    a$mensagem <- sub("^\\[[A-Za-z0-9_]+\\] ", "", a$mensagem %||% "")
+    a
+  })
+}
+
+report_llm_payload <- function(report) {
+  secoes <- report_llm_secoes(report$secoes)
   payload <- list(
     titulo = report$titulo,
     recorte = report$recorte,
     tema = report$tema,
     secoes = secoes,
     # sem o nome interno da ferramenta: o LLM cita a fonte pela descrição
-    fontes = lapply(report$fontes, function(f) f[setdiff(names(f), "ferramenta")]),
-    # sem o prefixo "[ferramenta] " das mensagens de aviso
-    avisos = lapply(report$avisos, function(a) {
-      a$mensagem <- sub("^\\[[A-Za-z0-9_]+\\] ", "", a$mensagem %||% "")
-      a
-    })
+    fontes = report_llm_fontes(report$fontes),
+    avisos = report_llm_avisos(report$avisos)
   )
   txt <- as.character(jsonlite::toJSON(
     payload, auto_unbox = TRUE, na = "null", null = "null", digits = 4,
@@ -309,7 +338,10 @@ report_sanitize_markdown <- function(x) {
   x <- gsub("```[^`]*```", "", x, perl = TRUE)
   x <- gsub("!\\[[^]]*\\]\\([^)]*\\)", "", x, perl = TRUE)
   x <- gsub("\\[([^]]+)\\]\\([^)]*\\)", "\\1", x, perl = TRUE)
-  x <- gsub("<[^>]+>", "", x, perl = TRUE)
+  # Só o que parece TAG (<letra…> ou </letra…>, sem atravessar linha): a
+  # versão gananciosa "<[^>]+>" engolia texto entre comparações como
+  # "4,5 < 4,7 … > 4" e truncava o resumo da EDA (achado do e2e, Fase 4).
+  x <- gsub("</?[A-Za-z][^<>\n]*>", "", x, perl = TRUE)
   x <- gsub("(?m)^#{1,6}[[:space:]]*", "## ", x, perl = TRUE)
   x <- gsub("\n{3,}", "\n\n", x)
   x <- trimws(x)
@@ -386,16 +418,21 @@ report_resumo_deterministico <- function(report, prefixo = NULL) {
 #' @param cfg configuração de [chat_config()].
 #' @param llm função opcional `(system, prompt) -> texto` (injeção em testes);
 #'   padrão: o provedor do painel via [chat_llm()].
+#' @param system,user prompts prontos (relatório em capítulos, Fase 4);
+#'   `NULL` = os do relatório de um tema.
+#' @param resumo_fn função `(report, prefixo)` do resumo determinístico (mock
+#'   e degradação).
 #'
 #' @return `list(resumo, leitura, llm = "ok"|"indisponivel", aviso = NULL|aviso)`.
 #'
 #' @keywords internal
-report_write_text <- function(report, cfg, llm = NULL) {
+report_write_text <- function(report, cfg, llm = NULL, system = NULL, user = NULL,
+                              resumo_fn = report_resumo_deterministico) {
   tem_dados <- length(Filter(function(s) !identical(s$tipo, "texto"), report$secoes)) > 0
 
   if (identical(cfg$provider, "mock")) {
     return(list(
-      resumo = report_resumo_deterministico(
+      resumo = resumo_fn(
         report, "Modo demonstração (sem modelo de linguagem)."
       ),
       leitura = report$leitura_padrao,
@@ -407,7 +444,7 @@ report_write_text <- function(report, cfg, llm = NULL) {
   # Sem dados não há o que redigir: evita gastar uma chamada ao modelo.
   if (!tem_dados) {
     return(list(
-      resumo = report_resumo_deterministico(report),
+      resumo = resumo_fn(report, NULL),
       leitura = report$leitura_padrao,
       llm = "ok",
       aviso = NULL
@@ -417,11 +454,12 @@ report_write_text <- function(report, cfg, llm = NULL) {
   llm <- llm %||% report_llm_default(cfg)
   texto <- tryCatch(
     llm(
-      report_system_prompt(
+      system %||% report_system_prompt(
         report$profundidade %||% "descritiva",
-        report_tem_lista_escolas(report)
+        report_tem_lista_escolas(report),
+        complemento = report$prompt_complemento
       ),
-      report_user_prompt(report)
+      user %||% report_user_prompt(report)
     ),
     error = function(e) {
       cat(sprintf(
@@ -435,7 +473,7 @@ report_write_text <- function(report, cfg, llm = NULL) {
 
   if (is.null(partes) || is.null(partes$resumo)) {
     return(list(
-      resumo = report_resumo_deterministico(report),
+      resumo = resumo_fn(report, NULL),
       leitura = report$leitura_padrao,
       llm = "indisponivel",
       aviso = list(

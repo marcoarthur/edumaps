@@ -9,6 +9,7 @@ import { SESSION_TOKEN } from "../mocks/fixtures.js";
 import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_INFRAESTRUTURA_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "../mocks/relatoriosFixtures.js";
 import {
   resetRelatoriosMockState,
@@ -132,5 +133,30 @@ describe("RelatorioSalvoPage", () => {
     await fireEvent.click(within(dlg).getByRole("button", { name: "Excluir" }));
     await vi.waitFor(() => expect(window.location.pathname).toBe("/gestor/relatorios/salvos"));
     expect(getSalvosMock()).toHaveLength(0);
+  });
+
+  it("fase 4: EDA mostra o assistente, os capítulos e o gerar de novo leva o assistente", async () => {
+    const [s] = semearSalvosMock([{ relatorio: RELATORIO_EDA_FIXTURE, opcoes: { etapa: "fundamental_ii" } }]);
+    render(RelatorioSalvoPage, { props: { id: String(s.id) } });
+    expect(await screen.findByTestId("salvo-assistente")).toHaveTextContent("Assistente: EDA do município");
+    expect(screen.getAllByTestId("relatorio-capitulo")).toHaveLength(2);
+    const href = screen.getByTestId("gerar-de-novo").getAttribute("href");
+    const q = Object.fromEntries(new URLSearchParams(href.split("?")[1]));
+    expect(q).toEqual({
+      assistente: "eda_municipio",
+      nivel: "municipio",
+      codigo: "1100205",
+      nome: "Porto Velho",
+      etapa: "fundamental_ii",
+      gerar: "1",
+    });
+  });
+
+  it("fase 4: assistente padrão não aparece", async () => {
+    const [s] = semearSalvosMock([{ relatorio: RELATORIO_RESULT_FIXTURE }]);
+    render(RelatorioSalvoPage, { props: { id: String(s.id) } });
+    await screen.findByTestId("aviso-fotografia");
+    expect(screen.queryByTestId("salvo-assistente")).toBeNull();
+    expect(screen.getByTestId("gerar-de-novo").getAttribute("href")).not.toContain("assistente");
   });
 });

@@ -206,26 +206,30 @@ sub run_chat ($self, $args) {
   });
 }
 
-# Assistente de Relatório (#219). POST /report com recorte (geotag), tema e
-# opções; o R roda o roteiro fixo do tema sobre as ferramentas do eduBR e o
-# LLM só redige. Cacheável por 24 h: a chave é {geotag, tema, opcoes,
+# Assistente de Relatório (#219). POST /report com recorte (geotag),
+# assistente, tema e opções; o R roda o roteiro fixo do tema (ou os capítulos
+# do assistente `composto`, Fase 4) sobre as ferramentas do eduBR e o LLM só
+# redige. Cacheável por 24 h: a chave é {geotag, assistente, tema, opcoes,
 # config_version} — a `config` (com api_key) vai só no body, nunca na chave,
 # e uma troca de provedor/modelo/chave invalida o cache via config_version.
 # O `contexto` (cod_inep do gestor) não entra na chave: o relatório de um
-# território é o mesmo para qualquer gestor.
+# território é o mesmo para qualquer gestor. `assistente` ausente = o padrão
+# `relatorio` (Relatório por tema), o mesmo comportamento das Fases 1–3.
 sub run_report ($self, $args) {
-  my $geotag  = $args->{geotag}  // {};
-  my $tema    = $args->{tema};
-  my $opcoes  = $args->{opcoes}  // {};
-  my $config  = $args->{config}  // {};
+  my $geotag     = $args->{geotag}  // {};
+  my $tema       = $args->{tema};
+  my $opcoes     = $args->{opcoes}  // {};
+  my $config     = $args->{config}  // {};
+  my $assistente = _assistente($args->{assistente});
 
   $self->_run('report', {
-    geotag   => $geotag,
-    tema     => $tema,
-    opcoes   => $opcoes,
-    contexto => $args->{contexto} // {},
-    config   => $config,
-  }, 'report_' . ($tema // ''), {
+    geotag     => $geotag,
+    assistente => $assistente,
+    tema       => $tema,
+    opcoes     => $opcoes,
+    contexto   => $args->{contexto} // {},
+    config     => $config,
+  }, 'report_' . ($assistente eq 'relatorio' ? ($tema // '') : $assistente), {
     cacheable    => 1,
     cache_params => $self->report_cache_params($args),
   });
@@ -236,24 +240,41 @@ sub report_cache_params ($self, $args) {
   my $config = $args->{config} // {};
   return {
     geotag         => $args->{geotag} // {},
+    assistente     => _assistente($args->{assistente}),
     tema           => $args->{tema},
     opcoes         => $args->{opcoes} // {},
     config_version => Mojo::Util::sha1_hex(JSON::PP->new->canonical->encode($config)),
   };
 }
 
-# Catálogo de temas do Assistente de Relatório: GET /report/temas?nivel=.
-# Cacheável (por nível); `nivel` ausente devolve o catálogo inteiro.
-sub run_report_temas ($self, $nivel = undef) {
-  my $endpoint = 'report/temas';
-  if (defined $nivel && length $nivel) {
-    $endpoint .= '?' . Mojo::Parameters->new(nivel => $nivel)->to_string;
-  }
+sub _assistente ($v) {
+  return (defined $v && !ref $v && length $v) ? "$v" : 'relatorio';
+}
+
+# Catálogo de temas do Assistente de Relatório:
+# GET /report/temas?nivel=&assistente=. Cacheável (por nível e assistente);
+# `nivel` ausente devolve o catálogo inteiro do assistente; `assistente`
+# ausente é o padrão `relatorio`.
+sub run_report_temas ($self, $nivel = undef, $assistente = undef) {
+  $assistente = _assistente($assistente);
+  my @q = (assistente => $assistente);
+  push @q, (nivel => $nivel) if defined $nivel && length $nivel;
+  my $endpoint = 'report/temas?' . Mojo::Parameters->new(@q)->to_string;
 
   $self->_run($endpoint, undef, 'report_temas', {
     cacheable    => 1,
     get          => 1,
-    cache_params => { nivel => $nivel },
+    cache_params => { nivel => $nivel, assistente => $assistente },
+  });
+}
+
+# Lista de assistentes declarados no R (Fase 4): GET /report/assistentes.
+# Cacheável; o filtro por público fica a cargo de quem chama.
+sub run_report_assistentes ($self) {
+  $self->_run('report/assistentes', undef, 'report_assistentes', {
+    cacheable    => 1,
+    get          => 1,
+    cache_params => {},
   });
 }
 

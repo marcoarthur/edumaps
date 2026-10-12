@@ -23,10 +23,13 @@ import {
   listarSalvos,
   getSalvo,
   excluirSalvo,
+  listarAssistentes,
+  ASSISTENTE_PADRAO,
 } from "./gestorRelatoriosApi.js";
 import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_INFRAESTRUTURA_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "../mocks/relatoriosFixtures.js";
 
 describe("gestorRelatoriosApi", () => {
@@ -260,6 +263,92 @@ describe("gestorRelatoriosApi", () => {
     it("sem sessão a lista responde 401", async () => {
       setApiToken(null);
       await expect(listarSalvos(INEP_RELATORIOS)).rejects.toMatchObject({ status: 401 });
+    });
+  });
+
+  describe("assistentes (fase 4)", () => {
+    it("lista os assistentes (desembrulha {assistentes})", async () => {
+      const lista = await listarAssistentes(INEP_RELATORIOS);
+      expect(lista.map((a) => [a.id, a.modo])).toEqual([
+        ["relatorio", "tema"],
+        ["eda_municipio", "composto"],
+      ]);
+      expect(lista[1].niveis).toEqual(["municipio"]);
+      expect(lista[1].capitulos[0]).toEqual({ tema: "ideb_territorio", titulo: "IDEB do município" });
+      expect(ASSISTENTE_PADRAO).toBe("relatorio");
+    });
+
+    it("sem sessão /assistentes responde 401; corpo vazio vira []", async () => {
+      setApiToken(null);
+      await expect(listarAssistentes(INEP_RELATORIOS)).rejects.toMatchObject({ status: 401 });
+      setApiToken(SESSION_TOKEN);
+      server.use(http.get("/api/gestor/:cod_inep/relatorios/assistentes", () => HttpResponse.json({})));
+      expect(await listarAssistentes(INEP_RELATORIOS)).toEqual([]);
+    });
+
+    it("temas: ?assistente só fora do padrão", async () => {
+      const vistos = [];
+      server.use(
+        http.get("/api/gestor/:cod_inep/relatorios/temas", ({ request }) => {
+          vistos.push(new URL(request.url).searchParams.get("assistente"));
+          return HttpResponse.json({ temas: [] });
+        }),
+      );
+      await listTemasRelatorio(INEP_RELATORIOS, "municipio");
+      await listTemasRelatorio(INEP_RELATORIOS, "municipio", "relatorio");
+      await listTemasRelatorio(INEP_RELATORIOS, "municipio", "eda_municipio");
+      expect(vistos).toEqual([null, null, "eda_municipio"]);
+    });
+
+    it("temas do assistente composto são os dos capítulos no nível", async () => {
+      const temas = await listTemasRelatorio(INEP_RELATORIOS, "municipio", "eda_municipio");
+      expect(temas.map((t) => t.id).sort()).toEqual(
+        ["docentes_territorio", "ideb_escolas", "ideb_territorio", "redes_territorio"].sort(),
+      );
+    });
+
+    it("gera no modo composto: sem tema, com assistente; o job devolve a EDA", async () => {
+      configurarRelatoriosMock({ consultasAteFim: 1 });
+      const { job_id } = await gerarRelatorio(INEP_RELATORIOS, {
+        geotag: { nivel: "municipio", codigo: "1100205" },
+        opcoes: { etapa: "fundamental_i" },
+        assistente: "eda_municipio",
+      });
+      expect(getPedidosRelatorioMock()[0]).toEqual({
+        geotag: { nivel: "municipio", codigo: "1100205" },
+        opcoes: { etapa: "fundamental_i" },
+        assistente: "eda_municipio",
+      });
+      const job = await getJobRelatorio(INEP_RELATORIOS, job_id);
+      expect(job.state).toBe("finished");
+      expect(job.result.capitulos).toEqual(RELATORIO_EDA_FIXTURE.capitulos);
+      expect(job.result.assistente.id).toBe("eda_municipio");
+    });
+
+    it("assistente padrão não vai no corpo", async () => {
+      await gerarRelatorio(INEP_RELATORIOS, {
+        geotag: { nivel: "uf", codigo: "RO" },
+        tema: "ideb_territorio",
+        assistente: "relatorio",
+      });
+      expect(getPedidosRelatorioMock()[0]).toEqual({ geotag: { nivel: "uf", codigo: "RO" }, tema: "ideb_territorio" });
+    });
+
+    it("composto fora do nível do assistente → 400", async () => {
+      await expect(
+        gerarRelatorio(INEP_RELATORIOS, { geotag: { nivel: "uf", codigo: "RO" }, assistente: "eda_municipio" }),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("salvo da EDA leva assistente {id, titulo}; o padrão também", async () => {
+      const [eda, tema] = semearSalvosMock([
+        { relatorio: RELATORIO_EDA_FIXTURE },
+        { relatorio: RELATORIO_RESULT_FIXTURE },
+      ]);
+      expect(eda.assistente).toEqual({ id: "eda_municipio", titulo: "EDA do município" });
+      expect(tema.assistente).toEqual({ id: "relatorio", titulo: "Relatório por tema" });
+      const lista = await listarSalvos(INEP_RELATORIOS);
+      expect(lista.items.map((i) => i.assistente.id)).toEqual(["relatorio", "eda_municipio"]);
     });
   });
 });

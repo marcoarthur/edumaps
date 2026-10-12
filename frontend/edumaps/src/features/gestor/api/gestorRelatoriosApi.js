@@ -5,8 +5,11 @@
 //
 //   GET  /recorte-padrao  → {escola:{cod_inep,nome}, municipio:{codigo,nome},
 //                            uf:{codigo,nome}, regiao:{codigo,nome}}
-//   GET  /temas?nivel     → {temas:[{id,titulo,descricao,niveis,profundidade,opcoes}]}
-//   POST /                {geotag:{nivel,codigo}, tema, opcoes?} → 202 {job_id}
+//   GET  /assistentes     → {assistentes:[{id,titulo,descricao,modo,niveis,publico,
+//                            temas?, capitulos?:[{tema,titulo}], opcoes, padroes}]}  (fase 4)
+//   GET  /temas?nivel&assistente → {temas:[{id,titulo,descricao,niveis,profundidade,opcoes}]}
+//   POST /                {geotag:{nivel,codigo}, tema?, opcoes?, assistente?} → 202 {job_id}
+//                         (modo composto: sem tema; `assistente` omitido = "relatorio")
 //   GET  /jobs/:job_id    → {state, progress?, result?: ReportResult+{cache_hit}, error?}
 import { apiClient } from "@/shared/api/client.js";
 
@@ -19,12 +22,26 @@ export function getRecortePadrao(inep) {
   return apiClient.get(`${BASE(inep)}/recorte-padrao`);
 }
 
+/** Assistente padrão (Fases 1–3): "Relatório por tema". */
+export const ASSISTENTE_PADRAO = "relatorio";
+
 /**
- * Temas disponíveis (opcionalmente só os de um nível).
+ * Assistentes de relatório visíveis ao gestor (fase 4).
  * @returns {Promise<Array<object>>}
  */
-export function listTemasRelatorio(inep, nivel) {
-  return apiClient.get(`${BASE(inep)}/temas`, { nivel }).then((d) => d?.temas ?? []);
+export function listarAssistentes(inep) {
+  return apiClient.get(`${BASE(inep)}/assistentes`).then((d) => d?.assistentes ?? []);
+}
+
+/**
+ * Temas disponíveis (opcionalmente só os de um nível e de um assistente).
+ * O `assistente` padrão não vai na query (o servidor assume "relatorio").
+ * @returns {Promise<Array<object>>}
+ */
+export function listTemasRelatorio(inep, nivel, assistente) {
+  const params = { nivel };
+  if (assistente && assistente !== ASSISTENTE_PADRAO) params.assistente = assistente;
+  return apiClient.get(`${BASE(inep)}/temas`, params).then((d) => d?.temas ?? []);
 }
 
 /** Remove opções vazias (ex.: rede "todas"). */
@@ -37,12 +54,16 @@ export function limparOpcoes(opcoes = {}) {
 }
 
 /**
- * Enfileira a geração do relatório.
- * @param {{geotag: {nivel: string, codigo: string}, tema: string, opcoes?: object}} pedido
+ * Enfileira a geração do relatório. O `assistente` só vai no corpo quando
+ * não é o padrão ("relatorio"), e o `tema` só quando há (no modo composto o
+ * assistente define os capítulos e o tema é omitido).
+ * @param {{geotag: {nivel: string, codigo: string}, tema?: string, opcoes?: object, assistente?: string}} pedido
  * @returns {Promise<{job_id: number}>}
  */
-export function gerarRelatorio(inep, { geotag, tema, opcoes } = {}) {
-  const body = { geotag: { nivel: geotag?.nivel, codigo: String(geotag?.codigo ?? "") }, tema };
+export function gerarRelatorio(inep, { geotag, tema, opcoes, assistente } = {}) {
+  const body = { geotag: { nivel: geotag?.nivel, codigo: String(geotag?.codigo ?? "") } };
+  if (tema) body.tema = tema;
+  if (assistente && assistente !== ASSISTENTE_PADRAO) body.assistente = assistente;
   const limpas = limparOpcoes(opcoes);
   if (Object.keys(limpas).length) body.opcoes = limpas;
   return apiClient.post(BASE(inep), body);

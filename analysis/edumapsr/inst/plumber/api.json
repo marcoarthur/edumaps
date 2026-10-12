@@ -727,10 +727,55 @@
       }
     },
 
+    "/report/assistentes": {
+      "get": {
+        "summary": "Lista os assistentes de relatório",
+        "description": "Assistentes declarativos (Fase 4 da issue #219): um YAML por assistente em `inst/assistentes/<id>.yml`. Modo `tema` (o gestor escolhe um tema; `relatorio` = \"Relatório por tema\", o padrão) ou `composto` (capítulos fixos, ex.: `eda_municipio`). YAML inválido é ignorado com log. `opcoes`/`padroes` têm o mesmo formato do catálogo de temas.",
+        "operationId": "reportAssistentes",
+        "parameters": [
+          {
+            "name": "publico",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pelos assistentes cujo `publico` contém o perfil (ex.: gestor).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistentes disponíveis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportAssistentesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro interno ao listar os assistentes",
+                  "tipo": "internal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/report/temas": {
       "get": {
         "summary": "Lista os temas do Assistente de Relatório",
-        "description": "Catálogo de temas do Assistente de Relatório (issue #219), opcionalmente filtrado pelo nível do recorte. A primeira etapa de `opcoes.etapa` é o padrão; `rede` é opcional (omitida = todas as redes; \"publica\" junta Federal, Estadual e Municipal, só nos temas que a aceitam).",
+        "description": "Catálogo de temas do Assistente de Relatório (issue #219), opcionalmente filtrado pelo nível do recorte e pelo assistente (Fase 4; padrão `relatorio`; no assistente `composto`, os temas dos capítulos). A primeira etapa de `opcoes.etapa` é o padrão; `rede` é opcional (omitida = todas as redes; \"publica\" junta Federal, Estadual e Municipal, só nos temas que a aceitam).",
         "operationId": "reportTemas",
         "parameters": [
           {
@@ -746,6 +791,16 @@
                 "regiao",
                 "escola"
               ]
+            }
+          },
+          {
+            "name": "assistente",
+            "in": "query",
+            "required": false,
+            "description": "Id do assistente (padrão `relatorio`). Desconhecido → 400.",
+            "schema": {
+              "type": "string",
+              "example": "relatorio"
             }
           }
         ],
@@ -794,7 +849,7 @@
     "/report": {
       "post": {
         "summary": "Gera um relatório (Assistente de Relatório)",
-        "description": "Gera o relatório de um tema sobre um recorte geográfico. O roteiro do tema chama de forma determinística as ferramentas do pacote eduBR (persona pesquisadora-educacional) pela conexão somente-leitura; o modelo de linguagem do painel só redige as seções `resumo` e `leitura`. Falha do modelo não derruba o relatório (`rastreio.llm = \"indisponivel\"`, aviso `llm` e resumo determinístico). `config.provider = \"mock\"` gera texto determinístico.",
+        "description": "Gera o relatório de um tema sobre um recorte geográfico. Com `assistente` composto (Fase 4, ex.: `eda_municipio`), `tema` é ignorado: os capítulos rodam os roteiros dos temas (sem redação por capítulo), as seções de capítulo levam `capitulo`, `capitulos` lista os capítulos gerados, um capítulo que falha vira aviso `capitulo` e o modelo de linguagem é chamado UMA vez para o `resumo` e a `leitura` gerais. O roteiro do tema chama de forma determinística as ferramentas do pacote eduBR (persona pesquisadora-educacional) pela conexão somente-leitura; o modelo de linguagem do painel só redige as seções `resumo` e `leitura`. Falha do modelo não derruba o relatório (`rastreio.llm = \"indisponivel\"`, aviso `llm` e resumo determinístico). `config.provider = \"mock\"` gera texto determinístico.",
         "operationId": "createReport",
         "requestBody": {
           "required": true,
@@ -1986,6 +2041,108 @@
           }
         }
       },
+      "ReportAssistente": {
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "modo",
+          "niveis",
+          "publico",
+          "opcoes",
+          "padroes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "eda_municipio"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "tema",
+              "composto"
+            ]
+          },
+          "niveis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "publico": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "temas": {
+            "type": "array",
+            "description": "Só no modo tema: ids dos temas oferecidos.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capitulos": {
+            "type": "array",
+            "description": "Só no modo composto. `opcional: true` = capítulo que roda sobre a escola do gestor e só entra quando ela fica no território pedido.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "tema": {
+                  "type": "string"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "opcional": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "opcoes": {
+            "type": "object",
+            "description": "Opções que o gestor escolhe (modo composto), com os valores aceitos.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "padroes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReportAssistentesResponse": {
+        "type": "object",
+        "required": [
+          "assistentes"
+        ],
+        "properties": {
+          "assistentes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportAssistente"
+            }
+          }
+        }
+      },
       "ReportGeotag": {
         "type": "object",
         "required": [
@@ -2012,15 +2169,20 @@
       "ReportRequest": {
         "type": "object",
         "required": [
-          "geotag",
-          "tema"
+          "geotag"
         ],
         "properties": {
           "geotag": {
             "$ref": "#/components/schemas/ReportGeotag"
           },
+          "assistente": {
+            "type": "string",
+            "description": "Id do assistente (Fase 4). Padrão `relatorio` (modo tema).",
+            "example": "eda_municipio"
+          },
           "tema": {
             "type": "string",
+            "description": "Obrigatório no modo `tema`; ignorado no modo `composto`.",
             "example": "ideb_territorio"
           },
           "opcoes": {
@@ -2109,6 +2271,10 @@
           },
           "markdown": {
             "type": "string"
+          },
+          "capitulo": {
+            "type": "string",
+            "description": "Fase 4, modo composto: id do capítulo da seção (ausente nas seções gerais `resumo` e `leitura`). Os ids das seções de capítulo são prefixados pelo capítulo (`<capitulo>-<id>`)."
           },
           "itens": {
             "type": "array",
@@ -2309,14 +2475,52 @@
               }
             }
           },
-          "tema": {
+          "assistente": {
             "type": "object",
+            "description": "Fase 4: assistente que gerou o relatório (também no modo tema).",
             "properties": {
               "id": {
                 "type": "string"
               },
               "titulo": {
                 "type": "string"
+              },
+              "modo": {
+                "type": "string",
+                "enum": [
+                  "tema",
+                  "composto"
+                ]
+              }
+            }
+          },
+          "tema": {
+            "type": "object",
+            "description": "No modo composto, `{id, titulo}` do assistente.",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "titulo": {
+                "type": "string"
+              }
+            }
+          },
+          "capitulos": {
+            "type": "array",
+            "description": "Fase 4, só no modo composto: capítulos gerados, em ordem.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "tema": {
+                  "type": "string"
+                }
               }
             }
           },

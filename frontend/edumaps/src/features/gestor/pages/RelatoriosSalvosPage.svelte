@@ -4,6 +4,7 @@
   // gestor salvou (mais recentes primeiro), com título, tema, recorte, a data
   // em que foi gerado e a data em que foi salvo. "Abrir" leva à fotografia;
   // "Excluir" pede confirmação. Só os salvos do próprio gestor.
+  // Fase 4: o título do assistente aparece quando não é o padrão.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import { listarSalvos, excluirSalvo } from "../api/gestorRelatoriosApi.js";
@@ -14,7 +15,7 @@
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import ConfirmDialog from "@/shared/ui/components/ConfirmDialog.svelte";
-  import { formatarDataHora, textoRecorteSalvo } from "../utils/relatorioSalvos.js";
+  import { formatarDataHora, textoRecorteSalvo, assistenteNaoPadrao } from "../utils/relatorioSalvos.js";
 
   const POR_PAGINA = 20;
 
@@ -188,10 +189,17 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           {#each items as item (item.id)}
+            {@const assistente = assistenteNaoPadrao(item)}
             <tr data-testid="salvo-item">
               <th scope="row" class="text-left font-medium text-gray-900 px-4 py-2">
                 {item.titulo}
-                {#if item.tema?.titulo}
+                {#if assistente}
+                  {" "}<span
+                    class="ml-1 inline-block align-middle text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
+                    data-testid="salvo-assistente"
+                  >{assistente.titulo}</span>
+                {/if}
+                {#if item.tema?.titulo && item.tema?.id !== assistente?.id}
                   <span class="block text-xs font-normal text-gray-500">{item.tema.titulo}</span>
                 {/if}
               </th>

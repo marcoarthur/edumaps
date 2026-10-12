@@ -4,13 +4,14 @@
   // quando houver, a referência (ex.: o valor da UF para comparação).
   import { formatarValor } from "../../utils/relatorioFormatos.js";
 
-  /** @type {{secao: {id: string, titulo?: string, itens?: Array<object>}}} */
-  let { secao } = $props();
+  /** @type {{secao: {id: string, titulo?: string, itens?: Array<object>}, nivelTitulo?: number}} */
+  // nivelTitulo: 2 (padrão) ou 3 quando a seção está dentro de um capítulo (fase 4)
+  let { secao, nivelTitulo = 2 } = $props();
 </script>
 
 <section class="space-y-3" aria-labelledby="secao-{secao.id}" data-testid="secao-indicadores">
   {#if secao.titulo}
-    <h2 id="secao-{secao.id}" class="text-lg font-semibold text-gray-900">{secao.titulo}</h2>
+    <svelte:element this={`h${nivelTitulo}`} id="secao-{secao.id}" class="text-lg font-semibold text-gray-900">{secao.titulo}</svelte:element>
   {/if}
   <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     {#each secao.itens ?? [] as item, i (i)}

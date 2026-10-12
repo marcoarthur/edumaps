@@ -6,6 +6,7 @@
   // atuais" (leva à RelatoriosPage com recorte, tema e opções por query).
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao
   // login; 404 → "Relatório não encontrado".
+  // Fase 4: mostra o assistente quando não é o padrão; o "gerar de novo" o leva.
   import { onMount } from "svelte";
   import { getSalvo, excluirSalvo } from "../api/gestorRelatoriosApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
@@ -14,7 +15,7 @@
   import { router } from "@/app/router.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
-  import { formatarDataHora, urlGerarDeNovo } from "../utils/relatorioSalvos.js";
+  import { formatarDataHora, urlGerarDeNovo, assistenteNaoPadrao } from "../utils/relatorioSalvos.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import RelatorioView from "../components/relatorios/RelatorioView.svelte";
   import ConfirmDialog from "@/shared/ui/components/ConfirmDialog.svelte";
@@ -42,6 +43,7 @@
   let erroExcluir = $state(null);
 
   const relatorio = $derived(salvo?.relatorio ?? null);
+  const assistente = $derived(assistenteNaoPadrao(salvo));
   const dataFoto = $derived(formatarDataHora(salvo?.gerado_em ?? relatorio?.gerado_em));
 
   const onApiError = (err, padraoMsg) => {
@@ -159,6 +161,12 @@
     >
       Fotografia de {dataFoto}: os números são os daquela data.
     </div>
+
+    {#if assistente}
+      <p class="text-sm text-gray-700" data-testid="salvo-assistente">
+        Assistente: <strong>{assistente.titulo}</strong>
+      </p>
+    {/if}
 
     <div class="flex flex-wrap items-center gap-2 print:hidden">
       <a

@@ -59,8 +59,9 @@ report_json_section <- function(s) {
 #'
 #' @param result `analysis_result` de [analyze_report()].
 #'
-#' @return Lista com `titulo`, `gerado_em`, `recorte`, `tema`, `secoes`,
-#'   `fontes`, `avisos` e `rastreio`.
+#' @return Lista com `titulo`, `gerado_em`, `recorte`, `assistente`
+#'   (Fase 4), `tema`, `capitulos` (só no modo composto), `secoes` (as de
+#'   capítulo levam `capitulo`), `fontes`, `avisos` e `rastreio`.
 #'
 #' @export
 render_report_json <- function(result) {
@@ -69,16 +70,22 @@ render_report_json <- function(result) {
   }
   m <- result$metadata
   recorte <- m$recorte[!vapply(m$recorte, is.null, logical(1))]
-  list(
+  out <- list(
     titulo = m$titulo,
     gerado_em = m$gerado_em,
     recorte = recorte,
-    tema = m$tema,
+    assistente = m$assistente,
+    tema = m$tema
+  )
+  if (!is.null(m$capitulos)) {
+    out$capitulos <- unname(m$capitulos)
+  }
+  c(out, list(
     secoes = unname(lapply(m$secoes, report_json_section)),
     fontes = unname(m$fontes),
     avisos = unname(m$avisos),
     rastreio = m$rastreio
-  )
+  ))
 }
 
 #' Serializa um ReportResult em JSON (mesmas opções do endpoint)

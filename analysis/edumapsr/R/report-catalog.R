@@ -212,18 +212,21 @@ report_catalog <- function() {
 
 #' Temas disponíveis (visão pública do catálogo)
 #'
-#' Lista os temas do Assistente de Relatório, opcionalmente filtrados pelo
-#' nível do recorte. É o corpo de `GET /report/temas`.
+#' Lista os temas de um assistente (Fase 4; padrão `relatorio`, todos os
+#' temas do catálogo), opcionalmente filtrados pelo nível do recorte. É o
+#' corpo de `GET /report/temas`. No assistente `composto`, são os temas dos
+#' capítulos.
 #'
 #' @param nivel `NULL` (todos) ou um de `municipio`, `uf`, `regiao`,
 #'   `escola`.
 #' @param perfil perfil do usuário (hoje só `"gestor"`).
+#' @param assistente id do assistente (`NULL`/vazio = `relatorio`).
 #'
 #' @return Lista `{temas: [{id, titulo, descricao, niveis[], profundidade,
 #'   opcoes: {etapa?: [..], rede?: [..]}, padroes: {etapa?: ".."}}]}`.
 #'
 #' @export
-report_temas <- function(nivel = NULL, perfil = "gestor") {
+report_temas <- function(nivel = NULL, perfil = "gestor", assistente = NULL) {
   if (!is.null(nivel) && !identical(nivel, "")) {
     if (!is.character(nivel) || length(nivel) != 1L || !nivel %in% REPORT_NIVEIS) {
       stop(new_client_error(
@@ -239,9 +242,11 @@ report_temas <- function(nivel = NULL, perfil = "gestor") {
     nivel <- NULL
   }
 
+  ast <- report_assistente(assistente)
+  catalog <- report_catalog()[report_assistente_tema_ids(ast)]
   catalog <- Filter(function(t) {
     perfil %in% t$perfis && (is.null(nivel) || nivel %in% t$niveis)
-  }, report_catalog())
+  }, catalog)
 
   list(temas = unname(lapply(catalog, report_tema_public)))
 }

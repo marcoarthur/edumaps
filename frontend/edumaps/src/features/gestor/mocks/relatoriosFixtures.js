@@ -331,3 +331,100 @@ export const RELATORIOS_POR_TEMA_FIXTURE = {
   infraestrutura_ideb: RELATORIO_INFRAESTRUTURA_FIXTURE,
   ideb_escolas: RELATORIO_IDEB_ESCOLAS_FIXTURE,
 };
+
+// ---------------------------------------------------------------- fase 4
+
+/**
+ * Assistentes (GET /assistentes): o "Relatório por tema" (modo tema, o
+ * catálogo das Fases 1–3) e a "EDA do município" (modo composto, capítulos).
+ */
+export const ASSISTENTES_FIXTURE = [
+  {
+    id: "relatorio",
+    titulo: "Relatório por tema",
+    descricao: "Um tema por relatório, com a escolha do recorte e das opções.",
+    modo: "tema",
+    niveis: ["escola", "municipio", "uf", "regiao"],
+    publico: ["gestor"],
+    temas: TEMAS_FIXTURE.map((t) => t.id),
+    opcoes: {},
+    padroes: {},
+  },
+  {
+    id: "eda_municipio",
+    titulo: "EDA do município",
+    descricao: "Relatório exploratório completo de um município, em capítulos.",
+    modo: "composto",
+    niveis: ["municipio"],
+    publico: ["gestor"],
+    capitulos: [
+      { tema: "ideb_territorio", titulo: "IDEB do município" },
+      { tema: "ideb_escolas", titulo: "Escolas do município pelo IDEB" },
+      { tema: "redes_territorio", titulo: "Redes de ensino" },
+      { tema: "docentes_territorio", titulo: "Professores" },
+    ],
+    opcoes: { etapa: ETAPAS },
+    padroes: { etapa: "fundamental_i" },
+  },
+];
+
+/** EDA do município (modo composto): capítulos e seções gerais. */
+export const RELATORIO_EDA_FIXTURE = {
+  titulo: "EDA do município — Porto Velho (RO)",
+  gerado_em: "2026-10-12T12:00:00Z",
+  recorte: { nivel: "municipio", codigo: "1100205", nome: "Porto Velho", uf: "RO" },
+  assistente: { id: "eda_municipio", titulo: "EDA do município", modo: "composto" },
+  tema: { id: "eda_municipio", titulo: "EDA do município" },
+  capitulos: [
+    { id: "ideb", titulo: "IDEB do município", tema: "ideb_territorio" },
+    { id: "escolas", titulo: "Escolas do município pelo IDEB", tema: "ideb_escolas" },
+  ],
+  secoes: [
+    {
+      id: "resumo",
+      tipo: "texto",
+      titulo: "Resumo",
+      markdown: "Porto Velho tem IDEB **5,6** nos anos iniciais, abaixo do estado.",
+    },
+    {
+      id: "kpis",
+      capitulo: "ideb",
+      tipo: "indicadores",
+      titulo: "Indicadores principais",
+      itens: [{ rotulo: "IDEB 2023", valor: 5.6, formato: "decimal1", referencia: { rotulo: "RO", valor: 5.9 } }],
+    },
+    {
+      id: "serie",
+      capitulo: "ideb",
+      tipo: "tabela",
+      titulo: "IDEB ao longo do tempo",
+      colunas: [
+        { id: "ano", rotulo: "Ano", formato: "texto" },
+        { id: "ideb", rotulo: "IDEB", formato: "decimal1" },
+      ],
+      linhas: [
+        { ano: "2021", ideb: 5.0 },
+        { ano: "2023", ideb: 5.6 },
+      ],
+    },
+    {
+      id: "kpis",
+      capitulo: "escolas",
+      tipo: "indicadores",
+      titulo: "Visão geral das escolas",
+      itens: [{ rotulo: "Escolas com nota", valor: 3, formato: "inteiro" }],
+    },
+    {
+      id: "leitura",
+      tipo: "texto",
+      titulo: "Como ler",
+      markdown: "Os capítulos descrevem o município; **não** indicam causas.",
+    },
+  ],
+  fontes: [
+    { ferramenta: "ideb_agregado", descricao: "IDEB agregado por território", edicao: "IDEB 2023" },
+    { ferramenta: "ideb", descricao: "IDEB por escola", edicao: "IDEB 2023", n: 3 },
+  ],
+  avisos: [{ tipo: "sem_dados", mensagem: "O capítulo \"Professores\" ficou sem dados." }],
+  rastreio: { provedor: "mock", modelo: "mock-1", llm: "ok" },
+};

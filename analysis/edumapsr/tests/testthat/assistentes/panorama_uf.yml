@@ -1,0 +1,20 @@
+# Terceiro assistente SÓ DE TESTE (#219, Fase 4, critério de aceite): um
+# relatório composto por UF criado apenas com este YAML, sem código R novo.
+# Carregado nos testes pela opção `edumapsAnalytics.assistentes_dirs`.
+id: panorama_uf
+titulo: Panorama do estado
+descricao: Gestores, IDEB e infraestrutura do estado, com a sua escola quando ela fica no estado.
+publico: [gestor, pesquisador]
+modo: composto
+niveis: [uf]
+capitulos:
+  - { tema: ideb_territorio,     titulo: "IDEB do estado" }
+  - { tema: gestores_territorio, titulo: "Gestores escolares" }
+  - { id: infra, tema: infraestrutura_ideb, titulo: "Infraestrutura e IDEB", opcoes: { rede: publica } }
+  - { tema: minha_escola,        titulo: "Minha escola", recorte: escola }
+opcoes:
+  etapa: { valores: [fundamental_i, fundamental_ii], padrao: fundamental_ii }
+prompt_complemento: |
+  ## Panorama do estado (teste)
+  - Marca de teste: PANORAMA-UF.
+limites: { max_chamadas: 50 }

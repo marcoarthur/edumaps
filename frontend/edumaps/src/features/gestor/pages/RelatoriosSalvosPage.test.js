@@ -9,6 +9,7 @@ import { SESSION_TOKEN } from "../mocks/fixtures.js";
 import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_INFRAESTRUTURA_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "../mocks/relatoriosFixtures.js";
 import {
   resetRelatoriosMockState,
@@ -156,5 +157,17 @@ describe("RelatoriosSalvosPage", () => {
     );
     await waitFor(() => expect(linhas()).toHaveLength(20));
     expect(screen.queryByRole("navigation", { name: /Paginação/ })).toBeNull();
+  });
+
+  it("fase 4: mostra o assistente quando não é o padrão", async () => {
+    semearSalvosMock([{ relatorio: RELATORIO_RESULT_FIXTURE }, { relatorio: RELATORIO_EDA_FIXTURE }]);
+    render(RelatoriosSalvosPage);
+    await screen.findByTestId("salvos-tabela");
+    const [eda, tema] = linhas();
+    expect(within(eda).getByTestId("salvo-assistente")).toHaveTextContent("EDA do município");
+    // o tema da EDA é o próprio assistente: não repete
+    expect(within(eda).getAllByText("EDA do município")).toHaveLength(1);
+    expect(within(tema).queryByTestId("salvo-assistente")).toBeNull();
+    expect(within(tema).getByText("IDEB do território")).toBeInTheDocument();
   });
 });

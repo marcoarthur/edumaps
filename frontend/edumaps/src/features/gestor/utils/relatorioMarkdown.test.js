@@ -15,6 +15,7 @@ import {
   RELATORIO_LLM_INDISPONIVEL_FIXTURE,
   RELATORIO_INFRAESTRUTURA_FIXTURE,
   RELATORIO_IDEB_ESCOLAS_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "../mocks/relatoriosFixtures.js";
 
 describe("relatorioParaMarkdown", () => {
@@ -253,5 +254,58 @@ describe("download", () => {
     });
     expect(md).toContain("80,3%");
     expect(md).not.toMatch(/\| 0,8 \|/);
+  });
+});
+
+describe("relatorioParaMarkdown com capítulos (fase 4)", () => {
+  const md = relatorioParaMarkdown(RELATORIO_EDA_FIXTURE);
+  const titulos = md.split("\n").filter((l) => /^#{1,6} /.test(l));
+
+  it("cabeçalho leva o assistente e não repete o tema", () => {
+    expect(md).toContain("**Assistente:** EDA do município  \n**Recorte:** Porto Velho (RO)");
+    expect(md).not.toContain("**Tema:**");
+  });
+
+  it("sumário, gerais em ##, capítulo em ## e seções em ###, na ordem", () => {
+    expect(titulos).toEqual([
+      "# EDA do município — Porto Velho (RO)",
+      "## Sumário",
+      "## Resumo",
+      "## IDEB do município",
+      "### Indicadores principais",
+      "### IDEB ao longo do tempo",
+      "## Escolas do município pelo IDEB",
+      "### Visão geral das escolas",
+      "## Como ler",
+      "## Avisos",
+      "## Fontes",
+    ]);
+    expect(md).toContain("## Sumário\n\n1. IDEB do município\n2. Escolas do município pelo IDEB");
+  });
+
+  it("sumário é opcional", () => {
+    expect(relatorioParaMarkdown(RELATORIO_EDA_FIXTURE, { sumario: false })).not.toContain("Sumário");
+  });
+
+  it("títulos internos de texto num capítulo descem dois níveis; capítulo vazio avisa", () => {
+    const out = relatorioParaMarkdown({
+      titulo: "T",
+      capitulos: [{ id: "a", titulo: "A" }, { id: "b", titulo: "B" }],
+      secoes: [{ id: "t", tipo: "texto", capitulo: "a", titulo: "Texto", markdown: "## Sub\n\nok" }],
+    });
+    expect(out).toContain("## A\n\n### Texto\n\n#### Sub\n\nok");
+    expect(out).toContain("## B\n\n_Sem dados neste capítulo._");
+  });
+
+  it("sem capítulos é igual ao das fases 1–3 (com ou sem a opção de sumário)", () => {
+    expect(relatorioParaMarkdown({ ...RELATORIO_RESULT_FIXTURE, capitulos: [] })).toBe(
+      relatorioParaMarkdown(RELATORIO_RESULT_FIXTURE, { sumario: false }),
+    );
+    // assistente padrão não aparece no cabeçalho
+    const comPadrao = relatorioParaMarkdown({
+      ...RELATORIO_RESULT_FIXTURE,
+      assistente: { id: "relatorio", titulo: "Relatório por tema", modo: "tema" },
+    });
+    expect(comPadrao).toBe(relatorioParaMarkdown(RELATORIO_RESULT_FIXTURE));
   });
 });

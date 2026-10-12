@@ -33,11 +33,13 @@ fake_rook_req <- function(verb, path, qs = "", body = "") {
 report_router <- function(fail = character()) {
   skip_if_not_installed("plumber")
   env <- new.env(parent = asNamespace("edumapsAnalytics"))
-  env$run_report <- function(geotag, tema, opcoes = NULL, contexto = NULL, config = NULL) {
+  env$run_report <- function(geotag, tema, opcoes = NULL, contexto = NULL, config = NULL,
+                             assistente = NULL) {
     edumapsAnalytics::run_report(
       geotag, tema, opcoes, contexto,
       config = list(provider = "mock"),
-      tools = fake_edubr_tools(fail = fail)
+      tools = fake_edubr_tools(fail = fail),
+      assistente = assistente
     )
   }
   plumber::pr(endpoint_file(), envir = env)
@@ -123,4 +125,106 @@ test_that("POST /report dos temas da Fase 2 (associacoes, recolhida, _destaque)"
   r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"RJ"},"tema":"infraestrutura_ideb"}')
   expect_equal(r$status, 400)
   expect_match(r$body$error, "rede específica")
+})
+
+# --- Fase 4: assistentes ------------------------------------------------------
+
+test_that("GET /report/assistentes lista os assistentes do pacote", {
+  pr <- report_router()
+  r <- call_api(pr, "GET", "/report/assistentes")
+  expect_equal(r$status, 200)
+  ids <- vapply(r$body$assistentes, `[[`, character(1), "id")
+  expect_equal(ids, c("relatorio", "eda_municipio"))
+  rel <- r$body$assistentes[[1]]
+  expect_equal(rel$modo, "tema")
+  expect_length(rel$temas, 10)
+  expect_equal(rel$opcoes, structure(list(), names = character(0)))
+  eda <- r$body$assistentes[[2]]
+  expect_equal(eda$modo, "composto")
+  expect_equal(eda$niveis, list("municipio"))
+  expect_equal(eda$publico, list("gestor"))
+  expect_equal(eda$padroes$etapa, "fundamental_i")
+  expect_equal(eda$capitulos[[1]], list(id = "redes_territorio", tema = "redes_territorio", titulo = "Redes de ensino"))
+  expect_true(isTRUE(eda$capitulos[[5]]$opcional))
+
+  r <- call_api(pr, "GET", "/report/assistentes", qs = "publico=pesquisador")
+  expect_equal(r$status, 200)
+  expect_length(r$body$assistentes, 0)
+})
+
+test_that("GET /report/temas?assistente", {
+  pr <- report_router()
+  r <- call_api(pr, "GET", "/report/temas", qs = "assistente=relatorio&nivel=municipio")
+  expect_equal(r$status, 200)
+  expect_length(r$body$temas, 4)
+  r <- call_api(pr, "GET", "/report/temas", qs = "assistente=eda_municipio&nivel=municipio")
+  expect_equal(r$status, 200)
+  expect_equal(vapply(r$body$temas, `[[`, character(1), "id"),
+               c("redes_territorio", "docentes_territorio", "ideb_territorio", "ideb_escolas"))
+  r <- call_api(pr, "GET", "/report/temas", qs = "assistente=nao_existe")
+  expect_equal(r$status, 400)
+  expect_match(r$body$error, "Assistente desconhecido")
+})
+
+test_that("POST /report com assistente (tema e composto)", {
+  pr <- report_router()
+  # padrão = relatorio, com `assistente` no resultado
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"SP"},"tema":"ideb_territorio"}')
+  expect_equal(r$status, 200)
+  expect_equal(r$body$assistente, list(id = "relatorio", titulo = "Relatório por tema", modo = "tema"))
+  expect_null(r$body$capitulos)
+
+  body <- '{"geotag":{"nivel":"municipio","codigo":"3555406"},"assistente":"eda_municipio","tema":"ignorado","opcoes":{"etapa":"fundamental_ii"},"contexto":{"cod_inep":"35038751"}}'
+  r <- call_api(pr, "POST", "/report", body = body)
+  expect_equal(r$status, 200)
+  expect_equal(r$body$tema, list(id = "eda_municipio", titulo = "EDA do município"))
+  expect_equal(r$body$assistente$modo, "composto")
+  caps <- vapply(r$body$capitulos, `[[`, character(1), "id")
+  expect_true("ideb_escolas" %in% caps)
+  expect_true("minha_escola" %in% caps)
+  expect_equal(r$body$secoes[[1]]$id, "resumo")
+  expect_null(r$body$secoes[[1]]$capitulo)
+  meio <- r$body$secoes[-c(1, length(r$body$secoes))]
+  expect_true(all(vapply(meio, function(s) s$capitulo %in% caps, logical(1))))
+  # `capitulos` é sempre lista JSON (mesmo com um capítulo)
+  expect_true(is.list(r$body$capitulos))
+
+  # Campinas: capítulos territoriais, sem a escola (em Ubatuba)
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"municipio","codigo":"3509502"},"assistente":"eda_municipio","contexto":{"cod_inep":"35038751"}}')
+  expect_equal(r$status, 200)
+  expect_equal(vapply(r$body$capitulos, `[[`, character(1), "id"),
+               c("redes_territorio", "docentes_territorio", "ideb_territorio", "ideb_escolas"))
+
+  # nível fora do assistente, assistente desconhecido → 400
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"SP"},"assistente":"eda_municipio"}')
+  expect_equal(r$status, 400)
+  expect_match(r$body$error, "não está disponível para o nível uf")
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"SP"},"tema":"ideb_territorio","assistente":"xyz"}')
+  expect_equal(r$status, 400)
+})
+
+test_that("POST /report composto: todos os capítulos sem fonte → 500; um capítulo → aviso", {
+  pr <- report_router(fail = "municipios")
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"municipio","codigo":"3509502"},"assistente":"eda_municipio"}')
+  expect_equal(r$status, 500)
+  expect_equal(r$body$tipo, "internal")
+
+  pr <- report_router(fail = "redes_municipio")
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"municipio","codigo":"3509502"},"assistente":"eda_municipio"}')
+  expect_equal(r$status, 200)
+  tipos <- vapply(r$body$avisos, `[[`, character(1), "tipo")
+  expect_true("capitulo" %in% tipos)
+  expect_false("redes_territorio" %in% vapply(r$body$capitulos, `[[`, character(1), "id"))
+})
+
+test_that("POST /report com o terceiro assistente (só YAML de teste)", {
+  old <- options(edumapsAnalytics.assistentes_dirs = testthat::test_path("assistentes"))
+  on.exit(options(old), add = TRUE)
+  pr <- report_router()
+  r <- call_api(pr, "GET", "/report/assistentes")
+  expect_true("panorama_uf" %in% vapply(r$body$assistentes, `[[`, character(1), "id"))
+  r <- call_api(pr, "POST", "/report", body = '{"geotag":{"nivel":"uf","codigo":"SP"},"assistente":"panorama_uf","contexto":{"cod_inep":"35038751"}}')
+  expect_equal(r$status, 200)
+  expect_equal(r$body$assistente$id, "panorama_uf")
+  expect_length(r$body$capitulos, 4)
 })

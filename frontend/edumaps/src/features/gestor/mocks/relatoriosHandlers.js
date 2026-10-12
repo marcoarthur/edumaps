@@ -2,6 +2,8 @@
 // MSW do Assistente de Relatório (issue #219; salvos na fase 3): recorte-padrão, temas por
 // nível, POST de geração (202 {job_id}) e o job, que passa por
 // inactive → active → finished (ou failed) a cada consulta.
+// Fase 4: assistentes (`relatorio` no modo tema e `eda_municipio` no modo
+// composto), `?assistente` nos temas e `assistente` no POST e nos salvos.
 import { http, HttpResponse } from "msw";
 import { SESSION_TOKEN } from "./fixtures.js";
 import {
@@ -10,6 +12,8 @@ import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_LLM_INDISPONIVEL_FIXTURE,
   RELATORIOS_POR_TEMA_FIXTURE,
+  ASSISTENTES_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "./relatoriosFixtures.js";
 
 const BASE = "/api/gestor/:cod_inep/relatorios";
@@ -56,6 +60,13 @@ function resumoSalvo(s) {
   return resumo;
 }
 
+const assistentePorId = (id) => ASSISTENTES_FIXTURE.find((a) => a.id === (id || "relatorio")) ?? null;
+
+function assistenteResumo(id) {
+  const a = assistentePorId(id) ?? assistentePorId("relatorio");
+  return { id: a.id, titulo: a.titulo };
+}
+
 function criarSalvo({ jobId, pedido, relatorio, salvoEm }) {
   const { cache_hit, ...conteudo } = relatorio ?? {};
   const salvo = {
@@ -63,6 +74,7 @@ function criarSalvo({ jobId, pedido, relatorio, salvoEm }) {
     job_id: jobId,
     titulo: conteudo.titulo,
     tema: { id: pedido?.tema ?? conteudo.tema?.id, titulo: conteudo.tema?.titulo },
+    assistente: assistenteResumo(pedido?.assistente ?? conteudo.assistente?.id),
     recorte: {
       nivel: pedido?.geotag?.nivel ?? conteudo.recorte?.nivel,
       codigo: String(pedido?.geotag?.codigo ?? conteudo.recorte?.codigo ?? ""),
@@ -90,6 +102,7 @@ export function semearSalvosMock(itens = []) {
         geotag: { nivel: item.relatorio?.recorte?.nivel, codigo: item.relatorio?.recorte?.codigo },
         tema: item.relatorio?.tema?.id,
         opcoes: item.opcoes ?? {},
+        ...(item.relatorio?.assistente?.id ? { assistente: item.relatorio.assistente.id } : {}),
       },
       relatorio: item.relatorio,
       salvoEm: item.salvoEm,
@@ -122,6 +135,9 @@ const erro404 = (msg) => HttpResponse.json({ error: msg }, { status: 404 });
 /** Resultado final do job (o mesmo que o GET do job devolve ao terminar). */
 function resultadoJob(job) {
   const c = job.config;
+  if (job.pedido?.assistente === "eda_municipio") {
+    return { ...RELATORIO_EDA_FIXTURE, cache_hit: !!c.cacheHit };
+  }
   const base = c.llmIndisponivel
     ? RELATORIO_LLM_INDISPONIVEL_FIXTURE
     : (RELATORIOS_POR_TEMA_FIXTURE[job.pedido?.tema] ?? RELATORIO_RESULT_FIXTURE);
@@ -137,10 +153,20 @@ export const gestorRelatoriosHandlers = [
     });
   }),
 
+  http.get(`${BASE}/assistentes`, ({ request }) => {
+    if (naoAutorizado(request)) return erro401();
+    return HttpResponse.json({ assistentes: ASSISTENTES_FIXTURE });
+  }),
+
   http.get(`${BASE}/temas`, ({ request }) => {
     if (naoAutorizado(request)) return erro401();
-    const nivel = new URL(request.url).searchParams.get("nivel");
-    const temas = nivel ? TEMAS_FIXTURE.filter((t) => t.niveis.includes(nivel)) : TEMAS_FIXTURE;
+    const q = new URL(request.url).searchParams;
+    const nivel = q.get("nivel");
+    const a = assistentePorId(q.get("assistente"));
+    if (!a) return erro400("Assistente desconhecido.");
+    const ids = a.modo === "composto" ? a.capitulos.map((c) => c.tema) : a.temas;
+    const doAssistente = TEMAS_FIXTURE.filter((t) => ids.includes(t.id));
+    const temas = nivel ? doAssistente.filter((t) => t.niveis.includes(nivel)) : doAssistente;
     return HttpResponse.json({ temas });
   }),
 
@@ -154,9 +180,14 @@ export const gestorRelatoriosHandlers = [
     if (geotag.nivel === "escola" && String(geotag.codigo) !== String(params.cod_inep)) {
       return erro400("Só é possível gerar relatório da sua escola.");
     }
-    const def = TEMAS_FIXTURE.find((t) => t.id === tema);
-    if (!def || !def.niveis.includes(geotag.nivel)) {
-      return erro400("Tema indisponível para este nível.");
+    const a = assistentePorId(body?.assistente);
+    if (!a) return erro400("Assistente desconhecido.");
+    if (!a.niveis.includes(geotag.nivel)) return erro400("Assistente indisponível para este nível.");
+    if (a.modo !== "composto") {
+      const def = TEMAS_FIXTURE.find((t) => t.id === tema);
+      if (!def || !def.niveis.includes(geotag.nivel)) {
+        return erro400("Tema indisponível para este nível.");
+      }
     }
     const id = proximoJob++;
     jobs.set(id, { id, consultas: 0, config: { ...config }, pedido: body });

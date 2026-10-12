@@ -5,6 +5,10 @@
   // não esteve disponível, as seções por tipo e o rodapé com fontes e avisos.
   // Tipos de seção desconhecidos são ignorados (compatibilidade). O aviso
   // `associacao` (fase 2) sai em destaque no topo: associação não é causa.
+  // Fase 4 (modo composto): com `capitulos`, um sumário com âncoras no topo e
+  // as seções agrupadas por capítulo (h2 por capítulo, seções em h3), com as
+  // seções gerais antes (resumo) e depois (leitura); na impressão cada
+  // capítulo começa numa página nova. Sem `capitulos`, igual às Fases 1–3.
   import SecaoTexto from "./SecaoTexto.svelte";
   import SecaoIndicadores from "./SecaoIndicadores.svelte";
   import SecaoTabela from "./SecaoTabela.svelte";
@@ -12,6 +16,7 @@
   import SecaoAssociacoes from "./SecaoAssociacoes.svelte";
   import { formatarValor } from "../../utils/relatorioFormatos.js";
   import { baixarMarkdown } from "../../utils/relatorioMarkdown.js";
+  import { agruparPorCapitulo, ancoraCapitulo } from "../../utils/relatorioCapitulos.js";
   import { ApiError } from "@/shared/api/client.js";
 
   /**
@@ -80,6 +85,7 @@
     "px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   const secoes = $derived((relatorio?.secoes ?? []).filter((s) => s && typeof s === "object"));
+  const grupos = $derived(agruparPorCapitulo(relatorio));
   const fontes = $derived(relatorio?.fontes ?? []);
   const todosAvisos = $derived(relatorio?.avisos ?? []);
   const avisosAssociacao = $derived(todosAvisos.filter((a) => a?.tipo === "associacao"));
@@ -177,19 +183,64 @@
     </div>
   {/if}
 
-  {#each secoes as secao, i (i)}
+  {#snippet umaSecao(secao, nivelTitulo)}
     {#if secao.tipo === "texto"}
-      <SecaoTexto {secao} />
+      <SecaoTexto {secao} {nivelTitulo} />
     {:else if secao.tipo === "indicadores"}
-      <SecaoIndicadores {secao} />
+      <SecaoIndicadores {secao} {nivelTitulo} />
     {:else if secao.tipo === "tabela"}
       <SecaoTabela {secao} />
     {:else if secao.tipo === "grafico"}
       <SecaoGrafico {secao} />
     {:else if secao.tipo === "associacoes"}
-      <SecaoAssociacoes {secao} />
+      <SecaoAssociacoes {secao} {nivelTitulo} />
     {/if}
-  {/each}
+  {/snippet}
+
+  {#if grupos}
+    <nav
+      class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm print:bg-white"
+      aria-labelledby="relatorio-sumario"
+      data-testid="relatorio-sumario"
+    >
+      <h2 id="relatorio-sumario" class="font-semibold text-gray-900">Sumário</h2>
+      <ol class="mt-2 list-decimal pl-5 space-y-1">
+        {#each grupos.capitulos as c (c.id)}
+          <li><a href="#{ancoraCapitulo(c.id)}" class="text-blue-700 hover:underline">{c.titulo}</a></li>
+        {/each}
+      </ol>
+    </nav>
+
+    {#each grupos.antes as secao, i (i)}
+      {@render umaSecao(secao, 2)}
+    {/each}
+
+    {#each grupos.capitulos as c (c.id)}
+      {@const ancora = ancoraCapitulo(c.id)}
+      <section
+        id={ancora}
+        class="space-y-6 scroll-mt-4 print:break-before-page"
+        aria-labelledby="{ancora}-titulo"
+        data-testid="relatorio-capitulo"
+      >
+        <h2 id="{ancora}-titulo" class="text-xl font-bold text-gray-900 border-b border-gray-200 pb-1">{c.titulo}</h2>
+        {#each c.secoes as secao, i (i)}
+          <!-- ids das seções prefixados pelo capítulo: capítulos podem repetir ids -->
+          {@render umaSecao({ ...secao, id: `${c.id}-${secao.id ?? i}` }, 3)}
+        {:else}
+          <p class="text-sm text-gray-500">Sem dados neste capítulo.</p>
+        {/each}
+      </section>
+    {/each}
+
+    {#each grupos.depois as secao, i (i)}
+      {@render umaSecao(secao, 2)}
+    {/each}
+  {:else}
+    {#each secoes as secao, i (i)}
+      {@render umaSecao(secao, 2)}
+    {/each}
+  {/if}
 
   <footer class="border-t border-gray-200 pt-4 space-y-4 text-sm">
     {#if fontes.length}
