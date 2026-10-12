@@ -279,3 +279,120 @@ Onda 2: e2e em dev, docs funcionais, nota técnica e PR.
   - um filtro por município nas ferramentas do eduBR eliminaria as fatias
     (achado para o mantenedor do eduBR).
 - **Docs:** capacidade nova `analise/relatorios-territorio.md` e o índice.
+
+---
+
+# Fase 2 — Aprofundamento
+
+- **Branch:** `feat/relatorio-fase2`.
+- **Trilhas:** T-R (`analysis/edumapsr/`) e T-F (`frontend/`). O Perl não
+  muda: o catálogo vem do R e as rotas existentes já cobrem os temas novos.
+
+## Decisões (developer, 2026-10-12)
+
+1. **Temas:** IDEB escola a escola, Infraestrutura × IDEB, Histórico da minha
+   escola e Escolas parecidas com a minha.
+2. **Regressão com especificação fixa por tema:** o gestor escolhe só a UF, a
+   etapa e a rede.
+3. **Leitura da regressão:** simplificada e visível; a parte técnica
+   (coeficientes, erros, p-valores, R², n) fica recolhida.
+
+## Contrato da Fase 2 (congelado)
+
+### Ferramentas
+
+- As ferramentas dos temas da escola (`serie_ideb_escola`, `scores_escola`,
+  `resumo_escola`, `escolas_similares`) são só da `gestora-escolar` no eduBR.
+  Por isso o adapter monta as ferramentas com `persona = NULL` e escolhe por
+  nome: é o **complemento B** do plano.
+- O system prompt do LLM continua com a persona pesquisadora e o complemento.
+
+### Temas novos (`profundidade`)
+
+| id | Título | Níveis | Ferramentas (roteiro) | Opções | Profundidade |
+|---|---|---|---|---|---|
+| `ideb_escolas` | IDEB escola a escola | municipio | `municipios` (nome pelo código) + `ideb` (UF + nome do município, edição 2023) | `etapa`*, `rede` | profunda |
+| `infraestrutura_ideb` | Infraestrutura e IDEB | uf | `regressao_escolas` (especificação fixa abaixo) | `etapa`* (→ desfecho `ideb_fund_i`/`ideb_fund_ii`/`ideb_medio`), `rede` | profunda |
+| `historico_escola` | Histórico da minha escola | escola | `serie_ideb_escola` + `scores_escola` (+ `resumo_escola` se útil) | — | descritiva |
+| `escolas_parecidas` | Escolas parecidas com a minha | escola | `escolas_similares` (n = 10, `publica` = true) | `etapa` (opcional) | descritiva |
+
+**Especificação fixa** do `infraestrutura_ideb`:
+- desfecho: IDEB 2023 da etapa;
+- preditores: `in_biblioteca`, `in_internet`, `in_laboratorio_informatica`,
+  `docentes`, `matriculas`;
+- `cuts = "localizacao"`;
+- modelo linear;
+- só escolas ativas.
+
+A T-R confere no eduBR que esses nomes existem e ajusta, **reportando**
+qualquer mudança. Os rótulos ao gestor ficam em pt-BR (ex.: "Biblioteca",
+"Internet", "Laboratório de informática", "Nº de professores",
+"Nº de matrículas").
+
+### Extensões do ReportResult (todas opcionais e retrocompatíveis)
+
+- **Seção nova `associacoes`** (leitura simplificada da regressão):
+  ```json
+  { "id": "associacoes", "tipo": "associacoes", "titulo": "O que anda junto com o IDEB",
+    "itens": [ { "rotulo": "Biblioteca", "corte": "Urbana", "direcao": "maior",
+                 "seguranca": "alta", "n": 8123 } ],
+    "nota": "Associação, não causa: ..." }
+  ```
+  - `direcao` ∈ `maior | menor | sem_relacao_clara` (sinal da estimativa;
+    `sem_relacao_clara` quando p ≥ 0,05);
+  - `seguranca` ∈ `alta` (p < 0,01) | `media` (p < 0,05) | `baixa`;
+  - `corte` é opcional.
+- **Seção `tabela` com `"recolhida": true`:** o frontend a mostra dentro de
+  `<details>` ("Ver detalhes técnicos"). É usada para coeficientes e métricas.
+- **Linha de `tabela` com `"_destaque": true`:** o frontend destaca a linha,
+  por exemplo a escola do gestor na lista do `ideb_escolas`. Essa chave não é
+  coluna.
+- **Aviso fixo `{tipo: "associacao"}`** em todo relatório de regressão.
+
+### Regras
+
+- **`ideb_escolas`:**
+  - lista as escolas do município com o IDEB da etapa (nome, rede, IDEB),
+    ordenadas por IDEB;
+  - indicadores: escolas com nota, mediana e intervalo (mínimo e máximo),
+    calculados de forma **determinística** no R;
+  - quando a escola do gestor (`contexto.cod_inep`) está na lista, a linha
+    leva `_destaque` e um indicador mostra a posição dela ("3ª de 21");
+  - gráfico de barras por faixa de IDEB.
+- **`infraestrutura_ideb`:**
+  - resumo;
+  - `associacoes`;
+  - tabela recolhida de coeficientes (termo, estimativa, erro, p-valor, corte);
+  - tabela recolhida de métricas por corte (n, R², R² ajustado);
+  - fontes com `n`.
+- **`historico_escola`:** gráfico de linhas do IDEB por edição e etapa,
+  indicadores dos scores (0–10) e tabela da série.
+- **`escolas_parecidas`:** tabela das escolas (nome, município/UF, rede); a
+  similaridade entra se a ferramenta devolver.
+- **LLM:**
+  - recebe os dados já arredondados, como na Fase 1;
+  - nos temas `profunda`, o complemento do prompt reforça "associação, não
+    causa", "cite o n" e "não ranqueie como julgamento de qualidade";
+  - na lista de escolas, o LLM **não** cita nomes de escolas, salvo a do
+    próprio gestor.
+- **Sem PII:** só nomes e códigos de escola (dado institucional) e
+  agregados.
+
+### Frontend
+
+- `SecaoAssociacoes`: cartões ou lista com seta/ícone de direção, selo de
+  segurança (alta/média/baixa) com texto, corte e n, e a `nota`.
+- `SecaoTabela`: suporta `recolhida` (`<details>`) e `_destaque` (linha
+  realçada e acessível, com sufixo "(sua escola)" para leitores de tela).
+- Tipos de seção desconhecidos são ignorados sem quebrar a tela
+  (compatibilidade).
+- Os temas novos aparecem pelo catálogo; nenhuma mudança de rota.
+
+## WBS (Fase 2)
+
+| ID | Trilha | Escopo | Status |
+|----|--------|--------|--------|
+| R5 | T-R | Complemento B no adapter + 4 roteiros + seções novas + catálogo com `profundidade` | ⚪ |
+| R6 | T-R | Regras de prompt dos temas profundos + testes (ferramentas falsas) + integração real no `analytic` | ⚪ |
+| F2 | T-F | `SecaoAssociacoes`, tabela `recolhida`/`_destaque`, tipos desconhecidos tolerados + fixtures + testes | ⚪ |
+| C2 | coord. | Verificação, deploy, e2e, docs, PR | ⚪ |
