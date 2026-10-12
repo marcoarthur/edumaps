@@ -8,13 +8,17 @@
 //   - gestão  /api/gestor/:cod_inep/canais/listas  (Bearer SESSION_TOKEN + posse)
 //   - público /api/canais/inscricao/:token         (sem auth; capability = token)
 //   - público /api/canais/confirmacao/:ref[/whatsapp|/email[/verificar]] (capability = ref)
-//   - público /api/canais/consentimento             (texto vigente)
+//   - público /api/canais/consentimento             (texto vigente + retencao)
+//   - público /api/canais/exclusao/:token           (onda 2: exclusão pelo titular)
+//   - gestão  DELETE /listas/:id/membros/:membro_id e GET /canais/exclusoes (onda 2)
 //
 // Helpers de teste: `ultimaRefConfirmacao()` devolve a última ref emitida e
 // `confirmarRefMock(ref, via)` simula a confirmação fora da página (Telegram);
 // `setCanaisConfirmacaoMock([...])` escolhe os canais disponíveis;
 // `setEmailDisponivelMock(bool)` liga/desliga o canal e-mail (SMTP configurado);
-// `setConsentimentoVigenteMock({versao, texto})` publica outra versão.
+// `setConsentimentoVigenteMock({versao, texto})` publica outra versão;
+// `setRetencaoPublicaMock({...})` muda os prazos expostos no consentimento;
+// `getExclusoesMock(inep)` devolve o histórico de exclusões em memória.
 //
 // O estado é em memória por escola para as páginas criarem/rotacionarem QR sem
 // recarregar. `resetCanaisMockState()` volta tudo ao fixture inicial (chamar no
@@ -26,6 +30,11 @@ import {
   COLETAS_VALIDAS,
   CONSENTIMENTO_VIGENTE,
   EMAIL_CODIGO_MOCK,
+  EXCLUSAO_TOKEN_JA_EXCLUIDO,
+  EXCLUSAO_TOKEN_LIMITE,
+  EXCLUSAO_TOKEN_VALIDO,
+  EXCLUSOES_FIXTURE,
+  RETENCAO_PUBLICA,
   INSCRICAO_TOKEN_AMBOS,
   INSCRICAO_TOKEN_EMAIL,
   INSCRICAO_TOKEN_QUALQUER,
@@ -47,13 +56,19 @@ const BASE = "/api/gestor/:cod_inep/canais/listas";
 const PUBLICO = "/api/canais/inscricao/:token";
 const CONFIRMACAO = "/api/canais/confirmacao/:ref";
 const CONSENTIMENTO = "/api/canais/consentimento";
+const EXCLUSAO = "/api/canais/exclusao/:token";
+const EXCLUSOES = "/api/gestor/:cod_inep/canais/exclusoes";
 
 // Origem pública (no dev a SPA roda em 5173). O backend real monta a URL a
 // partir de $PUBLIC_BASE_URL.
 const PUBLIC_BASE = "http://localhost:5173";
 const publicUrl = (token) => `${PUBLIC_BASE}/inscricao/${token}`;
-const exclusaoUrl = () =>
-  `${PUBLIC_BASE}/privacidade/exclusao/${crypto.randomUUID().replace(/-/g, "")}`;
+// Gera o token de exclusão da inscrição e o registra (onda 2 consome).
+function exclusaoUrl(inep, listaId, contatoId) {
+  const token = crypto.randomUUID().replace(/-/g, "");
+  exclusaoTokens.set(token, { cod_inep: inep, lista_id: listaId, contato_id: contatoId, excluido: false });
+  return `${PUBLIC_BASE}/privacidade/exclusao/${token}`;
+}
 
 // ---------------------------------------------------------------------------
 // estado em memória
@@ -69,6 +84,9 @@ const CANAIS_PADRAO = ["telegram", "whatsapp"];
 let canaisDisponiveis = [...CANAIS_PADRAO];
 let emailDisponivel = true;
 let consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
+let retencaoPublica = { ...RETENCAO_PUBLICA };
+// token de exclusão -> { cod_inep, lista_id, contato_id, excluido }
+const exclusaoTokens = new Map();
 
 function baseState() {
   const listas = LISTAS_CANAIS_FIXTURE.map((l) => ({ ...l }));
@@ -76,7 +94,13 @@ function baseState() {
   for (const [id, rows] of Object.entries(MEMBROS_CANAIS_FIXTURE)) {
     membros[id] = rows.map((m) => ({ ...m }));
   }
-  return { listas, membros, proximos: { lista: 100, membro: 1000, contato: 2000 } };
+  const exclusoes = EXCLUSOES_FIXTURE.map((e) => ({ ...e }));
+  return {
+    listas,
+    membros,
+    exclusoes,
+    proximos: { lista: 100, membro: 1000, contato: 2000, exclusao: 100 },
+  };
 }
 
 function estadoFor(inep) {
@@ -133,6 +157,26 @@ function semearTokens() {
       status: "ativo",
     });
   }
+  exclusaoTokens.clear();
+  exclusaoTokens.set(EXCLUSAO_TOKEN_VALIDO, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 101,
+    excluido: false,
+  });
+  exclusaoTokens.set(EXCLUSAO_TOKEN_JA_EXCLUIDO, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 199,
+    excluido: true,
+  });
+  exclusaoTokens.set(EXCLUSAO_TOKEN_LIMITE, {
+    cod_inep: INEP_CANAIS,
+    lista_id: 1,
+    contato_id: 102,
+    excluido: false,
+    limite: true,
+  });
   tokens.set(INSCRICAO_TOKEN_LIMITE, {
     lista_id: 1,
     cod_inep: INEP_CANAIS,
@@ -152,6 +196,17 @@ export function resetCanaisMockState() {
   canaisDisponiveis = [...CANAIS_PADRAO];
   emailDisponivel = true;
   consentimentoVigente = { ...CONSENTIMENTO_VIGENTE };
+  retencaoPublica = { ...RETENCAO_PUBLICA };
+}
+
+/** Muda os prazos de retenção expostos em GET /api/canais/consentimento. */
+export function setRetencaoPublicaMock(retencao) {
+  retencaoPublica = { ...retencaoPublica, ...retencao };
+}
+
+/** Histórico de exclusões em memória da escola (para asserções). */
+export function getExclusoesMock(inep = INEP_CANAIS) {
+  return estadoFor(String(inep)).exclusoes.map((e) => ({ ...e }));
 }
 
 /** Liga/desliga o canal e-mail (canais.email.enabled + smtp_host + from). */
@@ -368,6 +423,43 @@ function tokenIndisponivel(entry) {
     return HttpResponse.json({ error: "Link expirado ou revogado." }, { status: 410 });
   }
   return null;
+}
+
+// Anonimização (RF-206): remove o contato de TODAS as listas da escola,
+// invalida as refs e registra a exclusão sem dados pessoais.
+function anonimizarContato(inep, contatoId, { origem, motivo = null, gestor_id = null }) {
+  const estab = estadoFor(inep);
+  let membros = 0;
+  for (const [listaId, rows] of Object.entries(estab.membros)) {
+    const restantes = rows.filter((m) => m.contato_id !== contatoId);
+    const removidos = rows.length - restantes.length;
+    if (removidos > 0) {
+      membros += removidos;
+      for (const m of rows) {
+        if (m.contato_id !== contatoId) continue;
+        for (const [r, e] of refs) if (e.membro_id === m.id) refs.delete(r);
+      }
+      estab.membros[listaId] = restantes;
+      const lista = estab.listas.find((l) => l.id === Number(listaId));
+      if (lista) lista.n_membros = restantes.length;
+    }
+  }
+  for (const entry of exclusaoTokens.values()) {
+    if (entry.cod_inep === inep && entry.contato_id === contatoId) entry.excluido = true;
+  }
+  const registro = {
+    id: estab.proximos.exclusao++,
+    origem,
+    regra: null,
+    motivo: motivo || null,
+    gestor_id,
+    contatos: 1,
+    inscricoes: membros,
+    membros,
+    created_at: new Date().toISOString(),
+  };
+  estab.exclusoes.unshift(registro);
+  return registro;
 }
 
 // ---------------------------------------------------------------------------
@@ -653,9 +745,8 @@ export const gestorCanaisHandlers = [
 
     entry.usos += 1;
     const exige = Boolean(lista?.exige_confirmacao);
-    const exclusao_url = exclusaoUrl();
-
     if (existente) {
+      const exclusao_url = exclusaoUrl(entry.cod_inep, entry.lista_id, existente.contato_id);
       if (!exige) return HttpResponse.json({ ok: 1, duplicado: 1, exclusao_url }, { status: 201 });
       const confirmacao =
         estadoMembro(lista, existente) === "confirmado"
@@ -680,6 +771,7 @@ export const gestorCanaisHandlers = [
       consentimento_versao: consentimentoVigente.versao,
     };
     membros.push(novo);
+    const exclusao_url = exclusaoUrl(entry.cod_inep, entry.lista_id, novo.contato_id);
     if (lista) lista.n_membros = membros.length;
     if (!exige) return HttpResponse.json({ ok: 1, exclusao_url }, { status: 201 });
     const confirmacao = abrirRef(entry.cod_inep, entry.lista_id, novo.id);
@@ -770,7 +862,68 @@ export const gestorCanaisHandlers = [
   }),
 
   // ------------------------ consentimento vigente (#214) ------------------
-  http.get(CONSENTIMENTO, () => HttpResponse.json({ ...consentimentoVigente })),
+  http.get(CONSENTIMENTO, () =>
+    HttpResponse.json({ ...consentimentoVigente, retencao: { ...retencaoPublica } }),
+  ),
+
+  // ---------------------- exclusão pelo titular (#214, onda 2) -------------
+  http.get(EXCLUSAO, ({ params }) => {
+    const entry = exclusaoTokens.get(params.token);
+    if (!entry) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    const lista = listaDe(entry.cod_inep, entry.lista_id);
+    return HttpResponse.json({
+      escola_nome: CANAIS_ESCOLA_NOME,
+      lista_nome: lista?.nome ?? "Lista removida",
+      ja_excluido: entry.excluido,
+    });
+  }),
+
+  http.post(EXCLUSAO, async ({ request, params }) => {
+    const entry = exclusaoTokens.get(params.token);
+    if (!entry) return HttpResponse.json({ error: "Link inválido." }, { status: 404 });
+    if (entry.limite) {
+      return HttpResponse.json({ error: "Muitas tentativas. Aguarde um instante." }, { status: 429 });
+    }
+    const body = await request.json().catch(() => ({}));
+    if (body?.confirmar !== true) {
+      return HttpResponse.json({ error: "Confirme a exclusão." }, { status: 400 });
+    }
+    if (entry.excluido) return HttpResponse.json({ ok: 1, ja_excluido: true });
+    anonimizarContato(entry.cod_inep, entry.contato_id, { origem: "titular" });
+    return HttpResponse.json({ ok: 1, ja_excluido: false });
+  }),
+
+  // ---------------------- exclusão pelo gestor (#214, onda 2) --------------
+  http.delete(`${BASE}/:id/membros/:membro_id`, async ({ request, params }) => {
+    const denied = negarAuth(request) ?? negarPosse(params);
+    if (denied) return denied;
+    const lista = listaDe(params.cod_inep, params.id);
+    const membro = (estadoFor(params.cod_inep).membros[params.id] ?? []).find(
+      (m) => m.id === Number(params.membro_id),
+    );
+    if (!lista || !membro) {
+      return HttpResponse.json({ error: "Inscrito não encontrado." }, { status: 404 });
+    }
+    const texto = await request.text();
+    let body = {};
+    try {
+      body = texto ? JSON.parse(texto) : {};
+    } catch {
+      body = {};
+    }
+    const r = anonimizarContato(params.cod_inep, membro.contato_id, {
+      origem: "gestor",
+      motivo: body?.motivo ?? null,
+      gestor_id: 7,
+    });
+    return HttpResponse.json({ ok: 1, contatos: r.contatos, inscricoes: r.inscricoes, membros: r.membros });
+  }),
+
+  http.get(EXCLUSOES, ({ request, params }) => {
+    const denied = negarAuth(request) ?? negarPosse(params);
+    if (denied) return denied;
+    return HttpResponse.json(estadoFor(params.cod_inep).exclusoes.slice(0, 200));
+  }),
 ];
 
 export { PUBLIC_BASE };

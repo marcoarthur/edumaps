@@ -4,12 +4,14 @@
   // cartões empilhados em telas estreitas e tabela em telas largas.
   // Issue #214: conforme a `coleta` da lista, mostra telefone e/ou e-mail, o
   // estado de cada contato e o estado geral (inclui `parcial`).
-  /** @type {{membros?: Array, carregando?: boolean, mensagemVazia?: string, coleta?: string}} */
+  // Onda 2: com `onRemover`, cada linha ganha a ação "Remover inscrito".
+  /** @type {{membros?: Array, carregando?: boolean, mensagemVazia?: string, coleta?: string, onRemover?: ((membro: object) => void)|null}} */
   let {
     membros = [],
     carregando = false,
     mensagemVazia = "Ninguém se inscreveu ainda. Compartilhe o QR ou o link.",
     coleta = "telefone",
+    onRemover = null,
   } = $props();
 
   const mostraTelefone = $derived(coleta !== "email");
@@ -77,6 +79,9 @@
           <th class="text-left font-medium px-4 py-2">Quando</th>
           <th class="text-left font-medium px-4 py-2">Estado</th>
           <th class="text-left font-medium px-4 py-2">Status</th>
+          {#if onRemover}
+            <th class="text-left font-medium px-4 py-2"><span class="sr-only">Ações</span></th>
+          {/if}
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
@@ -118,6 +123,16 @@
                 <span class="inline-block ml-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase">conflito</span>
               {/if}
             </td>
+            {#if onRemover}
+              <td class="block sm:table-cell px-4 pb-3 sm:py-2 sm:text-right">
+                <button
+                  type="button"
+                  aria-label={`Remover inscrito ${m.nome}`}
+                  onclick={() => onRemover(m)}
+                  class="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors"
+                >Remover</button>
+              </td>
+            {/if}
           </tr>
         {/each}
       </tbody>

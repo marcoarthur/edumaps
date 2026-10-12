@@ -5,7 +5,9 @@ import { setApiToken } from "@/shared/api/client.js";
 import { setSessaoToken } from "../utils/gestorSession.js";
 import { addToast } from "@/shared/stores/toastStore.js";
 import { SESSION_TOKEN } from "../mocks/fixtures.js";
-import { resetCanaisMockState } from "../mocks/canaisHandlers.js";
+import { resetCanaisMockState, getExclusoesMock } from "../mocks/canaisHandlers.js";
+import { server } from "../../../mocks/server.js";
+import { http, HttpResponse } from "msw";
 import ListasPage from "./ListasPage.svelte";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
@@ -324,6 +326,130 @@ describe("ListasPage", () => {
       await fireEvent.click(screen.getByRole("button", { name: "Gerar QR code" }));
       await waitFor(() => expect(addToast).toHaveBeenCalledWith("QR code gerado.", "success"));
       expect(await screen.findByTestId("qr-usos")).toHaveTextContent("0 / 3");
+    });
+  });
+  describe("exclusão: remover inscrito e histórico (#214, onda 2)", () => {
+    async function abrir(nome) {
+      render(ListasPage);
+      await screen.findByText(nome);
+      await fireEvent.click(screen.getByRole("button", { name: `Ver inscrições de ${nome}` }));
+      await screen.findAllByTestId("membro-row");
+    }
+
+    it("mostra o histórico de exclusões da escola (origem, regra/motivo, contagens)", async () => {
+      render(ListasPage);
+      const linhas = await screen.findAllByTestId("exclusao-row");
+      expect(linhas).toHaveLength(3);
+      const origens = screen.getAllByTestId("exclusao-origem").map((td) => td.textContent.trim());
+      expect(origens).toEqual(["Titular", "Retenção", "Gestor"]);
+      const detalhes = screen.getAllByTestId("exclusao-detalhe").map((td) => td.textContent.trim());
+      expect(detalhes[1]).toBe("Inscrições nunca confirmadas");
+      expect(detalhes[2]).toBe("Pedido feito na secretaria");
+      expect(screen.getAllByTestId("exclusao-inscricoes")[2]).toHaveTextContent("2");
+    });
+
+    it("histórico vazio mostra mensagem amigável", async () => {
+      server.use(http.get("/api/gestor/:cod_inep/canais/exclusoes", () => HttpResponse.json([])));
+      render(ListasPage);
+      expect(await screen.findByText("Nenhuma exclusão registrada até agora.")).toBeInTheDocument();
+    });
+
+    it("remove um inscrito com motivo: DELETE, recarrega membros e histórico", async () => {
+      let corpo = null;
+      const ouvir = async ({ request }) => {
+        if (request.method === "DELETE" && request.url.includes("/membros/")) {
+          corpo = await request.clone().json();
+        }
+      };
+      server.events.on("request:start", ouvir);
+      await abrir("Responsáveis 6ºA");
+
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito João Pai" }));
+      const dialogo = screen.getByRole("alertdialog", { name: "Remover inscrito" });
+      expect(dialogo).toHaveAccessibleDescription(/João Pai.*todas as listas desta escola/);
+      const motivo = screen.getByRole("textbox", { name: /Motivo/ });
+      expect(motivo).toHaveFocus();
+      await fireEvent.input(motivo, { target: { value: "Pedido na secretaria" } });
+      await fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+
+      await waitFor(() =>
+        expect(addToast).toHaveBeenCalledWith(
+          expect.stringMatching(/^Inscrito removido/),
+          "success",
+        ),
+      );
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(corpo).toEqual({ motivo: "Pedido na secretaria" });
+      await waitFor(() => expect(screen.queryByText("João Pai")).not.toBeInTheDocument());
+      expect(screen.getAllByTestId("membro-row")).toHaveLength(1);
+      await waitFor(() => expect(screen.getAllByTestId("exclusao-row")).toHaveLength(4));
+      expect(screen.getAllByTestId("exclusao-detalhe")[0]).toHaveTextContent("Pedido na secretaria");
+      expect(getExclusoesMock()[0]).toMatchObject({ origem: "gestor", motivo: "Pedido na secretaria" });
+      server.events.removeListener("request:start", ouvir);
+    });
+
+    it("sem motivo, o DELETE vai sem corpo", async () => {
+      let temCorpo = null;
+      const ouvir = async ({ request }) => {
+        if (request.method === "DELETE" && request.url.includes("/membros/")) {
+          temCorpo = (await request.clone().text()).length > 0;
+        }
+      };
+      server.events.on("request:start", ouvir);
+      await abrir("Responsáveis 6ºA");
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito Marina Responsável" }));
+      await fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+      await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+      expect(temCorpo).toBe(false);
+      expect(getExclusoesMock()[0]).toMatchObject({ origem: "gestor", motivo: null });
+      server.events.removeListener("request:start", ouvir);
+    });
+
+    it("cancelar (botão ou Escape) não remove", async () => {
+      await abrir("Responsáveis 6ºA");
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito João Pai" }));
+      await fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito João Pai" }));
+      await fireEvent.keyDown(screen.getByRole("alertdialog"), { key: "Escape" });
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(screen.getByText("João Pai")).toBeInTheDocument();
+      expect(getExclusoesMock()).toHaveLength(3);
+    });
+
+    it("404 avisa no diálogo e recarrega a lista", async () => {
+      await abrir("Responsáveis 6ºA");
+      server.use(
+        http.delete("/api/gestor/:cod_inep/canais/listas/:id/membros/:membro_id", () =>
+          HttpResponse.json({ error: "Inscrito não encontrado." }, { status: 404 }),
+        ),
+      );
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito João Pai" }));
+      await fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(/não existe mais/);
+      expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    });
+
+    it("403 avisa no diálogo", async () => {
+      await abrir("Responsáveis 6ºA");
+      server.use(
+        http.delete("/api/gestor/:cod_inep/canais/listas/:id/membros/:membro_id", () =>
+          HttpResponse.json({ error: "Escola fora do seu acesso." }, { status: 403 }),
+        ),
+      );
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito João Pai" }));
+      await fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(/não tem acesso/);
+    });
+
+    it("remover tira o contato de todas as listas da escola (contador atualizado)", async () => {
+      await abrir("Responsáveis 7ºB");
+      await fireEvent.click(screen.getByRole("button", { name: "Remover inscrito Paulo Pendente" }));
+      await fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+      await waitFor(() => expect(screen.queryByText("Paulo Pendente")).not.toBeInTheDocument());
+      const linha = screen.getByText("Responsáveis 7ºB").closest("[data-testid='lista-row']");
+      await waitFor(() => expect(linha.textContent).toContain("1 contato(s)"));
     });
   });
 });

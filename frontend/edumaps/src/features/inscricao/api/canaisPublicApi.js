@@ -68,3 +68,20 @@ export function verificarCodigoEmail(ref, codigo) {
 export function consentimentoVigente() {
   return apiClient.get("/api/canais/consentimento");
 }
+
+// Exclusão a pedido do titular (issue #214, contrato da onda 2). O token é o da
+// `exclusao_url` (32 hex) e funciona mesmo com a autoinscrição desligada.
+//   GET  /api/canais/exclusao/:token → 200 {escola_nome, lista_nome, ja_excluido} · 404
+//   POST /api/canais/exclusao/:token ← {confirmar:true} → 200 {ok, ja_excluido} · 400 · 404 · 429
+//   GET  /api/canais/consentimento   → + retencao {metadados_dias, pendentes_dias, listas_inativas_meses, enabled}
+const EXCLUSAO = (token) => `/api/canais/exclusao/${encodeURIComponent(token)}`;
+
+/** @returns {Promise<{escola_nome: string, lista_nome: string, ja_excluido: boolean|number}>} */
+export function getExclusao(token) {
+  return apiClient.get(EXCLUSAO(token));
+}
+
+/** Confirma a exclusão (idempotente). @returns {Promise<{ok: number, ja_excluido: boolean|number}>} */
+export function confirmarExclusao(token) {
+  return apiClient.post(EXCLUSAO(token), { confirmar: true });
+}

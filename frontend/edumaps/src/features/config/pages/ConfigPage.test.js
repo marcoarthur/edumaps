@@ -6,7 +6,11 @@ import { setApiToken } from "@/shared/api/client.js";
 import { setSessaoToken } from "@/features/gestor/utils/gestorSession.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 import { addToast } from "@/shared/stores/toastStore.js";
-import { resetConfigMockState, getTelegramStatusChamadas } from "../mocks/configHandlers.js";
+import {
+  resetConfigMockState,
+  getTelegramStatusChamadas,
+  getRetencaoStatusChamadas,
+} from "../mocks/configHandlers.js";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -172,5 +176,59 @@ describe("ConfigPage", () => {
 
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Configuração salva.", "success"));
     await waitFor(() => expect(getTelegramStatusChamadas()).toBe(antes + 1));
+  });
+  describe("retenção (LGPD) e consentimento (#214)", () => {
+    it("lista o grupo Retenção (LGPD) com as quatro folhas habilitadas", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      expect(screen.getByText("Retenção (LGPD)")).toBeInTheDocument();
+      for (const label of [
+        "Retenção ativada",
+        "Metadados técnicos (dias)",
+        "Inscrições nunca confirmadas (dias)",
+        "Listas desativadas (meses)",
+      ]) {
+        expect(screen.getByRole("button", { name: `Configurar ${label}` })).not.toHaveTextContent("Em breve");
+      }
+    });
+
+    it("mostra o painel de retenção só nas folhas canais.retencao.*", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      expect(screen.queryByText("Retenção dos dados das listas")).not.toBeInTheDocument();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Metadados técnicos (dias)" }));
+      expect(await screen.findByText("Retenção dos dados das listas")).toBeInTheDocument();
+      expect(await screen.findByTestId("ret-metadados-dias")).toHaveTextContent("90 dias");
+      expect(screen.queryByText("Status do bot público")).not.toBeInTheDocument();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Modo de recebimento" }));
+      await screen.findByText("Status do bot público");
+      expect(screen.queryByText("Retenção dos dados das listas")).not.toBeInTheDocument();
+    });
+
+    it("salvar uma folha de retenção recarrega o painel com o prazo novo", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      await fireEvent.click(screen.getByRole("button", { name: "Configurar Metadados técnicos (dias)" }));
+      await screen.findByTestId("ret-metadados-dias");
+      const antes = getRetencaoStatusChamadas();
+
+      await fireEvent.input(await screen.findByPlaceholderText("90"), { target: { value: "30" } });
+      await fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Configuração salva.", "success"));
+      await waitFor(() => expect(getRetencaoStatusChamadas()).toBe(antes + 1));
+      expect(await screen.findByTestId("ret-metadados-dias")).toHaveTextContent("30 dias");
+    });
+
+    it("tem o link para as versões do consentimento", async () => {
+      render(ConfigPage);
+      await screen.findByText(/Chave ainda não definida/);
+      expect(screen.getByRole("link", { name: "Versões do consentimento" })).toHaveAttribute(
+        "href",
+        "/config/consentimento",
+      );
+    });
   });
 });

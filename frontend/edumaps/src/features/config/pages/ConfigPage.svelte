@@ -14,6 +14,8 @@
   import ConfigArvore from "../components/ConfigArvore.svelte";
   import ConfigEditor from "../components/ConfigEditor.svelte";
   import TelegramPublicoStatus from "../components/TelegramPublicoStatus.svelte";
+  import RetencaoStatus from "../components/RetencaoStatus.svelte";
+  import { link } from "@/app/router.svelte.js";
 
   let carregando = $state(true);
   let precisaLogin = $state(false);
@@ -29,6 +31,9 @@
   let grupoTelegramPublico = $derived(selecionada?.startsWith("canais.telegram.") ?? false);
   // Incrementa ao salvar uma folha do bot público: remonta o painel de status.
   let revisaoTelegram = $state(0);
+  // Folha do grupo "Retenção (LGPD)" → painel de prazos/última execução (#214).
+  let grupoRetencao = $derived(selecionada?.startsWith("canais.retencao.") ?? false);
+  let revisaoRetencao = $state(0);
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && (err.status === 401)) {
@@ -75,6 +80,7 @@
       item = await updateConfigItem(key, valor);
       addToast("Configuração salva.", "success");
       if (key.startsWith("canais.telegram.")) revisaoTelegram += 1;
+      if (key.startsWith("canais.retencao.")) revisaoRetencao += 1;
       await carregarTree();
     } finally {
       salvando = false;
@@ -157,6 +163,14 @@
           Configurações gerais da plataforma, feitas pela administração da instalação.
         </p>
       </div>
+      <div class="flex items-center gap-2">
+      <a
+        href="/config/consentimento"
+        use:link
+        class="px-4 py-2 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-md hover:bg-indigo-50"
+      >
+        Versões do consentimento
+      </a>
       <button
         type="button"
         onclick={sair}
@@ -164,6 +178,7 @@
       >
         Sair
       </button>
+      </div>
     </header>
   {/if}
 
@@ -201,6 +216,11 @@
         {#if grupoTelegramPublico}
           {#key revisaoTelegram}
             <TelegramPublicoStatus />
+          {/key}
+        {/if}
+        {#if grupoRetencao}
+          {#key revisaoRetencao}
+            <RetencaoStatus />
           {/key}
         {/if}
       </section>

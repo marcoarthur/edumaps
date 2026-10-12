@@ -7,11 +7,17 @@ import {
   CONFIG_SAVED_ITEM,
   TELEGRAM_STATUS_POLLING,
   TELEGRAM_WEBHOOK_URL,
+  RETENCAO_STATUS,
+  RETENCAO_JOB_ID,
+  CONSENTIMENTO_VERSOES,
 } from "./configFixtures.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
+import { setConsentimentoVigenteMock } from "@/features/gestor/mocks/canaisHandlers.js";
 
 const BASE = "/api/admin/config";
 const TELEGRAM_BASE = "/api/admin/canais/telegram";
+const RETENCAO_BASE = "/api/admin/canais/retencao";
+const CONSENTIMENTO_BASE = "/api/admin/consentimento/versoes";
 
 // Estado do bot público do Telegram (status + ações admin). Mutável pelos
 // testes via setTelegramMockState / setTelegramMockErro.
@@ -30,6 +36,31 @@ export const setTelegramMockErro = (acao, erro) => {
   telegramErros[acao] = erro;
 };
 export const getTelegramStatusChamadas = () => telegramStatusChamadas;
+
+// Retenção (issue #214): status + execução avulsa. Os prazos refletem as
+// folhas canais.retencao.* gravadas no PUT (outrosState).
+let retencaoState = clone(RETENCAO_STATUS);
+let retencaoErro = null; // { status, error } forçado no POST executar
+let retencaoStatusChamadas = 0;
+export const setRetencaoMockState = (estado) => {
+  retencaoState = clone(estado);
+};
+export const setRetencaoMockErro = (erro) => {
+  retencaoErro = erro;
+};
+export const getRetencaoStatusChamadas = () => retencaoStatusChamadas;
+
+// Versões do consentimento (issue #214): rascunho → vigente → arquivada.
+let versoesState = clone(CONSENTIMENTO_VERSOES);
+let proximaVersaoId = 100;
+export const getConsentimentoVersoesMock = () => clone(versoesState);
+
+// hash fictício (o backend usa sha256 do texto)
+function hashFicticio(texto) {
+  let h = 0;
+  for (const ch of String(texto)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h.toString(16).padStart(8, "0").repeat(8);
+}
 
 let saved = false;
 // Valores gravados das demais folhas habilitadas (canais.*), por chave.
@@ -55,6 +86,11 @@ export const resetConfigMockState = () => {
   telegramState = clone(TELEGRAM_STATUS_POLLING);
   telegramErros = {};
   telegramStatusChamadas = 0;
+  retencaoState = clone(RETENCAO_STATUS);
+  retencaoErro = null;
+  retencaoStatusChamadas = 0;
+  versoesState = clone(CONSENTIMENTO_VERSOES);
+  proximaVersaoId = 100;
   botState = {
     "integrations.bot_telegram.token": null,
     "integrations.bot_telegram.chat_id": null,
@@ -117,8 +153,120 @@ export const telegramHandlers = [
   }),
 ];
 
+const RETENCAO_CHAVES = {
+  enabled: "canais.retencao.enabled",
+  metadados_dias: "canais.retencao.metadados_dias",
+  pendentes_dias: "canais.retencao.pendentes_dias",
+  listas_inativas_meses: "canais.retencao.listas_inativas_meses",
+};
+
+export const retencaoHandlers = [
+  http.get(RETENCAO_BASE, ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    retencaoStatusChamadas += 1;
+    const status = clone(retencaoState);
+    for (const [campo, chave] of Object.entries(RETENCAO_CHAVES)) {
+      if (outrosState[chave] === undefined) continue;
+      const v = outrosState[chave];
+      status[campo] = campo === "enabled" ? (v === true || v === 1 || v === "true" ? 1 : 0) : Number(v);
+    }
+    return HttpResponse.json(status);
+  }),
+
+  http.post(`${RETENCAO_BASE}/executar`, ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    if (retencaoErro) return HttpResponse.json({ error: retencaoErro.error }, { status: retencaoErro.status });
+    // execução "instantânea" no mock: nada além dos prazos → contagens zero
+    retencaoState.ultima_execucao = {
+      em: new Date().toISOString(),
+      metadados: 0,
+      pendentes: 0,
+      listas_inativas: 0,
+    };
+    return HttpResponse.json({ ok: 1, job_id: RETENCAO_JOB_ID }, { status: 202 });
+  }),
+];
+
+const versaoNaoEncontrada = () =>
+  HttpResponse.json({ error: "Versão não encontrada." }, { status: 404 });
+
+export const consentimentoAdminHandlers = [
+  http.get(CONSENTIMENTO_BASE, ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    return HttpResponse.json(clone(versoesState));
+  }),
+
+  http.post(CONSENTIMENTO_BASE, async ({ request }) => {
+    if (!authed(request)) return naoAutorizado();
+    const body = await request.json().catch(() => ({}));
+    const versao = String(body.versao ?? "").trim();
+    const texto = String(body.texto ?? "").trim();
+    if (!versao || !texto) {
+      return HttpResponse.json({ error: "Informe a versão e o texto." }, { status: 400 });
+    }
+    if (versoesState.some((v) => v.versao === versao)) {
+      return HttpResponse.json({ error: `A versão ${versao} já existe.` }, { status: 409 });
+    }
+    const nova = {
+      id: proximaVersaoId++,
+      versao,
+      texto,
+      texto_hash: hashFicticio(texto),
+      status: "rascunho",
+      publicada_em: null,
+      created_at: new Date().toISOString(),
+    };
+    versoesState.push(nova);
+    return HttpResponse.json(nova, { status: 201 });
+  }),
+
+  http.put(`${CONSENTIMENTO_BASE}/:id`, async ({ request, params }) => {
+    if (!authed(request)) return naoAutorizado();
+    const v = versoesState.find((x) => x.id === Number(params.id));
+    if (!v) return versaoNaoEncontrada();
+    if (v.status !== "rascunho") {
+      return HttpResponse.json(
+        { error: "Só rascunhos podem ser editados; versões publicadas são imutáveis." },
+        { status: 409 },
+      );
+    }
+    const body = await request.json().catch(() => ({}));
+    if (body.versao !== undefined) {
+      const versao = String(body.versao ?? "").trim();
+      if (!versao) return HttpResponse.json({ error: "Informe a versão." }, { status: 400 });
+      if (versoesState.some((x) => x.id !== v.id && x.versao === versao)) {
+        return HttpResponse.json({ error: `A versão ${versao} já existe.` }, { status: 409 });
+      }
+      v.versao = versao;
+    }
+    if (body.texto !== undefined) {
+      const texto = String(body.texto ?? "").trim();
+      if (!texto) return HttpResponse.json({ error: "Informe o texto." }, { status: 400 });
+      v.texto = texto;
+      v.texto_hash = hashFicticio(texto);
+    }
+    return HttpResponse.json(clone(v));
+  }),
+
+  http.post(`${CONSENTIMENTO_BASE}/:id/publicar`, ({ request, params }) => {
+    if (!authed(request)) return naoAutorizado();
+    const v = versoesState.find((x) => x.id === Number(params.id));
+    if (!v) return versaoNaoEncontrada();
+    if (v.status !== "rascunho") {
+      return HttpResponse.json({ error: "Só rascunhos podem ser publicados." }, { status: 409 });
+    }
+    for (const x of versoesState) if (x.status === "vigente") x.status = "arquivada";
+    v.status = "vigente";
+    v.publicada_em = new Date().toISOString();
+    setConsentimentoVigenteMock({ versao: v.versao, texto: v.texto, publicada_em: v.publicada_em });
+    return HttpResponse.json(clone(v));
+  }),
+];
+
 export const configHandlers = [
   ...telegramHandlers,
+  ...retencaoHandlers,
+  ...consentimentoAdminHandlers,
   // árvore (exige sessão admin)
   http.get(`${BASE}/tree`, ({ request }) => {
     if (!authed(request)) {

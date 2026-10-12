@@ -352,3 +352,60 @@ export const INSCRICAO_TOKEN_QUALQUER = "77777777-7777-4777-8777-777777777777";
 export const INSCRICAO_TOKEN_EMAIL = "88888888-8888-4888-8888-888888888888";
 // Código de 6 dígitos que o mock do e-mail "envia".
 export const EMAIL_CODIGO_MOCK = "654321";
+
+// ---------------------------------------------------------------------------
+// Exclusão e retenção (issue #214, onda 2)
+// ---------------------------------------------------------------------------
+
+// Tokens de exclusão (32 hex, os da `exclusao_url`).
+// Válido: inscrição do João Pai (lista 1, membro 11, contato 101).
+export const EXCLUSAO_TOKEN_VALIDO = "a1b2c3d4e5f60718293a4b5c6d7e8f90";
+// Inscrição já anonimizada antes (GET devolve ja_excluido).
+export const EXCLUSAO_TOKEN_JA_EXCLUIDO = "b1b2c3d4e5f60718293a4b5c6d7e8f90";
+// Antiabuso: o POST responde 429.
+export const EXCLUSAO_TOKEN_LIMITE = "c1b2c3d4e5f60718293a4b5c6d7e8f90";
+
+// Prazos de retenção expostos em GET /api/canais/consentimento (`retencao`).
+export const RETENCAO_PUBLICA = {
+  enabled: true,
+  metadados_dias: 90,
+  pendentes_dias: 180,
+  listas_inativas_meses: 12,
+};
+
+// Histórico de exclusões da escola (GET /canais/exclusoes), mais recentes primeiro.
+export const EXCLUSOES_FIXTURE = [
+  {
+    id: 3,
+    origem: "titular",
+    regra: null,
+    motivo: null,
+    gestor_id: null,
+    contatos: 1,
+    inscricoes: 1,
+    membros: 1,
+    created_at: "2026-10-11T14:00:00",
+  },
+  {
+    id: 2,
+    origem: "retencao",
+    regra: "pendentes",
+    motivo: null,
+    gestor_id: null,
+    contatos: 0,
+    inscricoes: 0,
+    membros: 0,
+    created_at: "2026-10-11T03:00:00",
+  },
+  {
+    id: 1,
+    origem: "gestor",
+    regra: null,
+    motivo: "Pedido feito na secretaria",
+    gestor_id: 7,
+    contatos: 1,
+    inscricoes: 2,
+    membros: 2,
+    created_at: "2026-10-10T16:30:00",
+  },
+];

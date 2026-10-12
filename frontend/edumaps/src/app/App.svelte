@@ -17,6 +17,10 @@
     { to: "/about", label: "Sobre o Refactor" },
   ];
 
+  // Páginas públicas abertas por link pessoal (token na URL): sem o menu da
+  // plataforma e fora de qualquer sessão.
+  const PUBLICAS_SEM_MENU = new Set(["/p/:token", "/inscricao/:token", "/privacidade/exclusao/:token"]);
+
   let match = $derived(matchRoute(router.path.split("?")[0]));
 
   // Navegação -> telemetria. Emite o PADRÃO da rota (ex.: /p/:token), nunca o
@@ -38,7 +42,7 @@
 </script>
 
 <div class="min-h-screen flex flex-col">
-  {#if match?.path === "/p/:token" || match?.path === "/inscricao/:token"}
+  {#if PUBLICAS_SEM_MENU.has(match?.path)}
     {#if match}
       <match.component token={match.params.token} />
     {/if}

@@ -7,6 +7,8 @@
   // Issue #214: a lista escolhe o que coletar (telefone, e-mail, ambos ou
   // qualquer um); a tabela mostra o e-mail e o estado por contato, e o estado
   // geral ganha `parcial` (algum contato confirmado, outro não).
+  // Onda 2 (#214): "Remover inscrito" (diálogo + motivo; anonimiza o contato em
+  // todas as listas da escola) e a seção "Exclusões" com o histórico da escola.
   // Exige sessão do gestor: sem token mostra o cartão de login; 401 volta ao login.
   import { onMount } from "svelte";
   import {
@@ -18,6 +20,8 @@
     gerarQrCode,
     revogarQrCode,
     listInscricoes,
+    removerMembro,
+    listExclusoes,
     COLETAS,
   } from "../api/gestorCanaisApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
@@ -28,6 +32,8 @@
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import QRModal from "../components/canais/QRModal.svelte";
   import MembrosTable from "../components/canais/MembrosTable.svelte";
+  import ExclusoesHistorico from "../components/canais/ExclusoesHistorico.svelte";
+  import ConfirmDialog from "@/shared/ui/components/ConfirmDialog.svelte";
   import { QR_ESTADOS, estadoQr } from "../utils/qrEstado.js";
 
   let inep = $state(null);
@@ -78,6 +84,15 @@
     filtroEstado === "todos" ? membros : membros.filter((m) => m.estado === filtroEstado),
   );
 
+  // exclusão (onda 2)
+  let exclusoes = $state([]);
+  let exclusoesCarregando = $state(false);
+  let erroExclusoes = $state(null);
+  let removendo = $state(null); // { lista, membro }
+  let motivoRemocao = $state("");
+  let removendoOcupado = $state(false);
+  let erroRemocao = $state(null);
+
   let qrcodeAberto = $state(null); // { lista, qrcode }
   let gerando = $state(false);
   let revogando = $state(false);
@@ -105,11 +120,74 @@
       inep = me.cod_inep;
       gestor = me;
       listas = await listListas(me.cod_inep);
+      carregarExclusoes();
     } catch (err) {
       const msg = onApiError(err, "Não foi possível carregar as listas.");
       if (msg) error = msg;
     } finally {
       carregando = false;
+    }
+  }
+
+  async function carregarExclusoes() {
+    if (!inep) return;
+    exclusoesCarregando = true;
+    erroExclusoes = null;
+    try {
+      exclusoes = await listExclusoes(inep);
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível carregar o histórico de exclusões.");
+      if (msg) erroExclusoes = msg;
+    } finally {
+      exclusoesCarregando = false;
+    }
+  }
+
+  function pedirRemocao(lista, membro) {
+    removendo = { lista, membro };
+    motivoRemocao = "";
+    erroRemocao = null;
+  }
+
+  function cancelarRemocao() {
+    removendo = null;
+    erroRemocao = null;
+  }
+
+  // recarrega membros da lista aberta, contadores das listas e o histórico
+  async function recarregarAposRemocao(listaId) {
+    const [rows, todas] = await Promise.all([
+      listInscricoes(inep, listaId).catch(() => null),
+      listListas(inep).catch(() => null),
+    ]);
+    if (rows && selecionada === listaId) membros = rows;
+    if (todas) listas = todas;
+    await carregarExclusoes();
+  }
+
+  async function confirmarRemocao() {
+    if (!removendo) return;
+    const { lista, membro } = removendo;
+    removendoOcupado = true;
+    erroRemocao = null;
+    try {
+      await removerMembro(inep, lista.id, membro.id, motivoRemocao);
+      removendo = null;
+      addToast("Inscrito removido. Os dados dele foram apagados de todas as listas da escola.", "success");
+      await recarregarAposRemocao(lista.id);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        erroRemocao = "Este inscrito não existe mais — talvez já tenha sido removido.";
+        await recarregarAposRemocao(lista.id);
+      } else if (err instanceof ApiError && err.status === 403) {
+        erroRemocao = "Você não tem acesso a esta escola.";
+      } else {
+        const msg = onApiError(err, "Não foi possível remover o inscrito.");
+        if (msg) erroRemocao = msg;
+        else removendo = null; // 401: volta ao login
+      }
+    } finally {
+      removendoOcupado = false;
     }
   }
 
@@ -510,9 +588,37 @@
           mensagemVazia={membros.length > 0
             ? "Nenhuma inscrição neste estado."
             : undefined}
+          onRemover={listaSel ? (m) => pedirRemocao(listaSel, m) : null}
         />
       </section>
     {/if}
+
+    <ExclusoesHistorico {exclusoes} carregando={exclusoesCarregando} erro={erroExclusoes} />
+  {/if}
+
+  {#if removendo}
+    <ConfirmDialog
+      titulo="Remover inscrito"
+      descricao={`Os dados de ${removendo.membro.nome} (nome, telefone e e-mail) serão apagados de todas as listas desta escola. Fica só um registro sem dados pessoais. Não pode ser desfeito.`}
+      confirmarRotulo="Remover"
+      perigo
+      ocupado={removendoOcupado}
+      erro={erroRemocao}
+      onConfirmar={confirmarRemocao}
+      onCancelar={cancelarRemocao}
+      testid="remover-membro-dialog"
+    >
+      <label class="block text-sm text-gray-700">
+        Motivo (opcional)
+        <textarea
+          bind:value={motivoRemocao}
+          rows="2"
+          maxlength="500"
+          placeholder="Ex.: pedido feito na secretaria"
+          class="mt-1 w-full px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        ></textarea>
+      </label>
+    </ConfirmDialog>
   {/if}
 
   {#if qrcodeAberto}

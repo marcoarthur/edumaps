@@ -25,6 +25,11 @@
 //   GET    /listas/:id/inscricoes      + email, telefone_estado, email_estado, email_confirmado_em;
 //                                      estado geral ganha `parcial`
 //   POST   /listas/:id/qrcode          {expira_em?, max_usos?} → 400 se data passada ou limite ≤ 0
+//
+// Exclusão (issue #214, contrato da onda 2):
+//   DELETE /listas/:id/membros/:membro_id  {motivo?} → 200 {ok, contatos, inscricoes, membros} · 403 · 404
+//   GET    /api/gestor/:cod_inep/canais/exclusoes → [{id, origem, regra, motivo, gestor_id,
+//                                      contatos, inscricoes, membros, created_at}] (recentes primeiro)
 
 import { apiClient } from "@/shared/api/client.js";
 
@@ -119,4 +124,29 @@ export function revogarQrCode(inep, id) {
  */
 export function listInscricoes(inep, id) {
   return apiClient.get(`${BASE(inep)}/${id}/inscricoes`).then(comoMembros);
+}
+
+/**
+ * Remove um inscrito (anonimiza o contato em todas as listas da escola).
+ * @param {string|null} [motivo] opcional; só vai no corpo quando informado
+ * @returns {Promise<{ok: number, contatos: number, inscricoes: number, membros: number}>}
+ */
+export function removerMembro(inep, listaId, membroId, motivo = null) {
+  const m = String(motivo ?? "").trim();
+  return apiClient.delete(
+    `${BASE(inep)}/${listaId}/membros/${membroId}`,
+    m ? { motivo: m } : undefined,
+  );
+}
+
+/**
+ * Histórico de exclusões da escola (titular, gestor e retenção), sem dados pessoais.
+ * @returns {Promise<Array<{id: number, origem: "titular"|"gestor"|"retencao", regra: string|null,
+ *   motivo: string|null, gestor_id: number|null, contatos: number, inscricoes: number,
+ *   membros: number, created_at: string}>>}
+ */
+export function listExclusoes(inep) {
+  return apiClient
+    .get(`/api/gestor/${inep}/canais/exclusoes`)
+    .then((d) => (Array.isArray(d) ? d : (d?.exclusoes ?? d?.itens ?? [])));
 }
