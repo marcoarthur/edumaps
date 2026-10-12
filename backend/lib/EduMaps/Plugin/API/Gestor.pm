@@ -251,6 +251,17 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/relatorios/jobs/:job_id' => [ @$check, job_id => qr/\d+/ ])
     ->to('gestor_relatorios#job')->name('gestor_relatorios_job');
 
+  # Fase 3: relatórios salvos (literais antes de /:id).
+  my $salvo_check = [ @$check, id => qr/\d{1,18}/ ];
+  $auth->post('/:cod_inep/relatorios/salvos' => $check)
+    ->to('gestor_relatorios#salvos_criar')->name('gestor_relatorios_salvos_criar');
+  $auth->get('/:cod_inep/relatorios/salvos' => $check)
+    ->to('gestor_relatorios#salvos_listar')->name('gestor_relatorios_salvos');
+  $auth->get('/:cod_inep/relatorios/salvos/:id' => $salvo_check)
+    ->to('gestor_relatorios#salvos_detalhe')->name('gestor_relatorios_salvos_detalhe');
+  $auth->delete('/:cod_inep/relatorios/salvos/:id' => $salvo_check)
+    ->to('gestor_relatorios#salvos_excluir')->name('gestor_relatorios_salvos_excluir');
+
   # --- documentos e planos escolares (pastas, versões, tags, auditoria) -----
   my $doc_id_check = [ @$check, id => qr/\d+/ ];
 

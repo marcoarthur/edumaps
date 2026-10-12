@@ -446,3 +446,153 @@ qualquer mudança. Os rótulos ao gestor ficam em pt-BR (ex.: "Biblioteca",
     sempre que o R mudar.
   - **E2E com o Gemini real:** 13/13 pela API e 11/11 na tela; rodada em
     `docs/e2e/cobertura.md`.
+
+---
+
+# Fase 3 — Relatório rico e exportável
+
+- **Branch:** `feat/relatorio-fase3`.
+- **Trilhas:**
+  - T-P: `data_pipeline/` + `backend/` (migration + rotas);
+  - T-F: `frontend/`.
+
+  O R não muda.
+
+## Decisões (developer, 2026-10-12)
+
+1. **Exportação:**
+   - **PDF pela impressão do navegador**, com CSS de impressão e o botão
+     "Imprimir / salvar PDF";
+   - **Markdown**, gerado no **frontend** a partir do ReportResult. Uma
+     implementação só serve o relatório atual e os salvos.
+2. **Histórico:** **salvar quando quiser**. Os salvos ficam numa lista e
+   podem ser reabertos sem custo de LLM e excluídos.
+3. **Retenção:** **até o gestor excluir**, ou até a conta ser removida
+   (cascade). Os relatórios só têm dados públicos e agregados.
+4. **Reabrir:** **fotografia** do que foi gerado (com data) mais o botão
+   "Gerar de novo com os dados atuais".
+
+## Contrato da Fase 3 (congelado)
+
+### Migration
+
+Change nova `relatorios_salvos`, anexada ao fim do plano, com o mesmo estilo
+de verify em gate:
+
+```sql
+CREATE TABLE clean.relatorios_salvos (
+  id           bigserial PRIMARY KEY,
+  gestor_id    bigint NOT NULL REFERENCES clean.gestores (id) ON DELETE CASCADE,
+  cod_inep     bigint NOT NULL,
+  job_id       bigint NOT NULL,                 -- job Minion de origem (dedupe)
+  tema_id      text   NOT NULL,
+  tema_titulo  text   NOT NULL,
+  nivel        text   NOT NULL CHECK (nivel IN ('escola','municipio','uf','regiao')),
+  codigo       text   NOT NULL,
+  recorte_nome text,
+  opcoes       jsonb  NOT NULL DEFAULT '{}'::jsonb,
+  titulo       text   NOT NULL,
+  conteudo     jsonb  NOT NULL,                 -- ReportResult (fotografia)
+  gerado_em    timestamptz NOT NULL,            -- ReportResult.gerado_em
+  created_at   timestamptz NOT NULL DEFAULT NOW(),
+  UNIQUE (gestor_id, job_id)
+);
+CREATE INDEX idx_relatorios_salvos_gestor ON clean.relatorios_salvos (gestor_id, created_at DESC);
+```
+
+### Perl — gestão (Bearer + posse do `cod_inep`)
+
+| Método | Rota | Entrada | Saída |
+|---|---|---|---|
+| POST | `/api/gestor/:cod_inep/relatorios/salvos` | `{job_id}` | `201 {salvo}` (novo) · `200 {salvo}` (já salvo: mesmo `job_id`) · `404` (job inexistente, de outro gestor ou de outra task) · `409` (job não terminou com sucesso) |
+| GET | `/api/gestor/:cod_inep/relatorios/salvos` | `?page&per_page` (20, máx. 100) | `200 {items: [resumo], total, page, per_page}` (mais recentes primeiro) |
+| GET | `/api/gestor/:cod_inep/relatorios/salvos/:id` | — | `200 {salvo + relatorio}` · `404` |
+| DELETE | `/api/gestor/:cod_inep/relatorios/salvos/:id` | — | `200 {ok:1}` · `404` |
+
+- **O conteúdo vem do resultado do job no servidor** (`job->info->{result}`),
+  **nunca do cliente**, para evitar adulteração. Os `args` do job dão
+  `geotag`, `tema` e `opcoes`; o resultado dá `titulo`, `tema.titulo`,
+  `recorte.nome` e `gerado_em`. O `cache_hit` não é gravado.
+- **Escopo:** só os salvos do **próprio gestor** (`gestor_id` da sessão).
+  Outro gestor da mesma escola não vê.
+- **Resumo:**
+  ```json
+  { "id": 7, "titulo": "...", "tema": {"id": "...", "titulo": "..."},
+    "recorte": {"nivel": "municipio", "codigo": "3555406", "nome": "Ubatuba"},
+    "opcoes": {"etapa": "fundamental_ii"}, "gerado_em": "...Z", "salvo_em": "...Z" }
+  ```
+- **Detalhe:** o resumo mais `relatorio` (o ReportResult gravado).
+
+### Frontend
+
+- **Ações no `RelatorioView`** (opcionais por prop):
+  - **"Imprimir / salvar PDF"**: chama `window.print()`. Antes de imprimir,
+    abre os `<details>` técnicos (`beforeprint`) e depois restaura
+    (`afterprint`).
+  - **"Baixar Markdown"**: gera no cliente, por uma função pura
+    `relatorioParaMarkdown(relatorio)`, com título, recorte e data, cada
+    seção (texto; indicadores em lista; tabelas em markdown, respeitando os
+    formatos pt-BR e sem colunas `_*`; gráficos como a tabela dos dados;
+    associações em lista com direção, segurança e n), avisos e fontes. O
+    nome do arquivo é `relatorio-<tema>-<recorte>-<data>.md`, com slug.
+  - **"Salvar relatório"**: só quando há `job_id` e o relatório não é
+    salvo. Faz POST e, ao concluir, mostra "Salvo" com link para a lista.
+- **CSS de impressão:**
+  - esconde a navegação do app, o formulário de recorte e tema e os botões;
+  - imprime título, recorte, data, todas as seções, as tabelas técnicas
+    abertas, os avisos e as fontes;
+  - gráficos legíveis em A4;
+  - quebra de página evitada dentro de cartões e tabelas pequenas.
+- **Rota `/gestor/relatorios/salvos`** (`RelatoriosSalvosPage`): lista
+  paginada (título, tema, recorte, data em que foi gerado, data em que foi
+  salvo), "Abrir" e "Excluir" (`ConfirmDialog`).
+- **Rota `/gestor/relatorios/salvos/:id`:** `RelatorioView` da fotografia,
+  com um aviso "Fotografia de <data>: os números são os daquela data", as
+  ações de imprimir e Markdown, "Excluir" e **"Gerar de novo com os dados
+  atuais"**.
+  - "Gerar de novo" leva a `/gestor/relatorios` com o recorte, o tema e as
+    opções preenchidos por query (`nivel`, `codigo`, `nome`, `tema`, `etapa`,
+    `rede`) e dispara a geração.
+  - A `RelatoriosPage` passa a aceitar esse preenchimento por query,
+    inclusive um recorte fora da escola do gestor, mostrado como "Recorte:
+    <nome>" com a opção de trocar.
+- **Links:** "Meus relatórios" na `RelatoriosPage` e na navegação do gestor.
+
+## WBS (Fase 3)
+
+| ID | Trilha | Escopo | Status |
+|----|--------|--------|--------|
+| P2 | T-P | Migration `relatorios_salvos` + 4 rotas + testes | 🟢 |
+| F3 | T-F | Ações (imprimir, Markdown, salvar), CSS de impressão, páginas de salvos, "gerar de novo" por query + testes | 🟢 |
+| C3 | coord. | Verificação, deploy, e2e, docs, PR | 🟢 |
+
+## Log — Fase 3
+
+- **2026-10-12 — Desvios da T-P aceitos:**
+  - 400 para `job_id` inválido;
+  - 409 também para resultado de job inválido;
+  - fallbacks de `tema_titulo`/`titulo`/`gerado_em` (este cai na hora em
+    que o job terminou);
+  - paginação permissiva (valores inválidos voltam ao padrão, máx. 100);
+  - `Location` no POST;
+  - a resposta do POST traz o resumo **sem envelope** `{salvo}`. O cliente
+    aceita as duas formas.
+  - **Migration no CI:** `ci_db.sh` não tem deploy incremental; a T-P usou o
+    contêiner `sqitch` na rede do CI. Verify, revert e deploy OK.
+- **2026-10-12 — T-F:**
+  - o `beforeprint` abre **todos** os `<details>` (inclusive a tabela de
+    dados dos gráficos) e o `afterprint` restaura;
+  - o "Salvo" é igual para 201 e 200;
+  - no nível escola vindo da query, vale sempre o INEP do próprio gestor;
+  - a query `gerar=1` dispara uma vez e é removida; sem sessão, fica
+    guardada até o login.
+- **Verificação (coordenador):**
+  - `ci_db.sh verify`: `relatorios_salvos .. ok`;
+  - backend: 102 / 690, só as 7 falhas antigas;
+  - frontend: 105 / 863, build OK.
+- **2026-10-12 — Integração da Fase 3 (coordenador):**
+  - deploy de banco, backend, minion e frontend;
+  - imagens locais `sqitch`, `backend`, `minion` e `frontend`;
+  - E2E 21/21 com download real de Markdown e PDF via `printToPDF`;
+  - correção: o formato da seção passou a valer nos dados do gráfico.
+  - **Pendência:** eixo percentual dos gráficos.

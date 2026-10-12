@@ -16,3 +16,5 @@ export { default as GestorDocumentosPage } from "./pages/DocumentosPage.svelte";
 export { default as GestorEnviosPage } from "./pages/EnviosPage.svelte";
 export { default as GestorSegmentosPage } from "./pages/SegmentosPage.svelte";
 export { default as GestorRelatoriosPage } from "./pages/RelatoriosPage.svelte";
+export { default as GestorRelatoriosSalvosPage } from "./pages/RelatoriosSalvosPage.svelte";
+export { default as GestorRelatorioSalvoPage } from "./pages/RelatorioSalvoPage.svelte";

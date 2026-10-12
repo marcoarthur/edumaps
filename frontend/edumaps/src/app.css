@@ -37,3 +37,38 @@
 .hChatHistorico {
   height: calc(100vh - 200px);
 }
+
+/* Impressão do Assistente de Relatório (#219, fase 3): "Imprimir / salvar PDF".
+   A navegação, os formulários e os botões somem pelas utilitárias `print:hidden`
+   nos componentes; aqui ficam a página A4 e o que não cabe em utilitária. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  body {
+    background: #fff;
+  }
+  .relatorio-imprimivel {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11pt;
+  }
+  /* gráficos e tabelas cabem na largura útil da folha */
+  .relatorio-imprimivel figure,
+  .relatorio-imprimivel svg,
+  .relatorio-imprimivel table {
+    max-width: 100%;
+  }
+  .relatorio-imprimivel h2,
+  .relatorio-imprimivel h3,
+  .relatorio-imprimivel caption {
+    break-after: avoid;
+  }
+  .relatorio-imprimivel thead {
+    display: table-header-group;
+  }
+  .relatorio-imprimivel tr {
+    break-inside: avoid;
+  }
+}

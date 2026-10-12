@@ -36,7 +36,7 @@
         {@const d = direcao(item.direcao)}
         {@const s = seguranca(item.seguranca)}
         <li
-          class="bg-white border border-gray-200 rounded-card shadow-card p-4 space-y-2"
+          class="bg-white border border-gray-200 rounded-card shadow-card p-4 space-y-2 print:shadow-none print:break-inside-avoid"
           data-testid="associacao"
           data-direcao={item.direcao}
           data-seguranca={item.seguranca}

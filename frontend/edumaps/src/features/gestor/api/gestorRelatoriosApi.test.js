@@ -9,6 +9,8 @@ import {
   resetRelatoriosMockState,
   configurarRelatoriosMock,
   getPedidosRelatorioMock,
+  getSalvosMock,
+  semearSalvosMock,
 } from "../mocks/relatoriosHandlers.js";
 import { server } from "../../../mocks/server.js";
 import {
@@ -17,7 +19,15 @@ import {
   gerarRelatorio,
   getJobRelatorio,
   limparOpcoes,
+  salvarRelatorio,
+  listarSalvos,
+  getSalvo,
+  excluirSalvo,
 } from "./gestorRelatoriosApi.js";
+import {
+  RELATORIO_RESULT_FIXTURE,
+  RELATORIO_INFRAESTRUTURA_FIXTURE,
+} from "../mocks/relatoriosFixtures.js";
 
 describe("gestorRelatoriosApi", () => {
   beforeEach(() => {
@@ -126,5 +136,130 @@ describe("gestorRelatoriosApi", () => {
   it("limparOpcoes remove vazios e nulos", () => {
     expect(limparOpcoes({ a: "", b: null, c: undefined, d: "x" })).toEqual({ d: "x" });
     expect(limparOpcoes(undefined)).toEqual({});
+  });
+
+  describe("salvos (fase 3)", () => {
+    async function jobTerminado(tema = "ideb_territorio") {
+      configurarRelatoriosMock({ consultasAteFim: 1 });
+      const { job_id } = await gerarRelatorio(INEP_RELATORIOS, {
+        geotag: { nivel: "municipio", codigo: "1100205" },
+        tema,
+        opcoes: { etapa: "fundamental_ii" },
+      });
+      await getJobRelatorio(INEP_RELATORIOS, job_id);
+      return job_id;
+    }
+
+    it("salva o job terminado (201) e devolve o resumo; de novo devolve o mesmo (200)", async () => {
+      let status = [];
+      server.events.on("response:mocked", ({ response, request }) => {
+        if (request.url.endsWith("/relatorios/salvos") && request.method === "POST") {
+          status.push(response.status);
+        }
+      });
+      const jobId = await jobTerminado();
+      const salvo = await salvarRelatorio(INEP_RELATORIOS, jobId);
+      expect(salvo).toMatchObject({
+        id: 1,
+        titulo: RELATORIO_RESULT_FIXTURE.titulo,
+        tema: { id: "ideb_territorio", titulo: "IDEB do território" },
+        recorte: { nivel: "municipio", codigo: "1100205", nome: "Porto Velho" },
+        opcoes: { etapa: "fundamental_ii" },
+        gerado_em: RELATORIO_RESULT_FIXTURE.gerado_em,
+      });
+      expect(salvo.salvo_em).toBeTruthy();
+      const outra = await salvarRelatorio(INEP_RELATORIOS, jobId);
+      expect(outra.id).toBe(1);
+      expect(getSalvosMock()).toHaveLength(1);
+      server.events.removeAllListeners();
+      expect(status).toEqual([201, 200]);
+    });
+
+    it("o POST só leva o job_id (o conteúdo vem do servidor)", async () => {
+      let corpo = null;
+      server.use(
+        http.post("/api/gestor/:cod_inep/relatorios/salvos", async ({ request }) => {
+          corpo = await request.json();
+          return HttpResponse.json({ salvo: { id: 9 } }, { status: 201 });
+        }),
+      );
+      expect(await salvarRelatorio(INEP_RELATORIOS, "77")).toEqual({ id: 9 });
+      expect(corpo).toEqual({ job_id: 77 });
+    });
+
+    it("job inexistente → 404; job ainda rodando ou falho → 409", async () => {
+      await expect(salvarRelatorio(INEP_RELATORIOS, 12345)).rejects.toMatchObject({ status: 404 });
+      const { job_id } = await gerarRelatorio(INEP_RELATORIOS, {
+        geotag: { nivel: "uf", codigo: "RO" },
+        tema: "ideb_territorio",
+      });
+      const err = await salvarRelatorio(INEP_RELATORIOS, job_id).catch((e) => e);
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.status).toBe(409);
+      expect(err.message).toMatch(/ainda não terminou/);
+    });
+
+    it("lista paginada, mais recentes primeiro, com page/per_page", async () => {
+      semearSalvosMock(
+        Array.from({ length: 3 }, (_, i) => ({
+          relatorio: { ...RELATORIO_RESULT_FIXTURE, titulo: `Relatório ${i + 1}` },
+        })),
+      );
+      let consulta = null;
+      server.events.on("request:start", ({ request }) => {
+        if (request.url.includes("/salvos?")) consulta = new URL(request.url).searchParams;
+      });
+      const p1 = await listarSalvos(INEP_RELATORIOS, { page: 1, per_page: 2 });
+      server.events.removeAllListeners();
+      expect(consulta.get("page")).toBe("1");
+      expect(consulta.get("per_page")).toBe("2");
+      expect(p1.total).toBe(3);
+      expect(p1.items.map((i) => i.titulo)).toEqual(["Relatório 3", "Relatório 2"]);
+      expect(p1.items[0]).not.toHaveProperty("relatorio");
+      const p2 = await listarSalvos(INEP_RELATORIOS, { page: 2, per_page: 2 });
+      expect(p2.items.map((i) => i.titulo)).toEqual(["Relatório 1"]);
+      expect(p2.page).toBe(2);
+    });
+
+    it("lista vazia tem defaults", async () => {
+      expect(await listarSalvos(INEP_RELATORIOS)).toEqual({
+        items: [],
+        total: 0,
+        page: 1,
+        per_page: 20,
+      });
+    });
+
+    it("detalhe traz o resumo e o relatório; aceita também {salvo, relatorio}", async () => {
+      const [s] = semearSalvosMock([{ relatorio: RELATORIO_INFRAESTRUTURA_FIXTURE }]);
+      const det = await getSalvo(INEP_RELATORIOS, s.id);
+      expect(det.id).toBe(s.id);
+      expect(det.relatorio.titulo).toBe(RELATORIO_INFRAESTRUTURA_FIXTURE.titulo);
+      expect(det.recorte).toMatchObject({ nivel: "uf", codigo: "RO" });
+
+      server.use(
+        http.get("/api/gestor/:cod_inep/relatorios/salvos/:id", () =>
+          HttpResponse.json({ salvo: { id: 3, titulo: "X" }, relatorio: { titulo: "X" } }),
+        ),
+      );
+      expect(await getSalvo(INEP_RELATORIOS, 3)).toEqual({
+        id: 3,
+        titulo: "X",
+        relatorio: { titulo: "X" },
+      });
+    });
+
+    it("detalhe e exclusão de id inexistente → 404; exclusão remove", async () => {
+      await expect(getSalvo(INEP_RELATORIOS, 99)).rejects.toMatchObject({ status: 404 });
+      await expect(excluirSalvo(INEP_RELATORIOS, 99)).rejects.toMatchObject({ status: 404 });
+      const [s] = semearSalvosMock([{ relatorio: RELATORIO_RESULT_FIXTURE }]);
+      expect(await excluirSalvo(INEP_RELATORIOS, s.id)).toEqual({ ok: 1 });
+      expect(getSalvosMock()).toHaveLength(0);
+    });
+
+    it("sem sessão a lista responde 401", async () => {
+      setApiToken(null);
+      await expect(listarSalvos(INEP_RELATORIOS)).rejects.toMatchObject({ status: 401 });
+    });
   });
 });

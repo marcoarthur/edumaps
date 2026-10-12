@@ -14,7 +14,7 @@
   {/if}
   <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     {#each secao.itens ?? [] as item, i (i)}
-      <li class="bg-white border border-gray-200 rounded-card shadow-card p-4" data-testid="indicador">
+      <li class="bg-white border border-gray-200 rounded-card shadow-card p-4 print:shadow-none print:break-inside-avoid" data-testid="indicador">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{item.rotulo}</p>
         <p class="text-2xl font-bold text-gray-900 mt-1">{formatarValor(item.valor, item.formato)}</p>
         {#if item.referencia}

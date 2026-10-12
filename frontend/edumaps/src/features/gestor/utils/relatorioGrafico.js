@@ -31,7 +31,7 @@ export function descricaoGrafico(secao, formatar) {
   const xRotulo = secao?.x?.rotulo ?? xId ?? "";
   const partes = (secao?.series ?? []).map((serie) => {
     const valores = (secao?.dados ?? [])
-      .map((d) => `${d?.[xId]}: ${formatar(d?.[serie.id], serie.formato)}`)
+      .map((d) => `${d?.[xId]}: ${formatar(d?.[serie.id], serie.formato ?? secao?.formato)}`)
       .join("; ");
     return `${serie.rotulo ?? serie.id} — ${valores}`;
   });

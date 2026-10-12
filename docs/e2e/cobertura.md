@@ -811,3 +811,28 @@ da escola 35038751 (Ubatuba/SP). Driver CDP próprio em Perl (Chrome `:9222`).
 >
 > **Nota do driver:** o Mojo limita mensagens de WebSocket a 256 KB e
 > derrubava as capturas grandes; use `max_websocket_size`.
+
+### Rodada 2026-10-12 — Assistente de Relatório, Fase 3 (feat, issue #219)
+
+**Objetivo:** certificar a exportação e os relatórios salvos em dev, com o
+Gemini real, o gestor da escola 35038751 e uma sessão temporária. O Chrome usa
+download real (`Browser.setDownloadBehavior`) e `Page.printToPDF` para a
+versão de impressão.
+
+| Verificação | Resultado |
+|---|---|
+| Salvar job concluído → 201; de novo → 200 com o mesmo id; job em andamento → 409; inexistente → 404 | 🟢 |
+| Fotografia = resultado do job (corpo enviado pelo cliente ignorado; sem `cache_hit`) | 🟢 |
+| Query `?nivel=uf&codigo=BA&…&gerar=1` preenche o recorte e gera | 🟢 |
+| "Salvar relatório" → "Salvo"; "Meus relatórios" lista; "Abrir" mostra "Fotografia de …"; "Gerar de novo" gera com os dados atuais | 🟢 |
+| Markdown baixado (`relatorio-docentes-territorio-bahia-2026-10-12.md`): título, tabelas pt-BR, fontes, sem nomes internos | 🟢 |
+| `<details>` abertos no `beforeprint`; PDF A4 com 2 páginas, sem navegação nem formulário | 🟢 |
+| Exclusão dos salvos do teste; lista vazia | 🟢 |
+| Backend 102 / 690 (só falhas antigas); frontend 105 / 864; `relatorios_salvos` verify OK | 🟢 |
+
+> **Achado corrigido:** a tabela de dados dos gráficos (tela, PDF e
+> Markdown) ignorava o `formato` da seção e mostrava frações ("0,8") em vez de
+> percentuais ("80,3%").
+>
+> **Pendência visual:** o eixo do gráfico continua de 0 a 1 para séries
+> percentuais.

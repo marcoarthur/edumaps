@@ -405,6 +405,10 @@
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Relatórios</a>
       <a
+        href="/gestor/relatorios/salvos"
+        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+      >Meus relatórios</a>
+      <a
         href="/gestor/contatos"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Contatos →</a>

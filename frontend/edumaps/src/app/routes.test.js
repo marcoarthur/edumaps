@@ -97,6 +97,20 @@ describe("matchRoute", () => {
   it("encontra o Assistente de Relatório /gestor/relatorios", () => {
     expect(matchRoute("/gestor/relatorios")?.path).toBe("/gestor/relatorios");
     expect(matchRoute("/gestor/relatorios/")?.path).toBe("/gestor/relatorios");
+    expect(matchRoute("/gestor/relatorios?nivel=uf&codigo=RO&gerar=1")?.path).toBe(
+      "/gestor/relatorios",
+    );
+  });
+
+  it("encontra os relatórios salvos /gestor/relatorios/salvos e o detalhe :id", () => {
+    expect(matchRoute("/gestor/relatorios/salvos")?.path).toBe("/gestor/relatorios/salvos");
+    expect(matchRoute("/gestor/relatorios/salvos/")?.path).toBe("/gestor/relatorios/salvos");
+    expect(matchRoute("/gestor/relatorios/salvos?page=2")?.path).toBe("/gestor/relatorios/salvos");
+    const m = matchRoute("/gestor/relatorios/salvos/42");
+    expect(m?.path).toBe("/gestor/relatorios/salvos/:id");
+    expect(m?.params).toEqual({ id: "42" });
+    expect(m?.component).not.toBe(matchRoute("/gestor/relatorios/salvos")?.component);
+    expect(matchRoute("/gestor/relatorios/salvos/42/extra")).toBeNull();
   });
 
   it("captura o token na rota pública de inscrição /inscricao/:token", () => {

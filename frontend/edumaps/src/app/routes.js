@@ -27,6 +27,8 @@ import {
   GestorEnviosPage,
   GestorSegmentosPage,
   GestorRelatoriosPage,
+  GestorRelatoriosSalvosPage,
+  GestorRelatorioSalvoPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -75,6 +77,9 @@ export const routes = [
   { path: "/gestor/relacoes", component: GestorRelacoesPage },
   { path: "/gestor/relacoes/:id", component: GestorRelacaoDetailPage },
   { path: "/gestor/documentos", component: GestorDocumentosPage },
+  // salvos antes de qualquer padrão que os capture (fase 3 do #219)
+  { path: "/gestor/relatorios/salvos", component: GestorRelatoriosSalvosPage },
+  { path: "/gestor/relatorios/salvos/:id", component: GestorRelatorioSalvoPage },
   { path: "/gestor/relatorios", component: GestorRelatoriosPage },
   { path: "/p/:token", component: PublicaRespostaPage },
   { path: "/inscricao/:token", component: InscricaoPublicaPage },
