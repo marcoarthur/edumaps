@@ -4,6 +4,61 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-11 — Confirmação de posse do telefone nas listas com QR (PR #213, Fase 1)
+
+- **Issue:** [#212](https://github.com/marcoarthur/edumaps/issues/212) (fechada
+  pelo PR). **Spec:** `docs/specs/2026-10-11-confirmacao-posse-listas-qr.md`;
+  **execução:** `…-listas-qr.execucao.md` (contratos por onda + log).
+- **Decisões do developer**: Telegram **e** WhatsApp, Telegram primeiro;
+  exigência **configurável por lista** (default off → Fase 0 intacta); quem não
+  confirma entra **pendente**; **sem** confirmação retroativa; recebimento do
+  bot por **polling (dev) e webhook (prod)**; **bot público dedicado**
+  (`canais.telegram.*`), separado do bot interno (`integrations.bot_telegram`).
+- **Entregas** (branch `feat/canais-confirmacao-posse` → **PR #213**, merge
+  `8d5c502`), em 3 ondas com duas trilhas paralelas (subagentes só código/teste;
+  git, deploy e verificação no coordenador):
+  - **Onda 1**: change `canal_confirmacao_listas` (`exige_confirmacao`, estado
+    do membro `confirmado_em/via/telegram_chat_id`, `canal_confirmacao_refs`
+    com só o hash da ref, `canal_telegram_estado`); role `Canal::Confirmacao`;
+    inscrição devolve `confirmacao {ref, estado, canais, expira_em}`;
+    `GET /api/canais/confirmacao/:ref`; `PATCH` de lista + contadores + estado
+    por membro; `ListasPage` (toggle, selos, filtro) e passo 2 na página
+    pública (`ConfirmacaoTelefone.svelte`, polling 3s/5min).
+  - **Onda 2**: `Channel::Telegram::Updates` (`/start <ref>` → teclado
+    `request_contact` → confere `user_id == from.id` e número → `concluir` ou
+    conflito); webhook com `secret_token`; admin status/webhook/polling; task
+    Minion `telegram_polling` (offset persistido, lock, reagenda, início no
+    `wait` do worker); WhatsApp com template de autenticação + endpoints de
+    código; painel de status do bot no `/config`.
+  - **Onda 3**: docs funcionais, rodada e2e, `fix(deploy)` da master key.
+- **🔴 Achado de infra (causado por este ciclo e corrigido)**: o Rexfile grava
+  `EDUMAPS_CONFIG_MASTER_KEY` nas units a partir do **ambiente local** de quem
+  roda o `rex` (`|| ''`). Os deploys de hoje sem a variável **zeraram a chave**
+  no `backend.edumaps` (a de 2026-10-07) → segredos ilegíveis em dev. Agora
+  `deploy_backend_dev`/`deploy_minion_dev`/`deploy_analytics_worker_dev`
+  **abortam** com a variável vazia (regra no AGENTS.md). Por decisão do
+  developer, **dev usa chave só de teste** em `~/.config/edumaps/dev_master_key`
+  (600, fora do repo); chaves reais só no deploy de nuvem (AWS/Cloudflare).
+  Segredos de dev gravados com a chave antiga (bot interno, Assistente) ficaram
+  ilegíveis — regravar pelo painel se forem necessários.
+- **Validação**: backend 65 arquivos / 428 testes (6 pré-falhos idênticos no
+  `main`: `City.t`, `domain/quality.t`, `indicators/quality.t`,
+  `indicators_quality.t`, `03-plugins/analytics.t`, `middlewares/session.t`);
+  frontend 83 / 511; `sqitch verify` + revert/deploy no CI DB; e2e CDP em dev
+  com bot fictício e Telegram simulado pelo webhook (confirmação, terceiro,
+  divergente, página vira "Telefone confirmado!" por polling); validação
+  visual do developer.
+- **Não exercitado**: app real do Telegram (precisa de bot de teste do
+  @BotFather) e WhatsApp Cloud (conta Business + template aprovado).
+- **Limpeza dev**: lista `E2E 212`, contatos 175–177, 7 mensagens e a config
+  fictícia `canais.telegram.*` removidos.
+- **Armadilhas**: (1) `/proc/<pid>/environ` do morbo não mostra a master key
+  (Perl reescreve a área ao mudar `$0`) — validar funcionalmente; (2) `prove -r`
+  em `t/02-models/` inclui `domain/` e `indicators/`, também pré-falhos; (3)
+  testes backend no host exigem `EDUMAPS_CONF=./t/ci/edu_maps.conf`.
+- **Próximo no roadmap**: Fase 2 (e-mail + LGPD) e Fase 3 (listas em massa);
+  teste real do bot com credenciais do developer.
+
 ## Sessão 2026-10-11 — Config da autoinscrição habilitada no painel (PR #211)
 
 - **Objetivo**: fechar a última dívida menor do ciclo #208 (escolhida pelo
