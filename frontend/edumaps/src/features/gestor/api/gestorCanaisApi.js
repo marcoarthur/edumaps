@@ -18,6 +18,13 @@
 //   PATCH  /listas/:id                 {nome?, descricao?, exige_confirmacao?} → detalhe · 400 · 409 · 404
 //   GET    /listas, /listas/:id        + exige_confirmacao, membros_confirmados, membros_pendentes
 //   GET    /listas/:id/inscricoes      + estado (nao_exigida|pendente|confirmado), confirmado_via, confirmado_em
+//
+// E-mail e LGPD (issue #214, contrato da onda 1):
+//   POST/PATCH /listas[/:id]           + coleta (telefone|email|ambos|qualquer; default telefone) · 400
+//   GET    /listas, /listas/:id        + coleta; membros_pendentes = pendente + parcial
+//   GET    /listas/:id/inscricoes      + email, telefone_estado, email_estado, email_confirmado_em;
+//                                      estado geral ganha `parcial`
+//   POST   /listas/:id/qrcode          {expira_em?, max_usos?} → 400 se data passada ou limite ≤ 0
 
 import { apiClient } from "@/shared/api/client.js";
 
@@ -25,6 +32,14 @@ const BASE = (inep) => `/api/gestor/${inep}/canais/listas`;
 
 // O backend pode devolver o envelope ou a lista crua; normalizamos para não
 // acoplar a UI ao formato exato.
+/** Valores de `coleta` aceitos pelo backend, na ordem do seletor. */
+export const COLETAS = [
+  { valor: "telefone", rotulo: "Telefone" },
+  { valor: "email", rotulo: "E-mail" },
+  { valor: "ambos", rotulo: "Ambos" },
+  { valor: "qualquer", rotulo: "Qualquer um" },
+];
+
 const comoLista = (data) =>
   Array.isArray(data) ? data : (data?.listas ?? data?.itens ?? []);
 
@@ -40,25 +55,29 @@ export function listListas(inep) {
 }
 
 /**
- * @param {{nome: string, descricao?: string|null, exige_confirmacao?: boolean}} lista
+ * @param {{nome: string, descricao?: string|null, exige_confirmacao?: boolean, coleta?: string}} lista
  * @returns {Promise<object>} lista criada
  */
-export function createLista(inep, { nome, descricao = null, exige_confirmacao = false }) {
+export function createLista(
+  inep,
+  { nome, descricao = null, exige_confirmacao = false, coleta = "telefone" },
+) {
   return apiClient.post(BASE(inep), {
     nome,
     descricao: descricao || null,
     exige_confirmacao: Boolean(exige_confirmacao),
+    coleta: coleta || "telefone",
   });
 }
 
 /**
- * Altera nome/descrição/exigência de confirmação. Só envia os campos passados.
- * @param {{nome?: string, descricao?: string|null, exige_confirmacao?: boolean}} mudancas
+ * Altera nome/descrição/exigência de confirmação/coleta. Só envia os campos passados.
+ * @param {{nome?: string, descricao?: string|null, exige_confirmacao?: boolean, coleta?: string}} mudancas
  * @returns {Promise<object>} detalhe da lista atualizada
  */
 export function atualizarLista(inep, id, mudancas = {}) {
   const body = {};
-  for (const campo of ["nome", "descricao", "exige_confirmacao"]) {
+  for (const campo of ["nome", "descricao", "exige_confirmacao", "coleta"]) {
     if (mudancas[campo] !== undefined) body[campo] = mudancas[campo];
   }
   return apiClient.patch(`${BASE(inep)}/${id}`, body);
@@ -74,11 +93,19 @@ export function deleteLista(inep, id) {
 }
 
 /**
- * Gera (ou rotaciona) o QR code da lista.
+ * Gera (ou rotaciona) o QR code da lista. `expira_em` (ISO 8601, futura) e
+ * `max_usos` (inteiro > 0) são opcionais; só vão no corpo quando informados.
+ * @param {{expira_em?: string|null, max_usos?: number|null}} [opcoes]
  * @returns {Promise<{token: string, url: string, expira_em: string|null, usos?: number, max_usos?: number|null, status?: string}>}
  */
-export function gerarQrCode(inep, id) {
-  return apiClient.post(`${BASE(inep)}/${id}/qrcode`);
+export function gerarQrCode(inep, id, { expira_em = null, max_usos = null } = {}) {
+  const body = {};
+  if (expira_em) body.expira_em = expira_em;
+  if (max_usos != null) body.max_usos = max_usos;
+  return apiClient.post(
+    `${BASE(inep)}/${id}/qrcode`,
+    Object.keys(body).length > 0 ? body : undefined,
+  );
 }
 
 /** Revoga o QR ativo da lista. */
@@ -87,8 +114,8 @@ export function revogarQrCode(inep, id) {
 }
 
 /**
- * @returns {Promise<Array>} [{id, contato_id, nome, telefone, quando, validado, conflito, origem,
- *   estado, confirmado_via, confirmado_em}]
+ * @returns {Promise<Array>} [{id, contato_id, nome, telefone, email, quando, validado, conflito, origem,
+ *   estado, confirmado_via, confirmado_em, telefone_estado, email_estado, email_confirmado_em}]
  */
 export function listInscricoes(inep, id) {
   return apiClient.get(`${BASE(inep)}/${id}/inscricoes`).then(comoMembros);

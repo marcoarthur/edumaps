@@ -8,6 +8,7 @@ import {
   confirmarRefMock,
   setCanaisConfirmacaoMock,
   ultimaRefConfirmacao,
+  setConsentimentoVigenteMock,
 } from "@/features/gestor/mocks/canaisHandlers.js";
 import {
   INSCRICAO_TOKEN_CONFIRMACAO,
@@ -18,12 +19,16 @@ import {
   TELEFONE_DUPLICADO,
   TELEGRAM_BOT_CONFIRMACAO,
   WHATSAPP_CODIGO_MOCK,
+  EMAIL_CODIGO_MOCK,
+  INSCRICAO_TOKEN_AMBOS,
+  INSCRICAO_TOKEN_EMAIL,
+  INSCRICAO_TOKEN_QUALQUER,
 } from "@/features/gestor/mocks/canaisFixtures.js";
 import InscricaoPublicaPage from "./InscricaoPublicaPage.svelte";
 import {
   POLL_INTERVALO_MS,
   POLL_DURACAO_MS,
-} from "../components/ConfirmacaoTelefone.svelte";
+} from "../components/ConfirmacaoContatos.svelte";
 
 function renderPage(token = INSCRICAO_TOKEN_VALIDO, extra = {}) {
   return render(InscricaoPublicaPage, { props: { token, ...extra } });
@@ -279,6 +284,315 @@ describe("InscricaoPublicaPage", () => {
       ).toBeInTheDocument();
       expect(screen.queryByTestId("confirmacao-passo")).not.toBeInTheDocument();
       expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+  describe("e-mail e LGPD (#214)", () => {
+    async function preencherContatos({ nome = "Nova Pessoa", telefone, email, aceitar = true } = {}) {
+      await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
+        target: { value: nome },
+      });
+      if (telefone !== undefined) {
+        await fireEvent.input(screen.getByPlaceholderText("(00) 00000-0000"), {
+          target: { value: telefone },
+        });
+      }
+      if (email !== undefined) {
+        await fireEvent.input(screen.getByPlaceholderText("voce@exemplo.com"), {
+          target: { value: email },
+        });
+      }
+      if (aceitar) await fireEvent.click(screen.getByRole("checkbox"));
+    }
+
+    const enviar = () => fireEvent.click(screen.getByRole("button", { name: "Inscrever-me" }));
+
+    it("lista só de telefone: sem campo de e-mail (regressão)", async () => {
+      renderPage();
+      await screen.findByRole("heading", { name: "Responsáveis 6ºA" });
+      expect(screen.queryByPlaceholderText("voce@exemplo.com")).not.toBeInTheDocument();
+    });
+
+    it("lista só de e-mail: campo e-mail com tipo, autocomplete e teclado certos", async () => {
+      renderPage(INSCRICAO_TOKEN_EMAIL);
+      await screen.findByRole("heading", { name: "Boletim por e-mail" });
+      expect(screen.queryByPlaceholderText("(00) 00000-0000")).not.toBeInTheDocument();
+      const campo = screen.getByPlaceholderText("voce@exemplo.com");
+      expect(campo).toHaveAttribute("type", "email");
+      expect(campo).toHaveAttribute("autocomplete", "email");
+      expect(campo).toHaveAttribute("inputmode", "email");
+      expect(screen.getByText("E-mail *")).toBeInTheDocument();
+
+      await preencherContatos({ email: "invalido" });
+      await enviar();
+      expect(await screen.findByText("Informe um e-mail válido.")).toBeInTheDocument();
+    });
+
+    it("'qualquer um': exige pelo menos um contato e aceita só o e-mail", async () => {
+      renderPage(INSCRICAO_TOKEN_QUALQUER);
+      await screen.findByRole("heading", { name: "Comunidade escolar" });
+      expect(screen.getByTestId("dica-um-contato")).toBeInTheDocument();
+      expect(screen.getByText("Telefone")).toBeInTheDocument(); // sem asterisco
+
+      await preencherContatos({});
+      await enviar();
+      expect(await screen.findByText("Informe telefone ou e-mail.")).toBeInTheDocument();
+
+      await fireEvent.input(screen.getByPlaceholderText("voce@exemplo.com"), {
+        target: { value: "nova@example.org" },
+      });
+      await enviar();
+      expect(await screen.findByTestId("inscricao-sucesso")).toBeInTheDocument();
+    });
+
+    it("mostra o 400 do backend (obrigatório ausente)", async () => {
+      server.use(
+        http.post("/api/canais/inscricao/:token", () =>
+          HttpResponse.json({ error: "Informe um e-mail válido." }, { status: 400 }),
+        ),
+      );
+      renderPage(INSCRICAO_TOKEN_AMBOS);
+      await screen.findByRole("heading", { name: "Família 8ºC" });
+      await preencherContatos({ telefone: "+55 11 94444-1111", email: "a@example.org" });
+      await enviar();
+      expect(await screen.findByRole("alert")).toHaveTextContent("Informe um e-mail válido.");
+    });
+
+    it("exibe o termo vigente com a versão, expansível, sem HTML cru, e envia a versão", async () => {
+      let corpo = null;
+      server.use(
+        http.post("/api/canais/inscricao/:token", async ({ request }) => {
+          corpo = await request.json();
+          return HttpResponse.json({ ok: 1 }, { status: 201 });
+        }),
+      );
+      renderPage();
+      await screen.findByRole("heading", { name: "Responsáveis 6ºA" });
+      expect(screen.getByTestId("termo-versao")).toHaveTextContent("versão 1.0");
+      const termo = screen.getByTestId("termo-consentimento");
+      expect(termo.open).toBe(false);
+      await fireEvent.click(screen.getByText(/Ler o termo de consentimento/));
+      const texto = screen.getByTestId("termo-texto");
+      expect(texto.querySelectorAll("li")).toHaveLength(2);
+      expect(texto.querySelector("strong")).toHaveTextContent("escola");
+      expect(screen.getByRole("link", { name: "política de privacidade" })).toHaveAttribute(
+        "href",
+        "/privacidade",
+      );
+
+      await preencher();
+      await enviar();
+      await screen.findByTestId("inscricao-sucesso");
+      expect(corpo).toMatchObject({ consentimento: true, consentimento_versao: "1.0" });
+    });
+
+    it("renderiza HTML do termo como texto (sem injeção)", async () => {
+      server.use(
+        http.get("/api/canais/inscricao/:token", () =>
+          HttpResponse.json({
+            lista_nome: "Lista X",
+            escola_nome: "Escola",
+            campos: ["nome", "telefone"],
+            obrigatorios: ["nome", "telefone"],
+            consentimento: { versao: "9", texto: "<img src=x onerror=alert(1)> **ok**" },
+          }),
+        ),
+      );
+      renderPage();
+      await screen.findByRole("heading", { name: "Lista X" });
+      const texto = screen.getByTestId("termo-texto");
+      expect(texto.querySelector("img")).toBeNull();
+      expect(texto.textContent).toContain("<img src=x onerror=alert(1)>");
+    });
+
+    it("409: mostra o texto novo e pede novo aceite", async () => {
+      renderPage();
+      await screen.findByRole("heading", { name: "Responsáveis 6ºA" });
+      setConsentimentoVigenteMock({ versao: "2.0", texto: "Texto **revisado**." });
+      await preencher();
+      await enviar();
+
+      expect(await screen.findByTestId("aviso-consentimento")).toHaveTextContent("versão 2.0");
+      expect(screen.getByRole("checkbox")).not.toBeChecked();
+      expect(screen.getByTestId("termo-versao")).toHaveTextContent("versão 2.0");
+      expect(screen.getByTestId("termo-consentimento").open).toBe(true);
+      expect(screen.getByTestId("termo-texto")).toHaveTextContent("Texto revisado.");
+
+      await fireEvent.click(screen.getByRole("checkbox"));
+      await enviar();
+      expect(await screen.findByTestId("inscricao-sucesso")).toBeInTheDocument();
+    });
+
+    it("sucesso mostra o link 'Remover meus dados' com orientação", async () => {
+      renderPage();
+      await screen.findByRole("heading", { name: "Responsáveis 6ºA" });
+      await preencher();
+      await enviar();
+      await screen.findByTestId("inscricao-sucesso");
+      const link = screen.getByRole("link", { name: "Remover meus dados" });
+      expect(link.getAttribute("href")).toMatch(/\/privacidade\/exclusao\/[0-9a-f]{32}$/);
+      expect(screen.getByText(/Guarde este link/)).toBeInTheDocument();
+    });
+
+    it("sem exclusao_url não mostra o link", async () => {
+      server.use(
+        http.post("/api/canais/inscricao/:token", () =>
+          HttpResponse.json({ ok: 1 }, { status: 201 }),
+        ),
+      );
+      renderPage();
+      await screen.findByRole("heading", { name: "Responsáveis 6ºA" });
+      await preencher();
+      await enviar();
+      await screen.findByTestId("inscricao-sucesso");
+      expect(screen.queryByTestId("link-exclusao")).not.toBeInTheDocument();
+    });
+
+    describe("confirmação por contato", () => {
+      beforeEach(() => {
+        vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      async function inscreverAmbos() {
+        const view = renderPage(INSCRICAO_TOKEN_AMBOS);
+        await screen.findByRole("heading", { name: "Família 8ºC" });
+        await preencherContatos({ telefone: "+55 11 94444-2222", email: "nova@example.org" });
+        await enviar();
+        await screen.findByRole("heading", { name: "Confirme seus contatos" });
+        return view;
+      }
+
+      it("ambos: telefone pelo Telegram (parcial) e depois e-mail → confirmado", async () => {
+        await inscreverAmbos();
+        expect(screen.getByRole("link", { name: "Confirmar pelo Telegram" })).toBeInTheDocument();
+        expect(screen.getByText("Receber código por e-mail")).toBeInTheDocument();
+        expect(screen.getByTestId("contato-telefone")).toHaveTextContent("pendente");
+
+        confirmarRefMock(ultimaRefConfirmacao(), "telegram");
+        await vi.advanceTimersByTimeAsync(POLL_INTERVALO_MS);
+        await waitFor(() =>
+          expect(screen.getByTestId("contato-telefone")).toHaveTextContent("confirmado"),
+        );
+        // parcial: o passo segue aberto para o e-mail, o polling continua
+        expect(screen.getByRole("heading", { name: "Confirme seus contatos" })).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Confirmar pelo Telegram" })).not.toBeInTheDocument();
+        expect(screen.getByTestId("contato-email")).toHaveTextContent("pendente");
+        expect(vi.getTimerCount()).toBe(1);
+
+        await fireEvent.click(screen.getByRole("button", { name: "Enviar código por e-mail" }));
+        const campo = await screen.findByLabelText("Código do e-mail (6 dígitos)");
+        await fireEvent.input(campo, { target: { value: "000000" } });
+        await fireEvent.click(screen.getByRole("button", { name: "Verificar código do e-mail" }));
+        expect(await screen.findByText(/Código inválido/)).toBeInTheDocument();
+
+        await fireEvent.input(campo, { target: { value: EMAIL_CODIGO_MOCK } });
+        await fireEvent.click(screen.getByRole("button", { name: "Verificar código do e-mail" }));
+        expect(
+          await screen.findByRole("heading", { name: "Contatos confirmados!" }),
+        ).toBeInTheDocument();
+        expect(vi.getTimerCount()).toBe(0);
+        expect(screen.getByRole("link", { name: "Remover meus dados" })).toBeInTheDocument();
+      });
+
+      it("ambos: e-mail primeiro deixa o telefone pendente (parcial)", async () => {
+        await inscreverAmbos();
+        await fireEvent.click(screen.getByRole("button", { name: "Enviar código por e-mail" }));
+        const campo = await screen.findByLabelText("Código do e-mail (6 dígitos)");
+        await fireEvent.input(campo, { target: { value: EMAIL_CODIGO_MOCK } });
+        await fireEvent.click(screen.getByRole("button", { name: "Verificar código do e-mail" }));
+        await waitFor(() =>
+          expect(screen.getByTestId("contato-email")).toHaveTextContent("confirmado"),
+        );
+        expect(screen.queryByTestId("confirmacao-email")).not.toBeInTheDocument();
+        expect(screen.getByTestId("confirmacao-whatsapp")).toBeInTheDocument();
+
+        await fireEvent.click(screen.getByRole("button", { name: "Enviar código" }));
+        await fireEvent.input(await screen.findByPlaceholderText("000000"), {
+          target: { value: WHATSAPP_CODIGO_MOCK },
+        });
+        await fireEvent.click(screen.getByRole("button", { name: "Verificar" }));
+        expect(
+          await screen.findByRole("heading", { name: "Contatos confirmados!" }),
+        ).toBeInTheDocument();
+      });
+
+      it("e-mail: falha de envio (502) mostra mensagem própria", async () => {
+        server.use(
+          http.post("/api/canais/confirmacao/:ref/email", () =>
+            HttpResponse.json({ error: "SMTP falhou." }, { status: 502 }),
+          ),
+        );
+        await inscreverAmbos();
+        await fireEvent.click(screen.getByRole("button", { name: "Enviar código por e-mail" }));
+        expect(await screen.findByText(/Não conseguimos enviar o e-mail/)).toBeInTheDocument();
+      });
+
+      it("e-mail: limite (429) e indisponível (409)", async () => {
+        await inscreverAmbos();
+        await fireEvent.click(screen.getByRole("button", { name: "Enviar código por e-mail" }));
+        const reenviar = await screen.findByRole("button", { name: "Reenviar código por e-mail" });
+        await fireEvent.click(reenviar);
+        await waitFor(() => expect(reenviar).not.toBeDisabled());
+        await fireEvent.click(reenviar);
+        await waitFor(() => expect(reenviar).not.toBeDisabled());
+        await fireEvent.click(reenviar);
+        expect(await screen.findByText(/Muitas tentativas/)).toBeInTheDocument();
+
+        server.use(
+          http.post("/api/canais/confirmacao/:ref/email", () =>
+            HttpResponse.json({ error: "x" }, { status: 409 }),
+          ),
+        );
+        await fireEvent.click(reenviar);
+        expect(await screen.findByText(/por e-mail não está disponível/)).toBeInTheDocument();
+      });
+
+      it("só e-mail: sem Telegram/WhatsApp, título do e-mail", async () => {
+        renderPage(INSCRICAO_TOKEN_EMAIL);
+        await screen.findByRole("heading", { name: "Boletim por e-mail" });
+        await preencherContatos({ email: "leitor@example.org" });
+        await enviar();
+        await screen.findByRole("heading", { name: "Confirme seu e-mail" });
+        expect(screen.queryByRole("link", { name: "Confirmar pelo Telegram" })).not.toBeInTheDocument();
+        expect(screen.queryByTestId("confirmacao-whatsapp")).not.toBeInTheDocument();
+        expect(screen.getByTestId("confirmacao-email")).toBeInTheDocument();
+      });
+
+      it("'Confirmar depois' mostra o link de exclusão", async () => {
+        await inscreverAmbos();
+        await fireEvent.click(screen.getByRole("button", { name: "Confirmar depois" }));
+        expect(await screen.findByText(/Seus contatos ainda precisam/)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Remover meus dados" })).toBeInTheDocument();
+      });
+
+      it("resposta sem `contatos` (formato #212) deduz pelos canais", async () => {
+        server.use(
+          http.post("/api/canais/inscricao/:token", () =>
+            HttpResponse.json(
+              {
+                ok: 1,
+                confirmacao: {
+                  ref: "a".repeat(32),
+                  estado: "pendente",
+                  canais: [{ canal: "whatsapp" }, { canal: "email" }],
+                },
+              },
+              { status: 201 },
+            ),
+          ),
+        );
+        renderPage(INSCRICAO_TOKEN_AMBOS);
+        await screen.findByRole("heading", { name: "Família 8ºC" });
+        await preencherContatos({ telefone: "+55 11 94444-3333", email: "z@example.org" });
+        await enviar();
+        expect(
+          await screen.findByRole("heading", { name: "Confirme seus contatos" }),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("confirmacao-whatsapp")).toBeInTheDocument();
+        expect(screen.getByTestId("confirmacao-email")).toBeInTheDocument();
+      });
     });
   });
 });

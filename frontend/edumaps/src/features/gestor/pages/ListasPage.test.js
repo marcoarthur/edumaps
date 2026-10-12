@@ -193,4 +193,137 @@ describe("ListasPage", () => {
       expect(screen.getByRole("checkbox", { name: "Exigir confirmação do telefone" })).toBeChecked();
     });
   });
+  describe("coleta e e-mail (#214)", () => {
+    async function abrirDetalhe(nome) {
+      render(ListasPage);
+      await screen.findByText(nome);
+      await fireEvent.click(screen.getByRole("button", { name: `Ver inscrições de ${nome}` }));
+      await screen.findAllByTestId("membro-row");
+    }
+
+    it("cria lista escolhendo o que coletar", async () => {
+      render(ListasPage);
+      await screen.findByText("Responsáveis 6ºA");
+      await fireEvent.click(screen.getByRole("button", { name: "+ Nova lista" }));
+      await fireEvent.input(screen.getByPlaceholderText(/Nome da lista/), {
+        target: { value: "Lista por e-mail" },
+      });
+      const coletar = screen.getByRole("combobox", { name: "Coletar" });
+      expect([...coletar.options].map((o) => o.textContent)).toEqual([
+        "Telefone",
+        "E-mail",
+        "Ambos",
+        "Qualquer um",
+      ]);
+      await fireEvent.change(coletar, { target: { value: "email" } });
+      expect(
+        screen.getByRole("checkbox", { name: /Exigir confirmação do e-mail/ }),
+      ).toBeInTheDocument();
+      await fireEvent.click(screen.getByRole("button", { name: "Criar lista" }));
+
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Lista criada.", "success"));
+      const linha = (await screen.findByText("Lista por e-mail")).closest("[data-testid='lista-row']");
+      expect(linha.textContent).toContain("e-mail");
+    });
+
+    it("lista 'ambos': coluna de e-mail, estado por contato e selo Parcial", async () => {
+      await abrirDetalhe("Família 8ºC");
+      expect(screen.getByRole("columnheader", { name: "E-mail" })).toBeInTheDocument();
+      expect(screen.getByText("ana@example.org")).toBeInTheDocument();
+
+      const estados = screen.getAllByTestId("membro-estado").map((td) => td.textContent);
+      expect(estados[0]).toContain("Parcial");
+      expect(estados[1]).toContain("Confirmado");
+      expect(estados[2]).toContain("Pendente");
+
+      const linhaAna = screen.getAllByTestId("membro-row")[0];
+      expect(linhaAna.querySelector("[data-testid='membro-telefone-estado']").textContent).toContain(
+        "confirmado",
+      );
+      expect(linhaAna.querySelector("[data-testid='membro-email-estado']").textContent).toContain(
+        "pendente",
+      );
+
+      const contadores = screen.getByTestId("contadores-confirmacao");
+      expect(contadores.textContent).toMatch(/1\s*confirmado\(s\)/);
+      expect(contadores.textContent).toMatch(/2\s*pendente\(s\)/);
+      expect(contadores.textContent).toMatch(/1\s*parcial\(is\)/);
+    });
+
+    it("filtra por estado parcial", async () => {
+      await abrirDetalhe("Família 8ºC");
+      await fireEvent.change(screen.getByRole("combobox", { name: "Filtrar por estado" }), {
+        target: { value: "parcial" },
+      });
+      expect(screen.getAllByTestId("membro-row")).toHaveLength(1);
+      expect(screen.getByText("Ana Parcial")).toBeInTheDocument();
+    });
+
+    it("lista só de telefone não mostra a coluna de e-mail", async () => {
+      await abrirDetalhe("Responsáveis 7ºB");
+      expect(screen.queryByRole("columnheader", { name: "E-mail" })).not.toBeInTheDocument();
+      expect(screen.queryByTestId("membro-email-estado")).not.toBeInTheDocument();
+    });
+
+    it("lista só de e-mail esconde a coluna de telefone", async () => {
+      await abrirDetalhe("Boletim por e-mail");
+      expect(screen.queryByRole("columnheader", { name: "Telefone" })).not.toBeInTheDocument();
+      expect(screen.getByText("eva@example.org")).toBeInTheDocument();
+    });
+
+    it("altera a coleta no detalhe (PATCH) e mostra o e-mail", async () => {
+      await abrirDetalhe("Responsáveis 6ºA");
+      const sel = screen.getByRole("combobox", { name: "Coletar nesta lista" });
+      expect(sel.value).toBe("telefone");
+      await fireEvent.change(sel, { target: { value: "ambos" } });
+      await waitFor(() =>
+        expect(addToast).toHaveBeenCalledWith("A lista passou a coletar: Ambos.", "success"),
+      );
+      expect(await screen.findByRole("columnheader", { name: "E-mail" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("checkbox", { name: "Exigir confirmação dos contatos" }),
+      ).toBeInTheDocument();
+    });
+
+    it("desfaz a coleta quando o PATCH falha", async () => {
+      const { server } = await import("../../../mocks/server.js");
+      const { http, HttpResponse } = await import("msw");
+      await abrirDetalhe("Responsáveis 6ºA");
+      server.use(
+        http.patch("/api/gestor/:cod_inep/canais/listas/:id", () =>
+          HttpResponse.json({ error: "coleta inválida." }, { status: 400 }),
+        ),
+      );
+      const sel = screen.getByRole("combobox", { name: "Coletar nesta lista" });
+      await fireEvent.change(sel, { target: { value: "email" } });
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("coleta inválida.", "error"));
+      expect(sel.value).toBe("telefone");
+    });
+
+    it("gera QR com limite; 400 do backend aparece no modal", async () => {
+      const { server } = await import("../../../mocks/server.js");
+      const { http, HttpResponse } = await import("msw");
+      render(ListasPage);
+      await screen.findByText("Responsáveis 6ºA");
+      await fireEvent.click(screen.getByRole("button", { name: "QR code de Responsáveis 6ºA" }));
+      await screen.findByTestId("qr-modal");
+
+      server.use(
+        http.post("/api/gestor/:cod_inep/canais/listas/:id/qrcode", () =>
+          HttpResponse.json({ error: "expira_em deve ser uma data futura (ISO 8601)." }, { status: 400 }),
+        ),
+      );
+      await fireEvent.click(screen.getByRole("button", { name: "Gerar QR code" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("expira_em deve ser");
+      expect(addToast).not.toHaveBeenCalledWith(expect.anything(), "error");
+
+      server.resetHandlers();
+      await fireEvent.input(screen.getByLabelText(/Limite de inscrições/), {
+        target: { value: "3" },
+      });
+      await fireEvent.click(screen.getByRole("button", { name: "Gerar QR code" }));
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("QR code gerado.", "success"));
+      expect(await screen.findByTestId("qr-usos")).toHaveTextContent("0 / 3");
+    });
+  });
 });

@@ -10,27 +10,36 @@
 //   GET  /api/canais/confirmacao/:ref                    → 200 {estado, canais, expira_em} · 404
 //   POST /api/canais/confirmacao/:ref/whatsapp           → 202 {enviado, expira_em} · 404 · 409 · 429
 //   POST /api/canais/confirmacao/:ref/whatsapp/verificar → 200 {estado:"confirmado"} · 400 · 410
+//
+// E-mail e LGPD (issue #214, contrato da onda 1):
+//   GET  /api/canais/inscricao/:token → + {campos, obrigatorios, consentimento:{versao, texto}}
+//   POST /api/canais/inscricao/:token ← {nome, telefone?, email?, consentimento, consentimento_versao?, _hp?}
+//                                      → 201 + exclusao_url · 400 · 409 {error, consentimento} (versão desatualizada)
+//   GET  /api/canais/confirmacao/:ref  → estado pendente|parcial|confirmado + contatos {telefone?, email?}
+//   POST /api/canais/confirmacao/:ref/email           → 202 {enviado, expira_em} · 404 · 409 · 429 · 502
+//   POST /api/canais/confirmacao/:ref/email/verificar → 200 {estado, contatos} · 400 · 410
+//   GET  /api/canais/consentimento    → 200 {versao, texto, publicada_em}
 
 import { apiClient } from "@/shared/api/client.js";
 
 const BASE = (token) => `/api/canais/inscricao/${token}`;
 const CONFIRMACAO = (ref) => `/api/canais/confirmacao/${ref}`;
 
-/** @returns {Promise<{lista_nome: string, escola_nome: string, canal: string, campos: string[], expira_em: string|null}>} */
+/** @returns {Promise<{lista_nome: string, escola_nome: string, canal: string, campos: string[], obrigatorios?: string[], consentimento?: {versao: string, texto: string}, expira_em: string|null}>} */
 export function getInscricaoPublica(token) {
   return apiClient.get(BASE(token));
 }
 
 /**
  * @param {string} token
- * @param {{nome: string, telefone: string, consentimento: boolean, _hp?: string}} payload
- * @returns {Promise<{ok: number, duplicado?: number, confirmacao?: {ref?: string, estado: string, expira_em?: string, canais?: Array<{canal: string, url?: string}>}}>}
+ * @param {{nome: string, telefone?: string, email?: string, consentimento: boolean, consentimento_versao?: string, _hp?: string}} payload
+ * @returns {Promise<{ok: number, duplicado?: number, exclusao_url?: string, confirmacao?: {ref?: string, estado: string, expira_em?: string, canais?: Array<{canal: string, url?: string}>, contatos?: object}}>}
  */
 export function enviarInscricao(token, payload) {
   return apiClient.post(BASE(token), payload);
 }
 
-/** @returns {Promise<{estado: "pendente"|"confirmado", canais: Array, expira_em: string}>} */
+/** @returns {Promise<{estado: "pendente"|"parcial"|"confirmado", canais: Array, expira_em: string, contatos?: object}>} */
 export function estadoConfirmacao(ref) {
   return apiClient.get(CONFIRMACAO(ref));
 }
@@ -43,4 +52,19 @@ export function enviarCodigoWhatsapp(ref) {
 /** @returns {Promise<{estado: "confirmado"}>} */
 export function verificarCodigoWhatsapp(ref, codigo) {
   return apiClient.post(`${CONFIRMACAO(ref)}/whatsapp/verificar`, { codigo: String(codigo) });
+}
+
+/** Pede o envio do código de 6 dígitos por e-mail. @returns {Promise<{enviado: number, expira_em: string}>} */
+export function enviarCodigoEmail(ref) {
+  return apiClient.post(`${CONFIRMACAO(ref)}/email`);
+}
+
+/** @returns {Promise<{estado: "pendente"|"parcial"|"confirmado", contatos: object}>} */
+export function verificarCodigoEmail(ref, codigo) {
+  return apiClient.post(`${CONFIRMACAO(ref)}/email/verificar`, { codigo: String(codigo) });
+}
+
+/** Texto de consentimento vigente. @returns {Promise<{versao: string, texto: string, publicada_em: string}>} */
+export function consentimentoVigente() {
+  return apiClient.get("/api/canais/consentimento");
 }

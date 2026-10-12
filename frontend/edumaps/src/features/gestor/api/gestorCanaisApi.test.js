@@ -15,7 +15,10 @@ import {
   gerarQrCode,
   revogarQrCode,
   listInscricoes,
+  COLETAS,
 } from "./gestorCanaisApi.js";
+import { server } from "../../../mocks/server.js";
+import { http, HttpResponse } from "msw";
 
 describe("gestorCanaisApi", () => {
   beforeEach(() => {
@@ -30,7 +33,7 @@ describe("gestorCanaisApi", () => {
 
   it("lista as listas da escola", async () => {
     const listas = await listListas(INEP_CANAIS);
-    expect(listas.length).toBe(3);
+    expect(listas.length).toBe(6);
     expect(listas.map((l) => l.nome)).toContain("Responsáveis 6ºA");
   });
 
@@ -124,5 +127,76 @@ describe("gestorCanaisApi", () => {
 
   it("nega acesso a escola de outro gestor (403)", async () => {
     await expect(listListas("99999999")).rejects.toMatchObject({ status: 403 });
+  });
+  describe("e-mail e LGPD (#214)", () => {
+    it("expõe as quatro opções de coleta", () => {
+      expect(COLETAS.map((c) => c.valor)).toEqual(["telefone", "email", "ambos", "qualquer"]);
+    });
+
+    it("cria com coleta (default telefone) e recusa coleta inválida (400)", async () => {
+      const padrao = await createLista(INEP_CANAIS, { nome: "Padrão" });
+      expect(padrao.coleta).toBe("telefone");
+      const ambos = await createLista(INEP_CANAIS, { nome: "Ambos", coleta: "ambos" });
+      expect(ambos.coleta).toBe("ambos");
+      await expect(
+        createLista(INEP_CANAIS, { nome: "Inválida", coleta: "fax" }),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("altera a coleta via PATCH", async () => {
+      const detalhe = await atualizarLista(INEP_CANAIS, 1, { coleta: "qualquer" });
+      expect(detalhe.coleta).toBe("qualquer");
+      expect((await getLista(INEP_CANAIS, 1)).coleta).toBe("qualquer");
+      await expect(atualizarLista(INEP_CANAIS, 1, { coleta: "x" })).rejects.toMatchObject({
+        status: 400,
+      });
+    });
+
+    it("membros trazem e-mail, estado por contato e o estado geral parcial", async () => {
+      const membros = await listInscricoes(INEP_CANAIS, 4);
+      expect(membros.map((m) => m.estado)).toEqual(["parcial", "confirmado", "pendente"]);
+      expect(membros[0]).toMatchObject({
+        email: "ana@example.org",
+        telefone_estado: "confirmado",
+        email_estado: "pendente",
+        email_confirmado_em: null,
+      });
+      const soTelefone = await listInscricoes(INEP_CANAIS, 1);
+      expect(soTelefone[0].email_estado).toBeNull();
+    });
+
+    it("contadores: pendentes incluem os parciais", async () => {
+      expect(await getLista(INEP_CANAIS, 4)).toMatchObject({
+        coleta: "ambos",
+        membros_confirmados: 1,
+        membros_pendentes: 2,
+      });
+    });
+
+    it("QR com validade e limite; recusa data passada e limite inválido (400)", async () => {
+      const expira = new Date(Date.now() + 86400000).toISOString();
+      const qr = await gerarQrCode(INEP_CANAIS, 1, { expira_em: expira, max_usos: 10 });
+      expect(qr).toMatchObject({ expira_em: expira, max_usos: 10, usos: 0 });
+      await expect(
+        gerarQrCode(INEP_CANAIS, 1, { expira_em: "2020-01-01T00:00:00Z" }),
+      ).rejects.toMatchObject({ status: 400 });
+      await expect(gerarQrCode(INEP_CANAIS, 1, { max_usos: 0 })).rejects.toMatchObject({
+        status: 400,
+      });
+    });
+
+    it("só envia corpo no QR quando há opções", async () => {
+      const corpos = [];
+      server.use(
+        http.post("/api/gestor/:cod_inep/canais/listas/:id/qrcode", async ({ request }) => {
+          corpos.push(await request.text());
+          return HttpResponse.json({ token: "t", url: "u" }, { status: 201 });
+        }),
+      );
+      await gerarQrCode(INEP_CANAIS, 1);
+      await gerarQrCode(INEP_CANAIS, 1, { max_usos: 3 });
+      expect(corpos[0]).toBe("");
+      expect(JSON.parse(corpos[1])).toEqual({ max_usos: 3 });
+    });
   });
 });

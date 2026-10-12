@@ -1,7 +1,9 @@
 // src/features/gestor/mocks/canaisFixtures.js
 // Fixtures do módulo Listas & QR (autoinscrição de contatos via telefone).
 // Espelha o contrato congelado da Fase 0 (issue #208) + confirmação de posse
-// do telefone (issue #212, onda 1: `exige_confirmacao`, estado do membro):
+// do telefone (issue #212, onda 1: `exige_confirmacao`, estado do membro) +
+// e-mail e LGPD (issue #214, onda 1: `coleta`, estado por contato, `parcial`,
+// consentimento versionado, `exclusao_url`, QR com validade/limite):
 //   gestão  /api/gestor/:cod_inep/canais/listas (Bearer + posse do cod_inep)
 //   público /api/canais/inscricao/:token        (sem auth)
 
@@ -19,6 +21,7 @@ export const LISTAS_CANAIS_FIXTURE = [
     cod_inep: 11000040,
     nome: "Responsáveis 6ºA",
     canal: "telefone",
+    coleta: "telefone",
     descricao: "Responsáveis dos alunos do 6ºA.",
     ativo: true,
     n_membros: 2,
@@ -34,6 +37,7 @@ export const LISTAS_CANAIS_FIXTURE = [
     cod_inep: 11000040,
     nome: "Professores",
     canal: "telefone",
+    coleta: "telefone",
     descricao: null,
     ativo: true,
     n_membros: 0,
@@ -56,6 +60,7 @@ export const LISTAS_CANAIS_FIXTURE = [
     cod_inep: 11000040,
     nome: "Responsáveis 7ºB",
     canal: "telefone",
+    coleta: "telefone",
     descricao: "Lista que exige confirmação do telefone.",
     ativo: true,
     n_membros: 2,
@@ -65,6 +70,54 @@ export const LISTAS_CANAIS_FIXTURE = [
     qrcode: null,
     created_at: "2026-10-11T08:00:00",
     updated_at: "2026-10-11T08:00:00",
+  },
+  {
+    id: 4,
+    cod_inep: 11000040,
+    nome: "Família 8ºC",
+    canal: "telefone",
+    coleta: "ambos",
+    descricao: "Coleta telefone e e-mail; exige confirmação.",
+    ativo: true,
+    n_membros: 3,
+    exige_confirmacao: true,
+    membros_confirmados: 1,
+    membros_pendentes: 2,
+    qrcode: null,
+    created_at: "2026-10-12T08:00:00",
+    updated_at: "2026-10-12T08:00:00",
+  },
+  {
+    id: 5,
+    cod_inep: 11000040,
+    nome: "Comunidade escolar",
+    canal: "telefone",
+    coleta: "qualquer",
+    descricao: "Telefone ou e-mail, à escolha de quem se inscreve.",
+    ativo: true,
+    n_membros: 1,
+    exige_confirmacao: false,
+    membros_confirmados: 0,
+    membros_pendentes: 0,
+    qrcode: null,
+    created_at: "2026-10-12T08:30:00",
+    updated_at: "2026-10-12T08:30:00",
+  },
+  {
+    id: 6,
+    cod_inep: 11000040,
+    nome: "Boletim por e-mail",
+    canal: "telefone",
+    coleta: "email",
+    descricao: null,
+    ativo: true,
+    n_membros: 1,
+    exige_confirmacao: true,
+    membros_confirmados: 0,
+    membros_pendentes: 1,
+    qrcode: null,
+    created_at: "2026-10-12T09:00:00",
+    updated_at: "2026-10-12T09:00:00",
   },
 ];
 
@@ -123,6 +176,83 @@ export const MEMBROS_CANAIS_FIXTURE = {
       confirmado_em: null,
     },
   ],
+  // coleta "ambos": confirmado_em/confirmado_via = telefone; email_confirmado_em = e-mail
+  4: [
+    {
+      id: 41,
+      contato_id: 401,
+      nome: "Ana Parcial",
+      telefone: "+55 11 99999-0041",
+      email: "ana@example.org",
+      quando: "2026-10-12T09:00:00",
+      validado: true,
+      conflito: false,
+      origem: "qrcode",
+      confirmado_via: "telegram",
+      confirmado_em: "2026-10-12T09:01:00",
+      email_confirmado_em: null,
+    },
+    {
+      id: 42,
+      contato_id: 402,
+      nome: "Bruno Completo",
+      telefone: "+55 11 99999-0042",
+      email: "bruno@example.org",
+      quando: "2026-10-12T09:10:00",
+      validado: true,
+      conflito: false,
+      origem: "qrcode",
+      confirmado_via: "whatsapp",
+      confirmado_em: "2026-10-12T09:11:00",
+      email_confirmado_em: "2026-10-12T09:12:00",
+    },
+    {
+      id: 43,
+      contato_id: 403,
+      nome: "Clara Pendente",
+      telefone: "+55 11 99999-0043",
+      email: "clara@example.org",
+      quando: "2026-10-12T09:20:00",
+      validado: false,
+      conflito: false,
+      origem: "qrcode",
+      confirmado_via: null,
+      confirmado_em: null,
+      email_confirmado_em: null,
+    },
+  ],
+  5: [
+    {
+      id: 51,
+      contato_id: 501,
+      nome: "Diego Só E-mail",
+      telefone: null,
+      email: "diego@example.org",
+      quando: "2026-10-12T10:00:00",
+      validado: false,
+      conflito: false,
+      origem: "qrcode",
+      confirmado_via: null,
+      confirmado_em: null,
+      email_confirmado_em: null,
+    },
+  ],
+  6: [
+    {
+      id: 61,
+      contato_id: 601,
+      nome: "Eva Leitora",
+      telefone: null,
+      email: "eva@example.org",
+      quando: "2026-10-12T10:30:00",
+      validado: false,
+      conflito: false,
+      origem: "qrcode",
+      confirmado_via: null,
+      confirmado_em: null,
+      email_confirmado_em: null,
+    },
+  ],
 };
 
 // `estado` do membro é derivado (contrato #212): confirmado se confirmado_em,
@@ -147,7 +277,42 @@ export const INSCRICAO_PUBLICA_FORM = {
   escola_nome: CANAIS_ESCOLA_NOME,
   canal: "telefone",
   campos: ["nome", "telefone"],
+  obrigatorios: ["nome", "telefone"],
   expira_em: null,
+};
+
+// `campos`/`obrigatorios` por `coleta` (contrato #214, onda 1).
+export const CAMPOS_POR_COLETA = {
+  telefone: { campos: ["nome", "telefone"], obrigatorios: ["nome", "telefone"] },
+  email: { campos: ["nome", "email"], obrigatorios: ["nome", "email"] },
+  ambos: { campos: ["nome", "telefone", "email"], obrigatorios: ["nome", "telefone", "email"] },
+  qualquer: { campos: ["nome", "telefone", "email"], obrigatorios: ["nome"] },
+};
+
+export const COLETAS_VALIDAS = Object.keys(CAMPOS_POR_COLETA);
+
+// Texto de consentimento vigente (GET /api/canais/consentimento e embutido no
+// GET público). Markdown simples: parágrafos, listas e **negrito**.
+export const CONSENTIMENTO_VIGENTE = {
+  versao: "1.0",
+  texto: [
+    "Ao se inscrever, você autoriza a **escola** a guardar seu nome e seus contatos.",
+    "",
+    "Usamos esses dados para:",
+    "",
+    "- avisos da escola;",
+    "- convites para reuniões.",
+    "",
+    "Você pode pedir a **remoção dos seus dados** a qualquer momento.",
+  ].join("\n"),
+  publicada_em: "2026-10-12T00:00:00Z",
+};
+
+// Versão nova (para simular o 409 de consentimento desatualizado).
+export const CONSENTIMENTO_NOVO = {
+  versao: "1.1",
+  texto: "Texto **revisado** do consentimento.\n\nInclui o uso do e-mail.",
+  publicada_em: "2026-10-13T00:00:00Z",
 };
 
 // Tokens usados nos testes e no estado inicial do mock.
@@ -174,3 +339,16 @@ export const TELEFONE_PENDENTE = "+55 11 99999-0005";
 export const TELEGRAM_BOT_CONFIRMACAO = "EduMapsConfirmaBot";
 // Código de 6 dígitos que o mock do WhatsApp "envia".
 export const WHATSAPP_CODIGO_MOCK = "123456";
+
+// ---------------------------------------------------------------------------
+// E-mail e LGPD (issue #214, onda 1)
+// ---------------------------------------------------------------------------
+
+// Token público da lista 4 (coleta "ambos", exige confirmação).
+export const INSCRICAO_TOKEN_AMBOS = "66666666-6666-4666-8666-666666666666";
+// Token público da lista 5 (coleta "qualquer", não exige).
+export const INSCRICAO_TOKEN_QUALQUER = "77777777-7777-4777-8777-777777777777";
+// Token público da lista 6 (coleta "email", exige confirmação).
+export const INSCRICAO_TOKEN_EMAIL = "88888888-8888-4888-8888-888888888888";
+// Código de 6 dígitos que o mock do e-mail "envia".
+export const EMAIL_CODIGO_MOCK = "654321";
