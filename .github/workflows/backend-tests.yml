@@ -60,7 +60,7 @@ jobs:
       EDUMAPS_FIXTURES: '1'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: dependências de sistema (cabeçalhos do libpq, cpanminus)
         run: |
@@ -68,7 +68,7 @@ jobs:
           sudo apt-get install -y build-essential libpq-dev cpanminus
 
       - name: cache da imagem do banco (edumaps-db:ci)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
           key: edumaps-db-ci-${{ hashFiles('db/Dockerfile') }}
