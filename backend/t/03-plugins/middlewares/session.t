@@ -27,10 +27,15 @@ sub flush_logger {
   $app->event_bus->request('event_logger.flush');
 }
 
+# A busca precisa devolver escolas: o Cache::SchoolSearch não guarda resposta
+# vazia ("[]"), e sem cache o segundo request não é HIT. "teste" não casa no
+# banco de fixtures do CI; "escola" casa em qualquer base.
+my $BUSCA = '/api/school/search?escola=escola';
+
 my $sid;
 
 subtest 'Primeiro request API cria cookie de sessão' => sub {
-  $t->get_ok('/api/school/search?escola=teste')->status_is(200);
+  $t->get_ok($BUSCA)->status_is(200);
 
   my @cookies = @{ $t->tx->res->cookies };
   ok @cookies, 'Set-Cookie presente na resposta';
@@ -44,7 +49,8 @@ subtest 'Primeiro request API cria cookie de sessão' => sub {
 };
 
 subtest 'Request seguinte com o cookie é a mesma sessão' => sub {
-  $t->get_ok('/api/school/search?escola=teste', { Cookie => "edumaps_sid=$sid" })->status_is(200);
+  $t->get_ok($BUSCA, { Cookie => "edumaps_sid=$sid" })->status_is(200)
+    ->header_is('X-Cache' => 'HIT', 'segundo request servido pelo cache');
 
   flush_logger();
 
