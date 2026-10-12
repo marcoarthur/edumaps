@@ -42,6 +42,11 @@ report_prompt_complemento <- function() {
     "  (diferenças, percentuais, médias, rankings novos).",
     "- Não afirme causa: descreva o que os dados mostram.",
     "- Cite a edição/ano, o recorte e o n (fontes) dos números principais.",
+    "- Números no padrão brasileiro: vírgula decimal (6,3; nunca 6.3) e IDEB",
+    "  com uma casa decimal, como nas tabelas.",
+    "- Não mencione nomes internos de ferramentas, tabelas ou colunas (ex.:",
+    "  ideb_agregado, co_municipio): cite a fonte pela descrição e edição",
+    "  (ex.: \"IDEB 2023, municípios de SP\").",
     "- Se houver avisos (dados cortados, sem dados), mencione-os.",
     "- Markdown simples: parágrafos, listas com '-', **negrito**. Sem HTML,",
     "  links, imagens, tabelas ou títulos com '#'.",
@@ -209,7 +214,7 @@ report_resumo_deterministico <- function(report, prefixo = NULL) {
     }
   }
   fontes <- vapply(report$fontes, function(f) {
-    sprintf("%s (%s; %s; n = %s)", f$ferramenta, f$edicao, f$escopo, f$n)
+    sprintf("%s (%s; %s; n = %s)", f$descricao %||% f$edicao, f$edicao, f$escopo, f$n)
   }, character(1))
 
   partes <- c(
