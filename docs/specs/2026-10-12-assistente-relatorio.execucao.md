@@ -730,7 +730,49 @@ retrocompatíveis):
 
 | ID | Trilha | Escopo | Status |
 |----|--------|--------|--------|
-| R7 | T-R | Carregador YAML + `relatorio.yml` + `eda_municipio.yml` + modo composto + redação geral + `/report/assistentes` + testes (inclui o 3º assistente só com YAML) + versão 0.3.0 | ⚪ |
-| P3 | T-P | Migration `relatorios_salvos_assistente` + rotas (assistentes, `?assistente`, POST) + salvos com assistente + `analytics_source_version` 0.3.0 + testes | ⚪ |
-| F4 | T-F | Seletor de assistente, capítulos (view, impressão, Markdown), query `assistente`, salvos + testes | ⚪ |
+| R7 | T-R | Carregador YAML + `relatorio.yml` + `eda_municipio.yml` + modo composto + redação geral + `/report/assistentes` + testes (inclui o 3º assistente só com YAML) + versão 0.3.0 | 🟢 |
+| P3 | T-P | Migration `relatorios_salvos_assistente` + rotas (assistentes, `?assistente`, POST) + salvos com assistente + `analytics_source_version` 0.3.0 + testes | 🟢 |
+| F4 | T-F | Seletor de assistente, capítulos (view, impressão, Markdown), query `assistente`, salvos + testes | 🟢 |
 | C4 | coord. | Verificação, deploy, e2e, docs, nota do ciclo inteiro, PR | ⚪ |
+
+## Log — Fase 4
+
+- **2026-10-12 — Desvios da T-R aceitos:**
+  - **Ordem da EDA:** redes → professores → IDEB → escolas → **minha escola
+    (opcional)**, da estrutura para os resultados.
+    - "Minha escola" só entra se a escola do gestor fica no município pedido.
+    - A comparação é por nome normalizado + UF, porque o eduBR não devolve o
+      código do município da escola.
+  - **YAML:** `capitulos[].id` e `recorte` opcionais; `opcoes.<x>.valores`
+    cai na interseção dos capítulos.
+  - **Ids das seções de capítulo prefixados** (`<capitulo>-<id>`). O
+    frontend prefixa de novo no DOM, o que é inofensivo.
+  - **`/report/assistentes`:** aceita `?publico`; capítulos com `id` e
+    `opcional`.
+  - **Avisos:** os de capítulo levam o título do capítulo como prefixo;
+    capítulo que falha → `{tipo:"capitulo"}`. Se todos os territoriais
+    falham, o primeiro erro sobe (400 ou 500).
+  - **Pacote do LLM da EDA:** ≤ 18 mil caracteres e linhas por tabela
+    reduzidas progressivamente; o resumo pede até ~300 palavras.
+  - `tema` deixou de ser `required` no `ReportRequest` do `api.json`.
+- **2026-10-12 — T-P:**
+  - título do assistente nos salvos derivado do `conteudo` (sem coluna);
+  - `/temas?assistente` validado contra a lista;
+  - `tema` descartado no composto;
+  - cache por `report_<assistente>`;
+  - o default do `Plugin/Analytics.pm` e o `t/ci` ficam em 0.1.0 (vale o
+    conf).
+- **2026-10-12 — T-F:**
+  - o assistente padrão é omitido nos pedidos;
+  - se `/assistentes` falhar, a página cai em "Relatório por tema";
+  - o seletor só aparece com 2 ou mais assistentes;
+  - `agruparPorCapitulo` é compartilhado entre a tela, a impressão e o
+    Markdown.
+- **Verificação (coordenador):**
+  - verify `relatorios_salvos_assistente .. ok`;
+  - R: 30 arquivos / 1588 asserções / 0 falhas;
+  - backend: 102 / 697 (só falhas antigas);
+  - frontend: 106 / 899, build OK.
+- **Integração da T-R pelo endpoint** (Plumber de uma cópia, provider mock):
+  EDA de Ubatuba com 5 capítulos e de Campinas com 4, ~27 s cada.
+  **Pendência:** a EDA leva ~25–28 s por município.
