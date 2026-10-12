@@ -1,6 +1,6 @@
 # Assistente de Relatório — plano inicial de consumo e integração (edumapsAnalytics → eduBR)
 
-**Data:** 2026-10-12 · **Autor:** Tech Lead (agente) · **Versão:** 1.1 ·
+**Issue:** #219 · **Data:** 2026-10-12 · **Autor:** Tech Lead (agente) · **Versão:** 1.1 ·
 **Status:** plano inicial para discussão, **com poucas decisões fechadas**.
 **Fontes (somente leitura):** `analysis/edumapsr` (pacote `edumapsAnalytics`)
 e `~/Projects/eduBR`. O repositório `eduBR` é **somente-leitura** para este
