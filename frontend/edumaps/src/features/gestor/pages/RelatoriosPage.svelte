@@ -14,10 +14,19 @@
   // novo com os dados atuais" de um relatório salvo: o recorte da query pode
   // ser outro que não o da escola ("Recorte: <nome>", com a opção de trocar) e,
   // com `gerar=1`, a geração dispara uma vez (a query sai da URL em seguida).
+  //
+  // Fase 4: um seletor de assistente no topo (padrão "Relatório por tema").
+  // O assistente restringe os níveis; no modo `tema` a página segue igual (os
+  // temas vêm de /temas?assistente); no modo `composto` a lista de temas dá
+  // lugar ao sumário dos capítulos e às opções do próprio assistente, e o
+  // pedido vai sem tema. A query aceita `assistente`. Trocar de assistente
+  // cancela o polling e reajusta nível e opções.
   import { onMount, onDestroy } from "svelte";
   import {
     getRecortePadrao,
     listTemasRelatorio,
+    listarAssistentes,
+    ASSISTENTE_PADRAO,
     gerarRelatorio,
     getJobRelatorio,
     salvarRelatorio,
@@ -60,13 +69,18 @@
   function lerQuery() {
     const q = new URLSearchParams(window.location.search);
     const nivelQ = q.get("nivel");
-    if (!NIVEIS.some((n) => n.valor === nivelQ)) return null;
+    if (!NIVEIS.some((n) => n.valor === nivelQ)) {
+      // só o assistente (link direto): escolhe o assistente e mais nada
+      const a = q.get("assistente");
+      return a ? { assistente: a, nivel: null, codigo: null, nome: null, tema: null, opcoes: {}, gerar: false } : null;
+    }
     const opcoesQ = {};
     for (const [k, v] of q.entries()) {
-      if (!["nivel", "codigo", "nome", "tema", "gerar"].includes(k)) opcoesQ[k] = v;
+      if (!["nivel", "codigo", "nome", "tema", "gerar", "assistente"].includes(k)) opcoesQ[k] = v;
     }
     const codigoQ = q.get("codigo") ?? "";
     return {
+      assistente: q.get("assistente") || null,
       nivel: nivelQ,
       codigo: CODIGO_RE[nivelQ]?.test(codigoQ) ? codigoQ : null,
       nome: q.get("nome") || null,
@@ -87,6 +101,19 @@
   let carregando = $state(true);
   let error = $state(null);
   let precisaLogin = $state(false);
+
+  // assistente usado quando /assistentes não responde (servidor das Fases 1–3)
+  const ASSISTENTE_FALLBACK = {
+    id: ASSISTENTE_PADRAO,
+    titulo: "Relatório por tema",
+    modo: "tema",
+    niveis: NIVEIS.map((n) => n.valor),
+    opcoes: {},
+    padroes: {},
+  };
+
+  let assistentes = $state([]);
+  let assistenteId = $state(ASSISTENTE_PADRAO);
 
   let padrao = $state(null);
   let nivel = $state("municipio");
@@ -122,9 +149,17 @@
   let destruido = false;
   let pedidoTemas = 0;
 
+  const assistente = $derived(
+    assistentes.find((a) => a.id === assistenteId) ?? assistentes[0] ?? ASSISTENTE_FALLBACK,
+  );
+  const composto = $derived(assistente.modo === "composto");
+  const niveisDisponiveis = $derived(niveisDo(assistente));
+
   const tema = $derived(temas.find((t) => t.id === temaId) ?? null);
+  // de onde vêm as opções (e os padrões): do tema, ou do assistente no composto
+  const fonteOpcoes = $derived(composto ? assistente : tema);
   const opcoesTema = $derived(
-    Object.entries(tema?.opcoes ?? {})
+    Object.entries(fonteOpcoes?.opcoes ?? {})
       .map(([chave, lista]) => ({ chave, valores: valoresOpcao(lista) }))
       .filter((o) => o.valores.length > 0),
   );
@@ -153,7 +188,35 @@
     return m ? { nivel, codigo: codigoMunicipio(m.co_municipio), nome: m.no_municipio } : null;
   });
 
-  const podeGerar = $derived(!!geotag?.codigo && !!tema && !gerando);
+  const podeGerar = $derived(
+    !!geotag?.codigo &&
+      (composto ? niveisDisponiveis.some((n) => n.valor === nivel) : !!tema) &&
+      !gerando,
+  );
+
+  /** Níveis (na ordem de NIVEIS) que o assistente aceita; sem `niveis`, todos. */
+  function niveisDo(a) {
+    const lista = Array.isArray(a?.niveis) && a.niveis.length ? a.niveis : null;
+    return lista ? NIVEIS.filter((n) => lista.includes(n.valor)) : NIVEIS;
+  }
+
+  /** O nível atual, se o assistente aceita; senão o município, ou o primeiro. */
+  function nivelValido(a, atual) {
+    const ns = niveisDo(a).map((n) => n.valor);
+    if (ns.includes(atual)) return atual;
+    return ns.includes("municipio") ? "municipio" : (ns[0] ?? atual);
+  }
+
+  /** Opções iniciais de uma definição (tema ou assistente) com `opcoes`/`padroes`. */
+  function opcoesIniciais(def) {
+    const novas = {};
+    for (const [chave, lista] of Object.entries(def?.opcoes ?? {})) {
+      const valores = valoresOpcao(lista);
+      if (!valores.length) continue;
+      novas[chave] = valorInicialOpcao(def, chave, valores);
+    }
+    return novas;
+  }
 
   const onApiError = (err, padraoMsg) => {
     if (err instanceof ApiError && err.status === 401) {
@@ -175,12 +238,27 @@
       const me = await fetchMe();
       inep = me.cod_inep;
       gestor = me;
-      padrao = await getRecortePadrao(inep);
+      const [recorte, lista] = await Promise.all([getRecortePadrao(inep), carregarAssistentes()]);
+      padrao = recorte;
+      assistentes = lista;
       const q = queryPendente;
-      if (q) aplicarRecorteDaQuery(q);
-      await carregarTemas();
+      if (q?.assistente && lista.some((a) => a.id === q.assistente)) assistenteId = q.assistente;
+      else if (!lista.some((a) => a.id === assistenteId)) assistenteId = lista[0]?.id ?? ASSISTENTE_PADRAO;
+      if (q?.nivel) aplicarRecorteDaQuery(q);
+      const nivelOk = nivelValido(assistente, nivel);
+      if (nivelOk !== nivel) {
+        // nível da query fora do assistente: cai no nível válido, recorte da escola
+        nivel = nivelOk;
+        origem = "padrao";
+        recorteQuery = null;
+      }
+      if (composto) opcoes = opcoesIniciais(assistente);
+      else await carregarTemas();
       if (q) {
-        aplicarTemaDaQuery(q);
+        if (q.nivel) {
+          if (composto) aplicarOpcoesDaQuery(assistente, q);
+          else aplicarTemaDaQuery(q);
+        }
         queryPendente = null;
         gerarAgora = q.gerar;
         limparQueryDaUrl();
@@ -192,6 +270,20 @@
       carregando = false;
     }
     if (gerarAgora && !error && !precisaLogin) gerar();
+  }
+
+  /**
+   * Lista de assistentes; se a rota não responder (servidor anterior à fase
+   * 4), segue com o "Relatório por tema". 401 sobe para o login.
+   */
+  async function carregarAssistentes() {
+    try {
+      const lista = await listarAssistentes(inep);
+      return lista.length ? lista : [ASSISTENTE_FALLBACK];
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) throw err;
+      return [ASSISTENTE_FALLBACK];
+    }
   }
 
   // ------------------------------------------------------------- query
@@ -214,12 +306,16 @@
   function aplicarTemaDaQuery(q) {
     if (!q.tema || !temas.some((t) => t.id === q.tema)) return;
     escolherTema(q.tema);
-    const t = temas.find((x) => x.id === q.tema);
+    aplicarOpcoesDaQuery(temas.find((x) => x.id === q.tema), q);
+  }
+
+  /** Aplica as opções da query válidas para a definição (tema ou assistente). */
+  function aplicarOpcoesDaQuery(def, q) {
     const novas = { ...opcoes };
-    for (const [chave, lista] of Object.entries(t?.opcoes ?? {})) {
+    for (const [chave, lista] of Object.entries(def?.opcoes ?? {})) {
       if (!(chave in q.opcoes)) continue;
       const v = q.opcoes[chave];
-      const valido = v === "" ? !opcaoObrigatoria(t, chave) : valoresOpcao(lista).some((x) => x.valor === v);
+      const valido = v === "" ? !opcaoObrigatoria(def, chave) : valoresOpcao(lista).some((x) => x.valor === v);
       if (valido) novas[chave] = v;
     }
     opcoes = novas;
@@ -242,7 +338,7 @@
     carregandoTemas = true;
     erroTemas = null;
     try {
-      const lista = await listTemasRelatorio(inep, nivel);
+      const lista = await listTemasRelatorio(inep, nivel, assistente.id);
       if (pedido !== pedidoTemas) return;
       temas = lista;
       if (!lista.some((t) => t.id === temaId)) escolherTema(lista[0]?.id ?? "");
@@ -260,14 +356,33 @@
   function escolherTema(id) {
     cancelarJob();
     temaId = id;
-    const t = temas.find((x) => x.id === id);
-    const novas = {};
-    for (const [chave, lista] of Object.entries(t?.opcoes ?? {})) {
-      const valores = valoresOpcao(lista);
-      if (!valores.length) continue;
-      novas[chave] = valorInicialOpcao(t, chave, valores);
+    opcoes = opcoesIniciais(temas.find((x) => x.id === id));
+  }
+
+  // ------------------------------------------------------------- assistente
+
+  async function trocarAssistente(id) {
+    if (id === assistenteId) return;
+    cancelarJob();
+    assistenteId = id;
+    const novoNivel = nivelValido(assistente, nivel);
+    if (novoNivel !== nivel) {
+      nivel = novoNivel;
+      if (nivel === "escola" || origem === "query") origem = "padrao";
+      recorteQuery = null;
     }
-    opcoes = novas;
+    if (composto) {
+      // invalida um carregamento de temas em curso: no composto não há temas
+      pedidoTemas += 1;
+      carregandoTemas = false;
+      erroTemas = null;
+      temaId = "";
+      opcoes = opcoesIniciais(assistente);
+      await garantirCascata();
+    } else {
+      temaId = "";
+      await Promise.all([carregarTemas(), garantirCascata()]);
+    }
   }
 
   // ------------------------------------------------------------- recorte
@@ -278,7 +393,7 @@
     nivel = novo;
     if (nivel === "escola" || origem === "query") origem = "padrao";
     recorteQuery = null;
-    await Promise.all([carregarTemas(), garantirCascata()]);
+    await Promise.all([composto ? null : carregarTemas(), garantirCascata()]);
   }
 
   async function trocarOrigem(nova) {
@@ -385,8 +500,9 @@
     try {
       const { job_id } = await gerarRelatorio(inep, {
         geotag: { nivel: geotag.nivel, codigo: geotag.codigo },
-        tema: temaId,
+        tema: composto ? undefined : temaId,
         opcoes,
+        assistente: assistente.id,
       });
       if (destruido || !gerando) return;
       jobAtual = job_id;
@@ -480,10 +596,43 @@
       }}
       data-testid="relatorio-form"
     >
+      {#if assistentes.length > 1}
+        <fieldset class="space-y-2" data-testid="assistentes">
+          <legend class="text-sm font-semibold text-gray-900">Assistente</legend>
+          <div class="grid gap-2 sm:grid-cols-2">
+            {#each assistentes as a (a.id)}
+              <label
+                class="flex items-start gap-2 rounded-md border p-3 text-sm cursor-pointer"
+                class:bg-blue-50={assistenteId === a.id}
+                class:border-blue-400={assistenteId === a.id}
+                class:border-gray-300={assistenteId !== a.id}
+              >
+                <input
+                  type="radio"
+                  name="assistente"
+                  value={a.id}
+                  checked={assistenteId === a.id}
+                  onchange={() => trocarAssistente(a.id)}
+                  aria-labelledby="assistente-titulo-{a.id}"
+                  aria-describedby={a.descricao ? `assistente-desc-${a.id}` : undefined}
+                  class="mt-1"
+                />
+                <span>
+                  <span id="assistente-titulo-{a.id}" class="font-medium text-gray-900">{a.titulo}</span>
+                  {#if a.descricao}
+                    <span id="assistente-desc-{a.id}" class="block text-gray-500">{a.descricao}</span>
+                  {/if}
+                </span>
+              </label>
+            {/each}
+          </div>
+        </fieldset>
+      {/if}
+
       <fieldset class="space-y-2">
         <legend class="text-sm font-semibold text-gray-900">Recorte</legend>
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Nível do recorte">
-          {#each NIVEIS as n (n.valor)}
+          {#each niveisDisponiveis as n (n.valor)}
             <label
               class="px-3 py-1.5 rounded-md border text-sm cursor-pointer"
               class:bg-blue-50={nivel === n.valor}
@@ -594,46 +743,64 @@
         {/if}
       </fieldset>
 
-      <fieldset class="space-y-2">
-        <legend class="text-sm font-semibold text-gray-900">Tema</legend>
-        {#if carregandoTemas}
-          <p class="text-sm text-gray-500">Carregando temas…</p>
-        {:else if erroTemas}
-          <p class="text-sm text-red-700" role="alert">{erroTemas}</p>
-        {:else if temas.length === 0}
-          <p class="text-sm text-gray-500">Nenhum tema disponível para este nível.</p>
-        {:else}
-          <ul class="space-y-2" data-testid="temas">
-            {#each temas as t (t.id)}
-              <li>
-                <label class="flex items-start gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="tema"
-                    value={t.id}
-                    checked={temaId === t.id}
-                    onchange={() => escolherTema(t.id)}
-                    aria-describedby="tema-desc-{t.id}"
-                    class="mt-1"
-                  />
-                  <span>
-                    <span class="font-medium text-gray-900">{t.titulo}</span>
-                    {#if t.profundidade === "profunda"}
-                      {" "}<span
-                        class="ml-1 inline-block align-middle text-[11px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
-                        data-testid="selo-profunda"
-                      >Análise aprofundada</span>
-                    {/if}
-                    {#if t.descricao}
-                      <span id="tema-desc-{t.id}" class="block text-gray-500">{t.descricao}</span>
-                    {/if}
-                  </span>
-                </label>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </fieldset>
+      {#if composto}
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-semibold text-gray-900">Capítulos</legend>
+          {#if assistente.capitulos?.length}
+            <ol class="list-decimal pl-5 space-y-1 text-sm text-gray-800" data-testid="capitulos">
+              {#each assistente.capitulos as c, i (i)}
+                <li>{c.titulo ?? c.tema}</li>
+              {/each}
+            </ol>
+          {:else}
+            <p class="text-sm text-gray-500">O assistente define os capítulos ao gerar.</p>
+          {/if}
+          <p class="text-xs text-gray-500">
+            Os capítulos são fixos e saem em um relatório só, com um resumo geral.
+          </p>
+        </fieldset>
+      {:else}
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-semibold text-gray-900">Tema</legend>
+          {#if carregandoTemas}
+            <p class="text-sm text-gray-500">Carregando temas…</p>
+          {:else if erroTemas}
+            <p class="text-sm text-red-700" role="alert">{erroTemas}</p>
+          {:else if temas.length === 0}
+            <p class="text-sm text-gray-500">Nenhum tema disponível para este nível.</p>
+          {:else}
+            <ul class="space-y-2" data-testid="temas">
+              {#each temas as t (t.id)}
+                <li>
+                  <label class="flex items-start gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tema"
+                      value={t.id}
+                      checked={temaId === t.id}
+                      onchange={() => escolherTema(t.id)}
+                      aria-describedby="tema-desc-{t.id}"
+                      class="mt-1"
+                    />
+                    <span>
+                      <span class="font-medium text-gray-900">{t.titulo}</span>
+                      {#if t.profundidade === "profunda"}
+                        {" "}<span
+                          class="ml-1 inline-block align-middle text-[11px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
+                          data-testid="selo-profunda"
+                        >Análise aprofundada</span>
+                      {/if}
+                      {#if t.descricao}
+                        <span id="tema-desc-{t.id}" class="block text-gray-500">{t.descricao}</span>
+                      {/if}
+                    </span>
+                  </label>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </fieldset>
+      {/if}
 
       {#if opcoesTema.length}
         <div class="grid gap-3 sm:grid-cols-3" data-testid="opcoes-tema">
@@ -645,7 +812,7 @@
                 bind:value={opcoes[o.chave]}
                 onchange={() => cancelarJob()}
               >
-                {#if !opcaoObrigatoria(tema, o.chave)}
+                {#if !opcaoObrigatoria(fonteOpcoes, o.chave)}
                   <option value="">{o.chave === "etapa" ? "Todas as etapas" : "Todas"}</option>
                 {/if}
                 {#each o.valores as v (v.valor)}

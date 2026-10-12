@@ -8,6 +8,7 @@ import {
   RELATORIO_RESULT_FIXTURE,
   RELATORIO_LLM_INDISPONIVEL_FIXTURE,
   RELATORIO_INFRAESTRUTURA_FIXTURE,
+  RELATORIO_EDA_FIXTURE,
 } from "../../mocks/relatoriosFixtures.js";
 
 vi.mock("@carbon/charts-svelte", async () => {
@@ -227,5 +228,65 @@ describe("RelatorioView", () => {
       expect(screen.queryByRole("button", { name: "Salvar relatório" })).toBeNull();
       expect(screen.getByRole("button", { name: "Baixar Markdown" })).toBeInTheDocument();
     });
+  });
+});
+
+describe("RelatorioView com capítulos (fase 4)", () => {
+  it("sumário com âncoras para cada capítulo", () => {
+    render(RelatorioView, { props: { relatorio: RELATORIO_EDA_FIXTURE } });
+    const nav = screen.getByRole("navigation", { name: "Sumário" });
+    const links = within(nav).getAllByRole("link");
+    expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+      ["IDEB do município", "#capitulo-ideb"],
+      ["Escolas do município pelo IDEB", "#capitulo-escolas"],
+    ]);
+    for (const a of links) {
+      expect(document.getElementById(a.getAttribute("href").slice(1))).not.toBeNull();
+    }
+  });
+
+  it("resumo antes, um h2 por capítulo com as seções em h3, leitura por último", () => {
+    render(RelatorioView, { props: { relatorio: RELATORIO_EDA_FIXTURE } });
+    const titulos = [...document.querySelectorAll("h2, h3")]
+      .filter((h) => !h.closest("footer"))
+      .map((h) => `${h.tagName.toLowerCase()} ${h.textContent.trim()}`);
+    expect(titulos).toEqual([
+      "h2 EDA do município — Porto Velho (RO)",
+      "h2 Sumário",
+      "h2 Resumo",
+      "h2 IDEB do município",
+      "h3 Indicadores principais",
+      "h2 Escolas do município pelo IDEB",
+      "h3 Visão geral das escolas",
+      "h2 Como ler",
+    ]);
+    const capitulos = screen.getAllByTestId("relatorio-capitulo");
+    expect(capitulos).toHaveLength(2);
+    expect(capitulos[0]).toHaveAccessibleName("IDEB do município");
+    expect(within(capitulos[0]).getAllByTestId(/^secao-(indicadores|tabela)$/)).toHaveLength(2);
+    expect(within(capitulos[1]).getAllByTestId("indicador")).toHaveLength(1);
+    // quebra de página antes de cada capítulo na impressão
+    for (const c of capitulos) expect(c.className).toContain("print:break-before-page");
+  });
+
+  it("ids das seções não se repetem entre capítulos", () => {
+    render(RelatorioView, { props: { relatorio: RELATORIO_EDA_FIXTURE } });
+    const ids = [...document.querySelectorAll("[id]")].map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(screen.getByRole("heading", { name: "Visão geral das escolas" }).id).toBe("secao-escolas-kpis");
+  });
+
+  it("capítulo sem seções avisa; sem capítulos não há sumário", () => {
+    const { unmount } = render(RelatorioView, {
+      props: {
+        relatorio: { ...RELATORIO_EDA_FIXTURE, capitulos: [...RELATORIO_EDA_FIXTURE.capitulos, { id: "prof", titulo: "Professores" }] },
+      },
+    });
+    const ultimo = screen.getAllByTestId("relatorio-capitulo").at(-1);
+    expect(within(ultimo).getByText("Sem dados neste capítulo.")).toBeInTheDocument();
+    unmount();
+    render(RelatorioView, { props: { relatorio: RELATORIO_RESULT_FIXTURE } });
+    expect(screen.queryByTestId("relatorio-sumario")).toBeNull();
+    expect(screen.queryByTestId("relatorio-capitulo")).toBeNull();
   });
 });

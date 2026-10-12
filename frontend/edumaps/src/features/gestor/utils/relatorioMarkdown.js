@@ -11,7 +11,13 @@
 //   - associacoes  → lista com direção, segurança, corte e n
 //   (tipos desconhecidos são ignorados, como na tela);
 // depois os avisos e as fontes (sem o nome interno da ferramenta).
+//
+// Fase 4 (modo composto): com `capitulos`, o sumário (opcional) vem depois do
+// cabeçalho, as seções gerais antes/depois dos capítulos (`##`) e cada
+// capítulo é um `## <capítulo>` com as seções dele em `###`. Sem
+// `capitulos`, a saída é a mesma das Fases 1–3.
 import { formatarValor, ehNumerico } from "./relatorioFormatos.js";
+import { agruparPorCapitulo } from "./relatorioCapitulos.js";
 
 const DIRECAO = {
   maior: "associado a resultado maior",
@@ -71,25 +77,31 @@ export function tabelaMarkdown(colunas, linhas) {
   return [cab, sep, ...corpo].join("\n");
 }
 
-/** Rebaixa os títulos do markdown da seção (## → ###) para caber sob o "##" dela. */
-function rebaixarTitulos(md) {
+/** Marcador de título do nível n ("##", "###"). */
+const h = (n) => "#".repeat(n);
+
+/**
+ * Rebaixa os títulos do markdown da seção para caberem sob o título dela
+ * (seção em "##": ## → ###; seção em "###": ## → ####), até "######".
+ */
+function rebaixarTitulos(md, nivel = 2) {
   return String(md ?? "")
     .replace(/\r\n/g, "\n")
-    .replace(/^(#{1,5})(\s)/gm, "#$1$2")
+    .replace(/^(#{1,5})(\s)/gm, (_, marcas, esp) => `${h(Math.min(6, marcas.length + nivel - 1))}${esp}`)
     .trim();
 }
 
-function secaoTexto(s) {
+function secaoTexto(s, n) {
   const partes = [];
-  if (s.titulo) partes.push(`## ${linha(s.titulo)}`);
-  const corpo = rebaixarTitulos(s.markdown);
+  if (s.titulo) partes.push(`${h(n)} ${linha(s.titulo)}`);
+  const corpo = rebaixarTitulos(s.markdown, n);
   if (corpo) partes.push(corpo);
   return partes;
 }
 
-function secaoIndicadores(s) {
+function secaoIndicadores(s, n) {
   const partes = [];
-  if (s.titulo) partes.push(`## ${linha(s.titulo)}`);
+  if (s.titulo) partes.push(`${h(n)} ${linha(s.titulo)}`);
   const itens = (s.itens ?? []).map((item) => {
     let t = `- **${linha(item?.rotulo)}:** ${formatarValor(item?.valor, item?.formato)}`;
     if (item?.referencia) {
@@ -102,18 +114,18 @@ function secaoIndicadores(s) {
   return partes;
 }
 
-function secaoTabela(s) {
+function secaoTabela(s, n) {
   const titulo = linha(s.titulo ?? "Tabela");
-  const partes = [`## ${s.recolhida === true ? `Detalhes técnicos: ${titulo}` : titulo}`];
+  const partes = [`${h(n)} ${s.recolhida === true ? `Detalhes técnicos: ${titulo}` : titulo}`];
   const t = tabelaMarkdown(s.colunas, s.linhas);
   if (t) partes.push(t);
   if (s.nota) partes.push(`_${linha(s.nota)}_`);
   return partes;
 }
 
-function secaoGrafico(s) {
+function secaoGrafico(s, n) {
   const partes = [];
-  partes.push(`## ${linha(s.titulo ?? "Gráfico")}`);
+  partes.push(`${h(n)} ${linha(s.titulo ?? "Gráfico")}`);
   const tipo = s.grafico === "linhas" ? "Gráfico de linhas" : "Gráfico de barras";
   partes.push(`_${tipo} — dados:_`);
   const colunas = [
@@ -129,8 +141,8 @@ function secaoGrafico(s) {
   return partes;
 }
 
-function secaoAssociacoes(s) {
-  const partes = [`## ${linha(s.titulo ?? "Associações")}`];
+function secaoAssociacoes(s, n) {
+  const partes = [`${h(n)} ${linha(s.titulo ?? "Associações")}`];
   const itens = (s.itens ?? []).map((item) => {
     const nome = `**${linha(item?.rotulo)}**${item?.corte ? ` (${linha(item.corte)})` : ""}`;
     const detalhes = [DIRECAO[item?.direcao] ?? DIRECAO.sem_relacao_clara];
@@ -159,17 +171,36 @@ function fonteMarkdown(f) {
   return `- ${partes.join(" · ")}`;
 }
 
+/** Blocos das seções (tipos desconhecidos são ignorados). */
+function blocosSecoes(secoes, nivel) {
+  const out = [];
+  for (const s of secoes ?? []) {
+    if (!s || typeof s !== "object") continue;
+    const fn = POR_TIPO[s.tipo];
+    if (!fn) continue;
+    out.push(...fn(s, nivel));
+  }
+  return out;
+}
+
 /**
  * Converte o ReportResult em Markdown (função pura).
  * @param {object} relatorio
+ * @param {{sumario?: boolean}} [opcoes] sumario: lista dos capítulos no topo
+ *   (só no relatório com capítulos; padrão true)
  * @returns {string}
  */
-export function relatorioParaMarkdown(relatorio) {
+export function relatorioParaMarkdown(relatorio, { sumario = true } = {}) {
   const r = relatorio ?? {};
   const blocos = [`# ${linha(r.titulo ?? "Relatório")}`];
 
   const meta = [];
-  if (r.tema?.titulo) meta.push(`**Tema:** ${linha(r.tema.titulo)}`);
+  const assistente = r.assistente?.id && r.assistente.id !== "relatorio" ? r.assistente : null;
+  if (assistente) meta.push(`**Assistente:** ${linha(assistente.titulo ?? assistente.id)}`);
+  // no modo composto o `tema` é o próprio assistente: não repete
+  if (r.tema?.titulo && !(assistente && r.tema.id === assistente.id)) {
+    meta.push(`**Tema:** ${linha(r.tema.titulo)}`);
+  }
   const recorte = textoRecorte(r);
   if (recorte) meta.push(`**Recorte:** ${linha(recorte)}`);
   const data = dataGeracao(r);
@@ -183,11 +214,21 @@ export function relatorioParaMarkdown(relatorio) {
     );
   }
 
-  for (const s of r.secoes ?? []) {
-    if (!s || typeof s !== "object") continue;
-    const fn = POR_TIPO[s.tipo];
-    if (!fn) continue;
-    blocos.push(...fn(s));
+  const grupos = agruparPorCapitulo(r);
+  if (!grupos) {
+    blocos.push(...blocosSecoes(r.secoes, 2));
+  } else {
+    if (sumario) {
+      blocos.push("## Sumário");
+      blocos.push(grupos.capitulos.map((c, i) => `${i + 1}. ${linha(c.titulo)}`).join("\n"));
+    }
+    blocos.push(...blocosSecoes(grupos.antes, 2));
+    for (const c of grupos.capitulos) {
+      blocos.push(`## ${linha(c.titulo)}`);
+      const corpo = blocosSecoes(c.secoes, 3);
+      blocos.push(...(corpo.length ? corpo : ["_Sem dados neste capítulo._"]));
+    }
+    blocos.push(...blocosSecoes(grupos.depois, 2));
   }
 
   const avisos = (r.avisos ?? []).filter((a) => a?.mensagem);

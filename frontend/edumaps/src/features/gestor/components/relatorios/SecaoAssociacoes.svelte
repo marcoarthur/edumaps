@@ -6,8 +6,9 @@
   // A direção nunca depende só de cor: seta + texto (o ícone é decorativo).
   import { formatarValor } from "../../utils/relatorioFormatos.js";
 
-  /** @type {{secao: {id: string, titulo?: string, itens?: Array<object>, nota?: string}}} */
-  let { secao } = $props();
+  /** @type {{secao: {id: string, titulo?: string, itens?: Array<object>, nota?: string}, nivelTitulo?: number}} */
+  // nivelTitulo: 2 (padrão) ou 3 quando a seção está dentro de um capítulo (fase 4)
+  let { secao, nivelTitulo = 2 } = $props();
 
   const DIRECAO = {
     maior: { seta: "↑", texto: "Associado a resultado maior", classe: "text-emerald-700 bg-emerald-50 border-emerald-200" },
@@ -27,9 +28,9 @@
 </script>
 
 <section class="space-y-3" aria-labelledby="secao-{secao.id}" data-testid="secao-associacoes">
-  <h2 id="secao-{secao.id}" class="text-lg font-semibold text-gray-900">
+  <svelte:element this={`h${nivelTitulo}`} id="secao-{secao.id}" class="text-lg font-semibold text-gray-900">
     {secao.titulo ?? "Associações"}
-  </h2>
+  </svelte:element>
   {#if itens.length}
     <ul class="grid gap-3 sm:grid-cols-2">
       {#each itens as item, i (i)}

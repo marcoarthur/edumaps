@@ -544,4 +544,144 @@ describe("RelatoriosPage", () => {
       expect(window.location.search).toContain("nivel=regiao");
     });
   });
+
+  describe("fase 4: assistentes", () => {
+    const niveisVisiveis = () =>
+      within(screen.getByRole("radiogroup", { name: "Nível do recorte" }))
+        .getAllByRole("radio")
+        .map((r) => r.value);
+
+    async function irParaEda() {
+      await fireEvent.click(screen.getByRole("radio", { name: "EDA do município" }));
+      return screen.findByTestId("capitulos");
+    }
+
+    it("seletor no topo com \"Relatório por tema\" marcado; modo tema igual às fases anteriores", async () => {
+      await abrir();
+      const grupo = screen.getByTestId("assistentes");
+      expect(within(grupo).getByRole("radio", { name: "Relatório por tema" })).toBeChecked();
+      expect(within(grupo).getByRole("radio", { name: "EDA do município" })).toHaveAccessibleDescription(
+        "Relatório exploratório completo de um município, em capítulos.",
+      );
+      expect(niveisVisiveis()).toEqual(["escola", "municipio", "uf", "regiao"]);
+      expect(screen.queryByTestId("capitulos")).toBeNull();
+    });
+
+    it("EDA: só o nível município, sumário dos capítulos no lugar dos temas e as opções do assistente", async () => {
+      await abrir();
+      await fireEvent.click(screen.getByRole("radio", { name: "Região" }));
+      await waitFor(() => expect(temasVisiveis()).toContain("tendencia_ideb"));
+
+      const capitulos = await irParaEda();
+      expect(within(capitulos).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+        "IDEB do município",
+        "Escolas do município pelo IDEB",
+        "Redes de ensino",
+        "Professores",
+      ]);
+      expect(screen.queryByTestId("temas")).toBeNull();
+      expect(niveisVisiveis()).toEqual(["municipio"]);
+      expect(screen.getByRole("radio", { name: "Município" })).toBeChecked();
+      expect(screen.getByLabelText(/Da minha escola: Porto Velho/)).toBeChecked();
+      // etapa com padrão no assistente: obrigatória, sem "Todas"; sem rede
+      const etapa = screen.getByLabelText("Etapa");
+      expect(etapa).toHaveValue("fundamental_i");
+      expect(within(etapa).queryByRole("option", { name: "Todas as etapas" })).toBeNull();
+      expect(screen.queryByLabelText("Rede")).toBeNull();
+      expect(screen.getByRole("button", { name: "Gerar relatório" })).toBeEnabled();
+
+      // de volta ao relatório por tema: temas e níveis de volta, primeiro tema escolhido
+      await fireEvent.click(screen.getByRole("radio", { name: "Relatório por tema" }));
+      await waitFor(() => expect(temasVisiveis()).toContain("ideb_territorio"));
+      expect(screen.getByRole("radio", { name: /IDEB do território/ })).toBeChecked();
+      expect(niveisVisiveis()).toEqual(["escola", "municipio", "uf", "regiao"]);
+      expect(screen.getByLabelText("Rede")).toHaveValue("");
+    });
+
+    it("pede /temas com ?assistente só fora do padrão", async () => {
+      const assistentesPedidos = [];
+      server.use(
+        http.get("/api/gestor/:cod_inep/relatorios/temas", ({ request }) => {
+          assistentesPedidos.push(new URL(request.url).searchParams.get("assistente"));
+          return undefined; // segue para o handler padrão
+        }),
+      );
+      await abrir();
+      expect(assistentesPedidos).toEqual([null]);
+    });
+
+    it("gera a EDA sem tema, com assistente e opções; o relatório sai em capítulos", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      await abrir();
+      await irParaEda();
+      await fireEvent.change(screen.getByLabelText("Etapa"), { target: { value: "fundamental_ii" } });
+      await gerarEPollar();
+      expect(getPedidosRelatorioMock()[0]).toEqual({
+        geotag: { nivel: "municipio", codigo: "1100205" },
+        opcoes: { etapa: "fundamental_ii" },
+        assistente: "eda_municipio",
+      });
+      const view = await screen.findByTestId("relatorio-view");
+      expect(within(view).getByRole("navigation", { name: "Sumário" })).toBeInTheDocument();
+      expect(within(view).getAllByTestId("relatorio-capitulo")).toHaveLength(2);
+    });
+
+    it("trocar de assistente para o polling", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      await abrir();
+      await fireEvent.click(screen.getByRole("button", { name: "Gerar relatório" }));
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      await screen.findByTestId("job-estado");
+      await irParaEda();
+      expect(screen.queryByTestId("job-estado")).toBeNull();
+      await vi.advanceTimersByTimeAsync(6000);
+      expect(getConsultasJobMock(900)).toBe(0);
+      expect(screen.queryByTestId("relatorio-view")).toBeNull();
+    });
+
+    it("query com assistente: escolhe a EDA, aplica as opções e gera uma vez", async () => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      window.history.replaceState(
+        {},
+        "",
+        "/gestor/relatorios?assistente=eda_municipio&nivel=municipio&codigo=1200401&nome=Rio%20Branco&etapa=ensino_medio&gerar=1",
+      );
+      render(RelatoriosPage);
+      await ate(() => getPedidosRelatorioMock().length === 1);
+      expect(getPedidosRelatorioMock()[0]).toEqual({
+        geotag: { nivel: "municipio", codigo: "1200401" },
+        opcoes: { etapa: "ensino_medio" },
+        assistente: "eda_municipio",
+      });
+      expect(screen.getByRole("radio", { name: "EDA do município" })).toBeChecked();
+      expect(screen.getByTestId("recorte-query")).toHaveTextContent("Recorte: Rio Branco");
+      expect(window.location.search).toBe("");
+    });
+
+    it("query só com o assistente seleciona-o; nível fora do assistente cai no município", async () => {
+      window.history.replaceState({}, "", "/gestor/relatorios?assistente=eda_municipio&nivel=uf&codigo=RO");
+      render(RelatoriosPage);
+      await screen.findByTestId("capitulos");
+      expect(screen.getByRole("radio", { name: "Município" })).toBeChecked();
+      expect(screen.queryByTestId("recorte-query")).toBeNull();
+      expect(getPedidosRelatorioMock()).toHaveLength(0);
+    });
+
+    it("assistente desconhecido na query fica no padrão", async () => {
+      window.history.replaceState({}, "", "/gestor/relatorios?assistente=nao_existe");
+      await abrir();
+      expect(screen.getByRole("radio", { name: "Relatório por tema" })).toBeChecked();
+    });
+
+    it("sem /assistentes (servidor antigo) segue no relatório por tema, sem seletor", async () => {
+      server.use(
+        http.get("/api/gestor/:cod_inep/relatorios/assistentes", () =>
+          HttpResponse.json({ error: "not found" }, { status: 404 }),
+        ),
+      );
+      await abrir();
+      expect(screen.queryByTestId("assistentes")).toBeNull();
+      expect(temasVisiveis()).toContain("ideb_territorio");
+    });
+  });
 });
