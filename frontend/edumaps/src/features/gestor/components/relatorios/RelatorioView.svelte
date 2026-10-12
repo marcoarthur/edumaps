@@ -98,11 +98,11 @@
         <ul class="mt-1 space-y-1 text-gray-600" data-testid="relatorio-fontes">
           {#each fontes as f, i (i)}
             <li>
-              <span class="font-medium text-gray-800">{f.descricao ?? f.ferramenta}</span>
+              <!-- sem o nome interno da ferramenta: o gestor vê a descrição -->
+              <span class="font-medium text-gray-800">{f.descricao ?? "Dados públicos"}</span>
               {#if f.edicao}{" · "}{f.edicao}{/if}
               {#if f.escopo}{" · "}{f.escopo}{/if}
               {#if f.n !== undefined && f.n !== null}{" · "}n = {formatarValor(f.n, "inteiro")}{/if}
-              <span class="text-xs text-gray-400">({f.ferramenta})</span>
             </li>
           {/each}
         </ul>

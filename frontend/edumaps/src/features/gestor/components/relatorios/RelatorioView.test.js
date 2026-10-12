@@ -35,14 +35,14 @@ describe("RelatorioView", () => {
     expect(screen.queryByTestId("aviso-llm")).toBeNull();
   });
 
-  it("rodapé com fontes (ferramenta, edição, escopo, n) e avisos", () => {
+  it("rodapé com fontes (descrição, edição, escopo, n) e avisos, sem nome interno", () => {
     render(RelatorioView, { props: { relatorio: RELATORIO_RESULT_FIXTURE } });
     const fontes = screen.getByTestId("relatorio-fontes");
     expect(fontes).toHaveTextContent("IDEB agregado por território");
     expect(fontes).toHaveTextContent("IDEB 2023");
     expect(fontes).toHaveTextContent("municípios de RO");
     expect(fontes).toHaveTextContent("n = 52");
-    expect(fontes).toHaveTextContent("ideb_agregado");
+    expect(fontes).not.toHaveTextContent("ideb_agregado");
     expect(within(screen.getByTestId("relatorio-avisos")).getByText(/limitada a 1000 linhas/)).toBeInTheDocument();
   });
 
