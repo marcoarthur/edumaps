@@ -257,3 +257,25 @@ Onda 2: e2e em dev, docs funcionais, nota técnica e PR.
 - **Frontend:** 101 arquivos / 779 testes; `vite build` OK.
 - **Rexfile:** a instalação fixada do eduBR rodou no `analytic` (instala e,
   na segunda vez, pula).
+
+## Onda 2 (coordenador)
+
+- **Deploy em dev:**
+  - `deploy_analytics_dev`, que instala o eduBR fixado e o pacote;
+  - `deploy_backend_dev`, `deploy_minion_dev`,
+    `deploy_analytics_worker_dev`, `deploy_frontend_dev`;
+  - imagens locais `analytic`, `backend`, `minion` e `frontend` reconstruídas.
+- **E2E 14/14** com o Gemini real: rodada em `docs/e2e/cobertura.md`.
+- **Correções do e2e:**
+  - `censo-dictionary.R` no `Collate` (o deploy quebrava a reinstalação);
+  - texto do LLM em pt-BR, sem jargão; números arredondados pelo formato e sem
+    nome de ferramenta no pacote de dados para o LLM;
+  - espaços dos separadores na tela.
+- **Pendências registradas:**
+  - a chave do cache de relatórios não inclui a versão do prompt nem do
+    pacote;
+  - jobs falham durante o reinício do R (sem nova tentativa);
+  - `redes_territorio` é lento por região (até ~30–40 s);
+  - um filtro por município nas ferramentas do eduBR eliminaria as fatias
+    (achado para o mantenedor do eduBR).
+- **Docs:** capacidade nova `analise/relatorios-territorio.md` e o índice.

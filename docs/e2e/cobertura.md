@@ -732,3 +732,45 @@ temporárias de gestor e admin. Driver CDP próprio em Perl (Chrome `:9222`).
 > (inscrições sem abrir a página, ou várias a partir de um acesso).
 > **Não exercitado**: provedor SMTP real (só captura), WhatsApp/Telegram no
 > envio (fora do escopo).
+
+### Rodada 2026-10-12 — Assistente de Relatório (feat, issue #219, Fase 1)
+
+**Objetivo**: certificar a Fase 1 em dev (`http://ubatexu.lan:8080`) de ponta
+a ponta: Perl → Minion (fila `analytics`) → R (`/report`, `edumapsAnalytics`)
+→ eduBR (`2dc9af9`, persona pesquisadora, role `edumaps_leitor`) → **LLM real
+do painel (Gemini)** → tela `/gestor/relatorios`. Sessão temporária do gestor
+da escola 35038751 (Ubatuba/SP). Driver CDP próprio em Perl (Chrome `:9222`).
+
+| Verificação | Resultado |
+|---|---|
+| Sem sessão → 401 | 🟢 |
+| Recorte-padrão: escola → Ubatuba (SP, SE) | 🟢 |
+| Temas do nível UF = IDEB, redes, professores, gestores | 🟢 |
+| Escola de outro gestor → 400; tema fora do nível → 400 | 🟢 |
+| `minha_escola` (escola) | 🟢 ~5 s, 6 seções |
+| `ideb_territorio` (município, anos iniciais) | 🟢 ~7 s |
+| `docentes_territorio` (UF BA) | 🟢 ~5–9 s |
+| `gestores_territorio` (região S) | 🟢 ~11–13 s |
+| `tendencia_ideb` (região NE, anos finais) | 🟢 ~6–7 s |
+| Texto redigido pelo Gemini (`rastreio.llm = ok`) em todos | 🟢 |
+| Pedido repetido servido do cache (~1,6 s, `cache_hit`) | 🟢 |
+| Sem PII nos relatórios (endereço, telefone, CEP, CNPJ, e-mail) | 🟢 |
+| Tela: recorte, temas, opções, "Gerar relatório" → seções + fontes | 🟢 |
+| Backend 103 / 676 (só falhas antigas); R 28 arquivos / 1085 asserções; frontend 101 / 779 | 🟢 |
+
+> **Achados corrigidos na rodada**:
+> 1. o texto do LLM usava ponto decimal e citava o nome interno da
+>    ferramenta: os dados para o LLM passaram a sair arredondados pelo formato
+>    e sem nome de ferramenta, e o prompt pede padrão brasileiro;
+> 2. faltava espaço nos separadores "·" do cabeçalho e das fontes;
+> 3. `censo-dictionary.R` estava fora do `Collate` e quebrou a reinstalação do
+>    pacote no deploy.
+>
+> **Observações**:
+> - logo depois de um deploy do `analytic`, os jobs que pegam o reinício do
+>   serviço R falham (não há nova tentativa);
+> - a chave do cache de relatórios não inclui a versão do prompt nem do
+>   pacote, então uma mudança de texto só aparece depois de 24 h ou de limpar
+>   o cache;
+> - logo após o deploy do frontend, o service worker pode servir o bundle
+>   antigo (tela em branco até recarregar).
