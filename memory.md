@@ -4,6 +4,49 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-12 — E-mail e LGPD nas listas com QR (PR #215, Fase 2)
+
+- **Issue:** [#214](https://github.com/marcoarthur/edumaps/issues/214) (fechada
+  pelo PR). **Spec:** `docs/specs/2026-10-12-email-lgpd-listas-qr.md`;
+  **execução:** `…-listas-qr.execucao.md`.
+- **Decisões do developer**: e-mail por **coleta configurável por lista**
+  (`telefone`/`email`/`ambos`/`qualquer`, default telefone); exclusão por
+  **autoatendimento (link pessoal) + gestor**, que **anonimiza** e mantém
+  auditoria sem PII; **retenção configurável** (metadados 90 d, pendentes
+  180 d, listas inativas 12 meses); **consentimento em versões imutáveis pela
+  administração**, uma vigente. Perguntas em aberto seguiram as propostas
+  (acesso/portabilidade fora da fase; textos provisórios; exclusão só
+  anonimiza o contato).
+- **Entregas** (branch `feat/canais-email-lgpd` → **PR #215**, merge `a09f3b5`),
+  3 ondas, duas trilhas paralelas:
+  - **Onda 1**: change `canal_email_lgpd` (coleta, e-mail/email_norm,
+    `consentimento_versoes` + seed 1.0, `consentimento_hash`, `exclusao_hash`,
+    `anonimizado_em`, `canal_exclusoes`, `desativada_em`, `envios_email`);
+    estado por contato (`parcial`) e confirmação por código de e-mail; 409 de
+    consentimento desatualizado; `exclusao_url`; QR com validade/limite na UI.
+  - **Onda 2**: `Canal::Exclusao` (anonimização pelo inventário de PII,
+    idempotente), exclusão pública e pelo gestor, histórico; task
+    `canais_retencao` (diária, lock, avulsa `{manual:1}`), admin de retenção;
+    telas `ExclusaoPage`, `/privacidade` dinâmica, versões de consentimento
+    (`/config/consentimento`), painel de retenção.
+  - **Onda 3**: docs funcionais (`privacidade-lgpd` etc.) e e2e.
+- **Decisões técnicas relevantes**: retenção **só anonimiza contatos criados
+  pela autoinscrição** (agenda do gestor preservada); linhas de resumo da
+  retenção com `cod_inep = 0` (sempre, mesmo zero) + linha por escola; e-mail
+  de código **não** leva o link de exclusão (só o hash do token é guardado);
+  código mascarado (`******`) no histórico; SMTP injetável para testes;
+  markdown do consentimento renderizado sem `{@html}`.
+- **Dev**: consentimento **1.1** (cita e-mail) publicado e vigente em
+  `edumaps_dev` — pré-requisito para listas com e-mail. Lista `E2E 214` e
+  contatos anonimizados removidos; auditoria (sem PII) mantida.
+- **Validação**: backend 74 / 476 (6 pré-falhos idênticos no `main`); frontend
+  88 / 611; `sqitch verify` + revert/deploy; e2e CDP em dev (409, 400,
+  exclusão pelo link no navegador, remoção pelo gestor, **varredura de PII
+  sem resto**, auditoria, retenção avulsa); validação visual do developer.
+- **Não exercitado**: envio real de e-mail (sem SMTP em dev).
+- **Próximo no roadmap**: Fase 3 (envio em massa, opt-out, múltiplos QR,
+  analytics); direito de acesso/portabilidade do titular; textos jurídicos.
+
 ## Sessão 2026-10-11 — Confirmação de posse do telefone nas listas com QR (PR #213, Fase 1)
 
 - **Issue:** [#212](https://github.com/marcoarthur/edumaps/issues/212) (fechada
