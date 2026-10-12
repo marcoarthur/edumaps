@@ -65,6 +65,9 @@ sub register($self, $app, @args) {
     ->to('gestor#canais_qrcode_revoke')->name('gestor_canais_qrcode_revoke');
   $auth->get('/:cod_inep/canais/listas/:id/inscricoes' => $lista_check)
     ->to('gestor#canais_inscricoes_index')->name('gestor_canais_inscricoes');
+  # Funil de conversão da lista (#216, onda 2, RF-306): ?de&ate (YYYY-MM-DD).
+  $auth->get('/:cod_inep/canais/listas/:id/funil' => $lista_check)
+    ->to('gestor#canais_listas_funil')->name('gestor_canais_listas_funil');
   # Exclusão pelo gestor (#214, RF-205): anonimiza o contato do membro (sai de
   # todas as listas da escola) + histórico de exclusões da escola (sem PII).
   $auth->delete('/:cod_inep/canais/listas/:id/membros/:membro_id'

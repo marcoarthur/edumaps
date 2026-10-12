@@ -237,6 +237,58 @@ sub canais_retencao_executar ($self) {
   $self->render(status => 202, json => { ok => 1, job_id => $id + 0 });
 }
 
+# ---------------------------------------------------------------------------
+# Envio por e-mail para listas (#216, onda 2, RF-304)
+# ---------------------------------------------------------------------------
+
+# GET /api/admin/canais/envios — 200 {limites, escolas: [...]}.
+sub canais_envios_painel ($self) {
+  my $model = $self->instantiate_model(model => 'Canal');
+  $self->render(json => $model->envio_admin_painel);
+}
+
+# POST /api/admin/canais/envios/suspensoes {cod_inep, motivo} → 201
+# {suspensao} · 400 · 409 (já suspensa). Envios em curso passam a suspenso.
+sub canais_envios_suspender ($self) {
+  my $input = $self->_json_hash
+    // return $self->render(json => { error => 'Corpo JSON inválido.' }, status => 400);
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->envio_suspender(
+    cod_inep => (defined $input->{cod_inep} && !ref $input->{cod_inep}
+                 ? "$input->{cod_inep}" : undef),
+    motivo   => $input->{motivo},
+    admin_id => ($self->stash('gestor') // {})->{id},
+  );
+  return $self->render(json => { error => $r->{error} }, status => $r->{status} // 400)
+    if $r->{error};
+  $self->render(status => 201, json => $r);
+}
+
+# POST /api/admin/canais/envios/suspensoes/:cod_inep/reativar → 200 {ok:1,
+# envios_retomados} · 404 (sem suspensão ativa). Cada envio suspenso volta a
+# agendado (nunca começou) ou enviando e é reenfileirado; o job pendente
+# anterior (se ainda na fila) é removido para não haver duas cadeias.
+sub canais_envios_reativar ($self) {
+  my $model  = $self->instantiate_model(model => 'Canal');
+  my $minion = $self->app->minion;
+  my $r = $model->envio_reativar(
+    cod_inep => $self->param('cod_inep'),
+    admin_id => ($self->stash('gestor') // {})->{id},
+    enqueue  => sub ($id, $delay, $anterior) {
+      if ($anterior) {
+        eval {
+          my $j = $minion->job($anterior);
+          $j->remove if $j && $j->info->{state} eq 'inactive';
+        };
+      }
+      return $self->canais_envio_enfileirar($id, $delay);
+    },
+  );
+  return $self->render(json => { error => 'Nenhuma suspensão ativa para esta escola.' },
+                       status => 404) unless $r;
+  $self->render(json => { ok => 1, envios_retomados => $r->{envios_retomados} + 0 });
+}
+
 sub _tem ($v) { return defined $v && !ref $v && length $v ? 1 : 0 }
 
 sub _telegram_publico_bot ($self, $cfg) {

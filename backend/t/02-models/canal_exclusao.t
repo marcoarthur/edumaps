@@ -11,7 +11,10 @@
 #     exclusão cria contato novo; inscrição de terceiro (conflito) perde o
 #     e-mail do titular e o resto fica;
 #   - token de exclusão (exclusao_por_token / excluir_por_token), idempotente;
-#   - exclusão pelo gestor (membro precisa ser da lista e da escola).
+#   - exclusão pelo gestor (membro precisa ser da lista e da escola);
+#   - #216 (onda 2): a varredura cobre canal_envio_destinatarios — e-mail e
+#     contato saem; pendentes viram ignorado_anonimizado (+1 em `ignorados`);
+#     o opt-out (só hash) fica.
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -40,8 +43,11 @@ my $IP    = "ipanon-titular-$P";
 my $UA    = "Mozilla/5.0 Titular-$P";
 my $CHAT  = 8800000000 + ($$ % 1000);
 
+my $TEM_ENVIOS = $dbh->selectrow_array("SELECT to_regclass('clean.canal_envios')");
+
 sub limpa {
   for my $inep ($INEP, $OUTRA) {
+    $dbh->do('DELETE FROM clean.canal_envios WHERE cod_inep = ?', {}, $inep) if $TEM_ENVIOS;
     $dbh->do('DELETE FROM clean.canal_exclusoes WHERE cod_inep = ?', {}, $inep);
     $dbh->do('DELETE FROM clean.canal_confirmacoes WHERE cod_inep = ?', {}, $inep);
     $dbh->do('DELETE FROM clean.canal_mensagens WHERE cod_inep = ?', {}, $inep);
@@ -70,6 +76,7 @@ sub token_de ($r) { return ($r->{exclusao_url} =~ m{/([0-9a-f]{32})$})[0] }
 # colunas text/varchar das tabelas do inventário de PII + auditoria
 my @TABELAS = qw(contatos canal_inscricoes canal_lista_membros canal_confirmacao_refs
                  canal_confirmacoes canal_mensagens canal_exclusoes);
+push @TABELAS, qw(canal_envio_destinatarios canal_optouts) if $TEM_ENVIOS;
 my %COLS;
 for my $tab (@TABELAS) {
   $COLS{$tab} = $dbh->selectcol_arrayref(
@@ -95,7 +102,7 @@ sub varre ($needle) {
 
 limpa();
 
-my ($tit, $tit2, $terceiro, $ref_id, $conf_email_id, $conf_wa_id, $alheia_id);
+my ($tit, $tit2, $terceiro, $ref_id, $conf_email_id, $conf_wa_id, $alheia_id, %env, %dst);
 
 subtest 'setup: titular em duas listas + rastros em todas as tabelas' => sub {
   for my $inep ($INEP, $OUTRA) {
@@ -170,6 +177,31 @@ subtest 'setup: titular em duas listas + rastros em todas as tabelas' => sub {
   $msg->(canal => 'telegram', dest => "$CHAT", corpo => "Oi $NOME",
          rtipo => 'confirmacao_ref', rid => $ref_id);
   $msg->(canal => 'email', dest => "alheio.$P\@exemplo.org", corpo => 'mensagem de outra pessoa');
+
+  # envios por e-mail (#216): titular pendente num envio em curso, já
+  # enviado noutro (e-mail em claro até concluir), e um terceiro pendente
+  if ($TEM_ENVIOS) {
+    for my $k (qw(curso outro)) {
+      ($env{$k}) = $dbh->selectrow_array(q{INSERT INTO clean.canal_envios
+          (cod_inep, gestor_id, alvo_tipo, alvo_id, alvo_nome, operacao, assunto, corpo,
+           status, destinatarios, ignorados)
+          VALUES (?, ?, 'lista', ?, 'Lista A', 'aviso', 'A', 'B', 'enviando', 2, 0) RETURNING id},
+        {}, $INEP, $gestor_id, $lista{A});
+    }
+    my $d = sub ($envio, $contato, $email, $status) {
+      my ($id) = $dbh->selectrow_array(q{INSERT INTO clean.canal_envio_destinatarios
+          (envio_id, contato_id, lista_id, email, email_hash, status, processado_em)
+          VALUES (?, ?, ?, ?, encode(digest(?::text, 'sha256'), 'hex'), ?,
+                  CASE WHEN ? = 'pendente' THEN NULL ELSE NOW() END) RETURNING id},
+        {}, $envio, $contato, $lista{A}, $email, $email, $status, $status);
+      return $id;
+    };
+    $dst{pend}     = $d->($env{curso}, $tit->{contato_id}, $EMAIL, 'pendente');
+    $dst{terceiro} = $d->($env{curso}, $terceiro->{contato_id}, "terceiro.$P\@exemplo.org", 'pendente');
+    $dst{enviado}  = $d->($env{outro}, $tit->{contato_id}, $EMAIL, 'enviado');
+    $dbh->do(q{INSERT INTO clean.canal_optouts (lista_id, email_hash, envio_id)
+               VALUES (?, encode(digest(?::text, 'sha256'), 'hex'), ?)}, {}, $lista{A}, $EMAIL, $env{outro});
+  }
 
   for my $needle ($NOME, $TELN, $EMAIL, $IP, $UA, "$CHAT") {
     ok scalar(varre($needle)), "rastro presente antes: $needle";
@@ -250,9 +282,33 @@ subtest 'anonimizar_contato: varredura do inventário de PII' => sub {
   is [ @$ex{qw(cod_inep origem gestor_id contatos inscricoes membros motivo)} ],
      [ $INEP, 'gestor', $gestor_id, 1, 2, 2, 'pedido feito à secretaria' ], 'registro de auditoria';
   ok !defined $ex->{regra}, 'sem regra (não é retenção)';
+
+  # destinatários de envio (#216, onda 2)
+  if ($TEM_ENVIOS) {
+    my $rows = $dbh->selectall_hashref(
+      q{SELECT id, contato_id, email, status, (processado_em IS NOT NULL) AS processado
+        FROM clean.canal_envio_destinatarios WHERE id = ANY(?)}, 'id', {}, [values %dst]);
+    is [ @{ $rows->{ $dst{pend} } }{qw(contato_id email status processado)} ],
+       [ undef, undef, 'ignorado_anonimizado', 1 ], 'pendente → ignorado_anonimizado, sem PII';
+    is [ @{ $rows->{ $dst{enviado} } }{qw(contato_id email status)} ],
+       [ undef, undef, 'enviado' ], 'enviado fica enviado, sem PII';
+    is [ @{ $rows->{ $dst{terceiro} } }{qw(contato_id email status)} ],
+       [ $terceiro->{contato_id}, "terceiro.$P\@exemplo.org", 'pendente' ], 'terceiro intacto';
+    my $ign = $dbh->selectall_hashref('SELECT id, ignorados FROM clean.canal_envios WHERE id = ANY(?)',
+                                      'id', {}, [values %env]);
+    is $ign->{ $env{curso} }{ignorados}, 1, '+1 em ignorados do envio em curso';
+    is $ign->{ $env{outro} }{ignorados}, 0, 'envio sem pendente do titular: ignorados intacto';
+    is $dbh->selectrow_array('SELECT count(*) FROM clean.canal_optouts WHERE envio_id = ?', {}, $env{outro}),
+      1, 'opt-out (só hash) fica';
+  }
 };
 
 subtest 'idempotência' => sub {
+  if ($TEM_ENVIOS) {
+    $model->anonimizar_contato($INEP, $tit->{contato_id}, origem => 'gestor');
+    is $dbh->selectrow_array('SELECT ignorados FROM clean.canal_envios WHERE id = ?', {}, $env{curso}),
+      1, 'envio: sem novo +1 em ignorados';
+  }
   my $n = $dbh->selectrow_array('SELECT count(*) FROM clean.canal_exclusoes WHERE cod_inep = ?', {}, $INEP);
   my $r = $model->anonimizar_contato($INEP, $tit->{contato_id}, origem => 'gestor');
   is [ @$r{qw(contatos inscricoes membros)} ], [0, 0, 0], 'zeros na repetição';

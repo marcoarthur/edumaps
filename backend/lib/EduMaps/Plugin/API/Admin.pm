@@ -39,6 +39,15 @@ sub register ($self, $app, @args) {
   $auth->post('/canais/retencao/executar')
     ->to('admin#canais_retencao_executar')->name('admin_canais_retencao_executar');
 
+  # Envio por e-mail para listas (#216, onda 2, RF-304): volume por escola,
+  # suspensão e reativação (retoma os envios suspensos).
+  $auth->get('/canais/envios')
+    ->to('admin#canais_envios_painel')->name('admin_canais_envios_painel');
+  $auth->post('/canais/envios/suspensoes')
+    ->to('admin#canais_envios_suspender')->name('admin_canais_envios_suspender');
+  $auth->post('/canais/envios/suspensoes/:cod_inep/reativar' => [ cod_inep => qr/\d+/ ])
+    ->to('admin#canais_envios_reativar')->name('admin_canais_envios_reativar');
+
   # Consentimento versionado da autoinscrição (#214, RF-208): rascunho ->
   # publicar (vira vigente; a anterior é arquivada). Publicada é imutável.
   my $versao_id = [ id => qr/\d+/ ];

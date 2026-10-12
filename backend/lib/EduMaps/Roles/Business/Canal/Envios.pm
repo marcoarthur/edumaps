@@ -35,6 +35,11 @@ use EduMaps::Channel::Email;
 # nunca reenvia. Concluído/cancelado zera o `email` dos destinatários (fica o
 # hash).
 #
+# Administração (onda 2, RF-304): `envio_admin_painel` (volume por escola),
+# `envio_suspender` (envios agendado/enviando/pausado_cota → suspenso na hora)
+# e `envio_reativar` (suspenso → agendado se nunca começou, senão enviando;
+# reenfileira com o delay até agendado_para).
+#
 # Composta no model Canal; usa Canal::Listas (helpers SQL), Canal::Segmentos
 # (resolução de membros, máscara) e AppConfig (envio_config, email_config,
 # inscricao_config, email_confirmacao_disponivel).
@@ -109,6 +114,173 @@ sub envio_limites ($self, $cod_inep) {
     saldo_hoje        => $saldo > 0 ? $saldo : 0,
     suspensao         => $self->envio_suspensao($cod_inep),
   };
+}
+
+# ---------------------------------------------------------------------------
+# administração: volume, suspender, reativar (onda 2, RF-304)
+# ---------------------------------------------------------------------------
+
+our @EM_CURSO    = qw(agendado enviando pausado_cota suspenso);
+our @SUSPENDIVEIS = qw(agendado enviando pausado_cota);
+our $MOTIVO_MAX  = 500;
+
+# GET /api/admin/canais/envios: { limites, escolas } — escolas com envio nos
+# últimos 30 dias, com envio em curso ou com suspensão ativa, por
+# enviados_30d desc.
+sub envio_admin_painel ($self) {
+  my $cfg = $self->envio_config;
+  my $rows = $self->_rows(
+    sprintf(qq{WITH alvo AS (
+         SELECT cod_inep FROM clean.canal_envios
+          WHERE created_at >= NOW() - interval '30 days' OR status = ANY(?::text[])
+         UNION
+         SELECT cod_inep FROM clean.canal_envio_suspensoes WHERE reativado_em IS NULL
+       )
+       SELECT a.cod_inep, es.escola AS escola_nome,
+              (SELECT count(*)::int FROM clean.canal_envio_destinatarios d
+                 JOIN clean.canal_envios e ON e.id = d.envio_id
+                WHERE e.cod_inep = a.cod_inep AND d.status = 'enviado'
+                  AND d.processado_em >= $SQL_INICIO_HOJE) AS enviados_hoje,
+              (SELECT count(*)::int FROM clean.canal_envio_destinatarios d
+                 JOIN clean.canal_envios e ON e.id = d.envio_id
+                WHERE e.cod_inep = a.cod_inep AND d.status = 'enviado'
+                  AND d.processado_em >= NOW() - interval '30 days') AS enviados_30d,
+              (SELECT count(*)::int FROM clean.canal_envio_destinatarios d
+                 JOIN clean.canal_envios e ON e.id = d.envio_id
+                WHERE e.cod_inep = a.cod_inep AND d.status = 'falhou'
+                  AND d.processado_em >= NOW() - interval '30 days') AS falhas_30d,
+              (SELECT count(*)::int FROM clean.canal_optouts o
+                 JOIN clean.canal_listas l ON l.id = o.lista_id
+                WHERE l.cod_inep = a.cod_inep
+                  AND o.created_at >= NOW() - interval '30 days') AS optouts_30d,
+              (SELECT count(*)::int FROM clean.canal_envios e
+                WHERE e.cod_inep = a.cod_inep AND e.status = ANY(?::text[])) AS envios_em_curso,
+              s.id AS s_id, s.motivo AS s_motivo, s.suspenso_por AS s_por,
+              %s AS s_em
+       FROM   alvo a
+       LEFT JOIN clean.escolas es ON es.codigo_inep = a.cod_inep
+       LEFT JOIN clean.canal_envio_suspensoes s
+              ON s.cod_inep = a.cod_inep AND s.reativado_em IS NULL
+       ORDER  BY enviados_30d DESC, a.cod_inep}, sprintf($ISO, 's.suspenso_em')),
+    \@EM_CURSO, \@EM_CURSO,
+  );
+  return {
+    limites => {
+      enabled           => $cfg->{enabled} ? true : false,
+      ritmo_por_minuto  => $cfg->{ritmo_por_minuto} + 0,
+      cota_diaria       => $cfg->{cota_diaria_escola} + 0,
+      max_destinatarios => $cfg->{max_destinatarios} + 0,
+      smtp_disponivel   => $self->email_confirmacao_disponivel ? true : false,
+    },
+    escolas => [ map { +{
+      cod_inep        => $_->{cod_inep} + 0,
+      escola_nome     => $_->{escola_nome},
+      enviados_hoje   => $_->{enviados_hoje} + 0,
+      enviados_30d    => $_->{enviados_30d} + 0,
+      falhas_30d      => $_->{falhas_30d} + 0,
+      optouts_30d     => $_->{optouts_30d} + 0,
+      envios_em_curso => $_->{envios_em_curso} + 0,
+      suspensao       => defined $_->{s_id} ? {
+        id           => $_->{s_id} + 0,
+        motivo       => $_->{s_motivo},
+        suspenso_em  => $_->{s_em},
+        suspenso_por => defined $_->{s_por} ? $_->{s_por} + 0 : undef,
+      } : undef,
+    } } @$rows ],
+  };
+}
+
+# Suspende o envio da escola: grava a suspensão e passa na hora os envios
+# agendado/enviando/pausado_cota para `suspenso` (o job, ao rodar, já sai).
+# Devolve { suspensao => {...} } ou { error, status => 400|409 }.
+sub envio_suspender ($self, %p) {
+  my $cod = $p{cod_inep};
+  return { error => 'cod_inep inválido.', status => 400 }
+    unless defined $cod && !ref $cod && $cod =~ /^\d{8}\z/;
+  my $motivo = $p{motivo};
+  $motivo = '' unless defined $motivo && !ref $motivo;
+  $motivo =~ s/^\s+|\s+$//g;
+  return { error => "motivo é obrigatório (1..$MOTIVO_MAX caracteres).", status => 400 }
+    unless length $motivo >= 1 && length $motivo <= $MOTIVO_MAX;
+  my $ja = { error => 'O envio desta escola já está suspenso.', status => 409 };
+  return $ja if $self->envio_suspensao($cod);
+
+  my $admin = $p{admin_id};
+  $admin = undef unless defined $admin && $admin =~ /^\d+\z/;
+  my $s;
+  my $ok = eval {
+    $self->schema->storage->txn_do(sub {
+      $s = $self->_row(
+        sprintf(q{INSERT INTO clean.canal_envio_suspensoes (cod_inep, motivo, suspenso_por)
+                  VALUES (?, ?, ?)
+                  RETURNING id, motivo, suspenso_por, %s AS suspenso_em},
+                sprintf($ISO, 'suspenso_em')),
+        $cod + 0, $motivo, $admin,
+      );
+      $self->_rows(
+        q{UPDATE clean.canal_envios SET status = 'suspenso', updated_at = NOW()
+           WHERE cod_inep = ? AND status = ANY(?::text[])},
+        $cod + 0, \@SUSPENDIVEIS,
+      );
+    });
+    1;
+  };
+  unless ($ok) {
+    # corrida: outra suspensão ativa (uq_canal_envio_suspensao_ativa)
+    return $ja if ($@ // '') =~ /uq_canal_envio_suspensao_ativa/;
+    die $@;
+  }
+  return { suspensao => {
+    id           => $s->{id} + 0,
+    motivo       => $s->{motivo},
+    suspenso_em  => $s->{suspenso_em},
+    suspenso_por => defined $s->{suspenso_por} ? $s->{suspenso_por} + 0 : undef,
+  } };
+}
+
+# Reativa: fecha a suspensão ativa; cada envio `suspenso` volta a `agendado`
+# (nunca começou: iniciado_em NULL — não antecipa o agendamento) ou a
+# `enviando`, e é reenfileirado com o delay até agendado_para (ou 0).
+# %p: cod_inep, admin_id, enqueue (coderef ($envio_id, $delay, $job_anterior)
+# -> job id). Devolve { ok => 1, envios_retomados } ou undef (sem suspensão
+# ativa).
+sub envio_reativar ($self, %p) {
+  my $cod = $p{cod_inep};
+  return unless defined $cod && !ref $cod && $cod =~ /^\d{1,18}\z/;
+  my $admin = $p{admin_id};
+  $admin = undef unless defined $admin && $admin =~ /^\d+\z/;
+
+  my $retomados;
+  $self->schema->storage->txn_do(sub {
+    $self->_row(
+      q{UPDATE clean.canal_envio_suspensoes
+           SET reativado_em = NOW(), reativado_por = ?
+         WHERE cod_inep = ? AND reativado_em IS NULL
+         RETURNING id},
+      $admin, $cod + 0,
+    ) or return;
+    $retomados = $self->_rows(
+      q{UPDATE clean.canal_envios
+           SET status = CASE WHEN iniciado_em IS NULL THEN 'agendado' ELSE 'enviando' END,
+               updated_at = NOW()
+         WHERE cod_inep = ? AND status = 'suspenso'
+         RETURNING id, minion_job_id,
+                   GREATEST(0, COALESCE(CEIL(EXTRACT(EPOCH FROM (agendado_para - NOW()))), 0))::int
+                     AS delay},
+      $cod + 0,
+    );
+  });
+  return unless $retomados;
+
+  if (my $enq = $p{enqueue}) {
+    for my $e (sort { $a->{id} <=> $b->{id} } @$retomados) {
+      my $job = $enq->($e->{id} + 0, $e->{delay} + 0, $e->{minion_job_id});
+      $self->_rows('UPDATE clean.canal_envios SET minion_job_id = ? WHERE id = ?',
+                   $job + 0, $e->{id} + 0)
+        if defined $job;
+    }
+  }
+  return { ok => 1, envios_retomados => scalar @$retomados };
 }
 
 # ---------------------------------------------------------------------------

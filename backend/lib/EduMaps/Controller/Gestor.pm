@@ -469,6 +469,18 @@ sub canais_inscricoes_index($self) {
   $self->render(json => $rows);
 }
 
+# Funil de conversão da lista (#216, onda 2, RF-306): ?de&ate (YYYY-MM-DD)
+# → 200 {de, ate, exige_confirmacao, totais, taxas, serie} · 400 · 404.
+sub canais_listas_funil($self) {
+  return unless $self->_gestor_inep_ok;
+  my $model = $self->instantiate_model(model => 'Canal');
+  my $r = $model->lista_funil($self->param('cod_inep'), $self->param('id'),
+    de => $self->param('de'), ate => $self->param('ate'));
+  return $self->_render_not_found('Lista não encontrada') unless $r;
+  return $self->render(json => { error => $r->{error} }, status => 400) if $r->{error};
+  $self->render(json => $r);
+}
+
 # Exclusão pelo gestor (#214, RF-205): corpo opcional {motivo} -> 200 {ok:1,
 # contatos, inscricoes, membros} · 404 (membro não é da lista/escola). O
 # contato é anonimizado (RF-206) e sai de todas as listas da escola.

@@ -31,4 +31,10 @@ with 'EduMaps::Roles::Business::Canal::Exclusao';
 with 'EduMaps::Roles::Business::Canal::Segmentos';
 with 'EduMaps::Roles::Business::Canal::Envios';
 
+# Onda 2 (#216): opt-out público por lista (link de saída dos e-mails) e
+# funil de conversão por lista (acessos ao QR, inscrições, confirmações,
+# saídas). Requerem os helpers SQL de Listas.
+with 'EduMaps::Roles::Business::Canal::Optout';
+with 'EduMaps::Roles::Business::Canal::Funil';
+
 1;

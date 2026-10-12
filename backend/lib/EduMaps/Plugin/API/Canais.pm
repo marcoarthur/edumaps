@@ -53,6 +53,16 @@ sub register ($self, $app, @args) {
   $api->post('/exclusao/:token')
     ->to('canais#exclusao_confirmar')->name('canais_exclusao_confirmar');
 
+  # Opt-out por lista (#216, onda 2, RF-303): o token de saída (32 hex) do
+  # rodapé/List-Unsubscribe do e-mail é a capability. NÃO depende de
+  # canais.inscricao.enabled (direito do titular). POST aceita JSON
+  # {confirmar:true} ou o form One-Click (RFC 8058). Formato validado no
+  # controller (404 genérico).
+  $api->get('/sair/:token')
+    ->to('canais#sair_show')->name('canais_sair_show');
+  $api->post('/sair/:token')
+    ->to('canais#sair_confirmar')->name('canais_sair_confirmar');
+
   $api->post('/telegram/webhook')
     ->to('canais#telegram_webhook')->name('canais_telegram_webhook');
 
