@@ -632,3 +632,35 @@ de dev (`app_config.items`) com `public_base_url=http://ubatexu.lan:8080`.
 > 2026-09-28 e 2026-10-09). (2) A flag por omissão desligada é intencional
 > (endpoint público inexistente até decisão do admin). (3) Dados de teste
 > criados em dev: lista `E2E Coord 208` (escola de gestor id 2).
+
+### Rodada 2026-10-11 — Confirmação de posse do telefone nas listas com QR (feat, issue #212)
+
+**Objetivo**: certificar a Fase 1 (confirmação por Telegram) ponta a ponta em
+dev (`http://ubatexu.lan:8080`), com a lista `E2E 212` (exige confirmação,
+escola 35038751) e um bot público **fictício** em modo webhook (token falso:
+as respostas do bot falham, o que é esperado — o fluxo de confirmação não
+depende delas). Driver CDP próprio em Perl (`Mojo::UserAgent` websocket),
+Chrome `:9222`. As mensagens do Telegram foram simuladas com POST no webhook
+público com o `secret_token`.
+
+| Verificação | Resultado |
+|---|---|
+| Migração `canal_confirmacao_listas` em `database.edumaps` | 🟢 |
+| `POST` inscrição em lista que exige | 🟢 201 com `confirmacao {ref, estado:"pendente", canais:[telegram url t.me/<bot>?start=<ref>]}` |
+| Webhook sem `X-Telegram-Bot-Api-Secret-Token` | 🟢 401 |
+| `/start <ref>` + contato próprio com o número da inscrição | 🟢 `GET /confirmacao/:ref` → `confirmado`; membro `confirmado_via=telegram`, `telegram_chat_id` gravado, `validado=true` |
+| Contato de terceiro (`user_id` ≠ `from.id`) | 🟢 recusado; continua `pendente` |
+| Contato com número divergente | 🟢 `conflito=true` na inscrição; membro não confirmado; nada apagado |
+| Respostas do bot com token fictício | 🟢 registradas como `failed` em `canal_mensagens` (operação `confirmacao`) |
+| SPA `/inscricao/:token` → passo 2 "Confirme seu telefone" com link do Telegram | 🟢 |
+| Confirmação simulada → página mostra "Telefone confirmado!" **sem recarregar** (polling) | 🟢 |
+| Backend (65 arquivos / 428 testes; 6 pré-falhos idênticos no `main`) | 🟢 |
+| Frontend completo | 🟢 83 arquivos / 511 testes |
+
+> **Notas**: (1) o caminho com o app real do Telegram (bot criado no
+> @BotFather, modo polling) e o WhatsApp Cloud (template aprovado) não foram
+> exercitados — dependem de credenciais externas; ficam para a validação do
+> developer. (2) Achado de infra corrigido nesta rodada: deploys do Rex sem
+> `EDUMAPS_CONFIG_MASTER_KEY` na shell gravavam a chave **vazia** nas units
+> (segredos ilegíveis); agora o Rexfile aborta. Dev usa uma chave própria,
+> fora do repositório.
