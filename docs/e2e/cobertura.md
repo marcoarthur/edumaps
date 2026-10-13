@@ -902,3 +902,19 @@ do Markdown.
 
 > **Pendência menor (#224):** os títulos dos eixos do gráfico usam o nome
 > técnico da coluna escolhido pelo LLM (ex.: `total_escolas`).
+
+### Rodada 2026-10-13 — Dicionário do Censo a partir do INEP (feat, issue #134)
+
+Sem mudança de tela. Verificação em dev (`edumaps_dev`, dados reais de 2025) e
+no CI (fixtures):
+
+| Verificação | Resultado |
+|---|---|
+| Change `censo_data_dictionary_inep` aplicada em `database.edumaps`; verify em gate no CI | 🟢 |
+| Dicionário: 760 colunas `inep` + 5 `derivada`; **229 com domínio oficial** (antes 15, a maioria errada) | 🟢 |
+| `tp_aee` = Não oferece / Não exclusivamente / Exclusivamente | 🟢 |
+| `clean.censo_dict_violacoes()` sobre os 214 mil registros reais | 🟢 **0 violações** (~29 s) |
+| Gate no CI (fixtures): função vazia; código e coluna plantados são detectados | 🟢 |
+| Gerador: 25 testes unittest (xlsx sintético); CSV regenerado byte a byte igual | 🟢 |
+| Assistente do Censo: dicionário do prompt com 8 tabelas e rótulos oficiais (antes **vazio** desde `eaaf66d`) | 🟢 |
+| R 31 / 1658; backend só falhas antigas | 🟢 |

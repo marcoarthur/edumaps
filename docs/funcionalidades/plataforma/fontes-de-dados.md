@@ -36,6 +36,21 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   municipal) para melhorar a leitura de mobilidade e segurança no entorno das
   escolas e do município.
 
+### Dicionário de dados do Censo Escolar
+
+- Sistema pode **explicar cada coluna do Censo Escolar** (escolas, matrículas,
+  docentes e gestores) com a descrição, o significado de cada código (ex.:
+  "0 – Não oferece, 1 – Não exclusivamente, 2 – Exclusivamente") e os anos em
+  que a informação foi coletada, a partir do **dicionário oficial do INEP**.
+- Sistema pode **distinguir o que é do INEP do que é calculado pela
+  plataforma** (localização no mapa, grupo de escolas semelhantes, contagens
+  derivadas).
+- Sistema **não aceita em silêncio** um código ou uma coluna que o dicionário
+  não conhece: a verificação automática acusa o problema antes de o dado virar
+  um rótulo errado na tela ou um número sem significado numa análise.
+- O Assistente do Censo usa esse dicionário para entender as tabelas e
+  responder com os rótulos oficiais.
+
 ### Mobilidade e trânsito
 
 - Sistema pode **contar sinistros de trânsito por município e dia**, com o total
