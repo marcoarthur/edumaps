@@ -4,8 +4,8 @@
 
 ## ⚠️ Situação verificada em 2026-10-13 (plano da #156)
 
-**Não há número de protocolo nem data de envio registrados para nenhum dos 4
-pedidos.** A #132 foi fechada como "protocolados", mas sem protocolo não há
+**Confirmado pelo developer em 2026-10-13: os 4 pedidos AINDA NÃO FORAM
+PROTOCOLADOS.** Não há número de protocolo nem data de envio. A #132 foi fechada como "protocolados", mas sem protocolo não há
 prova de que os pedidos existam. **Até o developer confirmar, os 4 contam como
 NÃO protocolados**, e as fontes que dependem deles (INEP, Medidor Educação
 Conectada, FNDE e Secretarias) ficam **bloqueadas** no plano da #156.
@@ -18,10 +18,10 @@ seções "Perguntas protocoladas" abaixo.
 
 | # | Órgão destinatário na Fala.BR | Texto | Já protocolado? | Protocolo | Data |
 |---|---|---|---|---|---|
-| 1 | INEP — Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira | §1 | [ ] sim / [ ] não | | |
-| 2 | MEC — Ministério da Educação (Medidor Educação Conectada; NIC.br em cópia, se o MEC indicar) | §2 | [ ] sim / [ ] não | | |
-| 3 | FNDE — Fundo Nacional de Desenvolvimento da Educação | §3 | [ ] sim / [ ] não | | |
-| 4 | Secretarias municipais de Educação (pelo e-SIC de cada município) | §4 | [ ] sim / [ ] não | | |
+| 1 | INEP — Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira | §1 | não (2026-10-13) | | |
+| 2 | MEC — Ministério da Educação (Medidor Educação Conectada; NIC.br em cópia, se o MEC indicar) | §2 | não (2026-10-13) | | |
+| 3 | FNDE — Fundo Nacional de Desenvolvimento da Educação | §3 | não (2026-10-13) | | |
+| 4 | Secretarias municipais de Educação (pelo e-SIC de cada município) | §4 | não (2026-10-13) | | |
 
 Ao confirmar ou protocolar:
 1. Preencha protocolo e data aqui e na tabela "Registro de Respostas".
@@ -167,10 +167,10 @@ o porquê.
 
 | e-SIC | Protocolo | Data Resposta | Status | Licença Confirmada | Ficha Atualizada |
 |-------|-----------|---------------|--------|-------------------|------------------|
-| INEP | | | ⏳ Pendente | | |
-| MEC/NIC.br | | | ⏳ Pendente | | |
-| FNDE | | | ⏳ Pendente | | |
-| Secretarias (transporte) | | | ⏳ Pendente | | |
+| INEP | | | 📝 A protocolar | | |
+| MEC/NIC.br | | | 📝 A protocolar | | |
+| FNDE | | | 📝 A protocolar | | |
+| Secretarias (transporte) | | | 📝 A protocolar | | |
 
 ---
 
