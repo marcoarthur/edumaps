@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-13 — Dicionário do Censo a partir do INEP (PR #229, fecha #134)
+
+- **#134 fechada** pelo PR #229 (merge `fb1c7ad`). Nota técnica **119**.
+  Spec: `docs/specs/2026-10-13-dicionario-censo-inep.md`.
+- **Decisões do developer:**
+  - fonte = **dicionário oficial do INEP** (xlsx do Zotero 10296/ICPJZK6R)
+    → **CSV versionado** em `data_pipeline/dicionarios/` (o xlsx fica fora
+    do repo);
+  - escopo = #134 + o `dicionario.yml` do chat. Os rótulos duplicados no
+    backend/SQL/R ficaram para a **#228**.
+- **Entregas:**
+  - `tools/censo-dicionario/gerar.py` (só stdlib; também gera o SQL);
+  - change `censo_data_dictionary_inep`: `origem`, 229 domínios oficiais e a
+    função `clean.censo_dict_violacoes()`;
+  - teste Perl que exige a função vazia (**gate no CI**), mais o step Python
+    no workflow;
+  - `censo_dict_validate` corrigido e funções exportadas no R;
+  - edumapsAnalytics **0.3.2** = `analytics_source_version` 0.3.2.
+- **Armadilhas:**
+  - os validadores antigos **nunca falhavam** (nome qualificado vs
+    `information_schema`; verify com `SELECT`; teste com `pass`);
+  - `chat_dictionary()` **voltava vazio desde `eaaf66d`** (corrigido);
+  - os microdados têm o código 9 em `in_educ_amb_*` que o INEP não lista
+    (complemento documentado);
+  - 5 colunas `_con` nas migrations ≠ `_conc` do INEP;
+  - `man/*.Rd` está no `.gitignore` (convenção: não versionar).
+- **Validação:**
+  - **0 violações** em dev (dados reais);
+  - R 31 / 1658;
+  - Python 25;
+  - backend só falhas antigas;
+  - aceite do developer.
+- **Backlog restante** (ordem combinada concluída: #224, #225, #134):
+  - **#156**, que precisa de um plano próprio (a maioria dos loaders nunca
+    foi escrita);
+  - #131, #137 (destravada pela #134), #228;
+  - os bloqueados #167/#168/#170.
+
 ## Sessão 2026-10-13 — Backlog: Assistente do Censo com sessão (PR #226) e SPA sem tela em branco (PR #227)
 
 - **Backlog levantado em 2026-10-13:** 11 issues abertas, quase todas de
