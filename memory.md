@@ -39,8 +39,18 @@
   - **RENAVAM tem 33 pares (UF, município) sem casa** por grafia (~0,5% das
     linhas, 32 municípios sem frota). É conhecido; candidato a mapa de
     variantes, como o do BrazilCrime.
-- **Resultado:** BrazilCrime 61.192 linhas. SICONFI, IBGE e Transportes em
-  curso (ver o relatório na #234).
+- **PR #236** (merge `e2e89f1`): o IBGE gravava em `dados_ibge.*_percent` o
+  % oficial do SIDRA (0-100, do valor adicionado). O **contrato** é fração
+  do PIB, com serviços = complemento. Decisão do developer: o loader segue o
+  contrato.
+  - `--arg dados_csv=<bruto>` recarrega sem o SIDRA (12 s).
+  - Snapshot × carga: 0 divergências.
+- **Resultado parcial:**
+  - BrazilCrime 61.192 linhas (bruto + órfão real: Boa Esperança do Norte);
+  - Transportes: 2.268.496 sinistros, frota de 5.538 municípios, ZIPs no
+    raw;
+  - `dados_ibge` 55.715 linhas (2014–2023);
+  - SICONFI e `ibge_agregados` em curso (ver o relatório na #234).
 
 ## Sessão 2026-10-13 — #156 replanejada: allowlist (PR #232) e P0 da ingestão (#231)
 
