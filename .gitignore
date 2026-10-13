@@ -24,3 +24,6 @@ data_pipeline/config/local.ini
 pgdata/
 # symlink para os CSVs do Censo/IDEB ( datasets -> ~/Data/edumaps_data )
 datasets
+
+# Python (tools/)
+__pycache__/
