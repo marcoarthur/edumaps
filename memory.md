@@ -4,6 +4,47 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-13 — Backlog: Assistente do Censo com sessão (PR #226) e SPA sem tela em branco (PR #227)
+
+- **Backlog levantado em 2026-10-13:** 11 issues abertas, quase todas de
+  dados e ingestão (#156 é a principal).
+  - **#134 NÃO está cumprida**: só os entregáveis 1 e 3 estão em parte.
+    Comentário de conferência na issue; ela segue aberta.
+- **Ordem combinada com o developer:**
+  1. **#224** (Assistente do Censo);
+  2. **#225** (SPA em branco depois do deploy);
+  3. #134 ou #156 (decisão pendente).
+- **#224 → PR #226 (merge `6907bee`).**
+  - Decisão: **só gestor logado**. `ask` e `progress` exigem sessão; o
+    escopo vem da sessão (`recorte_padrao`); `progress` só devolve job do
+    dono.
+  - Resposta em markdown seguro e gráfico Carbon a partir do `chart` do R;
+    corrigido o `stop_chat_internal` inexistente.
+- **#225 → PR #227 (merge `7ad99f2`).**
+  - **Diagnóstico:** em dev (`http://ubatexu.lan`) **não há service worker**
+    (contexto não seguro). A tela em branco vinha do `deploy_frontend_dev`
+    com `rm -rf`.
+  - **Correções:**
+    - **deploy atômico** (assets ao lado; `index.html` e `sw.js` por último
+      via `mv`; poda após 7 dias);
+    - cache do SW nomeado pelo build;
+    - aviso "Nova versão disponível" (decisão do developer: recarregar só
+      ao clicar);
+    - recarga única em chunk antigo.
+  - **E2E do SW** só na stack **local** (`localhost`).
+- **Armadilhas:**
+  - **antes de culpar o SW, conferir `isSecureContext`**;
+  - o label de bug no GitHub é `bug` (não `type:bug`).
+- **Validação:**
+  - frontend 110 / 947;
+  - R 1595;
+  - backend só falhas antigas;
+  - sonda de deploy 87/0;
+  - SW 3 builds + transição;
+  - validação visual.
+- **Próximo:** item 3, completar a **#134** ou partir para a **#156**
+  (decisão do developer).
+
 ## Sessão 2026-10-12 — Assistente de Relatório, Fase 4 e fecho do ciclo (PR #223)
 
 - **Issue #219 FECHADA** pelo PR #223 (merge `4f7b0e9`). Nota técnica

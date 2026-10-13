@@ -877,3 +877,28 @@ do Markdown.
 >   perfil/resumo da escola;
 > - modelagem do perfil pesquisador (o catálogo já tem profundidade e
 >   público).
+
+### Rodada 2026-10-13 — Assistente do Censo com sessão (fix, issue #224) e atualização da SPA (fix, issue #225)
+
+**#224, em dev** (Gemini real; sessões temporárias de dois gestores):
+
+| Verificação | Resultado |
+|---|---|
+| `ask` e `progress` sem sessão | 🟢 401 |
+| Escopo forjado no corpo (Salvador/BA, INEP falso) ignorado; job com o escopo da sessão (Ubatuba/35038751) | 🟢 |
+| `progress` do job de outro gestor | 🟢 404 |
+| Tela: sem sessão pede login; com sessão mostra o escopo da conta (só leitura) | 🟢 |
+| Resposta em markdown (negrito, lista) e gráfico de barras desenhado com a tabela de dados | 🟢 |
+
+**#225:**
+
+| Verificação | Resultado |
+|---|---|
+| Dev (`http://ubatexu.lan`) não é contexto seguro, então **não há service worker** ali (`isSecureContext=false`) | diagnóstico |
+| Sonda durante o `deploy_frontend_dev` atômico: 87 pedidos a `/` + asset principal | 🟢 0 falhas |
+| Asset do build anterior servido depois do deploy (abas abertas) | 🟢 200 |
+| Stack local (`localhost:8080`), aba aberta, transição do SW antigo: aviso → Atualizar → `edumaps-v2` apagado | 🟢 |
+| 2º e 3º builds: aviso → Atualizar → recarga → só o cache do build atual; nome determinístico (`edumaps-17265fae` ↔ `edumaps-0ea1e1e7`) | 🟢 3/3 cada |
+
+> **Pendência menor (#224):** os títulos dos eixos do gráfico usam o nome
+> técnico da coluna escolhido pelo LLM (ex.: `total_escolas`).
