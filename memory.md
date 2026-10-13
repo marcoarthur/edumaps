@@ -4,6 +4,41 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-13 — #156 replanejada: allowlist (PR #232) e P0 da ingestão (#231)
+
+- **Plano da #156:** `docs/specs/2026-10-13-ingestao-real-plano.md`, §6 com as
+  decisões do developer. Nota técnica **120**.
+- **Decisões:**
+  - ordem: fix do allowlist → P0 → cargas (P1..P4);
+  - `raw` = disco do backend (`/srv/edumaps/raw/<fonte>/<data>/`) + manifesto
+    sha256 no `import_metadata`;
+  - B2 = CNES (BY-ND, sanitizado e agregado) + MapBiomas (COG público);
+    **ANTT e isócronas fora do objetivo** por ora.
+- **e-SICs: NÃO protocolados** (confirmado em 2026-10-13). O checklist está em
+  `docs/admin/esic-requests.md`. INEP, Medidor, FNDE e Secretarias ficam
+  `nao_carregada` com "e-SIC NÃO PROTOCOLADO".
+- **#230 / PR #232** (merge `f484c39`): allowlist sem chaves duplicadas.
+  - O YAML::XS ficava com a última chave: as regras LGPD do `denied` estavam
+    **inertes**.
+  - `Allowlist.pm` agora dá croak em duplicata.
+  - Há teste sobre o arquivo real.
+- **#231 (P0):**
+  - `--arg k=v` na CLI;
+  - `ultimo_status`/`ultimo_motivo`/`ultima_tentativa_em`/`raw_manifest`:
+    uma falha não apaga a última carga boa;
+  - exceção `NaoCarregada`, que dá **exit 3**;
+  - downloads validados pelo allowlist;
+  - dry-run honesto (IBGE, BrazilCrime);
+  - metadata SICONFI/FUNDEB corrigida.
+  - Infra:
+    - Rex cria `/srv/edumaps/raw`;
+    - o compose monta o allowlist (backend/minion) e `./raw` (minion).
+- **Armadilha:** a imagem local de backend/minion precisa ser construída **a
+  partir do diretório principal**, que tem o `.env` não versionado. Num
+  worktree limpo os contentores sobem sem as variáveis do banco.
+- **Próximo:** #156 P1, carregar no produto SICONFI malha, BrazilCrime,
+  Transportes e IBGE, com os brutos preservados.
+
 ## Sessão 2026-10-13 — Dicionário do Censo a partir do INEP (PR #229, fecha #134)
 
 - **#134 fechada** pelo PR #229 (merge `fb1c7ad`). Nota técnica **119**.

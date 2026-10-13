@@ -76,7 +76,7 @@
 ### plataforma
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
-| [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
+| [Fontes de dados](plataforma/fontes-de-dados.md) | Bases públicas em uso, carga com estado e arquivo bruto preservado, e catálogo curado de fontes candidatas, com prioridade avaliada e justificativa registrada. | 🟢 |
 | [Privacidade e LGPD](plataforma/privacidade-lgpd.md) | Tratamento de dados pessoais: termo de consentimento versionado, exclusão a pedido pelo titular (inclusive do histórico de envios), saída das comunicações por lista em um clique, sem rastreio de e-mails, e retenção com expurgo automático. | 🟢 |
 | [Canais de comunicação](plataforma/canais-de-comunicacao.md) | Alcançar a comunidade por e-mail, WhatsApp e Telegram, validando endereços, confirmando posse (Telegram e WhatsApp nas listas por QR), enviando e-mail em massa em fila com ritmo e cota, limites e suspensão pela administração, e registrando o histórico e o resultado de cada envio. | 🟡 |
 | [Telemetria de sessão](plataforma/telemetria-de-sessao.md) | Reconhecer o visitante por sessão e registrar uso da plataforma em lotes, de forma agregada e privada — do servidor e do navegador (navegação, buscas, login/logout, erros), sem texto digitado. | 🟢 |
