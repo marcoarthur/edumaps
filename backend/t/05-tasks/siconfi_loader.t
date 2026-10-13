@@ -200,6 +200,25 @@ subtest 'count==0 com HTTP 200 NAO e sucesso (armadilha #165)' => sub {
   like($@ // '', qr/0 itens/, 'mensagem denuncia o falso sucesso');
 };
 
+subtest 'RREO vazio cai para o RREO Simplificado (LRF art. 63, #234)' => sub {
+  my $j = mk_job(sub {
+    my ($url, $form) = @_;
+    return { items => [], count => 0, hasMore => 0 } if $form->{co_tipo_demonstrativo} eq 'RREO';
+    return { items => [ item(cod_conta => 'Impostos', coluna => 'Até o Bimestre (c)', valor => 7) ],
+             count => 1, hasMore => 0 };
+  });
+  my $rows = $j->_fetch_rreo(id_ente => '4211504', exercicio => 2025, nr_periodo => 6);
+  is(scalar @$rows, 1, 'linha do simplificado mapeada');
+  is_deeply([ map { $_->[1]{co_tipo_demonstrativo} } @{$j->ua->{calls}} ],
+    ['RREO', 'RREO Simplificado'], 'tenta o completo e depois o simplificado');
+  is($j->{_rreo_simplificado}, 1, 'conta o município via simplificado');
+
+  my $j2 = mk_job(sub { return { items => [ item(cod_conta => 'Impostos', coluna => 'Até o Bimestre (c)', valor => 7) ],
+                                 count => 1, hasMore => 0 } });
+  $j2->_fetch_rreo(id_ente => '3550308', exercicio => 2025, nr_periodo => 6);
+  is(scalar @{$j2->ua->{calls}}, 1, 'RREO completo com dado não consulta o simplificado');
+};
+
 # ---------------------------------------------------------------- 5
 subtest 'paginação por hasMore: count e pagina (limit=2 => count=2)' => sub {
   my $j = mk_job(sub {
