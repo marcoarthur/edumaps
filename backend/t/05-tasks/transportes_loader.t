@@ -276,4 +276,20 @@ CSV
   is($m{sem_nome_ou_uf}{codigo_ibge_fonte}, '1200302', 'mas preserva o código que trazia');
 };
 
+# Carga real da P1 (#234): o sentinela repete-se nas linhas mensais e a
+# segunda cópia violava a PK de renaest_localidade_nao_resolvida.
+subtest 'ler_localidade: não resolvida repetida nos meses sai uma vez' => sub {
+  my $tmp = tempdir(CLEANUP => 1);
+  my $csv = "$tmp/localidade.csv";
+  escrever($csv, <<'CSV');
+chv_localidade;ano_referencia;mes_referencia;mes_ano_referencia;regiao;uf;codigo_ibge;municipio;regiao_metropolitana;qtde_habitantes;frota_total;frota_circulante
+AC0000000201801;2018;01;012018;NORTE;AC;0;NAO INFORMADO;nao;0;0;0
+AC0000000201802;2018;02;022018;NORTE;AC;0;NAO INFORMADO;nao;0;0;0
+AM0000000201801;2018;01;012018;NORTE;AM;0;NAO INFORMADO;nao;0;0;0
+CSV
+  my $loc = job()->ler_localidade($csv);
+  is($loc->{estatisticas}{sentinelas}, 3, 'contagem segue por linha');
+  is(scalar @{ $loc->{nao_resolvidas} }, 2, 'uma não resolvida por (localidade, uf, código)');
+};
+
 done_testing();
