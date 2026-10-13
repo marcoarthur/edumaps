@@ -35,6 +35,12 @@ use utf8;
 # uf=XX restringe a uma UF (teste).
 # =============================================================================
 
+# O ogr2ogr do GPKG (1,49 GB) e o INSERT…SELECT com agrupamento de partes
+# escrevem só no banco: >10 min sem mudar data/ingestao, que o watchdog do
+# Runner (600 s) lia como travamento (medido na P2, #238). O Runner usa este
+# prazo quando ele é maior que o seu.
+has stall_timeout => 3600;
+
 has job_name    => 'SetoresCenso2022';
 has description => 'Malha de setores censitários + Censo 2022 por setor (IBGE)';
 has schedule    => 'manual';

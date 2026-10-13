@@ -166,6 +166,35 @@ PM
   sub notify { my ($self, $action, $text) = @_; push @{$self->{calls}}, [$action, $text]; return 1 }
 }
 
+# #238: um job com passos que só escrevem no banco declara prazo maior.
+{ package ZZJobPrazo;
+  our $visto;
+  sub new { bless { runner => $_[1] }, $_[0] }
+  sub stall_timeout { 3600 }
+  sub run { $visto = $_[0]{runner}->stall_timeout; 1 }
+}
+{ package ZZJobPrazoCurto;
+  our $visto;
+  sub new { bless { runner => $_[1] }, $_[0] }
+  sub stall_timeout { 60 }
+  sub run { $visto = $_[0]{runner}->stall_timeout; 1 }
+}
+
+subtest '7b. prazo de stall do job vale só se maior, e só durante o job' => sub {
+  my $runner = EduMaps::Ingestion::Runner->new(
+    app => mock_app([]), log => Mojo::Log->new(level => 'fatal'),
+    stall_timeout => 600, stall_check_interval => 3600,
+  );
+  $runner->jobs->{ZZPrazo} = ZZJobPrazo->new($runner);
+  $runner->run_job('ZZPrazo');
+  is $ZZJobPrazo::visto, 3600, 'durante o job vale o prazo maior do job';
+  is $runner->stall_timeout, 600, 'restaurado depois';
+
+  $runner->jobs->{ZZPrazoCurto} = ZZJobPrazoCurto->new($runner);
+  $runner->run_job('ZZPrazoCurto');
+  is $ZZJobPrazoCurto::visto, 600, 'prazo menor do job não encurta o do runner';
+};
+
 subtest '8. run_job notifica ingest_done no sucesso' => sub {
   my $notifier = MockNotifier->new;
   my $runner = EduMaps::Ingestion::Runner->new(
