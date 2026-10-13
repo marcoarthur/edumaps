@@ -150,6 +150,10 @@ subtest 'resolver: programa por ação, fallback ACAO_<código>' => sub {
   is(job()->programa_da_acao('12KU'), 'PROINFANCIA', '12KU -> PROINFANCIA');
   is(job()->programa_da_acao('20RP'), 'INFRAESTRUTURA_EDUC_BASICA', 'ação 20RP');
   is(job()->programa_da_acao('0509'), 'APOIO_EDUC_BASICA', 'ação 0509');
+  # medidas na carga de 2025 (#238): caíam no fallback
+  is(job()->programa_da_acao('00PI'), 'PNAE', '00PI -> PNAE (alimentação escolar)');
+  is(job()->programa_da_acao('00OW'), 'MANUTENCAO_EDUC_INFANTIL', '00OW -> manutenção da ed. infantil');
+  is(job()->programa_da_acao('00SU'), 'PROINFANCIA', '00SU -> PROINFANCIA');
 };
 
 subtest 'resolver: período do mês' => sub {
@@ -255,6 +259,10 @@ subtest 'carregar: upsert na PK, dt_snapshot, rollback preserva o erro' => sub {
   like($dbh->{sql}, qr/ON CONFLICT \(codigo_ibge, programa, data_inicio, data_fim, dt_snapshot\)/, 'conflito na PK exata');
   is($dbh->{exec}[0][-1], '2026-10-13', 'dt_snapshot no último parâmetro');
   is($dbh->{commits}, 1, 'um commit');
+  my ($del) = grep { $_->[0] =~ /DELETE FROM clean\.transferencia_educ/ } @{ $dbh->{dos} };
+  ok($del, 'o snapshot do período é substituído (sem chave antiga em dobro)');
+  is_deeply([ @{$del}[1 .. 3] ], ['2026-10-13', '2025-01-01', '2025-02-28'],
+    'DELETE por dt_snapshot e pelo intervalo dos meses carregados');
 
   my $ruim = MockDBH->new(falhar => 1);
   eval { job(app => mock_app($ruim))->carregar($res->{linhas}, '2026-10-13') };

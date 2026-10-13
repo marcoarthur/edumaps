@@ -16,7 +16,7 @@ BEGIN;
 COMMENT ON TABLE clean.transferencia_educ IS
 'Transferências federais para educação (função 12) por município e mês — CGU Portal da Transparência, ZIP mensal oficial {AAAAMM}_Transferencias.zip (CC-BY-4.0). Prefeituras pelo CNPJ (SICONFI /entes) ou código SIAFI; PDDE às UEx agregado ao município pelo SIAFI (de-para derivado das linhas de prefeitura). Estados e entidades fora do PDDE não entram; não resolvidos em cgu_orfaos.csv. Chave: codigo_ibge + programa + data_inicio + data_fim + dt_snapshot. Loader: job CGU (#238).';
 COMMENT ON COLUMN clean.transferencia_educ.programa IS
-'Ação orçamentária: 00SB=FUNDEB (complementação da União), 0969=PNATE, 0E53=CAMINHO_DA_ESCOLA, 0515=PDDE, 12KU=PROINFANCIA, 20RP=INFRAESTRUTURA_EDUC_BASICA, 0509=APOIO_EDUC_BASICA; outras ações de educação = ACAO_<código>.';
+'Ação orçamentária: 00SB=FUNDEB (complementação da União), 0969=PNATE, 0E53=CAMINHO_DA_ESCOLA, 0515=PDDE, 12KU/00SU=PROINFANCIA, 20RP=INFRAESTRUTURA_EDUC_BASICA, 0509=APOIO_EDUC_BASICA, 00PI=PNAE, 00OW=MANUTENCAO_EDUC_INFANTIL; outras ações de educação = ACAO_<código>.';
 COMMENT ON COLUMN clean.transferencia_educ.valor_transferido IS
 'Soma do VALOR TRANSFERIDO no mês (R$), estornos negativos incluídos.';
 COMMENT ON COLUMN clean.transferencia_educ.data_inicio IS

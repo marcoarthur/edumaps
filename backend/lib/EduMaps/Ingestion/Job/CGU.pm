@@ -56,6 +56,11 @@ my %PROGRAMA_POR_ACAO = (
   '12KU' => 'PROINFANCIA',                  # escolas de educação infantil
   '20RP' => 'INFRAESTRUTURA_EDUC_BASICA',
   '0509' => 'APOIO_EDUC_BASICA',
+  # Medido na carga de 2025 (#238): as ações abaixo caíam no fallback
+  # ACAO_<código>, e a 00PI sozinha somava R$ 3,86 bi em 5.537 municípios.
+  '00PI' => 'PNAE',                         # alimentação escolar
+  '00OW' => 'MANUTENCAO_EDUC_INFANTIL',     # apoio à manutenção da ed. infantil
+  '00SU' => 'PROINFANCIA',                  # implantação de escolas de ed. infantil
 );
 
 my %COL = (
@@ -413,9 +418,17 @@ ON CONFLICT (codigo_ibge, programa, data_inicio, data_fim, dt_snapshot)
 DO UPDATE SET valor_transferido = EXCLUDED.valor_transferido,
               nome_municipio    = EXCLUDED.nome_municipio
 SQL
+  # O snapshot de um período é substituído por inteiro: uma re-execução no
+  # mesmo dia com outro mapa de programas (ex.: ACAO_00PI -> PNAE) não pode
+  # deixar a chave antiga para trás somando em dobro.
+  my ($ini) = sort map { $_->{data_inicio} } @$rows;
+  my ($fim) = reverse sort map { $_->{data_fim} } @$rows;
   my $n = 0;
   $dbh->begin_work;
   eval {
+    $dbh->do(q{DELETE FROM clean.transferencia_educ
+                WHERE dt_snapshot = ? AND data_inicio >= ? AND data_fim <= ?},
+      undef, $dt_snapshot, $ini, $fim);
     my $sth = $dbh->prepare($sql);
     for my $r (@$rows) {
       $sth->execute(@{$r}{qw(codigo_ibge nome_municipio programa valor_transferido data_inicio data_fim)}, $dt_snapshot);
