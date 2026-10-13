@@ -38,6 +38,21 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   economia.
 - Sistema pode usar **indicadores de segurança pública** por município
   (homicídios, latrocínios e lesões seguidas de morte).
+- Sistema pode usar as **transferências federais para a educação** de cada
+  município, mês a mês (FUNDEB, alimentação escolar, dinheiro direto na
+  escola, transporte escolar, educação infantil, veículos escolares). Inclui
+  o dinheiro pago diretamente às associações das escolas, somado ao
+  município onde elas ficam.
+- Sistema pode usar o **Censo 2022 por setor censitário** (população por
+  sexo, idade e cor/raça, domicílios), junto com o **desenho de cada setor
+  no mapa**. Isso permite olhar o território abaixo do nível do município.
+  Onde o IBGE omite um número por sigilo estatístico, o valor fica vazio e
+  marcado, nunca zero. O que o Censo não publica por setor (escolaridade,
+  renda) não é estimado.
+- Sistema pode usar a presença do **Programa Mais Médicos** em cada
+  município: equipes, vagas ocupadas, população coberta e vulnerabilidade.
+  A série se forma a cada atualização mensal, porque a fonte publica só a
+  situação atual.
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 - Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota

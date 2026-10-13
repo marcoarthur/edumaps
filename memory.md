@@ -4,6 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-13 — #156 P2: CGU, setores + Censo 2022 e SISAB (#238)
+
+- Decisões do developer estão no §7 da spec. Nota técnica **122**.
+- **Jobs novos:** `CGU`, `SetoresCenso2022`, `SISAB`. Foram escritos por 3
+  agentes em worktrees, sobre a base `02a781e` (allowlist `ibge_ftp_censo2022`
+  + `gdal-bin` no Rex).
+- **Migration** `comments_ingestao_p2`. O verify de `comments_esic_pendente`
+  foi relaxado: editar verify não muda o `change_id`.
+- **Cargas no produto:**
+  - `transferencia_educ`: 146.325 linhas (FUNDEB 48,1 bi, PNAE 3,86 bi,
+    PDDE 1,57 bi);
+  - malha e censo por setor: 468.097 setores;
+  - `sisab_aps`: 5.571 municípios.
+  - Todas com bruto preservado.
+- **Armadilhas:**
+  - o GPKG tem **setores multipartes** (472.780 feições / 468.099 setores);
+  - o **watchdog de stall** do Runner só vê `data/ingestao`: um job que
+    escreve só no banco declara `has stall_timeout`;
+  - CGU: ações novas caem em `ACAO_<código>`. Conferir os maiores valores a
+    cada ano.
+- **Pendência de decisão:** PDDE de R$ 534,9 mi (≈25%) pago a UEx sem
+  código SIAFI. Fica no `cgu_orfaos.csv`.
+
 ## Sessão 2026-10-13 — #156 P1: cargas no produto (#234) e correções (PRs #235/#236/#237)
 
 - **Issue #234** (P1). Decisões do developer:
