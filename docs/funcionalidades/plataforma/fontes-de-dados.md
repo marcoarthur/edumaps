@@ -29,7 +29,15 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   infraestrutura, equipamentos).
 - Sistema pode usar o **IDEB/SAEB** para desempenho ao longo do tempo.
 - Sistema pode usar o **SIOPE** para dados de financiamento da educação.
-- Sistema pode usar bases do **IBGE** para território e população.
+- Sistema pode usar as **contas públicas municipais do Tesouro (SICONFI)**
+  para todos os municípios do país: receitas do ano (inclusive dos municípios
+  pequenos, que publicam o relatório simplificado), despesas por função e o
+  FUNDEB recebido.
+- Sistema pode usar bases do **IBGE** para território e população, inclusive
+  o **PIB municipal** de dez anos com a participação de cada setor da
+  economia.
+- Sistema pode usar **indicadores de segurança pública** por município
+  (homicídios, latrocínios e lesões seguidas de morte).
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 - Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota

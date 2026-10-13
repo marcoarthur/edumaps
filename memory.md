@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-10-13 — #156 P1: cargas no produto (#234) e correções (PR #235)
+## Sessão 2026-10-13 — #156 P1: cargas no produto (#234) e correções (PRs #235/#236/#237)
 
 - **Issue #234** (P1). Decisões do developer:
   - SICONFI: último exercício (**2025**), todas as UFs, RREO 6º bimestre +
@@ -54,7 +54,17 @@
     A tabela 5938 não tem quebra e o loader mandava NULL; a carga abortou
     depois de 2 h de SIDRA. Vazio agora vira `'Total'` (convenção do SIDRA).
     Recarregado dos brutos em 473 s: `ibge_agregados` 2.563.120 linhas;
-  - SICONFI em curso (ver o relatório na #234).
+  - SICONFI 2025 concluído:
+    - receita: 192.998 linhas, 5.538 municípios, **2.295 via RREO
+      Simplificado**;
+    - despesa: 83.508 linhas;
+    - FUNDEB: 5.468 municípios.
+  - Snapshot IBGE: **0 divergências** com tolerância; o snapshot foi
+    apagado.
+- **P1 concluída.** Relatório antes/depois postado na #234 e nota técnica
+  **121**.
+- **Próximo:** P2 (CGU ZIP, setores + Censo 2022, SISAB). Follow-ups: mapa
+  de variantes do RENAVAM (33 pares) e bruto do SICONFI.
 
 ## Sessão 2026-10-13 — #156 replanejada: allowlist (PR #232) e P0 da ingestão (#231)
 
