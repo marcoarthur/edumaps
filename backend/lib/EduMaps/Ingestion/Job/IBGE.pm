@@ -74,6 +74,11 @@ sub run ($self, $args = {}) {
   # 2. Extrair dados para dados_ibge (formato largo)
   $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.dados_ibge');
   $self->extrair_dados_ibge($mun_csv, $dados_csv, $args);
+  # Brutos (#234): os CSVs intermédios são o resultado de ~5,5 mil GETs ao
+  # SIDRA; preservados, uma recarga não repete horas de API.
+  my $url_sidra = $self->sidra_base . '/' . $self->tabela_pib;
+  $self->preservar_raw($dados_csv, $url_sidra, tabelas => ['clean.dados_ibge'])
+    unless $self->dry_run;
 
   # 3. Carregar dados_ibge
   my $rows_dados = $self->processar_dados_ibge($dados_csv);
@@ -83,6 +88,8 @@ sub run ($self, $args = {}) {
   # 4. Extrair e carregar ibge_agregados (formato longo)
   $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.ibge_agregados');
   $self->extrair_ibge_agregados($mun_csv, $agregados_csv, $args);
+  $self->preservar_raw($agregados_csv, $url_sidra, tabelas => ['clean.ibge_agregados'])
+    unless $self->dry_run || !-f $agregados_csv;
   my $rows_ag = $self->processar_ibge_agregados($agregados_csv);
   my $loaded_ag = 0;
   if (@$rows_ag) {
