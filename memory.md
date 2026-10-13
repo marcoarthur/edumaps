@@ -24,8 +24,12 @@
     escreve só no banco declara `has stall_timeout`;
   - CGU: ações novas caem em `ACAO_<código>`. Conferir os maiores valores a
     cada ano.
-- **Pendência de decisão:** PDDE de R$ 534,9 mi (≈25%) pago a UEx sem
-  código SIAFI. Fica no `cgu_orfaos.csv`.
+- **PR #239** (merge `6ed8df0`), fecha a #238. **Follow-up #240**: PDDE de
+  R$ 534,9 mi (≈25%) pago a UEx sem código SIAFI (decisão do developer:
+  issue própria).
+- **Paridade da stack local:** a imagem Docker do minion **não tem
+  `ogr2ogr`**. O `gdal-bin` só entra pelo Rex, então o job
+  `SetoresCenso2022` não roda na stack local.
 
 ## Sessão 2026-10-13 — #156 P1: cargas no produto (#234) e correções (PRs #235/#236/#237)
 
