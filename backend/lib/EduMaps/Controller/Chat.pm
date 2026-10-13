@@ -1,5 +1,7 @@
 package EduMaps::Controller::Chat;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
+use utf8;
+use Mojo::JSON ();
 use POSIX qw(strftime);
 
 has _default_poll_time => 1;
@@ -8,48 +10,29 @@ has _default_poll_time => 1;
 # POST /api/chat/ask
 #
 # Enfileira a pergunta ao Assistente do Censo (chat NL->SQL) na fila dedicada
-# 'analytics' e devolve 202 + Location para polling/SSE. A pergunta e o
-# contexto (escopo do gestor) são validados aqui; o job chama o Plumber.
+# 'analytics' e devolve 202 + Location para polling/SSE. Exige gestor logado
+# (#224): o escopo (escola, município, UF) vem SEMPRE da sessão — qualquer
+# `contexto` enviado pelo cliente é ignorado. Só a `pergunta` é validada.
 # ---------------------------------------------------------------------------
 
 sub ask ($self) {
+  my $gestor = $self->stash('gestor') or return $self->unauthorized;
+
   my $is_json = ($self->req->headers->content_type // '') =~ m{^application/json};
   my $input = $is_json ? $self->req->json : $self->req->params->to_hash;
-  $input ||= {};
-
-  # O escopo (contexto do gestor) vem aninhado em `contexto`, mas aceitamos
-  # também os campos na raiz por compatibilidade.
-  my $ctx = ref $input->{contexto} eq 'HASH' ? $input->{contexto} : {};
-  my %raw = (
-    pergunta       => $input->{pergunta},
-    cod_municipio  => $ctx->{cod_municipio}  // $input->{cod_municipio},
-    cod_inep       => $ctx->{cod_inep}       // $input->{cod_inep},
-    nome_municipio => $ctx->{nome_municipio} // $input->{nome_municipio},
-    nome_escola    => $ctx->{nome_escola}    // $input->{nome_escola},
-    sg_uf          => $ctx->{sg_uf}          // $input->{sg_uf},
-  );
+  $input = {} unless ref $input eq 'HASH';
 
   my $v = $self->app->validator->validation;
-  $v->input(\%raw);
+  $v->input({ pergunta => $input->{pergunta} });
   $v->required('pergunta', 'trim')->like(qr/^.{1,500}\z/s);
-  $v->optional('cod_municipio', 'trim')->like(qr/^\d{7}$/);
-  $v->optional('cod_inep',      'trim')->like(qr/^\d{8}$/);
-  $v->optional('nome_municipio', 'trim');
-  $v->optional('nome_escola',    'trim');
-  $v->optional('sg_uf',          'trim')->like(qr/^[A-Za-z]{2}$/);
-
   return $self->bad_req if $v->has_error;
 
-  my %contexto;
-  $contexto{cod_municipio}  = $v->param('cod_municipio')  if $v->param('cod_municipio');
-  $contexto{cod_inep}       = $v->param('cod_inep')       if $v->param('cod_inep');
-  $contexto{nome_municipio} = $v->param('nome_municipio') if $v->param('nome_municipio');
-  $contexto{nome_escola}    = $v->param('nome_escola')    if $v->param('nome_escola');
-  $contexto{sg_uf}          = uc($v->param('sg_uf'))      if $v->param('sg_uf');
-
+  my $cod_inep = '' . ($gestor->{cod_inep} // '');
   my $args = {
-    pergunta => $v->param('pergunta'),
-    contexto => \%contexto,
+    pergunta  => $v->param('pergunta'),
+    contexto  => $self->_contexto_da_sessao($cod_inep),
+    gestor_id => '' . $gestor->{id},
+    cod_inep  => $cod_inep,
   };
 
   my $job_id = $self->app->minion->enqueue(
@@ -64,7 +47,8 @@ sub ask ($self) {
 # GET /api/chat/progress
 #
 # Snapshot JSON (polling) ou SSE (Accept: text/event-stream), igual ao
-# /api/task/progress.
+# /api/task/progress. Só devolve jobs `chat_ask` do gestor da sessão; job
+# inexistente, de outra task ou de outro gestor -> 404 (sem distinguir).
 # ---------------------------------------------------------------------------
 
 sub progress ($self) {
@@ -74,25 +58,63 @@ sub progress ($self) {
   return $self->bad_req if $self->any_error;
 
   my $job_id = $v->param('job_id');
+  my $job = $self->_job_do_gestor($job_id)
+    or return $self->render(json => { error => 'job_not_found' }, status => 404);
 
-  if (($self->req->headers->accept // '') !~ m{text/event-stream}i) {
-    my $info = $self->minion->job($job_id);
-    return $self->render(json => { error => 'job_not_found' }, status => 404) unless $info;
-
-    my $job = $info->info;
-    my %resp = (state => $job->{state});
-    if ($job->{state} eq 'failed') {
-      my $err = $job->{error} // $job->{result};
-      $resp{error} = ref $err eq 'HASH' ? ($err->{error} // Mojo::JSON::encode_json($err)) : "$err";
-    }
-    elsif ($job->{state} eq 'finished') {
-      $resp{result} = $job->{result};
-    }
-    return $self->render(json => \%resp);
+  # SSE só para job em andamento; em estado terminal o monitor não teria o que
+  # transmitir (e a requisição ficaria pendurada) — devolve o snapshot.
+  if (($self->req->headers->accept // '') =~ m{text/event-stream}i
+      && $job->{state} !~ /^(?:finished|failed)$/) {
+    $self->render_later;
+    return $self->monitor_chat($job_id);
   }
 
-  $self->render_later;
-  $self->monitor_chat($job_id);
+  my %resp = (state => $job->{state});
+  if ($job->{state} eq 'failed') {
+    my $err = $job->{error} // $job->{result};
+    $resp{error} = ref $err eq 'HASH' ? ($err->{error} // Mojo::JSON::encode_json($err)) : "$err";
+  }
+  elsif ($job->{state} eq 'finished') {
+    $resp{result} = $job->{result};
+  }
+  $self->render(json => \%resp);
+}
+
+# Contexto (escopo) do Assistente montado a partir da escola do gestor da
+# sessão: escola, município e UF da edição mais recente do Censo
+# (clean.censo_escolas). Escola fora do Censo: só o cod_inep.
+sub _contexto_da_sessao ($self, $cod_inep) {
+  return {} unless $cod_inep =~ /^\d{8}$/;
+
+  my $recorte = eval { $self->model('Gestor')->recorte_padrao($cod_inep) };
+  $self->app->log->warn("Assistente do Censo: recorte da escola $cod_inep falhou: $@") if $@;
+  return { cod_inep => $cod_inep } unless $recorte;
+
+  my %ctx = (cod_inep => $cod_inep);
+  $ctx{nome_escola}    = $recorte->{escola}{nome}       if defined $recorte->{escola}{nome};
+  $ctx{cod_municipio}  = $recorte->{municipio}{codigo}  if defined $recorte->{municipio}{codigo};
+  $ctx{nome_municipio} = $recorte->{municipio}{nome}    if defined $recorte->{municipio}{nome};
+  $ctx{sg_uf}          = $recorte->{uf}{codigo}         if defined $recorte->{uf}{codigo};
+  return \%ctx;
+}
+
+# info do job chat_ask se ele é do gestor da sessão; undef para job
+# inexistente, de outra task ou de outro gestor (não vaza a existência de
+# jobs alheios). Mesmo padrão de GestorRelatorios::_job_do_gestor.
+sub _job_do_gestor ($self, $job_id) {
+  my $gestor = $self->stash('gestor') // {};
+
+  my $job  = $self->minion->job($job_id);
+  my $info = $job ? $job->info : undef;
+  my $args = $info && ref $info->{args} eq 'ARRAY' ? $info->{args}[0] : undef;
+
+  return undef
+    unless $info
+        && $info->{task} eq 'chat_ask'
+        && ref $args eq 'HASH'
+        && defined $args->{gestor_id}
+        && $args->{gestor_id} eq ('' . ($gestor->{id} // ''));
+  return $info;
 }
 
 # ---------------------------------------------------------------------------

@@ -49,7 +49,7 @@
 | [Comparação de redes](analise/rede-municipal.md) | Comparar as redes (federal, estadual, municipal, privada) de um município. | 🟢 |
 | [Painel financeiro](analise/financeiro.md) | Acompanhar recursos e gastos da educação. | 🟢 |
 | [Folha de pagamento](analise/folha-pagamento.md) | Ler a remuneração e o perfil dos profissionais. | 🟢 |
-| [Assistente do Censo](analise/assistente-censo.md) | Perguntar em linguagem natural e receber números do Censo no escopo da escola. | 🟢 |
+| [Assistente do Censo](analise/assistente-censo.md) | Gestor logado pergunta em linguagem natural e recebe a resposta formatada, com números e gráfico, no escopo da sua escola. | 🟢 |
 | [Histórico de conversas](analise/historico-conversas.md) | Guardar as conversas com o assistente, reencontrá-las por texto ou data e exportá-las em Markdown. | 🟡 |
 | [Relatórios do território](analise/relatorios-territorio.md) | Escolher um assistente ("Relatório por tema" ou "EDA do município", relatório exploratório completo em capítulos com resumo geral) e um recorte, e receber um relatório com números, tabelas, gráficos e texto explicativo; inclui análises aprofundadas (escola a escola, infraestrutura × IDEB, histórico e escolas parecidas), exportação em PDF/Markdown, relatórios salvos e novos assistentes criados pela equipe sem programação. | 🟡 |
 

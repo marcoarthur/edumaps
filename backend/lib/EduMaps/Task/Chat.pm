@@ -1,5 +1,6 @@
 package EduMaps::Task::Chat;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use utf8;
 use Syntax::Keyword::Try;
 use Minion::Task::Generator qw/task/;
 
@@ -27,6 +28,10 @@ sub register ($self, $app, $config) {
   $app->helper(monitor_chat => \&_monitor_chat);
 }
 
+# Args (#224): {pergunta, contexto, gestor_id, cod_inep}. O contexto é o da
+# escola do gestor da sessão (montado no controller, nunca o do cliente);
+# gestor_id/cod_inep ficam nos args para o GET /api/chat/progress só
+# devolver o job ao próprio gestor. O cache (run_chat) é por contexto.
 sub _chat_ask ($job, $args) {
   my $pergunta = $args->{pergunta};
   my $contexto = $args->{contexto} // {};

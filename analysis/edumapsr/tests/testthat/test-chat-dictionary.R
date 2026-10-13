@@ -118,3 +118,28 @@ test_that("system prompt direciona o perfil da escola", {
   expect_match(texto, "school_profile_flat")
   expect_match(texto, "atencao")
 })
+test_that("glossário ausente: erro interno com a mensagem real (#224)", {
+  inexistente <- file.path(tempdir(), "nao-existe", "dicionario.yml")
+
+  err <- expect_error(
+    edumapsAnalytics:::chat_glossary_path(instalado = "", local = inexistente),
+    "Glossário do chat \\(dicionario.yml\\) não encontrado",
+    class = "chat_internal_error"
+  )
+  expect_false(grepl("stop_chat_internal", conditionMessage(err)))
+})
+
+test_that("chat_glossary_path prefere o glossário instalado e cai no local", {
+  local <- tempfile(fileext = ".yml")
+  writeLines("tabelas: []", local)
+  on.exit(unlink(local), add = TRUE)
+
+  expect_identical(
+    edumapsAnalytics:::chat_glossary_path(instalado = "/x/dicionario.yml", local = local),
+    "/x/dicionario.yml"
+  )
+  expect_identical(
+    edumapsAnalytics:::chat_glossary_path(instalado = "", local = local),
+    local
+  )
+})

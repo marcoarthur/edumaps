@@ -14,6 +14,7 @@ import { gestorOsmHandlers } from "@/features/gestor/mocks/osmHandlers.js";
 import { gestorRelatoriosHandlers } from "@/features/gestor/mocks/relatoriosHandlers.js";
 import { configHandlers } from "@/features/config/mocks/configHandlers.js";
 import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
+import { chatHandlers } from "@/features/chat/mocks/chatHandlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -30,4 +31,5 @@ export const handlers = [
   ...gestorRelatoriosHandlers,
   ...configHandlers,
   ...telemetryHandlers,
+  ...chatHandlers,
 ];

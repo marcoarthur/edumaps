@@ -1,11 +1,27 @@
 <!-- src/features/chat/pages/ChatPage.svelte -->
 <script>
+  // Assistente do Censo. Exige sessão do gestor (#224): sem token, ou com 401
+  // em qualquer chamada (me, ask, progress, salvar), mostra o cartão de login.
+  // O escopo da consulta (escola, município, UF) é decidido NO SERVIDOR a
+  // partir da escola do gestor da sessão; aqui ele só é exibido, a partir do
+  // recorte-padrão da escola — a pergunta vai sem contexto.
   import { onMount, onDestroy } from "svelte";
   import { ApiError } from "@/shared/api/client.js";
   import { restaurarSessao } from "@/features/gestor/utils/gestorAuth.js";
+  import { setSessaoToken } from "@/features/gestor/utils/gestorSession.js";
   import { fetchMe } from "@/features/gestor/api/gestorPesquisasApi.js";
-  import { getGestorPanel } from "@/features/gestor/api/gestorApi.js";
-  import { askChat, getChatProgress, extractSql, extractResposta, extractResultado, extractOrigem, extractMeta } from "../api/chatApi.js";
+  import { getRecortePadrao } from "@/features/gestor/api/gestorRelatoriosApi.js";
+  import GestorLoginCard from "@/features/gestor/components/survey/GestorLoginCard.svelte";
+  import {
+    askChat,
+    getChatProgress,
+    extractSql,
+    extractResposta,
+    extractResultado,
+    extractOrigem,
+    extractMeta,
+    extractChart,
+  } from "../api/chatApi.js";
   import { saveConversa } from "../api/chatApi.js";
   import { router } from "@/app/router.svelte.js";
   import ChatHistory from "../components/ChatHistory.svelte";
@@ -24,55 +40,65 @@
   let saving = $state(false);
   let saveError = $state(null);
 
-  // ---- contexto do gestor --------------------------------------------------
-  let contexto = $state({
-    cod_municipio: "",
-    cod_inep: "",
-    nome_municipio: "",
-    nome_escola: "",
-    sg_uf: "",
-  });
-  let contextoCarregado = $state(false);
-  let sessaoExpirada = $state(false);
+  // ---- sessão e escopo (somente leitura) -----------------------------------
+  let carregando = $state(true);
+  let precisaLogin = $state(false);
+  let gestor = $state(null);
+  let escopo = $state(null); // recorte-padrão da escola do gestor
 
-  // Preenche o escopo com a escola do gestor logado (se houver sessão ativa).
-  // Sem isso o assistente não sabe qual é "a minha escola" e pede o INEP.
-  onMount(async () => {
-    if (!restaurarSessao()) {
-      console.info("[chat] sem sessão de gestor: contexto manual");
-      return;
-    }
+  // Chips do ChatInput: o escopo que o servidor aplica (informativo).
+  const contextoExibido = $derived(
+    escopo
+      ? Object.fromEntries(
+          Object.entries({
+            nome_escola: escopo.escola?.nome,
+            cod_inep: escopo.escola?.cod_inep,
+            nome_municipio: escopo.municipio?.nome,
+            sg_uf: escopo.uf?.codigo,
+          }).filter(([, v]) => v),
+        )
+      : {},
+  );
+
+  const is401 = (err) => err instanceof ApiError && err.status === 401;
+
+  async function carregar() {
+    carregando = true;
+    precisaLogin = false;
     try {
       const me = await fetchMe();
-      if (!me?.cod_inep) {
-        console.warn("[chat] /me não retornou cod_inep", me);
-        return;
-      }
-      const inep = String(me.cod_inep);
-      contexto = { ...contexto, cod_inep: inep };
-
-      const painel = await getGestorPanel(inep);
-      const escola = painel?.escola;
-      if (escola) {
-        contexto = {
-          cod_inep: inep,
-          cod_municipio: escola.cod_municipio ? String(escola.cod_municipio) : "",
-          nome_municipio: escola.municipio ?? "",
-          nome_escola: escola.nome ?? "",
-          sg_uf: escola.uf ?? "",
-        };
-        contextoCarregado = true;
-      } else {
-        console.warn("[chat] painel sem 'escola'", painel);
+      gestor = me;
+      escopo = null;
+      if (me?.cod_inep) {
+        try {
+          escopo = await getRecortePadrao(String(me.cod_inep));
+        } catch (err) {
+          if (is401(err)) throw err;
+          // Sem o recorte a tela só não exibe o escopo; o servidor o aplica igual.
+          console.warn("[chat] escopo da escola indisponível:", err?.message ?? err);
+        }
       }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        sessaoExpirada = true;
-        console.warn("[chat] sessão expirada (401): gestor precisa entrar novamente");
+      if (is401(err)) {
+        precisaLogin = true;
       } else {
-        console.warn("[chat] falha ao carregar contexto da escola:", err?.message ?? err);
+        error = apiMessage(err, "Não foi possível carregar a sua sessão.");
       }
+    } finally {
+      carregando = false;
     }
+  }
+
+  function onLogin(sessao) {
+    setSessaoToken(sessao?.token);
+    restaurarSessao();
+    error = null;
+    carregar();
+  }
+
+  onMount(() => {
+    restaurarSessao();
+    carregar();
   });
 
   function generateId() {
@@ -81,16 +107,6 @@
 
   function apiMessage(err, fallback) {
     return err instanceof ApiError ? err.message : fallback;
-  }
-
-  function contextoEnvio() {
-    return {
-      cod_municipio: contexto.cod_municipio || undefined,
-      cod_inep: contexto.cod_inep || undefined,
-      nome_municipio: contexto.nome_municipio || undefined,
-      nome_escola: contexto.nome_escola || undefined,
-      sg_uf: contexto.sg_uf || undefined,
-    };
   }
 
   // ---- polling de progresso ------------------------------------------------
@@ -127,11 +143,14 @@
     abortController = new AbortController();
 
     try {
-      const started = await askChat({ pergunta: texto, contexto: contextoEnvio() });
+      const started = await askChat({ pergunta: texto });
       const result = await pollJob(started.job_id);
       appendAssistantMessage(result);
     } catch (err) {
-      if (err.name !== "AbortError") {
+      if (is401(err)) {
+        // Sessão expirou no meio da conversa: volta ao login (a conversa fica).
+        precisaLogin = true;
+      } else if (err.name !== "AbortError") {
         error = apiMessage(err, "Erro ao consultar o Assistente do Censo.");
         messages = [
           ...messages,
@@ -155,6 +174,7 @@
       resultado: extractResultado(result),
       origem: extractOrigem(result),
       ...extractMeta(result),
+      chart: extractChart(result),
       timestamp: new Date().toISOString(),
     };
 
@@ -187,6 +207,11 @@
       });
       showSaveModal = false;
     } catch (err) {
+      if (is401(err)) {
+        showSaveModal = false;
+        precisaLogin = true;
+        return;
+      }
       saveError = err instanceof ApiError ? err.message : "Falha ao salvar conversa";
     } finally {
       saving = false;
@@ -214,6 +239,7 @@
           Censo Escolar automaticamente.
         </p>
       </div>
+      {#if gestor && !precisaLogin}
       <div class="flex items-center gap-2 flex-wrap">
         <button
           onclick={clearChat}
@@ -236,19 +262,13 @@
           Buscar conversas anteriores
         </button>
       </div>
+      {/if}
     </div>
 
     {#if error}
       <div class="mt-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3 flex items-center justify-between">
         <span>{error}</span>
         <button onclick={() => (error = null)} class="text-red-500 hover:text-red-700 font-bold text-lg leading-none" aria-label="Fechar erro">×</button>
-      </div>
-    {/if}
-
-    {#if sessaoExpirada}
-      <div class="mt-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md p-3 flex items-center justify-between gap-3">
-        <span>Sua sessão expirou. <a href="/gestor" class="underline font-medium">Entre novamente</a> para o assistente usar os dados da sua escola automaticamente.</span>
-        <button onclick={() => (sessaoExpirada = false)} class="text-amber-600 hover:text-amber-800 font-bold text-lg leading-none" aria-label="Fechar aviso">×</button>
       </div>
     {/if}
 
@@ -294,80 +314,44 @@
       </div>
     {/if}
 
-    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <p class="font-semibold text-blue-800 mb-3 flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.924 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-        Contexto do gestor (escopo da consulta)
-      </p>
-      <p class="text-sm text-blue-700 mb-3">
-        {#if contextoCarregado}
-          Preenchido automaticamente com os dados da sua escola. Ajuste os campos
-          abaixo se quiser consultar outro escopo.
+    {#if !carregando && !precisaLogin && gestor}
+      <section
+        class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4"
+        aria-labelledby="chat-escopo-titulo"
+        data-testid="chat-escopo"
+      >
+        <h2 id="chat-escopo-titulo" class="font-semibold text-blue-800 mb-1 text-sm">
+          Escopo da consulta
+        </h2>
+        {#if escopo}
+          <p class="text-sm text-blue-700">
+            As perguntas consideram a sua escola,
+            <strong>{escopo.escola?.nome ?? escopo.escola?.cod_inep}</strong>{#if escopo.municipio?.nome},
+              em <strong>{escopo.municipio.nome}{escopo.uf?.codigo ? ` (${escopo.uf.codigo})` : ""}</strong>{/if}.
+          </p>
         {:else}
-          O assistente filtrará automaticamente pelo seu município/escola. Preencha
-          os campos abaixo para refinar o escopo.
+          <p class="text-sm text-blue-700">As perguntas consideram a escola vinculada à sua conta.</p>
         {/if}
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <label class="block">
-          <span class="text-xs font-medium text-blue-900 mb-1 block">Município (código IBGE)</span>
-          <input
-            type="text"
-            bind:value={contexto.cod_municipio}
-            placeholder="Ex: 3550308 (São Paulo)"
-            class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            maxlength="7"
-            pattern="\d{7}"
-          />
-        </label>
-        <label class="block">
-          <span class="block text-xs font-medium text-blue-900 mb-1">Nome do município</span>
-          <input
-            type="text"
-            bind:value={contexto.nome_municipio}
-            placeholder="Ex: São Paulo"
-            class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-        <label class="block">
-          <span class="block text-xs font-medium text-blue-900 mb-1">Escola (código INEP)</span>
-          <input
-            type="text"
-            bind:value={contexto.cod_inep}
-            placeholder="Ex: 12345678"
-            class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            maxlength="8"
-            pattern="\d{8}"
-          />
-        </label>
-        <label class="block">
-          <span class="block text-xs font-medium text-blue-900 mb-1">Nome da escola</span>
-          <input
-            type="text"
-            bind:value={contexto.nome_escola}
-            placeholder="Ex: EMEF João Silva"
-            class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-        <label class="block">
-          <span class="block text-xs font-medium text-blue-900 mb-1">UF</span>
-          <input
-            type="text"
-            bind:value={contexto.sg_uf}
-            placeholder="SP"
-            class="w-full border border-blue-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            maxlength="2"
-            pattern="[A-Za-z]{2}"
-          />
-        </label>
-      </div>
-    </div>
+        <p class="text-xs text-blue-600 mt-1">
+          O escopo vem da sua conta de gestor e não pode ser alterado aqui.
+        </p>
+      </section>
+    {/if}
   </header>
 
-  <div class="flex-1 min-h-0 flex flex-col">
-    <ChatHistory {messages} {loading} />
-    <ChatInput disabled={loading} contexto={contexto} onsend={handleSend} />
-  </div>
+  {#if carregando}
+    <div class="text-center py-12"><p class="text-gray-500">Carregando a sua sessão…</p></div>
+  {:else if precisaLogin}
+    <GestorLoginCard
+      onLogin={onLogin}
+      titulo="Entrar para usar o Assistente"
+      descricao="O Assistente do Censo é exclusivo para gestores escolares cadastrados."
+      mensagem="Entre para usar o Assistente do Censo."
+    />
+  {:else if gestor}
+    <div class="flex-1 min-h-0 flex flex-col">
+      <ChatHistory {messages} {loading} />
+      <ChatInput disabled={loading} contexto={contextoExibido} onsend={handleSend} />
+    </div>
+  {/if}
 </div>

@@ -14,19 +14,25 @@ CHAT_ALLOWED_SCHEMAS <- c("clean", "analytics")
 
 #' Caminho do arquivo de glossário do chat
 #'
+#' Procura o glossário instalado com o pacote e, em desenvolvimento, em
+#' `inst/chat/dicionario.yml`. Ausente nos dois: erro interno (500) com a
+#' mensagem real.
+#'
+#' @param instalado caminho do glossário instalado (`""` se ausente).
+#' @param local caminho de desenvolvimento.
 #' @keywords internal
-chat_glossary_path <- function() {
-  installed <- system.file("chat/dicionario.yml", package = "edumapsAnalytics")
-  if (nzchar(installed)) {
-    return(installed)
+chat_glossary_path <- function(
+    instalado = system.file("chat/dicionario.yml", package = "edumapsAnalytics"),
+    local = file.path("inst", "chat", "dicionario.yml")) {
+  if (nzchar(instalado)) {
+    return(instalado)
   }
 
-  path <- file.path("inst", "chat", "dicionario.yml")
-  if (file.exists(path)) {
-    return(path)
+  if (file.exists(local)) {
+    return(local)
   }
 
-  stop_chat_internal("Glossário do chat (dicionario.yml) não encontrado")
+  chat_internal_failed("Glossário do chat (dicionario.yml) não encontrado")
 }
 
 #' Glossário curado do chat
