@@ -4,6 +4,7 @@ import { eventBus, logger } from "@/shared/events";
 import { initSentry } from "@/shared/sentry";
 import { registerToastEventBridge } from "@/shared/stores/toastEventBridge.js";
 import { startTelemetry } from "@/app/telemetry.js";
+import { atualizador, instalarRecargaDeChunk } from "@/shared/pwa/atualizacao.js";
 import "./app.css";
 import "@carbon/charts-svelte/styles.css";
 import App from "./app/App.svelte";
@@ -23,6 +24,21 @@ registerToastEventBridge();
 // Telemetria de sessão (etapa 2): liga o tracker no bus antes de montar o app,
 // para capturar a navegação inicial e os primeiros eventos.
 startTelemetry();
+
+// Chunk antigo que não carrega (aba aberta antes de um deploy) → recarga
+// única; se já recarregou há pouco, mostra o aviso em vez de entrar em laço.
+instalarRecargaDeChunk({ aoFalhar: () => atualizador.mostrarErroChunk() });
+
+// Service worker só no build de produção (o dev usa o Vite direto). O registro
+// é manual (injectRegister: false) para o aviso de nova versão (#225).
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  const registrar = () =>
+    atualizador.registrar("/sw.js").catch((err) => {
+      console.warn("[pwa] falha ao registrar o service worker", err);
+    });
+  if (document.readyState === "complete") registrar();
+  else window.addEventListener("load", registrar, { once: true });
+}
 
 async function bootstrap() {
   // Sentry opcional: sem DSN retorna null e nada é inicializado.
