@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-13 — #156 P1: cargas no produto (#234) e correções (PR #235)
+
+- **Issue #234** (P1). Decisões do developer:
+  - SICONFI: último exercício (**2025**), todas as UFs, RREO 6º bimestre +
+    DCA;
+  - IBGE: **snapshot** `clean.dados_ibge_antes_p1` antes da carga e
+    comparação antes/depois (apagar após o relatório);
+  - uma issue só, com PR apenas quando houver código.
+- **PR #235** (merge `ca5f5a3`), com correções achadas durante as cargas
+  reais:
+  - **RREO Simplificado:** municípios com menos de 50 mil habitantes (LRF
+    art. 63) devolviam 0 itens. Era ~metade da malha.
+  - **`no_anexo=RREO-Anexo 01` e páginas de 5000:** 1 GET por município.
+    DCA ~53 municípios/min, RREO ~25 municípios/min.
+  - **Brutos do BrazilCrime e do IBGE** (CSVs extraídos) agora vão para o
+    raw.
+  - **Extractor R do BrazilCrime:** lia o cabeçalho como município (órfão
+    falso).
+  - **Não resolvidas do RENAEST** duplicadas por mês violavam a PK. A carga
+    real abortava; o dry-run não pega isso.
+- **Operação** em `backend.edumaps`:
+  - scripts em `/root/p1/*.sh`;
+  - logs em `/var/log/edumaps/p1_*.log`;
+  - ZIPs RENAEST 05-2026 e RENAVAM 09-2026 em `/root/p1`, configurados em
+    `/root/p1/transportes.conf`;
+  - o servidor do dados.transportes corta downloads e só às vezes aceita
+    `Range` (usar `curl -C -` em laço).
+- **Armadilhas:**
+  - `pkill -f`/`pgrep -f` via ssh casa a própria linha de comando e derruba
+    a sessão: usar o padrão `[p]erl …`;
+  - sessão ssh silenciosa por ~10 min é cortada: rodar com `setsid nohup` e
+    log;
+  - **RENAVAM tem 33 pares (UF, município) sem casa** por grafia (~0,5% das
+    linhas, 32 municípios sem frota). É conhecido; candidato a mapa de
+    variantes, como o do BrazilCrime.
+- **Resultado:** BrazilCrime 61.192 linhas. SICONFI, IBGE e Transportes em
+  curso (ver o relatório na #234).
+
 ## Sessão 2026-10-13 — #156 replanejada: allowlist (PR #232) e P0 da ingestão (#231)
 
 - **Plano da #156:** `docs/specs/2026-10-13-ingestao-real-plano.md`, §6 com as
