@@ -50,7 +50,11 @@
   - Transportes: 2.268.496 sinistros, frota de 5.538 municípios, ZIPs no
     raw;
   - `dados_ibge` 55.715 linhas (2014–2023);
-  - SICONFI e `ibge_agregados` em curso (ver o relatório na #234).
+  - **PR #237** (merge `3e0b749`): `ibge_agregados.classificacao` está na PK.
+    A tabela 5938 não tem quebra e o loader mandava NULL; a carga abortou
+    depois de 2 h de SIDRA. Vazio agora vira `'Total'` (convenção do SIDRA).
+    Recarregado dos brutos em 473 s: `ibge_agregados` 2.563.120 linhas;
+  - SICONFI em curso (ver o relatório na #234).
 
 ## Sessão 2026-10-13 — #156 replanejada: allowlist (PR #232) e P0 da ingestão (#231)
 
