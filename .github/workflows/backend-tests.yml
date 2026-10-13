@@ -33,6 +33,7 @@ on:
       - 'backend/**'
       - 'data_pipeline/**'
       - 'db/**'
+      - 'tools/censo-dicionario/**'
       - '.github/workflows/backend-tests.yml'
   workflow_dispatch:
 
@@ -123,3 +124,8 @@ jobs:
       - name: suíte de testes
         working-directory: backend
         run: prove -r -l t/
+
+      # Gerador do dicionário do Censo a partir do dicionário oficial do INEP
+      # (#134): testes unittest com um xlsx sintético (só stdlib, sem rede).
+      - name: testes do gerador do dicionário do Censo
+        run: python3 -m unittest discover -s tools/censo-dicionario/t -v
