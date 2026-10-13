@@ -248,14 +248,14 @@ sources:
         method: GET
         description: "Malha municipal 2024 (shapefile, usado em raw_municipios_sp)"
         license: "Domínio público (IBGE)"
-      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.gpkg"
+      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/setores/gpkg/BR/BR_setores_CD2022.gpkg"
         method: GET
-        description: "Malha municipal 2024 (GPKG, GeoPackage)"
+        description: "Malha de setores censitários do Censo 2022 (GPKG, ~1,49 GB)"
         license: "Domínio público (IBGE)"
-      - path: "/organizacao_do_territorio/malhas_territoriais/malha_setores_censitarios/setor_censitario_2022/Brasil/BR_Setor_Censitario_2022.gpkg"
-        method: GET
-        description: "Malha de setor censitário 2022 (GPKG, ~748 MB)"
-        license: "Domínio público (IBGE)"
+    # Verificado 2026-10-13 (HEAD a partir de backend.edumaps): o .zip municipal
+    # (208 MB) e o BR_setores_CD2022.gpkg (1,49 GB) → 200. Os paths antigos
+    # (BR_Municipios_2024.gpkg e malha_setores_censitarios/.../BR_Setor_Censitario_2022.gpkg)
+    # → 404 e saíram da lista (#231).
 
   # ------------------------------------------------------------
   # MEIO AMBIENTE / CLIMA
@@ -359,7 +359,13 @@ sources:
       - path: "/R/BrazilCrime"
         method: CRAN
         description: "Pacote R BrazilCrime - dados de criminalidade agregados por município/ano (homicídios, roubos, etc.)"
-        license: "GPL-3 (CRAN)"
+        license: "MIT + file LICENSE (CRAN)"
+      - path: "/package=BrazilCrime"
+        method: GET
+        description: "Página canônica do pacote no CRAN — URL de proveniência que o job BrazilCrime declara e valida (#231)"
+        license: "MIT + file LICENSE (CRAN)"
+    # Licença: o CRAN declara MIT + file LICENSE (corrigido na #157; GPL-3 estava
+    # errado). Os termos dos DADOS (SINESP) seguem a confirmar.
 
   - id: antt_acidentes
     name: "ANTT - Acidentes e geodados por trecho"
