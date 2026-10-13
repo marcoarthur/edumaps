@@ -234,7 +234,9 @@ subtest 'paginação por hasMore: count e pagina (limit=2 => count=2)' => sub {
   my $rows = $j->_fetch_rreo(id_ente => '3550308', exercicio => 2025, nr_periodo => 2);
   is(scalar @$rows, 2, 'duas páginas consumidas');
   my @offsets = map { $_->[1]{offset} } @{$j->ua->{calls}};
-  is_deeply(\@offsets, [0, 1000], 'offset avança 0 -> 1000 (mesmo com count por página)');
+  is_deeply(\@offsets, [0, 5000], 'offset avança pelo limit (5000), mesmo com count por página');
+  is($j->ua->{calls}[0][1]{no_anexo}, 'RREO-Anexo 01', 'pede só o Anexo 01 (#234)');
+  is($j->ua->{calls}[0][1]{limit}, 5000, 'páginas de 5000');
 };
 
 # ---------------------------------------------------------------- 6
@@ -482,7 +484,7 @@ subtest 'fase 2: _fetch_dca pagina por hasMore com an_exercicio/id_ente' => sub 
   like($j->ua->{calls}[0][0], qr{/dca$}, 'endpoint /dca');
   is($j->ua->{calls}[0][1]{id_ente}, 3550308, 'id_ente passado');
   is($j->ua->{calls}[0][1]{an_exercicio}, 2025, 'an_exercicio (nome real do parâmetro)');
-  is($j->ua->{calls}[1][1]{offset}, 1000, 'offset avança');
+  is($j->ua->{calls}[1][1]{offset}, 5000, 'offset avança pelo limit (5000)');
 };
 
 subtest 'fase 2: count==0 no DCA — município único morre, iteração pula' => sub {

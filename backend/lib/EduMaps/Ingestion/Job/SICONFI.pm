@@ -332,6 +332,13 @@ sub ingest_municipio_receita ($self, %args) {
 # ---------------------------------------------------------------------
 use constant DEMONSTRATIVOS_RREO => ('RREO', 'RREO Simplificado');
 
+# Desempenho da malha (#234): o loader só usa o Anexo 01, e a API filtra
+# por no_anexo (689 itens de 4042 em SP 2025/6). Com páginas de 5000 (a API
+# aceita), um município custa 1 GET em vez de ~5 — a 1 req/s, a malha
+# nacional cai de ~10 h para ~2 h. A paginação por hasMore continua.
+use constant ANEXO_RECEITA => 'RREO-Anexo 01';
+use constant LIMITE_PAGINA => 5000;
+
 sub _fetch_rreo ($self, %args) {
   my $cod_ibge = delete $args{id_ente} // delete $args{cod_ibge};
   die "id_ente (cod_ibge) e obrigatorio\n" unless defined $cod_ibge;
@@ -349,8 +356,9 @@ sub _fetch_rreo ($self, %args) {
       an_exercicio          => $exercicio,
       nr_periodo            => $periodo,
       co_tipo_demonstrativo => $demonstrativos[$i],
+      no_anexo              => ANEXO_RECEITA,
       id_ente               => $cod_ibge,
-      limit                 => 1000,
+      limit                 => LIMITE_PAGINA,
       offset                => 0,
       %args,
     });
@@ -566,7 +574,7 @@ sub _fetch_dca ($self, %args) {
   my %p = (
     an_exercicio => $exercicio,
     id_ente      => $cod_ibge,
-    limit        => 1000,
+    limit        => LIMITE_PAGINA,
     offset       => 0,
     %args,
   );
