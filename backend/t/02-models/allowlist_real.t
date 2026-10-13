@@ -15,10 +15,10 @@ my $al = EduMaps::Data::Allowlist->new(file_path => $real);
 
 subtest 'arquivo real carrega com todas as fontes e regras' => sub {
     my @ids = map { $_->{id} } $al->sources->@*;
-    is(scalar @ids, 24, '24 fontes (22 ativas + 2 inativas)') or diag "@ids";
+    is(scalar @ids, 25, '25 fontes (23 ativas + 2 inativas; +ibge_ftp_censo2022 na #238)') or diag "@ids";
 
     my @ativas = grep { lc($_->{status} // 'ativo') ne 'inativo' } $al->sources->@*;
-    is(scalar @ativas, 22, '22 fontes ativas');
+    is(scalar @ativas, 23, '23 fontes ativas');
 
     # As 8 fontes que sumiam com o bloco `sources:` duplicado
     my %have = map { $_ => 1 } @ids;
