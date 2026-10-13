@@ -5,9 +5,17 @@
    * @param {string} content
    * @param {{ sql?: string, resultado?: object, origem?: string[], linhas?: number, colunas?: number, chart?: object, timestamp?: string }} [meta]
    */
+  // Resposta do assistente em markdown seguro (TextoMarkdown, sem {@html});
+  // o gráfico (`meta.chart`, spec estilo Plotly do R) é desenhado com os
+  // wrappers Carbon quando reconhecível — senão é ignorado (#224).
+  import TextoMarkdown from "@/features/inscricao/components/TextoMarkdown.svelte";
+  import ChatGrafico from "./ChatGrafico.svelte";
+  import { graficoDoChat } from "../utils/chatGrafico.js";
+
   let { role, content, meta = {} } = $props();
 
   const isUser = $derived(role === "user");
+  const grafico = $derived(isUser ? null : graficoDoChat(meta?.chart));
 
   const hora = $derived.by(() => {
     if (!meta.timestamp) return "";
@@ -32,14 +40,24 @@
   </div>
 
   <div
-    class="max-w-[70%] rounded-2xl px-4 py-3
+    class="max-w-[70%] min-w-0 rounded-2xl px-4 py-3 {grafico ? 'w-full' : ''}
       {isUser
         ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
         : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'}"
   >
-    <div class="text-sm whitespace-pre-wrap break-words">
-      {content}
-    </div>
+    {#if isUser}
+      <div class="text-sm whitespace-pre-wrap break-words">
+        {content}
+      </div>
+    {:else}
+      <div class="text-sm break-words space-y-2" data-testid="chat-resposta">
+        <TextoMarkdown texto={content} />
+      </div>
+    {/if}
+
+    {#if grafico}
+      <ChatGrafico spec={grafico} />
+    {/if}
 
     {#if meta.sql}
       <details class="mt-3 text-xs">

@@ -9,14 +9,12 @@ import { apiClient } from "@/shared/api/client.js";
  * Enfileira a pergunta ao Assistente do Censo (chat NL->SQL) na fila
  * dedicada 'analytics' e devolve 202 + Location para polling/SSE.
  *
+ * Exige sessão de gestor (Bearer); sem ela, 401. O escopo da consulta
+ * (escola, município, UF) vem SEMPRE da escola do gestor da sessão, no
+ * servidor — o cliente não envia contexto (#224).
+ *
  * @param {Object} payload
  * @param {string} payload.pergunta - Pergunta do gestor (máx. 500 chars).
- * @param {Object} payload.contexto - Escopo do gestor (opcional).
- *   @param {string} [payload.contexto.cod_municipio] - Código IBGE do município (7 dígitos).
- *   @param {string} [payload.contexto.cod_inep] - Código INEP da escola (8 dígitos).
- *   @param {string} [payload.contexto.nome_municipio] - Nome do município.
- *   @param {string} [payload.contexto.nome_escola] - Nome da escola.
- *   @param {string} [payload.contexto.sg_uf] - Sigla da UF (2 letras).
  * @returns {Promise<{ task: string, job_id: number }>}
  */
 export function askChat(payload) {
@@ -26,6 +24,7 @@ export function askChat(payload) {
 /**
  * Snapshot JSON do job (polling simples) ou SSE (Accept: text/event-stream).
  * Sem o header `Accept: text/event-stream`, devolve JSON com { state, error? }.
+ * Exige sessão (401 sem ela); job de outro gestor -> 404.
  *
  * @param {string|number} jobId
  * @returns {Promise<{ state: string, error?: string, result?: object }>}
@@ -37,6 +36,10 @@ export function getChatProgress(jobId) {
 /**
  * Versão SSE (EventSource) do progresso — útil para UI reativa.
  * Retorna um EventSource que emite eventos 'progress' até estado terminal.
+ *
+ * Atenção (#224): a rota exige `Authorization: Bearer`, que o EventSource
+ * nativo não envia — com a sessão por token esta função recebe 401. A tela
+ * usa o polling (`getChatProgress`).
  *
  * @param {string|number} jobId
  * @returns {EventSource}
@@ -182,6 +185,17 @@ export function extractResultado(jobResult) {
  */
 export function extractOrigem(jobResult) {
   return Array.isArray(jobResult?.origem) ? jobResult.origem : [];
+}
+
+/**
+ * Extrai a spec do gráfico (estilo Plotly `{data, layout}`) gerada pelo R,
+ * ou null. A validação do formato fica em utils/chatGrafico.js.
+ * @param {object} jobResult
+ * @returns {object|null}
+ */
+export function extractChart(jobResult) {
+  const c = jobResult?.chart;
+  return c && typeof c === "object" && !Array.isArray(c) ? c : null;
 }
 
 /**
