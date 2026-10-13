@@ -196,4 +196,11 @@ __PACKAGE__->set_primary_key("table_name", "column_name", "year_introduced");
 # Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-09-30 00:00:00
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:placeholder
 
+# origem: 'inep' (Dicionário de Variáveis do INEP) | 'derivada' (coluna criada
+# pelo EduMaps). Change censo_data_dictionary_inep (#134).
+__PACKAGE__->add_columns(
+  "origem",
+  { data_type => "text", default_value => "inep", is_nullable => 0 },
+);
+
 1;

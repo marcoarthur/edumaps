@@ -1,6 +1,6 @@
 Package: edumapsAnalytics
 Title: Camada Analitica do EduMaps (Model-Controller-View para R)
-Version: 0.3.1
+Version: 0.3.2
 Description: Biblioteca/aplicacao analitica do EduMaps. Separa fonte de
     dados (DataSource), modelo semantico do dominio (Semantic Model),
     calculo estatistico puro (Analysis), resultado intermediario

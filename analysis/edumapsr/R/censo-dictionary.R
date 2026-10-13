@@ -137,6 +137,10 @@ censo_dictionary <- function(con,
 }
 
 #' Método print para censo_dictionary
+#' @param x Objeto `censo_dictionary`.
+#' @param ... Repassado ao método de `data.frame`.
+#' @param n Reservado (compatibilidade).
+#' @return `x`, invisível.
 #' @export
 print.censo_dictionary <- function(x, ..., n = 20) {
   cat(sprintf("<censo_dictionary> %d colunas em %d tabela(s)\n",
@@ -158,6 +162,9 @@ print.censo_dictionary <- function(x, ..., n = 20) {
 }
 
 #' Resumo por tabela
+#' @param object Objeto `censo_dictionary`.
+#' @param ... Ignorado.
+#' @return `data.frame` com uma linha por tabela.
 #' @export
 summary.censo_dictionary <- function(object, ...) {
   tabs <- unique(object$table_name)
@@ -187,6 +194,10 @@ censo_dict_filter <- function(dict, pattern) {
 }
 
 #' Obter domínio de uma coluna específica
+#' @param dict Objeto `censo_dictionary`.
+#' @param table Tabela qualificada (ex.: `"clean.censo_escolas"`).
+#' @param column Nome da coluna.
+#' @return Lista nomeada `codigo -> rótulo` ou `NULL`.
 #' @export
 censo_dict_domain <- function(dict, table, column) {
   stopifnot(inherits(dict, "censo_dictionary"))
@@ -197,58 +208,159 @@ censo_dict_domain <- function(dict, table, column) {
 
 #' Verificar se há colunas/códigos novos não documentados
 #'
-#' Compara as colunas reais do banco (via information_schema) com o
-#' dicionário. Útil para rodar em teste/CI: falha se houver coluna na
-#' tabela que não está no dicionário, ou código em tp_*/in_* sem
-#' value_domain.
+#' Confere os dados reais do Censo contra o dicionário canônico. Útil em
+#' teste/CI: `ok` só é `TRUE` quando não há nenhuma violação.
+#'
+#' Quando o banco tem a função `clean.censo_dict_violacoes()` (migration
+#' `censo_data_dictionary_inep`), ela é a fonte: devolve colunas reais fora
+#' do dicionário (`coluna_sem_dicionario`), códigos fora do `value_domain`
+#' (`codigo_fora_do_dominio`) e binárias `in_*` fora de {0,1}
+#' (`binaria_invalida`).
+#'
+#' Sem a função (banco antigo), cai num fallback que só confere a estrutura:
+#' colunas reais (por `table_schema` + `table_name`) ausentes do dicionário
+#' (`coluna_sem_dicionario`), colunas `tp_*` sem `value_domain`
+#' (`sem_dominio`; as `in_*` são binárias e não exigem domínio) e tabelas
+#' pedidas que não existem no banco (`tabela_ausente`). O fallback não
+#' confere códigos.
 #'
 #' @param con Conexão DBI.
-#' @param tables Vetor de tabelas (default: 4 tabelas censo).
-#' @return `list(ok = logical, missing_cols = character, missing_domains = character)`
+#' @param tables Vetor de tabelas qualificadas (default: as 4 tabelas censo).
+#' @return Lista com:
+#'   \itemize{
+#'     \item `ok`: `TRUE` se e somente se não há violações;
+#'     \item `violacoes`: `data.frame(tipo, tabela, coluna, valor, n)`;
+#'     \item `missing_cols`: `"tabela.coluna"` sem dicionário;
+#'     \item `missing_domains`: `"tabela.coluna"` sem domínio ou com código
+#'       fora dele;
+#'     \item `fonte`: `"funcao"` ou `"fallback"`.
+#'   }
 #' @export
 censo_dict_validate <- function(con, tables = NULL) {
-  base_tables <- c("clean.censo_escolas", "clean.censo_matriculas",
-                   "clean.censo_docentes", "clean.censo_gestor")
-  tables <- tables %||% base_tables
-
-  dict <- censo_dictionary(con, tables = tables, include_domain = TRUE)
-
-  # Colunas reais no banco
-  where_tables <- paste(sprintf("'%s'", tables), collapse = ", ")
-  sql <- sprintf("
-    SELECT table_name, column_name, data_type
-    FROM information_schema.columns
-    WHERE table_schema = 'clean'
-      AND table_name IN (%s)
-      AND table_name NOT LIKE 'censo_data_dictionary'
-  ", where_tables)
-  real <- DBI::dbGetQuery(con, sql)
-
-  # Guard: se não há tabelas, retorna ok
-  if (nrow(real) == 0) {
-    return(list(ok = TRUE, missing_cols = character(), missing_domains = character()))
+  tables <- tables %||% CENSO_DICT_TABLES
+  invalid <- setdiff(tables, CENSO_DICT_TABLES)
+  if (length(invalid) > 0) {
+    stop("Tabelas não reconhecidas: ", paste(invalid, collapse = ", "),
+         ". Válidas: ", paste(CENSO_DICT_TABLES, collapse = ", "))
   }
 
-  real$table_name <- paste0("clean.", real$table_name)
+  if (censo_dict_has_violacoes_fn(con)) {
+    violacoes <- censo_dict_violacoes_fn(con, tables)
+    fonte <- "funcao"
+  } else {
+    violacoes <- censo_dict_violacoes_fallback(con, tables)
+    fonte <- "fallback"
+  }
+
+  chave <- paste(violacoes$tabela, violacoes$coluna, sep = ".")
+  list(
+    ok = nrow(violacoes) == 0,
+    violacoes = violacoes,
+    missing_cols = unique(chave[violacoes$tipo %in% c("coluna_sem_dicionario", "tabela_ausente")]),
+    missing_domains = unique(chave[violacoes$tipo %in% c("sem_dominio", "codigo_fora_do_dominio",
+                                                         "binaria_invalida")]),
+    fonte = fonte
+  )
+}
+
+# Tabelas do Censo cobertas pelo dicionário canônico.
+CENSO_DICT_TABLES <- c("clean.censo_escolas", "clean.censo_matriculas",
+                       "clean.censo_docentes", "clean.censo_gestor")
+
+# data.frame de violações vazio, no formato de clean.censo_dict_violacoes().
+censo_dict_violacoes_vazio <- function() {
+  data.frame(tipo = character(), tabela = character(), coluna = character(),
+             valor = character(), n = numeric(), stringsAsFactors = FALSE)
+}
+
+# Qualifica nomes de tabela sem schema com 'clean.'.
+censo_dict_qualify <- function(x) {
+  x <- as.character(x)
+  ifelse(grepl(".", x, fixed = TRUE), x, paste0("clean.", x))
+}
+
+#' A função clean.censo_dict_violacoes() existe no banco?
+#' @keywords internal
+censo_dict_has_violacoes_fn <- function(con) {
+  res <- DBI::dbGetQuery(
+    con,
+    "SELECT to_regprocedure('clean.censo_dict_violacoes()') IS NOT NULL AS existe"
+  )
+  nrow(res) == 1 && isTRUE(as.logical(res$existe[[1]]))
+}
+
+#' Violações via clean.censo_dict_violacoes(), filtradas pelas tabelas pedidas
+#' @keywords internal
+censo_dict_violacoes_fn <- function(con, tables) {
+  v <- DBI::dbGetQuery(
+    con,
+    "SELECT tipo, tabela, coluna, valor, n FROM clean.censo_dict_violacoes()"
+  )
+  if (nrow(v) == 0) return(censo_dict_violacoes_vazio())
+  v$tabela <- censo_dict_qualify(v$tabela)
+  v$valor <- as.character(v$valor)
+  v$n <- as.numeric(v$n)
+  v <- v[v$tabela %in% tables, c("tipo", "tabela", "coluna", "valor", "n"), drop = FALSE]
+  rownames(v) <- NULL
+  v
+}
+
+#' Violações estruturais quando a função SQL não existe (banco antigo)
+#' @keywords internal
+censo_dict_violacoes_fallback <- function(con, tables) {
+  partes <- strsplit(tables, ".", fixed = TRUE)
+  pares <- vapply(partes, function(p) {
+    sprintf("(%s, %s)",
+            DBI::dbQuoteString(con, p[[1]]), DBI::dbQuoteString(con, p[[2]]))
+  }, character(1))
+
+  # Colunas reais: casar schema E nome da tabela (nunca o nome qualificado
+  # contra information_schema.table_name).
+  sql <- sprintf("
+    SELECT table_schema, table_name, column_name
+    FROM information_schema.columns
+    WHERE (table_schema, table_name) IN (%s)
+  ", paste(pares, collapse = ", "))
+  real <- DBI::dbGetQuery(con, sql)
+  real_tab <- paste(real$table_schema, real$table_name, sep = ".")
+
+  dict <- suppressWarnings(censo_dictionary(con, tables = tables, include_domain = TRUE))
+
+  out <- list()
+
+  ausentes <- setdiff(tables, real_tab)
+  if (length(ausentes) > 0) {
+    out$ausentes <- data.frame(tipo = "tabela_ausente", tabela = ausentes,
+                               coluna = NA_character_, valor = NA_character_,
+                               n = NA_real_, stringsAsFactors = FALSE)
+  }
 
   dict_keys <- paste(dict$table_name, dict$column_name, sep = ".")
-  real_keys <- paste(real$table_name, real$column_name, sep = ".")
+  real_keys <- paste(real_tab, real$column_name, sep = ".")
+  sem_dict <- !(real_keys %in% dict_keys)
+  if (any(sem_dict)) {
+    out$sem_dict <- data.frame(tipo = "coluna_sem_dicionario",
+                               tabela = real_tab[sem_dict],
+                               coluna = real$column_name[sem_dict],
+                               valor = NA_character_, n = NA_real_,
+                               stringsAsFactors = FALSE)
+  }
 
-  missing <- setdiff(real_keys, dict_keys)
+  # Só tp_* exigem domínio; in_* são binárias (0/1) por convenção do INEP.
+  if (nrow(dict) > 0 && "value_domain" %in% names(dict)) {
+    sem_dom <- grepl("^tp_", dict$column_name) &
+      vapply(dict$value_domain, function(v) is.null(v) || length(v) == 0, logical(1))
+    if (any(sem_dom)) {
+      out$sem_dom <- data.frame(tipo = "sem_dominio",
+                                tabela = dict$table_name[sem_dom],
+                                coluna = dict$column_name[sem_dom],
+                                valor = NA_character_, n = NA_real_,
+                                stringsAsFactors = FALSE)
+    }
+  }
 
-  # Domínios faltando em tp_*/in_*
-  dict_tp_in <- dict[grepl("^(tp_|in_)", dict$column_name), ]
-  missing_domains <- dict_tp_in[
-    vapply(dict_tp_in$value_domain, is.null, logical(1)),
-    "table_name", "column_name"
-  ]
-  missing_domains <- if (nrow(missing_domains) > 0) {
-    paste(missing_domains$table_name, missing_domains$column_name, sep = ".")
-  } else character()
-
-  list(
-    ok = length(missing) == 0 && length(missing_domains) == 0,
-    missing_cols = missing,
-    missing_domains = missing_domains
-  )
+  if (length(out) == 0) return(censo_dict_violacoes_vazio())
+  v <- do.call(rbind, unname(out))
+  rownames(v) <- NULL
+  v
 }

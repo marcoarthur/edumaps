@@ -16,7 +16,12 @@
 #   (PII): colunas que casem são removidas do resultado antes de entregar.
 # - `conexoes` orienta joins entre tabelas (os elos do schema).
 # - `termos` mapeia vocabulário educacional comum para colunas concretas.
-# - `codificacoes` documenta enums (tp_*) usados nas tabelas.
+# - `codificacoes` documenta enums (tp_*) usados nas tabelas, alinhados ao
+#   Dicionário de Variáveis do INEP. Quando o banco tem
+#   clean.censo_data_dictionary, o domínio de cada coluna vem de lá; este bloco
+#   é o resumo que sempre vai ao prompt e o fallback para bancos sem o
+#   dicionário canônico. Manter em sincronia com
+#   data_pipeline/dicionarios/censo_inep_variaveis.csv.
 
 tabelas:
   clean.censo_escolas:
@@ -80,8 +85,8 @@ colunas:
     tp_dependencia: "Dependência administrativa (ver codificações)"
     tp_categoria_escola_privada: "Categoria da escola privada (ver codificações)"
     tp_localizacao: "1=Urbana, 2=Rural"
-    tp_localizacao_diferenciada: "1=Assentamento, 2=Terra Indígena, 3=Quilombo, 4=Área remanescente de quilombos, etc."
-    tp_situacao_funcionamento: "1=Ativa, 2=Paralisada, 3=Extinta"
+    tp_localizacao_diferenciada: "Localização diferenciada (ver codificações)"
+    tp_situacao_funcionamento: "Situação de funcionamento (ver codificações)"
     latitude: "Latitude (graus decimais)"
     longitude: "Longitude (graus decimais)"
     in_agua_potavel: "Há água potável?"
@@ -134,8 +139,8 @@ colunas:
     in_esp_exclusiva_creche: "Creche em educação especial exclusiva"
     in_esp_exclusiva_fund_ai: "Fundamental anos iniciais em educação especial exclusiva"
     in_especial_exclusiva: "Oferece educação especial exclusiva"
-    tp_aee: "Tipo de Atendimento Educacional Especializado (ver codificações)"
-    tp_atividade_complementar: "1=Meio período, 2=Período integral, 3=Ambas"
+    tp_aee: "Oferta de AEE (ver codificações)"
+    tp_atividade_complementar: "Oferta de atividade complementar (ver codificações)"
     nro_etapas: "Quantidade de etapas/modalidades oferecidas"
     nro_participacoes_exame: "Número de exames nacionais já realizados"
     cluster_id: "Cluster atribuído à escola na última clusterização"
@@ -419,7 +424,7 @@ termos:
       - "clean.censo_matriculas.qt_mat_esp (matrículas na educação especial)"
       - "clean.censo_matriculas.qt_mat_esp_cc (inclusão em classes comuns)"
       - "clean.censo_matriculas.qt_mat_esp_ce (classes exclusivas/AEE)"
-      - "clean.censo_escolas.tp_aee (tipo de AEE)"
+      - "clean.censo_escolas.tp_aee (oferta de AEE)"
       - "clean.censo_escolas.in_sala_atendimento_especial (sala de atendimento)"
       - "clean.censo_escolas.in_especial_exclusiva (educação especial exclusiva)"
       - "clean.censo_docentes.qt_doc_esp (docentes na educação especial)"
@@ -521,8 +526,11 @@ codificacoes:
   tp_dependencia: "1=Federal, 2=Estadual, 3=Municipal, 4=Privada"
   tp_categoria_escola_privada: "1=Particular, 2=Comunitária, 3=Confessional, 4=Filantrópica"
   tp_localizacao: "1=Urbana, 2=Rural"
-  tp_situacao_funcionamento: "1=Ativa, 2=Paralisada, 3=Extinta"
-  tp_aee: "1=Sala multifuncional, 2=Outras salas, 3=Canto de atividades, 4=Itinerância, 5=Classe hospitalar, 8=Não se aplica"
+  tp_situacao_funcionamento: "1=Em atividade, 2=Paralisada, 3=Extinta (no ano do censo), 4=Extinta em anos anteriores"
+  tp_localizacao_diferenciada: "0=Não está em área diferenciada, 1=Assentamento, 2=Terra indígena, 3=Comunidade quilombola, 8=Povos e comunidades tradicionais"
+  tp_aee: "0=Não oferece, 1=Não exclusivamente, 2=Exclusivamente (o mesmo vale para tp_atividade_complementar e tp_itinerario_formativo)"
+  tp_regulamentacao: "0=Não, 1=Sim, 2=Em tramitação"
+  nao_informado: "Em vários tp_* (ex.: tp_proposta_pedagogica, tp_rede_local, tp_ocupacao_galpao) o código 9 = Não informado."
   rede_texto: "ideb/inep: Municipal, Estadual, Federal, Privada. inep_notas: Pública Municipal, Pública Estadual, Pública Federal, Privada. inse (tp_tipo_rede): 1=Federal, 2=Estadual, 3=Municipal, 4=Privada."
   in_indicadores: "Todas as colunas prefixadas com 'in_' são binárias: 0=Não, 1=Sim."
   etapa_ideb: "clean.ideb_notas_escolas.etapa: fundamental_ii ou ensino_medio."
