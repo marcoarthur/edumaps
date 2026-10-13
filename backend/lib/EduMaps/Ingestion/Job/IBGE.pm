@@ -73,10 +73,18 @@ sub run ($self, $args = {}) {
 
   # 2. Extrair dados para dados_ibge (formato largo)
   $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.dados_ibge');
-  $self->extrair_dados_ibge($mun_csv, $dados_csv, $args);
   # Brutos (#234): os CSVs intermédios são o resultado de ~5,5 mil GETs ao
-  # SIDRA; preservados, uma recarga não repete horas de API.
+  # SIDRA; preservados, uma recarga não repete horas de API. Com
+  # `--arg dados_csv=<bruto>` a carga relê esse CSV em vez de extrair.
   my $url_sidra = $self->sidra_base . '/' . $self->tabela_pib;
+  if (my $bruto = $args->{dados_csv}) {
+    die "dados_csv não existe: $bruto\n" unless -f $bruto;
+    $self->log_info("Relendo o bruto $bruto (sem extração)");
+    $dados_csv = $bruto;
+  }
+  else {
+    $self->extrair_dados_ibge($mun_csv, $dados_csv, $args);
+  }
   $self->preservar_raw($dados_csv, $url_sidra, tabelas => ['clean.dados_ibge'])
     unless $self->dry_run;
 
@@ -87,10 +95,22 @@ sub run ($self, $args = {}) {
 
   # 4. Extrair e carregar ibge_agregados (formato longo)
   $self->log_info('Extraindo dados IBGE/SIDRA 5938 para clean.ibge_agregados');
-  $self->extrair_ibge_agregados($mun_csv, $agregados_csv, $args);
+  if (my $bruto = $args->{agregados_csv}) {
+    die "agregados_csv não existe: $bruto\n" unless -f $bruto;
+    $self->log_info("Relendo o bruto $bruto (sem extração)");
+    $agregados_csv = $bruto;
+  }
+  elsif ($args->{dados_csv}) {
+    # recarga só do dados_ibge a partir do bruto: não refaz os ~5,5 mil GETs
+    # do formato longo
+    $agregados_csv = undef;
+  }
+  else {
+    $self->extrair_ibge_agregados($mun_csv, $agregados_csv, $args);
+  }
   $self->preservar_raw($agregados_csv, $url_sidra, tabelas => ['clean.ibge_agregados'])
-    unless $self->dry_run || !-f $agregados_csv;
-  my $rows_ag = $self->processar_ibge_agregados($agregados_csv);
+    unless $self->dry_run || !$agregados_csv || !-f $agregados_csv;
+  my $rows_ag = $agregados_csv ? $self->processar_ibge_agregados($agregados_csv) : [];
   my $loaded_ag = 0;
   if (@$rows_ag) {
     $loaded_ag = $self->carregar_ibge_agregados($rows_ag);
@@ -299,10 +319,32 @@ sub processar_dados_ibge ($self, $csv_path) {
       }
     }
 
+    _percentuais_do_contrato(\%row);
     push @rows, \%row;
   }
   close $fh;
   return \@rows;
+}
+
+# Contrato de clean.dados_ibge (COMMENT da change dados_ibge e consumidores:
+# City, analytics.municipios_consolidado): os *_percent são FRAÇÃO DO PIB
+# (industria / pib_total, ...) e serviços é o complemento (1 - soma dos
+# demais). O SIDRA publica outra grandeza nas variáveis 516/520/528/6574
+# (% do valor adicionado, 0-100); carregá-las mudava a escala ×100 e o
+# denominador sem aviso (medido na P1, #234). O CSV bruto guarda o valor
+# oficial; a carga aplica o contrato a partir dos absolutos.
+sub _percentuais_do_contrato ($row) {
+  my $pib = $row->{pib_total};
+  my %fracao;
+  for my $setor (qw(industria agro governo)) {
+    $fracao{$setor} = (defined $pib && $pib != 0 && defined $row->{$setor})
+      ? $row->{$setor} / $pib : undef;
+    $row->{"${setor}_percent"} = $fracao{$setor};
+  }
+  $row->{servicos_percent} = (grep { !defined } values %fracao)
+    ? undef
+    : 1 - $fracao{industria} - $fracao{agro} - $fracao{governo};
+  return $row;
 }
 
 sub carregar_dados_ibge ($self, $rows) {
