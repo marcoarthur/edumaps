@@ -194,14 +194,14 @@ sub carregar_malha ($self, $args, $uf = undef) {
   die "Carga da malha falhou: $err" unless $ok;
 
   $self->log_info(sprintf(
-    'Malha: %d setores carregados de %d no GPKG; %d geometrias reparadas (ST_MakeValid); %d fora (município ausente da malha_municipio); %d descartados (código inválido ou geometria vazia após reparo)',
-    @r{qw(carregados no_stage reparadas orfaos descartados)}));
+    'Malha: %d setores carregados de %d no GPKG (%d feições; %d partes extras agrupadas em MULTIPOLYGON); %d geometrias reparadas (ST_MakeValid); %d fora (município ausente da malha_municipio); %d descartados (código inválido ou geometria vazia após reparo)',
+    @r{qw(carregados no_stage feicoes multipartes reparadas orfaos descartados)}));
   die "Malha: nenhum setor carregado\n" unless $r{carregados};
 
   $self->upsert_metadata(TAB_MALHA, CAMADA . '.gpkg (IBGE geoftp, Censo 2022)', URL_GPKG, LICENCA,
     $r{carregados},
-    sprintf('Malha de setores do Censo 2022 (camada %s, SIRGAS 2000/EPSG 4674), carregada com ogr2ogr (#238).%s %d setores de %d no arquivo; %d geometrias inválidas reparadas com ST_MakeValid; %d setores fora por município ausente de clean.malha_municipio (FK)%s; %d descartados (código ≠ 15 dígitos, CD_MUN incoerente ou geometria vazia após reparo).',
-      CAMADA, ($uf ? " Recorte CD_UF=$uf." : ''), @r{qw(carregados no_stage reparadas orfaos)},
+    sprintf('Malha de setores do Censo 2022 (camada %s, SIRGAS 2000/EPSG 4674), carregada com ogr2ogr (#238).%s %d setores de %d no arquivo (%d feições: setores multipartes agrupados num MULTIPOLYGON); %d geometrias inválidas reparadas com ST_MakeValid; %d setores fora por município ausente de clean.malha_municipio (FK)%s; %d descartados (código ≠ 15 dígitos, CD_MUN incoerente ou geometria vazia após reparo).',
+      CAMADA, ($uf ? " Recorte CD_UF=$uf." : ''), @r{qw(carregados no_stage feicoes reparadas orfaos)},
       ($r{amostra_orfaos} ? " (ex.: $r{amostra_orfaos})" : ''), $r{descartados}));
   return $r{carregados};
 }
@@ -270,10 +270,16 @@ sub _copiar_stage_malha ($self, $dbh) {
   my $siglas = join ', ', map { "('$_', '$SIGLA_UF{$_}')" } sort keys %SIGLA_UF;
   my %r;
   $self->app->schema->storage->txn_do(sub {
-    ($r{no_stage}) = $dbh->selectrow_array("SELECT count(*) FROM $stage");
+    # O GPKG tem um polígono por PARTE: 472.780 feições para 468.099 setores
+    # (setores multipartes, ex.: ilhas no AM). Conta-se por setor e as
+    # partes são agrupadas num MULTIPOLYGON antes do upsert — senão o
+    # ON CONFLICT toca a mesma linha duas vezes e a carga aborta (#238).
+    ($r{feicoes}, $r{no_stage}) = $dbh->selectrow_array(
+      "SELECT count(*), count(DISTINCT cd_setor) FROM $stage");
+    $r{multipartes} = $r{feicoes} - $r{no_stage};
     ($r{reparadas}) = $dbh->selectrow_array("SELECT count(*) FROM $stage WHERE NOT ST_IsValid(geom)");
     my $orfaos = $dbh->selectall_arrayref(qq{
-      SELECT s.cd_mun, min(s.nm_mun), count(*)
+      SELECT s.cd_mun, min(s.nm_mun), count(DISTINCT s.cd_setor)
         FROM $stage s
        WHERE NOT EXISTS (SELECT 1 FROM clean.malha_municipio m WHERE m.codigo_ibge = s.cd_mun)
        GROUP BY s.cd_mun ORDER BY 3 DESC});
@@ -291,11 +297,30 @@ sub _copiar_stage_malha ($self, $dbh) {
          WHERE s.cd_setor ~ '^[0-9]{15}\$'
            AND substr(s.cd_setor, 1, 7) = s.cd_mun
            AND EXISTS (SELECT 1 FROM clean.malha_municipio m WHERE m.codigo_ibge = s.cd_mun)
+      ),
+      partes AS (
+        SELECT cd_setor, cd_mun, nm_mun, situacao, sigla, (ST_Dump(geom)).geom AS g
+          FROM s
+      ),
+      agrupado AS (
+        SELECT cd_setor, min(cd_mun) AS cd_mun, min(nm_mun) AS nm_mun,
+               min(situacao) AS situacao, min(sigla) AS sigla,
+               ST_Multi(ST_Collect(g)) AS geom
+          FROM partes
+         GROUP BY cd_setor
+      ),
+      final AS (
+        -- partes vizinhas que partilham aresta tornam o MULTIPOLYGON
+        -- inválido: só então ST_MakeValid (que as funde)
+        SELECT cd_setor, cd_mun, nm_mun, situacao, sigla,
+               CASE WHEN ST_IsValid(geom) THEN geom
+                    ELSE ST_Multi(ST_CollectionExtract(ST_MakeValid(geom), 3)) END AS geom
+          FROM agrupado
       )
       INSERT INTO clean.malha_setor_censitario
         (codigo_setor, codigo_ibge, nome_municipio, sigla_uf, situacao_setor, geometry)
       SELECT cd_setor, cd_mun, nm_mun, sigla, situacao, ST_SetSRID(geom, 4674)
-        FROM s
+        FROM final
        WHERE NOT ST_IsEmpty(geom) AND ST_IsValid(geom)
       ON CONFLICT (codigo_setor) DO UPDATE SET
         codigo_ibge    = EXCLUDED.codigo_ibge,

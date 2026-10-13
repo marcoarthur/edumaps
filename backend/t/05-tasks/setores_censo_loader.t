@@ -181,9 +181,13 @@ subtest 'integração: malha + censo no banco do CI' => sub {
   };
   my $quadrado = '[[-47,-15],[-47,-14.9],[-46.9,-14.9],[-46.9,-15],[-47,-15]]';
   my $laco     = '[[-47,-15],[-46.9,-14.9],[-46.9,-15],[-47,-14.9],[-47,-15]]';   # auto-interseção
+  # 2ª parte do mesmo setor (o GPKG real tem 472.780 feições para 468.099
+  # setores: ilhas etc.; antes o upsert abortava, #238)
+  my $ilha     = '[[-46.5,-15],[-46.5,-14.9],[-46.4,-14.9],[-46.4,-15],[-46.5,-15]]';
   open my $gj, '>', "$tmp/s.geojson" or die $!;
   print $gj '{"type":"FeatureCollection","features":[',
-    join(',', $feat->($setores[0], $mun, $quadrado), $feat->($setores[1], $mun, $laco),
+    join(',', $feat->($setores[0], $mun, $quadrado), $feat->($setores[0], $mun, $ilha),
+              $feat->($setores[1], $mun, $laco),
               $feat->($setores[2], '9900001', $quadrado)), ']}';
   close $gj;
   my $gpkg = "$tmp/BR_setores_CD2022.gpkg";
@@ -215,10 +219,14 @@ subtest 'integração: malha + censo no banco do CI' => sub {
     ok($valida, 'todas as geometrias válidas (laço reparado)');
     is($srid, 4674, 'SRID 4674');
     is($tipo, 'MULTIPOLYGON', 'multipolígono');
+    is($dbh->selectrow_array(
+         q{SELECT ST_NumGeometries(geometry) FROM clean.malha_setor_censitario WHERE codigo_setor = ?},
+         undef, $setores[0]), 2, 'setor multipartes: as duas partes num MULTIPOLYGON');
     ok(!$dbh->selectrow_array(q{SELECT to_regclass('raw.stage_setores_cd2022')}), 'staging apagada');
     my ($notas, $manif) = $dbh->selectrow_array(
       q{SELECT notes, raw_manifest::text FROM clean.import_metadata WHERE table_name = 'clean.malha_setor_censitario'});
     like($notas, qr/1 geometrias inválidas reparadas/, 'reparo contado nas notas');
+    like($notas, qr/3 setores de 4 no arquivo|de 3 no arquivo \(4 feições/, 'feições x setores nas notas');
     like($notas, qr/1 setores fora por município ausente/, 'órfão contado nas notas');
     like($manif // '', qr/sha256/, 'GPKG no manifesto');
 
