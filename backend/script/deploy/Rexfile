@@ -196,7 +196,10 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
     zlib1g-dev
     libexpat1-dev
     libminizip-dev
+    gdal-bin
   );
+  # gdal-bin (#238): ogr2ogr carrega a malha de setores do Censo 2022 (GPKG
+  # de 1,49 GB) direto no PostgreSQL; não há GDAL em nenhum outro host.
 
   run q{
     git clone https://github.com/brechtsanders/xlsxio.git /opt/xlsxio

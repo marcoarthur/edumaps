@@ -189,12 +189,21 @@ sub run_job ($self, $job_name, $args = {}) {
   my @tabelas = $job->can('tabelas') ? $job->tabelas($args) : ();
   $self->_estado($job, registrar_tentativa => @tabelas);
 
+  # Um job pode declarar um prazo maior (#238): o ogr2ogr da malha de setores
+  # escreve direto no banco e passa >10 min sem tocar data/ingestao, o que o
+  # watchdog lia como travamento. Vale o maior dos dois prazos, só neste job.
+  my $prazo_runner = $self->stall_timeout;
+  my $prazo_job = $job->can('stall_timeout') ? $job->stall_timeout : undef;
+  $self->stall_timeout($prazo_job)
+    if defined $prazo_job && $prazo_runner > 0 && $prazo_job > $prazo_runner;
   $self->_install_stall_watch;
 
-  eval {
+  my $ok = eval {
     $job->run($args);
     1;
-  } or do {
+  };
+  $self->stall_timeout($prazo_runner);
+  $ok or do {
     my $error = $@ || 'Erro desconhecido';
     $self->_remove_stall_watch;
     my $duration = time - $start;

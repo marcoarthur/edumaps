@@ -257,6 +257,22 @@ sources:
     # (BR_Municipios_2024.gpkg e malha_setores_censitarios/.../BR_Setor_Censitario_2022.gpkg)
     # → 404 e saíram da lista (#231).
 
+  - id: ibge_ftp_censo2022
+    name: "IBGE FTP - Censo 2022, agregados por setor censitário"
+    host: ftp.ibge.gov.br
+    base_url: "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios"
+    resources:
+      - path: "/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/*.zip"
+        method: GET
+        description: "CSVs temáticos por setor (basico, demografia, cor_ou_raca, …), agregados — sem microdado"
+        license: "Domínio público (IBGE)"
+      - path: "/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/dicionario_de_dados_agregados_por_setores_censitarios_*.xlsx"
+        method: GET
+        description: "Dicionário de dados dos agregados por setor"
+        license: "Domínio público (IBGE)"
+    # Verificado 2026-10-13 (#238): listagem Agregados_por_Setor_csv/ → 200;
+    # basico_BR_20260520.zip 15 MB, demografia 23 MB, cor_ou_raca 44 MB.
+
   # ------------------------------------------------------------
   # MEIO AMBIENTE / CLIMA
   # ------------------------------------------------------------
