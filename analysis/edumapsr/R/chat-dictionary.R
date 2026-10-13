@@ -163,50 +163,78 @@ chat_dictionary <- function(con, glossario = NULL) {
     ))
   }
 
+  # Chaves qualificadas (schema.tabela[.coluna]) — precisam existir antes de
+  # separar Censo x demais tabelas.
+  tabelas$schema_table <- paste(tabelas$schema, tabelas$tabela, sep = ".")
+  curadas$schema_table <- paste(curadas$schema, curadas$tabela, sep = ".")
+  curadas$schema_table_col <- paste(curadas$schema_table, curadas$coluna, sep = ".")
+
   # 1) Carregar dicionário canônico do Censo para as tabelas censo_*
   census_tables <- c("clean.censo_escolas", "clean.censo_matriculas",
                      "clean.censo_docentes", "clean.censo_gestor")
   census_in_whitelist <- intersect(tabelas$schema_table, census_tables)
-  other_tables <- setdiff(tabelas$schema_table, census_tables)
+  census_ok <- character()
 
   dict_parts <- list()
 
-  # 1a) Tabelas do Censo: usar censo_dictionary() (fonte canônica)
+  # 1a) Tabelas do Censo: usar censo_dictionary() (fonte canônica). O YAML é a
+  # camada de curadoria: colunas curadas vêm primeiro (o prompt mostra poucas
+  # por tabela) e com a descrição curada; o domínio vem sempre do canônico.
   if (length(census_in_whitelist) > 0) {
     censo_dict <- tryCatch(
-      censo_dictionary(con, tables = census_in_whitelist, include_domain = TRUE),
+      suppressWarnings(
+        censo_dictionary(con, tables = census_in_whitelist, include_domain = TRUE)
+      ),
       error = function(e) {
-        warning("Falha ao ler censo_dictionary: ", e$message, "; caindo para catálogo")
+        warning("Falha ao ler censo_dictionary: ", conditionMessage(e), "; caindo para catálogo")
         NULL
       }
     )
 
     if (!is.null(censo_dict) && nrow(censo_dict) > 0) {
-      # Normalizar para formato do chat
-      censo_dict$schema_table_col <- paste(censo_dict$table_name, censo_dict$column_name, sep = ".")
-      censo_dict$tipo <- censo_dict$data_type
-      censo_dict$descricao <- censo_dict$description
-      censo_dict$value_domain_json <- vapply(censo_dict$value_domain %||% list(), function(v) {
-        if (is.null(v)) return("null")
-        jsonlite::toJSON(v, auto_unbox = TRUE)
+      class(censo_dict) <- "data.frame"  # value_domain é coluna-lista
+      stc <- paste(censo_dict$table_name, censo_dict$column_name, sep = ".")
+      idx_curada <- match(stc, curadas$schema_table_col)
+      descricao <- ifelse(is.na(idx_curada), censo_dict$description,
+                          curadas$descricao[idx_curada])
+      dominios <- if ("value_domain" %in% names(censo_dict)) censo_dict$value_domain else list()
+      value_domain_json <- vapply(seq_len(nrow(censo_dict)), function(i) {
+        v <- if (i <= length(dominios)) dominios[[i]] else NULL
+        if (is.null(v) || length(v) == 0) return("null")
+        as.character(jsonlite::toJSON(v, auto_unbox = TRUE))
       }, character(1))
-      censo_dict$descricao_tabela <- tabelas$descricao[match(censo_dict$table_name, tabelas$schema_table)]
-      censo_dict$chave <- tabelas$chave[match(censo_dict$table_name, tabelas$schema_table)]
 
-      dict_parts$censo <- censo_dict[, c("schema_table_col", "coluna", "tipo", "descricao",
-                                         "value_domain_json", "schema_table", "descricao_tabela", "chave")]
+      parte <- data.frame(
+        schema_table_col = stc,
+        coluna = censo_dict$column_name,
+        tipo = censo_dict$data_type,
+        descricao = descricao,
+        value_domain_json = value_domain_json,
+        schema_table = censo_dict$table_name,
+        descricao_tabela = tabelas$descricao[match(censo_dict$table_name, tabelas$schema_table)],
+        chave = tabelas$chave[match(censo_dict$table_name, tabelas$schema_table)],
+        stringsAsFactors = FALSE
+      )
+      # Ordem: tabela (ordem da whitelist), curadas (ordem do YAML), resto.
+      ordem <- order(match(parte$schema_table, tabelas$schema_table),
+                     is.na(idx_curada), idx_curada, parte$coluna)
+      parte <- parte[ordem, , drop = FALSE]
+      rownames(parte) <- NULL
+
+      dict_parts$censo <- parte
+      census_ok <- unique(parte$schema_table)
     }
   }
+
+  # Tabelas do Censo sem dicionário canônico (banco antigo ou falha) caem no
+  # catálogo, como as demais.
+  other_tables <- setdiff(tabelas$schema_table, census_ok)
 
   # 1b) Demais tabelas: catálogo do banco filtrado pela whitelist (comportamento anterior)
   if (length(other_tables) > 0) {
     metas <- chat_fetch_column_meta(con)
     metas$schema_table <- paste(metas$schema, metas$tabela, sep = ".")
     metas$schema_table_col <- paste(metas$schema_table, metas$coluna, sep = ".")
-
-    tabelas$schema_table <- paste(tabelas$schema, tabelas$tabela, sep = ".")
-    curadas$schema_table <- paste(curadas$schema, curadas$tabela, sep = ".")
-    curadas$schema_table_col <- paste(curadas$schema_table, curadas$coluna, sep = ".")
 
     other_tabelas <- tabelas[tabelas$schema_table %in% other_tables, , drop = FALSE]
     other_curadas <- curadas[curadas$schema_table %in% other_tables, , drop = FALSE]
