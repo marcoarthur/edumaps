@@ -5,17 +5,35 @@
 #
 # Estrutura:
 # - sources: lista de fontes permitidas, cada uma com:
-#     id: identificador único (usado no código)
+#     id: identificador único (usado no código) — NÃO pode repetir
 #     name: nome legível
 #     host: host base (ex.: www.fnde.gov.br)
+#     status: (opcional) "ativo" (padrão) ou "inativo". Fonte inativa fica
+#             registrada como histórico, mas o validador REJEITA as URLs dela
+#             (host morto, API retirada). Anotar o motivo em `status_note`.
 #     resources: lista de recursos permitidos nesta fonte
-#         path: caminho do endpoint (pode ter placeholders {cod_mun}, {ano})
+#         path: caminho do endpoint (pode ter placeholders {cod_mun}, {ano}
+#               — um segmento — e curinga "*" — qualquer trecho sem "/");
+#               casa por prefixo de segmento (path exato ou path + "/...")
 #         method: HTTP method (GET, POST)
 #         description: justificativa de por que este recurso é agregado
 #         license: SPDX ou descrição da licença
-# - denied: recursos EXPLICITAMENTE NEGADOS (mesmo host de permitido, mas recurso sensível)
+# - denied: recursos EXPLICITAMENTE NEGADOS (mesmo host de permitido, mas recurso sensível);
+#     `path` casa por PREFIXO (aceita o curinga "*"); têm precedência sobre `sources`
+# - sources_ref: fontes citadas em `denied`, só para contexto (não liberam nada)
+#
+# REGRA (issue #230): cada chave de topo (`sources`, `denied`, `sources_ref`)
+# aparece UMA ÚNICA VEZ. O YAML::XS não acusa chave duplicada e fica com a
+# última ocorrência — foi assim que 8 fontes e todas as regras de `denied`
+# ficaram inertes. Para acrescentar fontes, edite a lista existente; não abra
+# um segundo bloco `sources:`. O EduMaps::Data::Allowlist recusa carregar
+# (die) um arquivo com chave de topo duplicada, lista inválida ou id repetido,
+# e o teste t/02-models/allowlist_real.t roda sobre ESTE arquivo.
 
 sources:
+  # ------------------------------------------------------------
+  # EDUCAÇÃO / FINANÇAS PÚBLICAS
+  # ------------------------------------------------------------
   - id: fnde_siope_remuneracao
     name: "FNDE SIOPE - Remuneração Municipal (agregado)"
     host: www.fnde.gov.br
@@ -28,121 +46,32 @@ sources:
         license: "Não verificada"
     # NOTA: O recurso de viagens/detalhado NÃO está listado → negado por omissão
 
-  - id: ibge_sidra
-    name: "IBGE SIDRA - APIs agregadas"
-    host: apisidra.ibge.gov.br
-    base_url: "https://apisidra.ibge.gov.br"
+  - id: siconfi_apidatalake
+    name: "Tesouro Nacional / SICONFI - API de dados abertos (datalake)"
+    host: apidatalake.tesouro.gov.br
+    base_url: "https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt"
     resources:
-      - path: "/values/t/1393/n1/all/v/all/p/all/c11255/all"
+      - path: "/ords/cdwhprd/siconfi/tt/rreo"
         method: GET
-        description: "PIB municipal (tabela 1393) - agregado por município/ano"
-        license: "Domínio público (IBGE)"
-      - path: "/values/t/6579/n1/all/v/all/p/all/c11255/all"
+        params: [an_exercicio, nr_periodo, co_tipo_demonstrativo, no_anexo, co_esfera, id_ente]
+        description: "RREO (Relatório Resumido de Execução Orçamentária) por ente/exercício/bimestre"
+        license: "Domínio público (Tesouro Nacional)"
+      - path: "/ords/cdwhprd/siconfi/tt/dca"
         method: GET
-        description: "População municipal - agregado por município/ano"
-        license: "Domínio público (IBGE)"
-    # NOTA: apisidra.ibge.gov.br está atrás de Cloudflare (403).
-    # Usar SIDRA v3 em servicodados.ibge.gov.br para produção.
-
-  - id: ibge_servicodados
-    name: "IBGE Serviço de Dados - Malhas, códigos e SIDRA v3"
-    host: servicodados.ibge.gov.br
-    base_url: "https://servicodados.ibge.gov.br/api/v1"
-    resources:
-      - path: "/localidades/municipios"
+        params: [an_exercicio, no_anexo, id_ente]
+        description: "DCA (Declaração de Contas Anuais) por ente/exercício"
+        license: "Domínio público (Tesouro Nacional)"
+      - path: "/ords/cdwhprd/siconfi/tt/entes"
         method: GET
-        description: "Lista de municípios com códigos IBGE"
-        license: "Domínio público (IBGE)"
-      - path: "/localidades/municipios/{codigo_ibge}"
-        method: GET
-        description: "Detalhes de um município"
-        license: "Domínio público (IBGE)"
-      - path: "/localidades/setores/{codigo_ibge}"
-        method: GET
-        description: "Setores censitários de um município (simplificado)"
-        license: "Domínio público (IBGE)"
-      - path: "/sidra/v3/values/t/1393/n1/all/v/all/p/all/c11255/all"
-        method: GET
-        description: "SIDRA v3 - PIB municipal (sem Cloudflare)"
-        license: "Domínio público (IBGE)"
-      - path: "/sidra/v3/values/t/6579/n1/all/v/all/p/all/c11255/all"
-        method: GET
-        description: "SIDRA v3 - População municipal"
-        license: "Domínio público (IBGE)"
-      - path: "/sidra/v3/values/t/1093/n1/all/v/all/p/all/c11255/all"
-        method: GET
-        description: "SIDRA v3 - IDHM municipal"
-        license: "Domínio público (IBGE)"
-      - path: "/sidra/v3/values/t/5938/n1/all/v/all/p/all/c11255/all"
-        method: GET
-        description: "SIDRA v3 - PIB per capita"
-        license: "Domínio público (IBGE)"
-
-  - id: inmet
-    name: "INMET - Dados meteorológicos e alertas"
-    host: dados.inmet.gov.br
-    base_url: "https://dados.inmet.gov.br"
-    resources:
-      - path: "/dados/{tipo}/{ano}/{mes}"
-        method: GET
-        description: "Estações automáticas/conceição - dados agregados por estação/dia"
-        license: "CC-BY-4.0 (INMET)"
-      - path: "/alertas/cap12"
-        method: GET
-        params: [data_ini, data_fim, uf]
-        description: "Alerta-AS (CAP 1.2) - eventos meteorológicos que interrompem aula, com código IBGE"
-        license: "CC-BY-4.0 (INMET)"
-      - path: "/bdmep/estacao"
-        method: GET
-        params: [estacao, data_ini, data_fim]
-        description: "BDMEP - série diária histórica de estações (26 anos), sem autenticação"
-        license: "CC-BY-4.0 (INMET)"
-
-  - id: mapbiomas
-    name: "MapBiomas - Cobertura/uso do solo e fogo"
-    host: mapbiomas.org
-    base_url: "https://mapbiomas.org"
-    resources:
-      - path: "/download/collection/{colecao}/municipios"
-        method: GET
-        description: "Mosaico municipal por COLEÇÃO (não por ano). Fixar coleção (ex.: collection9)"
-        license: "CC-BY-4.0 (MapBiomas)"
-      - path: "/download/collection/{colecao}/fogo"
-        method: GET
-        description: "MapBiomas Fogo por coleção (substitui INPE Queimadas)"
-        license: "CC-BY-4.0 (MapBiomas)"
-
-  - id: transportes_renavam
-    name: "Ministério dos Transportes - RENAVAM/RENAEST (frota agregada)"
-    host: dados.transportes.gov.br
-    base_url: "https://dados.transportes.gov.br"
-    resources:
-      - path: "/dataset/frota-por-municipio"
-        method: GET
-        description: "Frota agregada por município (não por veículo)"
-        license: "CC-BY-4.0 (Transportes)"
-
-  - id: ibge_geoftp
-    name: "IBGE Geoftp - Malhas territoriais (GPKG)"
-    host: geoftp.ibge.gov.br
-    base_url: "https://geoftp.ibge.gov.br"
-    resources:
-      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip"
-        method: GET
-        description: "Malha municipal 2024 (shapefile, usado em raw_municipios_sp)"
-        license: "Domínio público (IBGE)"
-      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.gpkg"
-        method: GET
-        description: "Malha municipal 2024 (GPKG, GeoPackage)"
-        license: "Domínio público (IBGE)"
-      - path: "/organizacao_do_territorio/malhas_territoriais/malha_setores_censitarios/setor_censitario_2022/Brasil/BR_Setor_Censitario_2022.gpkg"
-        method: GET
-        description: "Malha de setor censitário 2022 (GPKG, ~748 MB)"
-        license: "Domínio público (IBGE)"
+        description: "Cadastro de entes federativos com código IBGE"
+        license: "Domínio público (Tesouro Nacional)"
+    # Verificado 2026-10-13 (HEAD a partir de backend.edumaps): rreo, dca e entes → 200 application/json.
 
   - id: tesouror_siconfi
-    name: "Tesouro Nacional / SICONFI - Finanças municipais"
+    name: "Tesouro Nacional / SICONFI - Finanças municipais (host antigo)"
     host: tesouror.transparencia.gov.br
+    status: inativo
+    status_note: "Host morto: DNS não resolve (verificado 2026-10-13). Substituído por siconfi_apidatalake."
     base_url: "https://tesouror.transparencia.gov.br"
     resources:
       - path: "/api/v1/receitas"
@@ -162,7 +91,7 @@ sources:
         license: "Domínio público (Tesouro Nacional)"
 
   - id: cgu_transparencia
-    name: "CGU Portal da Transparência - Transferências da União"
+    name: "CGU Portal da Transparência - Transferências da União (API, requer chave)"
     host: api.portaldatransparencia.gov.br
     base_url: "https://api.portaldatransparencia.gov.br"
     resources:
@@ -177,179 +106,28 @@ sources:
         description: "Cadastro de entes federativos"
         license: "CC-BY-4.0 (CGU)"
 
-# ------------------------------------------------------------
-# RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
-# ------------------------------------------------------------
-denied:
-  - id: antta_monitriip_viagens
-    source_ref: antta_monitriip
-    host: dados.antt.gov.br
-    path: "/dataset/monitriip-viagens"
-    reason: "74 recursos, CC-BY, mas expõe CNPJ, placa, IMEI, lat/long POR VIAGEM — nível individual, LGPD"
-
-  - id: sptrans_bilhete_unico_usuario
-    source_ref: sptrans
-    host: dados.mobilidade.rio
-    path: "/dataset/creditos-eletronicos-bilhete-unico-usuario"
-    reason: "CCZero, mas nível INDIVIDUAL (saldo por usuário) — cruzado com escola/horário reconstrói trajeto de aluno"
-
-  - id: sus_sisvan_individual
-    source_ref: sus
-    host: dados.saude.gov.br
-    path: "/sisvan/estado-nutricional"
-    reason: "Microdado individual (peso, altura, IMC por pessoa) — menor de idade"
-
-  - id: sus_vacinacao_individual
-    source_ref: sus
-    host: dados.saude.gov.br
-    path: "/vacinacao/doses-aplicadas-pni-*"
-    reason: "Microdado individual (data vacinação, código documento, raça por pessoa)"
-
-  - id: sus_cnes_individual
-    source_ref: sus
-    host: dados.saude.gov.br
-    path: "/cnes/estabelecimentos"
-    reason: "Expõe CNPJ, telefone, e-mail, nome de pessoa física de estabelecimentos"
-
-# ------------------------------------------------------------
-# FONTES REFERENCIADAS EM 'denied' (para contexto)
-# ------------------------------------------------------------
-sources_ref:
-  - id: antta_monitriip
-    name: "ANTT MONITRIIP - Serviço Regular"
-    host: dados.antt.gov.br
-    base_url: "https://dados.antt.gov.br"
-    note: "Apenas recurso AGREGADO permitido; viagens negado acima"
-
-  - id: sptrans
-    name: "SPTRANS - Bilhete Único"
-    host: dados.mobilidade.rio
-    base_url: "https://dados.mobilidade.rio"
-    note: "Recurso agregado de créditos permitido se existir; usuário NEGADO"
-
-  - id: sus
-    name: "Ministério da Saúde - Dados Abertos"
-    host: dados.saude.gov.br
-    base_url: "https://dados.saude.gov.br"
-    note: "TODOS os endpoints de microdado individual NEGADOS"
-
-# ------------------------------------------------------------
-# FONTES PERMITIDAS — SAÚDE (agregados apenas, Fase 2)
-# ------------------------------------------------------------
-sources:
-  - id: datasus_sisab
-    name: "DATASUS/SISAB - Indicadores APS (agregados municipais)"
-    host: apidadosabertos.saude.gov.br
-    base_url: "https://apidadosabertos.saude.gov.br"
+  - id: cgu_transferencias_download
+    name: "CGU Portal da Transparência - Download em massa de Transferências (sem chave)"
+    host: portaldatransparencia.gov.br
+    base_url: "https://portaldatransparencia.gov.br/download-de-dados/transferencias"
     resources:
-      - path: "/atencao-primaria/pmmb-serie-historica"
+      - path: "/download-de-dados/transferencias"
         method: GET
-        params: [codigo_municipio, limit, offset]
-        description: "Série histórica PIM/AB por município (cobertura, equipes, IVS)"
-        license: "CC BY 3.0 (dados abertos SUS)"
-      - path: "/atencao-primaria/pmmb-consolidado"
-        method: GET
-        params: [codigo_municipio, limit, offset]
-        description: "Consolidado PIM/AB atual (ativas_ff, equipe_esf, equipe_emsi, total_vagas_ativas, categoria_ivs)"
-        license: "CC BY 3.0 (dados abertos SUS)"
-      - path: "/macrorregiao-e-regiao-de-saude/municipio"
-        method: GET
-        params: [codigo_municipio, limit, offset]
-        description: "Municípios com população estimada IBGE 2022 (denominador)"
-        license: "CC BY 3.0 (dados abertos SUS)"
+        description: "Página e redirecionamento mensal (/{AAAAMM}) para o ZIP oficial de Transferências"
+        license: "CC-BY-4.0 (CGU)"
+    # Verificado 2026-10-13: /download-de-dados/transferencias → 200;
+    # /download-de-dados/transferencias/202401 → 302 para dadosabertos-download.cgu.gov.br.
 
-  - id: cnes_estabelecimentos
-    name: "CNES - Estabelecimentos de saúde (sanitizado)"
-    host: apidadosabertos.saude.gov.br
-    base_url: "https://apidadosabertos.saude.gov.br"
+  - id: cgu_dadosabertos_download
+    name: "CGU - Arquivos de dados abertos (ZIP mensal de Transferências)"
+    host: dadosabertos-download.cgu.gov.br
+    base_url: "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias"
     resources:
-      - path: "/cnes/estabelecimentos"
+      - path: "/PortalDaTransparencia/saida/transferencias/{arquivo}"
         method: GET
-        params: [codigo_uf, codigo_municipio, codigo_tipo_unidade, status, data_atualizacao, limit, offset]
-        description: "Estabelecimentos com lat/long — SANITIZADO na ingestão (sem PII)"
-        license: "CC BY-ND 3.0 (dados abertos SUS)"
-      - path: "/cnes/tipounidades"
-        method: GET
-        params: [limit, offset]
-        description: "Dicionário de tipos de unidade (UBS, SU, hospital, etc.)"
-        license: "CC BY-ND 3.0 (dados abertos SUS)"
-
-  - id: brazilcrime
-    name: "BrazilCrime - Dados de criminalidade agregados por município"
-    host: cran.r-project.org
-    base_url: "https://cran.r-project.org/package=BrazilCrime"
-    resources:
-      - path: "/R/BrazilCrime"
-        method: CRAN
-        description: "Pacote R BrazilCrime - dados de criminalidade agregados por município/ano (homicídios, roubos, etc.)"
-        license: "GPL-3 (CRAN)"
-
-  - id: antt_acidentes
-    name: "ANTT - Acidentes e geodados por trecho"
-    host: dados.antt.gov.br
-    base_url: "https://dados.antt.gov.br"
-    resources:
-      - path: "/dataset/acidentes"
-        method: GET
-        params: [limit, offset]
-        description: "Acidentes em rodovias federais por trecho (Concessionaria;Data;Km;Trecho) — sem município, requer join com geodados ANTT"
-        license: "CC-BY-4.0 (ANTT)"
-      - path: "/dataset/trechos"
-        method: GET
-        params: [limit, offset]
-        description: "Geodados de trechos rodoviários (Concessionaria;Trecho;Km_Inicial;Km_Final;Municipio) — permite resolver trecho → município"
-        license: "CC-BY-4.0 (ANTT)"
-
-  - id: transportes_renatest
-    name: "Transportes - RENAEST sinistro (agregado por localidade)"
-    host: dados.transportes.gov.br
-    base_url: "https://dados.transportes.gov.br"
-    resources:
-      - path: "/dataset/renatest-sinistro"
-        method: GET
-        params: [limit, offset]
-        description: "Sinistros RENAEST agregados por localidade (não município) — requer de-para localidade → município"
-        license: "CC-BY-4.0 (Transportes)"
-
-  - id: transportes_renavam
-    name: "Transportes - RENAVAM frota agregada por município"
-    host: dados.transportes.gov.br
-    base_url: "https://dados.transportes.gov.br"
-    resources:
-      - path: "/dataset/frota-por-municipio"
-        method: GET
-        params: [limit, offset]
-        description: "Frota agregada por município (não por veículo)"
-        license: "CC-BY-4.0 (Transportes)"
-      - path: "/dataset/renavam-frota"
-        method: GET
-        params: [limit, offset]
-        description: "Frota de veículos por município e tipo"
-        license: "CC-BY-4.0 (Transportes)"
-
-  - id: osrm_valhalla
-    name: "OSRM / Valhalla - Roteamento e isocronas auto-hospedados"
-    host: localhost
-    base_url: "http://localhost"
-    resources:
-      - path: "/route/v1"
-        method: GET
-        description: "OSRM auto-hospedado - rota e isocronas (tileset auto-hospedado)"
-        license: "BSD-2-Clause (OSRM), MIT (Valhalla)"
-      - path: "/isochrone"
-        method: GET
-        description: "Valhalla auto-hospedado - isocronas (tileset auto-hospedado)"
-        license: "MIT (Valhalla)"
-
-  - id: overpass_osm
-    name: "Overpass API - OpenStreetMap POIs e rede viária"
-    host: overpass-api.de
-    base_url: "https://overpass-api.de/api/interpreter"
-    resources:
-      - path: "/"
-        method: POST
-        description: "Overpass QL query para POIs, vias, transporte público"
-        license: "ODbL 1.0 (OpenStreetMap)"
+        description: "ZIP mensal {AAAAMM}_Transferencias.zip — transferências agregadas por ente (não individual)"
+        license: "CC-BY-4.0 (CGU)"
+    # Verificado 2026-10-13: 202401_Transferencias.zip → 200 application/x-zip-compressed (~2,2 MB).
 
   - id: inep
     name: "INEP - Censo Escolar, IDEB, ENEM, Painel PNE"
@@ -403,7 +181,308 @@ sources:
         description: "Vagas de transporte escolar por unidade/turno (e-SIC municipal)"
         license: "Não verificada (e-SIC municipal protocolado ______)"
 
+  # ------------------------------------------------------------
+  # IBGE — TERRITÓRIO E SOCIOECONOMIA
+  # ------------------------------------------------------------
+  - id: ibge_sidra
+    name: "IBGE SIDRA - APIs agregadas"
+    host: apisidra.ibge.gov.br
+    base_url: "https://apisidra.ibge.gov.br"
+    resources:
+      - path: "/values/t/1393/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "PIB municipal (tabela 1393) - agregado por município/ano"
+        license: "Domínio público (IBGE)"
+      - path: "/values/t/6579/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "População municipal - agregado por município/ano"
+        license: "Domínio público (IBGE)"
+      - path: "/values/t/{tabela}"
+        method: GET
+        params: [formato]
+        description: "Consulta /values por tabela agregada (ex.: /values/t/5938/n6/{cod}/v/.../p/...) — usada pelo job IBGE"
+        license: "Domínio público (IBGE)"
+    # Verificado 2026-10-13: /values/t/5938/n6/3550308/v/37/p/2021?formato=json → 200 com JSON
+    # (a nota antiga de Cloudflare/403 não se reproduz a partir de backend.edumaps).
+
+  - id: ibge_servicodados
+    name: "IBGE Serviço de Dados - Malhas, códigos e SIDRA v3"
+    host: servicodados.ibge.gov.br
+    base_url: "https://servicodados.ibge.gov.br/api/v1"
+    resources:
+      - path: "/localidades/municipios"
+        method: GET
+        description: "Lista de municípios com códigos IBGE"
+        license: "Domínio público (IBGE)"
+      - path: "/localidades/municipios/{codigo_ibge}"
+        method: GET
+        description: "Detalhes de um município"
+        license: "Domínio público (IBGE)"
+      - path: "/localidades/setores/{codigo_ibge}"
+        method: GET
+        description: "Setores censitários de um município (simplificado)"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/1393/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - PIB municipal (sem Cloudflare)"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/6579/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - População municipal"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/1093/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - IDHM municipal"
+        license: "Domínio público (IBGE)"
+      - path: "/sidra/v3/values/t/5938/n1/all/v/all/p/all/c11255/all"
+        method: GET
+        description: "SIDRA v3 - PIB per capita"
+        license: "Domínio público (IBGE)"
+
+  - id: ibge_geoftp
+    name: "IBGE Geoftp - Malhas territoriais (GPKG)"
+    host: geoftp.ibge.gov.br
+    base_url: "https://geoftp.ibge.gov.br"
+    resources:
+      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip"
+        method: GET
+        description: "Malha municipal 2024 (shapefile, usado em raw_municipios_sp)"
+        license: "Domínio público (IBGE)"
+      - path: "/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.gpkg"
+        method: GET
+        description: "Malha municipal 2024 (GPKG, GeoPackage)"
+        license: "Domínio público (IBGE)"
+      - path: "/organizacao_do_territorio/malhas_territoriais/malha_setores_censitarios/setor_censitario_2022/Brasil/BR_Setor_Censitario_2022.gpkg"
+        method: GET
+        description: "Malha de setor censitário 2022 (GPKG, ~748 MB)"
+        license: "Domínio público (IBGE)"
+
+  # ------------------------------------------------------------
+  # MEIO AMBIENTE / CLIMA
+  # ------------------------------------------------------------
+  - id: inmet
+    name: "INMET - Dados meteorológicos e alertas"
+    host: dados.inmet.gov.br
+    status: inativo
+    status_note: "API retirada: dados.inmet.gov.br não resolve DNS (verificado 2026-10-13; ver #171)."
+    base_url: "https://dados.inmet.gov.br"
+    resources:
+      - path: "/dados/{tipo}/{ano}/{mes}"
+        method: GET
+        description: "Estações automáticas/conceição - dados agregados por estação/dia"
+        license: "CC-BY-4.0 (INMET)"
+      - path: "/alertas/cap12"
+        method: GET
+        params: [data_ini, data_fim, uf]
+        description: "Alerta-AS (CAP 1.2) - eventos meteorológicos que interrompem aula, com código IBGE"
+        license: "CC-BY-4.0 (INMET)"
+      - path: "/bdmep/estacao"
+        method: GET
+        params: [estacao, data_ini, data_fim]
+        description: "BDMEP - série diária histórica de estações (26 anos), sem autenticação"
+        license: "CC-BY-4.0 (INMET)"
+
+  - id: mapbiomas
+    name: "MapBiomas - Cobertura/uso do solo e fogo"
+    host: mapbiomas.org
+    base_url: "https://mapbiomas.org"
+    resources:
+      - path: "/download/collection/{colecao}/municipios"
+        method: GET
+        description: "Mosaico municipal por COLEÇÃO (não por ano). Fixar coleção (ex.: collection9)"
+        license: "CC-BY-4.0 (MapBiomas)"
+      - path: "/download/collection/{colecao}/fogo"
+        method: GET
+        description: "MapBiomas Fogo por coleção (substitui INPE Queimadas)"
+        license: "CC-BY-4.0 (MapBiomas)"
+
+  - id: mapbiomas_cog
+    name: "MapBiomas - COG público de cobertura (bucket mapbiomas-public)"
+    host: storage.googleapis.com
+    base_url: "https://storage.googleapis.com/mapbiomas-public"
+    resources:
+      - path: "/mapbiomas-public/initiatives/brasil"
+        method: GET
+        description: "GeoTIFF/COG nacional por coleção/ano (ex.: collection11/lulc/coverage/brazil_coverage/brazil_coverage-col11_2025.tif), sem token"
+        license: "CC-BY-4.0 (MapBiomas)"
+    # Verificado 2026-10-13: brazil_coverage-col11_2025.tif → 200 image/tiff (~763 MB).
+    # Só o prefixo do bucket mapbiomas-public; o resto de storage.googleapis.com fica fora.
+
+  # ------------------------------------------------------------
+  # SAÚDE (agregados apenas, Fase 2)
+  # ------------------------------------------------------------
+  - id: datasus_sisab
+    name: "DATASUS/SISAB - Indicadores APS (agregados municipais)"
+    host: apidadosabertos.saude.gov.br
+    base_url: "https://apidadosabertos.saude.gov.br"
+    resources:
+      - path: "/atencao-primaria/pmmb-serie-historica"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Série histórica PIM/AB por município (cobertura, equipes, IVS)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+      - path: "/atencao-primaria/pmmb-consolidado"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Consolidado PIM/AB atual (ativas_ff, equipe_esf, equipe_emsi, total_vagas_ativas, categoria_ivs)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+      - path: "/macrorregiao-e-regiao-de-saude/municipio"
+        method: GET
+        params: [codigo_municipio, limit, offset]
+        description: "Municípios com população estimada IBGE 2022 (denominador)"
+        license: "CC BY 3.0 (dados abertos SUS)"
+
+  - id: cnes_estabelecimentos
+    name: "CNES - Estabelecimentos de saúde (sanitizado)"
+    host: apidadosabertos.saude.gov.br
+    base_url: "https://apidadosabertos.saude.gov.br"
+    resources:
+      - path: "/cnes/estabelecimentos"
+        method: GET
+        params: [codigo_uf, codigo_municipio, codigo_tipo_unidade, status, data_atualizacao, limit, offset]
+        description: "Estabelecimentos com lat/long — SANITIZADO na ingestão (sem PII)"
+        license: "CC BY-ND 3.0 (dados abertos SUS)"
+      - path: "/cnes/tipounidades"
+        method: GET
+        params: [limit, offset]
+        description: "Dicionário de tipos de unidade (UBS, SU, hospital, etc.)"
+        license: "CC BY-ND 3.0 (dados abertos SUS)"
+
+  # ------------------------------------------------------------
+  # SEGURANÇA / MOBILIDADE
+  # ------------------------------------------------------------
+  - id: brazilcrime
+    name: "BrazilCrime - Dados de criminalidade agregados por município"
+    host: cran.r-project.org
+    base_url: "https://cran.r-project.org/package=BrazilCrime"
+    resources:
+      - path: "/R/BrazilCrime"
+        method: CRAN
+        description: "Pacote R BrazilCrime - dados de criminalidade agregados por município/ano (homicídios, roubos, etc.)"
+        license: "GPL-3 (CRAN)"
+
+  - id: antt_acidentes
+    name: "ANTT - Acidentes e geodados por trecho"
+    host: dados.antt.gov.br
+    base_url: "https://dados.antt.gov.br"
+    resources:
+      - path: "/dataset/acidentes"
+        method: GET
+        params: [limit, offset]
+        description: "Acidentes em rodovias federais por trecho (Concessionaria;Data;Km;Trecho) — sem município, requer join com geodados ANTT"
+        license: "CC-BY-4.0 (ANTT)"
+      - path: "/dataset/trechos"
+        method: GET
+        params: [limit, offset]
+        description: "Geodados de trechos rodoviários (Concessionaria;Trecho;Km_Inicial;Km_Final;Municipio) — permite resolver trecho → município"
+        license: "CC-BY-4.0 (ANTT)"
+
+  - id: transportes_renatest
+    name: "Transportes - RENAEST sinistro (agregado por localidade)"
+    host: dados.transportes.gov.br
+    base_url: "https://dados.transportes.gov.br"
+    resources:
+      - path: "/dataset/renatest-sinistro"
+        method: GET
+        params: [limit, offset]
+        description: "Sinistros RENAEST agregados por localidade (não município) — requer de-para localidade → município"
+        license: "CC-BY-4.0 (Transportes)"
+
+  # transportes_renavam existia nos DOIS blocos `sources:` (#230). Fica a
+  # definição do 2º bloco, que é a mais completa (contém o recurso do 1º).
+  - id: transportes_renavam
+    name: "Transportes - RENAVAM frota agregada por município"
+    host: dados.transportes.gov.br
+    base_url: "https://dados.transportes.gov.br"
+    resources:
+      - path: "/dataset/frota-por-municipio"
+        method: GET
+        params: [limit, offset]
+        description: "Frota agregada por município (não por veículo)"
+        license: "CC-BY-4.0 (Transportes)"
+      - path: "/dataset/renavam-frota"
+        method: GET
+        params: [limit, offset]
+        description: "Frota de veículos por município e tipo"
+        license: "CC-BY-4.0 (Transportes)"
+
+  - id: osrm_valhalla
+    name: "OSRM / Valhalla - Roteamento e isocronas auto-hospedados"
+    host: localhost
+    base_url: "http://localhost"
+    resources:
+      - path: "/route/v1"
+        method: GET
+        description: "OSRM auto-hospedado - rota e isocronas (tileset auto-hospedado)"
+        license: "BSD-2-Clause (OSRM), MIT (Valhalla)"
+      - path: "/isochrone"
+        method: GET
+        description: "Valhalla auto-hospedado - isocronas (tileset auto-hospedado)"
+        license: "MIT (Valhalla)"
+
+  - id: overpass_osm
+    name: "Overpass API - OpenStreetMap POIs e rede viária"
+    host: overpass-api.de
+    base_url: "https://overpass-api.de/api/interpreter"
+    resources:
+      - path: "/"
+        method: POST
+        description: "Overpass QL query para POIs, vias, transporte público"
+        license: "ODbL 1.0 (OpenStreetMap)"
+
 # ------------------------------------------------------------
 # RECURSOS EXPLICITAMENTE NEGADOS (mesmo host de permitido)
+# Têm precedência sobre `sources`: a URL é rejeitada como NEGADO.
 # ------------------------------------------------------------
 denied:
+  - id: antta_monitriip_viagens
+    source_ref: antta_monitriip
+    host: dados.antt.gov.br
+    path: "/dataset/monitriip-viagens"
+    reason: "74 recursos, CC-BY, mas expõe CNPJ, placa, IMEI, lat/long POR VIAGEM — nível individual, LGPD"
+
+  - id: sptrans_bilhete_unico_usuario
+    source_ref: sptrans
+    host: dados.mobilidade.rio
+    path: "/dataset/creditos-eletronicos-bilhete-unico-usuario"
+    reason: "CCZero, mas nível INDIVIDUAL (saldo por usuário) — cruzado com escola/horário reconstrói trajeto de aluno"
+
+  - id: sus_sisvan_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/sisvan/estado-nutricional"
+    reason: "Microdado individual (peso, altura, IMC por pessoa) — menor de idade"
+
+  - id: sus_vacinacao_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/vacinacao/doses-aplicadas-pni-*"
+    reason: "Microdado individual (data vacinação, código documento, raça por pessoa)"
+
+  - id: sus_cnes_individual
+    source_ref: sus
+    host: dados.saude.gov.br
+    path: "/cnes/estabelecimentos"
+    reason: "Expõe CNPJ, telefone, e-mail, nome de pessoa física de estabelecimentos"
+
+# ------------------------------------------------------------
+# FONTES REFERENCIADAS EM 'denied' (para contexto)
+# ------------------------------------------------------------
+sources_ref:
+  - id: antta_monitriip
+    name: "ANTT MONITRIIP - Serviço Regular"
+    host: dados.antt.gov.br
+    base_url: "https://dados.antt.gov.br"
+    note: "Apenas recurso AGREGADO permitido; viagens negado acima"
+
+  - id: sptrans
+    name: "SPTRANS - Bilhete Único"
+    host: dados.mobilidade.rio
+    base_url: "https://dados.mobilidade.rio"
+    note: "Recurso agregado de créditos permitido se existir; usuário NEGADO"
+
+  - id: sus
+    name: "Ministério da Saúde - Dados Abertos"
+    host: dados.saude.gov.br
+    base_url: "https://dados.saude.gov.br"
+    note: "TODOS os endpoints de microdado individual NEGADOS"
