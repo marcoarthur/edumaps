@@ -1,4 +1,4 @@
-# Nota técnica 120 — Ingestão real, P0: allowlist efetivo e estado de carga (PRs #232 e #231)
+# Nota técnica 120 — Ingestão real, P0: allowlist efetivo e estado de carga (PRs #232 e #233)
 
 ## Resumo
 
@@ -8,7 +8,7 @@ A #156 (ingestão real das fontes das Fases 0–6) foi replanejada em 2026-10-13
 pré-requisitos antes de qualquer carga. Este ciclo entrega dois itens:
 
 - o **fix urgente do allowlist**: #230, PR #232, merge `f484c39`;
-- a fase **P0** do plano: #231, branch `feat/ingestao-p0`.
+- a fase **P0** do plano: #231, PR #233, merge `4060db2`.
 
 ## Achados que motivaram o desenho
 

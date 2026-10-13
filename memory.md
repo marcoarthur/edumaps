@@ -22,7 +22,7 @@
     **inertes**.
   - `Allowlist.pm` agora dá croak em duplicata.
   - Há teste sobre o arquivo real.
-- **#231 (P0):**
+- **#231 (P0) / PR #233** (merge `4060db2`; o CI exigiu declarar `File::Copy` e `Mojo::Parameters` no cpanfile — gate `check_dependencies.pl`):
   - `--arg k=v` na CLI;
   - `ultimo_status`/`ultimo_motivo`/`ultima_tentativa_em`/`raw_manifest`:
     uma falha não apaga a última carga boa;
