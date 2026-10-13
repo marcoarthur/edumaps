@@ -1,9 +1,12 @@
 package EduMaps::Ingestion::Runner;
 use Mojo::Base -base, -signatures;
+use utf8;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Log;
+use Scalar::Util ();
+use EduMaps::Ingestion::NaoCarregada;
 
 # ================================================================
 # ORQUESTRADOR DE JOBS DE INGESTÃO
@@ -174,9 +177,18 @@ sub load_jobs ($self, $job_names = []) {
 sub run_job ($self, $job_name, $args = {}) {
   my $job = $self->jobs->{$job_name}
     or die "Job '$job_name' não registrado";
-  
+  $args //= {};
+
   $self->log->info("Executando job: $job_name");
   my $start = time;
+
+  # #231: o estado da tentativa vai para clean.import_metadata, nas tabelas
+  # que o job declara, sem tocar na proveniência da última carga boa.
+  # Best-effort: um problema ao registrar o estado nunca mascara o resultado
+  # do job (vai para o log).
+  my @tabelas = $job->can('tabelas') ? $job->tabelas($args) : ();
+  $self->_estado($job, registrar_tentativa => @tabelas);
+
   $self->_install_stall_watch;
 
   eval {
@@ -185,17 +197,37 @@ sub run_job ($self, $job_name, $args = {}) {
   } or do {
     my $error = $@ || 'Erro desconhecido';
     $self->_remove_stall_watch;
+    my $duration = time - $start;
+
+    # Bloqueio conhecido (e-SIC, API retirada, fora do objetivo): não é bug,
+    # mas também não é sucesso — estado 'nao_carregada' + motivo.
+    if (Scalar::Util::blessed($error) && $error->isa('EduMaps::Ingestion::NaoCarregada')) {
+      $self->log->warn("Job $job_name NÃO CARREGADA: " . $error->motivo);
+      $self->_estado($job, registrar_nao_carregada => $error->motivo, @tabelas);
+      $self->_notify('ingest_failed', "Job $job_name não carregada: " . $error->motivo);
+      return { success => 0, nao_carregada => 1, error => "$error", duration => $duration };
+    }
+
     $self->log->error("Job $job_name falhou: $error");
+    $self->_estado($job, registrar_falha => "$error", @tabelas);
     my $action = $error =~ /\[STALL\]/ ? 'ingest_stall' : 'ingest_failed';
     $self->_notify($action, "Job $job_name falhou: $error");
-    return { success => 0, error => $error, duration => time - $start };
+    return { success => 0, error => "$error", duration => $duration };
   };
   $self->_remove_stall_watch;
-  
+  $self->_estado($job, fechar_tentativa => @tabelas);
+
   my $duration = time - $start;
   $self->log->info("Job $job_name concluído em ${duration}s");
   $self->_notify('ingest_done', "Job $job_name concluído em ${duration}s");
   return { success => 1, duration => $duration };
+}
+
+sub _estado ($self, $job, $metodo, @args) {
+  return 0 unless $job->can($metodo);
+  my $n = eval { $job->$metodo(@args) };
+  $self->log->error("Registro de estado ($metodo) falhou: $@") if $@;
+  return $n // 0;
 }
 
 # Notificação best-effort: nunca deita abaixo a ingestão. Um bot quebrado ou
@@ -211,21 +243,21 @@ sub _notify ($self, $action, $text) {
   return $sent ? 1 : 0;
 }
 
-sub run_all ($self, $job_names = []) {
+sub run_all ($self, $job_names = [], $args = {}) {
   $self->load_jobs($job_names);
   
   my @jobs = @$job_names ? @$job_names : keys %{$self->jobs};
   my @results;
   
   for my $name (@jobs) {
-    my $result = $self->run_job($name);
+    my $result = $self->run_job($name, $args);
     push @results, { job => $name, %$result };
   }
   
   return \@results;
 }
 
-sub run_scheduled ($self, $schedule = 'daily') {
+sub run_scheduled ($self, $schedule = 'daily', $args = {}) {
   $self->load_jobs;
   
   my @scheduled = grep { $_->schedule eq $schedule } values %{$self->jobs};
@@ -234,7 +266,7 @@ sub run_scheduled ($self, $schedule = 'daily') {
   
   my @results;
   for my $job (@scheduled) {
-    my $result = $self->run_job($job->job_name);
+    my $result = $self->run_job($job->job_name, $args);
     push @results, { job => $job->job_name, %$result };
   }
   

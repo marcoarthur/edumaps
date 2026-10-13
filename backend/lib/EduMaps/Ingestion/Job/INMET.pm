@@ -1,5 +1,6 @@
 package EduMaps::Ingestion::Job::INMET;
 use Mojo::Base 'EduMaps::Ingestion::Job::Base', -signatures;
+use utf8;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json decode_json);
@@ -19,9 +20,12 @@ sub run ($self, $args = {}) {
   # tabelas pretendidas (séries históricas por estação + alertas CAP).
   # Falhar sempre com o motivo — revisitar se o INMET publicar API/feed
   # oficial de novo.
-  die 'INMET: ingestão não implementada — decisão #171 (C): a API do INMET foi
-    retirada (endpoints mortos). Tabelas inmet_bdmep/inmet_alerta declaradas
-    NÃO CONSTRUÍDAS no schema.'
+  # #231: 'nao_carregada' (exit 3) + motivo gravado nas duas tabelas.
+  $self->nao_carregada('INMET: ingestão não implementada — decisão #171 (C): a API do INMET foi '
+    . 'retirada (endpoints mortos). Tabelas inmet_bdmep/inmet_alerta declaradas '
+    . 'NÃO CONSTRUÍDAS no schema; fora do objetivo da #156.');
 }
+
+sub tabelas ($self, $args = {}) { return ('clean.inmet_bdmep', 'clean.inmet_alerta') }
 
 1;

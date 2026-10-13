@@ -48,6 +48,11 @@ services:
       - ANALYTICS_URL=http://analytic:8000
       - EDUMAPS_SENTRY_DSN=${EDUMAPS_SENTRY_DSN:-}
       - EDUMAPS_SENTRY_RELEASE=${EDUMAPS_SENTRY_RELEASE:-}
+    # #231: os jobs de ingestão validam URLs contra o allowlist, e a imagem
+    # (contexto ./backend) não contém data_pipeline/. O Allowlist.pm procura
+    # ../data_pipeline/allowlist.yaml a partir de /opt/edumaps/backend.
+    volumes:
+      - ./data_pipeline/allowlist.yaml:/opt/edumaps/data_pipeline/allowlist.yaml:ro
     ports:
       - "3000:3000"
 
@@ -65,6 +70,12 @@ services:
       - ANALYTICS_URL=http://analytic:8000
       - EDUMAPS_SENTRY_DSN=${EDUMAPS_SENTRY_DSN:-}
       - EDUMAPS_SENTRY_RELEASE=${EDUMAPS_SENTRY_RELEASE:-}
+    # #231: idem backend — allowlist dos jobs de ingestão (somente leitura).
+    volumes:
+      - ./data_pipeline/allowlist.yaml:/opt/edumaps/data_pipeline/allowlist.yaml:ro
+      # #231/#156: arquivos brutos (ZIPs/CSVs) baixados pela ingestão, com
+      # manifesto no import_metadata — fora do pgdata e fora do Git.
+      - ./raw:/srv/edumaps/raw
     # O ENTRYPOINT da imagem já é o docker-entrypoint.sh; passar o caminho de
     # novo aqui faria $1 virar o próprio script e o container subiria o morbo
     # (web) em vez do worker. Use só o argumento esperado pelo entrypoint.

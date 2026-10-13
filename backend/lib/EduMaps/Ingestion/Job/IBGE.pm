@@ -31,11 +31,24 @@ has vars_dados_ibge => '37,513,517,525,6575,516,520,528,6574';
 has throttle => 0.2;    # 0.2s entre chamadas
 
 
+sub tabelas ($self, $args = {}) { return ('clean.dados_ibge', 'clean.ibge_agregados') }
+
 sub run ($self, $args = {}) {
   $self->log_info('Iniciando ingestão IBGE/SIDRA (tabela 5938 - PIB municipal)');
 
   # ---------------------------------------------------------------------------
-  # Semântica de --dry-run (corrigido 2026-10-06)
+  # --dry-run honesto (#231)
+  # ---------------------------------------------------------------------------
+  # A semântica de 2026-10-06 (abaixo) fazia o dry-run correr a EXTRAÇÃO
+  # inteira: ~11 mil GETs ao SIDRA para depois não gravar nada. Isso não é
+  # um ensaio, é a carga sem o último passo. Agora o dry-run lê a lista de
+  # municípios (só leitura), faz UMA requisição de sanidade (o primeiro
+  # município, validada no allowlist) e relata o plano. Nada é escrito.
+  return $self->_dry_run_sanidade($args) if $self->dry_run;
+
+  # ---------------------------------------------------------------------------
+  # Semântica de --dry-run (corrigido 2026-10-06; SUBSTITUÍDA pela #231,
+  # ver acima — o texto fica como histórico da decisão anterior)
   # ---------------------------------------------------------------------------
   # `--dry-run` significa **não escrever na base de dados** — não "não fazer
   # nada". Os guards estavam nas etapas de leitura (`exportar_municipios`,
@@ -80,7 +93,7 @@ sub run ($self, $args = {}) {
   $self->upsert_metadata(
     'clean.dados_ibge',
     'SIDRA tabela 5938 (PIB municipal)',
-    'https://servicodados.ibge.gov.br/api/v3/agregados/5938',
+    $self->sidra_base . '/' . $self->tabela_pib,
     'Domínio público (IBGE)',
     $loaded_dados,
     sprintf('Extração SIDRA 5938 (PIB municipal), %d municípios de referência. Período conforme parâmetros; percentuais podem ser NULL quando não divulgados.', $n_mun)
@@ -90,7 +103,7 @@ sub run ($self, $args = {}) {
     $self->upsert_metadata(
       'clean.ibge_agregados',
       'SIDRA tabela 5938 (PIB municipal) - formato longo',
-      'https://servicodados.ibge.gov.br/api/v3/agregados/5938',
+      $self->sidra_base . '/' . $self->tabela_pib,
       'Domínio público (IBGE)',
       $loaded_ag,
       sprintf('Extração SIDRA 5938 em formato longo, %d municípios de referência.', $n_mun)
@@ -101,6 +114,29 @@ sub run ($self, $args = {}) {
   return $loaded_dados + $loaded_ag;
 };
 
+
+sub _dry_run_sanidade ($self, $args) {
+  my $anos = $args->{anos} // 'last 10';
+  my $db = $self->app->schema->storage->dbh;
+  my $rows = $db->selectall_arrayref(
+    'SELECT codigo_ibge FROM clean.malha_municipio
+      WHERE codigo_ibge IS NOT NULL ORDER BY codigo_ibge', { Slice => {} });
+  my @cod = grep { defined && /^\d{7}$/ } map { $_->{codigo_ibge} } @$rows;
+  die "IBGE: clean.malha_municipio vazia — nada a extrair\n" unless @cod;
+
+  my $url = sprintf('%s/%s/n6/%s/v/%s/p/%s?formato=json',
+    $self->sidra_base, $self->tabela_pib, $cod[0], $self->vars_dados_ibge, $anos);
+  $self->exigir_allowlist($url);
+  my $tx = $self->ua->get($url);
+  my $code = $tx->res->code // 0;
+  die "IBGE [DRY-RUN] sanidade: HTTP $code em $url\n" unless $code == 200;
+  my $json = $tx->res->json;
+  my $n = ref $json eq 'ARRAY' ? scalar(@$json) - 1 : 0;
+  $self->log_info(sprintf(
+    '[DRY-RUN] IBGE: %d municípios planejados x 2 extrações (~%d GETs), anos=%s; sanidade %s -> HTTP 200, %d valores. Nada extraído nem gravado.',
+    scalar @cod, 2 * @cod, $anos, $cod[0], $n));
+  return $n;
+}
 
 sub dir_trabalho ($self) {
   my $dir = $self->config->{dir_trabalho} // 'data/ingestao';
@@ -158,6 +194,7 @@ sub extrair_dados_ibge ($self, $mun_csv, $out_csv, $args = {}) {
     # Buscar dados para este município: vars_dados_ibge, n6, período
     my $url = sprintf('%s/%s/n6/%s/v/%s/p/%s?formato=json',
       $self->sidra_base, $self->tabela_pib, $cod, $self->vars_dados_ibge, $anos);
+    $self->exigir_allowlist($url);
 
     my $res;
     eval {
@@ -321,6 +358,7 @@ sub extrair_ibge_agregados ($self, $mun_csv, $out_csv, $args = {}) {
 
     my $url = sprintf('%s/%s/n6/%s/v/all/p/%s?formato=json',
       $self->sidra_base, $self->tabela_pib, $cod, $anos);
+    $self->exigir_allowlist($url);
 
     my $res;
     eval {

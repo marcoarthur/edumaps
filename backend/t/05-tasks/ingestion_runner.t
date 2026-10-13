@@ -92,15 +92,16 @@ subtest '4. --config carregado e propagado' => sub {
     'propaga';
 };
 
-subtest '5. dry-run IBGE corre cadeia sem escrever na BD' => sub {
+subtest '5. dry-run IBGE: sanidade (1 GET), sem extração e sem escrever na BD (#231)' => sub {
+  # Antes da #231 o dry-run corria a extração inteira (~11 mil GETs) e só
+  # não gravava. Agora: lista de municípios (leitura) + 1 GET de sanidade.
   my $tmp = tempdir(CLEANUP=>1);
   my $job = $IBGE->new(log=>Mojo::Log->new,dry_run=>1,app=>mock_app(\@MUNICIPIOS),ua=>bless({},'TesteUA'),config=>{dir_trabalho=>$tmp});
   my $rc; my $morreu = !eval { $rc = $job->run; 1 };
   ok !$morreu, 'não morre' or diag $@;
-  ok -f "$tmp/municipios.csv", 'municipios.csv';
-  ok -f "$tmp/dados_ibge.csv", 'dados_ibge.csv';
-  ok -f "$tmp/ibge_agregados.csv", 'ibge_agregados.csv';
-  is $rc, 8, 'contagem 8';
+  ok !-f "$tmp/dados_ibge.csv", 'sem dados_ibge.csv (não extrai)';
+  ok !-f "$tmp/ibge_agregados.csv", 'sem ibge_agregados.csv (não extrai)';
+  is $rc, 2, 'relata os 2 valores da amostra';
 };
 
 subtest '6. exit code != 0 quando job falha' => sub {

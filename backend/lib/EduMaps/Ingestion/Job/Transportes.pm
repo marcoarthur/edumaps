@@ -706,7 +706,29 @@ sub _fonte ($self, $chave, $padrao, $renavam = 0) {
   my $zip = $renavam ? $self->config->{renavam_zip} : $self->config->{renaest_zip};
   die "Sem $chave nem " . ($renavam ? 'renavam_zip' : 'renaest_zip') . " na config\n"
     unless $zip && -f $zip;
+  $self->_preservar_zip($zip, $renavam);
   return $self->_extrair_membro($zip, $padrao);
+}
+
+# #231: o ZIP real (baixado à mão e passado por config) é copiado para o
+# raw (<raw_dir>/transportes/<dia>/) com sha256 no manifesto, uma vez por
+# execução. Os ZIPs da carga perdida no restore de 08/10 não tinham cópia.
+sub _preservar_zip ($self, $zip, $renavam) {
+  return if $self->{_zip_preservado}{$zip}++;
+  my $url = $renavam
+    ? ($self->config->{renavam_url} // 'https://dados.transportes.gov.br/dataset/registro-nacional-de-veiculos-automotores-renavam')
+    : ($self->config->{renaest_url} // 'https://dados.transportes.gov.br/dataset/renaest');
+  my @tabelas = $renavam
+    ? ('clean.renavam_frota_municipio')
+    : ('clean.renaest_localidade_municipio', 'clean.renaest_localidade_nao_resolvida', 'clean.renaest_sinistro');
+  $self->preservar_raw($zip, $url, tabelas => \@tabelas);
+}
+
+sub tabelas ($self, $args = {}) {
+  return qw(
+    clean.renaest_localidade_municipio clean.renaest_localidade_nao_resolvida
+    clean.renaest_sinistro clean.renavam_frota_municipio
+  );
 }
 
 sub _extrair_membro ($self, $zip, $padrao) {

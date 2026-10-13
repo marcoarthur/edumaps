@@ -33,8 +33,16 @@ my @COLUNAS_CRIME = qw(
   homicidio_doloso latrocinio lesao_corporal_seguida_de_morte
 );
 
+# Proveniência declarada (#157/#231): a página canônica do pacote no CRAN.
+# A requisição real é do R (install.packages a partir de cloud.r-project.org,
+# em install_brazilcrime.R); o Perl valida no allowlist a URL que declara.
+use constant URL_FONTE => 'https://cran.r-project.org/package=BrazilCrime';
+
+sub tabelas ($self, $args = {}) { return ('clean.brazilcrime_municipio') }
+
 sub run ($self, $args = {}) {
   $self->log_info('Iniciando ingestão BrazilCrime/SINESP');
+  $self->exigir_allowlist(URL_FONTE);
 
   # A data da extracção é calculada aqui e passada ao R, para que o
   # dt_snapshot que o R escreve no CSV e o que o Perl grava na base
@@ -66,16 +74,24 @@ sub run ($self, $args = {}) {
 
   # 5. Carga.
   my $rows = $self->process_csv($out_csv);
+  # Dry-run honesto (#231): o R não corre, logo não há CSV nem linhas — isso
+  # não é falha. Simula o resto da cadeia e sai sem exigir linhas.
+  if ($self->dry_run) {
+    $self->log_info('[DRY-RUN] BrazilCrime: cadeia simulada (exportar municípios -> R -> CSV -> carga); nada extraído nem gravado');
+    return 0;
+  }
   die "Extractor não produziu linhas: ver o relatório de órfãos $orf_csv\n"
     unless @$rows;
   my $loaded = $self->load_to_db($rows);
 
-  # 6. Metadados.
+  # 6. Metadados. Licença = undef: NÃO sobrescreve a licença corrigida à mão
+  #    na #157 ("MIT + file LICENSE (CRAN). Termos dos DADOS são do SINESP…");
+  #    sem linha prévia, vale a do allowlist (#231).
   $self->upsert_metadata(
     'clean.brazilcrime_municipio',
     'SINESP VDE via pacote R BrazilCrime',
-    'https://cran.r-project.org/web/packages/BrazilCrime/index.html',
-    'MIT (código do pacote); dados SINESP VDE — termos de uso por confirmar',
+    URL_FONTE,
+    undef,
     $loaded,
     sprintf('Extracção de %d municipios de referência. Os dados vêm embutidos no pacote CRAN '
         . '(versão 0.3.0, publicada 2025-09-05): não há sincronização com o SINESP, '
