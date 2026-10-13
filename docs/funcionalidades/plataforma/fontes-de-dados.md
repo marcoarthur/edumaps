@@ -70,6 +70,25 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   afectados, e localidades de acidentes que não resolvem ficam registadas com o
   motivo — nada desaparece em silêncio.
 
+### Carga e proveniência
+
+- Sistema pode **registrar o estado de cada carga** de fonte: carregada, em
+  carga, falhou ou **não carregada**, com o motivo e a data da última
+  tentativa. Uma falha **não apaga** o registro da última carga boa.
+- Sistema pode **declarar o que não carrega e por quê**, em vez de fingir
+  sucesso. Os motivos são concretos: o pedido de acesso à informação ainda não
+  foi protocolado, o servidor da fonte está fora do ar, ou a fonte está fora do
+  objetivo atual.
+- Sistema pode **guardar o arquivo bruto de cada carga**, fora do banco e com
+  um manifesto de integridade (origem, tamanho, assinatura, data). Assim, uma
+  restauração do banco não apaga dados que não podem ser baixados de novo.
+- Sistema **só busca dados de origens autorizadas**: cada carga confere a
+  origem contra uma lista de fontes aprovadas. As regras de proteção de dados
+  pessoais, que vetam bases individualizadas, valem para todas as cargas.
+- Operador pode **escolher o recorte da carga** (por exemplo UF ou exercício)
+  e ensaiar a carga sem gravar, conferindo o acesso à fonte antes de uma carga
+  longa.
+
 ### Curadoria de novas fontes
 
 - Plataforma pode **catalogar fontes de dados abertas candidatas**, além do

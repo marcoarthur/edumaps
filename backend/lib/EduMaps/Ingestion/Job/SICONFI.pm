@@ -160,47 +160,139 @@ sub _anexo_receita ($anexo) {
 }
 
 # ---------------------------------------------------------------------
+# Tabelas (#231): o Runner registra o estado da tentativa nelas.
+#
+# O FUNDEB entra em clean.siconfi_receita, mas vem de OUTRA fonte (DCA
+# Anexo I-C) e de outra execução (--arg dca). Antes ele gravava a metadata
+# na linha de clean.siconfi_receita, apagando a proveniência do RREO. Agora
+# tem a sua própria linha em import_metadata: 'clean.siconfi_receita#fundeb'
+# (tabela#recorte — não é uma tabela física; é a proveniência do recorte
+# tipo_receita='fundeb' dentro dela).
+# ---------------------------------------------------------------------
+use constant {
+  TAB_RECEITA => 'clean.siconfi_receita',
+  TAB_DESPESA => 'clean.siconfi_despesa',
+  TAB_FUNDEB  => 'clean.siconfi_receita#fundeb',
+};
+
+sub tabelas ($self, $args = {}) {
+  return $args->{dca} ? (TAB_DESPESA, TAB_FUNDEB) : (TAB_RECEITA);
+}
+
+# ---------------------------------------------------------------------
 # Run
+#
+# Args (via `ingestion_runner.pl --arg`): cod_ibge | uf=SP,RJ | todos;
+# exercicio, nr_periodo, dca, max_municipios, dt_snapshot.
+#
+# --dry-run (honesto, #231): resolve a lista de municípios (/entes, com
+# cache) e faz UMA requisição de sanidade (o primeiro município), mapeando
+# sem gravar. Não percorre a malha: 645 municípios de SP a 1 req/s não são
+# um "teste".
 # ---------------------------------------------------------------------
 sub run ($self, $args = {}) {
-  my $cod_ibge = $args->{cod_ibge};
+  $self->{_carga} = {};
+  $self->{_populacao} = {};
+  my @cod = $self->_municipios_alvo($args);
+  my $total = 0;
 
-  if ($cod_ibge) {
-    # dca => despesa por função + FUNDEB (DCA anual); senão receitas RREO
-    return $args->{dca}
-      ? $self->ingest_municipio_dca(%$args)
-      : $self->ingest_municipio_receita(%$args);
+  # strict_zero: município único morre com count==0 (falso sucesso). Na
+  # malha, demonstrativo ainda não publicado é comum (medido 2026-10-13:
+  # municípios pequenos de SP sem RREO 2026/2) e é avisado e pulado — RREO e
+  # DCA com a mesma regra; antes, o primeiro município sem RREO abortava a
+  # malha inteira. Malha sem NENHUM município com dado morre (abaixo).
+  my $malha = @cod > 1 || $args->{uf} || $args->{todos};
+
+  if ($self->dry_run && @cod > 1) {
+    # Amostra: o município mais populoso da seleção (o mais provável de ter
+    # publicado o demonstrativo), e não o primeiro da lista.
+    my $pop = $self->{_populacao} // {};
+    my ($amostra) = sort { ($pop->{$b} // 0) <=> ($pop->{$a} // 0) || $a cmp $b } @cod;
+    $self->log_info(sprintf('[DRY-RUN] SICONFI: %d municípios planejados (%s); sanidade com 1 (%s, o mais populoso)',
+      scalar @cod, ($args->{dca} ? 'DCA' : 'RREO'), $amostra));
+    @cod = ($amostra);
   }
 
-  # Iteração sobre a malha via /entes (cache local): por UF ou todos.
-  if ($args->{uf} || $args->{todos}) {
+  for my $i (0 .. $#cod) {
+    $self->_throttle if $i > 0;
+    if ($args->{dca}) {
+      $total += $self->ingest_municipio_dca(%$args, cod_ibge => $cod[$i],
+        ($malha ? (strict_zero => 0) : ()));
+    }
+    else {
+      $total += $self->ingest_municipio_receita(%$args, cod_ibge => $cod[$i],
+        ($malha ? (strict_zero => 0) : ()));
+    }
+  }
+  die sprintf("SICONFI: nenhum dos %d município(s) alvo devolveu dado (%s, exercício %s) — malha vazia NÃO é sucesso\n",
+      scalar @cod, ($args->{dca} ? 'DCA' : 'RREO'), $args->{exercicio} // (localtime)[5] + 1900)
+    if $malha && @cod && !$total;
+
+  $self->_registrar_metadata($args, scalar @cod);
+  $self->log_info(($self->dry_run ? '[DRY-RUN] ' : '') . "SICONFI: $total linhas no total da execução");
+  return $total;
+}
+
+sub _municipios_alvo ($self, $args) {
+  return (sprintf('%07d', $args->{cod_ibge})) if $args->{cod_ibge};
+
+  my @ufs = map { uc } $self->arg_lista($args, 'uf');
+  if (@ufs || $args->{todos}) {
+    my %uf = map { $_ => 1 } @ufs;
     my $entes = $self->_fetch_entes;
-    my @cod = map { sprintf('%07d', $_->{cod_ibge}) }
-      grep { !$args->{uf} || ($_->{uf} // '') eq $args->{uf} } @$entes;
+    my @sel = grep { !@ufs || $uf{ uc($_->{uf} // '') } } @$entes;
+    $self->{_populacao} = { map { sprintf('%07d', $_->{cod_ibge}) => ($_->{populacao} // 0) } @sel };
+    my @cod = map { sprintf('%07d', $_->{cod_ibge}) } @sel;
     my $max = $args->{max_municipios} // scalar @cod;
     @cod = @cod[0 .. $max - 1] if $max < @cod;
-    $self->log_info('SICONFI: ' . scalar(@cod) . " municípios a carregar (uf=" . ($args->{uf} // '*') . ')');
-
-    my $total = 0;
-    for my $i (0 .. $#cod) {
-      $self->_throttle if $i > 0;
-      if ($args->{dca}) {
-        # DCA anual é publicado no semestre seguinte ao exercício —
-        # município que ainda não publicou é comum e não pode abortar a
-        # malha inteira (strict_zero => 0), ao contrário do RREO bimestral.
-        $total += $self->ingest_municipio_dca(cod_ibge => $cod[$i], strict_zero => 0, %$args);
-      }
-      else {
-        $total += $self->ingest_municipio_receita(cod_ibge => $cod[$i], %$args);
-      }
-    }
-    return $total;
+    $self->log_info('SICONFI: ' . scalar(@cod) . ' municípios a carregar (uf=' . (@ufs ? join(',', @ufs) : '*') . ')');
+    die 'SICONFI: nenhum município casou uf=' . join(',', @ufs) . "\n" unless @cod;
+    return @cod;
   }
 
   # Fase 1 (escopo mínimo da #165): São Paulo quando nada é pedido
-  return $args->{dca}
-    ? $self->ingest_municipio_dca(cod_ibge => '3550308', %$args)
-    : $self->ingest_municipio_receita(cod_ibge => '3550308', %$args);
+  return ('3550308');
+}
+
+# Soma da EXECUÇÃO por tabela (#231): o row_count do import_metadata é o
+# total carregado na execução, e não o do último município (antes, cada
+# _load_* fazia o upsert com a contagem do seu município).
+sub _contar ($self, $tabela, $n) {
+  $self->{_carga}{$tabela}{linhas} += $n;
+  $self->{_carga}{$tabela}{municipios}++ if $n;
+  return $n;
+}
+
+sub _registrar_metadata ($self, $args, $n_alvo) {
+  my $c = $self->{_carga} // {};
+  my $ex = $args->{exercicio} // (localtime)[5] + 1900;
+  my %meta = (
+    TAB_RECEITA() => [
+      'API Tesouro Nacional SICONFI receitas (RREO)',
+      $self->base_url . '/rreo',
+      "Ingestão #165. classificacao: 'estimativa' = PREVISÃO ATUALIZADA (a); 'realizada' = Até o Bimestre (c). Exercício %s, período %s.",
+      [ $ex, $args->{nr_periodo} // 2 ],
+    ],
+    TAB_DESPESA() => [
+      'API Tesouro Nacional SICONFI despesas por função (DCA-Anexo I-E)',
+      $self->base_url . '/dca',
+      "Ingestão #193. classificacao: 'realizada'. Granularidade: linha de função (subfuncao=0). Exercício %s.",
+      [ $ex ],
+    ],
+    TAB_FUNDEB() => [
+      'API Tesouro Nacional SICONFI receitas FUNDEB (DCA-Anexo I-C)',
+      $self->base_url . '/dca',
+      "Ingestão #193. Linhas tipo_receita='fundeb' de clean.siconfi_receita: 1.7.5.1.00.0.0 (FUNDEB) e 1.7.1.5.00.0.0 (Complementação da União). Exercício %s.",
+      [ $ex ],
+    ],
+  );
+  for my $t (sort keys %$c) {
+    my $linhas = $c->{$t}{linhas} or next;
+    my ($file, $url, $nota, $p) = @{ $meta{$t} };
+    $self->upsert_metadata($t, $file, $url, 'Domínio público (Tesouro Nacional)', $linhas,
+      sprintf($nota, @$p) . sprintf(' Execução: %d linhas de %d município(s) com dado, de %d alvo(s).',
+        $linhas, $c->{$t}{municipios} // 0, $n_alvo));
+  }
 }
 
 # ---------------------------------------------------------------------
@@ -217,7 +309,9 @@ sub ingest_municipio_receita ($self, %args) {
     nr_periodo  => $periodo,
     id_ente     => $cod_ibge,
     dt_snapshot => $dt_snapshot,
+    strict_zero => $args{strict_zero} // 1,
   );
+  return 0 unless $rows;
 
   return $self->_load_receita($rows);
 }
@@ -233,6 +327,7 @@ sub _fetch_rreo ($self, %args) {
   my $exercicio = delete $args{exercicio} // (localtime)[5] + 1900;
   my $periodo   = delete $args{nr_periodo} // 2;
   my $dt_snapshot = delete $args{dt_snapshot};
+  my $strict = delete $args{strict_zero} // 1;
 
   my %p = (
     an_exercicio          => $exercicio,
@@ -244,6 +339,7 @@ sub _fetch_rreo ($self, %args) {
     %args,
   );
 
+  $self->exigir_allowlist($self->base_url . '/rreo');
   my @items;
   my ($page, $max_pages) = (0, 500);
 
@@ -274,8 +370,12 @@ sub _fetch_rreo ($self, %args) {
   # que devia ter RREO devolvendo lista vazia é erro de parâmetro/dado —
   # não pode passar como carga concluída.
   if (@items == 0) {
-    die sprintf("SICONFI /rreo devolveu 0 itens para cod_ibge=%s (exercicio=%s periodo=%s) — HTTP 200 com count==0 NAO e sucesso; conferir parametros (an_exercicio e o nome correto)\n",
+    my $msg = sprintf("SICONFI /rreo devolveu 0 itens para cod_ibge=%s (exercicio=%s periodo=%s)",
       $cod_ibge, $exercicio, $periodo);
+    die $msg . " — HTTP 200 com count==0 NAO e sucesso; conferir parametros (an_exercicio e o nome correto)\n"
+      if $strict;
+    $self->log->warn('[' . $self->job_name . "] $msg — RREO provavelmente ainda nao publicado (pulado)");
+    return undef;
   }
 
   return $self->_map_receitas($cod_ibge, $exercicio, \@items, $dt_snapshot);
@@ -334,7 +434,11 @@ sub _map_receitas ($self, $cod_ibge, $exercicio, $items, $dt_snapshot) {
 # Load idempotente em clean.siconfi_receita
 # ---------------------------------------------------------------------
 sub _load_receita ($self, $rows) {
-  return 0 if $self->dry_run || !$rows || !@$rows;
+  return 0 if !$rows || !@$rows;
+  if ($self->dry_run) {
+    $self->log_info('[DRY-RUN] Carregaria ' . scalar(@$rows) . ' linhas em clean.siconfi_receita');
+    return scalar @$rows;
+  }
 
   my $dbh = $self->app->schema->storage->dbh;
   my $sql = <<'SQL';
@@ -360,11 +464,6 @@ SQL
       );
       $loaded++;
     }
-    $self->upsert_metadata('clean.siconfi_receita',
-      'API Tesouro Nacional SICONFI receitas (RREO)',
-      'https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/rreo',
-      'Domínio público (Tesouro Nacional)', $loaded,
-      "Ingestão #165. classificacao: 'estimativa' = PREVISÃO ATUALIZADA (a); 'realizada' = Até o Bimestre (c).");
     $dbh->commit;
   };
   # CAPTURAR $@ ANTES do eval de rollback: o eval interno limpa $@, e o
@@ -376,7 +475,7 @@ SQL
   }
 
   $self->log_info("SICONFI: $loaded linhas em clean.siconfi_receita");
-  return $loaded;
+  return $self->_contar(TAB_RECEITA, $loaded);
 }
 
 # ---------------------------------------------------------------------
@@ -446,6 +545,7 @@ sub _fetch_dca ($self, %args) {
     %args,
   );
 
+  $self->exigir_allowlist($self->base_url . '/dca');
   my @items;
   my ($page, $max_pages) = (0, 500);
 
@@ -603,7 +703,11 @@ sub _map_fundeb ($self, $cod_ibge, $exercicio, $items, $dt_snapshot) {
 # codigo_ibge + exercicio + funcao + subfuncao + classificacao + snapshot)
 # ---------------------------------------------------------------------
 sub _load_despesa ($self, $rows) {
-  return 0 if $self->dry_run || !$rows || !@$rows;
+  return 0 if !$rows || !@$rows;
+  if ($self->dry_run) {
+    $self->log_info('[DRY-RUN] Carregaria ' . scalar(@$rows) . ' linhas em clean.siconfi_despesa');
+    return scalar @$rows;
+  }
 
   my $dbh = $self->app->schema->storage->dbh;
   my $sql = <<'SQL';
@@ -631,11 +735,6 @@ SQL
       );
       $loaded++;
     }
-    $self->upsert_metadata('clean.siconfi_despesa',
-      'API Tesouro Nacional SICONFI despesas por função (DCA-Anexo I-E)',
-      'https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca',
-      'Domínio público (Tesouro Nacional)', $loaded,
-      "Ingestão #193. classificacao: 'realizada'. Granularidade: linha de função (subfuncao=0).");
     $dbh->commit;
   };
   # CAPTURAR $@ ANTES do eval de rollback (mesma armadilha medida na #165)
@@ -645,14 +744,18 @@ SQL
   }
 
   $self->log_info("SICONFI: $loaded linhas em clean.siconfi_despesa");
-  return $loaded;
+  return $self->_contar(TAB_DESPESA, $loaded);
 }
 
 # ---------------------------------------------------------------------
 # Load idempotente do FUNDEB em clean.siconfi_receita
 # ---------------------------------------------------------------------
 sub _load_fundeb ($self, $rows) {
-  return 0 if $self->dry_run || !$rows || !@$rows;
+  return 0 if !$rows || !@$rows;
+  if ($self->dry_run) {
+    $self->log_info('[DRY-RUN] Carregaria ' . scalar(@$rows) . ' linhas em clean.siconfi_receita (fundeb)');
+    return scalar @$rows;
+  }
 
   my $dbh = $self->app->schema->storage->dbh;
   my $sql = <<'SQL';
@@ -678,11 +781,6 @@ SQL
       );
       $loaded++;
     }
-    $self->upsert_metadata('clean.siconfi_receita',
-      'API Tesouro Nacional SICONFI receitas FUNDEB (DCA-Anexo I-C)',
-      'https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca',
-      'Domínio público (Tesouro Nacional)', $loaded,
-      "Ingestão #193. tipo_receita='fundeb': 1.7.5.1.00.0.0 (FUNDEB) e 1.7.1.5.00.0.0 (Complementação da União).");
     $dbh->commit;
   };
   if (my $err = $@) {
@@ -691,7 +789,7 @@ SQL
   }
 
   $self->log_info("SICONFI: $loaded linhas FUNDEB em clean.siconfi_receita");
-  return $loaded;
+  return $self->_contar(TAB_FUNDEB, $loaded);
 }
 
 # ---------------------------------------------------------------------
@@ -704,6 +802,7 @@ sub _fetch_entes ($self) {
     return $cached if $cached && ref($cached) eq 'ARRAY' && @$cached;
   }
 
+  $self->exigir_allowlist($self->base_url . '/entes');
   my @todos;
   my %p = (limit => 1000, offset => 0);
   my ($page, $max_pages) = (0, 50);

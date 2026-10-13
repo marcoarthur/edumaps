@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 # EduMaps Ingestion Runner
-# Uso: perl -Ilib ingestion_runner.pl [--job=NOME] [--schedule=daily] [--list] [--dry-run]
+# Uso: perl -Ilib ingestion_runner.pl [--job=NOME] [--arg chave=valor ...] [--schedule=daily] [--list] [--dry-run]
 #
-# O código de saída é 0 apenas quando todos os jobs executados têm sucesso.
+# Saída: 0 = todos com sucesso; 1 = alguma falha; 3 = fonte(s) NÃO CARREGADA(S)
+# por bloqueio conhecido (e-SIC, API retirada, fora do objetivo); 2 = uso inválido.
+# Ver `--help`.
 
 use strict;
 use warnings;

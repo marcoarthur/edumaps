@@ -1,5 +1,6 @@
 package EduMaps::Ingestion::Job::ANTT;
 use Mojo::Base 'EduMaps::Ingestion::Job::Base', -signatures;
+use utf8;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json decode_json);
@@ -10,7 +11,22 @@ has job_name => 'ANTT';
 has description => 'Ingestão ANTT (OD, Acidentes, Trechos, Contagem)';
 has schedule => 'monthly';
 
+# As 4 tabelas que este job alimentaria.
+sub tabelas ($self, $args = {}) {
+  return qw(clean.antt_od_municipio clean.antt_acidente_trecho
+            clean.antt_trecho_geodados clean.antt_contagem_equipamento);
+}
+
 sub run ($self, $args = {}) {
+  # #231 / plano da #156 §6 (decisão do developer, 2026-10-13): ANTT fica
+  # FORA DO OBJETIVO por ora — o host dados.antt.gov.br está fora do ar e o
+  # job abaixo baixa páginas HTML de dataset como se fossem CSV/GPKG (tem de
+  # ser reescrito, em issue própria). Até lá: 'nao_carregada' com o motivo,
+  # nunca uma carga quebrada. O código antigo fica como referência.
+  $self->nao_carregada('ANTT: fora do objetivo por ora (decisão de 2026-10-13, plano da #156 §6) — '
+    . 'host dados.antt.gov.br fora do ar e loader a reescrever (baixava páginas de dataset como '
+    . 'CSV/GPKG). Volta em issue própria.');
+
   $self->log_info('Iniciando ingestão ANTT (OD, Acidentes, Trechos, Contagem)');
   
   $self->ingest_od_municipio();

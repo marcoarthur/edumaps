@@ -27,3 +27,6 @@ datasets
 
 # Python (tools/)
 __pycache__/
+
+# Brutos da ingestão (#231): ZIPs/CSVs baixados — fora do Git
+/raw/

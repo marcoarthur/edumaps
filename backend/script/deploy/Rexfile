@@ -183,6 +183,11 @@ task deploy_backend_dev => 'backend.edumaps' => sub {
 desc "Configure and Install Minion Jobs and its dependencies";
 task deploy_minion_dev => 'backend.edumaps' => sub {
   _require_master_key();
+  # #231/#156: arquivos brutos da ingestão (ZIPs/CSVs) com manifesto no
+  # import_metadata — fora do pgdata, para um restore do banco não apagar a
+  # única cópia (como no pg_restore de 2026-10-08).
+  run q{mkdir -p /srv/edumaps/raw && chmod 0750 /srv/edumaps/raw},
+    unless => q{test -d /srv/edumaps/raw};
   pkg $_, ensure => 'present' for qw(
     cmake
     make

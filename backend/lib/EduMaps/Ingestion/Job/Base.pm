@@ -1,9 +1,15 @@
 package EduMaps::Ingestion::Job::Base;
 use Mojo::Base -base, -signatures;
+use utf8;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json decode_json);
+use Digest::SHA;
+use File::Copy qw(copy);
+use POSIX qw(strftime);
+use EduMaps::Ingestion::NaoCarregada;
 use Mojo::UserAgent;
+use Mojo::URL;
 use Mojo::Promise;
 use Mojo::Log;
 use Mojo::Util qw(trim);
@@ -29,8 +35,52 @@ has log => sub ($self) { $self->log // Mojo::Log->new };
 has max_retries => 3;
 has backoff_base => 5;  # seconds
 
+# --- Allowlist (#231) --------------------------------------------------------
+# Toda URL que um job busca passa por EduMaps::Data::Allowlist ANTES da
+# requisição: NEGADO, fora da lista ou fonte INATIVA morrem alto com o motivo.
+# Injetável nos testes.
+has allowlist => sub {
+  require EduMaps::Data::Allowlist;
+  return EduMaps::Data::Allowlist->new;
+};
+
+# --- Preservação de raw (#231) -----------------------------------------------
+# Todo arquivo baixado vai para <raw_dir>/<fonte_raw>/<AAAA-MM-DD>/<arquivo>,
+# fora do pgdata, para que um restore do banco não apague a única cópia (o
+# que aconteceu a 2026-10-08). O DVC (#135) virá apontar para o mesmo lugar.
+#   raw_dir: config->{raw_dir} > $ENV{EDUMAPS_RAW_DIR} > /srv/edumaps/raw
+has raw_dir => sub ($self) {
+  return $self->config->{raw_dir} // $ENV{EDUMAPS_RAW_DIR} // '/srv/edumaps/raw';
+};
+has fonte_raw => sub ($self) { lc($self->job_name || 'desconhecida') };
+has data_raw  => sub { strftime('%Y-%m-%d', localtime) };
+# Manifesto acumulado na execução: [{url, caminho, sha256, bytes, baixado_em,
+# reaproveitado, tabelas?}]. Vai para clean.import_metadata.raw_manifest no
+# upsert_metadata de sucesso.
+has raw_manifest => sub { [] };
+
 sub run ($self, $args = {}) {
   die "Método run() deve ser implementado na subclasse";
+}
+
+# Tabelas que o job alimenta (#231). O Runner usa esta lista para registrar
+# o estado da tentativa (em_carga/falhou/nao_carregada) sem tocar na
+# proveniência da última carga boa. Recebe os args da execução: um job pode
+# alimentar tabelas diferentes conforme o modo (SICONFI receita x DCA).
+sub tabelas ($self, $args = {}) { return () }
+
+# Lê um --arg que aceita lista: "SP,RJ", ["SP","RJ"] (chave repetida) ou
+# ["SP,RJ","MG"]. Devolve a lista sem vazios (ver CLI::parse_args).
+sub arg_lista ($self, $args, $chave) {
+  my $v = $args->{$chave};
+  return () unless defined $v;
+  return grep { length } map { s/^\s+|\s+$//gr } map { split /,/ } (ref $v eq 'ARRAY' ? @$v : $v);
+}
+
+# Sinaliza "não carregada por bloqueio conhecido" (e-SIC, API retirada,
+# fora do objetivo). Ver EduMaps::Ingestion::NaoCarregada.
+sub nao_carregada ($self, $motivo) {
+  EduMaps::Ingestion::NaoCarregada->throw(motivo => $motivo, job => $self->job_name);
 }
 
 sub log_info ($self, $msg) {
@@ -63,7 +113,18 @@ sub run_with_retry ($self, $operation, $description) {
   }
 }
 
+# Morre alto se a URL não passa no allowlist (NEGADO / fora da lista /
+# INATIVA). Vale também em --dry-run: o dry-run tem de denunciar uma URL que
+# a carga real recusaria.
+sub exigir_allowlist ($self, $url) {
+  my $al = $self->allowlist;
+  return 1 if $al->validate_url("$url");
+  die sprintf("[ALLOWLIST] %s recusou %s: %s\n",
+    $self->job_name || ref($self), $url, $al->last_error);
+}
+
 sub fetch_with_retry ($self, $url, $headers = {}) {
+  $self->exigir_allowlist($url);
   return $self->run_with_retry(sub {
     my $tx = $self->ua->get($url => $headers);
     die $tx->error->{message} if $tx->error;
@@ -71,17 +132,131 @@ sub fetch_with_retry ($self, $url, $headers = {}) {
   }, "GET $url");
 }
 
-sub download_file ($self, $url, $dest_path, $headers = {}) {
-  return $self->run_with_retry(sub {
-    if ($self->dry_run) {
-      $self->log->info("[DRY-RUN] Download: $url -> $dest_path");
-      return $dest_path;
-    }
-    my $tx = $self->ua->get($url => $headers);
-    die $tx->error->{message} if $tx->error;
-    $tx->result->content->asset->move_to($dest_path);
+# ---------------------------------------------------------------------------
+# download_file($url, $dest_path = undef, $headers = {}, %opt)
+# ---------------------------------------------------------------------------
+# 1. valida a URL no allowlist (morre alto se recusada);
+# 2. grava em <raw_dir>/<fonte_raw>/<AAAA-MM-DD>/<arquivo> (nome: $opt{nome},
+#    ou o último segmento da URL — o nome da FONTE, não o do destino de
+#    trabalho —, ou o basename de $dest_path se a URL não tiver nome);
+# 3. REAPROVEITA: se o arquivo já existe com esse nome no diretório do dia,
+#    não rebaixa (regra de reaproveitamento = mesmo nome, mesmo dia). Entre
+#    dias diferentes baixa de novo — cada dia é uma fotografia; o sha256 no
+#    manifesto permite deduplicar depois (DVC, #135) sem perder a fotografia;
+# 4. calcula sha256 e bytes e acumula a entrada em raw_manifest
+#    ($opt{tabelas} restringe a entrada a essas tabelas no upsert_metadata);
+# 5. se $dest_path foi dado e é outro lugar, copia o raw para lá (os
+#    loaders antigos esperam o arquivo no caminho de trabalho).
+# Download vai para "<arquivo>.part" e só é renomeado completo: um download
+# interrompido nunca vira "arquivo existente" a reaproveitar.
+# Devolve o caminho onde o loader deve ler ($dest_path ou o raw).
+sub download_file ($self, $url, $dest_path = undef, $headers = {}, %opt) {
+  $self->exigir_allowlist($url);
+
+  my $nome = $opt{nome} // _nome_da_url($url);
+  $nome = path($dest_path)->basename if $nome eq 'download' && defined $dest_path;
+  $nome =~ s{[^\w.\-]+}{_}g;
+  my $raw = $self->caminho_raw($nome);
+
+  if ($self->dry_run) {
+    $self->log->info("[DRY-RUN] Download: $url -> $raw" . (defined $dest_path ? " (cópia em $dest_path)" : ''));
+    return defined $dest_path ? $dest_path : "$raw";
+  }
+
+  my $reaproveitado = (-f $raw && -s $raw) ? 1 : 0;
+  if ($reaproveitado) {
+    $self->log_info("raw reaproveitado (já baixado hoje): $raw");
+  }
+  else {
+    $raw->dirname->make_path;
+    my $part = "$raw.part";
+    $self->run_with_retry(sub {
+      my $tx = $self->ua->build_tx(GET => "$url" => $headers);
+      $tx->res->max_message_size(0);    # malhas de 1,5 GB: sem teto
+      $tx = $self->ua->start($tx);
+      if (my $err = $tx->error) {
+        die(($err->{code} ? "HTTP $err->{code} " : '') . ($err->{message} // 'erro') . "\n");
+      }
+      unlink $part;
+      $tx->result->content->asset->move_to($part);
+      return 1;
+    }, "DOWNLOAD $url -> $raw");
+    rename $part, "$raw" or die "Não renomeou $part -> $raw: $!\n";
+  }
+
+  $self->_registrar_raw($url, $raw, $reaproveitado, $opt{tabelas});
+
+  if (defined $dest_path && path($dest_path)->to_abs ne $raw->to_abs) {
+    path($dest_path)->dirname->make_path;
+    copy("$raw", "$dest_path") or die "Não copiou $raw -> $dest_path: $!\n";
     return $dest_path;
-  }, "DOWNLOAD $url -> $dest_path");
+  }
+  return "$raw";
+}
+
+# Preserva no raw um arquivo que chegou por fora do job (ZIP baixado à mão e
+# passado por config, como o RENAEST/RENAVAM do Transportes): copia para
+# <raw_dir>/<fonte_raw>/<dia>/ (se ainda não estiver lá) e registra no
+# manifesto com a URL de origem declarada. Não valida o allowlist — não há
+# requisição; a URL é só proveniência.
+sub preservar_raw ($self, $arquivo, $url_origem = undef, %opt) {
+  die "preservar_raw: arquivo inexistente: $arquivo\n" unless -f $arquivo;
+  my $nome = path($arquivo)->basename;
+  $nome =~ s{[^\w.\-]+}{_}g;
+  my $raw = $self->caminho_raw($nome);
+  if ($self->dry_run) {
+    $self->log->info("[DRY-RUN] Preservaria $arquivo -> $raw");
+    return "$raw";
+  }
+  my $reaproveitado = (-f $raw && -s $raw) ? 1 : 0;
+  unless ($reaproveitado) {
+    $raw->dirname->make_path;
+    copy("$arquivo", "$raw.part") or die "Não copiou $arquivo -> $raw: $!\n";
+    rename "$raw.part", "$raw" or die "Não renomeou $raw.part: $!\n";
+  }
+  $self->_registrar_raw($url_origem // "file://" . path($arquivo)->to_abs, $raw, $reaproveitado, $opt{tabelas});
+  return "$raw";
+}
+
+sub caminho_raw ($self, $nome) {
+  return path($self->raw_dir, $self->fonte_raw, $self->data_raw, $nome);
+}
+
+sub _nome_da_url ($url) {
+  my $p = Mojo::URL->new("$url")->path->parts->[-1];
+  return (defined $p && length $p) ? $p : 'download';
+}
+
+sub _sha256_arquivo ($arquivo) {
+  my $sha = Digest::SHA->new(256);
+  $sha->addfile("$arquivo", 'b');
+  return $sha->hexdigest;
+}
+
+sub _registrar_raw ($self, $url, $raw, $reaproveitado, $tabelas = undef) {
+  my $entrada = {
+    url           => "$url",
+    caminho       => "$raw",
+    sha256        => _sha256_arquivo($raw),
+    bytes         => -s "$raw",
+    baixado_em    => strftime('%Y-%m-%dT%H:%M:%S%z', localtime((stat "$raw")[9])),
+    reaproveitado => $reaproveitado ? Mojo::JSON::true : Mojo::JSON::false,
+    ($tabelas ? (tabelas => [@$tabelas]) : ()),
+  };
+  # A mesma URL/caminho duas vezes na execução conta uma vez.
+  @{ $self->raw_manifest } =
+    grep { !($_->{url} eq $entrada->{url} && $_->{caminho} eq $entrada->{caminho}) }
+    @{ $self->raw_manifest };
+  push @{ $self->raw_manifest }, $entrada;
+  $self->log_info(sprintf('raw: %s (%d bytes, sha256 %s)', $raw, $entrada->{bytes}, $entrada->{sha256}));
+  return $entrada;
+}
+
+# Entradas do manifesto que valem para $tabela (as sem `tabelas` valem para
+# todas as tabelas do job).
+sub manifesto_para ($self, $tabela) {
+  return [ grep { !$_->{tabelas} || grep { $_ eq $tabela } @{ $_->{tabelas} } }
+           @{ $self->raw_manifest } ];
 }
 
 sub run_r_script ($self, $script_path, $args = []) {
@@ -114,24 +289,118 @@ sub run_perl_script ($self, $script_path, $args = []) {
   }, "Perl script $script_path");
 }
 
+# ---------------------------------------------------------------------------
+# Metadata de SUCESSO: proveniência + estado 'ok' (#231)
+# ---------------------------------------------------------------------------
+# upsert_metadata($tabela, $source_file, $source_url, $source_license,
+#                 $row_count, $notes)
+#
+# Grava a proveniência da carga boa (source_*, retrieved_at, row_count,
+# notes, raw_manifest) e marca ultimo_status='ok'. $source_license = undef
+# significa "NÃO TOQUE NA LICENÇA": mantém a que já está no banco (ex.: a
+# corrigida à mão na #157) e, se não houver linha, usa a do allowlist
+# (get_license_for_url).
+#
+# Exige a change Sqitch import_metadata_estado (colunas ultimo_* e
+# raw_manifest).
 sub upsert_metadata ($self, $table_name, $source_file, $source_url, $source_license, $row_count, $notes) {
   if ($self->dry_run) {
     $self->log->info("[DRY-RUN] Upsert metadata: $table_name ($row_count rows)");
     return;
   }
+  my $preservar = defined $source_license ? 0 : 1;
+  my $licenca = $source_license
+    // eval { $self->allowlist->get_license_for_url($source_url) }
+    // 'Não verificada';
+  my $manifesto = $self->manifesto_para($table_name);
   my $db = $self->app->schema->storage->dbh;
   $db->do(
-    q{INSERT INTO clean.import_metadata (table_name, source_file, source_url, source_license, retrieved_at, row_count_loaded, notes)
-      VALUES (?, ?, ?, ?, NOW(), ?, ?)
+    q{INSERT INTO clean.import_metadata AS im
+        (table_name, source_file, source_url, source_license, retrieved_at,
+         row_count_loaded, notes, ultimo_status, ultimo_motivo,
+         ultima_tentativa_em, raw_manifest)
+      VALUES (?, ?, ?, ?, NOW(), ?, ?, 'ok', NULL, NOW(), ?::jsonb)
       ON CONFLICT (table_name) DO UPDATE SET
         source_file = EXCLUDED.source_file,
         source_url = EXCLUDED.source_url,
-        source_license = EXCLUDED.source_license,
+        source_license = CASE WHEN ?::boolean
+                              THEN COALESCE(im.source_license, EXCLUDED.source_license)
+                              ELSE EXCLUDED.source_license END,
         retrieved_at = NOW(),
         row_count_loaded = EXCLUDED.row_count_loaded,
-        notes = EXCLUDED.notes},
-    undef, $table_name, $source_file, $source_url, $source_license, $row_count, $notes
+        notes = EXCLUDED.notes,
+        ultimo_status = 'ok',
+        ultimo_motivo = NULL,
+        ultima_tentativa_em = NOW(),
+        raw_manifest = EXCLUDED.raw_manifest},
+    undef, $table_name, $source_file, $source_url, $licenca, $row_count, $notes,
+    (@$manifesto ? encode_json($manifesto) : undef),
+    ($preservar ? 1 : 0),
   );
+}
+
+# ---------------------------------------------------------------------------
+# Metadata de ESTADO da última tentativa (#231)
+# ---------------------------------------------------------------------------
+# Só tocam ultimo_status / ultimo_motivo / ultima_tentativa_em: a proveniência
+# da última carga boa (source_*, retrieved_at, row_count_loaded, notes,
+# raw_manifest) sobrevive a qualquer falha. Tabela sem linha ganha uma com
+# source_file '(nenhuma carga registrada)' — o estado não pode sumir por
+# falta de carga anterior. Em --dry-run não escrevem nada.
+my $SEM_CARGA = '(nenhuma carga registrada)';
+
+sub _registrar_estado ($self, $status, $motivo, @tabelas) {
+  return 0 unless @tabelas;
+  if ($self->dry_run) {
+    $self->log->info("[DRY-RUN] Estado $status em: @tabelas");
+    return 0;
+  }
+  $motivo = substr($motivo, 0, 4000) . ' […]' if defined $motivo && length $motivo > 4000;
+  my $db = $self->app->schema->storage->dbh;
+  for my $t (@tabelas) {
+    $db->do(
+      q{INSERT INTO clean.import_metadata AS im
+          (table_name, source_file, ultimo_status, ultimo_motivo, ultima_tentativa_em)
+        VALUES (?, ?, ?, ?, NOW())
+        ON CONFLICT (table_name) DO UPDATE SET
+          ultimo_status = EXCLUDED.ultimo_status,
+          ultimo_motivo = EXCLUDED.ultimo_motivo,
+          ultima_tentativa_em = NOW()},
+      undef, $t, $SEM_CARGA, $status, $motivo,
+    );
+  }
+  return scalar @tabelas;
+}
+
+sub registrar_tentativa ($self, @tabelas) {
+  return $self->_registrar_estado('em_carga', undef, @tabelas);
+}
+
+sub registrar_falha ($self, $motivo, @tabelas) {
+  return $self->_registrar_estado('falhou', $motivo, @tabelas);
+}
+
+sub registrar_nao_carregada ($self, $motivo, @tabelas) {
+  return $self->_registrar_estado('nao_carregada', $motivo, @tabelas);
+}
+
+# Depois de um run() com sucesso: tabela declarada que ficou 'em_carga'
+# (o job terminou sem upsert_metadata para ela — ex.: 0 linhas) vira
+# 'nao_carregada' com o motivo, e não 'ok': ok é só para carga registrada.
+sub fechar_tentativa ($self, @tabelas) {
+  return 0 if $self->dry_run || !@tabelas;
+  my $db = $self->app->schema->storage->dbh;
+  my $n = 0;
+  for my $t (@tabelas) {
+    $n += 0 + ($db->do(
+      q{UPDATE clean.import_metadata
+           SET ultimo_status = 'nao_carregada',
+               ultimo_motivo = 'execução concluída sem carga registrada para esta tabela (0 linhas?)',
+               ultima_tentativa_em = NOW()
+         WHERE table_name = ? AND ultimo_status = 'em_carga'},
+      undef, $t) || 0);
+  }
+  return $n;
 }
 
 sub get_latest_snapshot ($self, $table_name) {
