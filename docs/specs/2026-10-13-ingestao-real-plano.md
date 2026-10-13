@@ -103,3 +103,36 @@ Recife se o jurídico vetar; isócronas se a infraestrutura não for aprovada.
    objetivo por ora**, justificados no `import_metadata` (o host da ANTT está
    fora do ar; as isócronas exigem infraestrutura nova). Podem voltar em
    issue própria.
+
+## 7. P2: levantamento e decisões (2026-10-13, issue #238)
+
+**Fontes conferidas:**
+
+- **CGU:** `{AAAAMM}_Transferencias.zip` (~2,5 MB zipado, ~100 MB CSV, latin1,
+  `;`). Traz o código **SIAFI** do município, não o IBGE.
+  - Para prefeituras, o casamento é feito pelo `CÓDIGO FAVORECIDO` (CNPJ),
+    usando o mapa CNPJ→IBGE do SICONFI `/entes` (5.570 de 5.570 com CNPJ).
+  - O PDDE vai para as UEx (CNPJ da associação). Para ele, o mapa
+    SIAFI→IBGE é derivado do próprio arquivo, a partir das linhas de
+    prefeitura (SIAFI + CNPJ).
+- **Malha de setores:** `BR_setores_CD2022.gpkg` (1,49 GB) no geoftp, que
+  exige GDAL. Nenhum host tinha.
+- **Censo 2022 por setor:** CSVs temáticos em
+  `ftp.ibge.gov.br/.../Agregados_por_Setor_csv/` (basico, demografia,
+  cor_ou_raca, …) com dicionário próprio.
+  - **Não há** escolaridade (só alfabetização), rendimento nem "cor sem
+    declaração".
+- **SISAB:** a API pública (`/atencao-primaria/pmmb-consolidado`) é o
+  consolidado **atual** do PMMB (Mais Médicos), sem série.
+  - Mistura linhas `DSEI` e `ESTADUAL`, que são filtradas.
+
+**Decisões do developer:**
+
+1. **CGU:** 2025 (12 ZIPs), função 12. Entram as prefeituras e o PDDE às
+   UEx, este agregado por município.
+2. **Malha:** `gdal-bin` no backend via Rex; o job chama `ogr2ogr`, com o
+   GPKG preservado no raw.
+3. **Censo 2022 por setor:** carrega o que existe. As colunas sem fonte
+   (`esc_*`, `rend_*`, `cor_sem_decl`) ficam NULL, com COMMENT.
+4. **SISAB:** snapshot atual, uma linha por município e `dt_referencia`.
+   Re-execuções mensais acumulam a série. O COMMENT diz que é PMMB.
