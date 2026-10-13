@@ -45,4 +45,19 @@ subtest 'processar_dados_ibge: percentuais pelo contrato, não os do SIDRA' => s
   is($r{1100031}{industria_percent}, 0.2, 'os setores presentes seguem calculados');
 };
 
+# classificacao é parte da PK de ibge_agregados: vazio vira 'Total'
+# (convenção SIDRA), nunca NULL (#234: a carga real abortava).
+subtest 'processar_ibge_agregados: sem classificação vira Total' => sub {
+  my $tmp = tempdir(CLEANUP => 1);
+  my $csv = "$tmp/ibge_agregados.csv";
+  open my $fh, '>:encoding(utf8)', $csv or die $!;
+  print $fh qq{codigo_ibge,ano,tabela_id,variavel,classificacao,valor,unidade\n};
+  print $fh qq{1100015,2014,5938,37,,377799,"Mil Reais"\n};
+  print $fh qq{1100015,2014,9999,1,Agropecuária,10,%\n};
+  close $fh;
+  my @r = @{ job()->processar_ibge_agregados($csv) };
+  is($r[0]{classificacao}, 'Total', 'vazio vira Total');
+  is($r[1]{classificacao}, 'Agropecuária', 'classificação real preservada');
+};
+
 done_testing();

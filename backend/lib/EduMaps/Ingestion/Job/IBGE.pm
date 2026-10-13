@@ -27,6 +27,10 @@ has tabela_pib => '5938';
 # Percentuais (quando disponíveis): 516 agro%, 520 indústria%, 528 governo%, 6574 serviços%
 has vars_dados_ibge => '37,513,517,525,6575,516,520,528,6574';
 
+# ibge_agregados.classificacao de um agregado sem quebra (ver
+# processar_ibge_agregados)
+use constant SEM_CLASSIFICACAO => 'Total';
+
 # Throttle leve (API pública, sem limite declarado)
 has throttle => 0.2;    # 0.2s entre chamadas
 
@@ -470,8 +474,12 @@ sub processar_ibge_agregados ($self, $csv_path) {
     $row{ano} = defined $r->{ano} ? 0 + $r->{ano} : undef;
     $row{tabela_id} = $r->{tabela_id} // '';
     $row{variavel} = $r->{variavel} // '';
+    # classificacao faz parte da PK (NOT NULL). Agregado sem quebra (a
+    # tabela 5938 não tem classificação) é 'Total', a convenção do próprio
+    # SIDRA; undef violava a PK e a carga inteira abortava (P1, #234).
     $row{classificacao} = $r->{classificacao};
-    $row{classificacao} = undef if defined $row{classificacao} && $row{classificacao} eq '';
+    $row{classificacao} = SEM_CLASSIFICACAO
+      unless defined $row{classificacao} && $row{classificacao} ne '';
 
     die sprintf("Linha %d: dados obrigatórios inválidos\n", $linha)
       unless defined $row{codigo_ibge} && $row{codigo_ibge} =~ /^\d{7}$/
