@@ -2,6 +2,39 @@
 
 > **Issue #132** — Três e-SICs de maior retorno (INEP, MEC/NIC.br, FNDE) + Secretarias municipais (transporte escolar)
 
+## ⚠️ Situação verificada em 2026-10-13 (plano da #156)
+
+**Não há número de protocolo nem data de envio registrados para nenhum dos 4
+pedidos.** A #132 foi fechada como "protocolados", mas sem protocolo não há
+prova de que os pedidos existam. **Até o developer confirmar, os 4 contam como
+NÃO protocolados**, e as fontes que dependem deles (INEP, Medidor Educação
+Conectada, FNDE e Secretarias) ficam **bloqueadas** no plano da #156.
+
+### Checklist do developer (ação administrativa)
+
+Os pedidos são feitos pela **Fala.BR** (`https://falabr.cgu.gov.br`), em "Acesso
+à Informação" → órgão destinatário. O texto de cada pedido está pronto nas
+seções "Perguntas protocoladas" abaixo.
+
+| # | Órgão destinatário na Fala.BR | Texto | Já protocolado? | Protocolo | Data |
+|---|---|---|---|---|---|
+| 1 | INEP — Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira | §1 | [ ] sim / [ ] não | | |
+| 2 | MEC — Ministério da Educação (Medidor Educação Conectada; NIC.br em cópia, se o MEC indicar) | §2 | [ ] sim / [ ] não | | |
+| 3 | FNDE — Fundo Nacional de Desenvolvimento da Educação | §3 | [ ] sim / [ ] não | | |
+| 4 | Secretarias municipais de Educação (pelo e-SIC de cada município) | §4 | [ ] sim / [ ] não | | |
+
+Ao confirmar ou protocolar:
+1. Preencha protocolo e data aqui e na tabela "Registro de Respostas".
+2. Avise no PR ou na issue, para atualizar o `import_metadata` e o plano.
+
+> **Não precisam de e-SIC** (re-escopo de 2026-10-13):
+> - **MapBiomas:** o raster da Coleção 11 é público e sem token (#170).
+> - **CGU, transferências:** o download em massa oficial não exige chave
+>   (#167).
+> - **Setores censitários e Censo 2022 por setor:** são IBGE, domínio
+>   público.
+> - **INMET:** fora do objetivo (#171).
+
 ---
 
 ## 1. INEP — Licença e Dicionário do Censo Escolar/IDEB/ENEM
