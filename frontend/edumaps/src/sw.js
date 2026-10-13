@@ -1,33 +1,45 @@
 // src/sw.js
 //
-// Service Worker do EduMaps — RASCUNHO/base.
+// Service Worker do EduMaps — app shell offline com cache VERSIONADO POR BUILD
+// (issue #225: SPA em branco após deploy).
 //
-// Serviço básico provido hoje: **app shell offline**. Os demais serviços ainda
-// não têm planejamento; este arquivo é o ponto de partida.
+// Versão do cache
+//   O build (vite-plugin-pwa, `injectManifest`) injeta em `self.__WB_MANIFEST`
+//   a lista `[{ url, revision }]` de todos os arquivos do bundle. O nome do
+//   cache é `edumaps-<hash>`, com o hash (FNV-1a) dessa lista — ver
+//   `src/shared/pwa/cacheNome.js`. Qualquer arquivo diferente → outro cache.
 //
-// Estratégias deliberadamente simples (para não virar "cache complexo"):
-//   - install  : precache do app shell + skipWaiting
-//   - activate : limpa caches de versões antigas + clients.claim
-//   - navigate : network-first, com fallback para o shell em cache (offline)
-//   - /api/    : network-only (nunca servido do cache)
-//   - estáticos: stale-while-revalidate (serve do cache e atualiza em background)
+// Estratégias
+//   - install  : precache dos arquivos DESTE build. SEM skipWaiting automático:
+//                o SW novo espera até o app mandar {type:'SKIP_WAITING'}
+//                (aviso "Nova versão disponível — Atualizar").
+//   - activate : apaga os caches `edumaps-*` de outros builds + clients.claim.
+//   - navigate : network-first; offline → o index.html precacheado DESTE build
+//                (nunca o shell de outro build, que aponta para hashes que já
+//                não existem no servidor → tela em branco).
+//   - /api/, /analytic-api/ : só rede (nunca cache).
+//   - /sw.js, /registerSW.js, /manifest.webmanifest : só rede, senão o SW
+//                antigo se perpetua.
+//   - /assets/*-<hash>.* : cache-first (imutáveis); 404 nunca é cacheado.
+//   - demais estáticos same-origin (sem hash): stale-while-revalidate.
 //
-// O build (vite-plugin-pwa, estratégia `injectManifest`) injeta em
-// `self.__WB_MANIFEST` a lista de assets com hash. Consumimos apenas o `.url`
-// dessa lista para o precache — sem trazer o runtime do Workbox.
+// Não usamos o runtime do Workbox: só o `url`/`revision` do manifest injetado.
+
+import {
+  nomeDoCache,
+  cachesObsoletos,
+  ehAssetComHash,
+} from "./shared/pwa/cacheNome.js";
 
 // Injetado pelo build (Workbox precache manifest): [{ url, revision }, ...].
 const INJECTED_MANIFEST = self.__WB_MANIFEST || [];
 
-const CACHE_VERSION = "edumaps-v2";
-// App shell mínimo offline. Não incluímos /sw.js, /registerSW.js nem
-// /manifest.webmanifest: esses são servidos sempre pela rede (ver `fetch`).
-const APP_SHELL = ["/", "/favicon.svg"];
+const CACHE_VERSION = nomeDoCache(INJECTED_MANIFEST);
+const SHELL = "/index.html";
+const EXTRAS = ["/favicon.svg"];
 
-// Normaliza para caminho absoluto ("favicon.svg" -> "/favicon.svg") para que
-// a deduplicação funcione: o APP_SHELL usa caminhos absolutos e o manifest
-// injetado usa relativos — sem normalizar, Cache.addAll recebe a mesma URL
-// duas vezes e falha com "duplicate requests".
+// Normaliza para caminho absoluto ("favicon.svg" -> "/favicon.svg") para
+// deduplicar: Cache.addAll falha com "duplicate requests".
 const toAbsolute = (u) => {
   try {
     return new URL(u, self.location.origin).pathname;
@@ -39,7 +51,8 @@ const toAbsolute = (u) => {
 const PRECACHE = [
   ...new Set(
     [
-      ...APP_SHELL,
+      SHELL,
+      ...EXTRAS,
       ...INJECTED_MANIFEST.map((entry) =>
         typeof entry === "string" ? entry : entry.url
       ),
@@ -47,13 +60,21 @@ const PRECACHE = [
   ),
 ];
 
+const SOMENTE_REDE = new Set(["/sw.js", "/registerSW.js", "/manifest.webmanifest"]);
+
 self.addEventListener("install", (event) => {
+  // `cache: "reload"` evita que o cache HTTP devolva o shell anterior.
   event.waitUntil(
     caches
       .open(CACHE_VERSION)
-      .then((cache) => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
+      .then((cache) =>
+        cache.addAll(PRECACHE.map((u) => new Request(u, { cache: "reload" })))
+      )
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -62,14 +83,20 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys
-            .filter((key) => key !== CACHE_VERSION)
-            .map((key) => caches.delete(key))
+          cachesObsoletos(keys, CACHE_VERSION).map((key) => caches.delete(key))
         )
       )
       .then(() => self.clients.claim())
   );
 });
+
+function guardar(request, response) {
+  if (response && response.ok && response.type === "basic") {
+    const copy = response.clone();
+    caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+  }
+  return response;
+}
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -78,45 +105,50 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // Navegação (SPA): rede primeiro; se offline, serve o shell em cache.
+  // Navegação (SPA): rede primeiro; offline → shell DESTE build.
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches
+          .open(CACHE_VERSION)
+          .then((cache) => cache.match(SHELL))
+          .then((r) => r || Response.error())
+      )
+    );
     return;
   }
 
   // API: sempre rede (sem cache).
-  if (url.pathname.startsWith("/api/")) return;
-
-  // Arquivos de controle do PWA: NUNCA servir do cache, senão o service worker
-  // antigo se perpetua (stale-while-revalidate no próprio sw.js) e o app fica
-  // preso numa versão antiga do bundle.
-  if (
-    url.pathname === "/sw.js" ||
-    url.pathname === "/registerSW.js" ||
-    url.pathname === "/manifest.webmanifest"
-  ) {
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/analytic-api/")) {
     return;
   }
 
-  // Estáticos same-origin: stale-while-revalidate.
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetched = fetch(request)
-          .then((response) => {
-            if (response && response.ok) {
-              const copy = response.clone();
-              caches
-                .open(CACHE_VERSION)
-                .then((cache) => cache.put(request, copy));
-            }
-            return response;
-          })
-          .catch(() => cached);
+  // Arquivos de controle do PWA: sempre rede.
+  if (SOMENTE_REDE.has(url.pathname)) return;
 
+  // Assets com hash: imutáveis → cache-first (no cache deste build).
+  if (ehAssetComHash(url.pathname)) {
+    event.respondWith(
+      caches
+        .open(CACHE_VERSION)
+        .then((cache) => cache.match(request))
+        .then((cached) => cached || fetch(request).then((r) => guardar(request, r)))
+    );
+    return;
+  }
+
+  // Demais estáticos same-origin: stale-while-revalidate.
+  event.respondWith(
+    caches
+      .open(CACHE_VERSION)
+      .then((cache) => cache.match(request))
+      .then((cached) => {
+        const fetched = fetch(request)
+          .then((r) => guardar(request, r))
+          .catch(() => cached || Response.error());
         return cached || fetched;
       })
-    );
-  }
+  );
 });

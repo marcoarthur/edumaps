@@ -15,9 +15,14 @@ export default defineConfig(({ mode }) => {
       svelte(),
       svelteTesting(),
       VitePWA({
-        registerType: "autoUpdate",
-        // SW próprio (rascunho) em `src/sw.js`; o plugin só cuida do
-        // manifest + registro. Ver src/sw.js para os serviços providos.
+        // Atualização sob demanda (#225): o SW novo espera; o app mostra o
+        // aviso "Nova versão disponível" e só ativa quando a pessoa clica.
+        // O registro é manual (src/shared/pwa/atualizacao.js, chamado em
+        // main.js), por isso `injectRegister: false`.
+        registerType: "prompt",
+        injectRegister: false,
+        // SW próprio em `src/sw.js`; o plugin cuida do manifest e injeta a
+        // lista de arquivos do build. Ver src/sw.js para as estratégias.
         strategies: "injectManifest",
         srcDir: "src",
         filename: "sw.js",

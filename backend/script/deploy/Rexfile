@@ -418,8 +418,30 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
 
   my $web_root = '/var/www/edumaps-frontend';
   run qq{mkdir -p $web_root}, unless => qq{test -d $web_root};
-  run qq{rm -rf $web_root/*};  # limpa versões anteriores
-  run qq{cp -r $frontend_path/dist/* $web_root/};
+  # Deploy ATÔMICO (#225). Antes: `rm -rf $web_root/*` + `cp` — durante a
+  # cópia quem abria o app recebia 404/tela em branco, e uma aba aberta perdia
+  # os assets do build anterior. Agora: (1) assets com hash entram AO LADO dos
+  # antigos (o hash no nome evita colisão); (2) demais arquivos e pastas;
+  # (3) sw.js e index.html por ÚLTIMO, por mv atômico; (4) poda só de assets
+  # que não vêm de nenhum build há mais de 7 dias (cp renova o mtime dos que
+  # continuam no build atual).
+  run qq{
+    set -e
+    DIST=$frontend_path/dist
+    WEB=$web_root
+    mkdir -p \$WEB/assets
+    cp -r \$DIST/assets/. \$WEB/assets/
+    cd \$DIST
+    for f in * .[!.]*; do
+      [ -e "\$f" ] || continue
+      case "\$f" in assets|index.html|sw.js) continue ;; esac
+      cp -r "\$f" \$WEB/
+    done
+    if [ -f \$DIST/sw.js ]; then cp \$DIST/sw.js \$WEB/.sw.js.novo && mv -f \$WEB/.sw.js.novo \$WEB/sw.js; fi
+    cp \$DIST/index.html \$WEB/.index.html.novo && mv -f \$WEB/.index.html.novo \$WEB/index.html
+    rm -f \$WEB/registerSW.js
+    find \$WEB/assets -type f -mtime +7 -delete
+  };
   run qq{chown -R www-data:www-data $web_root};
 
   my $nginx_cnf = "/etc/nginx/sites-available/edumaps-frontend.conf";

@@ -5,6 +5,7 @@
   import { eventBus, EVENTS } from "@/shared/events";
   import Toast from '@/shared/ui/components/Toast.svelte';
   import Logo from '@/shared/ui/components/Logo.svelte';
+  import NovaVersaoAviso from '@/shared/ui/components/NovaVersaoAviso.svelte';
 
   const NAV_LINKS = [
     { to: "/", label: "Home" },
@@ -76,4 +77,6 @@
     {/if}
   </main>
   {/if}
+  <!-- Aviso de nova versão (#225): em todas as páginas, inclusive as públicas. -->
+  <NovaVersaoAviso />
 </div>
