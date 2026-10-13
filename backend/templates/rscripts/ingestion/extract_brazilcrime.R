@@ -115,13 +115,13 @@ norm <- function(x) {
 if (!file.exists(mun_file)) die("nao encontro o ficheiro de municipios: ", mun_file)
 # sep="," explicito: nao depende do locale (em pt-BR o default do R
 # seria ";" e o ficheiro viria partido em colunas erradas).
-# header=FALSE e obrigatorio: o CSV exportado pelo Perl nao tem
-# cabecalho. Sem isto, read.csv assume que a primeira linha e o
-# cabecalho -- e o primeiro municipio da lista vira o nome da coluna.
-# Medido: 5572 linhas lidas em vez de 5573, e o join falhava para
-# "RO|ALTA FLORESTA D OESTE" sem nenhuma mensagem de erro.
+# header=TRUE: o CSV exportado pelo Perl TEM cabecalho
+# (codigo_ibge,sigla_uf,nome_municipio -- contrato testado em
+# brazilcrime_loader.t). Com header=FALSE o cabecalho virava um
+# "municipio" sigla_uf|NOME MUNICIPIO e aparecia como orfao nos dois
+# lados (medido na carga da P1, #234). col.names fixa os nomes.
 mun <- utils::read.csv(mun_file, colClasses = "character", sep = ",",
-                       header = FALSE,
+                       header = TRUE,
                        col.names = c("codigo_ibge", "sigla_uf", "nome_municipio"))
 cat(sprintf("Municipios de referencia: %d\n", nrow(mun)))
 

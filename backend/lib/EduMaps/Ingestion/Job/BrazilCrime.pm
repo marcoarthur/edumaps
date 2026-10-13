@@ -68,6 +68,11 @@ sub run ($self, $args = {}) {
     $mun_csv, $out_csv, "--orfaos=$orf_csv", "--snapshot=$hoje",
   ]);
 
+  # 3b. O CSV extraído é o bruto desta fonte (o pacote R não deixa ficheiro
+  #     baixado): preservado fora do banco, com sha256 no manifesto (#234).
+  $self->preservar_raw($out_csv, URL_FONTE, tabelas => ['clean.brazilcrime_municipio'])
+    unless $self->dry_run;
+
   # 4. Os órfãos contam. Um município que desaparece em silêncio é a
   #    forma exacta do defeito da #155.
   $self->registrar_orfaos($orf_csv);

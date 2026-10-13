@@ -192,6 +192,7 @@ sub tabelas ($self, $args = {}) {
 # ---------------------------------------------------------------------
 sub run ($self, $args = {}) {
   $self->{_carga} = {};
+  $self->{_rreo_simplificado} = 0;
   $self->{_populacao} = {};
   my @cod = $self->_municipios_alvo($args);
   my $total = 0;
@@ -291,7 +292,9 @@ sub _registrar_metadata ($self, $args, $n_alvo) {
     my ($file, $url, $nota, $p) = @{ $meta{$t} };
     $self->upsert_metadata($t, $file, $url, 'Domínio público (Tesouro Nacional)', $linhas,
       sprintf($nota, @$p) . sprintf(' Execução: %d linhas de %d município(s) com dado, de %d alvo(s).',
-        $linhas, $c->{$t}{municipios} // 0, $n_alvo));
+        $linhas, $c->{$t}{municipios} // 0, $n_alvo)
+      . ($t eq TAB_RECEITA && $self->{_rreo_simplificado}
+        ? sprintf(' %d município(s) via RREO Simplificado (LRF art. 63).', $self->{_rreo_simplificado}) : ''));
   }
 }
 
@@ -318,9 +321,24 @@ sub ingest_municipio_receita ($self, %args) {
 
 # ---------------------------------------------------------------------
 # RREO: /rreo
-# params da API: an_exercicio, nr_periodo, co_tipo_demonstrativo=RREO,
+# params da API: an_exercicio, nr_periodo, co_tipo_demonstrativo,
 # id_ente (= cod_ibge, obrigatório e não vem no /entes)
+#
+# #234: municípios com menos de 50 mil habitantes podem publicar o
+# "RREO Simplificado" (LRF art. 63). Com co_tipo_demonstrativo=RREO eles
+# devolvem 0 itens — medido 2026-10-13: ~metade da malha 2025/6 pulada.
+# O Anexo 01 do simplificado tem as mesmas colunas e cod_conta, então
+# cai-se para ele quando o RREO completo vem vazio.
 # ---------------------------------------------------------------------
+use constant DEMONSTRATIVOS_RREO => ('RREO', 'RREO Simplificado');
+
+# Desempenho da malha (#234): o loader só usa o Anexo 01, e a API filtra
+# por no_anexo (689 itens de 4042 em SP 2025/6). Com páginas de 5000 (a API
+# aceita), um município custa 1 GET em vez de ~5 — a 1 req/s, a malha
+# nacional cai de ~10 h para ~2 h. A paginação por hasMore continua.
+use constant ANEXO_RECEITA => 'RREO-Anexo 01';
+use constant LIMITE_PAGINA => 5000;
+
 sub _fetch_rreo ($self, %args) {
   my $cod_ibge = delete $args{id_ente} // delete $args{cod_ibge};
   die "id_ente (cod_ibge) e obrigatorio\n" unless defined $cod_ibge;
@@ -329,17 +347,46 @@ sub _fetch_rreo ($self, %args) {
   my $dt_snapshot = delete $args{dt_snapshot};
   my $strict = delete $args{strict_zero} // 1;
 
-  my %p = (
-    an_exercicio          => $exercicio,
-    nr_periodo            => $periodo,
-    co_tipo_demonstrativo => 'RREO',
-    id_ente               => $cod_ibge,
-    limit                 => 1000,
-    offset                => 0,
-    %args,
-  );
-
   $self->exigir_allowlist($self->base_url . '/rreo');
+  my @items;
+  my @demonstrativos = DEMONSTRATIVOS_RREO;
+  for my $i (0 .. $#demonstrativos) {
+    $self->_throttle if $i > 0;
+    @items = $self->_paginas_rreo({
+      an_exercicio          => $exercicio,
+      nr_periodo            => $periodo,
+      co_tipo_demonstrativo => $demonstrativos[$i],
+      no_anexo              => ANEXO_RECEITA,
+      id_ente               => $cod_ibge,
+      limit                 => LIMITE_PAGINA,
+      offset                => 0,
+      %args,
+    });
+    if (@items) {
+      $self->{_rreo_simplificado}++ if $i > 0;
+      last;
+    }
+  }
+
+  # Armadilha crítica: HTTP 200 com count==0 é falso sucesso. Município
+  # que devia ter RREO devolvendo lista vazia é erro de parâmetro/dado —
+  # não pode passar como carga concluída.
+  if (@items == 0) {
+    my $msg = sprintf("SICONFI /rreo devolveu 0 itens para cod_ibge=%s (exercicio=%s periodo=%s; RREO e RREO Simplificado)",
+      $cod_ibge, $exercicio, $periodo);
+    die $msg . " — HTTP 200 com count==0 NAO e sucesso; conferir parametros (an_exercicio e o nome correto)\n"
+      if $strict;
+    $self->log->warn('[' . $self->job_name . "] $msg — RREO provavelmente ainda nao publicado (pulado)");
+    return undef;
+  }
+
+  return $self->_map_receitas($cod_ibge, $exercicio, \@items, $dt_snapshot);
+}
+
+# Todas as páginas de um /rreo (um demonstrativo).
+sub _paginas_rreo ($self, $p) {
+  my %p = %$p;
+  my $cod_ibge = $p{id_ente};
   my @items;
   my ($page, $max_pages) = (0, 500);
 
@@ -365,20 +412,7 @@ sub _fetch_rreo ($self, %args) {
     $p{offset} += $p{limit};
     $self->_throttle;
   }
-
-  # Armadilha crítica: HTTP 200 com count==0 é falso sucesso. Município
-  # que devia ter RREO devolvendo lista vazia é erro de parâmetro/dado —
-  # não pode passar como carga concluída.
-  if (@items == 0) {
-    my $msg = sprintf("SICONFI /rreo devolveu 0 itens para cod_ibge=%s (exercicio=%s periodo=%s)",
-      $cod_ibge, $exercicio, $periodo);
-    die $msg . " — HTTP 200 com count==0 NAO e sucesso; conferir parametros (an_exercicio e o nome correto)\n"
-      if $strict;
-    $self->log->warn('[' . $self->job_name . "] $msg — RREO provavelmente ainda nao publicado (pulado)");
-    return undef;
-  }
-
-  return $self->_map_receitas($cod_ibge, $exercicio, \@items, $dt_snapshot);
+  return @items;
 }
 
 # ---------------------------------------------------------------------
@@ -540,7 +574,7 @@ sub _fetch_dca ($self, %args) {
   my %p = (
     an_exercicio => $exercicio,
     id_ente      => $cod_ibge,
-    limit        => 1000,
+    limit        => LIMITE_PAGINA,
     offset       => 0,
     %args,
   );

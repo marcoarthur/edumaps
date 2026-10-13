@@ -200,6 +200,25 @@ subtest 'count==0 com HTTP 200 NAO e sucesso (armadilha #165)' => sub {
   like($@ // '', qr/0 itens/, 'mensagem denuncia o falso sucesso');
 };
 
+subtest 'RREO vazio cai para o RREO Simplificado (LRF art. 63, #234)' => sub {
+  my $j = mk_job(sub {
+    my ($url, $form) = @_;
+    return { items => [], count => 0, hasMore => 0 } if $form->{co_tipo_demonstrativo} eq 'RREO';
+    return { items => [ item(cod_conta => 'Impostos', coluna => 'Até o Bimestre (c)', valor => 7) ],
+             count => 1, hasMore => 0 };
+  });
+  my $rows = $j->_fetch_rreo(id_ente => '4211504', exercicio => 2025, nr_periodo => 6);
+  is(scalar @$rows, 1, 'linha do simplificado mapeada');
+  is_deeply([ map { $_->[1]{co_tipo_demonstrativo} } @{$j->ua->{calls}} ],
+    ['RREO', 'RREO Simplificado'], 'tenta o completo e depois o simplificado');
+  is($j->{_rreo_simplificado}, 1, 'conta o município via simplificado');
+
+  my $j2 = mk_job(sub { return { items => [ item(cod_conta => 'Impostos', coluna => 'Até o Bimestre (c)', valor => 7) ],
+                                 count => 1, hasMore => 0 } });
+  $j2->_fetch_rreo(id_ente => '3550308', exercicio => 2025, nr_periodo => 6);
+  is(scalar @{$j2->ua->{calls}}, 1, 'RREO completo com dado não consulta o simplificado');
+};
+
 # ---------------------------------------------------------------- 5
 subtest 'paginação por hasMore: count e pagina (limit=2 => count=2)' => sub {
   my $j = mk_job(sub {
@@ -215,7 +234,9 @@ subtest 'paginação por hasMore: count e pagina (limit=2 => count=2)' => sub {
   my $rows = $j->_fetch_rreo(id_ente => '3550308', exercicio => 2025, nr_periodo => 2);
   is(scalar @$rows, 2, 'duas páginas consumidas');
   my @offsets = map { $_->[1]{offset} } @{$j->ua->{calls}};
-  is_deeply(\@offsets, [0, 1000], 'offset avança 0 -> 1000 (mesmo com count por página)');
+  is_deeply(\@offsets, [0, 5000], 'offset avança pelo limit (5000), mesmo com count por página');
+  is($j->ua->{calls}[0][1]{no_anexo}, 'RREO-Anexo 01', 'pede só o Anexo 01 (#234)');
+  is($j->ua->{calls}[0][1]{limit}, 5000, 'páginas de 5000');
 };
 
 # ---------------------------------------------------------------- 6
@@ -463,7 +484,7 @@ subtest 'fase 2: _fetch_dca pagina por hasMore com an_exercicio/id_ente' => sub 
   like($j->ua->{calls}[0][0], qr{/dca$}, 'endpoint /dca');
   is($j->ua->{calls}[0][1]{id_ente}, 3550308, 'id_ente passado');
   is($j->ua->{calls}[0][1]{an_exercicio}, 2025, 'an_exercicio (nome real do parâmetro)');
-  is($j->ua->{calls}[1][1]{offset}, 1000, 'offset avança');
+  is($j->ua->{calls}[1][1]{offset}, 5000, 'offset avança pelo limit (5000)');
 };
 
 subtest 'fase 2: count==0 no DCA — município único morre, iteração pula' => sub {

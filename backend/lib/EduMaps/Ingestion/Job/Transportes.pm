@@ -173,7 +173,7 @@ sub ler_localidade ($self, $csv_path) {
   $self->_exigir_colunas($header, \@LOCALIDADE_NEC, 'RENAEST Localidade');
 
   my %idx_h = map { $header->[$_] => $_ } 0 .. $#$header;
-  my (%nome_por_codigo, %visto, @registros, @nao_resolvidas);
+  my (%nome_por_codigo, %visto, %visto_nr, @registros, @nao_resolvidas);
   my $linhas = 0;
   my $sentinelas = 0;
   my $sem_codigo = 0;
@@ -189,8 +189,13 @@ sub ler_localidade ($self, $csv_path) {
 
     # O que não é município utilizável não é descartado em silêncio: sai
     # nomeado, com o motivo, para a carga registar (#155).
+    # As não resolvidas também se repetem nas linhas mensais: uma por chave
+    # da PK (localidade, uf, codigo_ibge_fonte), senão a carga viola a PK
+    # (medido na P1, #234: NAO INFORMADO/AC/0). Os contadores seguem por linha.
+    my $chave_nr = join '|', $nome // '', $uf // '', $codigo // '';
     if (!defined $codigo || $CODIGO_SENTINELA{$codigo}) {
       $sentinelas++;
+      next if $visto_nr{$chave_nr}++;
       push @nao_resolvidas, {
         localidade => ($nome // ''), uf => ($uf // ''),
         codigo_ibge_fonte => ($codigo // ''), motivo => 'codigo_sentinela',
@@ -199,6 +204,7 @@ sub ler_localidade ($self, $csv_path) {
     }
     if (!defined $nome || $nome eq '' || !defined $uf || $uf eq '') {
       $sem_codigo++;
+      next if $visto_nr{$chave_nr}++;
       push @nao_resolvidas, {
         localidade => ($nome // ''), uf => ($uf // ''),
         codigo_ibge_fonte => $codigo, motivo => 'sem_nome_ou_uf',
