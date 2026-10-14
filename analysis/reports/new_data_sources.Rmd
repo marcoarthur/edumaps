@@ -98,7 +98,22 @@ Este relatório responde a três perguntas, uma por seção:
    **porcentagem de nulos**, coluna a coluna, mais as checagens que a
    porcentagem de nulos sozinha não revela.
 
-> **Conclusão principal, antecipada:** o *schema* das 7 fases está íntegro e
+> **Atualização de 2026-10-14 (#156 concluída):** depois da ingestão real
+> (P1–P3), **19 das 28 entradas têm dados** (eram 4). As 9 vazias são as
+> **não carregadas com motivo registrado** no `clean.import_metadata`:
+> - INMET ×2: API retirada, #171;
+> - ANTT ×4: host fora do ar;
+> - isócronas: infraestrutura nova;
+> - VMDA: só existe a camada do ES, e há um ADR jurídico pendente;
+> - Recife: licença ODbL *share-alike*.
+>
+> "Indicadores nulos" agora quer dizer colunas **NULL por desenho**, sem
+> fonte publicada: escolaridade e renda por setor, quebra da frota por tipo,
+> feridos do RENAEST. Inclui também as views que dependem de isócronas/ANTT.
+> As tabelas desta seção são consultadas ao vivo. O parágrafo abaixo é o
+> diagnóstico **original**, mantido como registro do ponto de partida.
+>
+> **Conclusão principal, antecipada (diagnóstico original):** o *schema* das 7 fases está íntegro e
 > bem documentado, mas **a ingestão de dados não aconteceu**. Das 28 entradas,
 > **4 têm dados**; 21 tabelas e 1 view estão vazias; e as 2 views que têm linhas
 > devolvem **100% de nulos em todas as colunas de indicador** — Worse, algumas
@@ -377,36 +392,38 @@ con <- tryCatch(conectar(), error = function(e) {
 
 # Perfil de colunas de uma relação.
 #
-# Usa `to_jsonb(t)` para obter todas as colunas numa única passagem (evita
-# reler a relação uma vez por coluna) e um LEFT JOIN de pg_attribute para a
-# relação — assim uma tabela VAZIA ainda devolve uma linha por coluna, com
-# n_linhas = 0 e pct_nulos = NA. Um CROSS JOIN devolveria zero linhas e a
-# tabela sumiria do relatório, que é exatamente o erro que esta função
-# precisa evitar.
+# Uma única passagem pela relação: `count(*)`, `count(col)` (não nulos) e
+# `count(DISTINCT col)` para todas as colunas no mesmo SELECT. A versão
+# anterior convertia CADA linha em jsonb (`to_jsonb(t)`) — com dado real isso
+# incluía as 468 mil geometrias dos setores e passava de 24 min numa tabela
+# (#156, P4). Colunas geométricas não entram no DISTINCT (caro e sem
+# significado). As colunas vêm de pg_attribute, logo uma tabela VAZIA ainda
+# devolve uma linha por coluna, com n_linhas = 0 e pct_nulos = NA.
 perfil_colunas <- function(con, schema, rel) {
   stopifnot(grepl("^[A-Za-z_][A-Za-z0-9_]*$", schema),
             grepl("^[A-Za-z_][A-Za-z0-9_]*$", rel))
   rel_id <- paste0(schema, ".", rel)
-  sql <- paste0(
-    "WITH v AS MATERIALIZED (SELECT to_jsonb(t) AS j FROM ", rel_id, " t), ",
-    "c AS (SELECT attname, attnum, format_type(atttypid, atttypmod) AS tipo, attnotnull ",
+  cols <- DBI::dbGetQuery(con, paste0(
+    "SELECT attnum AS ord, attname AS coluna, format_type(atttypid, atttypmod) AS tipo, ",
+    "CASE WHEN attnotnull THEN 'NO' ELSE 'YES' END AS nullable ",
     "FROM pg_attribute WHERE attrelid = '", rel_id, "'::regclass ",
-    "AND attnum > 0 AND NOT attisdropped), ",
-    "n AS (SELECT count(*)::bigint AS total FROM v) ",
-    "SELECT c.attnum AS ord, c.attname AS coluna, c.tipo AS tipo, ",
-    "CASE WHEN c.attnotnull THEN 'NO' ELSE 'YES' END AS nullable, ",
-    "n.total AS n_linhas, ",
-    "CASE WHEN n.total = 0 THEN NULL::bigint ",
-    "ELSE count(*) FILTER (WHERE v.j -> c.attname = 'null'::jsonb) END AS nulos, ",
-    "CASE WHEN n.total = 0 THEN NULL::numeric ",
-    "ELSE round(100.0 * count(*) FILTER (WHERE v.j -> c.attname = 'null'::jsonb) ",
-    "           / n.total, 2) END AS pct_nulos, ",
-    "count(DISTINCT v.j ->> c.attname)::bigint AS n_distintos ",
-    "FROM c CROSS JOIN n LEFT JOIN v ON true ",
-    "GROUP BY c.attnum, c.attname, c.tipo, c.attnotnull, n.total ",
-    "ORDER BY c.attnum"
-  )
-  DBI::dbGetQuery(con, sql)
+    "AND attnum > 0 AND NOT attisdropped ORDER BY attnum"))
+  if (nrow(cols) == 0) return(cols)
+  q <- DBI::dbQuoteIdentifier(con, cols$coluna)
+  geo <- grepl("^(geometry|geography)", cols$tipo)
+  exprs <- c("count(*)::bigint AS n_linhas",
+             paste0("count(", q, ")::bigint AS nn_", seq_along(q)),
+             ifelse(geo, paste0("NULL::bigint AS d_", seq_along(q)),
+                    paste0("count(DISTINCT ", q, ")::bigint AS d_", seq_along(q))))
+  r <- DBI::dbGetQuery(con, paste0("SELECT ", paste(exprs, collapse = ", "), " FROM ", rel_id))
+  total <- as.numeric(r$n_linhas)
+  nn    <- vapply(seq_along(q), function(k) as.numeric(r[[paste0("nn_", k)]]), numeric(1))
+  dist  <- vapply(seq_along(q), function(k) as.numeric(r[[paste0("d_", k)]]), numeric(1))
+  cols$n_linhas    <- total
+  cols$nulos       <- if (total == 0) NA_real_ else total - nn
+  cols$pct_nulos   <- if (total == 0) NA_real_ else round(100 * (total - nn) / total, 2)
+  cols$n_distintos <- dist
+  cols
 }
 
 alvos <- tribble(
