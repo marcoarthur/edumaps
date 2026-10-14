@@ -20,6 +20,9 @@ requires "Digest::MD5" => "0";
 requires "Digest::SHA" => "0";
 requires "Encode" => "0";
 requires "Exporter" => "0";
+# OSM.pm usa Fcntl (:flock) para serializar as chamadas ao Overpass (#131).
+# Core declarado por convenção do repo, que o inventário (#177) exige.
+requires "Fcntl" => "0";
 requires "File::Copy" => "0";
 requires "File::Path" => "0";
 requires "File::Find" => "0";
