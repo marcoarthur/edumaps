@@ -136,3 +136,32 @@ Recife se o jurídico vetar; isócronas se a infraestrutura não for aprovada.
    (`esc_*`, `rend_*`, `cor_sem_decl`) ficam NULL, com COMMENT.
 4. **SISAB:** snapshot atual, uma linha por município e `dt_referencia`.
    Re-execuções mensais acumulam a série. O COMMENT diz que é PMMB.
+
+## 8. P3: levantamento e decisões (2026-10-13)
+
+**Fontes conferidas:**
+
+- **MapBiomas:** o bucket público tem, para a **Coleção 10**, a estatística
+  oficial por município (`collection_10/lulc/statistics/MAPBIOMAS_BRAZIL-COL.10-BIOME_STATE_MUNICIPALITY.xlsx`,
+  78 MB).
+  - Aba `COVERAGE_10`: 79.286 linhas (município × bioma × classe), área
+    por ano de 1985 a 2024, `geocode` IBGE e classe em 5 níveis.
+  - A **Coleção 11** só tem o raster (COG ~760 MB/ano, 2018–2025), sem
+    estatística publicada.
+- **CNES:** a API `apidadosabertos.saude.gov.br/cnes/estabelecimentos`
+  devolve **no máximo 20 registros por página** (`limit` maior é
+  ignorado).
+  - Aceita `status` (1 ativo, 0 desabilitado) e `codigo_uf`.
+  - O código do município vem com 6 dígitos.
+  - Os registros trazem PII (CNPJ, nome, telefone, e-mail, endereço), que é
+    descartada na ingestão.
+
+**Decisões do developer:**
+
+1. **MapBiomas:** a estatística oficial da Coleção 10, sem processar raster,
+   lida via GDAL (XLSX), anos **2015–2024**. As áreas somam os biomas de um
+   mesmo município. A Coleção 11 fica para quando a estatística for
+   publicada.
+2. **CNES:** só estabelecimentos **ativos**, todas as UFs, sanitizados (só
+   as colunas da tabela). A licença CC BY-ND 3.0 fica registrada: guardar um
+   subconjunto de colunas, sem alterar valores, não é obra derivada.
