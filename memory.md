@@ -4,6 +4,39 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #228 (camada backend): rótulos do Censo do dicionário
+
+- **PR #247 ABERTO, aguarda merge** (branch `refactor/backend-dicionario-censo`,
+  commit `d2a5366`). **Deploy dev já aplicado** (`rex prepare` +
+  `deploy_backend_dev`).
+- **Entregue**: `EduMaps::Model::Domain::CensoLabels` (novo) + um role partilhado
+  `EduMaps::Model::Role::CensoLabels` (novo). As 6 roles — `Gestor/Overview`,
+  `School/Profile`, `SchoolNetwork/Profile`, `SchoolNetwork/Geo`,
+  `Gestor/SimilarSchools`, `School/Searching` — deixam de reescrever
+  `1 => 'Federal'` / `1 => 'Urbana'` à mão e passam a ler
+  `clean.censo_data_dictionary` (`value_domain`, curado na #134). Os `CASE` SQL de
+  `tipo` e `localizacao` são **montados do domínio** via `sql_case`.
+  `%REDE_LABELS` era código morto — removido.
+- **Descoberta (arquitetura)**: um `has` idêntico em cada role **colide** na
+  composição (`SchoolNetwork = Geo + Profile`, `Gestor = Overview + SimilarSchools`
+  → *method name conflict between roles*). Resolvido com **um único role
+  partilhado** composto por todas — o Role::Tiny resolve o diamante.
+- **Descoberta (ambiente, importante)**: os testes de backend nesta máquina usam o
+  Postgres do **Docker** → `EDUMAPS_DB_HOST=127.0.0.1`. O default da config é
+  `ubatexu.lan:5432`, que é **outro banco**: sem `clean.censo_data_dictionary` e
+  **sem pgvector** (por isso `t/02-models/censo_dictionary.t` dava `skip_all` lá).
+  Sem esse env a suíte roda contra o banco errado e asserções legítimas falham.
+- **Fora de escopo**: camadas SQL de deploy (`badge_functions.sql`,
+  `analytics_rede_escolas.sql`, `rede_escolas_etapas.sql`, COMMENTs) e R da #228;
+  `Rank/School.pm` e `Clustering.pm` comparam rótulos já gravados nas MVs
+  (`analytics.ranking_escola.rede`) — outro mecanismo.
+- **Validação**: novo `t/02-models/censo_labels.t` (PASS, 6 subtestes).
+  `t/02-models` + `t/04-api` = **268 testes, sem regressão** (3 falhas —
+  `City.t`, `indicators_quality.t`, `municipio.t` — idênticas em `main`,
+  confirmadas com `git stash`). No produto: `/api/gestor/11000040/painel` → 200,
+  `rede=Municipal`, `localizacao=Urbana`.
+- **Imagens Docker locais NÃO reconstruídas** neste ponto (esperam o merge, passo 6).
+
 ## Sessão 2026-10-14 — #131 (entregável 1): Overpass conforme a OSMF
 
 - **Entregue (branch `feat/data-overpass-conformidade` → PR #246 → merge
