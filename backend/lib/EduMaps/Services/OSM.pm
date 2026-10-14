@@ -1,7 +1,7 @@
 package EduMaps::Services::OSM;
 
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
-use Mojo::JSON qw(decode_json encode_json);
+use Mojo::JSON qw(decode_json);
 use Mojo::Promise;
 use Mojo::URL;
 use Mojo::UserAgent;
@@ -9,8 +9,9 @@ use Mojo::File qw(path);
 use Mojo::Log;
 use Time::HiRes qw(gettimeofday tv_interval);
 use utf8;
-use File::Path qw(make_path);
-use Digest::MD5 qw(md5_hex);
+use Fcntl qw(:flock);
+use File::Spec;
+
 
 =head1 NAME
 
@@ -33,16 +34,49 @@ C<fixture> (caminho de um JSON gravado ou um hashref já decodificado).
 Emite: C<query> (string QL), C<query_data> (C<{query,data,elapsed}>),
 C<feature> (GeoJSON Feature) e C<progress> (C<{total,processed,phase}>).
 
+=head2 Conformidade com a política do Overpass (#131)
+
+  * C<user_agent> identifica a aplicação (a OSMF exige rasto para contacto).
+  * As chamadas são serializadas por um lock de ficheiro e espaçadas por
+    C<min_interval> — nunca em paralelo (o serviço limita a 2 slots).
+  * Falhas transitórias (429, 504, 5xx, rede) são retentadas com backoff
+    exponencial até C<max_tentativas>; um 4xx (excepto 429) propaga de imediato.
+
 =cut
 
 has query        => undef;
 has ql           => undef;
 has log          => sub { Mojo::Log->new };
 has timeout      => sub ($self) { $self->query ? $self->query->timeout : 60 };
-has ua           => sub ($self) { Mojo::UserAgent->new->connect_timeout($self->timeout) };
+
+# A política de uso do Overpass/OSMF exige um User-Agent que IDENTIFIQUE a
+# aplicação (não o default "Mojolicious (Perl)"): é o único rasto pelo qual o
+# operador consegue contactar quem abusa, e a ausência dele é motivo de
+# bloqueio (#131). Sobrescrevível pelo atributo `user_agent`.
+has user_agent   => 'EduMaps/1.0 (+https://edumaps.org; plataforma de mapeamento escolar brasileiro)';
+has ua           => sub ($self) {
+  my $ua = Mojo::UserAgent->new->connect_timeout($self->timeout);
+  $ua->transactor->name($self->user_agent);
+  return $ua;
+};
 has overpass_url => sub { Mojo::URL->new('https://overpass-api.de/api/interpreter') };
 has offline      => sub { 0 };
 has fixture      => sub { undef };
+
+# Retry/backoff só para falhas TRANSITÓRIAS (429, 504, 5xx e rede). Um 4xx
+# (excepto 429) é definitivo — repetir uma query malformada não a melhora.
+# Código da última falha HTTP (0 = falha de transporte); lido pelo retry.
+has max_tentativas => 3;
+has backoff_base   => 5;
+has jitter         => 2;
+has _http_code     => undef;
+
+# Repetição espaçada: consultas ao Overpass NÃO correm em paralelo (o serviço
+# limita a 2 slots simultâneos e bloqueia quem dispara em massa — #131). Um
+# lock de ficheiro serializa entre processos; `min_interval` espaço as
+# chamadas. O lock vive em disco e é libertado no fim/à morte do processo.
+has lock_dir     => sub { File::Spec->catdir(File::Spec->tmpdir, 'edumaps-osm') };
+has min_interval => 0;
 
 has raw_body => undef;
 has raw      => undef;
@@ -65,7 +99,7 @@ sub run($self) {
   }
   else {
     $self->log->info('Requesting OSM/Overpass service');
-    $data = $self->_request($ql);
+    $data = $self->_request_com_retry($ql);
   }
 
   $self->raw($data);
@@ -88,94 +122,68 @@ sub _load_fixture($self) {
   return decode_json( path($f)->slurp );
 }
 
-# Requisição com rate limiting, cache em disco e retry com backoff
-sub _request_with_rate_limit($self, $ql) {
-  my $cache_key = md5_hex($ql);
-  my $cache_file = path($self->cache_dir)->child("$cache_key.json");
+# Requisição ao Overpass com repetição espaçada e retry com backoff.
+#
+# - Serializa as chamadas com um lock de ficheiro: o Overpass limita a 2 slots
+#   simultâneos e bloqueia quem dispara em massa — nada de paralelismo (#131).
+# - `min_interval` (segundos) espaço chamadas consecutivas, se configurado.
+# - Retry só para falhas transitórias (429/504/5xx/rede); 4xx é definitivo.
+sub _request_com_retry($self, $ql) {
+  return $self->_com_lock(sub {
+    $self->_respeitar_intervalo;
 
-  # Tenta ler do cache primeiro
-  if (-f $cache_file && !$self->query->no_cache) {
-    $self->log->info("Cache hit OSM: $cache_file");
-    my $cached = decode_json(path($cache_file)->slurp);
-    $self->emit(query_data => {
-      query   => $ql,
-      data    => $cached,
-      elapsed => 0,
-      cached  => 1,
-    });
-    return $cached;
-  }
+    my $tentativa = 0;
+    while (1) {
+      $tentativa++;
+      my $data = eval { $self->_request($ql) };
+      return $data unless $@;
 
-  # Rate limiting: semáforo para max 2 requisições concorrentes
-  $self->_acquire_semaphore;
+      my $erro = $@;
+      chomp $erro;
+      my $code = $self->_http_code // 0;
+      my $transitorio = $code == 0 || $code == 429 || $code == 504 || $code >= 500;
 
-  my $attempt = 0;
-  my $max_retries = 3;
-  my $data;
+      # 4xx (excepto 429): o pedido está errado — repetir não muda nada e só
+      # gasta o slot que é de outro.
+      die "$erro\n" unless $transitorio;
 
-  while (1) {
-    $data = eval { $self->_request($ql) };
-    unless ($@) {
-      last;
+      my $max = $self->max_tentativas;
+      die "Overpass: falha persistente após $max tentativas: $erro\n"
+        if $tentativa >= $max;
+
+      my $espera = $self->backoff_base * (2 ** ($tentativa - 1)) + ($self->jitter > 0 ? rand($self->jitter) : 0);
+      $self->log->warn(sprintf('Overpass %s (%s); retry %d/%d em %.1fs',
+        $code ? "HTTP $code" : 'falha de rede', $erro, $tentativa, $self->max_tentativas, $espera));
+      sleep $espera;
+      $self->_respeitar_intervalo;
     }
-
-    my $error = $@;
-    chomp $error;
-    my $attempt = $self->{_attempt} // 0;
-    $self->log->warn("Tentativa $attempt falhou: $error");
-
-    if ($attempt >= 3) {
-      die "Falha permanente após 3 tentativas: $error";
-    }
-
-    my $sleep_time = 5 * (2 ** $attempt) + rand(2);
-    $self->log->info("Aguardando ${sleep_time}s antes de retry " . ($attempt + 1) . "/3");
-    sleep($sleep_time);
-    $self->{_attempt} = $attempt + 1;
-  }
-
-  $self->_release_semaphore;
-
-  # Salva no cache
-  make_path($self->cache_dir);
-  path($cache_file)->spew(encode_json($data));
-
-  $self->emit(query_data => {
-    query   => $ql,
-    data    => $data,
-    elapsed => $self->elapsed,
-    cached  => 0,
   });
-
-  return $data;
 }
 
-# Semáforo simples para limitar concorrência a 2
-sub _acquire_semaphore($self) {
-  # Implementação simples: usa arquivo de lock
-  my $lock_file = path($self->cache_dir)->child('.osm_semaphore');
-  while (1) {
-    my $count = 0;
-    if (-f $lock_file) {
-      my $content = path($lock_file)->slurp;
-      $count = $content + 0;
-    }
-    last if $count < 2;
-    sleep(1);
-  }
-  # Incrementa contador
-  my $new_count = 0;
-  if (-f $lock_file) {
-    $new_count = path($lock_file)->slurp + 0;
-  }
-  path($lock_file)->spew($new_count + 1);
+# Executa $cb sob um lock exclusivo de ficheiro (entre processos do mesmo
+# host). O lock é libertado ao fechar o descritor — inclusive se $cb morrer.
+sub _com_lock($self, $cb) {
+  my $dir = path($self->lock_dir);
+  $dir->make_path;
+  my $lock = $dir->child('overpass.lock');
+  open my $fh, '>>', "$lock" or die "Não abriu o lock do Overpass ($lock): $!\n";
+  flock($fh, LOCK_EX) or die "flock no lock do Overpass falhou: $!\n";
+
+  my $out = eval { $cb->() };
+  my $err = $@;
+  close $fh;    # liberta o lock
+  die $err if $err;
+  return $out;
 }
 
-sub _release_semaphore($self) {
-  my $lock_file = path($self->cache_dir)->child('.osm_semaphore');
-  return unless -f $lock_file;
-  my $count = path($lock_file)->slurp + 0;
-  path($lock_file)->spew($count - 1) if $count > 0;
+# Espaça chamadas consecutivas ao Overpass (só se min_interval > 0).
+sub _respeitar_intervalo($self) {
+  return unless $self->min_interval > 0;
+  my $stamp = path($self->lock_dir)->child('overpass.last');
+  my $ultimo = -f $stamp ? ($stamp->slurp + 0) : 0;
+  my $espera = $self->min_interval - (time - $ultimo);
+  sleep $espera if $espera > 0;
+  $stamp->spew(time);
 }
 
 # Requisição bloqueante ao Overpass. HTTP não-2xx / falha de conexão -> die.
@@ -205,6 +213,7 @@ sub _request($self, $ql) {
   if (my $err = $tx->error) {
     my $code = $err->{code} // 0;
     my $msg  = $err->{message} // 'erro';
+    $self->_http_code($code);   # 0 = falha de transporte; lido pelo retry
     $self->log->error(sprintf 'Overpass falhou: %s (%s)', $ql, $code ? "HTTP $code" : $msg);
     die $code
       ? sprintf('Overpass retornou HTTP %s: %s', $code, $msg)
@@ -213,10 +222,12 @@ sub _request($self, $ql) {
 
   my $res = $tx->res;
   if (!$res->is_success) {
+    $self->_http_code($res->code);   # lido pelo retry (429/504/5xx transitórios)
     $self->log->error(sprintf 'Overpass falhou: %s (HTTP %s)', $ql, $res->code);
     die sprintf 'Overpass retornou HTTP %s: %s', $res->code, $res->message;
   }
 
+  $self->_http_code(undef);   # sucesso: limpa o rasto da tentativa anterior
   $self->raw_body( $res->body );
   $self->elapsed( tv_interval($t0) );
   $self->emit(query_data => {
