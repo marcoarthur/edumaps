@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #156 P3: MapBiomas e CNES (#241)
+
+- Decisões do developer estão no §8 da spec. Nota técnica **123**.
+- **MapBiomas:** usa a **estatística oficial Col.10** (xlsx no bucket
+  público), 2015–2024: 690.340 linhas. A Coleção 11 fica para quando houver
+  estatística.
+- **CNES:** só ativos, todas as UFs, sanitizado por lista branca, **inclusive
+  o bruto**. Licença BY-ND registrada. Resultado: 500.233 estabelecimentos
+  em 70 min (estimativa era 7–8 h).
+- **Armadilhas:**
+  - o **GDAL 3.6.2 do backend ignora `-oo HEADERS=FORCE`**; usar
+    `--config OGR_XLSX_HEADERS FORCE`;
+  - verifies antigos exigem "NÃO CONSTRUÍDA"/"NÃO CARREGADA" para sempre:
+    relaxar para aceitar o comment que nomeia o loader. Editar verify não
+    muda o `change_id`.
+- **Próximo:** P4, o fechamento da #156.
+
 ## Sessão 2026-10-13 — #156 P2: CGU, setores + Censo 2022 e SISAB (#238)
 
 - Decisões do developer estão no §7 da spec. Nota técnica **122**.

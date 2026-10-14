@@ -53,6 +53,13 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   município: equipes, vagas ocupadas, população coberta e vulnerabilidade.
   A série se forma a cada atualização mensal, porque a fonte publica só a
   situação atual.
+- Sistema pode usar a **rede de estabelecimentos de saúde em funcionamento**
+  (CNES), com tipo de unidade e localização no mapa. Só entram o código, o
+  tipo e o local: nome, documento, telefone e endereço são descartados na
+  entrada, inclusive na cópia guardada.
+- Sistema pode usar a **cobertura e uso da terra** de cada município (floresta,
+  pastagem, agricultura, área urbana, água…) ano a ano, de 2015 a 2024. Os
+  números são a estatística oficial do MapBiomas.
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 - Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota

@@ -12,9 +12,10 @@ use_ok('EduMaps::Ingestion::Runner');
 # nada. O CensoEscolar (caminho morto) foi removido e não pode reaparecer na
 # lista de jobs (derivada do diretório).
 #
-# #171 (decisão C) e #170: INMET (API retirada) e MapBiomas (e-SIC para
-# token; loader antigo baixava geometria do IBGE) seguem a mesma regra —
-# falham alto com o motivo, sem sucesso silencioso.
+# #171 (decisão C): INMET (API retirada) segue a mesma regra — falha alto
+# com o motivo, sem sucesso silencioso. O MapBiomas saiu desta lista na #241:
+# ganhou loader real (estatística oficial da Coleção 10, sem token) e tem
+# teste próprio em mapbiomas_loader.t.
 
 { package EsicTesteDBH;     sub selectall_arrayref { $_[0]{rows} } }
 { package EsicTesteStorage; sub dbh     { $_[0]{dbh} } }
@@ -50,14 +51,14 @@ subtest 'jobs com e-SIC pendente falham com motivo (sem sucesso silencioso)' => 
   }
 };
 
-subtest 'INMET (decisão #171 C) e MapBiomas (#170) falham com motivo honesto' => sub {
+subtest 'INMET (decisão #171 C) falha com motivo honesto' => sub {
   my $runner = EduMaps::Ingestion::Runner->new(
     app           => mock_app(),
     log           => Mojo::Log->new,
     notifier      => EsicMockNotifier->new,
     stall_timeout => 0,
   );
-  $runner->load_jobs([qw(INMET MapBiomas)]);
+  $runner->load_jobs([qw(INMET)]);
 
   my $r = $runner->run_job('INMET');
   is $r->{success}, 0, 'INMET: success=0 (decisão C registrada)';
@@ -65,11 +66,6 @@ subtest 'INMET (decisão #171 C) e MapBiomas (#170) falham com motivo honesto' =
   like $r->{error}, qr/NÃO CONSTRUÍD[AA]/, 'INMET: declara as tabelas não construídas';
   like $r->{error}, qr/retirada/, 'INMET: motivo = API retirada';
 
-  $r = $runner->run_job('MapBiomas');
-  is $r->{success}, 0, 'MapBiomas: success=0 (e-SIC pendente)';
-  like $r->{error}, qr/#170/, 'MapBiomas: cita a issue';
-  like $r->{error}, qr/e-SIC/, 'MapBiomas: motivo = e-SIC para token';
-  like $r->{error}, qr/IBGE/, 'MapBiomas: explica o defeito do loader antigo';
 };
 
 subtest 'CensoEscolar removido (caminho morto) e INEP permanece' => sub {
