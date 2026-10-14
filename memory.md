@@ -25,6 +25,8 @@
   - o HTML não é versionado (`.gitignore`).
 - **Depois de recargas por outro caminho** (Censo Escolar etc.): chamar
   `SELECT analytics.refresh_views_ingestao();` à mão.
+- **PR #243** (merge `34d0ba0`) **fecha a #156 e a #158**. O ciclo de
+  ingestão real está encerrado.
 
 ## Sessão 2026-10-14 — #156 P3: MapBiomas e CNES (#241)
 
