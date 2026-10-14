@@ -252,6 +252,33 @@ sub _notify ($self, $action, $text) {
   return $sent ? 1 : 0;
 }
 
+# #158: as views analíticas são materializadas (analytics.mv_*). Ao fim de
+# uma execução REAL com ao menos um job bem-sucedido, refresca-as — senão o
+# produto leria a fotografia anterior à carga. Best-effort, mas alto: a falha
+# vai para o log como erro e é notificada; não desfaz as cargas já gravadas.
+# Sem a função (banco antes da change analytics_views_materializadas), não faz
+# nada.
+sub refrescar_views ($self, $results) {
+  return 0 if $self->dry_run;
+  return 0 unless grep { $_->{success} } @{ $results // [] };
+  return 0 unless $self->app && eval { $self->app->can('schema') && $self->app->schema };
+  my $dbh = $self->app->schema->storage->dbh;
+  my ($existe) = eval {
+    $dbh->selectrow_array(q{SELECT to_regprocedure('analytics.refresh_views_ingestao()') IS NOT NULL})
+  };
+  return 0 unless $existe;
+  my $inicio = time;
+  my $ok = eval { $dbh->do('SELECT analytics.refresh_views_ingestao()'); 1 };
+  if (!$ok) {
+    my $err = $@ || 'erro desconhecido';
+    $self->log->error("Refresh das views analíticas falhou: $err");
+    $self->_notify('ingest_failed', "Refresh das views analíticas falhou: $err");
+    return 0;
+  }
+  $self->log->info(sprintf('Views analíticas materializadas refrescadas em %ds', time - $inicio));
+  return 1;
+}
+
 sub run_all ($self, $job_names = [], $args = {}) {
   $self->load_jobs($job_names);
   

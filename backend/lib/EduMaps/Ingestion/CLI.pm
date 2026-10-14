@@ -76,6 +76,7 @@ sub run ($class, @argv) {
       }
     :                    $runner->run_all([], $args);
 
+  $runner->refrescar_views($results);
   $class->print_results($results);
   return $class->exit_code($results);
 }

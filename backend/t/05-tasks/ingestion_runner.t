@@ -195,6 +195,45 @@ subtest '7b. prazo de stall do job vale só se maior, e só durante o job' => su
   is $ZZJobPrazoCurto::visto, 600, 'prazo menor do job não encurta o do runner';
 };
 
+# #158: refresh das views materializadas ao fim de uma carga real.
+{ package RefreshDBH;
+  sub new { my ($c, %o) = @_; bless { sql => [], existe => 1, falhar => 0, %o }, $c }
+  sub selectrow_array { my ($s, $sql) = @_; push @{ $s->{sql} }, $sql; return ($s->{existe}) }
+  sub do { my ($s, $sql) = @_; push @{ $s->{sql} }, $sql; die "boom refresh\n" if $s->{falhar}; 1 }
+}
+{ package RefreshStorage; sub new { bless { dbh => $_[1] }, $_[0] } sub dbh { $_[0]{dbh} } }
+{ package RefreshSchema;  sub new { bless { st => $_[1] }, $_[0] } sub storage { $_[0]{st} } }
+{ package RefreshApp;     sub new { bless { sc => $_[1] }, $_[0] } sub schema { $_[0]{sc} } }
+
+subtest '7c. refrescar_views: só em carga real com sucesso, e falha alta' => sub {
+  my $app = sub { RefreshApp->new(RefreshSchema->new(RefreshStorage->new($_[0]))) };
+  my $mk = sub { my ($dbh, %o) = @_;
+    EduMaps::Ingestion::Runner->new(app => $app->($dbh), log => Mojo::Log->new(level => 'fatal'),
+      notifier => MockNotifier->new, %o) };
+
+  my $dbh = RefreshDBH->new;
+  is($mk->($dbh)->refrescar_views([{ success => 1 }]), 1, 'carga real com sucesso refresca');
+  ok((grep { /refresh_views_ingestao\(\)/ && /^SELECT analytics/ } @{ $dbh->{sql} }), 'chama a função');
+
+  my $d2 = RefreshDBH->new;
+  is($mk->($d2, dry_run => 1)->refrescar_views([{ success => 1 }]), 0, 'dry-run não refresca');
+  is(scalar @{ $d2->{sql} }, 0, 'nem consulta o banco');
+
+  my $d3 = RefreshDBH->new;
+  is($mk->($d3)->refrescar_views([{ success => 0 }, { success => 0, nao_carregada => 1 }]), 0,
+    'sem nenhum sucesso não refresca');
+
+  my $d4 = RefreshDBH->new(existe => 0);
+  is($mk->($d4)->refrescar_views([{ success => 1 }]), 0, 'banco sem a função: não faz nada');
+  ok(!(grep { /^SELECT analytics/ } @{ $d4->{sql} }), 'e não chama');
+
+  my $d5 = RefreshDBH->new(falhar => 1);
+  my $r5 = $mk->($d5);
+  is($r5->refrescar_views([{ success => 1 }]), 0, 'falha do refresh não derruba a execução');
+  is($r5->notifier->{calls}[0][0], 'ingest_failed', 'mas é notificada');
+  like($r5->notifier->{calls}[0][1], qr/boom refresh/, 'com o erro');
+};
+
 subtest '8. run_job notifica ingest_done no sucesso' => sub {
   my $notifier = MockNotifier->new;
   my $runner = EduMaps::Ingestion::Runner->new(

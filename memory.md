@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #156 P4: fechamento (views materializadas #158, justificativas, relatório)
+
+- **Resultado da #156:** **19/28 entradas com dado** (eram 4). As 9 vazias
+  estão `nao_carregada` com motivo: INMET ×2, ANTT ×4, isócronas, VMDA,
+  Recife. Nota técnica **124** consolida o ciclo P0–P4.
+- **#158:**
+  - `analytics.mv_{mobilidade_escola,acessibilidade_saude,esforco_fiscal_educacao}`
+    com índice único;
+  - os nomes antigos viram **fachadas** (`SELECT * FROM mv`), para não
+    quebrar os verifies que usam `information_schema`;
+  - `analytics.refresh_views_ingestao()` é chamada pelo `ingestion_runner`
+    ao fim de uma carga real com sucesso;
+  - ganho: 1 escola de 2,4 s para 0,65 ms; leitura completa de 1,3 s para
+    48 ms; refresh em 10 s.
+- **Relatório `new_data_sources.Rmd`:**
+  - o perfil de nulos usava `to_jsonb(t)` (>24 min só na malha de setores);
+    agora usa `count(col)` e roda em ~1 min;
+  - render no analytic com as credenciais via pipe e arquivo 600 apagado;
+  - o HTML não é versionado (`.gitignore`).
+- **Depois de recargas por outro caminho** (Censo Escolar etc.): chamar
+  `SELECT analytics.refresh_views_ingestao();` à mão.
+
 ## Sessão 2026-10-14 — #156 P3: MapBiomas e CNES (#241)
 
 - Decisões do developer estão no §8 da spec. Nota técnica **123**.
