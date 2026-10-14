@@ -17,7 +17,8 @@ use Mojo::File;
 #   2. prefeitura: município pelo CNPJ (SICONFI /entes) e, se o CNPJ não
 #      for o da prefeitura, pelo SIAFI;
 #   3. PDDE às UEx: município pelo de-para SIAFI -> IBGE DERIVADO das
-#      linhas de prefeitura (inclusive de outro mês);
+#      linhas de prefeitura (inclusive de outro mês) e, quando não há SIAFI,
+#      pelo CNPJ da própria UEx (#240);
 #   4. o que não resolve vai para órfãos com motivo — não some;
 #   5. programa por ação, com fallback ACAO_<código>;
 #   6. soma por município × programa × mês, datas do mês, vírgula decimal;
@@ -27,15 +28,33 @@ use Mojo::File;
 my $JOB = 'EduMaps::Ingestion::Job::CGU';
 require_ok($JOB);
 
+# Dublê do provedor CNPJ -> município (sem rede). Por omissão devolve
+# nao_encontrado para tudo; um mapa injetado resolve os CNPJs listados.
+{
+  package MockCnpjProvider;
+  sub new { my ($c, %o) = @_; bless { mapa => $o{mapa} // {} }, $c }
+  sub municipio_por_cnpj {
+    my ($self, $cnpjs) = @_;
+    my %r;
+    for my $c (@$cnpjs) {
+      my $m = $self->{mapa}{$c};
+      $r{$c} = $m ? { %$m } : { nao_encontrado => 1 };
+    }
+    return \%r;
+  }
+}
+
 my $LOG = Mojo::Log->new(level => 'fatal');
 
 sub job {
   my %o = @_;
   my $tmp = tempdir(CLEANUP => 1);
+  my $mapa = delete $o{cnpj_mapa} // {};
   return $JOB->new(
     log => $LOG,
     config => { dir_trabalho => $tmp, raw_dir => "$tmp/raw" },
     entes => \@ENTES::LISTA,
+    cnpj_provider => MockCnpjProvider->new(mapa => $mapa),
     max_retries => 0, backoff_base => 0,
     %o,
   );
@@ -313,6 +332,57 @@ subtest 'dry-run: só HEAD do primeiro ZIP, nada baixado nem gravado' => sub {
   is($jj->run({ ano => 2025 }), 0, 'devolve 0');
   is(scalar @{ $ua->{calls} }, 1, 'uma requisição de sanidade');
   like($ua->{calls}[0], qr{/202501_Transferencias\.zip$}, 'HEAD do primeiro mês');
+};
+
+subtest 'resolver: UEx pelo CNPJ quando não há SIAFI (e o DF, fora do /entes)' => sub {
+  my $jj = job();
+  my $mapa = {
+    '22222222000122' => { codigo_ibge => '4314902', municipio => 'PORTO ALEGRE',   uf => 'RS', fonte => 'brasilapi' },
+    '33333333000133' => { codigo_ibge => '5300108', municipio => 'BRASILIA',      uf => 'DF', fonte => 'brasilapi' },
+  };
+  my $r = $jj->resolver([ $jj->ler_csv($jan), $jj->ler_csv($fev) ], \@ENTES::LISTA, $mapa);
+  my %L = map { join('|', @{$_}{qw(codigo_ibge programa data_inicio)}) => $_ } @{ $r->{linhas} };
+
+  is($L{'4314902|PDDE|2025-01-01'}{valor_transferido}, 50,
+     'PDDE da UEx sem SIAFI resolve pelo CNPJ da própria UEx');
+  is($L{'4314902|PDDE|2025-01-01'}{nome_municipio}, 'PORTO ALEGRE',
+     'nome vem da fonte do CNPJ (não do /entes)');
+  is($L{'5300108|PDDE|2025-01-01'}{valor_transferido}, 70,
+     'SIAFI sem correspondência cai no CNPJ (DF ausente do /entes)');
+  is($r->{estatisticas}{uex_cnpj_resolvidos}, 2, 'duas UEx resolvidas por CNPJ');
+
+  my %m;
+  $m{ $_->{motivo} } += $_->{linhas} for @{ $r->{orfaos} };
+  is($m{pdde_sem_siafi} // 0, 0, 'sem órfão pdde_sem_siafi');
+  is($m{pdde_siafi_sem_correspondencia} // 0, 0, 'sem órfão pdde_siafi_sem_correspondencia');
+  is($m{municipio_nao_resolvido}, 1, 'só o município desconhecido segue órfão');
+};
+
+subtest 'resolver: CNPJ consultado e não encontrado é motivo próprio' => sub {
+  my $jj = job();
+  my $r = $jj->resolver([ $jj->ler_csv($jan) ], \@ENTES::LISTA,
+    { '22222222000122' => { nao_encontrado => 1 } });
+  my %m;
+  $m{ $_->{motivo} } += $_->{linhas} for @{ $r->{orfaos} };
+  is($m{pdde_cnpj_nao_resolvido}, 1, 'UEx sem SIAFI cujo CNPJ não resolve');
+};
+
+subtest 'run: UEx do PDDE resolvidas por CNPJ ponta a ponta' => sub {
+  my $dbh = MockDBH->new;
+  my $jj = job(app => mock_app($dbh), cnpj_mapa => {
+    '22222222000122' => { codigo_ibge => '4314902', municipio => 'PORTO ALEGRE', uf => 'RS', fonte => 'brasilapi' },
+    '33333333000133' => { codigo_ibge => '4302105', municipio => 'BENTO GONCALVES', uf => 'RS', fonte => 'brasilapi' },
+  });
+  my %csv = ('202501' => $jan, '202502' => $fev);
+  no warnings qw(redefine once);
+  local *EduMaps::Ingestion::Job::CGU::obter_csv = sub { $csv{ $_[1] } };
+  my $n = $jj->run({ ano => 2025, meses => '1,2' });
+
+  my @ibges = map { $_->[0] } @{ $dbh->{exec} };
+  ok((grep { $_ eq '4314902' } @ibges), 'PDDE da UEx sem SIAFI carregado no município do CNPJ');
+  ok((grep { $_ eq '4302105' } @ibges), 'PDDE com SIAFI desconhecido carregado no município do CNPJ');
+  my ($meta) = grep { $_->[0] =~ /import_metadata/ } @{ $dbh->{dos} };
+  like($meta->[6], qr/2\/3 CNPJs resolvidos/, 'nota declara as UEx resolvidas por CNPJ');
 };
 
 done_testing();

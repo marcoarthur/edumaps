@@ -42,7 +42,8 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   município, mês a mês (FUNDEB, alimentação escolar, dinheiro direto na
   escola, transporte escolar, educação infantil, veículos escolares). Inclui
   o dinheiro pago diretamente às associações das escolas, somado ao
-  município onde elas ficam.
+  município onde elas ficam — inclusive quando a associação não traz o
+  código do município, reconhecido pelo seu próprio cadastro federal.
 - Sistema pode usar o **Censo 2022 por setor censitário** (população por
   sexo, idade e cor/raça, domicílios), junto com o **desenho de cada setor
   no mapa**. Isso permite olhar o território abaixo do nível do município.

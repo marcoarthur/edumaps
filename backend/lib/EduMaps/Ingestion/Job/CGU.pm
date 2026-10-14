@@ -28,7 +28,9 @@ has schedule    => 'monthly';
 #     SICONFI /entes, 5570/5570 com CNPJ) e, se o CNPJ não for o da
 #     prefeitura (fundo municipal, secretaria), do código SIAFI;
 #   - PDDE (ação 0515) às UEx (associações de escola, CNPJ próprio):
-#     agregado por município pelo CÓDIGO MUNICÍPIO SIAFI;
+#     município pelo CÓDIGO MUNICÍPIO SIAFI e, quando a UEx não traz SIAFI
+#     (ou o DF, fora do de-para), pelo CNPJ da própria UEx — dados abertos
+#     da Receita Federal, com cache em clean.cnpj_municipio (#240);
 #   - estados e entidades fora do PDDE: fora do escopo (tabela municipal),
 #     contados — não somem em silêncio.
 #
@@ -96,6 +98,19 @@ has entes => sub ($self) {
   return $sic->_fetch_entes;
 };
 
+# Resolve o município do CNPJ de uma UEx (cache clean.cnpj_municipio + API
+# BrasilAPI/Minha Receita). Injetável nos testes (stub sem rede).
+has cnpj_provider => sub ($self) {
+  require EduMaps::Data::CnpjMunicipio;
+  my $dbh = eval { $self->app->schema->storage->dbh };
+  return EduMaps::Data::CnpjMunicipio->new(
+    log       => $self->log,
+    allowlist => $self->allowlist,
+    ua        => $self->ua,
+    dbh       => $dbh,
+  );
+};
+
 sub tabelas ($self, $args = {}) { return (TABELA) }
 
 # ---------------------------------------------------------------------
@@ -121,7 +136,7 @@ sub run ($self, $args = {}) {
     push @leituras, $self->ler_csv($csv);
   }
 
-  my $res = $self->resolver(\@leituras, $self->entes);
+  my $res = $self->resolver(\@leituras, $self->entes, $self->_mapa_cnpj_uex(\@leituras));
   $self->registrar_orfaos($res->{orfaos});
 
   my $rows = $res->{linhas};
@@ -141,11 +156,13 @@ sub run ($self, $args = {}) {
     $n,
     sprintf('Função 12 (Educação), %s, meses %s. %d municípios; linhas (município×programa×mês) por programa: %s. '
       . 'Município pelo CNPJ da prefeitura (SICONFI /entes) ou pelo código SIAFI (de-para derivado dos próprios arquivos: %d códigos). '
-      . 'PDDE às UEx agregado por município. Fora do escopo (estados, entidades fora do PDDE): %d linhas. '
+      . 'PDDE às UEx agregado por município (SIAFI ou CNPJ da própria UEx: %d/%d CNPJs resolvidos). '
+      . 'Fora do escopo (estados, entidades fora do PDDE): %d linhas. '
       . 'Órfãos: %d linhas (R$ %.2f) — ver cgu_orfaos.csv.',
       $ano, join(',', @meses), $e->{municipios},
       join(', ', map { "$_=$por_prog{$_}" } sort keys %por_prog),
-      $e->{siafi_mapeados}, $e->{fora_do_escopo}, $e->{orfaos_linhas}, $e->{orfaos_valor}),
+      $e->{siafi_mapeados}, $e->{uex_cnpj_resolvidos}, $e->{uex_cnpj_total},
+      $e->{fora_do_escopo}, $e->{orfaos_linhas}, $e->{orfaos_valor}),
   );
   $self->log_info("CGU: $n linhas carregadas em " . TABELA . " (dt_snapshot $dt_snapshot)");
   return $n;
@@ -267,11 +284,32 @@ sub programa_da_acao ($self, $acao) {
 }
 
 # ---------------------------------------------------------------------
+# CNPJs das UEx do PDDE (não-estaduais) -> município, via provedor
+# (cache + API). Cobre as UEx sem SIAFI e o DF, ausente do de-para.
+# ---------------------------------------------------------------------
+sub _mapa_cnpj_uex ($self, $leituras) {
+  my %cand;
+  for my $l (@$leituras) {
+    for my $r (@{ $l->{educ} }) {
+      next unless $r->{acao} eq ACAO_PDDE && $r->{tipo} !~ /Estadual/;
+      $cand{ $r->{cnpj} } = 1 if length $r->{cnpj};
+    }
+  }
+  return {} unless %cand;
+  my $resolvidos = $self->cnpj_provider->municipio_por_cnpj([ sort keys %cand ]);
+  my $n_ok = grep { !$_->{nao_encontrado} } values %$resolvidos;
+  $self->log_info(sprintf('CGU: %d/%d CNPJs de UEx resolvidos por CNPJ', $n_ok, scalar keys %cand));
+  return $resolvidos;
+}
+
+# ---------------------------------------------------------------------
 # Resolução município + agregação (município × programa × mês)
 #
 # $leituras: lista de retornos de ler_csv; $entes: [{cod_ibge, cnpj, ente}]
+# $cnpj_uex: { cnpj => { codigo_ibge, municipio, fonte } | { nao_encontrado } }
+#            para as UEx do PDDE (provedor CNPJ + cache); {} quando não há.
 # ---------------------------------------------------------------------
-sub resolver ($self, $leituras, $entes) {
+sub resolver ($self, $leituras, $entes, $cnpj_uex = {}) {
   my (%ibge_por_cnpj, %nome_por_ibge);
   for my $e (@$entes) {
     next unless defined $e->{cod_ibge};
@@ -279,6 +317,16 @@ sub resolver ($self, $leituras, $entes) {
     $nome_por_ibge{$cod} = $e->{ente};
     (my $cnpj = $e->{cnpj} // '') =~ s/\D//g;
     $ibge_por_cnpj{$cnpj} = $cod if length $cnpj;
+  }
+
+  # UEx resolvidas por CNPJ: o nome do município vem da própria API, o que
+  # cobre o DF (5300108), ausente do /entes (esfera M).
+  my $uex_resolvidos = 0;
+  for my $c (keys %$cnpj_uex) {
+    my $i = $cnpj_uex->{$c};
+    next if $i->{nao_encontrado};
+    $uex_resolvidos++;
+    $nome_por_ibge{ $i->{codigo_ibge} } //= $i->{municipio} if $i->{municipio};
   }
 
   # De-para SIAFI -> IBGE derivado das linhas de prefeitura. Se um SIAFI
@@ -313,10 +361,13 @@ sub resolver ($self, $leituras, $entes) {
           unless $cod;
       }
       elsif ($r->{acao} eq ACAO_PDDE && $r->{tipo} !~ /Estadual/) {
-        if (!length $r->{siafi}) { $motivo = 'pdde_sem_siafi' }
-        else {
-          $cod = $ibge_por_siafi{ $r->{siafi} };
-          $motivo = 'pdde_siafi_sem_correspondencia' unless $cod;
+        my $info = $cnpj_uex->{ $r->{cnpj} };
+        $cod = $ibge_por_siafi{ $r->{siafi} } if length $r->{siafi};
+        $cod //= $info->{codigo_ibge} if $info && !$info->{nao_encontrado};
+        unless ($cod) {
+          if    (length $r->{siafi})                { $motivo = 'pdde_siafi_sem_correspondencia' }
+          elsif ($info && $info->{nao_encontrado})  { $motivo = 'pdde_cnpj_nao_resolvido' }
+          else                                      { $motivo = 'pdde_sem_siafi' }
         }
       }
       else {
@@ -362,6 +413,8 @@ sub resolver ($self, $leituras, $entes) {
       municipios     => scalar(keys %agg),
       siafi_mapeados => scalar(keys %ibge_por_siafi),
       siafi_conflitos => $conflitos // 0,
+      uex_cnpj_resolvidos   => $uex_resolvidos,
+      uex_cnpj_total        => scalar(keys %$cnpj_uex),
       fora_do_escopo => $fora,
       orfaos_linhas  => $orf_linhas,
       orfaos_valor   => $orf_valor,
