@@ -32,9 +32,11 @@ require_ok($JOB);
 # nao_encontrado para tudo; um mapa injetado resolve os CNPJs listados.
 {
   package MockCnpjProvider;
-  sub new { my ($c, %o) = @_; bless { mapa => $o{mapa} // {} }, $c }
+  sub new { my ($c, %o) = @_; bless { mapa => $o{mapa} // {}, pedidos => [] }, $c }
+  sub pedidos { $_[0]{pedidos} }
   sub municipio_por_cnpj {
     my ($self, $cnpjs) = @_;
+    push @{ $self->{pedidos} }, @$cnpjs;
     my %r;
     for my $c (@$cnpjs) {
       my $m = $self->{mapa}{$c};
@@ -382,7 +384,21 @@ subtest 'run: UEx do PDDE resolvidas por CNPJ ponta a ponta' => sub {
   ok((grep { $_ eq '4314902' } @ibges), 'PDDE da UEx sem SIAFI carregado no município do CNPJ');
   ok((grep { $_ eq '4302105' } @ibges), 'PDDE com SIAFI desconhecido carregado no município do CNPJ');
   my ($meta) = grep { $_->[0] =~ /import_metadata/ } @{ $dbh->{dos} };
-  like($meta->[6], qr/2\/3 CNPJs resolvidos/, 'nota declara as UEx resolvidas por CNPJ');
+  like($meta->[6], qr/2\/2 CNPJs resolvidos/, 'nota declara as UEx resolvidas por CNPJ (só quem precisa)');
+};
+
+subtest 'otimização: UEx com SIAFI mapeado não consulta o CNPJ' => sub {
+  my $prov = MockCnpjProvider->new;
+  my $jj = job(cnpj_provider => $prov);
+  my $leituras = [ $jj->ler_csv($jan), $jj->ler_csv($fev) ];
+  my $siafi = $jj->_mapa_siafi($leituras, \@ENTES::LISTA);
+  my $mapa  = $jj->_mapa_cnpj_uex($leituras, $siafi->{ibge_por_siafi});
+
+  my %ped = map { $_ => 1 } @{ $prov->pedidos };
+  ok($ped{'22222222000122'}, 'UEx sem SIAFI é consultada');
+  ok($ped{'33333333000133'}, 'UEx com SIAFI sem correspondência é consultada');
+  ok(!$ped{'11111111000111'}, 'UEx cujo SIAFI mapeia (9373, visto na prefeitura em fev) NÃO é consultada');
+  is(scalar keys %$mapa, 2, 'candidatos ficam só com as UEx que precisam do CNPJ');
 };
 
 done_testing();

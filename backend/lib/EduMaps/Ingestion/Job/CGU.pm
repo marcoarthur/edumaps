@@ -136,7 +136,16 @@ sub run ($self, $args = {}) {
     push @leituras, $self->ler_csv($csv);
   }
 
-  my $res = $self->resolver(\@leituras, $self->entes, $self->_mapa_cnpj_uex(\@leituras));
+  # O de-para SIAFI -> IBGE é derivado ANTES de resolver os CNPJs das UEx:
+  # só as UEx cujo SIAFI não mapeia precisam do CNPJ (as demais resolvem pelo
+  # SIAFI). Sem este filtro a primeira carga consulta ~4,6x mais CNPJs do que
+  # o necessário (medido na carga de 2025: 113.729 candidatos para ~24,5 mil
+  # úteis) — horas de API jogadas fora.
+  my $entes = $self->entes;
+  my $siafi = $self->_mapa_siafi(\@leituras, $entes);
+  my $uex   = $self->_mapa_cnpj_uex(\@leituras, $siafi->{ibge_por_siafi});
+
+  my $res = $self->resolver(\@leituras, $entes, $uex, $siafi);
   $self->registrar_orfaos($res->{orfaos});
 
   my $rows = $res->{linhas};
@@ -284,14 +293,60 @@ sub programa_da_acao ($self, $acao) {
 }
 
 # ---------------------------------------------------------------------
+# De-para SIAFI -> IBGE, derivado das linhas de prefeitura (qualquer
+# função): a prefeitura traz o SIAFI e o CNPJ, e o CNPJ está no /entes do
+# SICONFI com o IBGE. Devolve { ibge_por_siafi => {...}, conflitos => n }.
+#
+# É derivado ANTES de resolver os CNPJs das UEx de propósito: uma UEx cujo
+# SIAFI já mapeia é resolvida pelo SIAFI, e o CNPJ dela não precisa ser
+# consultado (ver _mapa_cnpj_uex).
+# ---------------------------------------------------------------------
+sub _mapa_siafi ($self, $leituras, $entes) {
+  my %ibge_por_cnpj;
+  for my $e (@$entes) {
+    next unless defined $e->{cod_ibge};
+    (my $cnpj = $e->{cnpj} // '') =~ s/\D//g;
+    $ibge_por_cnpj{$cnpj} = sprintf('%07d', $e->{cod_ibge}) if length $cnpj;
+  }
+
+  my %votos;
+  for my $l (@$leituras) {
+    while (my ($siafi, $cnpjs) = each %{ $l->{siafi_cnpj} }) {
+      while (my ($cnpj, $n) = each %$cnpjs) {
+        my $cod = $ibge_por_cnpj{$cnpj} or next;
+        $votos{$siafi}{$cod} += $n;
+      }
+    }
+  }
+
+  my (%ibge_por_siafi, $conflitos);
+  for my $siafi (keys %votos) {
+    # Se um SIAFI apontar para mais de um IBGE (não deveria), vence o mais
+    # frequente e o conflito é registado no log.
+    my @c = sort { $votos{$siafi}{$b} <=> $votos{$siafi}{$a} || $a cmp $b } keys %{ $votos{$siafi} };
+    $conflitos++ if @c > 1;
+    $ibge_por_siafi{$siafi} = $c[0];
+  }
+  $self->log->warn("[CGU] $conflitos código(s) SIAFI com mais de um IBGE — escolhido o mais frequente")
+    if $conflitos;
+  return { ibge_por_siafi => \%ibge_por_siafi, conflitos => $conflitos // 0 };
+}
+
+# ---------------------------------------------------------------------
 # CNPJs das UEx do PDDE (não-estaduais) -> município, via provedor
 # (cache + API). Cobre as UEx sem SIAFI e o DF, ausente do de-para.
+#
+# $ibge_por_siafi filtra os candidatos: UEx cujo SIAFI já mapeia é resolvida
+# pelo SIAFI (o CNPJ dela nunca é consultado no resolver), então consultá-la
+# é desperdício. Sem o filtro a primeira carga consultava TODAS as UEx — na
+# carga de 2025, 113.729 CNPJs para ~24,5 mil úteis (~4,6x).
 # ---------------------------------------------------------------------
-sub _mapa_cnpj_uex ($self, $leituras) {
+sub _mapa_cnpj_uex ($self, $leituras, $ibge_por_siafi = {}) {
   my %cand;
   for my $l (@$leituras) {
     for my $r (@{ $l->{educ} }) {
       next unless $r->{acao} eq ACAO_PDDE && $r->{tipo} !~ /Estadual/;
+      next if length $r->{siafi} && $ibge_por_siafi->{ $r->{siafi} };
       $cand{ $r->{cnpj} } = 1 if length $r->{cnpj};
     }
   }
@@ -308,8 +363,10 @@ sub _mapa_cnpj_uex ($self, $leituras) {
 # $leituras: lista de retornos de ler_csv; $entes: [{cod_ibge, cnpj, ente}]
 # $cnpj_uex: { cnpj => { codigo_ibge, municipio, fonte } | { nao_encontrado } }
 #            para as UEx do PDDE (provedor CNPJ + cache); {} quando não há.
+# $siafi_mapa: { ibge_por_siafi => {...}, conflitos => n } — o que o run já
+#              derivou. Quando ausente (chamada isolada), é derivado aqui.
 # ---------------------------------------------------------------------
-sub resolver ($self, $leituras, $entes, $cnpj_uex = {}) {
+sub resolver ($self, $leituras, $entes, $cnpj_uex = {}, $siafi_mapa = undef) {
   my (%ibge_por_cnpj, %nome_por_ibge);
   for my $e (@$entes) {
     next unless defined $e->{cod_ibge};
@@ -329,26 +386,12 @@ sub resolver ($self, $leituras, $entes, $cnpj_uex = {}) {
     $nome_por_ibge{ $i->{codigo_ibge} } //= $i->{municipio} if $i->{municipio};
   }
 
-  # De-para SIAFI -> IBGE derivado das linhas de prefeitura. Se um SIAFI
-  # apontar para mais de um IBGE (não deveria), vence o mais frequente e o
-  # conflito é registado no log.
-  my %votos;
-  for my $l (@$leituras) {
-    while (my ($siafi, $cnpjs) = each %{ $l->{siafi_cnpj} }) {
-      while (my ($cnpj, $n) = each %$cnpjs) {
-        my $cod = $ibge_por_cnpj{$cnpj} or next;
-        $votos{$siafi}{$cod} += $n;
-      }
-    }
-  }
-  my (%ibge_por_siafi, $conflitos);
-  for my $siafi (keys %votos) {
-    my @c = sort { $votos{$siafi}{$b} <=> $votos{$siafi}{$a} || $a cmp $b } keys %{ $votos{$siafi} };
-    $conflitos++ if @c > 1;
-    $ibge_por_siafi{$siafi} = $c[0];
-  }
-  $self->log->warn("[CGU] $conflitos código(s) SIAFI com mais de um IBGE — escolhido o mais frequente")
-    if $conflitos;
+  # De-para SIAFI -> IBGE derivado das linhas de prefeitura. Vem pronto do
+  # run (para o _mapa_cnpj_uex já ter filtrado os candidatos pelo SIAFI);
+  # quando chamado isolado, deriva aqui.
+  my $mapa       = $siafi_mapa // $self->_mapa_siafi($leituras, $entes);
+  my $ibge_por_siafi = $mapa->{ibge_por_siafi};
+  my $conflitos  = $mapa->{conflitos};
 
   my (%agg, %orfaos);
   my ($fora, $orf_linhas, $orf_valor) = (0, 0, 0);
@@ -356,13 +399,13 @@ sub resolver ($self, $leituras, $entes, $cnpj_uex = {}) {
     for my $r (@{ $l->{educ} }) {
       my ($cod, $motivo);
       if ($r->{tipo} eq TIPO_MUNICIPAL) {
-        $cod = $ibge_por_cnpj{ $r->{cnpj} } // $ibge_por_siafi{ $r->{siafi} };
+        $cod = $ibge_por_cnpj{ $r->{cnpj} } // $ibge_por_siafi->{ $r->{siafi} };
         $motivo = length $r->{siafi} ? 'municipio_nao_resolvido' : 'municipio_sem_cnpj_nem_siafi'
           unless $cod;
       }
       elsif ($r->{acao} eq ACAO_PDDE && $r->{tipo} !~ /Estadual/) {
         my $info = $cnpj_uex->{ $r->{cnpj} };
-        $cod = $ibge_por_siafi{ $r->{siafi} } if length $r->{siafi};
+        $cod = $ibge_por_siafi->{ $r->{siafi} } if length $r->{siafi};
         $cod //= $info->{codigo_ibge} if $info && !$info->{nao_encontrado};
         unless ($cod) {
           if    (length $r->{siafi})                { $motivo = 'pdde_siafi_sem_correspondencia' }
@@ -408,10 +451,10 @@ sub resolver ($self, $leituras, $entes, $cnpj_uex = {}) {
   return {
     linhas => \@linhas,
     orfaos => [ sort { $b->{valor} <=> $a->{valor} || $a->{motivo} cmp $b->{motivo} } values %orfaos ],
-    ibge_por_siafi => \%ibge_por_siafi,
+    ibge_por_siafi => $ibge_por_siafi,
     estatisticas => {
       municipios     => scalar(keys %agg),
-      siafi_mapeados => scalar(keys %ibge_por_siafi),
+      siafi_mapeados => scalar(keys %$ibge_por_siafi),
       siafi_conflitos => $conflitos // 0,
       uex_cnpj_resolvidos   => $uex_resolvidos,
       uex_cnpj_total        => scalar(keys %$cnpj_uex),
