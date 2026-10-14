@@ -4,6 +4,34 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #240: otimização da fase de CNPJ na reexecução (PR #250)
+
+- **Descoberta na reexecução da CGU 2025**: o `_mapa_cnpj_uex` consultava
+  **todas** as UEx do PDDE não-estadual, mas o `resolver` só usa o CNPJ quando o
+  **SIAFI** da linha não mapeia. Medido no produto: **113.729 CNPJs** para
+  **~24,5 mil úteis** (~4,6x) → ~37 h em vez das ~6 h estimadas na #244 — a
+  estimativa estava certa, o código é que consultava a mais.
+- **Medição do universo (script `/tmp/cgu_measure.pl` no produto)**: PDDE 2025 =
+  **R$ 2.100,30 mi** (1.999.911 linhas, função 12 / ação 0515); in-scope (não
+  estadual c/ CNPJ) = mesmos R$ 2.100,30 mi; **113.729 CNPJs distintos**;
+  estadual fora = R$ 0,96 mi. Baseline de órfãos (CSV de **13/10**, pré-fix) =
+  R$ 533,33 mi → **74,6% atribuído**. Meta ≥99% ⇒ órfãos ≤ **R$ 21,0 mi**.
+- **Fix (PR #250, merge `043481f`, branch `perf/backend-cgu-uex-siafi`)**:
+  extrai `_mapa_siafi` (de-para SIAFI→IBGE, antes dentro do `resolver`) e o
+  deriva **antes** de resolver CNPJs; o `_mapa_cnpj_uex` filtra as UEx cujo
+  SIAFI já mapeia. O `resolver` recebe o de-para pronto (4º arg opcional;
+  deriva quando chamado isolado). **Behavior-preserving**: quando o SIAFI
+  mapeia, ele já vencia o CNPJ. Testes: `cgu_loader.t` (**17 PASS**, inclui
+  subteste que trava a otimização — `2/3` → `2/2` no metadata) +
+  `cnpj_municipio.t` (PASS); CI verde (`Perl contra o banco de fixtures`).
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_minion_dev`
+  (master key), md5 de `CGU.pm` confere nos **3 lugares**. Job CGU 2025
+  **reiniciado** (pid antigo `2853990` morto; novo pid `2859903`, log
+  `/tmp/cgu_2025_fix2_2026-10-14_180630.log`); cache `clean.cnpj_municipio`
+  (**15.467**) preservado → retoma de onde parou.
+- **Pendência**: com o cache, faltam ~21 mil CNPJs úteis (~7 h); medir a
+  atribuição total e comentar/fechar a **#240**.
+
 ## Sessão 2026-10-14 — #228 (camada backend): rótulos do Censo do dicionário
 
 - **PR #247 MERGEADO** (merge `4855331`; branch `refactor/backend-dicionario-censo`,
