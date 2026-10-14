@@ -31,25 +31,30 @@ subtest 'erro do _request propaga pelo run e pelo run_p' => sub {
     package Test::OSM::Failing;
     use Mojo::Base 'EduMaps::Services::OSM', -signatures;
     sub _request($self, $ql) {
+      $self->_http_code(504);
       die "Overpass retornou HTTP 504: Gateway Timeout\n";
     }
   }
 
-  my $err = eval { Test::OSM::Failing->new(query => $q)->run; 1 } ? undef : $@;
+  # max_tentativas=1: o 504 é transitório, mas o teste não quer esperar o
+  # backoff — verifica só que o erro propaga.
+  my $err = eval { Test::OSM::Failing->new(query => $q, max_tentativas => 1, jitter => 0)->run; 1 } ? undef : $@;
   ok $err, 'run morre quando o _request falha (HTTP 504)';
   like $err, qr/HTTP 504/, 'erro HTTP propagado';
 
   my $perr;
-  Test::OSM::Failing->new(query => $q)->run_p->catch(sub { $perr = shift })->wait;
+  Test::OSM::Failing->new(query => $q, max_tentativas => 1, jitter => 0)->run_p->catch(sub { $perr = shift })->wait;
   ok $perr, 'run_p rejeita (nao engole)';
   like $perr, qr/HTTP 504/, 'run_p preserva a mensagem';
 };
 
 subtest 'falha de transporte propaga pelo run' => sub {
   my $svc = EduMaps::Services::OSM->new(
-    query        => $q,
-    timeout      => 3,
-    overpass_url => Mojo::URL->new('http://127.0.0.1:1/api/interpreter'),
+    query          => $q,
+    timeout        => 3,
+    max_tentativas => 1,
+    jitter         => 0,
+    overpass_url   => Mojo::URL->new('http://127.0.0.1:1/api/interpreter'),
   );
 
   my $err = eval { $svc->run; 1 } ? undef : $@;
