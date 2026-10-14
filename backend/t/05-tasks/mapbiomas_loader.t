@@ -135,11 +135,13 @@ subtest 'carregar: substitui o recorte (colecao, anos) e insere em lote' => sub 
   like($@, qr/nada gravado: boom: violação/, 'erro original preservado');
 };
 
-subtest 'comando_xlsx_csv: HEADERS=FORCE e a aba COVERAGE_10' => sub {
+subtest 'comando_xlsx_csv: OGR_XLSX_HEADERS=FORCE e a aba COVERAGE_10' => sub {
   my $c = join ' ', @{ job()->comando_xlsx_csv('/x/col10.xlsx', '/y/out.csv') };
-  like($c, qr/^ogr2ogr -f CSV /, 'ogr2ogr para CSV');
-  like($c, qr/-oo HEADERS=FORCE/, 'cabeçalho forçado (anos numéricos)');
-  like($c, qr/-oo FIELD_TYPES=STRING/, 'sem adivinhar tipos');
+  like($c, qr/^ogr2ogr /, 'ogr2ogr');
+  like($c, qr/ -f CSV /, 'para CSV');
+  like($c, qr/--config OGR_XLSX_HEADERS FORCE/, 'cabeçalho forçado (anos numéricos), como config option: o GDAL 3.6 ignora -oo');
+  like($c, qr/--config OGR_XLSX_FIELD_TYPES STRING/, 'sem adivinhar tipos');
+  unlike($c, qr/-oo /, 'nenhuma open option (ignorada no GDAL 3.6.2 do backend)');
   like($c, qr{/y/out\.csv /x/col10\.xlsx COVERAGE_10$}, 'destino, origem e aba');
 };
 

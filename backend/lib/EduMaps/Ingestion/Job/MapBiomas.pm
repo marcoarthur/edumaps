@@ -25,7 +25,9 @@ use Text::CSV;
 # Leitura via GDAL (driver XLSX, ogr2ogr -> CSV): sem dependência CPAN nova;
 # o gdal-bin já é instalado no backend pelo Rex (#238). HEADERS=FORCE é
 # obrigatório: com anos numéricos no cabeçalho, o driver toma a 1ª linha por
-# dado e devolve Field1..Field54.
+# dado e devolve Field1..Field54. Vai como --config OGR_XLSX_HEADERS, não como
+# -oo: o GDAL 3.6.2 do backend ignora a open option (medido na carga, #241);
+# o config option vale no 3.6 e no 3.10.
 #
 # classe = código numérico da legenda (texto), classe_desc = nível mais
 # específico (class_level_4). A classe 0 ("Not Observed") é área real e
@@ -165,8 +167,9 @@ sub _obter_xlsx ($self, $args) {
 # xlsx -> CSV (GDAL). O ogr2ogr não sobrescreve um CSV existente: apaga antes.
 # -----------------------------------------------------------------------------
 sub comando_xlsx_csv ($self, $xlsx, $csv) {
-  return ['ogr2ogr', '-f', 'CSV', '-oo', 'HEADERS=FORCE', '-oo', 'FIELD_TYPES=STRING',
-          $csv, $xlsx, CAMADA];
+  return ['ogr2ogr', '--config', 'OGR_XLSX_HEADERS', 'FORCE',
+          '--config', 'OGR_XLSX_FIELD_TYPES', 'STRING',
+          '-f', 'CSV', $csv, $xlsx, CAMADA];
 }
 
 sub xlsx_para_csv ($self, $xlsx, $csv) {
