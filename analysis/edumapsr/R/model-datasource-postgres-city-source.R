@@ -49,12 +49,16 @@ load_city_schools.postgres_source <- function(
 
   quote <- function(x) DBI::dbQuoteIdentifier(con, x)
 
+  # Rótulos vêm do dicionário canônico (#228): clean.censo_label() lê
+  # clean.censo_data_dictionary.value_domain. Sem mapa à mão aqui.
   sql <- sprintf("
     SELECT
       e.co_entidade,
       e.no_entidade,
       e.tp_dependencia,
       e.tp_localizacao,
+      COALESCE(clean.censo_label('clean.censo_escolas', 'tp_dependencia', e.tp_dependencia::text), 'Outra') AS dependencia,
+      COALESCE(clean.censo_label('clean.censo_escolas', 'tp_localizacao', e.tp_localizacao::text), 'Desconhecida') AS localizacao,
       COALESCE(m.qt_mat_bas, 0)  AS qt_mat_bas,
       COALESCE(m.qt_mat_inf, 0)  AS qt_mat_inf,
       COALESCE(m.qt_mat_fund, 0) AS qt_mat_fund,
@@ -76,24 +80,6 @@ load_city_schools.postgres_source <- function(
       codigo_ibge
     ))
   }
-
-  df_schools$dependencia <- vapply(df_schools$tp_dependencia, function(v) {
-    switch(as.character(v),
-      "1" = "Federal",
-      "2" = "Estadual",
-      "3" = "Municipal",
-      "4" = "Privada",
-      "Outra"
-    )
-  }, character(1))
-
-  df_schools$localizacao <- vapply(df_schools$tp_localizacao, function(v) {
-    switch(as.character(v),
-      "1" = "Urbana",
-      "2" = "Rural",
-      "Desconhecida"
-    )
-  }, character(1))
 
   df_schools$ratio_aluno_docente <- ifelse(
     df_schools$qt_doc_bas > 0,

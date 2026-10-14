@@ -35,6 +35,8 @@ compute_and_save_city_summary <- function(con, schema = "clean", codigo_ibge = "
         e.no_entidade,
         e.tp_dependencia,
         e.tp_localizacao,
+        COALESCE(clean.censo_label('clean.censo_escolas', 'tp_dependencia', e.tp_dependencia::text), 'Outra') AS dependencia,
+        COALESCE(clean.censo_label('clean.censo_escolas', 'tp_localizacao', e.tp_localizacao::text), 'Desconhecida') AS localizacao,
         COALESCE(m.qt_mat_bas, 0)  AS qt_mat_bas,
         COALESCE(m.qt_mat_inf, 0)  AS qt_mat_inf,
         COALESCE(m.qt_mat_fund, 0) AS qt_mat_fund,
@@ -54,21 +56,10 @@ compute_and_save_city_summary <- function(con, schema = "clean", codigo_ibge = "
       stop(paste("Nenhum dado encontrado para o código IBGE:", codigo_ibge))
     }
     
-    # Mapeamento de rótulos categóricos
+    # Rótulos de dependência/localização vêm do dicionário canônico (#228),
+    # direto no SELECT via clean.censo_label(). Aqui só o indicador derivado.
     df_schools <- df_schools %>%
       mutate(
-        dependencia = case_when(
-          tp_dependencia == 1 ~ "Federal",
-          tp_dependencia == 2 ~ "Estadual",
-          tp_dependencia == 3 ~ "Municipal",
-          tp_dependencia == 4 ~ "Privada",
-          TRUE ~ "Outra"
-        ),
-        localizacao = case_when(
-          tp_localizacao == 1 ~ "Urbana",
-          tp_localizacao == 2 ~ "Rural",
-          TRUE ~ "Desconhecida"
-        ),
         ratio_aluno_docente = if_else(qt_doc_bas > 0, round(qt_mat_bas / qt_doc_bas, 2), NA_real_)
       )
 
