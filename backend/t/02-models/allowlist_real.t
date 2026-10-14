@@ -15,10 +15,10 @@ my $al = EduMaps::Data::Allowlist->new(file_path => $real);
 
 subtest 'arquivo real carrega com todas as fontes e regras' => sub {
     my @ids = map { $_->{id} } $al->sources->@*;
-    is(scalar @ids, 25, '25 fontes (23 ativas + 2 inativas; +ibge_ftp_censo2022 na #238)') or diag "@ids";
+    is(scalar @ids, 27, '27 fontes (25 ativas + 2 inativas; +brasilapi_cnpj/minhareceita_cnpj na #240)') or diag "@ids";
 
     my @ativas = grep { lc($_->{status} // 'ativo') ne 'inativo' } $al->sources->@*;
-    is(scalar @ativas, 23, '23 fontes ativas');
+    is(scalar @ativas, 25, '25 fontes ativas');
 
     # As 8 fontes que sumiam com o bloco `sources:` duplicado
     my %have = map { $_ => 1 } @ids;
@@ -30,6 +30,8 @@ subtest 'arquivo real carrega com todas as fontes e regras' => sub {
         for qw(datasus_sisab cnes_estabelecimentos brazilcrime antt_acidentes
                transportes_renatest transportes_renavam osrm_valhalla overpass_osm
                inep mec_nicbr fnde secretarias_educacao);
+    # #240: resolução de CNPJ para as UEx do PDDE
+    ok($have{$_}, "fonte $_ presente") for qw(brasilapi_cnpj minhareceita_cnpj);
 
     is([ sort map { $_->{id} } $al->denied->@* ],
        [ sort qw(antta_monitriip_viagens sptrans_bilhete_unico_usuario
@@ -69,6 +71,8 @@ subtest 'fontes vivas aceitas' => sub {
         'https://storage.googleapis.com/mapbiomas-public/initiatives/brasil/collection11/lulc/coverage/brazil_coverage/brazil_coverage-col11_2025.tif',
         'https://download.inep.gov.br/microdados_censo_escolar_2023.zip',
         'https://overpass-api.de/api/interpreter',
+        'https://brasilapi.com.br/api/cnpj/v1/45545636000157',
+        'https://minhareceita.org/45545636000157',
     );
 
     is($al->get_resource_info('https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca')->{source_id},

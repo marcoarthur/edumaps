@@ -117,6 +117,14 @@ sub _progress_sig ($self) {
       my $c = eval { $schema->resultset($rs)->count };
       push @parts, "$tag:$c" if defined $c;
     }
+    # #240: a resolução de CNPJ das UEx do PDDE grava em clean.cnpj_municipio
+    # linha a linha; a fase pode durar horas sem tocar em ficheiros nem nas
+    # tabelas acima, e sem este contador o watchdog lia travamento. Tabela sem
+    # classe DBIC: a contagem vai por SQL cru, best-effort.
+    my $cnpj = eval {
+      $schema->storage->dbh->selectrow_array('SELECT count(*) FROM clean.cnpj_municipio');
+    };
+    push @parts, "cnpj:$cnpj" if defined $cnpj;
   }
   return join('|', @parts);
 }

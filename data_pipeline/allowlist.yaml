@@ -129,6 +129,29 @@ sources:
         license: "CC-BY-4.0 (CGU)"
     # Verificado 2026-10-13: 202401_Transferencias.zip → 200 application/x-zip-compressed (~2,2 MB).
 
+  - id: brasilapi_cnpj
+    name: "BrasilAPI - Cadastro de CNPJ (dados abertos da Receita Federal)"
+    host: brasilapi.com.br
+    base_url: "https://brasilapi.com.br/api/cnpj/v1"
+    resources:
+      - path: "/api/cnpj/v1/{cnpj}"
+        method: GET
+        description: "Consulta de um CNPJ: razão social, endereço fiscal e código do município (codigo_municipio_ibge) — base RFB"
+        license: "Dados abertos da Receita Federal (via BrasilAPI)"
+    # Verificado 2026-10-13: /api/cnpj/v1/45545636000157 → 200 application/json
+    # com codigo_municipio_ibge. Usado para atribuir as UEx do PDDE sem SIAFI (#240).
+
+  - id: minhareceita_cnpj
+    name: "Minha Receita - Cadastro de CNPJ (dados abertos da Receita Federal)"
+    host: minhareceita.org
+    base_url: "https://minhareceita.org"
+    resources:
+      - path: "/{cnpj}"
+        method: GET
+        description: "Consulta de um CNPJ (fallback da BrasilAPI): mesmos campos da RFB, incluindo codigo_municipio_ibge"
+        license: "Dados abertos da Receita Federal (via Minha Receita)"
+    # Verificado 2026-10-13: /45545636000157 → 200 application/json.
+
   - id: inep
     name: "INEP - Censo Escolar, IDEB, ENEM, Painel PNE"
     host: download.inep.gov.br
