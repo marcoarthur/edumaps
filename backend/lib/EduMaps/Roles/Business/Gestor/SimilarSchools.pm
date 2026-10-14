@@ -10,6 +10,9 @@ use utf8;
 
 requires qw(schema);
 
+# Rótulo de localização do dicionário canônico do Censo (issue #228).
+with 'EduMaps::Model::Role::CensoLabels';
+
 our $DEFAULT_YEAR = 2025;
 
 our @SCOPES = qw(municipio estado regiao);
@@ -93,6 +96,11 @@ sub similar_schools ($self, $params = {}) {
 
   my $target_vector = join(',', $porte_dim + 0, $loc_dim, ($inse_val // 0) / 10, @flags);
 
+  # Rótulo de localização montado do dicionário (issue #228), em vez de um CASE
+  # com os rótulos à mão na query.
+  my $loc_case = $self->censo_labels
+    ->sql_case('ce.tp_localizacao', 'clean.censo_escolas', 'tp_localizacao');
+
   my $sql = <<~"SQL";
     SELECT
       ce.co_entidade,
@@ -101,7 +109,7 @@ sub similar_schools ($self, $params = {}) {
       COALESCE(e.uf, ce.sg_uf)                       AS uf,
       e.porte_escola,
       COALESCE(e.localizacao,
-        CASE ce.tp_localizacao WHEN 1 THEN 'Urbana' WHEN 2 THEN 'Rural' END) AS localizacao,
+        $loc_case) AS localizacao,
       i.media_inse,
       e.latitude,
       e.longitude,
@@ -166,7 +174,7 @@ sub similar_schools ($self, $params = {}) {
       uf           => $esc->{uf} // $censo->{sg_uf},
       porte_escola => $esc->{porte_escola},
       localizacao  => $esc->{localizacao}
-        // ($censo->{tp_localizacao} == 1 ? 'Urbana' : $censo->{tp_localizacao} == 2 ? 'Rural' : undef),
+        // $self->censo_labels->localizacao_label($censo->{tp_localizacao}),
       media_inse   => $self->_num($inse_val),
       latitude     => $self->_num($esc->{latitude}),
       longitude    => $self->_num($esc->{longitude}),

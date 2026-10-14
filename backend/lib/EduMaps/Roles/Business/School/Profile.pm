@@ -8,6 +8,8 @@ use Carp qw(croak);
 
 requires qw(schema default_columns);
 
+with 'EduMaps::Model::Role::CensoLabels';   # rótulos canônicos (issue #228)
+
 has rank_model => sub ($self) {
   EduMaps::Model::Rank::School->new({ schema => $self->schema });
 };
@@ -16,13 +18,6 @@ has rank_model => sub ($self) {
 has default_date => sub {
   DateTime->new( day => 1, month => 6, year => 2025 )
 };
-
-our %adm_labels = (
-  1 => 'Federal',
-  2 => 'Estadual',
-  3 => 'Municipal',
-  4 => 'Privada',
-);
 
 sub info($self, $params = {}) {
 
@@ -241,7 +236,7 @@ sub panel_info($self, $params) {
       nome => $school->{no_entidade},
       municipio => $school->{no_municipio},
       uf => $school->{no_uf},
-      rede => $adm_labels{$school->{tp_dependencia}},
+      rede => $self->censo_labels->rede_label($school->{tp_dependencia}),
       etapas => $self->_etapas($school),
       infraestrutura => $self->_infraestrutura($school),
       matriculas => $school->{matriculas},

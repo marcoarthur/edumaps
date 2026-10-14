@@ -4,14 +4,9 @@ use Carp qw(croak);
 
 requires qw(schema);
 
-our %REDE_CODS = (
-  federal   => 1,
-  estadual  => 2,
-  municipal => 3,
-  privada   => 4,
-);
-
-our %REDE_LABELS = reverse %REDE_CODS;
+# O vocabulário de slug (federal|estadual|municipal|privada) e o domínio dos
+# códigos ficam no dicionário canônico (issue #228).
+with 'EduMaps::Model::Role::CensoLabels';
 
 =head2 summary($params)
 
@@ -50,7 +45,7 @@ sub summary($self, $params = {}) {
 
   my $search = { co_municipio => $params->{codigo_ibge} };
   if (my $rede = $params->{rede}) {
-    my $cod = $REDE_CODS{lc $rede} or croak "Rede inválida: $rede";
+    my $cod = $self->censo_labels->rede_code($rede) or croak "Rede inválida: $rede";
     $search->{codigo_rede} = $cod;
   }
 
@@ -119,7 +114,7 @@ sub schools($self, $params = {}) {
 
   my $search = { co_municipio => $params->{codigo_ibge} };
   if (my $rede = $params->{rede}) {
-    my $cod = $REDE_CODS{lc $rede} or croak "Rede inválida: $rede";
+    my $cod = $self->censo_labels->rede_code($rede) or croak "Rede inválida: $rede";
     $search->{tp_dependencia} = $cod;
   }
 

@@ -4,8 +4,12 @@ use Carp qw(croak);
 
 requires qw(schema default_limit);
 
+# Rótulo de dependência administrativa do dicionário canônico do Censo
+# (issue #228), em vez de um CASE com os rótulos à mão.
+with 'EduMaps::Model::Role::CensoLabels';
+
 # substitui default_columns para CensoEscolas
-has censo_columns => sub {
+has censo_columns => sub ($self) {
   my $end_expr =<<~'EOE';
   concat_ws(', ',
       NULLIF(ds_endereco, ''),
@@ -46,15 +50,9 @@ has censo_columns => sub {
   '&mlon=' || longitude ||'&zoom=18#map=18/' || latitude || '/' || longitude
   EOE
 
-  my $tipo_expr =<<~'EOE';
-  CASE tp_dependencia
-      WHEN 1 THEN 'Federal'
-      WHEN 2 THEN 'Estadual'
-      WHEN 3 THEN 'Municipal'
-      WHEN 4 THEN 'Privada'
-      ELSE 'Não informado'
-  END AS tipo 
-  EOE
+  my $tipo_expr = $self->censo_labels->sql_case(
+    'tp_dependencia', 'clean.censo_escolas', 'tp_dependencia',
+    else => q{'Não informado'}) . " AS tipo";
 
   my $mod_expr =<<~'EOE';
   array_remove(ARRAY[
