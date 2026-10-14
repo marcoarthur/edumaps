@@ -4,6 +4,37 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #131 (entregável 1): Overpass conforme a OSMF
+
+- **Entregue (branch `feat/data-overpass-conformidade` → PR #246, aberto,
+  aguarda aceite)**: o cliente Overpass (`Services/OSM.pm`) passa a
+  **identificar a aplicação** (`user_agent`), a retentar **só falhas
+  transitórias** (429/504/5xx/rede, com backoff) e a **serializar e espaçar**
+  as chamadas (`flock` + `min_interval`) — nunca em paralelo.
+- **Achado**: `_request_with_rate_limit` era **código morto** (nunca chamado) e
+  referenciava `cache_dir`/`no_cache`, atributos inexistentes; o `run` chamava
+  `_request` cru, sem retry. O cache do bruto já vivia no `Model::OSM`
+  (`clean.osm_query.raw_results`, com TTL), não em disco.
+- **Testes**: novo `t/osm_overpass_conformidade.t` (UA, 429→retry, 504→retry,
+  4xx **definitivo**, esgotamento de tentativas); `t/osm_service_errors.t`
+  ajustado para retry rápido. **PASS**. `t/osm_model_offline.t` falha por
+  depender de DB (`clean.municipios_sp`) — também falha em `main`.
+- **Fora do PR**: persistência do bruto em **disco** (hoje é no DB; a
+  localização dependia da #153) e o **entregável 2** (viés de cobertura;
+  depende da #154).
+- **Verificação (entregável 1, tiles)**: o frontend usa a CDN da OSMF **com
+  atribuição** (`LeafletMap.svelte:17`); a política não cobre uso de produção
+  intenso → trocar por fornecedor dedicado fica como item próprio.
+- **Pendência**: aceite/merge do PR #246.
+
+## Sessão 2026-10-14 — #167 fechada (resolvida por outra via)
+
+- `clean.transferencia_educ` passou a ser alimentada pelo loader `CGU.pm` a
+  partir do **ZIP público** (`download-de-dados/transferencias`), **sem chave de
+  API**. O stub `ingest_cgu_transferencias` já não existe. A issue do 401 foi
+  **fechada** como resolvida por outra via — critérios de aceite revistos e
+  cumpridos (carga real de 2025 confirmada).
+
 ## Sessão 2026-10-14 — #240: UEx do PDDE ao município pelo CNPJ
 
 - **Entregue (branch `feat/data-pdde-uex-cnpj` → PR #244 → merge `71d3565`)**:
