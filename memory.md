@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #240: UEx do PDDE ao município pelo CNPJ
+
+- **Entregue (branch `feat/data-pdde-uex-cnpj` → PR #244 → merge `71d3565`)**:
+  atribui as Unidades Executoras (UEx) do PDDE ao município quando o arquivo
+  da CGU não traz o código SIAFI — a pendência que a nota 124 mediu como
+  R$ 535 mi.
+- **Fonte (decisão do developer)**: API por CNPJ **com cache**. BrasilAPI
+  (primária) + Minha Receita (fallback), dados abertos da RFB;
+  `codigo_municipio_ibge`. Cache novo em `clean.cnpj_municipio` (migration
+  `cnpj_municipio`, requires `transferencia_educ`); **só CNPJs resolvidos**
+  entram (sem cache negativo).
+- **Ordem de resolução do PDDE**: SIAFI → CNPJ da própria UEx → órfão.
+  Motivos novos: `pdde_cnpj_nao_resolvido`; mantidos
+  `pdde_siafi_sem_correspondencia` e `pdde_sem_siafi`. O nome do município
+  vem da API — **cobre o DF** (5300108), fora do SICONFI `/entes` (esfera M).
+- **Duas armadilhas medidas e tratadas:**
+  1. a fase de CNPJ é **~6 h** na 1ª carga (~24,5 mil CNPJs × ~0,9 s); o
+     `Runner` (`stall_timeout` 600 s) lia travamento. O provedor grava
+     **linha a linha** e a contagem de `clean.cnpj_municipio` entra na
+     assinatura de progresso (`_progress_sig`) — progresso + cache que
+     sobrevive a interrupção;
+  2. a tabela de cache **não** é "fonte": não entra em `tabelas()` nem em
+     `import_metadata`; o verify de `import_metadata_fontes_p0` não esbarra.
+- **Erros**: 4xx (exceto 429) = "não encontrado" definitivo; rede/5xx/429
+  após retries = **die** (não orfana em silêncio).
+- **Validação**: `ci_db.sh up`+`verify` (banco limpo) **ok**; amostra real de
+  **400 CNPJs órfãos → 400/400 (100%)** (critério de aceite ≥ 99%); cache
+  ponta a ponta contra Postgres real (8/8, 2ª passada sem rede);
+  `t/02-models/cnpj_municipio.t`, `t/05-tasks/cgu_loader.t`,
+  `t/02-models/allowlist_real.t`, `t/05-tasks/ingestion_runner.t` **PASS**.
+- **Deploy**: `rex prepare` + `deploy_db_dev` (database.edumaps; tabela
+  criada) + `deploy_backend_dev` (md5 confere). Imagens Docker locais
+  reconstruídas (`sqitch backend minion`).
+- **Operação**: a 1ª execução real paga o cache (~6 h); as seguintes só
+  resolvem CNPJs novos. Nota técnica **125**.
+- **Pendência**: rodar a CGU 2025 no produto para medir a atribuição total
+  (a amostra de 400 já dá o critério; a carga completa é um job de horas).
+
 ## Sessão 2026-10-14 — #156 P4: fechamento (views materializadas #158, justificativas, relatório)
 
 - **Resultado da #156:** **19/28 entradas com dado** (eram 4). As 9 vazias
