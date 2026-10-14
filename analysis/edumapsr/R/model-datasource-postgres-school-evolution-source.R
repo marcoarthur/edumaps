@@ -50,10 +50,12 @@ load_school_evolution.postgres_source <- function(
   schema_q <- DBI::dbQuoteIdentifier(con, schema)
 
   # Identificação (e existência) da escola — ano mais recente.
+  # O rótulo da rede (#228) vem do dicionário canônico via clean.censo_label().
   info <- DBI::dbGetQuery(
     con,
     sprintf(
-      "SELECT co_entidade, no_entidade, co_municipio, no_municipio, sg_uf, tp_dependencia
+      "SELECT co_entidade, no_entidade, co_municipio, no_municipio, sg_uf, tp_dependencia,
+              COALESCE(clean.censo_label('clean.censo_escolas', 'tp_dependencia', tp_dependencia::text), 'Outra') AS rede
          FROM %s.censo_escolas
         WHERE co_entidade = $1
         ORDER BY nu_ano_censo DESC
@@ -92,13 +94,7 @@ load_school_evolution.postgres_source <- function(
 
   long <- .school_evolution_bind(ideb, saeb)
 
-  rede <- "Outra"
-  if (!is.na(info$tp_dependencia[1])) {
-    rede <- switch(as.character(info$tp_dependencia[1]),
-      "1" = "Federal", "2" = "Estadual", "3" = "Municipal", "4" = "Privada",
-      "Outra"
-    )
-  }
+  rede <- as.character(info$rede[1])
 
   new_school_evolution_model(
     data = long,
