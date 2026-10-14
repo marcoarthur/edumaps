@@ -7,6 +7,8 @@ use Carp qw(croak);
 
 requires qw(schema default_columns);
 
+with 'EduMaps::Model::Role::CensoLabels';   # rótulos canônicos (issue #228)
+
 has parser => sub {
   DateTime::Format::Strptime->new(
     pattern   => '%m-%Y',
@@ -259,7 +261,7 @@ sub _rede_escola($self, $cod_inep) {
     undef, $cod_inep,
   );
   return undef unless defined $tp;
-  return { 1 => 'Federal', 2 => 'Estadual', 3 => 'Municipal', 4 => 'Privada' }->{$tp};
+  return $self->censo_labels->rede_label($tp);
 }
 
 sub _siope_anos_presentes($self, $cod_municipio) {
