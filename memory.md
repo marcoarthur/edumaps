@@ -25,7 +25,9 @@
   subteste que trava a otimização — `2/3` → `2/2` no metadata) +
   `cnpj_municipio.t` (PASS); CI verde (`Perl contra o banco de fixtures`).
 - **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_minion_dev`
-  (master key), md5 de `CGU.pm` confere nos **3 lugares**. Job CGU 2025
+  (master key), md5 de `CGU.pm` confere nos **3 lugares**. Imagens Docker locais
+  (`backend` + `minion`) reconstruídas e contentores recriados; md5 dentro do
+  `edumaps-backend` confere; `sqitch` exit 0. Job CGU 2025
   **reiniciado** (pid antigo `2853990` morto; novo pid `2859903`, log
   `/tmp/cgu_2025_fix2_2026-10-14_180630.log`); cache `clean.cnpj_municipio`
   (**15.467**) preservado → retoma de onde parou.
