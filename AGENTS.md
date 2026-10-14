@@ -64,7 +64,16 @@ Vivem em `tools/` (local, **não** vai ao deploy). Bypass pontual:
 **Onde rodar depende da máquina** (mesma regra do frontend):
 
 - **No host `ubaxala`** o backend roda no **perlbrew do host** e aponta para o
-  **Postgres do Docker** (`127.0.0.1:5432`, sobe com `docker compose up -d db`).
+  **Postgres do Docker**. O default do `edu_maps.conf` é `ubatexu.lan:5432`, que
+  é **outro banco** — sem `pgvector` e sem as migrations mais recentes (por isso
+  `t/02-models/censo_dictionary.t` lá dá `skip_all`). É preciso forçar o alvo,
+  senão a suíte roda contra a base errada e falhas legítimas aparecem:
+
+  ```bash
+  docker compose up -d db            # sobe o Postgres do Docker
+  export EDUMAPS_DB_HOST=127.0.0.1   # sem isto, a suíte vai ao ubatexu.lan
+  ```
+
   O `env -u PERL5LIB` é **obrigatório**: o `PERL5LIB` do shell tem caminhos de
   uma máquina antiga e faz o `prove` abortar antes de rodar qualquer teste.
 
@@ -75,8 +84,8 @@ Vivem em `tools/` (local, **não** vai ao deploy). Bypass pontual:
 
 ```bash
 cd backend
-prove -vl t/02-models/SchoolNetwork.t   # modelo isolado
-prove -vl t/04-api/network/             # API
+EDUMAPS_DB_HOST=127.0.0.1 env -u PERL5LIB prove -vl t/02-models/SchoolNetwork.t  # modelo isolado
+EDUMAPS_DB_HOST=127.0.0.1 env -u PERL5LIB prove -vl t/04-api/network/            # API
 prove -rl t/05-tasks                     # jobs R/Siope (depende de serviços externos)
 yath -l t/02-models/SchoolNetwork.t     # runner moderno (preferido)
 ```
