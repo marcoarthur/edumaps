@@ -4,6 +4,53 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-14 — #228 (camadas SQL + R): rótulos do Censo no dicionário
+
+- **PR #251 MERGEADO** (merge `14a72c4`; branch `refactor/censo-labels-dicionario`
+  → main). Fecha o restante da #228 (backend já em #247/#249): as camadas **SQL**
+  e **R** deixam de reescrever `1 => 'Federal'` / `1 => 'Urbana'` e passam a ler
+  `clean.censo_data_dictionary`.
+- **Duas changes Sqitch novas** (nunca editar as já deployadas):
+  - **`censo_label`**: `clean.censo_label(tabela, coluna, código)`,
+    `clean.censo_code(...)` (rótulo→código, case-insensitive) e
+    `clean.censo_labels(tabela, coluna)`. Leem a linha vigente do dicionário
+    (`year_deprecated IS NULL`, maior `year_introduced`). Aponta os COMMENTs das
+    colunas enum para o dicionário.
+  - **`censo_labels_consumers`**: redefine `clean.typification_badge` e recria
+    `analytics.mv_rede_escolas` via helpers; o mapeamento de volta do IDEB usa
+    `clean.censo_code`. **Ícones permanecem no código** (o dicionário só guarda
+    texto).
+- **R**: `model-datasource-postgres-{city,school-evolution}-source.R` — o rótulo
+  vem do `SELECT` (`clean.censo_label`, `COALESCE` p/ `'Outra'`/`'Desconhecida'`);
+  removidos os `switch()`. **Backend**: `templates/rscripts/city/city_analytics.R`
+  idem, removido o `case_when`.
+- **Armadilha (matview) — já documentada no AGENTS, reapareceu**: `verify` que usa
+  `information_schema.columns` **não vê** colunas de matviews (retornou "0 de 8").
+  Corrigido para `pg_attribute`. E o `DROP`+`CREATE` da MV apaga os COMMENTs
+  adicionados por `column_descriptions` (change na linha 51 do plano): a change
+  nova **reemite os 34** `COMMENT ON COLUMN`. Sem isso o gate
+  `column_descriptions` falha (foi o que o CI pegou).
+- **Validação**:
+  - **Gate de CI** (`db/fixtures/ci_db.sh up` + `verify`, banco fresco, porta
+    5433): deploy das **117 changes** OK e `verify` **successful**; workflow
+    `backend-tests` verde (10m).
+  - **Revert** testado (`sqitch revert db:pg://ci@127.0.0.1:5433/edumaps_ci --to
+    cnpj_municipio`): depois do revert o `column_descriptions` continua ok.
+  - **R**: parse OK nos 3 arquivos; integração real contra `edumaps_dev` (rótulos
+    corretos) e `testthat` (`censo-dictionary`, `city-summary`,
+    `school-evolution`) sem falhas.
+  - **Deploy dev**: `rex prepare` + `deploy_db_dev` + `deploy_analytics_dev` +
+    `deploy_backend_dev`. No produto: 2 changes aplicadas, 3 helpers presentes,
+    MV com **0** colunas sem comentário, `rede` consistente, `typification_badge`
+    devolve rótulo do dicionário (`{"label_principal":"Estadual",...}`), package
+    R reinstalado (funções com `censo_label`).
+  - **Imagens Docker locais** (`sqitch`, `backend`, `minion`, `analytic`)
+    reconstruídas + `up -d`; `sqitch` exit **0**; md5 confere host↔contentor
+    (template do backend e `/pkg/R/*-source.R` do analytic).
+- **Fora de escopo** (fica como está): `report-catalog.R` / `report-roteiros.R`
+  usam os rótulos como **identificadores de negócio** em recortes de relatório —
+  não é mapa código→rótulo. `eduBR` é repositório somente-leitura.
+
 ## Sessão 2026-10-14 — #240: otimização da fase de CNPJ na reexecução (PR #250)
 
 - **Descoberta na reexecução da CGU 2025**: o `_mapa_cnpj_uex` consultava
@@ -33,6 +80,17 @@
   (**15.467**) preservado → retoma de onde parou.
 - **Pendência**: com o cache, faltam ~21 mil CNPJs úteis (~7 h); medir a
   atribuição total e comentar/fechar a **#240**.
+- **ATUALIZAÇÃO (fim da sessão)**: o job CGU 2025 `2859903` **FALHOU** em
+  2026-10-14 15:35:57 (`[STALL] Sem progresso há 603s (timeout 600s)`,
+  `dir=data/ingestao`; log `/tmp/cgu_2025_fix2_2026-10-14_180630.log`). A
+  assinatura de "sem progresso" cita arquivos de **outras** ingestões
+  (`Acidentes_DadosAbertos`, `I_Frota`, `Localidade`, `brazilcrime`) — o detector
+  de stall olha o diretório `data/ingestao` inteiro, e durante a fase de
+  resolução de CNPJ (lenta, via APIs externas 503/500) **nenhum arquivo muda** →
+  falso positivo. O job **não** concluiu a fase de CNPJ nem reescreveu o
+  `cgu_orfaos.csv` (mtime 13/10 21:37, pré-fix). Logo a medição (74,6%) **é o
+  baseline antigo**, não o pós-#250. Investigar o stall (timeout? excluir do
+  watchdog?) antes de remedir.
 
 ## Sessão 2026-10-14 — #228 (camada backend): rótulos do Censo do dicionário
 
