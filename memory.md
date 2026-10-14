@@ -6,9 +6,20 @@
 
 ## Sessão 2026-10-14 — #228 (camada backend): rótulos do Censo do dicionário
 
-- **PR #247 ABERTO, aguarda merge** (branch `refactor/backend-dicionario-censo`,
-  commit `d2a5366`). **Deploy dev já aplicado** (`rex prepare` +
-  `deploy_backend_dev`).
+- **PR #247 MERGEADO** (merge `4855331`; branch `refactor/backend-dicionario-censo`,
+  commit de trabalho `d2a5366`). **Deploy dev aplicado** (`rex prepare` +
+  `deploy_backend_dev`); no produto o md5 de `CensoLabels.pm` confere e
+  `/api/gestor/11000040/painel` → **200** (`rede=Municipal`, `localizacao=Urbana`).
+  **Imagens Docker locais reconstruídas** (`backend` + `minion`) e contentores
+  recriados (`up -d`); md5 dentro do `edumaps-backend` confere. `sqitch` exit 0.
+- **Regressão de CI encontrada e corrigida (PR #248, merge `b4e4db8`)**: o merge
+  do #246 deixou `main` **vermelha** — `Services/OSM.pm` passou a usar
+  `Fcntl qw(:flock)` sem declarar no `cpanfile`, e o inventário
+  (`script/check_dependencies.pl`) **não** isenta core: qualquer módulo usado em
+  `lib/`/`script/` tem de estar declarado. Fix: `requires "Fcntl" => "0";`. O
+  #247 só ficou verde depois disso (branch atualizado com `gh pr update-branch`).
+- **`gh` perdeu autenticação a meio da sessão** (`not logged into any GitHub
+  hosts`); resolvido com `gh auth login`. `git push` por SSH nunca parou.
 - **Entregue**: `EduMaps::Model::Domain::CensoLabels` (novo) + um role partilhado
   `EduMaps::Model::Role::CensoLabels` (novo). As 6 roles — `Gestor/Overview`,
   `School/Profile`, `SchoolNetwork/Profile`, `SchoolNetwork/Geo`,
@@ -26,6 +37,8 @@
   `ubatexu.lan:5432`, que é **outro banco**: sem `clean.censo_data_dictionary` e
   **sem pgvector** (por isso `t/02-models/censo_dictionary.t` dava `skip_all` lá).
   Sem esse env a suíte roda contra o banco errado e asserções legítimas falham.
+  **Documentado em `AGENTS.md`** (commit `3407e5d`, docs-only), para não repetir
+  a perda de tempo.
 - **Fora de escopo**: camadas SQL de deploy (`badge_functions.sql`,
   `analytics_rede_escolas.sql`, `rede_escolas_etapas.sql`, COMMENTs) e R da #228;
   `Rank/School.pm` e `Clustering.pm` comparam rótulos já gravados nas MVs
@@ -35,7 +48,8 @@
   `City.t`, `indicators_quality.t`, `municipio.t` — idênticas em `main`,
   confirmadas com `git stash`). No produto: `/api/gestor/11000040/painel` → 200,
   `rede=Municipal`, `localizacao=Urbana`.
-- **Imagens Docker locais NÃO reconstruídas** neste ponto (esperam o merge, passo 6).
+- **Imagens Docker locais reconstruídas** (`backend` + `minion`) — passo 6 do
+  Workflow cumprido.
 
 ## Sessão 2026-10-14 — #131 (entregável 1): Overpass conforme a OSMF
 
