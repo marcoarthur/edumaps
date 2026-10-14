@@ -81,16 +81,25 @@
 - **Pendência**: com o cache, faltam ~21 mil CNPJs úteis (~7 h); medir a
   atribuição total e comentar/fechar a **#240**.
 - **ATUALIZAÇÃO (fim da sessão)**: o job CGU 2025 `2859903` **FALHOU** em
-  2026-10-14 15:35:57 (`[STALL] Sem progresso há 603s (timeout 600s)`,
-  `dir=data/ingestao`; log `/tmp/cgu_2025_fix2_2026-10-14_180630.log`). A
-  assinatura de "sem progresso" cita arquivos de **outras** ingestões
-  (`Acidentes_DadosAbertos`, `I_Frota`, `Localidade`, `brazilcrime`) — o detector
-  de stall olha o diretório `data/ingestao` inteiro, e durante a fase de
-  resolução de CNPJ (lenta, via APIs externas 503/500) **nenhum arquivo muda** →
-  falso positivo. O job **não** concluiu a fase de CNPJ nem reescreveu o
-  `cgu_orfaos.csv` (mtime 13/10 21:37, pré-fix). Logo a medição (74,6%) **é o
-  baseline antigo**, não o pós-#250. Investigar o stall (timeout? excluir do
-  watchdog?) antes de remedir.
+  2026-10-14 18:34:38 UTC (15:34 local) com `[STALL] Sem progresso há 603s
+  (timeout 600s)` (log `/tmp/cgu_2025_fix2_2026-10-14_180630.log` no
+  `backend.edumaps`). **Causa medida**: na fase de CNPJ as duas fontes devolvem
+  5xx para os CNPJs das UEx (brasilapi → 500 "Request failed with status code
+  503"; minhareceita → 503 "temporariamente indisponível"; reproduzido com os
+  CNPJs do log, enquanto um CNPJ conhecido responde 200). O provider só grava no
+  cache os CNPJs **resolvidos**, então nada muda no `count(*)` de
+  `clean.cnpj_municipio` (o contador `cnpj:` da assinatura do watchdog) → o
+  watchdog de **600 s** dispara. O guard `max_falhas_seguidas=30` abortaria
+  limpo, mas cada CNPJ falho leva ~50 s ⇒ cabem ~12 falhas na janela → **o
+  watchdog vence o guard**. O job não concluiu a fase de CNPJ nem reescreveu o
+  `cgu_orfaos.csv` (mtime 13/10 21:37, pré-fix) ⇒ a medição (74,6%) **é o
+  baseline antigo**, não o pós-#250.
+- **Decisão do developer**: **deixar o #240 de lado por agora**. Diagnóstico
+  registrado no comentário da issue #240
+  (`https://github.com/marcoarthur/edumaps/issues/240#issuecomment-6176746421`),
+  com as opções (stall_timeout maior no job à la CNES/Setores; baixar
+  `max_falhas_seguidas`; cache negativo com TTL; fonte alternativa) para um
+  próximo ciclo.
 
 ## Sessão 2026-10-14 — #228 (camada backend): rótulos do Censo do dicionário
 
