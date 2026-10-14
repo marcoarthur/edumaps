@@ -6,8 +6,8 @@
 
 ## Sessão 2026-10-14 — #131 (entregável 1): Overpass conforme a OSMF
 
-- **Entregue (branch `feat/data-overpass-conformidade` → PR #246, aberto,
-  aguarda aceite)**: o cliente Overpass (`Services/OSM.pm`) passa a
+- **Entregue (branch `feat/data-overpass-conformidade` → PR #246 → merge
+  `5edcfe3`)**: o cliente Overpass (`Services/OSM.pm`) passa a
   **identificar a aplicação** (`user_agent`), a retentar **só falhas
   transitórias** (429/504/5xx/rede, com backoff) e a **serializar e espaçar**
   as chamadas (`flock` + `min_interval`) — nunca em paralelo.
@@ -25,7 +25,9 @@
 - **Verificação (entregável 1, tiles)**: o frontend usa a CDN da OSMF **com
   atribuição** (`LeafletMap.svelte:17`); a política não cobre uso de produção
   intenso → trocar por fornecedor dedicado fica como item próprio.
-- **Pendência**: aceite/merge do PR #246.
+- **Deploy**: `rex prepare` + `deploy_backend_dev` (md5 `b3c21141…` confere no
+  produto); imagens Docker locais `backend`/`minion` reconstruídas. Nota
+  técnica **126**.
 
 ## Sessão 2026-10-14 — #167 fechada (resolvida por outra via)
 
