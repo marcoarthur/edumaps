@@ -13,8 +13,11 @@ use Mojo::Log;
 #   2. fallback para a Minha Receita quando a primária não achou;
 #   3. nao_encontrado quando nenhuma resolve;
 #   4. retry de falha transitória antes de desistir;
-#   5. cache: hit não chama a API; miss grava no cache;
-#   6. host fora do allowlist morre alto.
+#   5. fallback usado quando a primária tem falha transitória (fix #244);
+#   6. CNPJ que nenhuma fonte responde vira órfão, não derruba a carga;
+#   7. rajada de falhas seguidas morre alto (indisponibilidade das fontes);
+#   8. cache: hit não chama a API; miss grava no cache;
+#   9. host fora do allowlist morre alto.
 # =================================================================
 
 my $JOB = 'EduMaps::Data::CnpjMunicipio';
@@ -102,11 +105,32 @@ subtest 'retry de falha transitória antes de desistir' => sub {
   is(scalar @{ $ua->{urls} }, 2, 'retentou a mesma URL');
 };
 
-subtest 'falha transitória persistente morre alto' => sub {
-  my $ua = MockUA->new(fila => [ { transitorio => 1 }, { transitorio => 1 }, { transitorio => 1 } ]);
-  my $p = provider(ua => $ua, max_retries => 2);
-  eval { $p->municipio_por_cnpj([$CNPJ]) };
-  like($@, qr/falha persistente/, 'morre em vez de orfanar em silêncio');
+subtest 'fallback usado quando a primária tem falha transitória' => sub {
+  # BrasilAPI esgota retries (max_retries=1 -> 2 tentativas), Minha Receita resolve.
+  my $ua = MockUA->new(fila => [
+    { transitorio => 1 }, { transitorio => 1 },
+    { code => 200, body => '{"codigo_municipio_ibge":3304557,"uf":"RJ","municipio":"RIO DE JANEIRO"}' },
+  ]);
+  my $p = provider(ua => $ua, max_retries => 1);
+  my $m = $p->municipio_por_cnpj([$CNPJ]);
+  is($m->{$CNPJ}{fonte}, 'minhareceita', 'resolvido pelo fallback após falha da primária');
+  is($m->{$CNPJ}{codigo_ibge}, '3304557', 'IBGE do fallback');
+};
+
+subtest 'CNPJ que nenhuma fonte responde vira órfão, não derruba a carga' => sub {
+  # 2 fontes x 2 tentativas (max_retries=1) de falha transitória.
+  my $ua = MockUA->new(fila => [ map { { transitorio => 1 } } 1 .. 4 ]);
+  my $p = provider(ua => $ua, max_retries => 1);
+  my $m = $p->municipio_por_cnpj([$CNPJ]);
+  ok($m->{$CNPJ}{nao_encontrado}, 'marcado como não encontrado');
+  ok(!exists $m->{$CNPJ}{codigo_ibge}, 'sem IBGE');
+};
+
+subtest 'rajada de falhas seguidas morre alto (indisponibilidade)' => sub {
+  my $ua = MockUA->new(fila => [ map { { transitorio => 1 } } 1 .. 20 ]);
+  my $p = provider(ua => $ua, max_retries => 1, max_falhas_seguidas => 2);
+  eval { $p->municipio_por_cnpj([qw(11111111000191 22222222000191 33333333000191)]) };
+  like($@, qr/falhas seguidas/, 'morre após a rajada de falhas');
 };
 
 subtest 'CNPJ fora do formato é ignorado' => sub {

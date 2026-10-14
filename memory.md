@@ -27,8 +27,19 @@
      sobrevive a interrupção;
   2. a tabela de cache **não** é "fonte": não entra em `tabelas()` nem em
      `import_metadata`; o verify de `import_metadata_fontes_p0` não esbarra.
-- **Erros**: 4xx (exceto 429) = "não encontrado" definitivo; rede/5xx/429
-  após retries = **die** (não orfana em silêncio).
+- **Erros**: 4xx (exceto 429) = "não encontrado" definitivo; falha de rede
+  (5xx/429/timeout) é retentada em cada fonte e, esgotada, passa à seguinte.
+  CNPJ que nenhuma fonte responde vira órfão (não cacheado); só uma **rajada**
+  de 30 falhas seguidas (`max_falhas_seguidas`) morre alto — ver o fix do
+  PR #245 abaixo.
+- **A carga real falhou e expôs um bug (corrigido no PR #245)**: a 1ª
+  execução da CGU 2025 no produto morreu no **primeiro** CNPJ
+  (`00000049000144`) — a BrasilAPI devolveu 5xx transitório e o `_tentar`
+  morria **antes** de tentar o fallback (Minha Receita). Minutos depois o
+  mesmo CNPJ respondeu **200** (São Paulo): era transitório. Correção:
+  fallback a sério (esgotada uma fonte, tenta a seguinte) + **guard de
+  rajada** (`max_falhas_seguidas` 30): CNPJ isolado vira órfão e não derruba
+  a carga; só uma rajada morre.
 - **Validação**: `ci_db.sh up`+`verify` (banco limpo) **ok**; amostra real de
   **400 CNPJs órfãos → 400/400 (100%)** (critério de aceite ≥ 99%); cache
   ponta a ponta contra Postgres real (8/8, 2ª passada sem rede);
@@ -39,8 +50,8 @@
   reconstruídas (`sqitch backend minion`).
 - **Operação**: a 1ª execução real paga o cache (~6 h); as seguintes só
   resolvem CNPJs novos. Nota técnica **125**.
-- **Pendência**: rodar a CGU 2025 no produto para medir a atribuição total
-  (a amostra de 400 já dá o critério; a carga completa é um job de horas).
+- **Pendência**: reexecutar a CGU 2025 no produto (após o PR #245) para medir
+  a atribuição total e fechar a medição de aceite.
 
 ## Sessão 2026-10-14 — #156 P4: fechamento (views materializadas #158, justificativas, relatório)
 

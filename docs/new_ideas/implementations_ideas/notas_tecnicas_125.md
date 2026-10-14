@@ -46,8 +46,20 @@ persistido**.
   sleep): 29/30 HTTP 200 e uma falha transitória — sem rate-limit declarado,
   mas retry é obrigatório.
 - Um erro **4xx (exceto 429)** é resposta definitiva ("não está na base",
-  não aborta); rede/5xx/429 após esgotar retries **morre alto**. O job não
-  pode ter sucesso com um município a menos em silêncio.
+  não aborta).
+- Falha de rede (5xx/429/timeout) é retentada **em cada fonte** e, esgotada,
+  passa à **fonte seguinte**. Um CNPJ que **nenhuma** fonte responde vira
+  **órfão** (`pdde_cnpj_nao_resolvido`) e **não** entra no cache (a próxima
+  execução tenta de novo). Só uma **rajada** (`max_falhas_seguidas`, 30) de
+  falhas seguidas morre alto — aí as fontes estão fora e orfanar em massa
+  seria mentir.
+
+> **A primeira versão estava errada e a carga real expôs.** O `_tentar`
+> morria na falha persistente da **primária**, sem chegar ao **fallback**, e
+> uma indisponibilidade transitória da BrasilAPI (upstream 503 → 5xx)
+> derrubou a carga inteira já no **primeiro** CNPJ. Corrigido no PR #245
+> (fallback a sério + guard de rajada). Detalhe na secção \"O que a carga real
+> ensinou\".
 
 ## Ordem de resolução (em `CGU.pm`)
 
@@ -91,11 +103,36 @@ então não esbarra nela.
 - **Cadeia completa com cache:** 8 CNPJs resolvidos contra um Postgres real,
   gravados em `clean.cnpj_municipio`; a segunda passada resolve **sem
   rede** (0 s).
-- **Testes:** `t/02-models/cnpj_municipio.t` (9 casos: primária, fallback,
-  não-encontrado, retry, falha persistente, formato inválido, cache
-  hit/miss, allowlist), `t/05-tasks/cgu_loader.t` (inclui o caminho novo do
-  resolver e um `run` ponta a ponta com o provedor dublê),
+- **Testes:** `t/02-models/cnpj_municipio.t` (11 casos: primária, fallback por
+  404, fallback por **falha transitória**, não-encontrado, retry, CNPJ que
+  nenhuma fonte responde vira órfão, **rajada de falhas morre alto**, formato
+  inválido, cache hit/miss, allowlist), `t/05-tasks/cgu_loader.t` (inclui o
+  caminho novo do resolver e um `run` ponta a ponta com o provedor dublê),
   `t/02-models/allowlist_real.t` — **PASS**.
+
+## O que a carga real ensinou
+
+A primeira execução real (2026-10-14, produto, `cgu` 2025) **falhou**. Não por
+bug de dado, mas por **robustez**: ela morreu no **primeiro** CNPJ.
+
+O CNPJ `00000049000144` devolveu 5xx persistente na BrasilAPI **e** na Minha
+Receita. O `_tentar` foi desenhado para morrer nisso — \"rede/5xx esgotado =
+morre alto\" — e morria **antes** de tentar o fallback. Uma indisponibilidade
+transitória (a BrasilAPI embrulha um 503 do upstream como 500) derrubou uma
+carga de horas no primeiro item. Repetido minutos depois, o mesmo CNPJ
+respondeu **200 OK** (São Paulo): era transitório, não determinístico.
+
+Duas correções:
+
+1. **O fallback passou a ser usado de facto.** Esgotados os retries numa
+   fonte, tenta-se a seguinte; um 4xx continua definitivo.
+2. **Guard de rajada** (`max_falhas_seguidas`): um CNPJ isolado que ninguém
+   responde vira órfão e **não** derruba a carga; só uma sequência de 30
+   falhas seguidas morre — o sinal de indisponibilidade real.
+
+O mesmo padrão vale para qualquer fonte comunitária sem SLA: **o item
+problemático não pode matar o lote**. A distinção entre \"este aqui não existe\"
+e \"as fontes estão fora\" tem de estar no código, não na esperança.
 
 ## Notas de operação
 
