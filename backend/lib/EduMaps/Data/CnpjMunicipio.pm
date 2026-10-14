@@ -23,20 +23,21 @@ conselhos, APMs, associações — que o arquivo da CGU traz só com o CNPJ, sem
 código SIAFI do município (issue #240).
 
 Consulta primeiro o cache; só os CNPJs ainda não vistos vão à API. Cada CNPJ
-resolvido é gravado no cache <b>à medida que resolve</b> — a primeira carga
+resolvido é gravado no cache B<à medida que resolve> — a primeira carga
 resolve dezenas de milhares de CNPJs e corre por horas: gravar só no fim
 perderia tudo se o job morresse a meio. C<nao_encontrado> é devolvido para
 CNPJs que as fontes não reconhecem (mas NÃO é cacheado: uma falha definitiva
 pode vir a ser resolvida depois, e reconsultar alguns poucos por carga é
-barato). Falha transitória de rede é retentada; se persistir, morre alto — o
-job não pode "ter sucesso" com um município a menos em silêncio.
+barato).
 
-Como o cache cresce durante a fase (que pode passar do C<stall_timeout> do
-orquestrador sem tocar em ficheiros ou noutras tabelas), a contagem de linhas
-de C<clean.cnpj_municipio> entra na assinatura de progresso do Runner.
-
-Fontes, em ordem: BrasilAPI (primária) e Minha Receita (fallback). Ambas são
-APIs comunitárias sem contrato de volume, por isso o C<throttle> padrão.
+Fontes, em ordem: BrasilAPI (primária) e Minha Receita (fallback) — APIs
+comunitárias sem contrato de volume, por isso o C<throttle> padrão. Uma fonte
+que responde 4xx (excepto 429) diz "não está na base"; uma que falha a rede
+(5xx/429/timeout) é retentada e, esgotada, passa à fonte seguinte. Há CNPJs
+que B<as duas> fontes não respondem (5xx determinístico, medido): um caso
+isolado é registrado como órfão sem derrubar a carga. Só uma rajada de falhas
+seguidas (C<max_falhas_seguidas>) morre alto — aí as fontes estão fora e
+orfanar em massa seria mentir.
 
 =cut
 
@@ -67,6 +68,13 @@ has throttle => 0.2;
 has max_retries => 3;
 has backoff_base => 2;
 has jitter => 2;   # aleatoriedade somada ao backoff (0 nos testes)
+
+# Nº de CNPJs SEGUIDOS que podem falhar transitória em todas as fontes antes
+# de a carga abortar. Separa os dois casos que se parecem: um CNPJ isolado
+# que a RFB não responde (as duas fontes devolvem 5xx para ele — medido) passa
+# e fica registrado como órfão; uma rajada significa que as fontes estão fora
+# e orfanar em massa seria mentir. ~6 chamadas por CNPJ problemático.
+has max_falhas_seguidas => 30;
 
 # Fontes em ordem de preferência. Cada uma usa o CNPJ para montar a URL; a
 # resposta (mesmos campos do layout da RFB) é interpretada por _tentar.
@@ -100,16 +108,29 @@ sub municipio_por_cnpj ($self, $cnpjs) {
   # Grava linha a linha, à medida que resolve: ver a DESCRIPTION (resiliência
   # a interrupção + progresso do watchdog).
   my $sth = $self->dbh ? $self->_sth_cache : undef;
+  my $seguidas = 0;   # falhas transitórias consecutivas (guard de indisponibilidade)
 
   for my $i (0 .. $#falta) {
     my $cnpj = $falta[$i];
     my $info = $self->_resolver_cnpj($cnpj);
-    if ($info) {
+    if ($info->{codigo_ibge}) {
       $res{$cnpj} = $info;
       _gravar_linha($sth, $cnpj, $info) if $sth;
+      $seguidas = 0;
+    }
+    elsif ($info->{nao_encontrado}) {
+      $self->log->warn("[CNPJ] $cnpj não encontrado nas fontes");
+      $res{$cnpj} = { nao_encontrado => 1 };
+      $seguidas = 0;
     }
     else {
-      $self->log->warn("[CNPJ] $cnpj não encontrado nas fontes");
+      # Todas as fontes falharam a rede. Um CNPJ problemático isolado não
+      # pode derrubar a carga (fica órfão); uma rajada indica indisponibilidade.
+      $seguidas++;
+      die sprintf("[CNPJ] %d falhas seguidas nas fontes (última em %s: %s) — "
+        . "provável indisponibilidade; abortando para não orfanar em massa\n",
+        $seguidas, $cnpj, $info->{erro} // 'sem detalhe') if $seguidas > $self->max_falhas_seguidas;
+      $self->log->warn("[CNPJ] $cnpj não resolvido (fontes indisponíveis: " . ($info->{erro} // '?') . ')');
       $res{$cnpj} = { nao_encontrado => 1 };
     }
     sleep $self->throttle if $self->throttle > 0 && $i < $#falta;
@@ -118,18 +139,26 @@ sub municipio_por_cnpj ($self, $cnpjs) {
   return \%res;
 }
 
+# Tenta cada fonte em ordem. Devolve o registo achatado
+# { codigo_ibge, uf, municipio, fonte } quando alguma resolve;
+# { nao_encontrado => 1 } quando alguma fonte responde 4xx definitivo; ou
+# { erro => $msg } quando TODAS falharam a rede.
 sub _resolver_cnpj ($self, $cnpj) {
+  my ($viu_nao_encontrado, $ultimo_erro);
   for my $fonte (@{ $self->fontes }) {
     my $url = $fonte->{url}->($cnpj);
     $self->_exigir_allowlist($url);
-    my $info = $self->_tentar($url, $fonte->{id}, $cnpj);
-    return $info if $info;
+    my $r = $self->_tentar($url, $fonte->{id}, $cnpj);
+    return $r->{resolvido} if $r->{resolvido};
+    $viu_nao_encontrado = 1 if $r->{nao_encontrado};
+    $ultimo_erro = $r->{erro} if $r->{erro};
   }
-  return undef;
+  return { nao_encontrado => 1 } if $viu_nao_encontrado;
+  return { erro => $ultimo_erro };
 }
 
-# Uma fonte. Devolve { codigo_ibge, uf, municipio, fonte } ou undef (CNPJ não
-# está na base). Erro transitório (rede/5xx/429) é retentado; esgotado, morre.
+# Uma fonte. Devolve { resolvido => {...} }, { nao_encontrado => 1 } (4xx:
+# não está na base) ou { erro => $msg } (rede/5xx/429 após retries).
 sub _tentar ($self, $url, $fonte, $cnpj) {
   my $tentativa = 0;
   while (1) {
@@ -138,11 +167,8 @@ sub _tentar ($self, $url, $fonte, $cnpj) {
     if (my $err = $tx->error) {
       my $code = $err->{code} // 0;
       # 4xx (excepto 429) é resposta definitiva: o CNPJ não está na base.
-      return undef if $code >= 400 && $code < 500 && $code != 429;
-      if ($tentativa > $self->max_retries) {
-        die sprintf("[CNPJ] %s: falha persistente em %s para %s: %s\n",
-          $fonte, $url, $cnpj, $err->{message} // "HTTP $code");
-      }
+      return { nao_encontrado => 1 } if $code >= 400 && $code < 500 && $code != 429;
+      return { erro => ($err->{message} // "HTTP $code") } if $tentativa > $self->max_retries;
       my $espera = $self->backoff_base * (2 ** ($tentativa - 1)) + ($self->jitter ? rand($self->jitter) : 0);
       $self->log->warn(sprintf('[CNPJ] %s %s: %s — retry %d/%d em %.1fs',
         $fonte, $cnpj, $err->{message} // "HTTP $code", $tentativa, $self->max_retries, $espera));
@@ -150,15 +176,15 @@ sub _tentar ($self, $url, $fonte, $cnpj) {
       next;
     }
     my $json = eval { decode_json($tx->res->body) };
-    return undef unless ref $json eq 'HASH';
+    return { nao_encontrado => 1 } unless ref $json eq 'HASH';
     my $ibge = $json->{codigo_municipio_ibge};
-    return undef unless defined $ibge && $ibge =~ /^\d{1,7}\z/ && $ibge > 0;
-    return {
+    return { nao_encontrado => 1 } unless defined $ibge && $ibge =~ /^\d{1,7}\z/ && $ibge > 0;
+    return { resolvido => {
       codigo_ibge => sprintf('%07d', $ibge),
       uf          => $json->{uf},
       municipio   => $json->{municipio},
       fonte       => $fonte,
-    };
+    } };
   }
 }
 
