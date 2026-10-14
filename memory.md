@@ -19,7 +19,11 @@
   - verifies antigos exigem "NÃO CONSTRUÍDA"/"NÃO CARREGADA" para sempre:
     relaxar para aceitar o comment que nomeia o loader. Editar verify não
     muda o `change_id`.
-- **Próximo:** P4, o fechamento da #156.
+- **PR #242** (merge `6180511`), fecha a #241.
+- **Próximo:** P4, o fechamento da #156. Decisões do developer:
+  - VMDA e Recife entram como `nao_carregada`, com motivo;
+  - a P4 **inclui a #158**: medir as views e materializar as que
+    justificarem.
 
 ## Sessão 2026-10-13 — #156 P2: CGU, setores + Censo 2022 e SISAB (#238)
 
