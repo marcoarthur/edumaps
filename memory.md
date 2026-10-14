@@ -20,6 +20,18 @@
   #247 só ficou verde depois disso (branch atualizado com `gh pr update-branch`).
 - **`gh` perdeu autenticação a meio da sessão** (`not logged into any GitHub
   hosts`); resolvido com `gh auth login`. `git push` por SSH nunca parou.
+- **PR #249 MERGEADO** (merge `9094196`): `Roles/Business/School/Finance.pm`
+  também reescrevia o mapa `{ 1 => 'Federal', ... }` — ponto backend da #228 que
+  **escapou** ao #247. Agora compõe o role e usa `censo_labels->rede_label`.
+  Deploy + imagens locais reconstruídas; md5 confere nos **3 lugares**. Testes:
+  `censo_labels.t` e `finance_secretaria.t` PASS; `clustering.t` e
+  `finance_siope.t` (teste 4) falham **igual em `main`** (pré-existentes).
+- **Restante da #228 (não feito)**: camada **SQL** (`badge_functions.sql`,
+  `analytics_rede_escolas.sql`, `rede_escolas_etapas.sql`, COMMENTs de
+  `censo_escolar_2025.sql`) — todos **Sqitch já deployados**, logo exige change
+  **nova** (nunca editar a deployada, ver AGENTS) — e camada **R**
+  (`analysis/edumapsr/R/model-datasource-postgres-{school-evolution,city}-source.R`
+  + `templates/rscripts/city/city_analytics.R`).
 - **Entregue**: `EduMaps::Model::Domain::CensoLabels` (novo) + um role partilhado
   `EduMaps::Model::Role::CensoLabels` (novo). As 6 roles — `Gestor/Overview`,
   `School/Profile`, `SchoolNetwork/Profile`, `SchoolNetwork/Geo`,
