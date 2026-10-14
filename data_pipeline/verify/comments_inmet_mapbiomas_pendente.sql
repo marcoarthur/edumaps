@@ -21,7 +21,11 @@ BEGIN
   END IF;
 
   SELECT obj_description('clean.mapbiomas_cobertura'::regclass) INTO c;
-  IF c IS NULL OR position('NÃO CONSTRUÍDA' IN c) = 0 OR position('#170' IN c) = 0 THEN
+  -- #241: carregada pela estatística oficial (comments_ingestao_p3); o comment
+  -- honesto passa a ser o que nomeia o loader. Exigir "NÃO CONSTRUÍDA" para
+  -- sempre tornaria este verify falso (mesmo critério de comments_esic_pendente).
+  IF c IS NULL OR ((position('NÃO CONSTRUÍDA' IN c) = 0 OR position('#170' IN c) = 0)
+                   AND position('#241' IN c) = 0) THEN
     RAISE EXCEPTION 'comments_inmet_mapbiomas_pendente: mapbiomas_cobertura sem declaração NÃO CONSTRUÍDA/#170';
   END IF;
 END $$;
