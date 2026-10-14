@@ -5,12 +5,9 @@ use Encode qw(encode);
 
 requires qw(schema);
 
-our %REDE_NOMES = (
-  federal   => 'Federal',
-  estadual  => 'Estadual',
-  municipal => 'Municipal',
-  privada   => 'Privada',
-);
+# O nome da rede (rótulo) vem do dicionário canônico do Censo (issue #228); o
+# slug da API é traduzido por CensoLabels->rede_label_for_slug.
+with 'EduMaps::Model::Role::CensoLabels';
 
 =head2 markers($params)
 
@@ -44,7 +41,7 @@ sub markers($self, $params = {}) {
 
   my $search = { 'municipio.codigo_ibge' => $params->{codigo_ibge} };
   if (my $rede = $params->{rede}) {
-    my $nome = $REDE_NOMES{lc $rede} or croak "Rede inválida: $rede";
+    my $nome = $self->censo_labels->rede_label_for_slug($rede) or croak "Rede inválida: $rede";
     $search->{'dependencia_administrativa'} = $nome;
   }
 

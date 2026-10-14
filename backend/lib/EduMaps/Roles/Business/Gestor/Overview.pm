@@ -10,19 +10,11 @@ use utf8;
 
 requires qw(schema);
 
+# Rótulos de rede e localização vêm do dicionário canônico do Censo
+# (clean.censo_data_dictionary), não de mapas locais (issue #228).
+with 'EduMaps::Model::Role::CensoLabels';
+
 our $DEFAULT_YEAR = 2025;
-
-our %REDE = (
-  1 => 'Federal',
-  2 => 'Estadual',
-  3 => 'Municipal',
-  4 => 'Privada',
-);
-
-our %LOCALIZACAO = (
-  1 => 'Urbana',
-  2 => 'Rural',
-);
 
 # --- Especificações (key, rótulo PT-BR, coluna do Censo) ------------------
 
@@ -204,8 +196,8 @@ sub overview($self, $params = {}) {
       municipio   => $censo->{no_municipio},
       uf          => $censo->{sg_uf},
       cod_municipio => $censo->{co_municipio} + 0,
-      rede        => $REDE{ $censo->{tp_dependencia} // 0 } // 'Não informada',
-      localizacao => $LOCALIZACAO{ $censo->{tp_localizacao} // 0 },
+      rede        => $self->censo_labels->rede_label($censo->{tp_dependencia}) // 'Não informada',
+      localizacao => $self->censo_labels->localizacao_label($censo->{tp_localizacao}),
       ano_censo   => $ano + 0,
     },
     resumo => {
