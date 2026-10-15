@@ -22,6 +22,8 @@ data_pipeline/config/local.ini
 # Ambiente Docker de desenvolvimento
 .env
 pgdata/
+# backups do cluster (bind mount) — ex.: pgdata.bak-corrompido-<ts>/
+pgdata.bak-*/
 # symlink para os CSVs do Censo/IDEB ( datasets -> ~/Data/edumaps_data )
 datasets
 
