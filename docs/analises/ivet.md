@@ -300,6 +300,12 @@ o versionamento do passo `raw`→`clean`→`analytics`.
 | 4. Critério de vigência e retreino | pendente | 3 |
 | 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
 
+> **Gate dos blocos territoriais (B–F) e da #255**: a **metodologia da área de
+> influência da escola** (buffer × setor × isócrona) — proposta em
+> [`influencia.md`](influencia.md) (`influencia-v1`, **aguardando decisão de
+> produto**). É o que permite a *extração* dos componentes territoriais; o
+> núcleo da fórmula (entregável 3) **não** depende dela.
+
 Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
 
 - **B declarado canônico na base** e **A quarentenada** via `COMMENT`
