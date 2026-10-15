@@ -216,6 +216,13 @@ subtest 'integração: xlsx real (GDAL) no banco do CI' => sub {
   my $dir = tempdir(CLEANUP => 1);
   my $fx = $FIXTURE;
   $fx =~ s/1200013/$mun/g;
+  # O órfão tem de estar FORA da malha_municipio REAL: '4300002' (Área
+  # Operacional "Lagoa dos Patos") ESTÁ na malha carregada (5.573 linhas), só
+  # não está no fixture de 18 municípios do CI. Um geocode inexistente evita a
+  # dependência de dados (o teste unitário de separar_orfaos passa malha
+  # explícita e pode manter a lagoa).
+  my $orfa = '9999999';
+  $fx =~ s/4300002/$orfa/g;
   path("$dir/COVERAGE_10.csv")->spew($fx, 'UTF-8');
   my $xlsx = "$dir/col10.xlsx";
   system('ogr2ogr', '-f', 'XLSX', $xlsx, "$dir/COVERAGE_10.csv", '-nln', 'COVERAGE_10',
@@ -224,8 +231,8 @@ subtest 'integração: xlsx real (GDAL) no banco do CI' => sub {
   my $meta_antes = $dbh->selectall_arrayref(
     q{SELECT * FROM clean.import_metadata WHERE table_name = 'clean.mapbiomas_cobertura'}, { Slice => {} });
   my $limpar = sub {
-    $dbh->do(q{DELETE FROM clean.mapbiomas_cobertura WHERE colecao = 'collection10' AND codigo_ibge IN (?, '4300002')},
-      undef, $mun);
+    $dbh->do(q{DELETE FROM clean.mapbiomas_cobertura WHERE colecao = 'collection10' AND codigo_ibge IN (?, ?)},
+      undef, $mun, $orfa);
   };
   $limpar->();
 
@@ -240,7 +247,8 @@ subtest 'integração: xlsx real (GDAL) no banco do CI' => sub {
     is(0 + $r->{'3|2015'}{area_km2}, 1.505, 'km²');
     is($r->{'0|2016'}{classe_desc}, '6. Not Observed', 'classe_desc');
     ok(!$dbh->selectrow_array(
-      q{SELECT 1 FROM clean.mapbiomas_cobertura WHERE codigo_ibge = '4300002' AND colecao = 'collection10'}),
+      q{SELECT 1 FROM clean.mapbiomas_cobertura WHERE codigo_ibge = ? AND colecao = 'collection10'},
+      undef, $orfa),
       'órfão fora da tabela');
     is($j->run({ xlsx => $xlsx, anos => '2015-2016' }), 4, 'recarga idempotente');
     is($dbh->selectrow_array(

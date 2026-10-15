@@ -31,9 +31,10 @@ use Text::CSV;
 #
 # classe = código numérico da legenda (texto), classe_desc = nível mais
 # específico (class_level_4). A classe 0 ("Not Observed") é área real e
-# entra. Geocode fora de clean.malha_municipio (ex.: as lagoas 4300001 Mirim
-# e 4300002 dos Patos) vai para o relatório de órfãos, nunca some em
-# silêncio.
+# entra. Geocode do XLSX que não exista em clean.malha_municipio vai para o
+# relatório de órfãos, nunca some em silêncio — mas o conjunto depende da
+# malha carregada: a nacional inclui as "Áreas Operacionais" 4300001/4300002
+# das lagoas (não são órfãs), enquanto um recorte que as omita as torna órfãs.
 #
 # Args (--arg): anos=2015-2024 (padrão, decisão do developer; aceita lista e
 # intervalos: 2019,2021-2024); xlsx=<arquivo> relê um bruto já baixado.
