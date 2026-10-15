@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — #137 (parcial): fórmula do IVET versionada + decisão de leitura
+
+- **Escopo acordado com o usuário**: apenas **entregável 1** (fórmula
+  documentada/versionada) + **entregável 2** (decisão de leitura). Entregáveis
+  3/4/5 ficam para depois (o 3 depende de **#135**/DVC e do dataset da Fase 0).
+- **Decisão de leitura (entregável 2) tomada**: o IVET é **territorial (escola em
+  contexto)** — a escola é o *ponto de observação*, os coeficientes descrevem o
+  **entorno**; as dimensões escolares viram *um bloco de contexto dentro do
+  território*, não o índice inteiro.
+- **Entregável 1**: novo doc **`docs/analises/ivet.md`** (versão **`ivet-v1.0`**).
+  Registrado também em `docs/indice.md` §12. Comentário na **#137**
+  ([issuecomment-6196038213]).
+- **Achado central**: o IVET **não existe como número** e há **quatro** sistemas
+  de score paralelos e divergentes:
+  - **A** `clean.censo_escolas_scores` (view, `scores_view.sql`) — 11 scores
+    0–10 — **morto** (só classes `Schema::Result*`, sem consumidor);
+  - **B** `clean.mv_escolas_scores` (MV, `escolas_scores.sql`) — 6 scores 0–10 —
+    **CANÔNICO** (consumido por `analytics.ranking_escola`/`bin/ranking.pl`,
+    `Rank::School`, `SchoolEmbedding`, `View::ClusterEscola`, `Controller::Rank`);
+  - **C** `EduMaps::Model::Indicator::School::*` (IFS/ITD/IPS/IGE/IAI/IOC/IQD/ISE,
+    base `Model::Indicator` = média ponderada, 0–1) via `SchoolQuality` — **vivo**
+    (escolas semelhantes em `Profile.pm`); `iqd` devolve razão **>1**, fora de
+    `[0,1]` (bug de normalização); `ran` é *dummy*;
+  - **D** `CensoEscolas::_compute_score` (internet/accessibility/support_staff/
+    infrastructure scores) via `with_all_scores` — **morto** (sem chamador).
+- **Stubs que "são" o IVET**: `with_vulnerability_score` → `die "ainda não
+  implementado"`; rota `/api/school/scores` → `Controller::School::scores` =
+  *yada* (`...`); `Roles::Business::School::Scores` implementado mas **não
+  composto** (e com lógica invertida).
+- **Fórmula-alvo `ivet-v1.0`**: ordem **componente → dimensão → IVET**; peso
+  igual entre dimensões disponíveis; dimensão ausente entra como **`NULL`** (fora
+  do denominador — não penaliza por falta de dado, coerente com #154). Enquanto
+  as dimensões territoriais (#125/#126/#127) não tiverem dado, publica-se só o
+  bloco escolar e o IVET agregado fica `NULL`.
+- **Sem deploy**: mudança só de documentação (`docs/`, `memory.md`) — não há
+  artefato de runtime a sincronizar.
+- **Pendências**: entregáveis 3/4/5 da #137; ação de código sugerida —
+  reconciliar **B** e **C** numa definição única e quarentenar **A**/**D**.
+
 ## Sessão 2026-10-15 — #170 (fechamento): limpeza MapBiomas pós-#241
 
 - **PR #256 MERGEADO** (merge `d63363c`; branch `fix/data-170-mapbiomas-limpeza`;

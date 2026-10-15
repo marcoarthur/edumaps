@@ -85,6 +85,9 @@
 - 🟢 `docs/analises/fontes_de_dados.md` — **matriz-mestre**: lacunas do IVET,
   método de pontuação, priorização das 61 fontes candidatas e plano de
   integração faseado.
+- 🟢 `docs/analises/ivet.md` — **fórmula versionada do IVET** (`ivet-v1.0`) +
+  decisão de leitura **territorial** (#137, entregáveis 1 e 2): inventário dos
+  quatro sistemas de score existentes (A–D), qual é canônico e a fórmula-alvo.
 - 🟢 `docs/analises/fontes/` — fichas por domínio (`educacao`, `socioeconomico`,
   `conectividade-obras`, `mobilidade`, `saude`, `seguranca`, `meio-ambiente`,
   `agregadores`), com licença, endpoint, granularidade e risco verificados.
