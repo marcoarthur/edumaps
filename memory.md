@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — chore: `.gitignore` cobre backups `pgdata.bak-*`
+
+- **PR #254 MERGEADO** (merge `8c12953`; branch `chore/gitignore-pgdata-bak`;
+  commit `c2e75f1`). `.gitignore` passa a ignorar `pgdata.bak-*/` (linha 26).
+- **Motivo**: `rex prepare` faz rsync filtrado pelo `.gitignore`; o diretório
+  `pgdata.bak-corrompido-20261014-193013/` (`dnsmasq:root`, modo 700) não era
+  coberto, e o rsync abortava com **código 23**. No ciclo #131 foi contornado
+  com linha temporária + restauro; era **pendência durável**.
+- **Validação**: `git check-ignore -v pgdata.bak-corrompido-20261014-193013/`
+  casa com `.gitignore:26`; `git status --short` deixou de emitir
+  `warning: could not open directory`.
+- Mudança só de configuração de repositório — **sem deploy** (não há artefato
+  de runtime).
+
 ## Sessão 2026-10-15 — #131 (fechamento): espaçamento, cache testado e decisão Python/R
 
 - **PR #253 MERGEADO** (merge `b3e97d6`; branch `fix/osm-131-conformidade` →
