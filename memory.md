@@ -4,6 +4,48 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — #170 (fechamento): limpeza MapBiomas pós-#241
+
+- **PR #256 MERGEADO** (merge `d63363c`; branch `fix/data-170-mapbiomas-limpeza`;
+  commits `4d8e19c`/`8f4dfad`/`84e9fc1`). Fecha a **#170** (`type:data`,
+  `complexity:hard`) — que estava **obsoleta**. Nota técnica 129.
+- **A #170 estava cumprida pela #241** (P3 da #156, `CLOSED`): o job
+  `MapBiomas.pm` (310 linhas) lê a **estatística oficial da Coleção 10** (XLSX
+  público, **sem token**, via GDAL), grão **município × classe × ano**, biomas
+  somados, anos 2015–2024 — decisão do developer em
+  `docs/specs/2026-10-13-ingestao-real-plano.md` §8. Critérios 3/4 (areolização
+  em R sobre área de influência) foram **superados** por essa decisão.
+- **Entregue sem os dados** (o que o usuário pediu para investigar):
+  1. **Teste de integração data-dependente**: `t/05-tasks/mapbiomas_loader.t`
+     usava `4300002` como órfão, mas ele **está** na malha real (5.573) → falhava
+     local, passava só no CI (fixture de 18). Agora usa `9999999`.
+  2. **Comentário do job** — a crença de que as lagoas 4300001/4300002 são órfãs
+     estava errada (existem na malha; só num recorte que as omita viram órfãs).
+  3. **Verify que morde** (`data_pipeline/verify/mapbiomas_cobertura.sql`): era o
+     anti-padrão da #160 (`SELECT 1`, `collection9`, classes `'3.1'/'3.2'` que
+     nunca vigoraram) → `DO … RAISE EXCEPTION`, **só estrutura** (banco fresco é
+     vazio; dados vêm do job).
+  4. **Docs**: `docs/analises/fontes/meio-ambiente.md` (decisão #241 + aponta a
+     #255); `new_data_sources.Rmd` (Coleção 9→10; nota de areolização).
+- **Issue nova: #255** — cobertura do solo por **área de influência da escola**
+  (raster 30 m), a parte que a decisão §8 deixou de fora (grão município é
+  decisão, não lacuna).
+- **Lição Sqitch**: editar o **corpo** de um verify de change já deployada é
+  seguro — `change_id` = SHA dos **metadados** (nome/`requires`/pai), não dos
+  scripts. Confirmado: `sqitch status dev_docker` → *up-to-date* e
+  `sqitch verify` (cadeia inteira) → *successful* após a edição. (Continua valendo
+  o proibido: editar `requires`/reordenar.)
+- **Deploy**: `rex prepare` (3 hosts; **o fix do `.gitignore` da #254 eliminou o
+  código 23** — o `pgdata.bak-*/` já não quebra o rsync). `deploy_db_dev`
+  **aplicou `osm_mobilidade_completude`, que estava PENDENTE em
+  `database.edumaps`/`edumaps_dev`** (o ciclo #131 não correu `deploy_db_dev` —
+  corrigido agora; status up-to-date). `deploy_backend_dev` +
+  `deploy_minion_dev` (master key 64 chars). Imagens locais
+  `sqitch`/`backend`/`minion` reconstruídas; `md5sum` do `MapBiomas.pm` idêntico
+  local ↔ `backend.edumaps` ↔ contentor.
+- **Pendências**: #255 (areolização escolar); carga real da `mapbiomas_cobertura`
+  (tabela segue vazia até o job rodar). #168 (ANTT) segue fora do objetivo.
+
 ## Sessão 2026-10-15 — chore: `.gitignore` cobre backups `pgdata.bak-*`
 
 - **PR #254 MERGEADO** (merge `8c12953`; branch `chore/gitignore-pgdata-bak`;
