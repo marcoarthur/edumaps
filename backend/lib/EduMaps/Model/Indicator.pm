@@ -2,6 +2,12 @@ package EduMaps::Model::Indicator;
 use Mojo::Base -base, -signatures;
 use Scalar::Util qw(looks_like_number);
 
+# ============================================================================
+# Indicadores da CAMADA DE ANÁLISE (sistema C) — ver docs/analises/ivet.md.
+# Cada `calculate` é uma média ponderada de componentes normalizados em [0,1].
+# NÃO são o índice canônico do produto (esse é `clean.mv_escolas_scores`, B).
+# ============================================================================
+
 has name        => 'Indicador Base';
 has code        => 'BASE';
 has description => 'Classe base para todos os indicadores.';

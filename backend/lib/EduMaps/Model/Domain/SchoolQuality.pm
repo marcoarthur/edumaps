@@ -4,6 +4,17 @@ use Role::Tiny::With;
 use Carp qw(croak);
 use Memoize;
 
+# ============================================================================
+# CAMADA DE ANÁLISE (não é o índice do produto) — ver docs/analises/ivet.md
+# ----------------------------------------------------------------------------
+# Este modelo é a camada de *features* usada para similaridade/perfil (sistema
+# C na doc de índices). NÃO é o IVET nem o índice canônico: o índice canônico é
+# `clean.mv_escolas_scores` (sistema B), consumido por
+# `analytics.ranking_escola` / `EduMaps::Model::Rank::School` / `SchoolEmbedding`.
+# Os indicadores aqui duplicam conceitos de B com fórmulas próprias — usados
+# apenas como vetor de features para "escolas semelhantes".
+# ============================================================================
+
 # Indicadores
 use EduMaps::Model::Indicator::School::IFS;
 use EduMaps::Model::Indicator::School::ITD;

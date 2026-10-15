@@ -121,6 +121,15 @@ __PACKAGE__->add_columns(
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 
+# ============================================================================
+# DEPRECATED (#137) — ver docs/analises/ivet.md (ivet-v1.0)
+# ----------------------------------------------------------------------------
+# `clean.censo_escolas_scores` é uma view de 11 scores SEM consumidor: nunca
+# foi o índice do produto. NÃO usar em código novo. O índice canônico é
+# `clean.mv_escolas_scores` (Result::MvEscolasScores), consumido por
+# `analytics.ranking_escola` / EduMaps::Model::Rank::School.
+# ============================================================================
+
 __PACKAGE__->belongs_to(
   'escola',
   'EduMaps::Schema::Result::CensoEscolas',
