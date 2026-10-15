@@ -136,3 +136,4 @@ censo_label [censo_data_dictionary_inep] 2026-10-14T15:00:00Z Marco Arthur <arth
 censo_labels_consumers [censo_label badge_functions rede_escolas_etapas] 2026-10-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #228: typification_badge e mv_rede_escolas leem rótulos do dicionário
 osm_mobilidade_completude [censo_labels_consumers] 2026-10-14T17:00:00Z Marco Arthur <arthurpbs@gmail.com> # #131 e2: iv_mobilidade_completude_malha (densidade de m/km² no buffer 500 m)
 quarantine_censo_escolas_scores [osm_mobilidade_completude] 2026-10-15T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137: quarentena dos scores mortos (A) e declaracao do indice canonico (B)
+escola_influencia [quarantine_censo_escolas_scores censo_escolar_2025] 2026-10-15T19:00:00Z Marco Arthur <arthurpbs@gmail.com> # #255/#137: camada de influencia da escola (buffer por raio, influencia-v1)
