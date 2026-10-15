@@ -1,4 +1,4 @@
-# Nota Técnica — NT_${nextn} · 2026-10-15
+# Nota técnica 131 — #135: manifesto de hashes versionado (datasets.lock.json)
 
 ## Título
 #135 — Manifesto de hashes versionado (datasets.lock.json)

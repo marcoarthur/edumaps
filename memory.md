@@ -4,6 +4,71 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — #137 (entregável 3, núcleo): fórmula `ivet-v1.0` como código R
+
+- **PR #259 MERGEADO** (merge `f7ce422`; branch `feat/analysis-ivet-nucleo-formula`;
+  commit `eb53d20`). Nota técnica **NT_132**.
+- **Entreguei** o núcleo **determinístico** do entregável 3: a fórmula de
+  §4.1/§4.3 do `docs/analises/ivet.md` como módulo R **puro** em
+  `analysis/edumapsr/R/ivet.R`:
+  - `ivet_normalizar()` — binário/proporção/contagem (contagem sempre contra
+    teto documentado, nunca crua);
+  - `ivet_dimensao()` — média ponderada dos componentes (`undef`/`NA` → `0`);
+  - `ivet_agregar()` — média das dimensões **disponíveis**; a ausente fica
+    **fora do denominador** (não penaliza — §4.3);
+  - `ivet_v1()` — fórmula completa: publica o agregado **só** quando as
+    dimensões territoriais mínimas (C–E) existem, senão `NA` + bloco escola;
+  - `ivet_dataset_version()` — lê o `dataset_version` do lockfile (#135).
+- **`ivet-v1.0`**; **peso igual** entre dimensões é o *default* reprodutível.
+  Testes: `tests/testthat/test-ivet.R` (**31 asserts**, PASS).
+- **Escopo explícito**: é a metade *determinística*. A **extração dos componentes
+  de B/C** (reconciliação *de fórmula* B↔C) fica como follow-up — é decisão de
+  produto (§6 do doc); o core não a inventa.
+- **Validação**: suíte do pacote `PASS 1634 / FAIL 2` — as 2 falhas
+  (`test-censo-dictionary.R:112`, `test-cluster.R:96`) são **pré-existentes em
+  HEAD** (confirmado com `git stash`). `devtools::load_all()` limpo.
+- **Nota de manutenção (importante)**: o roxygen local é **8.1.0**, mas o repo
+  foi gerado com **8.0.0** — `roxygenise()` reordena **todo** o `NAMESPACE` e
+  reformata os `importFrom`. Por isso o `NAMESPACE` foi editado **à mão** (7
+  exports `ivet_*`) e o `Config/roxygen2/version` mantido em 8.0.0, para não
+  poluir o PR com ruído.
+- **Deploy**: `rex prepare` + `rex -H analytic.edumaps deploy_analytics_dev`
+  (verificado: `ivet_versao()`/`ivet_v1()` respondem no host). Imagem local
+  `analytic` reconstruída + `up -d`. ⚠️ `analytic.edumaps` tem locale **`C`**,
+  então strings acentuadas emitem o aviso "strings not representable in native
+  encoding" — **pré-existente** (o pacote inteiro usa PT-BR acentuado).
+- **Também fechei a issue #135** (implementada via manifesto de hashes; decisão
+  já alinhada — ver entrada abaixo).
+- **Próximo (decidido com o usuário)**: pesquisar e **propor a metodologia da
+  área de influência da escola** (buffer/raio/setor/isócrona) — é o **gate
+  comum** de #137 (3-resto/4/5) e #255.
+
+## Sessão 2026-10-15 — #135 (fechamento): manifesto de hashes versionado (datasets.lock)
+
+> ⚠️ **Registro retroativo**: este ciclo (PR #258) **não** commitou entrada de
+> memória na altura (os commits só tocaram código/doc/NT). Escrito agora.
+
+- **PR #258 MERGEADO** (merge `f687fb7`; branch `chore/data-135-manifesto-hashes`;
+  commit `16cdbfa`). Nota técnica **NT_131** (`0ea8fd7`).
+- **Decisão**: caminho mínimo — **lockfile de hashes versionado** em vez de DVC
+  completo (o `raw_manifest` do #231 já dá `sha256`+`bytes` por arquivo). DVC
+  fica como follow-up opcional (só faria sentido com um remote externo).
+- **Entregas**: `backend/lib/EduMaps/Ingestion/DatasetsLock.pm` (build/diff/
+  `from_db`/`dataset_version`/JSON canônico), `backend/bin/datasets_lock.pl`
+  (`--write/--verify/--print-version/--check-files`),
+  `data_pipeline/datasets.lock.json` (gerado de `database.edumaps`: **49
+  tabelas**, **13** com raw; `dataset_version`
+  `122b32dd6e505ec9ea228d13cd4e874e678ce4ec590bb311f3c7f32d3ed610f7`),
+  `backend/t/05-tasks/datasets_lock.t` (23 asserts), doc
+  `docs/analises/versionamento_datasets.md` + `fontes-de-dados.md`/`ivet.md`/
+  `indice.md`.
+- **Validação**: `prove` 51/51; `--verify` em `backend.edumaps` OK;
+  `--check-files` 26 blobs ok / 0 faltando / 0 alterados.
+- **Nota**: o lockfile descreve `database.edumaps`; `--verify` local
+  (127.0.0.1) acusa deriva **por construção** (cargas locais ≠ dev).
+- **Issue #135 fechada** em 2026-10-15 (no ciclo seguinte, ao iniciar a
+  retomada do backlog).
+
 ## Sessão 2026-10-15 — #137 (parcial): fórmula do IVET versionada + decisão de leitura + reconciliação B/A/D
 
 - **Escopo acordado com o usuário**: apenas **entregável 1** (fórmula
