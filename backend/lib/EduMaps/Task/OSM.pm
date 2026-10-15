@@ -64,6 +64,8 @@ sub _query_osm_school($job, $args) {
       ? (cache_ttl_days => $app->config->{osm_cache_ttl_days}) : () ),
     ( $app->config->{osm_service_class}
       ? (service_class => $app->config->{osm_service_class}) : () ),
+    ( defined $app->config->{osm_min_interval}
+      ? (min_interval => $app->config->{osm_min_interval}) : () ),
   );
 
   # Encaminha o progresso do Model/Service para as "notes" do job

@@ -505,15 +505,22 @@ não acidental**.
 - 🔴 **Limite de taxa verificado: 2 slots simultâneos.** Um plano de coleta que
   dispare dezenas de consultas em paralelo **será bloqueado**. Todo acesso ao
   Overpass precisa de **fila com repetição espaçada** e **persistência do
-  resultado bruto em disco** — reconsultar o OSM para o mesmo objeto é
-  desperdício.
+  resultado bruto** — reconsultar o OSM para o mesmo objeto é desperdício.
+  **Implementado (#131):** o cliente Perl serializa as chamadas com `flock` e
+  as espaça por `min_interval`; o bruto é persistido em
+  `clean.osm_query.raw_results` (TTL de `osm_cache_ttl_days`) — **em banco,
+  não em ficheiro em disco** (decisão registrada em #131). A segunda execução
+  do mesmo objeto é *cache HIT* e não reconsulta o Overpass.
 - 🔴 **Os tiles da OSMF não são uso livre.** A política proíbe baixar em massa,
   proíbe uso offline e exige `User-Agent` identificando a aplicação, além de
   atribuição visível. Se o frontend do EduMaps usa tiles do OSM, isso **já** é uma
   obrigação em produção, não uma escolha futura.
-- ⚠️ **OSMnx não é R.** Se a extração de hoje é em Python, o IVET em R terá que
-  reimplementar ou manter fronteira entre linguagens. Registrar a decisão na
-  issue de implementação.
+- ✅ **Decisão sobre a fronteira Python/R (registrada em #131):** a extração do
+  OSM é feita **inteiramente no cliente Perl** (`EduMaps::Services::OSM`,
+  falando Overpass QL) — **nem Python/OSMnx nem R** (`sf`+`httr2`). O pipeline
+  R apenas **lê** as feições já materializadas em `clean.osm_feature` /
+  `clean.osm_query`; não fala com o Overpass. Não há fronteira entre linguagens
+  na extração.
 - ⚠️ Derivar buffers em volta de escolas **é identificador de localização de
   menores** quando a escola atende poucos alunos. Agregar buffers.
 

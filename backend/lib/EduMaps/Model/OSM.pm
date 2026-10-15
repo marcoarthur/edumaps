@@ -31,6 +31,14 @@ has service_class => 'EduMaps::Services::OSM';
 has cache_ttl_days => sub { 30 };
 has default_raio   => sub { 1000 };
 
+# Repetição espaçada entre consultas ao Overpass (#131): o serviço limita a
+# 2 slots simultâneos e um burst em paralelo é bloqueado. `min_interval`
+# (segundos) espaça consultas consecutivas entre processos, via um
+# estampilho no `lock_dir` do serviço. O default do serviço é 0 (cliente
+# de baixo nível opt-in); aqui o caminho de produção liga o espaçamento e
+# permite ajustá-lo por `osm_min_interval` (ver Task/OSM.pm).
+has min_interval => sub { 1 };
+
 # ---------------------------------------------------------------------------
 # API principal
 # ---------------------------------------------------------------------------
@@ -399,7 +407,11 @@ sub _ensure_query($self, $query, %opts) {
   }
   else {
     $self->log->info("OSM cache MISS para digest $digest; consultando Overpass");
-    my $svc = $self->service_class->new(query => $query, log => $self->log);
+    my $svc = $self->service_class->new(
+      query        => $query,
+      log          => $self->log,
+      min_interval => $self->min_interval,
+    );
     $svc->on(progress => sub ($evt, $p) {
       my $phase = $p->{phase} // '';
       my ($pct, $msg) = (10, 'Consultando o OpenStreetMap');
