@@ -4,6 +4,59 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — #131 (fechamento): espaçamento, cache testado e decisão Python/R
+
+- **PR #253 MERGEADO** (merge `b3e97d6`; branch `fix/osm-131-conformidade` →
+  main; commit `9c217e4`). Fecha a **#131** (`priority:high`) — auto-fechada
+  pelo `Closes #131`. Os PRs #246 (e1) e #252 (e2) deixaram **3 critérios de
+  aceite em falta**, medidos no código:
+  1. **repetição espaçada (crit. 1)** — `min_interval` estava implementado mas
+     **desligado** (`0`, nunca configurado); só o `flock` atuava. Agora default
+     **1 s** em `Model::OSM` e `Task::OSM::Service`, com override por
+     `osm_min_interval` (mesmo padrão de `osm_cache_ttl_days`).
+  2. **prova de não-reconsulta (crit. 2)** — `t/osm_model_offline.t` passou a
+     **contar invocações** do serviço (`our $RUNS`): 1ª chamada = MISS (1),
+     2ª = HIT (0). Decisão registrada: o bruto fica em
+     `clean.osm_query.raw_results` (**banco, com TTL**) — **não em disco**; a
+     #153, que condicionava o destino, já estava fechada.
+  3. **decisão Python/R (crit. 5)** — registrada em
+     `docs/analises/fontes/mobilidade.md`: a extração é **100% Perl**
+     (`EduMaps::Services::OSM`, Overpass QL) — nem OSMnx (Python) nem
+     `sf`+`httr2` (R); o pipeline R só **lê** `clean.osm_feature`/`osm_query`.
+- **Testes**: `t/osm_*.t` + `t/04-api/gestor/osm_pois.t` → **10 ficheiros, 45
+  testes, PASS** (`osm_service_online.t` skip por design, rede). Novos: 2
+  subtestes de espaçamento em `t/osm_overpass_conformidade.t` (espera com
+  `min_interval>0`; `=0` não grava estampilho) + contagem de invocações.
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_minion_dev`
+  (`backend.edumaps`) com `EDUMAPS_CONFIG_MASTER_KEY`; imagens locais
+  `backend`/`minion` reconstruídas + `up -d`; `md5sum` de `Model/OSM.pm`
+  **idêntico** em local ↔ `backend.edumaps` ↔ contentor.
+- **⚠️ `rex prepare` quebrou no rsync por causa de
+  `pgdata.bak-corrompido-20261014-193013/`** (`dnsmasq:root`, modo 700): o
+  `prepare` filtra pelo `.gitignore`, que só tem `pgdata/` (não cobre o
+  `.bak-*`), e o rsync abortou com **código 23**. Contorno: linha temporária
+  `pgdata.bak-*/` no `.gitignore`, `prepare`, e o `.gitignore` **restaurado**
+  (não entrou no PR — mudança não relacionada). **Pendência:** ignorar
+  `pgdata.bak-*/` de forma durável, senão o próximo `prepare` falha igual.
+- **Backfill (registro que faltava no memory)**:
+  - **#131 entregável 2** — PR #252 (merge `617bda6`, commit `8fa1787`):
+    `iv_mobilidade_completude_malha` = densidade de via (**m/km²**) no buffer
+    de 500 m, **sob demanda** (perfil `malha_viaria`); change
+    `osm_mobilidade_completude` + `Model::OSM` + job `query_osm_school` +
+    `osm_pois_status`; `NULL` = sem extração, `0` = sem via, `>0` = densidade
+    (#154).
+  - **Recuperação do banco local (2026-10-14)**: `pgdata` corrompido arquivado
+    em `pgdata.bak-corrompido-20261014-193013/`; deploy completo (118 changes),
+    `sqitch verify` OK, 214.192 escolas.
+  - **Regra do revert** (commit `0066100`, docs-only direto em main):
+    `sqitch revert` **sempre com `--to <change>`** — sem limite reverte o banco
+    inteiro; documentado em `AGENTS.md` e
+    `.opencode/skills/sqitch-migrations.md`.
+- **#168 (ANTT) reavaliada a pedido**: o host `dados.antt.gov.br` **voltou**
+  (HTTP 200, CKAN ok), mas os DDLs das 4 tabelas **não batem com as fontes
+  reais** (grão e colunas) — é redesign de DDL+ETL, não "escrever 2 scripts R".
+  Decisão do developer: **manter ANTT fora do objetivo** e seguir o backlog.
+
 ## Sessão 2026-10-14 — #228 (camadas SQL + R): rótulos do Censo no dicionário
 
 - **PR #251 MERGEADO** (merge `14a72c4`; branch `refactor/censo-labels-dicionario`
