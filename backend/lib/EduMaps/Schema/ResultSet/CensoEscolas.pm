@@ -238,6 +238,19 @@ sub columns_for($self, $params) {
   return $self->search_rs(undef, {columns => $cols});
 }
 
+# ============================================================================
+# DEPRECATED (#137) — ver docs/analises/ivet.md (ivet-v1.0)
+# ----------------------------------------------------------------------------
+# Os scores abaixo (internet/accessibility/support_staff/infrastructure) e o
+# `with_all_scores` que os expõe NÃO são o índice canônico do produto e não têm
+# consumidor de produto — só o script de sandbox `sandbox/censo.pl`. O índice
+# canônico é `clean.mv_escolas_scores` (sistema B), consumido por
+# `analytics.ranking_escola` / `EduMaps::Model::Rank::School`.
+#
+# Quarentena: mantidos como referência histórica. Código novo NÃO deve usá-los.
+# A remoção definitiva é follow-up da #137.
+# ============================================================================
+
 # score to define internet level
 sub with_internet_score($self) {
   my $weights = {

@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-10-15 — #137 (parcial): fórmula do IVET versionada + decisão de leitura
+## Sessão 2026-10-15 — #137 (parcial): fórmula do IVET versionada + decisão de leitura + reconciliação B/A/D
 
 - **Escopo acordado com o usuário**: apenas **entregável 1** (fórmula
   documentada/versionada) + **entregável 2** (decisão de leitura). Entregáveis
@@ -38,10 +38,22 @@
   do denominador — não penaliza por falta de dado, coerente com #154). Enquanto
   as dimensões territoriais (#125/#126/#127) não tiverem dado, publica-se só o
   bloco escolar e o IVET agregado fica `NULL`.
-- **Sem deploy**: mudança só de documentação (`docs/`, `memory.md`) — não há
-  artefato de runtime a sincronizar.
-- **Pendências**: entregáveis 3/4/5 da #137; ação de código sugerida —
-  reconciliar **B** e **C** numa definição única e quarentenar **A**/**D**.
+- **Sem deploy** (entregáveis 1+2, docs-only): mudança só de documentação
+  (`docs/`, `memory.md`) — não há artefato de runtime a sincronizar.
+- **Ação de código executada em seguida** (branch `refactor/analytics-137-...`):
+  reconcilei a *origem* declarando **B** canônico na própria base
+  (`COMMENT ON MATERIALIZED VIEW clean.mv_escolas_scores`), quarentenei **A**
+  (`COMMENT ON VIEW clean.censo_escolas_scores` = DEPRECATED, + aviso nas classes
+  `Schema::Result{,Set}::CensoEscolasScores`) e **D** (`with_all_scores` + 4
+  scores marcados `DEPRECATED`; único consumidor restante `sandbox/censo.pl`), e
+  marquei **C** (`SchoolQuality`/`Model::Indicator`) como **camada de análise, não
+  o índice canônico**. Tudo via change Sqitch
+  `quarantine_censo_escolas_scores` (deploy/revert/verify com `DO…RAISE
+  EXCEPTION`, #160) + cabeçalhos de código + §3.1 do `ivet.md`. Sem mudança de
+  fórmula (isso é decisão de produto e conflita com o alvo `ivet-v1.0`) — ver
+  follow-ups no §6 do doc.
+- **Pendências**: entregáveis 3/4/5 da #137; follow-ups — remover de vez o código
+  morto A/D e alinhar o *fallback* em memória de `Profile` (C) ao espaço de B.
 
 ## Sessão 2026-10-15 — #170 (fechamento): limpeza MapBiomas pós-#241
 

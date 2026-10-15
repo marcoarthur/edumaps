@@ -7,6 +7,8 @@
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
 > das dimensões territoriais** dependem de dado (#125–#127) e do versionamento
 > de dataset (#135), e estão marcados como pendentes.
+> **Reconciliação (código)**: o canônico **B** foi declarado na base e **A** e
+> **D** foram postos em quarentena (`DEPRECATED`) — ver §3.1.
 
 ## 0. Resumo
 
@@ -185,6 +187,19 @@ chamado por ninguém**:
 - **O IVET agregado não existe.** Definir a fórmula-alvo é o que a #137
   entregável 1 faz (§4).
 
+### 3.1 Onde a decisão está fixada (código, não só doc)
+
+- **B** — `COMMENT ON MATERIALIZED VIEW clean.mv_escolas_scores` declara "índice
+  canônico do produto (#137)" (change `quarantine_censo_escolas_scores`).
+- **A** — `COMMENT ON VIEW clean.censo_escolas_scores` marca **DEPRECATED** na
+  própria base; as classes `Schema::Result{,Set}::CensoEscolasScores` levam o
+  mesmo aviso.
+- **C** — `Model::Domain::SchoolQuality` e `Model::Indicator` têm cabeçalho
+  declarando "camada de análise, NÃO o índice canônico".
+- **D** — `ResultSet::CensoEscolas::with_all_scores` e os 4 scores levam
+  cabeçalho `DEPRECATED` (único consumidor restante: `sandbox/censo.pl`).
+
+
 ---
 
 ## 4. Fórmula-alvo do IVET `ivet-v1.0` (territorial)
@@ -265,9 +280,19 @@ bloco A enquanto C–E forem `NULL`.
 | 4. Critério de vigência e retreino | pendente | 3 |
 | 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
 
-Ações de código sugeridas (fora do escopo doc deste ciclo): reconciliar B e C em
-uma definição única; remover/quarentenar A e D; implementar
-`with_vulnerability_score` apenas quando o IVET v1.0 tiver as dimensões C–E.
+Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
+
+- **B declarado canônico na base** e **A quarentenada** via `COMMENT`
+  (change `quarantine_censo_escolas_scores`); **D** e **A** marcadas
+  `DEPRECATED` no código; **C** declarada camada de análise (§3.1). O efeito é
+  *uma* definição canônica (§3) em vez de quatro concorrentes (§2).
+- **`with_vulnerability_score` continua `die`** (não implementar antes do IVET
+  v1.0 ter as dimensões C–E).
+- **Follow-ups** (não neste ciclo): remoção definitiva do código morto A/D;
+  reconciliação *de fórmula* entre B e C — é decisão de produto (muda
+  similaridade/ranking) e conflita com o alvo `ivet-v1.0`; alinhar o *fallback*
+  em memória de `Profile` (sistema C) ao espaço canônico de B.
+
 
 ---
 
