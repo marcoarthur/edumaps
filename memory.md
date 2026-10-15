@@ -40,8 +40,9 @@
   bloco escolar e o IVET agregado fica `NULL`.
 - **Sem deploy** (entregáveis 1+2, docs-only): mudança só de documentação
   (`docs/`, `memory.md`) — não há artefato de runtime a sincronizar.
-- **Ação de código executada em seguida** (branch `refactor/analytics-137-...`):
-  reconcilei a *origem* declarando **B** canônico na própria base
+- **Ação de código executada e mergeada**: PR **#257 MERGEADO** (merge
+  `200d9c6`; branch `refactor/analytics-137-quarentena-indices`; commit `3fa9944`).
+  Reconciliei a *origem* declarando **B** canônico na própria base
   (`COMMENT ON MATERIALIZED VIEW clean.mv_escolas_scores`), quarentenei **A**
   (`COMMENT ON VIEW clean.censo_escolas_scores` = DEPRECATED, + aviso nas classes
   `Schema::Result{,Set}::CensoEscolasScores`) e **D** (`with_all_scores` + 4
@@ -52,6 +53,15 @@
   EXCEPTION`, #160) + cabeçalhos de código + §3.1 do `ivet.md`. Sem mudança de
   fórmula (isso é decisão de produto e conflita com o alvo `ivet-v1.0`) — ver
   follow-ups no §6 do doc.
+- **Deploy**: `rex prepare` + `rex -H database.edumaps deploy_db_dev` (user
+  `edumaps`, pass `change_me` — é o que o backend usa de facto, via
+  `edu_maps.conf` `postgresql://edumaps:change_me@Database/edumaps_dev`). Head em
+  `database.edumaps` = `quarantine_censo_escolas_scores`; comments confirmados.
+  Imagens locais reconstruídas (`backend`/`minion`/`sqitch`) e `up -d`; md5 do
+  `Indicator.pm` no container == working tree.
+- **Validação**: ciclo sqitch local deploy→verify→revert `--to`→redeploy OK;
+  `t/dbic/scores.t` e `t/02-models/school/rank.t` PASS; `domain/quality.t` falha
+  **pré-existente** (`ige>1`), idêntica em `git stash`.
 - **Pendências**: entregáveis 3/4/5 da #137; follow-ups — remover de vez o código
   morto A/D e alinhar o *fallback* em memória de `Profile` (C) ao espaço de B.
 
