@@ -1,0 +1,493 @@
+{
+   "dataset_version" : "122b32dd6e505ec9ea228d13cd4e874e678ce4ec590bb311f3c7f32d3ed610f7",
+   "tables" : [
+      {
+         "raw" : [],
+         "row_count_loaded" : null,
+         "source_license" : "n/a (derivada interna)",
+         "source_url" : "n/a (derivada de múltiplas fontes — ver docs/analises/fontes/saude.md)",
+         "table_name" : "analytics.acessibilidade_saude"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : null,
+         "source_license" : "n/a (derivada interna; herda as licenças das bases SICONFI)",
+         "source_url" : "https://servicodados.tesouro.gov.br/",
+         "table_name" : "analytics.esforco_fiscal_educacao"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : null,
+         "source_license" : "n/a (derivada interna)",
+         "source_url" : "n/a (derivada de múltiplas fontes — ver docs/analises/fontes/mobilidade.md)",
+         "table_name" : "analytics.mobilidade_escola"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (ANTT)",
+         "source_url" : "https://dados.antt.gov.br/dataset/acidentes",
+         "table_name" : "clean.antt_acidente_trecho"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (ANTT)",
+         "source_url" : "https://dados.antt.gov.br",
+         "table_name" : "clean.antt_contagem_equipamento"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (ANTT)",
+         "source_url" : "https://dados.antt.gov.br/dataset/monitriip-servico-regular",
+         "table_name" : "clean.antt_od_municipio"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (ANTT)",
+         "source_url" : "https://dados.antt.gov.br/dataset/trechos",
+         "table_name" : "clean.antt_trecho_geodados"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 2392601,
+               "sha256" : "631ed9a48d8b4048e7c3b301aa3a5577d95fd22244c3e8f407c2b9c90073f9c6",
+               "url" : "https://cran.r-project.org/package=BrazilCrime"
+            }
+         ],
+         "row_count_loaded" : 61192,
+         "source_license" : "MIT + file LICENSE (CRAN). Termos dos DADOS são do SINESP e não estão na página do CRAN — a confirmar (docs/analises/fontes/seguranca.md)",
+         "source_url" : "https://cran.r-project.org/package=BrazilCrime",
+         "table_name" : "clean.brazilcrime_municipio"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 15418417,
+               "sha256" : "ec04624286233d699ebe69c7b9625744a1cfdfc8352126f30245bdef5e9bdc63",
+               "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_basico_BR_20260520.zip"
+            },
+            {
+               "bytes" : 43838759,
+               "sha256" : "cd4d628878f619b69c9e0d06e613011a05b67643edbb3cfc25735ae6b6941b1a",
+               "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_cor_ou_raca_BR.zip"
+            },
+            {
+               "bytes" : 22554090,
+               "sha256" : "f8486233ce2f6559de76299390577c58d05f35cad07c46098e6e565949c8b269",
+               "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_demografia_BR.zip"
+            }
+         ],
+         "row_count_loaded" : 468097,
+         "source_license" : "Domínio público (IBGE)",
+         "source_url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv",
+         "table_name" : "clean.censo2022_setor"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 765,
+         "source_license" : "n/a (gerado internamente do catálogo; sem fonte externa)",
+         "source_url" : "interno (gerado do catálogo PG — docs/diagramas/validacao)",
+         "table_name" : "clean.censo_data_dictionary"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 178772,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.censo_docentes"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 214192,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.censo_escolas"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 180540,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.censo_gestor"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 178766,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.censo_matriculas"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 120759132,
+               "sha256" : "9e2427546b91591281d5e6a2086f06521cd0e03462cf340e705f687688bc9c45",
+               "url" : "https://apidadosabertos.saude.gov.br/cnes/estabelecimentos?status=1"
+            }
+         ],
+         "row_count_loaded" : 500233,
+         "source_license" : "CC BY-ND 3.0 (dados abertos SUS)",
+         "source_url" : "https://apidadosabertos.saude.gov.br/cnes/estabelecimentos",
+         "table_name" : "clean.cnes_estabelecimentos"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 2991201,
+               "sha256" : "d37acb49e2d75fc4e06a55b6d9205edc85e4a6073591f74fed9b4bee9cd483ba",
+               "url" : "https://apisidra.ibge.gov.br/values/t/5938"
+            }
+         ],
+         "row_count_loaded" : 55710,
+         "source_license" : "Domínio público (IBGE)",
+         "source_url" : "https://apisidra.ibge.gov.br/values/t/5938",
+         "table_name" : "clean.dados_ibge"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 158182,
+         "source_license" : "não verificada (herda a licença da base INEP)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.escolas"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 77828551,
+               "sha256" : "bb8356d1c5a90ea7f04cd3c9949c1dc63b8e7eda3135c4bb127b388717197e2c",
+               "url" : "https://apisidra.ibge.gov.br/values/t/5938"
+            }
+         ],
+         "row_count_loaded" : 2563120,
+         "source_license" : "Domínio público (IBGE)",
+         "source_url" : "https://apisidra.ibge.gov.br/values/t/5938",
+         "table_name" : "clean.ibge_agregados"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 814448,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados",
+         "table_name" : "clean.ideb_notas_escolas"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 64905,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados",
+         "table_name" : "clean.inep"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 384169,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados",
+         "table_name" : "clean.inep_notas_desagregadas"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (INMET)",
+         "source_url" : "https://dados.inmet.gov.br/alertas/cap12",
+         "table_name" : "clean.inmet_alerta"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "CC-BY-4.0 (INMET)",
+         "source_url" : "https://dados.inmet.gov.br/bdmep/estacao",
+         "table_name" : "clean.inmet_bdmep"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 69756,
+         "source_license" : "não verificada (e-SIC INEP pendente — docs/admin/esic-requests.md)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/saeb",
+         "table_name" : "clean.inse"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "BSD-2-Clause (OSRM) / MIT (Valhalla)",
+         "source_url" : "https://download.geofabrik.de/south-america/brazil.html",
+         "table_name" : "clean.isocrona_escolar"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 5573,
+         "source_license" : "Domínio público (IBGE)",
+         "source_url" : "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2024/Brasil/BR_Municipios_2024.zip",
+         "table_name" : "clean.malha_municipio"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 1486434304,
+               "sha256" : "7709750446c5fa2333afa460256c2b0dc0b73bcc3f5226b9650300d02f1db265",
+               "url" : "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/setores/gpkg/BR/BR_setores_CD2022.gpkg"
+            }
+         ],
+         "row_count_loaded" : 468097,
+         "source_license" : "Domínio público (IBGE)",
+         "source_url" : "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/setores/gpkg/BR/BR_setores_CD2022.gpkg",
+         "table_name" : "clean.malha_setor_censitario"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 78609681,
+               "sha256" : "2020496831bb2bdab5460d3d8b36ae99bc33a90e40403a827dadef76d3798576",
+               "url" : "https://storage.googleapis.com/mapbiomas-public/initiatives/brasil/collection_10/lulc/statistics/MAPBIOMAS_BRAZIL-COL.10-BIOME_STATE_MUNICIPALITY.xlsx"
+            }
+         ],
+         "row_count_loaded" : 690340,
+         "source_license" : "CC-BY-4.0 (MapBiomas)",
+         "source_url" : "https://storage.googleapis.com/mapbiomas-public/initiatives/brasil/collection_10/lulc/statistics/MAPBIOMAS_BRAZIL-COL.10-BIOME_STATE_MUNICIPALITY.xlsx",
+         "table_name" : "clean.mapbiomas_cobertura"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 5573,
+         "source_license" : "uso livre com atribuição da fonte (IBGE)",
+         "source_url" : "https://www.ibge.gov.br/geociencias/organizacao-territorial/malhas-territoriais.html",
+         "table_name" : "clean.municipios_sp"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 103,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.osm_feature"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 48,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.osm_landuse"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 3,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.osm_query"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 55,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.osm_query_feature"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 5571,
+         "source_license" : "uso livre com atribuição da fonte (IBGE)",
+         "source_url" : "https://ftp.ibge.gov.br/Censo/",
+         "table_name" : "clean.populacao_municipal"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "ODbL 1.0 (share-alike) - MATERIALIZAÇÃO SOB SHARE-ALIKE EXIGE DECISÃO JURÍDICA",
+         "source_url" : "https://dados.recife.pe.gov.br",
+         "table_name" : "clean.recife_transporte_escolar"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 32581804,
+         "source_license" : "não verificada (dado público gov)",
+         "source_url" : "https://www.fnde.gov.br/siope/",
+         "table_name" : "clean.remuneracao_municipal"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 529020946,
+               "sha256" : "4aa84ea561130f3125c82e36a94e523475493c66b998303f9bb179fc3d98232e",
+               "url" : "https://dados.transportes.gov.br/dataset/42e2320b-ea67-4fdc-896f-71363e043fc6/resource/675d49a4-91bf-44a8-82da-faa19a62c53f/download/renaest_dabertos_20260912.zip"
+            }
+         ],
+         "row_count_loaded" : 5570,
+         "source_license" : "CC-BY-4.0 (Ministério dos Transportes)",
+         "source_url" : "https://dados.transportes.gov.br/dataset/renaest",
+         "table_name" : "clean.renaest_localidade_municipio"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 529020946,
+               "sha256" : "4aa84ea561130f3125c82e36a94e523475493c66b998303f9bb179fc3d98232e",
+               "url" : "https://dados.transportes.gov.br/dataset/42e2320b-ea67-4fdc-896f-71363e043fc6/resource/675d49a4-91bf-44a8-82da-faa19a62c53f/download/renaest_dabertos_20260912.zip"
+            }
+         ],
+         "row_count_loaded" : 27,
+         "source_license" : "CC-BY-4.0 (Ministério dos Transportes)",
+         "source_url" : "https://dados.transportes.gov.br/dataset/renaest",
+         "table_name" : "clean.renaest_localidade_nao_resolvida"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 529020946,
+               "sha256" : "4aa84ea561130f3125c82e36a94e523475493c66b998303f9bb179fc3d98232e",
+               "url" : "https://dados.transportes.gov.br/dataset/42e2320b-ea67-4fdc-896f-71363e043fc6/resource/675d49a4-91bf-44a8-82da-faa19a62c53f/download/renaest_dabertos_20260912.zip"
+            }
+         ],
+         "row_count_loaded" : 2268496,
+         "source_license" : "CC-BY-4.0 (Ministério dos Transportes)",
+         "source_url" : "https://dados.transportes.gov.br/dataset/renaest",
+         "table_name" : "clean.renaest_sinistro"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 136926215,
+               "sha256" : "005963d4c677c50354bcdb094bf55119beacc25dc644f1d7bfe3611c26fe40a8",
+               "url" : "https://dados.transportes.gov.br/dataset/12686da0-3d71-4499-b432-d270f785c907/resource/4408da67-7821-4abf-96db-58acdf1497da/download/i_frota_por_uf_municipio_marca_e_modelo_ano_setembro_2026.zip"
+            }
+         ],
+         "row_count_loaded" : 5538,
+         "source_license" : "Domínio público (Ministério dos Transportes)",
+         "source_url" : "https://dados.transportes.gov.br/dataset/registro-nacional-de-veiculos-automotores-renavam",
+         "table_name" : "clean.renavam_frota_municipio"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 214192,
+         "source_license" : "não verificada (herda a licença da base INEP)",
+         "source_url" : "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+         "table_name" : "clean.school_indicators"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 55,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.school_osm_feature"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 2,
+         "source_license" : "ODbL (Open Database License — dados OpenStreetMap)",
+         "source_url" : "https://overpass-api.de/",
+         "table_name" : "clean.school_osm_query"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 83508,
+         "source_license" : "Domínio público (Tesouro Nacional)",
+         "source_url" : "https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca",
+         "table_name" : "clean.siconfi_despesa"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 182896,
+         "source_license" : "Domínio público (Tesouro Nacional)",
+         "source_url" : "https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/rreo",
+         "table_name" : "clean.siconfi_receita"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 10351,
+         "source_license" : "Domínio público (Tesouro Nacional)",
+         "source_url" : "https://apidatalake.tesouro.gov.br/ords/cdwhprd/siconfi/tt/dca",
+         "table_name" : "clean.siconfi_receita#fundeb"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 6886802,
+               "sha256" : "f323a0501ef70967c7921d0cbfb8737013c1577f7d4cd8dcd97d13096c76f07a",
+               "url" : "https://apidadosabertos.saude.gov.br/atencao-primaria/pmmb-consolidado"
+            }
+         ],
+         "row_count_loaded" : 5571,
+         "source_license" : "CC BY 3.0 (dados abertos SUS)",
+         "source_url" : "https://apidadosabertos.saude.gov.br/atencao-primaria/pmmb-consolidado",
+         "table_name" : "clean.sisab_aps"
+      },
+      {
+         "raw" : [],
+         "row_count_loaded" : 0,
+         "source_license" : "Public Domain (INDE declara) / Texto contraditório no GeoNetwork - DECISÃO JURÍDICA PENDENTE",
+         "source_url" : "https://ide.geobases.es.gov.br/layers/geonode:dnit_vmda_modelagem_2022_es_utf8_epsg_31984",
+         "table_name" : "clean.snv_trecho_vmda"
+      },
+      {
+         "raw" : [
+            {
+               "bytes" : 2556931,
+               "sha256" : "9a882a236e53072d8d7326aa0e43c35bfce46f0fe57f5465d89e09c69ae5ee70",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202501_Transferencias.zip"
+            },
+            {
+               "bytes" : 2434496,
+               "sha256" : "ce887afe420ac394b5f9576fa76f0397e154c183e0459ec6be93b4588bb086a7",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202502_Transferencias.zip"
+            },
+            {
+               "bytes" : 2620228,
+               "sha256" : "0e60b050907c70844772f01feca1f59c4e5cbe000bd03dd02f656eb34a2ffc89",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202503_Transferencias.zip"
+            },
+            {
+               "bytes" : 3072003,
+               "sha256" : "f69e3ee34c8d7a9b701664aab6b80e0088a63efb4ee024ac277949904a1cb948",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202504_Transferencias.zip"
+            },
+            {
+               "bytes" : 5795141,
+               "sha256" : "db610bc2213656e588a2b39cb7a4560ca4d4abf16803f54621ea7d39f1db8b36",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202505_Transferencias.zip"
+            },
+            {
+               "bytes" : 2677035,
+               "sha256" : "40bcaa56f50fbf64fc543b93adecb2a36044f8bb23a2aae0466c8884be0a4374",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202506_Transferencias.zip"
+            },
+            {
+               "bytes" : 3063430,
+               "sha256" : "a856a61f2fbe254adf90bb67c9c374cc0676d609f2a2268a67af21b29fd0ab8a",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202507_Transferencias.zip"
+            },
+            {
+               "bytes" : 3093378,
+               "sha256" : "86df36364ac3bb9f1cbc2e5d8b67deb7e32fed28753846c6a2b0434ff24198e1",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202508_Transferencias.zip"
+            },
+            {
+               "bytes" : 6492210,
+               "sha256" : "09974043545c389ec5e7272d53bcdcb3e0b2979509f055322b34f9c0b422af01",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202509_Transferencias.zip"
+            },
+            {
+               "bytes" : 4699695,
+               "sha256" : "70a99d2d566d30ff9988ff58e837613c743adca22ee67a52f7bc82399574b801",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202510_Transferencias.zip"
+            },
+            {
+               "bytes" : 4899564,
+               "sha256" : "36496d5da2955a2caae141a7e5a1b991fced7d571b6680fec2ddb6cd500441e4",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202511_Transferencias.zip"
+            },
+            {
+               "bytes" : 5482437,
+               "sha256" : "e9009f1fbc3d2d0328f280d72652dc86ab89dcfe194f6ea9ec43ca9fef20272f",
+               "url" : "https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/transferencias/202512_Transferencias.zip"
+            }
+         ],
+         "row_count_loaded" : 146325,
+         "source_license" : "CC-BY-4.0 (CGU)",
+         "source_url" : "https://portaldatransparencia.gov.br/download-de-dados/transferencias",
+         "table_name" : "clean.transferencia_educ"
+      }
+   ],
+   "version" : 1
+}
+
