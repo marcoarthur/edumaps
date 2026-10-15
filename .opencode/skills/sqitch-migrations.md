@@ -6,10 +6,17 @@ Auxiliar na criação e manutenção de migrations Sqitch do projeto EduMaps.
 ## Alvos
 ```bash
 cd data_pipeline
-sqitch deploy dev_super    # deploy no dev
-sqitch revert dev_super    # revert no dev
-sqitch verify dev_super    # verifica integridade
+sqitch deploy dev_super                    # deploy no dev
+sqitch revert dev_super --to <change>      # revert LIMITADO (sempre com --to!)
+sqitch verify dev_super                    # verifica integridade
 ```
+
+🔴 **`sqitch revert <target>` sem `--to` reverte TODAS as changes** do banco e
+corrompe o registry (o `deploy` seguinte falha com
+`Missing required changes`). **Nunca** rode o revert nu. Use `--to <change>`
+para reverter só o que vem depois dela — equivale ao `git revert` limitado e
+aceita símbolos de revisão (`@HEAD^-1`). Detalhes em `AGENTS.md` (secção
+Database). Em produção, revert não se usa: corrige-se com uma change nova.
 
 ## Estrutura de uma migration
 
@@ -74,6 +81,8 @@ WHERE matviewname = 'mv_foo' AND schemaname = 'analytics';
 ```
 
 ## Regras
+- **Revert sempre com `--to <change>`** — `sqitch revert` nu reverte o banco
+  inteiro (não há `--yes` seguro) e quebra o registry. Vale para qualquer alvo.
 - Sempre BEGIN/COMMIT (transacional)
 - Nunca fazer commit parcial; migrations são atômicas
 - Verificar existência antes de DROP (`IF EXISTS`)

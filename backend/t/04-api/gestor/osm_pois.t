@@ -244,6 +244,8 @@ subtest 'task: progresso, finish e fail (Model offline)' => sub {
   ok( ($info->{notes}{progress}{percent} // 0) >= 90, 'progresso reportado' );
   ok( ($info->{result}{related} // 0) >= 1, 'POI relacionado ao buffer' );
   ok $info->{result}{updated_at}, 'carimbo de atualização no resultado';
+  ok !exists $info->{result}{completude_malha},
+    'sem malha_viaria => sem indicador de completude';
   $minion->backend->remove_job($job_id);
 
   # falha: fixture inexistente -> job failed com erro (attempts=1 para não
@@ -263,6 +265,42 @@ subtest 'task: progresso, finish e fail (Model offline)' => sub {
 
   $dbh->do('DELETE FROM clean.school_osm_feature WHERE co_entidade = ?', {}, $INEP);
   $dbh->do('DELETE FROM clean.osm_feature WHERE osm_id = 910001');
+};
+
+subtest 'task: completude da malha viária quando o perfil é pedido' => sub {
+  plan skip_all => 'sem tabelas' unless $has_tables;
+
+  my $dbh = $t->app->schema->storage->dbh;
+  $t->app->config->{osm_service_class} = 'Test::OSM::Offline';
+
+  # Fixture com uma via (way) de ~200 m no buffer da escola.
+  $Test::OSM::Offline::FIXTURE = {
+    elements => [
+      { type => 'node', id => 920001, lat => -23.501, lon => -46.601 },
+      { type => 'node', id => 920002, lat => -23.501, lon => -46.599 },
+      { type => 'way', id => 920100, nodes => [920001, 920002],
+        tags => { highway => 'residential' } },
+    ],
+  };
+
+  my $job_id = $t->app->get_osm_school({
+    co_entidade => $INEP, raio => 500, profiles => ['malha_viaria'], refresh => 1,
+  });
+  $minion->perform_jobs({ queues => ['osm_test'] });
+
+  my $info = $minion->job($job_id)->info;
+  is $info->{state}, 'finished', 'job finalizado';
+
+  my $c = $info->{result}{completude_malha};
+  ok $c, 'indicador presente no resultado';
+  is $c->{extraido}, 1, 'extração de malha realizada';
+  is $c->{unidade}, 'm/km²', 'unidade';
+  is $c->{raio}, 500, 'raio do indicador';
+  ok( ($c->{valor} // 0) > 0, "densidade positiva ($c->{valor})" );
+
+  $minion->backend->remove_job($job_id);
+  $dbh->do('DELETE FROM clean.school_osm_feature WHERE co_entidade = ?', {}, $INEP);
+  $dbh->do('DELETE FROM clean.osm_feature WHERE osm_id = 920100 OR osm_id IN (920001, 920002)');
 };
 
 done_testing;

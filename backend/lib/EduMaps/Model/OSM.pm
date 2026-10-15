@@ -263,6 +263,65 @@ sub school_pois_geojson($self, $co_entidade, $nu_ano_censo = undef) {
 }
 
 # ---------------------------------------------------------------------------
+# Indicadores derivados do OSM
+# ---------------------------------------------------------------------------
+
+# Indicador de qualidade do dado OSM (#131 e2): completude da malha viária no
+# buffer de 500 m da escola, em metros de via (highway=*) por km² (m/km²).
+#
+# É o viés de cobertura do OSM tornado auditável — deve acompanhar todo
+# indicador que dele deriva. Distingue ausência de zero (regra da #154):
+#
+#   valor => undef, extraido => 0  -> não houve extração de malha viária
+#                                     (não há o que afirmar)
+#   valor => 0,     extraido => 1  -> extração feita, sem via no buffer
+#   valor > 0,      extraido => 1  -> densidade de metros de via por km²
+#
+# Só calcula quando a extração referida incluiu o perfil `malha_viaria` (a
+# única consulta que traz a cláusula sem valor `nwr["highway"]`). Sem isso o
+# indicador não tem significado e devolve C<extraido =E<gt> 0>.
+#
+# Aceita C<digest>/C<profiles>/C<nu_ano_censo> explícitos (o job acabou de rodar
+# a extração e já os conhece); sem eles, resolve a seleção corrente da escola.
+sub iv_mobilidade_completude_malha($self, %args) {
+  my $co = $args{co_entidade} // die 'Need co_entidade';
+
+  my ($ano, $digest, $profiles);
+  if (defined $args{digest}) {
+    $ano      = $args{nu_ano_censo};
+    $digest   = $args{digest};
+    $profiles = $args{profiles} // [];
+  }
+  else {
+    my $sel = $self->current_selection($co, $args{nu_ano_censo});
+    ($ano, $digest, $profiles) = $sel
+      ? ($sel->{nu_ano_censo}, $sel->{digest}, $sel->{profiles})
+      : (undef, undef, []);
+  }
+
+  my $base = {
+    unidade => 'm/km²',
+    raio    => 500,
+    digest  => $digest,
+  };
+
+  # Sem digest ou sem o perfil de malha viária => ausência, não zero.
+  return { %$base, valor => undef, extraido => 0 }
+    unless $digest && grep { $_ eq 'malha_viaria' } @$profiles;
+
+  my $valor = $self->_dbh->selectrow_array(
+    'SELECT clean.iv_mobilidade_completude_malha(?, ?, ?)',
+    undef, $co, $ano, $digest
+  );
+
+  return {
+    %$base,
+    valor    => defined $valor ? 0 + $valor : undef,
+    extraido => defined $valor ? 1 : 0,
+  };
+}
+
+# ---------------------------------------------------------------------------
 # Internos
 # ---------------------------------------------------------------------------
 

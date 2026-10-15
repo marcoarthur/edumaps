@@ -90,6 +90,18 @@ sub _query_osm_school($job, $args) {
 
   $job->progress(100, 'Concluído');
 
+  # Indicador de qualidade do OSM (#131 e2): devolve a completude da malha
+  # viária quando a extração pediu o perfil `malha_viaria` (sob demanda).
+  my $completude;
+  if (grep { $_ eq 'malha_viaria' } @$profiles) {
+    $completude = $model->iv_mobilidade_completude_malha(
+      co_entidade  => $co,
+      nu_ano_censo => $res->{nu_ano_censo},
+      digest       => $res->{digest},
+      profiles     => $profiles,
+    );
+  }
+
   return $job->finish({
     co_entidade  => 0 + $co,
     nu_ano_censo => $res->{nu_ano_censo},
@@ -98,6 +110,7 @@ sub _query_osm_school($job, $args) {
     digest       => $res->{digest},
     related      => $res->{related},
     updated_at   => $res->{updated_at},
+    (defined $completude ? (completude_malha => $completude) : ()),
   });
 }
 

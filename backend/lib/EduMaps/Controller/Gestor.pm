@@ -1995,6 +1995,9 @@ sub osm_pois_status($self) {
   my $sum    = $model->school_pois_summary($cod_inep, $ano);
   my $escola = $model->school_location($cod_inep, $ano);
   my $geojson = $model->school_pois_geojson($cod_inep, $ano);
+  my $completude = $model->iv_mobilidade_completude_malha(
+    co_entidade => $cod_inep, ($ano ? (nu_ano_censo => $ano) : ()),
+  );
   my $job_id = $self->_pending_osm_job($cod_inep);
 
   $self->render(json => {
@@ -2006,6 +2009,7 @@ sub osm_pois_status($self) {
     resumo     => $sum->{resumo},
     escola     => $escola,
     geojson    => $geojson,
+    completude_malha => $completude,
     (defined $job_id ? (job_id => $job_id) : ()),
   });
 }
