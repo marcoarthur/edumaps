@@ -129,6 +129,21 @@ escola) · `edificacao_em_area_susceptivel` · `distancia_drenagem_escola_m` ·
   relatório do IVET.
 - GEE exige conta Google — preferir o bucket `storage.googleapis.com`, que não exige.
 
+**Decisão de ingestão (#241, 2026-10-13) — resolve, por ora, os riscos acima:** foi
+adotado o **atalho da página de Estatísticas**, não a areolização do raster. A
+tabela `clean.mapbiomas_cobertura` é carregada pelo job `MapBiomas` a partir da
+**estatística oficial da Coleção 10**
+(`MAPBIOMAS_BRAZIL-COL.10-BIOME_STATE_MUNICIPALITY.xlsx`, 78 MB, bucket público,
+**sem token**, `HEAD` → HTTP 200), lida via **GDAL** (driver XLSX). Grão:
+**município × classe × ano** (biomas somados), anos **2015–2024**. Sem `sf`, sem
+raster, sem e-SIC. A Coleção 11 entra quando o MapBiomas publicar a estatística
+municipal dela.
+
+O recorte **por escola** (área de influência sobre o raster de 30 m) — que a
+COMMENT antiga da tabela prometia e que os indicadores acima projetam — **ficou
+de fora** desta carga: é a **#255** (grão município aqui é decisão registrada em
+`docs/specs/2026-10-13-ingestao-real-plano.md` §8).
+
 ---
 
 ### INMET — séries históricas diárias (BDMEP)

@@ -222,7 +222,7 @@ registro <- data.frame(
     "IBGE — API SIDRA v3", "IBGE — Censo Demográfico 2022",
     "Ministério da Saúde — CNES (DATASUS)", "Ministério da Saúde — SISAB/PIMMB",
     "cruzamento CNES × SISAB × Censo Escolar",
-    "MapBiomas — Coleção 9", "INMET — Alerta-AS (CAP 1.2)", "INMET — BDMEP",
+    "MapBiomas — Coleção 10", "INMET — Alerta-AS (CAP 1.2)", "INMET — BDMEP",
     "Tesouro Nacional — SICONFI (tesouror)", "Tesouro Nacional — SICONFI (tesouror)",
     "CGU — Portal da Transparência", "cruzamento SICONFI × CGU × Censo Escolar",
     "BrazilCrime (CRAN) / SSP / IBGE", "ANTT — acidentes rodoviários",
@@ -1485,8 +1485,8 @@ e um indicador juridicamente ou metodologicamente inválido.
 | **Sempre** filtrar `classificacao = 'realizada'` | `'estimativa'` é projeção orçamentária | `siconfi_receita`, `siconfi_despesa`, `esforco_fiscal_educacao` |
 | Junção **obrigatória** para resolver município | chave bruta não tem município | `antt_acidente_trecho`, `antt_contagem_equipamento` |
 | **Vazio ≠ zero** | supressão estatística é estado distinto | `censo2022_setor` |
-| Arealizar sobre área de influência, **não** sobre centróide | qualidade do indicador | `mapbiomas_cobertura` |
-| Fixar a **coleção** (ex.: `collection9`), nunca interpolar o ano | URL por ano morre; ETL quebra em silêncio | `mapbiomas_cobertura` |
+| Grão é **município** (estatística oficial Col.10); recorte por escola/área de influência é a **#255** | decisão #241: sem raster aqui | `mapbiomas_cobertura` |
+| Fixar a **coleção** (ex.: `collection10`), nunca interpolar o ano | URL por ano morre; ETL quebra em silêncio | `mapbiomas_cobertura` |
 | Sanitização na ingestão (sem PII) | LGPD | `cnes_estabelecimentos` |
 | ODbL share-alike: materialização **exige decisão jurídica** | licença | `recife_transporte_escolar` |
 | Camada é **modelagem, não medição**; ADR de licença pendente | procedência | `snv_trecho_vmda` |
