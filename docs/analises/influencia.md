@@ -2,9 +2,9 @@
 
 > **Issues**: **#255** (MapBiomas por escola) — e é **gate** de **#137**
 > (blocos B–F / entregável 3).
-> **Data**: 2026-10-15 · **Versão da metodologia proposta**: `influencia-v1`.
-> **Estado**: **proposta — aguardando decisão de produto**. Não implementar antes
-> do aceite (a geometria escolhida muda *todos* os indicadores territoriais).
+> **Data**: 2026-10-15 · **Versão da metodologia**: `influencia-v1`.
+> **Estado**: **DECIDIDA** (2026-10-15, developer) — abordagem **híbrida
+> Tier 0–3** com os *defaults* do §4. **Implementável.**
 
 ## 0. Resumo
 
@@ -199,19 +199,22 @@ setor gigante rural). O setor é a **unidade do dado**, não a geometria.
 
 ---
 
-## 7. Decisões a tomar (produto)
+## 7. Decisões tomadas (2026-10-15, developer)
 
-1. **Aprovar a abordagem híbrida** (Tier 0–3) como `influencia-v1`? Ou fixar uma
-   só (só-buffer é o menor risco de escopo; só-isócrona é o mais defensável).
-2. **Raio default do buffer** — 500 m? 1 km? por fenômeno (tabela §4)?
-3. **Isócrona** — a pé 15 min e/ou transporte 45 min? Confirmar o
-   **auto-hospedagem** do OSRM/Valhalla (implica container + custo).
-4. **Arealização** — ponderação por **área** (padrão) ou por **população**?
-5. **LGPD** — limiar mínimo de N e nível de agregação (grid 1 km / ZOT / k).
+| # | Pergunta | Decisão |
+|---|----------|---------|
+| 1 | Abordagem | **híbrida Tier 0–3** (`influencia-v1`) — não uma geometria única |
+| 2 | Raio do buffer | **defaults do §4** — 500 m (feições locais), 1 km (uso do solo), 1–2 km (fogo/chuva) |
+| 3 | Isócrona | **a pé 15 min + transporte 45 min**, OSRM/Valhalla **auto-hospedado** (buffer como *fallback*) |
+| 4 | Arealização | ponderada por **área** (população como refino quando houver viés de setor) |
+| 5 | LGPD | **agregar antes de expor** (grid 1 km / ZOT / k-anonimato); limiar exato a calibrar na implementação |
 
-Enquanto 1–5 não forem decididas, o **#255** e os blocos territoriais do **#137**
-ficam **parados** — o núcleo da fórmula (entregável 3) já está pronto e não
-depende desta decisão.
+A decisão **não** altera a fórmula `ivet-v1.0` (nem os pesos) — altera **de onde
+vem o componente** territorial. Ver §6 (impacto).
+
+**Próximo passo de implementação (Tier 1, o mais barato):** materializar a
+camada reusável `clean.escola_influencia(escola_id, tier, raio_km, geom,
+versao)` via PostGIS — é o pré-requisito da arealização (#255 e blocos B–F).
 
 ---
 

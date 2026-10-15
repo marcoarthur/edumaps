@@ -49,6 +49,17 @@
   esboço de cálculo. **Aguardando decisão de produto** (§7 tem 5 perguntas).
   Gate registrado em `ivet.md` §6 e `indice.md` §12. É o que desbloqueia #255 e
   os blocos B–F do #137; o núcleo da fórmula (entregável 3) **não** depende dela.
+- **Decisão tomada (2026-10-15, developer)**: **aprovada a `influencia-v1`
+  híbrida Tier 0–3** com os *defaults* do §4 — buffers 500 m/1 km/1–2 km por
+  fenômeno; isócrona a pé 15 min + transporte 45 min (OSRM/Valhalla
+  **auto-hospedado**); arealização ponderada por **área**; LGPD = agregar antes
+  de expor (grid 1 km / ZOT / k). Doc promovido a **DECIDIDA** (§7 = decisões
+  tomadas); `ivet.md` §6 e `indice.md` atualizados. **Nenhuma alteração à
+  fórmula `ivet-v1.0`** (pesos) — muda *de onde vem o componente*.
+- **Gate destravado**: #255 e #137 (blocos B–F) agora **implementáveis**. Próximo
+  passo de código proposto (Tier 1): materializar a camada reusável
+  `clean.escola_influencia(escola_id, tier, raio_km, geom, versao)` via PostGIS.
+  Tier 2 (isócrona) exige container do roteador + `sf`/`terra` no `analytic`.
 
 ## Sessão 2026-10-15 — #135 (fechamento): manifesto de hashes versionado (datasets.lock)
 

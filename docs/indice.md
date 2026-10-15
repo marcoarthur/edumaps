@@ -91,9 +91,10 @@
 - 🟢 `docs/analises/fontes/` — fichas por domínio (`educacao`, `socioeconomico`,
   `conectividade-obras`, `mobilidade`, `saude`, `seguranca`, `meio-ambiente`,
   `agregadores`), com licença, endpoint, granularidade e risco verificados.
-- 🟡 `docs/analises/influencia.md` — **metodologia da área de influência da
-  escola** (`influencia-v1`, *proposta*): buffer × setor censitário × isócrona,
-  camadas Tier 0–3, LGPD — gate dos blocos territoriais (#137) e da #255.
+- 🟢 `docs/analises/influencia.md` — **metodologia da área de influência da
+  escola** (`influencia-v1`, **decidida** 2026-10-15): buffer × setor censitário
+  × isócrona, camadas Tier 0–3, LGPD — destrava os blocos territoriais (#137) e
+  a #255.
 - 🟢 `docs/analises/versionamento_datasets.md` — **manifesto de hashes** dos
   datasets (#135): lockfile `data_pipeline/datasets.lock.json`, chave de
   conteúdo (`dataset_version`), comando de verificação de deriva e política de
