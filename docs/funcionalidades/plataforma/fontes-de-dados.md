@@ -113,6 +113,10 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode **guardar o arquivo bruto de cada carga**, fora do banco e com
   um manifesto de integridade (origem, tamanho, assinatura, data). Assim, uma
   restauração do banco não apaga dados que não podem ser baixados de novo.
+- Sistema pode **fixar a versão exata dos dados**: um manifesto de hashes
+  versionado no repositório identifica a versão de cada base carregada, e uma
+  verificação automática acusa quando o dado carregado diverge do manifesto —
+  respondendo "de qual versão dos dados veio este número?".
 - Sistema **só busca dados de origens autorizadas**: cada carga confere a
   origem contra uma lista de fontes aprovadas. As regras de proteção de dados
   pessoais, que vetam bases individualizadas, valem para todas as cargas.

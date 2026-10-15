@@ -252,7 +252,8 @@ Regra de peso (v1.0, explícita e auditável):
 - A leitura **territorial** (§1) torna o agregado um índice de *território com
   escola observada*, e não uma média de atributos do prédio.
 - O número publicado fica **rastreável**: `ivet-v1.0` + versão do dataset de
-  entrada (entregável 3, depende de #135/DVC).
+  entrada (a chave de conteúdo do [#135](versionamento_datasets.md) já fixa a
+  ponta `raw`; falta versionar o passo `raw`→`clean`→`analytics`).
 
 ---
 
@@ -276,7 +277,7 @@ bloco A enquanto C–E forem `NULL`.
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline de treino reprodutível em `analysis/edumapsr/` | pendente | **#135** (DVC) + dataset version (Fase 0 #124) |
+| 3. Pipeline de treino reprodutível em `analysis/edumapsr/` | pendente | ✅ Fase 0 #124 · ✅ **#135** (manifesto de hashes, ver [`versionamento_datasets.md`](versionamento_datasets.md)); falta versionar `raw`→`clean`→`analytics` |
 | 4. Critério de vigência e retreino | pendente | 3 |
 | 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
 
@@ -299,7 +300,8 @@ Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
 ## 7. Referências
 
 - Issue **#137** · Dependências **#124** (Fase 0), **#134** (dicionário),
-  **#135** (DVC), **#125/#126/#127** (dimensões novas).
+  **#135** (manifesto de hashes — [`versionamento_datasets.md`](versionamento_datasets.md)),
+  **#125/#126/#127** (dimensões novas).
 - `docs/analises/fontes_de_dados.md` — lacunas do IVET e plano de fontes (#123).
 - `docs/personas/pesquisadora-educacional.md` → **P5** (pergunta territorial ×
   escolar, hoje respondida aqui).

@@ -91,6 +91,10 @@
 - 🟢 `docs/analises/fontes/` — fichas por domínio (`educacao`, `socioeconomico`,
   `conectividade-obras`, `mobilidade`, `saude`, `seguranca`, `meio-ambiente`,
   `agregadores`), com licença, endpoint, granularidade e risco verificados.
+- 🟢 `docs/analises/versionamento_datasets.md` — **manifesto de hashes** dos
+  datasets (#135): lockfile `data_pipeline/datasets.lock.json`, chave de
+  conteúdo (`dataset_version`), comando de verificação de deriva e política de
+  armazenamento (o que vai no git e o que fica no `raw_dir`).
 
 ---
 
