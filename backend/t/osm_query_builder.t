@@ -52,6 +52,33 @@ subtest 'default equipamentos_publicos agrega vários perfis' => sub {
     'cobre amenity/leisure/railway/office';
 };
 
+subtest 'default equipamentos_publicos NÃO inclui a malha viária (sob demanda)' => sub {
+  my $q = EduMaps::Services::OSM::Query->new(
+    target => { type => 'around', lat => 0, lon => 0, raio => 300 });
+
+  my @tags = map { $_->{key} . ($_->{value} // '') } @{ $q->expanded_filters };
+  ok !(grep { $_ eq 'highway' } @tags),
+    'sem cláusula highway sem valor (a malha não polui o resumo de POIs)';
+  ok scalar(grep { $_ eq 'highwaybus_stop' } @tags),
+    'highway=bus_stop (transporte) permanece no agregado';
+};
+
+subtest 'malha_viaria: qualquer highway (ways), sem valor fixo' => sub {
+  my $q = EduMaps::Services::OSM::Query->new(
+    target  => { type => 'around', lat => -23.55, lon => -46.63, raio => 500 },
+    profile => 'malha_viaria',
+  );
+
+  my $ql = $q->to_ql;
+  like $ql, qr/nwr\["highway"\]\(around:500,-23.55,-46.63\)/,
+    'cláusula highway sem valor (qualquer via)';
+  unlike $ql, qr/"highway"="/, 'sem valor fixo';
+
+  my $valid = EduMaps::Services::OSM::Query->valid_profile('malha_viaria');
+  ok $valid, 'perfil válido';
+  ok length($q->digest) > 0, 'digest gerado';
+};
+
 subtest 'digest estável e sensível ao raio' => sub {
   my %base = (
     target  => { type => 'around', lat => -23, lon => -46, raio => 300 },

@@ -474,6 +474,13 @@ geográfico** que precisa ser medido e publicado junto do valor.
 - `iv_mobilidade_completude_malha` — completude da malha viária no buffer de
   500 m. É **indicador de qualidade do dado**, e deve ser publicado junto do
   valor para tornar o viés de cobertura auditável.
+  **Implementado** (#131 e2, 2026-10-14): densidade de metros de via
+  (`highway=*`) por km² no buffer de 500 m, extraída **sob demanda** pelo perfil
+  `malha_viaria` do OSM. Distingue ausência de zero (#154): `NULL` = sem
+  extração; `0` = extração feita sem via no buffer (viés alto); `> 0` =
+  densidade. Função `clean.iv_mobilidade_completude_malha(co, ano, digest)`;
+  método `EduMaps::Model::OSM::iv_mobilidade_completude_malha` e devolvido pelo
+  job `query_osm_school` quando o perfil é pedido.
 
 **Prioridade:** `[alta]` — **18 pontos**
 

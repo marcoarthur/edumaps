@@ -81,7 +81,17 @@ our %PROFILES = (
     { key => 'amenity', value => 'post_office' },
     { key => 'office',  value => 'government' },
   ],
+  malha_viaria => [
+    { key => 'highway' },
+  ],
 );
+
+# Perfis que NÃO entram no agregador `equipamentos_publicos`: são camadas
+# (redes/linhas) que alimentam indicadores próprios, não POIs. Incluí-las no
+# default faria as vias entrarem no resumo por categoria do painel (como se
+# fossem equipamentos) e inflaria a consulta. Pedidas explicitamente, funcionam
+# normalmente. A malha viária é "sob demanda" (#131 e2).
+our %NON_AGGREGATED = map { $_ => 1 } qw(malha_viaria);
 
 has target  => sub { die 'Need target ({ type => around|poly, ... })' };
 has filters => sub { [] };
@@ -128,6 +138,7 @@ sub profile_filters($class, $name) {
     my %seen;
     my @all;
     for my $key (sort keys %PROFILES) {
+      next if $NON_AGGREGATED{$key};
       for my $f (@{ $PROFILES{$key} }) {
         my $sig = $f->{key} . '=' . ($f->{value} // '');
         push @all, $f unless $seen{$sig}++;

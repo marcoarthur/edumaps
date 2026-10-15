@@ -35,6 +35,12 @@ território em volta.
   seleção anterior, e **avisar** quando os dados existentes são recentes
   (menos de 7 dias) antes de refazê-los.
 - Sistema pode **acompanhar o andamento** da busca e avisar de falhas.
+- Sistema pode informar a **completude da malha viária** no entorno (metros de
+  via por km², no buffer de 500 m) como **medida de confiabilidade** dos dados
+  do OpenStreetMap: onde há pouca malha mapeada, o viés de cobertura é alto e os
+  equipamentos encontrados merecem menos confiança. É um indicador de qualidade
+  do dado, não de mobilidade, e distingue "sem via no entorno" (dado fraco) de
+  "não houve extração" (sem o que afirmar).
 
 ## Valor
 
