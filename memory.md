@@ -4,6 +4,53 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-15 — #255/#137 (Tier 1): camada de influência da escola
+
+- **PR #260 MERGEADO** (merge `d297df8`; branch `feat/data-influencia-tier1`;
+  commit `1e5e4f9`). Nota técnica **NT_133**.
+- **Implementei o Tier 1** da metodologia `influencia-v1`
+  (`docs/analises/influencia.md` §8): a **camada reusável de influência** —
+  pré-requisito comum da **#255** (zonal statistics do MapBiomas 30 m) e da
+  extração dos blocos territoriais **B–F** do **#137**.
+  - **Change Sqitch `escola_influencia`**: tabela
+    `clean.escola_influencia(co_entidade, nu_ano_censo, tier, raio_m,
+    geom geometry(Polygon,4674), versao, computado_em)` (PK
+    `(co_entidade,nu_ano_censo,tier,raio_m)`, GiST em `geom`) + função
+    idempotente `clean.refresh_escola_influencia(p_raios integer[] DEFAULT
+    ARRAY[500,1000,2000], p_co_entidades bigint[] DEFAULT NULL)`.
+  - **Task Minion `refresh_influencia`** + helper
+    (`backend/lib/EduMaps/Task/Influencia.pm`, registrado em `EduMaps.pm`).
+- **Buffer em METROS via `ST_Buffer(geometry::geography, raio_m)`** — o overload
+  de `geography` trabalha em metros; o de `geometry` trabalharia em **graus**.
+  Verificado empiricamente: SRID **4674** preservado no *round-trip*; área de
+  500 m ≈ 780.700 m² (π·500² menos a aproximação poligonal).
+- **Ajuste vs. a proposta**: `raio_m`/`co_entidade` em vez de `raio_km`/
+  `escola_id` (alinha com `clean.school_osm_feature.raio` e
+  `clean.censo_escolas`); `nu_ano_censo` na PK (geometria de origem é anual; hoje
+  o snapshot é único, 2025).
+- **Migration = só DDL**; quem popula é o job. Em base recém-deployada o censo
+  pode estar vazio → o `verify` checa **estrutura**, nunca volume (senão o gate
+  de CI quebraria). O `verify` usa `DO $$ … RAISE EXCEPTION` (regra #160).
+- **Volume medido (dev)**: 156.816 escolas × 3 raios = **470.448** buffers,
+  **~352 MB**; refresh global ~30 s, de uma escola instantâneo.
+- **Testes**: `backend/t/escola_influencia.t` (**5 subtestes / 14 asserts** —
+  SRID, área métrica, corte do raio **400 m dentro / 600 m fora**, idempotência,
+  raio inválido) e `backend/t/05-tasks/influencia.t` (task+helper) — PASS;
+  `t/01-app` PASS.
+- **CI** (`backend-tests`) **PASS** (12m16s) — inclui o gate `sqitch verify`
+  numa base fresca.
+- **Deploy**: `rex prepare` + `deploy_db_dev` (database.edumaps: tabela +
+  registry OK) + `deploy_backend_dev` + `deploy_minion_dev` (md5 confere;
+  serviços `active`); imagens Docker locais `sqitch`/`backend`/`minion`
+  reconstruídas + `up -d` (sqitch exit 0; backend serve o código novo).
+- **Destrava**: **#255** (falta `sf`/`terra`+GDAL no `analytic`) e a extração
+  B–F do **#137**. Próximos incrementais: Tier 2 (isócrona OSRM/Valhalla
+  auto-hospedado) e Tier 3 (arealização por setor censitário) — reusam o mesmo
+  `tier`.
+- **Lembrete de infra (recorrente)**: `docker compose up` **não** reconstrói
+  imagens; usar o **sqitch do host** (`env -u PERL5LIB sqitch deploy dev_docker`)
+  lê o working tree e evita a armadilha do plano velho dentro da imagem.
+
 ## Sessão 2026-10-15 — #137 (entregável 3, núcleo): fórmula `ivet-v1.0` como código R
 
 - **PR #259 MERGEADO** (merge `f7ce422`; branch `feat/analysis-ivet-nucleo-formula`;
