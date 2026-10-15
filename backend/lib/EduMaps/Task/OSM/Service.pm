@@ -33,6 +33,9 @@ has _tmpl         => sub { Mojo::Template->new };
 has _osm_raw      => sub { die 'require run_query() first' };
 has _osm_geojson  => sub { die 'require run_query() first' };
 has _testing      => sub { 0 };
+# Repetição espaçada entre consultas ao Overpass (#131): default 1s no
+# caminho legado; o cliente de baixo nível (Services::OSM) tem default 0.
+has min_interval  => sub { 1 };
 
 sub _poly_string($self) {
   my @coords;
@@ -71,10 +74,11 @@ sub _build_query_tmpl($self, $tmpl) {
 # Constrói o Services::OSM com o QL legado (e o fixture offline quando em teste).
 sub _new_service($self) {
   return EduMaps::Services::OSM->new(
-    ql      => $self->_build_query,
-    log     => $self->log,
-    timeout => $self->timeout,
-    offline => $self->_testing,
+    ql           => $self->_build_query,
+    log          => $self->log,
+    timeout      => $self->timeout,
+    offline      => $self->_testing,
+    min_interval => $self->min_interval,
     ( $self->_testing ? (fixture => path('t', 'raw_osm.json')->to_string) : () ),
   );
 }

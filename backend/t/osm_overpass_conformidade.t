@@ -1,6 +1,9 @@
 use Mojo::Base -strict, -signatures;
 use Test2::V0;
 use lib qw(./lib);
+use Mojo::File qw(path);
+use File::Temp ();
+use Time::HiRes ();
 use EduMaps::Services::OSM;
 use EduMaps::Services::OSM::Query;
 
@@ -118,6 +121,42 @@ subtest 'sucesso limpa o rasto de HTTP' => sub {
 
   $svc->run;
   is $svc->_http_code, undef, 'sem código de erro pendente após sucesso';
+};
+
+# Repetição espaçada (#131): consultas ao Overpass NÃO correm em paralelo
+# (flock) e são espaçadas por `min_interval` via estampilho em `lock_dir`.
+subtest 'min_interval espaça chamadas consecutivas (repetição espaçada)' => sub {
+  my $dir = File::Temp::tempdir(CLEANUP => 1);
+  # Estampilho como se a última chamada fosse agora: força a espera. Com
+  # min_interval=2, mesmo que a leitura caia no segundo seguinte, a espera
+  # é >= 1s — a asserção tolera a granularidade de `time` sem flutuar.
+  path($dir, 'overpass.last')->spew(time);
+
+  my $svc = Test::OSM::Scripted->new(
+    query        => $q,
+    lock_dir     => $dir,
+    min_interval => 2,
+    script       => [ [200, { elements => [] }] ],
+  );
+
+  my $t0 = Time::HiRes::time;
+  $svc->run;
+  my $dt = Time::HiRes::time - $t0;
+  ok $dt >= 0.5, sprintf('esperou pelo intervalo antes de chamar (%.2fs)', $dt);
+};
+
+subtest 'min_interval=0 desliga o espaçamento (sem estampilho)' => sub {
+  my $dir = File::Temp::tempdir(CLEANUP => 1);
+
+  my $svc = Test::OSM::Scripted->new(
+    query        => $q,
+    lock_dir     => $dir,
+    min_interval => 0,
+    script       => [ [200, { elements => [] }] ],
+  );
+
+  $svc->run;
+  ok !-f path($dir, 'overpass.last'), 'sem espaçamento: nenhum estampilho gravado';
 };
 
 done_testing;

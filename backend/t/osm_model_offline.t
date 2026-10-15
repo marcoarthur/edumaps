@@ -9,8 +9,16 @@ use EduMaps::Model::OSM;
   package Test::OSM::Offline;
   use Mojo::Base 'EduMaps::Services::OSM', -signatures;
   our $FIXTURE;
+  our $RUNS = 0;
   sub new($class, %args) {
     $class->SUPER::new(%args, offline => 1, fixture => $FIXTURE);
+  }
+  # Conta quantas vezes o serviço é de facto executado. No cache HIT o
+  # Model não chama run() — só parse() do bruto já persistido —, então o
+  # contador prova que a segunda execução NÃO reconsulta (#131).
+  sub run($self) {
+    $RUNS++;
+    return $self->SUPER::run;
   }
 }
 
@@ -60,6 +68,7 @@ subtest 'osm_for_school cacheia, persiste a feature e a relação (buffer)' => s
   ok $res->{digest},               'digest calculado';
   ok $res->{related} >= 1,         'feature relacionada ao buffer da escola';
   ok $sch->resultset('OsmQuery')->find($res->{digest}), 'osm_query persistido';
+  is $Test::OSM::Offline::RUNS, 1, 'primeira execução consulta o serviço (cache MISS)';
 
   my $feat = $sch->resultset('OsmFeature')->find({ osm_type => 'node', osm_id => 987654 });
   ok $feat, 'osm_feature persistida';
@@ -74,13 +83,18 @@ subtest 'osm_for_school cacheia, persiste a feature e a relação (buffer)' => s
   is $rel, 1, 'school_osm_feature (relação)';
 };
 
-subtest 'segunda chamada usa o cache (HIT)' => sub {
+subtest 'segunda chamada usa o cache (HIT) e NÃO reconsulta o serviço' => sub {
+  my $antes = $Test::OSM::Offline::RUNS;
+  is $antes, 1, 'o serviço já correu uma vez (MISS da 1ª chamada)';
+
   my $res = $model->osm_for_school(
     co_entidade => $school->{co_entidade},
     raio        => 500,
     profiles    => ['educacao'],
   );
   ok $res->{related} >= 1, 'relação mantida no cache';
+  is $Test::OSM::Offline::RUNS, $antes,
+    'cache HIT: o serviço NÃO foi executado de novo (#131, sem reconsulta)';
 };
 
 subtest 'school_features lê as features relacionadas' => sub {
