@@ -1,56 +1,52 @@
 -- Verify edumaps:mapbiomas_cobertura on pg
+--
+-- Verificação que FALHA MESMO (DO … RAISE EXCEPTION, issue #160): um SELECT
+-- preguiçoso devolve 0 linhas e o Sqitch 1.6.1 reporta 'ok'.
+--
+-- Só a ESTRUTURA é verificada. Os DADOS vêm do job MapBiomas (#241), não desta
+-- migration: num banco recém-deployado a tabela é legitimamente VAZIA, logo um
+-- verify que exigisse linhas derrubaria o gate de CI. A verificação anterior era
+-- o anti-padrão da #160 e ainda checava `collection9` e classes '3.1'/'3.2'
+-- (esquema que nunca vigorou — a carga real é a Coleção 10 com classe numérica).
 
 BEGIN;
 
--- 1) Tabela existe
-SELECT 1
-FROM information_schema.tables
-WHERE table_schema = 'clean'
-  AND table_name = 'mapbiomas_cobertura';
+DO $$
+DECLARE
+  faltando text;
+BEGIN
+  IF to_regclass('clean.mapbiomas_cobertura') IS NULL THEN
+    RAISE EXCEPTION 'mapbiomas_cobertura: tabela clean.mapbiomas_cobertura não existe';
+  END IF;
 
--- 2) Colunas obrigatórias
-SELECT 1
-FROM information_schema.columns
-WHERE table_schema = 'clean'
-  AND table_name = 'mapbiomas_cobertura'
-  AND column_name IN ('codigo_ibge', 'ano', 'colecao', 'classe', 'area_ha')
-  AND is_nullable = 'NO';
+  -- Colunas e nulabilidade esperadas (area_ha/area_km2 são anuláveis no DDL).
+  SELECT string_agg(c.c || ' (' || c.n || ')', ', ' ORDER BY c.c) INTO faltando
+  FROM (VALUES
+    ('codigo_ibge', 'NO'), ('ano', 'NO'), ('colecao', 'NO'), ('classe', 'NO'),
+    ('classe_desc', 'YES'), ('area_ha', 'YES'), ('area_km2', 'YES')
+  ) AS c(c, n)
+  WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'clean' AND table_name = 'mapbiomas_cobertura'
+      AND column_name = c.c AND is_nullable = c.n);
+  IF faltando IS NOT NULL THEN
+    RAISE EXCEPTION 'mapbiomas_cobertura: colunas ausentes/nulabilidade errada: %', faltando;
+  END IF;
 
--- 3) PK composta
-SELECT 1
-FROM information_schema.table_constraints
-WHERE table_schema = 'clean'
-  AND table_name = 'mapbiomas_cobertura'
-  AND constraint_type = 'PRIMARY KEY'
-  AND constraint_name = 'pk_mapbiomas_cobertura';
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'clean.mapbiomas_cobertura'::regclass
+      AND contype = 'p' AND conname = 'pk_mapbiomas_cobertura') THEN
+    RAISE EXCEPTION 'mapbiomas_cobertura: PK pk_mapbiomas_cobertura ausente';
+  END IF;
 
--- 4) FK para malha_municipio
-SELECT 1
-FROM information_schema.table_constraints
-WHERE table_schema = 'clean'
-  AND table_name = 'mapbiomas_cobertura'
-  AND constraint_type = 'FOREIGN KEY'
-  AND constraint_name = 'fk_mapbiomas_municipio';
-
--- 5) Coleção fixa (collection9) - não por ano
-SELECT 1
-FROM clean.mapbiomas_cobertura
-WHERE colecao = 'collection9'
-LIMIT 1;
-
--- 6) Classes principais existem
-SELECT 1
-FROM clean.mapbiomas_cobertura
-WHERE classe IN ('3', '4', '3.1', '3.2', '3.3', '4.1', '4.2', '5', '6')
-GROUP BY classe
-HAVING COUNT(*) > 100;
-
--- 7) Metadados de importação
-SELECT 1
-FROM clean.import_metadata
-WHERE table_name = 'clean.mapbiomas_cobertura'
-  AND source_url IS NOT NULL
-  AND source_license IS NOT NULL
-  AND retrieved_at IS NOT NULL;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'clean.mapbiomas_cobertura'::regclass
+      AND contype = 'f' AND conname = 'fk_mapbiomas_municipio'
+      AND confrelid = 'clean.malha_municipio'::regclass) THEN
+    RAISE EXCEPTION 'mapbiomas_cobertura: FK fk_mapbiomas_municipio -> clean.malha_municipio ausente';
+  END IF;
+END $$;
 
 ROLLBACK;
