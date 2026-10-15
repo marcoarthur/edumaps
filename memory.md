@@ -42,6 +42,13 @@
 - **Próximo (decidido com o usuário)**: pesquisar e **propor a metodologia da
   área de influência da escola** (buffer/raio/setor/isócrona) — é o **gate
   comum** de #137 (3-resto/4/5) e #255.
+- **Proposta entregue** (commit `902721a`): `docs/analises/influencia.md`
+  (`influencia-v1`) — metodologia **híbrida em camadas** Tier 0–3 (ponto →
+  buffer de raio documentado → isócrona de rede → setor censitário para
+  arealização), com evidência interna (`fontes/*`) + externa, guarda **LGPD** e
+  esboço de cálculo. **Aguardando decisão de produto** (§7 tem 5 perguntas).
+  Gate registrado em `ivet.md` §6 e `indice.md` §12. É o que desbloqueia #255 e
+  os blocos B–F do #137; o núcleo da fórmula (entregável 3) **não** depende dela.
 
 ## Sessão 2026-10-15 — #135 (fechamento): manifesto de hashes versionado (datasets.lock)
 
