@@ -1,7 +1,7 @@
 # IVET — fórmula, coeficientes e decisão de leitura
 
-> **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada) e 2
-> (decisão de leitura).
+> **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
+> 2 (decisão de leitura) e 3 (núcleo reprodutível da fórmula, `R/ivet.R`).
 > **Versão da fórmula**: `ivet-v1.0` · **Data**: 2026-10-15.
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
@@ -269,6 +269,25 @@ Regra de peso (v1.0, explícita e auditável):
 Para o IVET v1.0: recalcular A→B reconciliados, aplicar §4.1 e publicar só o
 bloco A enquanto C–E forem `NULL`.
 
+**Núcleo da fórmula como código (entregável 3, parte pronta).** A estrutura
+`componente → dimensão → IVET` de §4.1/§4.3 vive como código R **puro** em
+`analysis/edumapsr/R/ivet.R` (fórmula `ivet-v1.0`):
+
+- `ivet_normalizar()` — binário/proporção/contagem (contagem sempre contra teto);
+- `ivet_dimensao()` — média ponderada dos componentes (`undef`→0);
+- `ivet_agregar()` — média das dimensões **disponíveis**, com a ausente fora do
+  denominador;
+- `ivet_v1()` — fórmula completa: publica o agregado **só** quando as dimensões
+  territoriais mínimas (C–E) existem, senão `NA` + bloco escola;
+- `ivet_dataset_version()` — lê a chave de conteúdo do
+  [`datasets.lock.json`](versionamento_datasets.md) (#135) para carimbar a
+  proveniência.
+
+É a metade *determinística* do entregável: mesma entrada → mesma saída, sem
+banco, coberta por `tests/testthat/test-ivet.R`. **Falta** a extração dos
+componentes de B/C (a reconciliação *de fórmula* B↔C, decisão de produto — §6) e
+o versionamento do passo `raw`→`clean`→`analytics`.
+
 ---
 
 ## 6. Pendências e próximos entregáveis (#137)
@@ -277,7 +296,7 @@ bloco A enquanto C–E forem `NULL`.
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline de treino reprodutível em `analysis/edumapsr/` | pendente | ✅ Fase 0 #124 · ✅ **#135** (manifesto de hashes, ver [`versionamento_datasets.md`](versionamento_datasets.md)); falta versionar `raw`→`clean`→`analytics` |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo pronto** (`R/ivet.R`, `ivet-v1.0`, ver §5) | falta extração dos componentes (reconciliação B↔C) e versionar `raw`→`clean`→`analytics` |
 | 4. Critério de vigência e retreino | pendente | 3 |
 | 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
 
