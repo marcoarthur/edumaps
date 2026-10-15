@@ -206,6 +206,38 @@ Regra: **antes de medir o estado dos dados, confirmar qual base se está a
 medir.** O relatório de fontes foi escrito contra `database.dev` e mediu um
 estado que não é o do produto.
 
+### 🔴 `sqitch revert` SEM limite reverte o banco INTEIRO — usar sempre `--to`
+
+`sqitch revert <target>` **sem nenhum limite reverte TODAS as changes** do
+banco, deixando o registry vazio e o schema desfeito. Não há `--yes` que torne
+isso seguro e **não há caminho trivial de volta**: o `deploy` seguinte falha
+com `Missing required changes`, porque o plano depende de changes que já não
+existem no registry. Bancos com bind mount (`./pgdata`) preservam o registry
+corrompido entre `down`/`up`, pelo que o dano sobrevive ao restart.
+
+**Regra obrigatória — limitar sempre o revert com `--to`:**
+
+```bash
+sqitch revert <target> --to <change>      # reverte só o que vem DEPOIS de <change>
+```
+
+`--to` (alias `--change`/`--to-change`) aceita os mesmos selectores de
+`sqitchchanges`, incluindo símbolos de revisão — como no git:
+
+```bash
+sqitch revert dev_docker --to censo_labels_consumers   # nome da change
+sqitch revert dev_docker --to @HEAD^-1                 # só a última
+```
+
+Ou seja: `--to <change>` reverte o que foi aplicado **depois** de `<change>`;
+`<change>` e tudo antes dela permanecem deployadas. Sem `--to`, o revert é
+total. `sqitch revert --help` e `sqitch help changes` documentam os selectores.
+
+🔴 **Em produção, nunca usar `revert`.** O caminho correcto para corrigir uma
+change deployada é uma **change nova** (ver secção seguinte). O que já
+aconteceu: um `sqitch revert dev_docker` sem `--to` reverteu as 117 changes do
+banco local e obrigou a reconstruir o ambiente inteiro (2026-10-14).
+
 ### ⚠️ `sqitch change_id` é irreversível: nunca editar `requires` nem reordenar changes já deployadas
 
 O `change_id` de uma change é o SHA-1 dos seus metadados, que incluem a lista
