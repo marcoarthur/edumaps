@@ -4,7 +4,8 @@
 > (blocos B–F / entregável 3).
 > **Data**: 2026-10-15 · **Versão da metodologia**: `influencia-v1`.
 > **Estado**: **DECIDIDA** (2026-10-15, developer) — abordagem **híbrida
-> Tier 0–3** com os *defaults* do §4. **Implementável.**
+> Tier 0–3** com os *defaults* do §4. **Tier 1 IMPLEMENTADO** (2026-10-15):
+> `clean.escola_influencia` + `clean.refresh_escola_influencia()` (§9).
 
 ## 0. Resumo
 
@@ -174,9 +175,10 @@ setor gigante rural). O setor é a **unidade do dado**, não a geometria.
 
 ## 5. Como isso se calcula (esboço)
 
-1. **Geometria** — materializar em `clean.escola_influencia(escola_id, tier,
-   raio_km, geom, versao)` (buffer) e, quando houver rede, `..._isocrona(...)`.
-   É a "camada reusável" que a **#255** pede.
+1. **Geometria** — materializada em `clean.escola_influencia(co_entidade,
+   nu_ano_censo, tier, raio_m, geom, versao)` (buffer; o raio em **metros**, e
+   `tier` reserva `isocrona`). É a "camada reusável" que a **#255** pede — ver
+   §8 (Tier 1 implementado).
 2. **Arealização** — `ST_Intersection` com os setores / zonal statistics
    (`ST_SummaryStats`/`terra`) do raster de 30 m contra a geometria.
 3. **Componente** — o valor entra na fórmula `ivet-v1.0` pelo passo de
@@ -212,13 +214,42 @@ setor gigante rural). O setor é a **unidade do dado**, não a geometria.
 A decisão **não** altera a fórmula `ivet-v1.0` (nem os pesos) — altera **de onde
 vem o componente** territorial. Ver §6 (impacto).
 
-**Próximo passo de implementação (Tier 1, o mais barato):** materializar a
-camada reusável `clean.escola_influencia(escola_id, tier, raio_km, geom,
-versao)` via PostGIS — é o pré-requisito da arealização (#255 e blocos B–F).
+**Próximo passo (Tier 1) — IMPLEMENTADO** (2026-10-15): a camada reusável
+`clean.escola_influencia` está materializada via PostGIS — ver §8.
 
 ---
 
-## 8. Referências
+## 8. Implementação (Tier 1, 2026-10-15)
+
+Materializado por **PostGIS puro** (sem dependência externa), fechando o
+pré-requisito da arealização (#255 e blocos B–F).
+
+| Peça | Onde |
+|------|------|
+| Change Sqitch | `data_pipeline/deploy/escola_influencia.sql` (`requires: quarantine_censo_escolas_scores, censo_escolar_2025`) |
+| Tabela | `clean.escola_influencia(co_entidade, nu_ano_censo, tier, raio_m, geom geometry(Polygon,4674), versao, computado_em)` — PK `(co_entidade, nu_ano_censo, tier, raio_m)` + GiST em `geom` |
+| Refresh (SQL) | `clean.refresh_escola_influencia(p_raios integer[] DEFAULT ARRAY[500,1000,2000], p_co_entidades bigint[] DEFAULT NULL)` — idempotente (UPSERT) |
+| Refresh (job) | task Minion `refresh_influencia` + helper `refresh_influencia` (`backend/lib/EduMaps/Task/Influencia.pm`) |
+| Teste | `backend/t/escola_influencia.t` (função SQL), `backend/t/05-tasks/influencia.t` (wiring da task) |
+
+Notas de implementação:
+
+- **Buffer em metros** via `ST_Buffer(geometry::geography, raio_m)` — o overload
+  de `geography` trabalha em metros; o `SRID 4674` é preservado no *round-trip*.
+  (O `ST_Buffer` de `geometry` trabalharia em **graus**.)
+- A proposta dizia `raio_km`/`escola_id`; a implementação usa `raio_m` (inteiro
+  em metros, alinhado ao `raio` de `clean.school_osm_feature`) e `co_entidade`
+  (o código INEP, alinhado a `clean.censo_escolas`/`school_osm_feature`); o
+  `nu_ano_censo` entra na PK porque a geometria de origem é anual.
+- Default materializado na base dev: **156.816 escolas × 3 raios = 470.448
+  buffers** (~352 MB). O refresh de uma escola (testes) é instantâneo; o global
+  leva ~30 s.
+- **Tier 2 (isócrona)** reusa o mesmo `tier`; **Tier 3 (setor)** é a
+  interseção/arealização — não precisa de nova coluna.
+
+---
+
+## 9. Referências
 
 - `docs/analises/ivet.md` §1 (leitura territorial), §4.2 (blocos A–G), §6 (gate).
 - `docs/analises/fontes/mobilidade.md` — isócrona/OSRM/Valhalla, buffer 500 m, LGPD.
