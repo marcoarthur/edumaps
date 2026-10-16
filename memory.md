@@ -4,6 +4,54 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-16 — #264/#137: materializar o bloco B (task de refresh do entorno) + influência global
+
+- **PR #265 MERGEADO** (merge commit `d72727d`, 2026-10-16; branch
+  `feat/materializa-bloco-b` removida): commit `18ad876`
+  `feat(backend): task refresh do entorno (bloco B)`. Nota técnica **NT_137**.
+  Fecha a lacuna de **mecanismo**: as camadas Tier 1/Tier 3
+  (`clean.escola_influencia`, `clean.escola_entorno_socioeconomico`) existiam,
+  mas o entorno só era (re)materializado por SQL manual — faltava o gêmeo da
+  `refresh_influencia`.
+- **Issue #264** criada (não havia issue para a pendência):
+  `feat(data): materializar influencia e entorno (bloco B) no produto`
+  (labels `type:data`, `complexity:hard`, `domain:gis`, `priority:medium`,
+  `analytics`).
+- **Task Minion `refresh_entorno_socioeconomico`**
+  (`backend/lib/EduMaps/Task/Entorno.pm`, registrada em `EduMaps.pm`): ramos
+  `{raios}` / `{uf}` / `{co_entidades}` / default. Espelha `Influencia.pm`. O
+  ramo `{uf}` monta a lista de escolas **no banco** (`array_agg` por `sg_uf`)
+  para não trafegar dezenas de milhares de INEPs. Teste de wiring
+  `backend/t/05-tasks/entorno.t` (11 testes PASS com `influencia.t` +
+  `escola_entorno_socioeconomico.t`).
+- **Custo real medido no produto** (`database.edumaps`; a estimativa inicial de
+  ~0,05 s/escola era otimista): amostras isoladas de 800 escolas → **SP 5m37s
+  (0,42 s/escola, urbano denso)**, MA 1m14s (0,092), BA 41s (0,051), amostra
+  nacional 37s (0,046). `shared_buffers`=128 MB, 4 cores, 7 GB. `jit` (on/off)
+  e `max_parallel_workers_per_gather` (0/2) **não mudam**; `work_mem` (4 MB vs
+  256 MB) **não muda**. Precomputar `area_inf`/`area_setor` economiza ~6% (o
+  gargalo é `ST_Intersection`×`ST_Area(geography)` por par; o plano faz *hash
+  join* com *seq scan* dos 468.097 setores por chamada).
+- 🔴 **3 UFs em paralelo é ~3× MAIS LENTO que sequencial** (contenda): MA 882 s
+  e BA 1746 s concorrentes, contra ~506 s e ~550 s estimados isolados. O driver
+  passou a ser **sequencial, maior UF primeiro** (SP é o poste de ~3 h),
+  progresso em `/tmp/entorno_progress.txt` (retomável; UPSERT idempotente).
+- **Influência global já no produto**: `clean.refresh_escola_influencia()` →
+  **470.448 linhas** (156.816 escolas com geometria × 3 raios), 58 s, 353 MB. O
+  entorno projeta ~5–6 h para o país (rodando em background no
+  `database.edumaps`, iniciado 2026-10-16T22:57Z).
+- **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_minion_dev` (md5
+  de `Entorno.pm`/`EduMaps.pm` confere no container). Imagens locais
+  `backend`/`minion` reconstruídas pós-merge.
+- **Docs**: `docs/analises/influencia.md` §8.1 (tabela de refresh + nota de
+  escala/chunked) e `docs/analises/ivet.md` §4.5 (task de refresh).
+- **Pendências**: concluir o lote do entorno (validar `count = 470.448` e
+  `count(DISTINCT co_entidade) = 156.816`); o bloco B ainda sai `NA` até a
+  extensão do loader (#238) **e** a materialização terminarem; #264 segue aberta
+  como tracker.
+- **Nota**: nenhum leitor em `analysis/` fixa um raio — a extração do bloco B
+  consome as 3 linhas de raio da camada; materializar os 3 raios é o correto.
+
 ## Sessão 2026-10-16 — #137: loader do bloco B (instrução/saneamento) + arealização por célula
 
 - **PR #263 MERGEADO** (merge commit `6303075`, 2026-10-16; branch
