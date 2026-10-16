@@ -4,6 +4,68 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-16 — #255/#137 (Tier 1): painel "Área de influência (IVET)"
+
+- **PR #261 MERGEADO** (merge `dab913e`; branch `feat/painel-influencia-ivet`;
+  commit `9dd63d3`). Nota técnica **NT_134**. Continuação direta do Tier 1
+  (PR #260/NT_133): a camada `clean.escola_influencia` já estava materializada;
+  faltava **vê-la**.
+- **Backend (leitura, nunca escreve)**:
+  - `backend/lib/EduMaps/Model/Influencia.pm` — `escola_localizacao` (ponto do
+    censo), `geojson` (FeatureCollection dos buffers, `ST_AsGeoJSON`, ordenado
+    por `raio_m`, com `raio_m`/`tier`/`versao`/`area_km2`/`computado_em`) e
+    `status` (proveniência + localização + geometria). **Devolve `undef` quando
+    não há linha** → ausência ≠ zero (#154): o painel diz "ainda não calculada",
+    nunca desenha buffer vazio. A geometria vem do banco (`ST_AsGeoJSON`), não
+    é recalculada no cliente.
+  - **Controller** `EduMaps::Controller::Gestor#influencia`: guarda
+    `_gestor_inep_ok` (LGPD — só o gestor da própria escola, §4 de
+    `docs/analises/influencia.md`); sem materialização → **404**
+  `'Área de influência ainda não calculada para esta escola'`.
+- **Rota** `GET /api/gestor/:cod_inep/influencia` em `Plugin/API/Gestor.pm`
+  (após as rotas OSM, sob `$auth`).
+- **Frontend** (`frontend/edumaps/src/features/gestor/`): `constants/influencia.js`
+  (raios/labels/cores/formatadores + teste), `api/gestorApi.js#getInfluencia`
+  (+ teste), `components/InfluenciaMap.svelte` (Leaflet: polígonos do GeoJSON +
+  ponto da escola), `components/InfluenciaPanel.svelte` (+
+  `InfluenciaPanel.test.js`), mocks MSW
+  `mocks/influenciaFixtures.js`/`influenciaHandlers.js` (registados em
+  `src/mocks/handlers.js`). `GestorPanel.svelte` ganha a entrada NAV
+  `#influencia` e regista `<InfluenciaPanel {inep} />` após `OsmPoisPanel`.
+- **Gráfico = a camada, não um círculo recalculado no cliente**: o mapa desenha
+  o polígono materializado (`ST_AsGeoJSON` no servidor). Áreas exibidas são
+  **medidas** (`ST_Area(geom::geography)/1e6`), não π·r². Ex.: raio 500 m →
+  ~0,7804 km² (não 0,7854).
+- **Teste backend** `t/04-api/gestor/influencia.t` — 5 subtestes
+  (401 sem sessão / 403 escola alheia / 404 não calculada / 200 com dados /
+  IDOR) usando INEPs sintéticos `99000001`/`99000002`; limpa censo + influência +
+  `clean.sessoes` + `clean.session_tracking` + `clean.gestores` (não polui a
+  base). **PASS**.
+- **Testes frontend**: feature gestor 48 arquivos / 482 verdes; **suíte
+  completa 112 arquivos / 960 verdes**. Backend `prove t/04-api/gestor/` passa
+  exceto `finance_siope.t` (pré-falho de Minion/SIOPE — "job 55 removido" — não
+  é regressão).
+- **CI do PR #261**: `vitest (jsdom + MSW)` PASS 2m6s + `Perl contra o banco de
+  fixtures` PASS 8m34s.
+- **Validação visual (developer)**: `http://localhost:8080/gestor/painel?inep=33179107`
+  (login descartável `valida.influencia@edumaps.test`; INEP `33179107` =
+  `0227006 EM LUIZ PAULO HORTA`/RJ, com 3 raios materializados em 2025). Endpoint
+  real devolveu `tier=buffer`, `versao=influencia-v1`, raios 500/1000/2000 e 3
+  polígonos. **Validado** antes do PR.
+- **Imagens locais**: `sqitch`/`backend`/`minion`/`frontend` reconstruídas antes
+  do PR; md5 de `Model/Influencia.pm` confere host ↔ `edumaps-backend`
+  (`b6033b8…`). Pós-merge: `rex prepare` + `rex -H backend.edumaps
+  deploy_backend_dev deploy_frontend_dev` (exit 0) — md5 do modelo confere
+  local↔produto, bundle novo (`index-DzPfpVB5.js`) contém "Área de influência
+  (IVET)", `edumaps-web`/`nginx` ativos. `deploy_minion_dev` **não** foi
+  necessário (nenhum job/task mudou); `deploy_db_dev` também não (a camada foi
+  deployada em #260).
+- **Pendências/fora de escopo**: **#255** (zonal statistics — falta `sf`/`terra`
+  + GDAL no `analytic`); **#137** entregáveis 4/5; **#168** (ANTT). Tier 2
+  (isócrona) e Tier 3 (setor censitário) reusam o mesmo `tier`.
+- **Achado do harness**: browser automatizado indisponível nesta sessão ("No
+  desktop browser is connected") — a validação visual foi feita pelo developer.
+
 ## Sessão 2026-10-15 — #255/#137 (Tier 1): camada de influência da escola
 
 - **PR #260 MERGEADO** (merge `d297df8`; branch `feat/data-influencia-tier1`;
