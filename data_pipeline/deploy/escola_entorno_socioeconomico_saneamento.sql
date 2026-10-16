@@ -24,6 +24,12 @@
 --   pct_lixo_inadequado   = (queimado + enterrado + jogado + outro)
 --                           / DPPO com destino de lixo conhecido
 --   pct_sem_banheiro      = sem banheiro de uso exclusivo / DPPO de banheiro
+--
+-- Ausência (#154) é por CÉLULA: cada indicador usa os setores cuja
+-- variável-fonte não é NULL. NÃO se filtra pelo flag do setor
+-- (`supressao_celula_pequena` = OR de dezenas de variáveis → ~88% dos
+-- setores), que mutilaria a base de todos os indicadores; o flag segue em
+-- `n_setores_suprimidos`/`area_com_dado` como proveniência.
 
 BEGIN;
 
@@ -49,6 +55,10 @@ COMMENT ON COLUMN clean.escola_entorno_socioeconomico.pct_sem_banheiro IS
   'Proporção de DPPO sem banheiro de uso exclusivo com chuveiro e vaso sanitário.';
 COMMENT ON COLUMN clean.escola_entorno_socioeconomico.versao IS
   'Versão da fórmula/metodologia que consome estes componentes (ivet-v1.1).';
+COMMENT ON COLUMN clean.escola_entorno_socioeconomico.area_coberta_km2 IS
+  'Área da interseção com setores sem NENHUMA célula suprimida (proveniência). NÃO é a área usada por cada indicador: cada pct_* usa os setores cuja variável-fonte existe (#154).';
+COMMENT ON COLUMN clean.escola_entorno_socioeconomico.cobertura_pct IS
+  'area_coberta / area_influencia em [0,1] (proveniência do flag do setor). 0 NÃO implica componente NULL — cada pct_* só é NULL se faltar a sua própria variável-fonte (#154).';
 
 -- ---------------------------------------------------------------------------
 -- refresh_escola_entorno_socioeconomico(): (re)materializa a arealização de
@@ -135,48 +145,56 @@ BEGIN
       count(*)                                             AS n_setores,
       count(*) FILTER (WHERE supressao)                    AS n_suprimidos,
       sum(w) FILTER (WHERE NOT supressao)                  AS area_com_dado,
+      -- Ausência é por CÉLULA (#154): cada componente usa `> 0`/`IS NOT NULL`
+      -- do seu próprio insumo, e o setor sai do numerador e do denominador
+      -- daquele indicador se a variável-fonte está NULL (célula suprimida).
+      --
+      -- NÃO se usa `supressao` (flag do setor) como gate: é o OR de dezenas
+      -- de variáveis e, com as do bloco B, marca ~88% dos setores — mutilaria
+      -- a base de TODOS os indicadores (~12% da área). O flag segue em
+      -- `n_setores_suprimidos`/`area_com_dado` como proveniência.
       sum(pop_setor * w / NULLIF(area_setor, 0))
-        FILTER (WHERE NOT supressao)                       AS pop_est,
+        FILTER (WHERE pop_setor IS NOT NULL)               AS pop_est,
       sum(rend_per_capita * w)
-        FILTER (WHERE NOT supressao AND rend_per_capita IS NOT NULL)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND rend_per_capita IS NOT NULL), 0)
+        FILTER (WHERE rend_per_capita IS NOT NULL)
+        / NULLIF(sum(w) FILTER (WHERE rend_per_capita IS NOT NULL), 0)
                                                            AS renda,
       sum((esc_sem_instrucao::numeric / NULLIF(esc_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND esc_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND esc_total > 0), 0)
+        FILTER (WHERE esc_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE esc_total > 0), 0)
                                                            AS pct_sem,
       sum((esc_fund_incomp::numeric / NULLIF(esc_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND esc_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND esc_total > 0), 0)
+        FILTER (WHERE esc_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE esc_total > 0), 0)
                                                            AS pct_fund,
       sum(((esc_med_comp + esc_sup_incomp + esc_sup_comp)::numeric
            / NULLIF(esc_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND esc_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND esc_total > 0), 0)
+        FILTER (WHERE esc_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE esc_total > 0), 0)
                                                            AS pct_medio_mais,
       sum((cor_pp::numeric / NULLIF(cor_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND cor_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND cor_total > 0), 0)
+        FILTER (WHERE cor_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE cor_total > 0), 0)
                                                            AS pct_pp,
       sum((alf_nao_sabe_15mais::numeric / NULLIF(alf_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND alf_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND alf_total > 0), 0)
+        FILTER (WHERE alf_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE alf_total > 0), 0)
                                                            AS pct_analfabeto,
       sum((esgoto_inadequado::numeric / NULLIF(esgoto_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND esgoto_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND esgoto_total > 0), 0)
+        FILTER (WHERE esgoto_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE esgoto_total > 0), 0)
                                                            AS pct_esgoto_inadequado,
       sum(((agua_total - dom_agua_rede)::numeric / NULLIF(agua_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND agua_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND agua_total > 0), 0)
+        FILTER (WHERE agua_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE agua_total > 0), 0)
                                                            AS pct_agua_sem_rede,
       sum((lixo_inadequado::numeric / NULLIF(lixo_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND lixo_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND lixo_total > 0), 0)
+        FILTER (WHERE lixo_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE lixo_total > 0), 0)
                                                            AS pct_lixo_inadequado,
       sum((dom_sem_banheiro::numeric / NULLIF(banheiro_total, 0)) * w)
-        FILTER (WHERE NOT supressao AND banheiro_total > 0)
-        / NULLIF(sum(w) FILTER (WHERE NOT supressao AND banheiro_total > 0), 0)
+        FILTER (WHERE banheiro_total > 0)
+        / NULLIF(sum(w) FILTER (WHERE banheiro_total > 0), 0)
                                                            AS pct_sem_banheiro
     FROM base
     GROUP BY co_entidade, nu_ano_censo, raio_m
@@ -237,6 +255,6 @@ END;
 $$;
 
 COMMENT ON FUNCTION clean.refresh_escola_entorno_socioeconomico(integer[], bigint[]) IS
-'Arealiza os setores do Censo 2022 sobre a área de influência da escola (#137, bloco B), peso = área de interseção. Idempotente (UPSERT). Setor suprimido fica fora do cálculo (#154). Devolve as linhas afetadas.';
+'Arealiza os setores do Censo 2022 sobre a área de influência da escola (#137, bloco B), peso = área de interseção. Idempotente (UPSERT). Ausência por célula (#154): cada componente exclui do numerador e do denominador os setores sem a sua variável-fonte. Devolve as linhas afetadas.';
 
 COMMIT;

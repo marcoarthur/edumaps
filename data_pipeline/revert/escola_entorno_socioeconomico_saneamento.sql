@@ -140,4 +140,9 @@ ALTER TABLE clean.escola_entorno_socioeconomico
 COMMENT ON COLUMN clean.escola_entorno_socioeconomico.versao IS
   'Versão da fórmula/metodologia que consome estes componentes (ivet-v1.0).';
 
+COMMENT ON COLUMN clean.escola_entorno_socioeconomico.area_coberta_km2 IS
+  'Área da interseção com setores NÃO suprimidos (km²).';
+COMMENT ON COLUMN clean.escola_entorno_socioeconomico.cobertura_pct IS
+  'area_coberta / area_influencia em [0,1]. 0 = nenhum setor com dado (sem extração).';
+
 COMMIT;

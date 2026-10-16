@@ -266,9 +266,12 @@ extração tem duas metades:
   `clean.escola_entorno_socioeconomico` (grão escola × ano × raio) é populada por
   `clean.refresh_escola_entorno_socioeconomico()`. Cada setor que intersecta o
   buffer entra com **peso = área de interseção** (geodésica); o componente é a
-  média ponderada dos setores. Setor com `supressao_celula_pequena` fica **fora
-  do numerador e do denominador** (#154) e `cobertura_pct` registra a fração da
-  área efetivamente usada (0 = nenhum setor com dado → componentes `NULL`).
+  média ponderada dos setores. A ausência é **por célula** (#154): cada
+  componente descarta do numerador e do denominador apenas os setores cuja sua
+  variável-fonte está NULL (célula suprimida pelo IBGE). O flag do setor
+  `supressao_celula_pequena` é o OR de dezenas de variáveis (~88% dos setores) e
+  **não** é usado como gate; ele fica em `n_setores_suprimidos`/`cobertura_pct`
+  como proveniência.
 - **Ingestão crua do setor** — change `censo2022_setor_instrucao_saneamento`:
   estende `EduMaps::Ingestion::Job::SetoresCenso2022` com os dois brutos que
   faltavam (alfabetização 15+ e `caracteristicas_domicilio2`, que traz água,

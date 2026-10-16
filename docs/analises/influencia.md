@@ -256,8 +256,10 @@ changes `escola_entorno_socioeconomico` e
 setores do Censo 2022 (`clean.malha_setor_censitario` + `clean.censo2022_setor`,
 alimentados com alfabetização e condições domiciliares pela change
 `censo2022_setor_instrucao_saneamento`) com `clean.escola_influencia` (tier
-`buffer`) e agregando com **peso = área de interseção**. Setor com
-`supressao_celula_pequena` fica fora do numerador e do denominador (#154). As
+`buffer`) e agregando com **peso = área de interseção**. A ausência é por
+**célula** (#154): cada componente descarta do numerador e do denominador os
+setores sem a sua própria variável-fonte; o flag de setor
+`supressao_celula_pequena` (~88% dos setores) fica só como proveniência. As
 colunas são as proporções de **analfabetismo** e **saneamento** (água, esgoto,
 lixo, banheiro), o default do bloco na fórmula `ivet-v1.1`. Detalhe dos
 componentes em [`ivet.md`](ivet.md) §4.5.

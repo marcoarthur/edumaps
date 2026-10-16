@@ -30,6 +30,27 @@ skip_all 'sem município em clean.malha_municipio' unless $codigo_ibge;
 my $CO  = 99999999999;
 my $ANO = 2025;
 
+# Todas as colunas-fonte da arealização. "Célula suprimida" no Censo = NULL na
+# coluna da variável (o loader grava NULL), com supressao_celula_pequena = true
+# no setor só como proveniência — a ausência é decidida por coluna, não pelo
+# flag do setor.
+my @COLS_FONTE = qw(
+  pop_total rend_per_capita
+  esc_sem_instrucao esc_fund_incomp esc_fund_comp
+  esc_med_incomp esc_med_comp esc_sup_incomp esc_sup_comp
+  cor_branca cor_preta cor_amarela cor_parda cor_indigena
+  alf_sabe_15mais alf_nao_sabe_15mais
+  dom_agua_rede dom_agua_poco_profundo dom_agua_poco_raso dom_agua_nascente
+  dom_agua_carro_pipa dom_agua_chuva dom_agua_rio dom_agua_outra
+  dom_esgoto_rede dom_esgoto_fossa_septica_rede dom_esgoto_fossa_septica
+  dom_esgoto_fossa_rudimentar dom_esgoto_vala dom_esgoto_rio
+  dom_esgoto_outra dom_esgoto_inexistente
+  dom_lixo_coletado dom_lixo_cacamba dom_lixo_queimado dom_lixo_enterrado
+  dom_lixo_jogado dom_lixo_outro
+  dom_banheiro_exclusivo dom_sem_banheiro
+);
+my $SET_NULL = join ', ', map { "$_ = NULL" } @COLS_FONTE;
+
 # buffer de teste: 0,01° × 0,01° no Atlântico, ~1,23 km².
 my $buffer = q{ST_SetSRID(ST_MakeEnvelope(-30.0, -15.0, -29.99, -14.99, 4674), 4674)};
 
@@ -159,9 +180,11 @@ subtest 'idempotente: o segundo refresh não duplica (UPSERT)' => sub {
   is $count, 1, 'continua com uma linha';
 };
 
-subtest '#154 vazio != zero: setor suprimido fica fora do cálculo' => sub {
-  $dbh->do("UPDATE clean.censo2022_setor SET supressao_celula_pequena = true
-             WHERE codigo_setor = 'TSTENTORNO01B'");
+subtest '#154 vazio != zero: célula suprimida (NULL) fica fora do cálculo' => sub {
+  # B vira célula suprimida: colunas-fonte NULL + flag do setor (proveniência).
+  $dbh->do(qq{UPDATE clean.censo2022_setor
+                 SET supressao_celula_pequena = true, $SET_NULL
+               WHERE codigo_setor = 'TSTENTORNO01B'});
 
   $dbh->selectrow_array(
     'SELECT clean.refresh_escola_entorno_socioeconomico(?::integer[], ?::bigint[])',
@@ -193,8 +216,9 @@ subtest '#154 vazio != zero: setor suprimido fica fora do cálculo' => sub {
 };
 
 subtest 'sem nenhum setor com dado: componentes NULL, cobertura 0' => sub {
-  $dbh->do("UPDATE clean.censo2022_setor SET supressao_celula_pequena = true
-             WHERE codigo_setor LIKE 'TSTENTORNO01%'");
+  $dbh->do(qq{UPDATE clean.censo2022_setor
+                 SET supressao_celula_pequena = true, $SET_NULL
+               WHERE codigo_setor LIKE 'TSTENTORNO01%'});
 
   $dbh->selectrow_array(
     'SELECT clean.refresh_escola_entorno_socioeconomico(?::integer[], ?::bigint[])',
