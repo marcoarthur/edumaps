@@ -271,7 +271,10 @@ extração tem duas metades:
   variável-fonte está NULL (célula suprimida pelo IBGE). O flag do setor
   `supressao_celula_pequena` é o OR de dezenas de variáveis (~88% dos setores) e
   **não** é usado como gate; ele fica em `n_setores_suprimidos`/`cobertura_pct`
-  como proveniência.
+  como proveniência. O (re)preenchimento é feito pela task Minion
+  `refresh_entorno_socioeconomico` (`backend/lib/EduMaps/Task/Entorno.pm`),
+  pensada para rodar **uma UF por job** (a chamada global sobre o país é custosa;
+  chunked é retomável).
 - **Ingestão crua do setor** — change `censo2022_setor_instrucao_saneamento`:
   estende `EduMaps::Ingestion::Job::SetoresCenso2022` com os dois brutos que
   faltavam (alfabetização 15+ e `caracteristicas_domicilio2`, que traz água,
