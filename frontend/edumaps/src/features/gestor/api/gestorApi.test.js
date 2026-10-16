@@ -1,7 +1,7 @@
 // src/features/gestor/api/gestorApi.test.js
 import { describe, it, expect, vi } from "vitest";
 import { apiClient } from "@/shared/api/client.js";
-import { getGestorPanel, getSchoolSimilares } from "./gestorApi.js";
+import { getGestorPanel, getSchoolSimilares, getInfluencia } from "./gestorApi.js";
 
 vi.mock("@/shared/api/client.js", () => ({
   apiClient: { get: vi.fn() },
@@ -37,6 +37,18 @@ describe("getSchoolSimilares", () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       "/api/gestor/11000040/similares",
       { scope: "municipio", limit: 10 },
+    );
+  });
+});
+
+describe("getInfluencia", () => {
+  it("chama /api/gestor/:inep/influencia", async () => {
+    apiClient.get.mockResolvedValue({ raios: [500, 1000, 2000] });
+
+    await getInfluencia("11000040");
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      "/api/gestor/11000040/influencia",
     );
   });
 });

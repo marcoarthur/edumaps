@@ -67,6 +67,7 @@
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
 | [Equipamentos no entorno](gestor/equipamentos-entorno.md) | Ver no mapa (e atualizar) os equipamentos públicos ao redor da escola; informa a completude da malha viária como medida de confiabilidade dos dados do OSM. | 🟢 |
+| [Área de influência](gestor/area-de-influencia.md) | Ver no mapa o entorno considerado nas leituras territoriais da escola, em três raios documentados (500 m, 1 km, 2 km), com legenda, área, proveniência e aviso de "ainda não calculada". | 🟢 |
 
 ### comunidade
 | Capacidade | Resumo | Status |
