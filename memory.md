@@ -6,7 +6,8 @@
 
 ## Sessão 2026-10-16 — #137: loader do bloco B (instrução/saneamento) + arealização por célula
 
-- **Branch `feat/bloco-b-instrucao-saneamento`** (não mergeada): `c35e5e6`
+- **PR #263 ABERTO** (base `main`; aguardando merge/aprovação). **Branch
+  `feat/bloco-b-instrucao-saneamento`** (não mergeada): `c35e5e6`
   (feat — loader + changes A/B), `bdfb538` (perf — escrita jsonb em lote),
   `ad9e356` (fix — arealização por célula).
 - **Loader `SetoresCenso2022`** ganhou 2 temas (alfabetização 15+;
