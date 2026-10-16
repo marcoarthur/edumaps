@@ -247,6 +247,16 @@ Notas de implementação:
 - **Tier 2 (isócrona)** reusa o mesmo `tier`; **Tier 3 (setor)** é a
   interseção/arealização — não precisa de nova coluna.
 
+### 8.1 Primeiro consumidor do Tier 3 — arealização do bloco B (#137)
+
+O primeiro consumidor da arealização é o bloco **B (socioeconômico)** do IVET: a
+change `escola_entorno_socioeconomico` materializa
+`clean.escola_entorno_socioeconomico` (grão escola × ano × raio), cruzando os
+setores do Censo 2022 (`clean.malha_setor_censitario` + `clean.censo2022_setor`)
+com `clean.escola_influencia` (tier `buffer`) e agregando com **peso = área de
+interseção**. Setor com `supressao_celula_pequena` fica fora do numerador e do
+denominador (#154). Detalhe dos componentes em [`ivet.md`](ivet.md) §4.5.
+
 ---
 
 ## 9. Referências

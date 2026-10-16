@@ -223,7 +223,7 @@ bug do `iqd` é justamente uma contagem crua).
 | Bloco | Dimensões | Fonte | Status |
 |-------|-----------|-------|--------|
 | **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (reconciliar em um só) | **implementado** (dividido em 4 sistemas) |
-| **B. Socioeconômico** | renda/instrução do setor censitário | `censobr`/IBGE (#123) | parcial |
+| **B. Socioeconômico** | renda/instrução do setor censitário | `censobr`/IBGE (#123) | **implementado** (extração: arealização do setor, §4.5) |
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
 | **D. Saúde** | PeNSE (saúde escolar) | #127 | **pendente** (LGPD) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **pendente** (LGPD) |
@@ -255,6 +255,57 @@ Regra de peso (v1.0, explícita e auditável):
   entrada (a chave de conteúdo do [#135](versionamento_datasets.md) já fixa a
   ponta `raw`; falta versionar o passo `raw`→`clean`→`analytics`).
 
+### 4.5 Bloco B — extração (arealização do setor censitário)
+
+O bloco **B** é lido do **setor censitário do Censo 2022** arealizado sobre a
+área de influência da escola ([`influencia.md`](influencia.md), Tier 3). A
+extração tem duas metades:
+
+- **Banco (geometria + arealização)** — change `escola_entorno_socioeconomico`:
+  `clean.escola_entorno_socioeconomico` (grão escola × ano × raio) é populada por
+  `clean.refresh_escola_entorno_socioeconomico()`. Cada setor que intersecta o
+  buffer entra com **peso = área de interseção** (geodésica); o componente é a
+  média ponderada dos setores. Setor com `supressao_celula_pequena` fica **fora
+  do numerador e do denominador** (#154) e `cobertura_pct` registra a fração da
+  área efetivamente usada (0 = nenhum setor com dado → componentes `NULL`).
+- **Fórmula (R puro)** — `analysis/edumapsr/R/ivet-socioeconomico.R`:
+  `ivet_bloco_socioeconomico()` mapeia os componentes brutos para a dimensão B em
+  `[0,1]`.
+
+Componentes e direção (a dimensão mede **vulnerabilidade**: maior = pior):
+
+| Componente | Coluna (banco) | Normalização | Papel (default) |
+|------------|----------------|--------------|-----------------|
+| renda | `renda_per_capita` | `1 − clamp(renda / teto, 0, 1)` | componente (peso 1) |
+| sem instrução | `pct_sem_instrucao` (25+) | proporção | componente (peso 1) |
+| fundamental incompleto | `pct_fund_incomp` (25+) | proporção | componente (peso 1) |
+| preto/pardo (equidade) | `pct_preto_pardo` | proporção | calculado, **fora** por omissão |
+
+- **Teto de renda** (`IVET_TETO_RENDA`, default = 2 salários mínimos de jul/2022
+  = R$ 2.424) é **parâmetro de produto**: mudá-lo exige registo e nova versão da
+  fórmula (§4.3).
+- **Direção**: `[0,1]`, maior = mais vulnerável (coerente com o nome do índice e
+  o §1). Consequência para a reconciliação: o bloco **A** (scores 0–10 do sistema
+  B, onde maior = melhor) precisa ser **invertido** para a mesma direção — é o
+  follow-up da reconciliação B↔C (§6).
+- **#154**: componente ausente entra como `NA` (fora do denominador), **nunca**
+  como 0; sem nenhum componente a dimensão é `NA`. Por isso o bloco B usa
+  `ivet_agregar()` e **não** `ivet_dimensao()` (§4.1, cujo `NA→0` vale para o
+  bloco escolar, onde "não tem o recurso" é de facto 0).
+- A proporção preto/pardo é calculada e exposta, mas fica fora da dimensão por
+  omissão: tratá-la como componente de vulnerabilidade é decisão de **equidade**
+  que exige justificativa registada (§4.3).
+- **Disponibilidade do dado hoje (#238)**: a ingestão do setor
+  (`EduMaps::Ingestion::Job::SetoresCenso2022`) carrega só o básico (domicílios),
+  a demografia e a cor/raça; `esc_*`, `rend_media`, `rend_per_capita` e
+  `cor_sem_decl` ficam **`NULL` por decisão** — o Censo 2022 não publica esses
+  temas por setor. Consequência medida no produto (2026-10-16): `renda_per_capita`,
+  `pct_sem_instrucao`, `pct_fund_incomp` e `pct_medio_mais` saem `NULL` (ausência,
+  nunca 0 — #154) e a dimensão B é `NA`; o único componente com dado é
+  `pct_preto_pardo`. Para o bloco B ter renda/instrução arealizadas é preciso
+  **estender o loader** (alfabetização e `caracteristicas_domicilio` estão nos
+  brutos do IBGE mas não são carregados) — follow-up da #238.
+
 ---
 
 ## 5. Reprodutibilidade
@@ -284,9 +335,18 @@ bloco A enquanto C–E forem `NULL`.
   proveniência.
 
 É a metade *determinística* do entregável: mesma entrada → mesma saída, sem
-banco, coberta por `tests/testthat/test-ivet.R`. **Falta** a extração dos
-componentes de B/C (a reconciliação *de fórmula* B↔C, decisão de produto — §6) e
-o versionamento do passo `raw`→`clean`→`analytics`.
+banco, coberta por `tests/testthat/test-ivet.R`.
+
+**Bloco B — extração pronta (entregável 3, parte de extração).** A extração dos
+componentes socioeconômicos existe nas duas metades descritas em §4.5: a
+arealização no banco (`clean.escola_entorno_socioeconomico` +
+`clean.refresh_escola_entorno_socioeconomico()`, change
+`escola_entorno_socioeconomico`; coberta por
+`backend/t/escola_entorno_socioeconomico.t`) e a dimensão em R puro
+(`ivet_bloco_socioeconomico()`, `analysis/edumapsr/R/ivet-socioeconomico.R`;
+coberta por `tests/testthat/test-ivet-socioeconomico.R`). **Falta** a
+reconciliação *de fórmula* B↔C (decisão de produto — §6), a extração de C–G e o
+versionamento do passo `raw`→`clean`→`analytics`.
 
 ---
 
@@ -296,7 +356,7 @@ o versionamento do passo `raw`→`clean`→`analytics`.
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo pronto** (`R/ivet.R`, `ivet-v1.0`, ver §5) | falta extração dos componentes (reconciliação B↔C) e versionar `raw`→`clean`→`analytics` |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo pronto** (`R/ivet.R`) + **extração do bloco B** (§4.5) | falta reconciliação B↔C, extração C–G e versionar `raw`→`clean`→`analytics` |
 | 4. Critério de vigência e retreino | pendente | 3 |
 | 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
 

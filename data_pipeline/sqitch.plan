@@ -137,3 +137,4 @@ censo_labels_consumers [censo_label badge_functions rede_escolas_etapas] 2026-10
 osm_mobilidade_completude [censo_labels_consumers] 2026-10-14T17:00:00Z Marco Arthur <arthurpbs@gmail.com> # #131 e2: iv_mobilidade_completude_malha (densidade de m/km² no buffer 500 m)
 quarantine_censo_escolas_scores [osm_mobilidade_completude] 2026-10-15T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137: quarentena dos scores mortos (A) e declaracao do indice canonico (B)
 escola_influencia [quarantine_censo_escolas_scores censo_escolar_2025] 2026-10-15T19:00:00Z Marco Arthur <arthurpbs@gmail.com> # #255/#137: camada de influencia da escola (buffer por raio, influencia-v1)
+escola_entorno_socioeconomico [escola_influencia censo2022_setor] 2026-10-16T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: arealizacao socioeconomica do entorno (setores Censo 2022)
