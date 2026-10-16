@@ -2,6 +2,7 @@ package EduMaps::Ingestion::Job::SetoresCenso2022;
 use Mojo::Base 'EduMaps::Ingestion::Job::Base', -signatures;
 
 use Mojo::File qw(path);
+use Mojo::JSON qw(encode_json);
 use POSIX qw(strftime);
 use Text::CSV;
 use utf8;
@@ -524,6 +525,35 @@ sub converter_linha ($self, $tema, $h) {
   return \%row;
 }
 
+# A escrita de cada lote vai num único statement (jsonb_to_recordset). O
+# watchdog de stall do Runner checa progresso por $SIG{ALRM} e consulta a BD
+# na MESMA conexão; os sinais do Perl são diferidos, por isso o handler corria
+# entre as chamadas de um COPY FROM STDIN e matava-o com um PQexec novo
+# ("COPY terminated by new PQexec"), derrubando a transação. Um PQexec único é
+# atómico nesse sentido. O caminho anterior (VALUES com ~25 mil placeholders
+# por statement) era ainda lento: ~6 s por 1.000 linhas no tema de 24 colunas,
+# ~50 min só em `caracteristicas_domicilio2`, acima do prazo do watchdog.
+# jsonb_to_recordset leva ~0,1 s pelo mesmo lote e mantém os tipos no record.
+sub _rec_decl ($cols, $tipos, $sup) {
+  my @decl = map { "$_ " . $tipos->{$_} } @$cols;
+  push @decl, 'sup integer' if $sup;
+  return join(', ', @decl);
+}
+
+# Array de linhas -> JSON. Com $sup, cada linha leva o flag de supressão; undef
+# vira null (NULL no record).
+sub _rec_json ($lote, $cols, $sup) {
+  return encode_json([
+    map {
+      my $r = $_;
+      +{
+        (map { $_ => $r->{$_} } @$cols),
+        ($sup ? (sup => ($r->{suprimido} ? 1 : 0)) : ()),
+      }
+    } @$lote
+  ]);
+}
+
 # INSERT da passada basico; só setores presentes na malha (FK). Devolve
 # (gravados, fora).
 sub _gravar_basico ($self, $dbh, $lote) {
@@ -532,50 +562,42 @@ sub _gravar_basico ($self, $dbh, $lote) {
   return (0, $invalidos) unless @validos;
   my @cols = (qw(codigo_setor codigo_ibge nome_municipio sigla_uf situacao_setor),
               sort keys %{ $MAPA{basico} });
-  my $tipos = { map { $_ => 'integer' } keys %{ $MAPA{basico} } };
-  my $sql = _sql_valores(\@cols, $tipos, scalar @validos);
+  my %tipos = map { $_ => 'text' } qw(codigo_setor codigo_ibge nome_municipio sigla_uf situacao_setor);
+  $tipos{$_} = 'integer' for keys %{ $MAPA{basico} };
   my $zera = join ",\n        ", map { "$_ = NULL" } (
     (map { keys %{ $MAPA{$_} } } @TEMAS_CENSO), @SEM_FONTE);
+  my $decl = _rec_decl(\@cols, \%tipos, 1);
   my $n = $dbh->do(qq{
+    WITH x AS (SELECT * FROM jsonb_to_recordset(?::jsonb) AS r($decl))
     INSERT INTO clean.censo2022_setor (@{[ join ', ', @cols ]}, supressao_celula_pequena, data_acessada)
-    SELECT @{[ join ', ', map { "v.$_" } @cols ]}, v.sup, NOW() FROM (
-      SELECT @{[ join ', ', map { "x.$_" } @cols ]}, x.sup::boolean AS sup FROM ($sql) x
-    ) v
-    WHERE EXISTS (SELECT 1 FROM clean.malha_setor_censitario m WHERE m.codigo_setor = v.codigo_setor)
+    SELECT @{[ join ', ', map { "x.$_" } @cols ]}, x.sup::boolean, NOW() FROM x
+    WHERE EXISTS (SELECT 1 FROM clean.malha_setor_censitario m WHERE m.codigo_setor = x.codigo_setor)
     ON CONFLICT (codigo_setor) DO UPDATE SET
       @{[ join ",\n      ", map { "$_ = EXCLUDED.$_" } grep { $_ ne 'codigo_setor' } @cols ]},
       supressao_celula_pequena = EXCLUDED.supressao_celula_pequena,
       data_acessada = NOW(),
       $zera},
-    undef, map { my $r = $_; ((map { $r->{$_} } @cols), $r->{suprimido} ? 1 : 0) } @validos);
+    undef, _rec_json(\@validos, \@cols, 1));
   $n = 0 + ($n // 0);
   return ($n, @$lote - $n);
 }
 
-# UPDATE das passadas demografia / cor_ou_raca (só setores já gravados).
+# UPDATE das demais passadas (demografia, cor_ou_raca, alfabetizacao,
+# caracteristicas_domicilio2); só setores já gravados.
 sub _gravar_tema ($self, $dbh, $tema, $lote) {
   my @validos = grep { ($_->{codigo_setor} // '') =~ /^\d{15}$/ } @$lote;
   return 0 unless @validos;
   my @vars = sort keys %{ $MAPA{$tema} };
-  my @cols = ('codigo_setor', @vars);
-  my $tipos = { map { $_ => 'integer' } @vars };
-  my $sql = _sql_valores(\@cols, $tipos, scalar @validos);
+  my %tipos = (codigo_setor => 'text', map { $_ => 'integer' } @vars);
+  my $decl = _rec_decl(['codigo_setor', @vars], \%tipos, 1);
   my $n = $dbh->do(qq{
     UPDATE clean.censo2022_setor t SET
       @{[ join ",\n      ", map { "$_ = x.$_" } @vars ]},
       supressao_celula_pequena = t.supressao_celula_pequena OR x.sup::boolean
-    FROM ($sql) x
+    FROM jsonb_to_recordset(?::jsonb) AS x($decl)
     WHERE t.codigo_setor = x.codigo_setor},
-    undef, map { my $r = $_; ((map { $r->{$_} } @cols), $r->{suprimido} ? 1 : 0) } @validos);
+    undef, _rec_json(\@validos, ['codigo_setor', @vars], 1));
   return 0 + ($n // 0);
-}
-
-# SELECT … FROM (VALUES (?::tipo, …), …) AS x(cols…, sup) com $n linhas.
-# Os tipos vão em cada placeholder: o Pg não infere tipo em VALUES solto.
-sub _sql_valores ($cols, $tipos, $n) {
-  my $linha = '(' . join(', ', (map { '?::' . ($tipos->{$_} // 'text') } @$cols), '?::integer') . ')';
-  return 'SELECT * FROM (VALUES ' . join(', ', ($linha) x $n) . ') AS x('
-    . join(', ', @$cols, 'sup') . ')';
 }
 
 1;
