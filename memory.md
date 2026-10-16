@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-16 — #137: loader do bloco B (instrução/saneamento) + arealização por célula
+
+- **PR #263 ABERTO** (base `main`; aguardando merge/aprovação). **Branch
+  `feat/bloco-b-instrucao-saneamento`** (não mergeada): `c35e5e6`
+  (feat — loader + changes A/B), `bdfb538` (perf — escrita jsonb em lote),
+  `ad9e356` (fix — arealização por célula).
+- **Loader `SetoresCenso2022`** ganhou 2 temas (alfabetização 15+;
+  `caracteristicas_domicilio2` = água/esgoto/lixo/banheiro) e passou a escrever
+  por **`jsonb` em lote** (`_rec_json`/`encode_json`) em vez de `VALUES`
+  gigantes. Motivo: o `$SIG{ALRM}` do stall do `Runner` interpõe um
+  `PQexec` entre `do(COPY)` e `pg_putcopyend` → `COPY from stdin failed:
+  COPY terminated by new PQexec` (log do Postgres). Carga real no produto:
+  **701 s** (antes abortava no stall de 1 h), 468097 setores, 409856 marcados
+  com supressão, 2 fora (FK). Ausência ≠ 0 confirmada (`X` do IBGE → NULL).
+- **Changes** `censo2022_setor_instrucao_saneamento` (24 colunas cruas) e
+  `escola_entorno_socioeconomico_saneamento` (5 `pct_*`, `versao` ivet-v1.1,
+  `CREATE OR REPLACE FUNCTION clean.refresh_escola_entorno_socioeconomico`).
+  Deployadas no produto (`database.edumaps`); função re-aplicada manualmente
+  após a correção (sqitch não re-executa change deployada).
+- **Achado (corrigido em `ad9e356`)**: a arealização descartava o setor inteiro
+  quando `supressao_celula_pequena` = true, mas o loader marca esse flag com
+  **qualquer** das ~47 variáveis em `X` → **87.6%** dos setores. Resultado: só
+  ~12% da área alimentava os indicadores. Corrigido para **ausência por
+  célula**: cada `pct_*` exclui só os setores sem a sua variável-fonte
+  (presença individual 44–87%). `n_setores_suprimidos`/`cobertura_pct` seguem
+  o flag, como proveniência (comentários atualizados). Teste
+  `t/escola_entorno_socioeconomico.t` (7 subtests PASS) passou a simular a
+  supressão como NULL das colunas.
+- **Validação do subset** (`co_municipio=4302105` Bento Gonçalves/RS): 219
+  buffers (0,23 s) + 219 linhas (13 s); os 5 `pct_*` presentes nas 73 escolas
+  (antes analfabetismo só em 51/68/71). `pct_agua_sem_rede` 1,5–5,2%,
+  `pct_esgoto_inadequado` 1,6–2,8%.
+- **Pendência**: materializar influência + entorno **de facto** (país) para o
+  bloco B sair do `NA` no produto depende de `clean.escola_influencia` (#255);
+  o produto tinha 0 linhas. Escopo país vs subset ainda em aberto.
+- **Nota**: `t/escola_influencia.t` falha 2/5 no ambiente local por poluição de
+  dados (a base local tem 470448 buffers, então o `count=2` do teste vira 3) —
+  pré-existente, não regressão (idêntico no `main`).
+
 ## Sessão 2026-10-16 — #137 (Tier 3): bloco B por arealização do setor (PR #262)
 
 - **PR #262 MERGEADO** (merge `facb26b`; branch `feat/bloco-b-socioeconomico`;

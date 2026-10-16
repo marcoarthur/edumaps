@@ -249,13 +249,20 @@ Notas de implementação:
 
 ### 8.1 Primeiro consumidor do Tier 3 — arealização do bloco B (#137)
 
-O primeiro consumidor da arealização é o bloco **B (socioeconômico)** do IVET: a
-change `escola_entorno_socioeconomico` materializa
+O primeiro consumidor da arealização é o bloco **B (socioeconômico)** do IVET: as
+changes `escola_entorno_socioeconomico` e
+`escola_entorno_socioeconomico_saneamento` materializam
 `clean.escola_entorno_socioeconomico` (grão escola × ano × raio), cruzando os
-setores do Censo 2022 (`clean.malha_setor_censitario` + `clean.censo2022_setor`)
-com `clean.escola_influencia` (tier `buffer`) e agregando com **peso = área de
-interseção**. Setor com `supressao_celula_pequena` fica fora do numerador e do
-denominador (#154). Detalhe dos componentes em [`ivet.md`](ivet.md) §4.5.
+setores do Censo 2022 (`clean.malha_setor_censitario` + `clean.censo2022_setor`,
+alimentados com alfabetização e condições domiciliares pela change
+`censo2022_setor_instrucao_saneamento`) com `clean.escola_influencia` (tier
+`buffer`) e agregando com **peso = área de interseção**. A ausência é por
+**célula** (#154): cada componente descarta do numerador e do denominador os
+setores sem a sua própria variável-fonte; o flag de setor
+`supressao_celula_pequena` (~88% dos setores) fica só como proveniência. As
+colunas são as proporções de **analfabetismo** e **saneamento** (água, esgoto,
+lixo, banheiro), o default do bloco na fórmula `ivet-v1.1`. Detalhe dos
+componentes em [`ivet.md`](ivet.md) §4.5.
 
 ---
 

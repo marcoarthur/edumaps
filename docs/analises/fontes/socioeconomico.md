@@ -167,6 +167,21 @@ Malha com atributos: `BR_setores_CD2022.zip`, **748 MB**. Nota metodológica
 dados como forma de proteção dos dados dos informantes"*. Página institucional:
 *"mais de 3.000 variáveis"*, periodicidade **decenal**.
 
+**Uso no EduMaps (2026-10-16).** O loader
+`EduMaps::Ingestion::Job::SetoresCenso2022` carrega por setor: `basico`
+(domicílios), `demografia`, `cor_ou_raca`, **`alfabetizacao`** (15+) e
+**`caracteristicas_domicilio2`** (água, esgoto, lixo, banheiro). A arealização
+sobre a área de influência da escola (`clean.escola_entorno_socioeconomico`,
+[`influencia.md`](../influencia.md) Tier 3) reduz esses brutos a
+`pct_analfabeto`, `pct_agua_sem_rede`, `pct_esgoto_inadequado`,
+`pct_lixo_inadequado` e `pct_sem_banheiro` — as dimensões de instrução e
+saneamento do bloco B do IVET ([`ivet.md`](../ivet.md) §4.5). Renda (`rend_*`) e
+escolaridade 25+ (`esc_*`) **não são publicados por setor** no Censo 2022: não há
+arquivo a carregar (#238), então seguem `NULL` (ausência, nunca 0 — #154). O
+loader é um dos poucos ETL com nome de arquivo fixo (`%ZIP` por tema); ao subir
+uma revisão do IBGE, atualizar a tabela `%ZIP` (o resto é por variável, não por
+nome).
+
 **Relevância para o EduMaps:** é a **fonte mais próxima da lacuna "saúde,
 contexto domiciliar e vulnerabilidade"**, e a única que permite resolução **abaixo
 do município**. Traz população (sexo, idade, **cor ou raça**), alfabetização,

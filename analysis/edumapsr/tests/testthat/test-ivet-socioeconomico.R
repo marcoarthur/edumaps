@@ -23,73 +23,101 @@ test_that("ivet_componente_proporcao: clamp(0,1) e preserva NA", {
   expect_true(is.na(ivet_componente_proporcao(NULL)))
 })
 
-test_that("ivet_bloco_socioeconomico_componentes devolve os quatro componentes", {
+test_that("ivet_bloco_socioeconomico_componentes devolve os componentes e o sub-bloco saneamento", {
   comps <- ivet_bloco_socioeconomico_componentes(
-    renda = 1212, pct_sem_instrucao = 0.2, pct_fund_incomp = 0.4, pct_preto_pardo = 0.6,
-    teto_renda = 2424
+    pct_analfabeto = 0.2,
+    pct_agua_sem_rede = 0.1, pct_esgoto_inadequado = 0.3,
+    pct_lixo_inadequado = 0.5, pct_sem_banheiro = 0.7
   )
-  expect_named(comps, c("renda", "sem_instrucao", "fund_incomp", "preto_pardo"))
-  expect_equal(comps[["renda"]], 0.5)
-  expect_equal(comps[["sem_instrucao"]], 0.2)
-  expect_equal(comps[["fund_incomp"]], 0.4)
-  expect_equal(comps[["preto_pardo"]], 0.6)
+  expect_named(comps, c("analfabetismo", "renda", "sem_instrucao", "fund_incomp",
+                        "agua_sem_rede", "esgoto_inadequado", "lixo_inadequado",
+                        "sem_banheiro", "saneamento", "preto_pardo"))
+  expect_equal(comps[["analfabetismo"]], 0.2)
+  expect_equal(comps[["agua_sem_rede"]], 0.1)
+  expect_equal(comps[["sem_banheiro"]], 0.7)
+  # saneamento = média dos 4 (0.1 + 0.3 + 0.5 + 0.7) / 4 = 0.4
+  expect_equal(comps[["saneamento"]], 0.4)
 })
 
-test_that("ivet_bloco_socioeconomico: dimensão = média dos componentes por omissão", {
-  # renda 1212/2424 -> 0.5; sem 0.2; fund 0.4; média = 1.1/3
+test_that("saneamento ignora sub-indicador ausente (#154) e só é NA se todos faltarem", {
+  # um só presente -> é ele próprio
+  comps <- ivet_bloco_socioeconomico_componentes(pct_agua_sem_rede = 0.4)
+  expect_equal(comps[["saneamento"]], 0.4)
+  # nenhum presente -> NA (não 0)
+  comps0 <- ivet_bloco_socioeconomico_componentes()
+  expect_true(is.na(comps0[["saneamento"]]))
+})
+
+test_that("ivet_bloco_socioeconomico: default (v1.1) = média de analfabetismo + saneamento", {
+  # analfabetismo 0.2; saneamento = (0.1+0.3+0.5+0.7)/4 = 0.4; média = 0.3
   expect_equal(
-    ivet_bloco_socioeconomico(renda = 1212, pct_sem_instrucao = 0.2, pct_fund_incomp = 0.4,
-                              teto_renda = 2424),
-    1.1 / 3
+    ivet_bloco_socioeconomico(
+      pct_analfabeto = 0.2,
+      pct_agua_sem_rede = 0.1, pct_esgoto_inadequado = 0.3,
+      pct_lixo_inadequado = 0.5, pct_sem_banheiro = 0.7
+    ),
+    0.3
   )
 })
 
 test_that("#154: componente ausente fica fora do denominador, não vira 0", {
-  # renda ausente: média só das duas proporções (0.2, 0.4) = 0.3 (não 0.2)
+  # só analfabetismo (saneamento sem fonte) -> é ele próprio
   expect_equal(
-    ivet_bloco_socioeconomico(renda = NA, pct_sem_instrucao = 0.2, pct_fund_incomp = 0.4),
+    ivet_bloco_socioeconomico(pct_analfabeto = 0.2),
+    0.2
+  )
+  # analfabetismo + parte do saneamento (água) -> média dos dois
+  expect_equal(
+    ivet_bloco_socioeconomico(pct_analfabeto = 0.2, pct_agua_sem_rede = 0.4),
     0.3
   )
-  # uma só disponível: é ela própria
+  # saneamento inteiro presente, analfabetismo ausente -> é o saneamento
   expect_equal(
-    ivet_bloco_socioeconomico(renda = NA, pct_sem_instrucao = NA, pct_fund_incomp = 0.4),
+    ivet_bloco_socioeconomico(
+      pct_agua_sem_rede = 0.4, pct_esgoto_inadequado = 0.4,
+      pct_lixo_inadequado = 0.4, pct_sem_banheiro = 0.4
+    ),
     0.4
   )
 })
 
 test_that("sem nenhum componente: dimensão NA (não calculada), nunca 0", {
-  expect_true(is.na(ivet_bloco_socioeconomico(renda = NA, pct_sem_instrucao = NA,
-                                              pct_fund_incomp = NA)))
   expect_true(is.na(ivet_bloco_socioeconomico()))
-
   # cobertura 0 (sem setor com dado) => colunas NULL no banco => NA aqui
   expect_true(is.na(ivet_bloco_socioeconomico(
-    renda = NA, pct_sem_instrucao = NA, pct_fund_incomp = NA, pct_preto_pardo = NA
+    pct_analfabeto = NA, pct_agua_sem_rede = NA, pct_esgoto_inadequado = NA,
+    pct_lixo_inadequado = NA, pct_sem_banheiro = NA
   )))
 })
 
 test_that("componentes selecionáveis (inclui equidade, fora por omissão)", {
-  # preto/pardo fora por omissão
+  # preto/pardo fora por omissão (default = analfabetismo + saneamento)
   expect_equal(
-    ivet_bloco_socioeconomico(renda = 1212, pct_sem_instrucao = 0.2, pct_fund_incomp = 0.4,
-                              pct_preto_pardo = 0.6, teto_renda = 2424),
-    1.1 / 3
+    ivet_bloco_socioeconomico(pct_analfabeto = 0.2, pct_agua_sem_rede = 0.4,
+                              pct_esgoto_inadequado = 0.4, pct_lixo_inadequado = 0.4,
+                              pct_sem_banheiro = 0.4, pct_preto_pardo = 0.6),
+    0.3
   )
   # incluído explicitamente
   expect_equal(
-    ivet_bloco_socioeconomico(renda = 1212, pct_sem_instrucao = 0.2, pct_fund_incomp = 0.4,
-                              pct_preto_pardo = 0.6, teto_renda = 2424,
-                              componentes = c("renda", "sem_instrucao", "fund_incomp",
-                                              "preto_pardo")),
-    1.7 / 4
+    ivet_bloco_socioeconomico(pct_analfabeto = 0.2, pct_agua_sem_rede = 0.4,
+                              pct_esgoto_inadequado = 0.4, pct_lixo_inadequado = 0.4,
+                              pct_sem_banheiro = 0.4, pct_preto_pardo = 0.6,
+                              componentes = c("analfabetismo", "saneamento", "preto_pardo")),
+    (0.2 + 0.4 + 0.6) / 3
   )
   # só equidade
   expect_equal(
     ivet_bloco_socioeconomico(pct_preto_pardo = 0.6, componentes = "preto_pardo"),
     0.6
   )
+  # fonte legada (renda) ainda calculável
+  expect_equal(
+    ivet_bloco_socioeconomico(renda = 1212, teto_renda = 2424, componentes = "renda"),
+    0.5
+  )
   expect_error(
-    ivet_bloco_socioeconomico(renda = 1, componentes = "inexistente"),
+    ivet_bloco_socioeconomico(pct_analfabeto = 1, componentes = "inexistente"),
     "componentes"
   )
 })
@@ -98,8 +126,7 @@ test_that("teto de renda é parâmetro documentado (default IVET_TETO_RENDA)", {
   # default = 2 salários mínimos de jul/2022
   expect_equal(IVET_TETO_RENDA, 2 * 1212)
   expect_equal(
-    ivet_bloco_socioeconomico(renda = IVET_TETO_RENDA, pct_sem_instrucao = 0,
-                              pct_fund_incomp = 0),
+    ivet_bloco_socioeconomico(renda = IVET_TETO_RENDA, componentes = "renda"),
     0
   )
 })
