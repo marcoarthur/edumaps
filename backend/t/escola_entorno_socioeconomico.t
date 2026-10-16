@@ -50,15 +50,42 @@ $dbh->do(qq{
 
 # A: pct_sem_instrucao 0,25 · pct_fund_incomp 0,15 · médio+ 0,50 · preto/pardo 0,50 · renda 1000
 # B: pct_sem_instrucao 0,05 · pct_fund_incomp 0,05 · médio+ 0,80 · preto/pardo 0,25 · renda 3000
+#
+# Bloco B v1.1 (instrução + saneamento), proporções por setor:
+#   A: analfabeto 5/75 · água sem rede 20/100 · esgoto inadequado 50/100
+#      lixo inadequado 10/100 · sem banheiro 10/100
+#   B: analfabeto 1/91 · água sem rede 0 · esgoto inadequado 10/100
+#      lixo inadequado 0 · sem banheiro 0
 $dbh->do(q{
   INSERT INTO clean.censo2022_setor
     (codigo_setor, codigo_ibge, pop_total, rend_per_capita,
      esc_sem_instrucao, esc_fund_incomp, esc_fund_comp, esc_med_incomp, esc_med_comp,
      esc_sup_incomp, esc_sup_comp,
      cor_branca, cor_preta, cor_amarela, cor_parda, cor_indigena, cor_sem_decl,
+     alf_sabe_15mais, alf_nao_sabe_15mais,
+     dom_agua_rede, dom_agua_poco_profundo, dom_agua_poco_raso, dom_agua_nascente,
+     dom_agua_carro_pipa, dom_agua_chuva, dom_agua_rio, dom_agua_outra,
+     dom_esgoto_rede, dom_esgoto_fossa_septica_rede, dom_esgoto_fossa_septica,
+     dom_esgoto_fossa_rudimentar, dom_esgoto_vala, dom_esgoto_rio,
+     dom_esgoto_outra, dom_esgoto_inexistente,
+     dom_lixo_coletado, dom_lixo_cacamba, dom_lixo_queimado, dom_lixo_enterrado,
+     dom_lixo_jogado, dom_lixo_outro,
+     dom_banheiro_exclusivo, dom_sem_banheiro,
      supressao_celula_pequena) VALUES
-    ('TSTENTORNO01A', ?, 400, 1000, 50, 30, 20, 0, 100, 0, 0, 100, 20, 0, 80, 0, 0, false),
-    ('TSTENTORNO01B', ?, 1600, 3000, 10, 10, 20, 0, 160, 0, 0, 300, 0, 0, 100, 0, 0, false)
+    ('TSTENTORNO01A', ?, 400, 1000, 50, 30, 20, 0, 100, 0, 0, 100, 20, 0, 80, 0, 0,
+     70, 5,
+     80, 0, 0, 20, 0, 0, 0, 0,
+     50, 0, 0, 30, 20, 0, 0, 0,
+     90, 0, 10, 0, 0, 0,
+     90, 10,
+     false),
+    ('TSTENTORNO01B', ?, 1600, 3000, 10, 10, 20, 0, 160, 0, 0, 300, 0, 0, 100, 0, 0,
+     90, 1,
+     100, 0, 0, 0, 0, 0, 0, 0,
+     90, 0, 0, 10, 0, 0, 0, 0,
+     100, 0, 0, 0, 0, 0,
+     100, 0,
+     false)
 }, {}, $codigo_ibge, $codigo_ibge);
 
 sub refresh {
@@ -90,7 +117,13 @@ subtest 'arealiza com peso = área (média ponderada dos setores)' => sub {
            pct_sem_instrucao::float8 AS pct_sem_instrucao,
            pct_fund_incomp::float8 AS pct_fund_incomp,
            pct_medio_mais::float8 AS pct_medio_mais,
-           pct_preto_pardo::float8 AS pct_preto_pardo
+           pct_preto_pardo::float8 AS pct_preto_pardo,
+           pct_analfabeto::float8 AS pct_analfabeto,
+           pct_agua_sem_rede::float8 AS pct_agua_sem_rede,
+           pct_esgoto_inadequado::float8 AS pct_esgoto_inadequado,
+           pct_lixo_inadequado::float8 AS pct_lixo_inadequado,
+           pct_sem_banheiro::float8 AS pct_sem_banheiro,
+           versao
       FROM clean.escola_entorno_socioeconomico
      WHERE co_entidade = ? AND nu_ano_censo = ? AND raio_m = 500
   }, {}, $CO, $ANO);
@@ -104,6 +137,14 @@ subtest 'arealiza com peso = área (média ponderada dos setores)' => sub {
   is $r->{pct_medio_mais}, 0.65,      'pct médio+ = média (0,50/0,80)';
   is $r->{pct_preto_pardo}, 0.375,    'pct preto/pardo = média (0,50/0,25)';
   is $r->{pop_total}, 2000,           'população estimada (400 + 1600)';
+
+  # bloco B v1.1: instrução (analfabetismo) + saneamento (esgoto/água/lixo/banheiro)
+  is $r->{pct_analfabeto}, 0.0388,    'pct analfabeto = média (5/75 e 1/91)';
+  is $r->{pct_agua_sem_rede}, 0.1,    'pct água sem rede = média (0,20 e 0)';
+  is $r->{pct_esgoto_inadequado}, 0.3, 'pct esgoto inadequado = média (0,50 e 0,10)';
+  is $r->{pct_lixo_inadequado}, 0.05, 'pct lixo inadequado = média (0,10 e 0)';
+  is $r->{pct_sem_banheiro}, 0.05,    'pct sem banheiro = média (0,10 e 0)';
+  is $r->{versao}, 'ivet-v1.1',       'versão da fórmula carimbada';
 };
 
 subtest 'idempotente: o segundo refresh não duplica (UPSERT)' => sub {
@@ -132,7 +173,10 @@ subtest '#154 vazio != zero: setor suprimido fica fora do cálculo' => sub {
            cobertura_pct::float8 AS cobertura_pct,
            renda_per_capita::float8 AS renda_per_capita,
            pct_sem_instrucao::float8 AS pct_sem_instrucao,
-           pct_preto_pardo::float8 AS pct_preto_pardo
+           pct_preto_pardo::float8 AS pct_preto_pardo,
+           pct_analfabeto::float8 AS pct_analfabeto,
+           pct_agua_sem_rede::float8 AS pct_agua_sem_rede,
+           pct_esgoto_inadequado::float8 AS pct_esgoto_inadequado
       FROM clean.escola_entorno_socioeconomico
      WHERE co_entidade = ? AND nu_ano_censo = ? AND raio_m = 500
   }, {}, $CO, $ANO);
@@ -143,6 +187,9 @@ subtest '#154 vazio != zero: setor suprimido fica fora do cálculo' => sub {
   is $r->{renda_per_capita}, 1000, 'renda é só do setor com dado (não virou zero)';
   is $r->{pct_sem_instrucao}, 0.25, 'pct sem instrução só do setor com dado';
   is $r->{pct_preto_pardo}, 0.5, 'pct preto/pardo só do setor com dado';
+  is $r->{pct_analfabeto}, 0.0667, 'analfabetismo só do setor com dado (5/75)';
+  is $r->{pct_agua_sem_rede}, 0.2, 'água sem rede só do setor com dado (20/100)';
+  is $r->{pct_esgoto_inadequado}, 0.5, 'esgoto inadequado só do setor com dado (50/100)';
 };
 
 subtest 'sem nenhum setor com dado: componentes NULL, cobertura 0' => sub {
@@ -157,7 +204,9 @@ subtest 'sem nenhum setor com dado: componentes NULL, cobertura 0' => sub {
   my $r = $dbh->selectrow_hashref(q{
     SELECT n_setores_suprimidos,
            cobertura_pct::float8 AS cobertura_pct,
-           renda_per_capita, pct_sem_instrucao, pct_preto_pardo, densidade_pop_km2
+           renda_per_capita, pct_sem_instrucao, pct_preto_pardo, densidade_pop_km2,
+           pct_analfabeto, pct_agua_sem_rede, pct_esgoto_inadequado,
+           pct_lixo_inadequado, pct_sem_banheiro
       FROM clean.escola_entorno_socioeconomico
      WHERE co_entidade = ? AND nu_ano_censo = ? AND raio_m = 500
   }, {}, $CO, $ANO);
@@ -168,6 +217,11 @@ subtest 'sem nenhum setor com dado: componentes NULL, cobertura 0' => sub {
   is $r->{pct_sem_instrucao}, undef, 'pct sem instrução NULL';
   is $r->{pct_preto_pardo}, undef, 'pct preto/pardo NULL';
   is $r->{densidade_pop_km2}, undef, 'densidade NULL';
+  is $r->{pct_analfabeto}, undef, 'pct analfabeto NULL (sem extração, não 0)';
+  is $r->{pct_agua_sem_rede}, undef, 'pct água sem rede NULL';
+  is $r->{pct_esgoto_inadequado}, undef, 'pct esgoto inadequado NULL';
+  is $r->{pct_lixo_inadequado}, undef, 'pct lixo inadequado NULL';
+  is $r->{pct_sem_banheiro}, undef, 'pct sem banheiro NULL';
 };
 
 subtest 'escola sem setor intersectado: nenhuma linha' => sub {

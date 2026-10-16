@@ -118,6 +118,25 @@ subtest 'ler_fluxo: variável ausente morre com a lista' => sub {
   like($@, qr/faltam variáveis: V01318/, 'nomeia o que falta');
 };
 
+subtest 'ler_fluxo: 1ª coluna `setor` (sem CD_) reconhecida como codigo_setor' => sub {
+  my @vars = (
+    qw(V00111 V00112 V00113 V00114 V00115 V00116 V00117 V00118),   # água
+    qw(V00309 V00310 V00311 V00312 V00313 V00314 V00315 V00316),   # esgoto
+    qw(V00397 V00398 V00399 V00400 V00401 V00402),                 # lixo
+    qw(V00494 V00495),                                            # banheiro
+  );
+  my $csv = '"setor";' . join(';', map { qq{"$_"} } @vars) . "\n"
+    . qq{"110001505000002";}
+    . join(';', map { $_ eq 'V00494' ? '"10"' : $_ eq 'V00495' ? '"2"' : '"0"' } @vars) . "\n";
+  my @lote;
+  my $n = job()->ler_fluxo(fh_de($csv), 'caracteristicas_domicilio2', undef,
+                           sub { push @lote, @{ $_[0] } });
+  is($n, 1, 'uma linha');
+  is($lote[0]{codigo_setor}, '110001505000002', 'setor -> codigo_setor');
+  is($lote[0]{dom_banheiro_exclusivo}, 10, 'banheiro exclusivo');
+  is($lote[0]{dom_sem_banheiro}, 2, 'sem banheiro');
+};
+
 # ---------------------------------------------------------------- ogr2ogr
 subtest 'comando_ogr2ogr: senha só no ambiente, nunca na linha de comando' => sub {
   my $j = job(app => app_com_dsn('dbi:Pg:dbname=edumaps_dev;host=172.19.198.3;port=5432', 'devel', 's3gr3d0'));
@@ -194,6 +213,23 @@ subtest 'integração: malha + censo no banco do CI' => sub {
   system('ogr2ogr', '-f', 'GPKG', $gpkg, "$tmp/s.geojson", '-nln', 'BR_setores_CD2022', '-a_srs', 'EPSG:4674') == 0
     or BAIL_OUT('ogr2ogr não gerou o GPKG de teste');
 
+  # características do domicílio (Parte 2): cabeçalho com a 1ª coluna `setor`
+  # (sem CD_), como no FTP do IBGE.
+  my @vars_dom2 = (
+    qw(V00111 V00112 V00113 V00114 V00115 V00116 V00117 V00118),   # água
+    qw(V00309 V00310 V00311 V00312 V00313 V00314 V00315 V00316),   # esgoto
+    qw(V00397 V00398 V00399 V00400 V00401 V00402),                 # lixo
+    qw(V00494 V00495),                                            # banheiro
+  );
+  my %v = (
+    V00111 => 10, V00112 => 1, V00113 => 1, V00114 => 0,
+    V00115 => 0,  V00116 => 0, V00117 => 0, V00118 => 0,
+    V00309 => 5,  V00310 => 0, V00311 => 2, V00312 => 1,
+    V00313 => 1,  V00314 => 1, V00315 => 0, V00316 => 1,
+    V00397 => 8,  V00398 => 0, V00399 => 1, V00400 => 0, V00401 => 1, V00402 => 0,
+    V00494 => 10, V00495 => 2,
+  );
+
   # ZIPs sintéticos (latin1)
   my %csv = (
     basico => qq{"CD_SETOR";"SITUACAO";"CD_UF";"NM_UF";"CD_MUN";"NM_MUN";"v0001";"v0002";"v0003";"v0004"\n}
@@ -201,6 +237,9 @@ subtest 'integração: malha + censo no banco do CI' => sub {
     demografia => qq{"CD_setor";"V01006";"V01007";"V01008";} . join(';', map { "\"V010$_\"" } 31 .. 41) . "\n"
       . qq{"$setores[0]";"10";"6";"4";} . join(';', ('"1"') x 4, '"1"', '"2"', '"X"', ('"1"') x 4) . "\n",
     cor_ou_raca => qq{"CD_SETOR";"V01317";"V01318";"V01319";"V01320";"V01321"\n"$setores[0]";"5";"X";"0";"5";"0"\n},
+    alfabetizacao => qq{"CD_setor";"V00900";"V00901"\n"$setores[0]";"7";"3"\n},
+    caracteristicas_domicilio2 => '"setor";' . join(';', map { qq{"$_"} } @vars_dom2) . "\n"
+      . qq{"$setores[0]";} . join(';', map { qq{"$v{$_}"} } @vars_dom2) . "\n",
   );
   for my $tema (keys %csv) {
     my $zip = "$tmp/$EduMaps::Ingestion::Job::SetoresCenso2022::ZIP{$tema}";
@@ -241,9 +280,21 @@ subtest 'integração: malha + censo no banco do CI' => sub {
     is($r->{cor_amarela}, 0, 'zero real fica zero');
     ok($r->{supressao_celula_pequena}, 'supressão marcada');
     ok(!defined $r->{$_}, "$_ NULL (sem fonte)") for qw(esc_sup_comp rend_media cor_sem_decl);
+    is($r->{alf_sabe_15mais}, 7, 'alfabetização: sabe ler/escrever');
+    is($r->{alf_nao_sabe_15mais}, 3, 'alfabetização: não sabe');
+    is($r->{dom_agua_rede}, 10, 'água: rede geral');
+    is($r->{dom_agua_nascente}, 0, 'água: zero real fica zero');
+    is($r->{dom_esgoto_fossa_septica}, 2, 'esgoto: fossa séptica não ligada');
+    is($r->{dom_esgoto_inexistente}, 1, 'esgoto: inexistente');
+    is($r->{dom_lixo_coletado}, 8, 'lixo: coletado');
+    is($r->{dom_lixo_jogado}, 1, 'lixo: jogado');
+    is($r->{dom_banheiro_exclusivo}, 10, 'banheiro: exclusivo');
+    is($r->{dom_sem_banheiro}, 2, 'banheiro: sem uso exclusivo');
     my $r2 = $dbh->selectrow_hashref(q{SELECT * FROM clean.censo2022_setor WHERE codigo_setor = ?}, undef, $setores[1]);
     ok(!$r2->{supressao_celula_pequena}, 'setor sem X não é marcado');
     ok(!defined $r2->{pop_total}, 'setor sem linha na demografia: NULL, não 0');
+    ok(!defined $r2->{alf_sabe_15mais}, 'setor sem linha na alfabetização: NULL, não 0');
+    ok(!defined $r2->{dom_agua_rede}, 'setor sem linha no domicílio: NULL, não 0');
 
     # Idempotência: recarregar não duplica nem herda valores antigos
     is($j->carregar_censo({ dir_zips => $tmp }), 2, 'recarga idempotente');

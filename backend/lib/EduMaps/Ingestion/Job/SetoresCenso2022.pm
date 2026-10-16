@@ -20,13 +20,21 @@ use utf8;
 #    contado, nunca abortando a carga inteira.
 #
 # 2. clean.censo2022_setor <- Agregados por Setores Censitários (IBGE FTP),
-#    três ZIPs com um CSV cada (latin1, `;`, entre aspas):
-#      basico      identificação + domicílios (V0002/V0003/V0004)
-#      demografia  moradores, sexo e faixas de idade (V01006..V01041)
-#      cor_ou_raca branca/preta/amarela/parda/indígena (V01317..V01321)
-#    Sem fonte no Censo 2022 por setor (decisão do developer, #238): esc_*
-#    (escolaridade — o tema publicado é só alfabetização), rend_media,
-#    rend_per_capita e cor_sem_decl ficam NULL. Não se inventa.
+#    cinco ZIPs com um CSV cada (latin1, `;`, entre aspas):
+#      basico         identificação + domicílios (V0002/V0003/V0004)
+#      demografia     moradores, sexo e faixas de idade (V01006..V01041)
+#      cor_ou_raca    branca/preta/amarela/parda/indígena (V01317..V01321)
+#      alfabetizacao  alfabetização 15+ (alf_sabe_15mais V00900 /
+#                     alf_nao_sabe_15mais V00901)
+#      caracteristicas_domicilio2
+#                     domicílio/saneamento: água (forma de abastecimento,
+#                     V00111..V00118), esgoto (V00309..V00316), lixo
+#                     (V00397..V00402) e banheiro (V00494/V00495)
+#    A 1ª coluna do CSV varia por tema (CD_SETOR, CD_setor ou setor): o
+#    cabeçalho é normalizado para maiúsculas e `setor` é tratado como
+#    CD_SETOR. Sem fonte no Censo 2022 por setor (decisão do developer, #238):
+#    esc_* (o tema publicado é só alfabetização), rend_media, rend_per_capita
+#    e cor_sem_decl ficam NULL. Não se inventa.
 #    Supressão: o IBGE escreve "X" na célula suprimida por sigilo. Vira NULL
 #    e marca supressao_celula_pequena = true no setor — nunca 0.
 #
@@ -58,11 +66,15 @@ use constant {
   LOTE      => 1000,
 };
 
-# ZIPs do Censo 2022 por setor (nomes do FTP verificados em 2026-10-13).
+# ZIPs do Censo 2022 por setor (nomes do FTP verificados em 2026-10-13; os dois
+# temas novos, 2026-10-16).
 our %ZIP = (
   basico      => 'Agregados_por_setores_basico_BR_20260520.zip',
   demografia  => 'Agregados_por_setores_demografia_BR.zip',
   cor_ou_raca => 'Agregados_por_setores_cor_ou_raca_BR.zip',
+  alfabetizacao => 'Agregados_por_setores_alfabetizacao_BR.zip',
+  caracteristicas_domicilio2 =>
+    'Agregados_por_setores_caracteristicas_domicilio2_BR_20250417.zip',
 );
 
 # Colunas do GPKG usadas (confirmadas no DDL do arquivo, 2026-10-13).
@@ -107,12 +119,63 @@ our %MAPA = (
     cor_parda    => ['V01320'],
     cor_indigena => ['V01321'],
   },
+  # Alfabetização 15+ (pessoas de 15 anos ou mais).
+  alfabetizacao => {
+    alf_sabe_15mais     => ['V00900'],
+    alf_nao_sabe_15mais => ['V00901'],
+  },
+  # Características do Domicílio - Parte 2: água/esgoto/lixo/banheiro dos
+  # domicílios particulares permanentes ocupados (DPPO). Contagens cruas por
+  # categoria; a classificação adequado/inadequado fica na arealização
+  # (change escola_entorno_socioeconomico_saneamento), não aqui.
+  caracteristicas_domicilio2 => {
+    # forma de abastecimento de água
+    dom_agua_rede          => ['V00111'],
+    dom_agua_poco_profundo => ['V00112'],
+    dom_agua_poco_raso     => ['V00113'],
+    dom_agua_nascente      => ['V00114'],
+    dom_agua_carro_pipa    => ['V00115'],
+    dom_agua_chuva         => ['V00116'],
+    dom_agua_rio           => ['V00117'],
+    dom_agua_outra         => ['V00118'],
+    # destinação do esgoto
+    dom_esgoto_rede               => ['V00309'],
+    dom_esgoto_fossa_septica_rede => ['V00310'],
+    dom_esgoto_fossa_septica      => ['V00311'],
+    dom_esgoto_fossa_rudimentar   => ['V00312'],
+    dom_esgoto_vala               => ['V00313'],
+    dom_esgoto_rio                => ['V00314'],
+    dom_esgoto_outra              => ['V00315'],
+    dom_esgoto_inexistente        => ['V00316'],
+    # destino do lixo
+    dom_lixo_coletado  => ['V00397'],
+    dom_lixo_cacamba   => ['V00398'],
+    dom_lixo_queimado  => ['V00399'],
+    dom_lixo_enterrado => ['V00400'],
+    dom_lixo_jogado    => ['V00401'],
+    dom_lixo_outro     => ['V00402'],
+    # banheiro de uso exclusivo
+    dom_banheiro_exclusivo => ['V00494'],
+    dom_sem_banheiro       => ['V00495'],
+  },
 );
 
 # Sem fonte no Censo 2022 por setor: ficam NULL (decisão do developer, #238).
 our @SEM_FONTE = qw(
   esc_sem_instrucao esc_fund_incomp esc_fund_comp esc_med_incomp esc_med_comp
   esc_sup_incomp esc_sup_comp rend_media rend_per_capita cor_sem_decl
+);
+
+# Temas além de `basico`, na ordem de carga (as colunas destes temas são
+# zeradas na passada basico: a carga é por inteiro, não um remendo).
+our @TEMAS_CENSO = sort grep { $_ ne 'basico' } keys %ZIP;
+
+# Rótulo humano de cada tema (mensagens e metadados).
+our %TEMA_ROTULO = (
+  demografia                 => 'demografia',
+  cor_ou_raca                => 'cor/raça',
+  alfabetizacao              => 'alfabetização',
+  caracteristicas_domicilio2 => 'domicílio/saneamento',
 );
 
 sub tabelas ($self, $args = {}) {
@@ -355,7 +418,7 @@ sub carregar_censo ($self, $args, $uf = undef) {
       $r{carregados} += $n;
       $r{orfaos} += $orf;
     });
-    for my $tema (qw(demografia cor_ou_raca)) {
+    for my $tema (@TEMAS_CENSO) {
       $self->_ler_csv($zip{$tema}, $tema, $uf, sub ($lote) {
         $r{atualizados}{$tema} += $self->_gravar_tema($dbh, $tema, $lote);
       });
@@ -365,17 +428,17 @@ sub carregar_censo ($self, $args, $uf = undef) {
       . ($uf ? ' AND sigla_uf = ?' : ''), undef, ($uf ? ($SIGLA_UF{$uf}) : ()));
   });
 
+  my $detalhe = join ', ',
+    map { "$TEMA_ROTULO{$_} em " . ($r{atualizados}{$_} // 0) } @TEMAS_CENSO;
   $self->log_info(sprintf(
-    'Censo 2022 por setor: %d setores (basico); demografia em %d, cor/raça em %d; %d com supressão; %d fora (setor ausente da malha, FK)',
-    $r{carregados}, $r{atualizados}{demografia} // 0, $r{atualizados}{cor_ou_raca} // 0,
-    $r{suprimidos}, $r{orfaos}));
+    'Censo 2022 por setor: %d setores (basico); %s; %d com supressão; %d fora (setor ausente da malha, FK)',
+    $r{carregados}, $detalhe, $r{suprimidos}, $r{orfaos}));
   die "Censo 2022: nenhum setor carregado (a malha foi carregada antes?)\n" unless $r{carregados};
 
   $self->upsert_metadata(TAB_CENSO, join(' + ', map { $ZIP{$_} } sort keys %ZIP), URL_CSVS, LICENCA,
     $r{carregados},
-    sprintf('Agregados por Setores Censitários do Censo 2022 (#238).%s %d setores (basico); demografia em %d e cor/raça em %d; %d setores com supressao_celula_pequena (célula "X" do IBGE = NULL, não zero); %d setores fora por ausência na malha_setor_censitario (FK). Sem fonte no Censo 2022 por setor, ficam NULL: %s.',
-      ($uf ? " Recorte UF=$SIGLA_UF{$uf}." : ''), $r{carregados},
-      $r{atualizados}{demografia} // 0, $r{atualizados}{cor_ou_raca} // 0,
+    sprintf('Agregados por Setores Censitários do Censo 2022 (#238).%s %d setores (basico); %s; %d setores com supressao_celula_pequena (célula "X" do IBGE = NULL, não zero); %d setores fora por ausência na malha_setor_censitario (FK). Sem fonte no Censo 2022 por setor, ficam NULL: %s.',
+      ($uf ? " Recorte UF=$SIGLA_UF{$uf}." : ''), $r{carregados}, $detalhe,
       $r{suprimidos}, $r{orfaos}, join(', ', @SEM_FONTE)));
   return $r{carregados};
 }
@@ -411,16 +474,18 @@ sub ler_fluxo ($self, $fh, $tema, $uf, $cb) {
   my $csv = Text::CSV->new({ binary => 1, sep_char => ';', auto_diag => 1 });
   my $header = $csv->getline($fh) or die "$tema: CSV vazio\n";
   $header->[0] =~ s/^\x{FEFF}//;
-  my @cab = map { uc } @$header;    # basico usa v0001, demografia CD_setor
+  my @cab = map { uc } @$header;    # basico usa v0001; demografia CD_setor
   my %idx = map { $cab[$_] => $_ } 0 .. $#cab;
+  # caracteristicas_domicilio2 nomeia a 1ª coluna `setor` (sem o prefixo CD_).
   die "$tema: sem coluna CD_SETOR (recebido: @cab[0..($#cab < 5 ? $#cab : 5)])\n"
-    unless defined $idx{CD_SETOR};
+    unless defined $idx{CD_SETOR} || defined $idx{SETOR};
   my @falta = grep { !defined $idx{$_} } map { @$_ } values %{ $MAPA{$tema} };
   die "$tema: faltam variáveis: @{[ sort @falta ]}\n" if @falta;
 
   my (@lote, $n);
   while (my $r = $csv->getline($fh)) {
     my %h = map { $cab[$_] => $r->[$_] } 0 .. $#cab;
+    $h{CD_SETOR} = $h{SETOR} if !defined $h{CD_SETOR} && defined $h{SETOR};
     next if $uf && substr($h{CD_SETOR} // '', 0, 2) ne $uf;
     push @lote, $self->converter_linha($tema, \%h);
     $n++;
@@ -470,7 +535,7 @@ sub _gravar_basico ($self, $dbh, $lote) {
   my $tipos = { map { $_ => 'integer' } keys %{ $MAPA{basico} } };
   my $sql = _sql_valores(\@cols, $tipos, scalar @validos);
   my $zera = join ",\n        ", map { "$_ = NULL" } (
-    (map { keys %{ $MAPA{$_} } } qw(demografia cor_ou_raca)), @SEM_FONTE);
+    (map { keys %{ $MAPA{$_} } } @TEMAS_CENSO), @SEM_FONTE);
   my $n = $dbh->do(qq{
     INSERT INTO clean.censo2022_setor (@{[ join ', ', @cols ]}, supressao_celula_pequena, data_acessada)
     SELECT @{[ join ', ', map { "v.$_" } @cols ]}, v.sup, NOW() FROM (

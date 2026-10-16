@@ -138,3 +138,5 @@ osm_mobilidade_completude [censo_labels_consumers] 2026-10-14T17:00:00Z Marco Ar
 quarantine_censo_escolas_scores [osm_mobilidade_completude] 2026-10-15T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137: quarentena dos scores mortos (A) e declaracao do indice canonico (B)
 escola_influencia [quarantine_censo_escolas_scores censo_escolar_2025] 2026-10-15T19:00:00Z Marco Arthur <arthurpbs@gmail.com> # #255/#137: camada de influencia da escola (buffer por raio, influencia-v1)
 escola_entorno_socioeconomico [escola_influencia censo2022_setor] 2026-10-16T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: arealizacao socioeconomica do entorno (setores Censo 2022)
+censo2022_setor_instrucao_saneamento [censo2022_setor] 2026-10-16T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: alfabetizacao e saneamento crus do setor (Censo 2022)
+escola_entorno_socioeconomico_saneamento [escola_entorno_socioeconomico censo2022_setor_instrucao_saneamento] 2026-10-16T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: analfabetismo e saneamento no entorno; ivet-v1.1

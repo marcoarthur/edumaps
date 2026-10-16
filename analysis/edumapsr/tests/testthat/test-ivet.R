@@ -1,7 +1,7 @@
 # testes do núcleo reprodutível do IVET v1.0 (R/ivet.R)
 
 test_that("ivet_versao carimba a versão da fórmula", {
-  expect_equal(ivet_versao(), "ivet-v1.0")
+  expect_equal(ivet_versao(), "ivet-v1.1")
 })
 
 test_that("ivet_normalizar: binario, proporcao e contagem", {
@@ -39,7 +39,7 @@ test_that("ivet_agregar: dimensão ausente sai do denominador — §4.3", {
 test_that("ivet_v1: sem as dimensões territoriais mínimas, o agregado é NA — §4.3", {
   res <- ivet_v1(c(escola = 0.7, socioeconomico = 0.4))
 
-  expect_equal(res$formula, "ivet-v1.0")
+  expect_equal(res$formula, "ivet-v1.1")
   expect_true(is.na(res$ivet))                    # não publicado
   expect_false(res$publicavel)
   expect_equal(res$bloco_escola, 0.7)             # bloco escola é publicado
