@@ -6,10 +6,13 @@
 
 ## Sessão 2026-10-16 — #137: loader do bloco B (instrução/saneamento) + arealização por célula
 
-- **PR #263 ABERTO** (base `main`; aguardando merge/aprovação). **Branch
-  `feat/bloco-b-instrucao-saneamento`** (não mergeada): `c35e5e6`
-  (feat — loader + changes A/B), `bdfb538` (perf — escrita jsonb em lote),
-  `ad9e356` (fix — arealização por célula).
+- **PR #263 MERGEADO** (merge commit `6303075`, 2026-10-16; branch
+  `feat/bloco-b-instrucao-saneamento` removida): `c35e5e6` (feat — loader +
+  changes A/B), `bdfb538` (perf — escrita jsonb em lote), `ad9e356` (fix —
+  arealização por célula), `3343141`+`43ccf25` (docs — memory). Nota técnica
+  **NT_136**. Pós-merge: imagens locais `sqitch`/`backend`/`minion`
+  reconstruídas (md5 do loader no container == working tree,
+  `75cacadf88b2a0553f9793774d9d59aa`).
 - **Loader `SetoresCenso2022`** ganhou 2 temas (alfabetização 15+;
   `caracteristicas_domicilio2` = água/esgoto/lixo/banheiro) e passou a escrever
   por **`jsonb` em lote** (`_rec_json`/`encode_json`) em vez de `VALUES`
