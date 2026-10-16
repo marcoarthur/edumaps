@@ -243,7 +243,7 @@ Notas de implementação:
   `nu_ano_censo` entra na PK porque a geometria de origem é anual.
 - Default materializado na base dev: **156.816 escolas × 3 raios = 470.448
   buffers** (~352 MB). O refresh de uma escola (testes) é instantâneo; o global
-  leva ~30 s.
+  leva **~58 s** (medido no produto, `database.edumaps`, 2026-10-16).
 - **Tier 2 (isócrona)** reusa o mesmo `tier`; **Tier 3 (setor)** é a
   interseção/arealização — não precisa de nova coluna.
 
@@ -263,6 +263,21 @@ setores sem a sua própria variável-fonte; o flag de setor
 colunas são as proporções de **analfabetismo** e **saneamento** (água, esgoto,
 lixo, banheiro), o default do bloco na fórmula `ivet-v1.1`. Detalhe dos
 componentes em [`ivet.md`](ivet.md) §4.5.
+
+#### Refresh da arealização
+
+| Peça | Como |
+|------|------|
+| Função SQL | `clean.refresh_escola_entorno_socioeconomico(p_raios integer[], p_co_entidades bigint[])` — idempotente (UPSERT) |
+| Job | task Minion `refresh_entorno_socioeconomico` + helper (`backend/lib/EduMaps/Task/Entorno.pm`) |
+| Teste | `backend/t/escola_entorno_socioeconomico.t` (função SQL), `backend/t/05-tasks/entorno.t` (wiring) |
+
+A task aceita `{raios}` e, em alternativa, `{uf}` ou `{co_entidades}`. Como a
+chamada global sobre o país é **custosa** (medido: 1.000 escolas → 50 s;
+projeção ≈ 2 h para as 156.816), o caminho para materializar o país é **um job
+por UF** (chunked): cada UF é uma transação curta e a operação é retomável
+(UPSERT; uma UF re-executada só refaz o upsert). `{uf}` monta a lista de escolas
+no banco — não trafega dezenas de milhares de INEPs.
 
 ---
 
