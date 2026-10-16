@@ -241,6 +241,11 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/osm/pois' => $check)
     ->to('gestor#osm_pois_status')->name('gestor_osm_pois_status');
 
+  # --- influência: área de influência materializada (#255/#137) -------------
+  # Somente leitura (a camada é do job refresh_influencia); gestor da escola.
+  $auth->get('/:cod_inep/influencia' => $check)
+    ->to('gestor#influencia')->name('gestor_influencia');
+
   # --- Assistente de Relatório (#219): recorte, assistentes, temas, job ------
   $auth->get('/:cod_inep/relatorios/recorte-padrao' => $check)
     ->to('gestor_relatorios#recorte_padrao')->name('gestor_relatorios_recorte_padrao');

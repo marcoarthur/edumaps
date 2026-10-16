@@ -46,3 +46,16 @@ export function requestOsmPois(codInep, { raio, profiles, refresh } = {}) {
 export function getOsmPoisStatus(codInep) {
   return apiClient.get(`${BASE}/${codInep}/osm/pois`);
 }
+
+/**
+ * Área de influência materializada da escola (metodologia `influencia-v1`,
+ * #255/#137). Somente leitura: a camada é gerada pelo job de materialização;
+ * a API devolve 404 quando ainda não foi calculada.
+ * @param {string|number} codInep
+ * @returns {Promise<{co_entidade:number, nu_ano_censo:number, tier:string,
+ *   versao:string, computado_em:string, raios:number[], escola:object,
+ *   geojson:{type:string, features:Array}}>}
+ */
+export function getInfluencia(codInep) {
+  return apiClient.get(`${BASE}/${codInep}/influencia`);
+}

@@ -7,6 +7,7 @@
   import StatusGrid from "./StatusGrid.svelte";
   import SimilarSchoolsSearch from "./SimilarSchoolsSearch.svelte";
   import OsmPoisPanel from "./OsmPoisPanel.svelte";
+  import InfluenciaPanel from "./InfluenciaPanel.svelte";
   import { resumoCards, formatInt } from "../utils/transformGestorData.js";
 
   /**
@@ -45,6 +46,7 @@
     { href: "#acessibilidade", label: "Acessibilidade" },
     { href: "#escolas-similares", label: "Escolas similares" },
     { href: "#osm-pois", label: "Equipamentos (OSM)" },
+    { href: "#influencia", label: "Área de influência" },
   ];
 </script>
 
@@ -160,4 +162,6 @@
   <SimilarSchoolsSearch {inep} />
 
   <OsmPoisPanel {inep} />
+
+  <InfluenciaPanel {inep} />
 </div>

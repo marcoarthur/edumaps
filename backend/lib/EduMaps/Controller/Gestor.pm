@@ -7,6 +7,7 @@ use DateTime;
 use Mojo::JSON ();
 use EduMaps::Services::OSM::Query;
 use EduMaps::Model::OSM;
+use EduMaps::Model::Influencia;
 
 # API do painel do gestor escolar (/api/gestor/...) + módulo Reuniões e Atas
 # (contatos, grupos por drag-and-drop, agendamento com atas e anexos).
@@ -1983,6 +1984,29 @@ sub osm_pois_request($self) {
     status => 202,
     json => { task => 'query_osm_school', job_id => $job_id, reused => Mojo::JSON::false },
   );
+}
+
+# ---------------------------------------------------------------------------
+# influência: área de influência da escola (#255/#137, metodologia
+# influencia-v1, docs/analises/influencia.md).
+# ---------------------------------------------------------------------------
+# Leitura somente: a camada clean.escola_influencia é materializada pelo job
+# `refresh_influencia` (clean.refresh_escola_influencia). Restrita ao gestor da
+# própria escola (_gestor_inep_ok): a guarda LGPD da metodologia proíbe expor a
+# geometria por escola como dado público; o gestor vê o entorno da sua escola.
+# Sem linha na camada -> 404 ("ainda não calculada"), nunca um buffer inventado
+# (#154: ausência != zero).
+sub influencia($self) {
+  return unless $self->_gestor_inep_ok;
+
+  my $cod_inep = $self->param('cod_inep');
+  my $model    = EduMaps::Model::Influencia->new;
+  my $result   = $model->status($cod_inep);
+
+  return $self->_render_not_found('Área de influência ainda não calculada para esta escola')
+    unless $result;
+
+  $self->render(json => $result);
 }
 
 sub osm_pois_status($self) {
