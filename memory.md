@@ -4,6 +4,62 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-16 — #137 (Tier 3): bloco B por arealização do setor (PR #262)
+
+- **PR #262 MERGEADO** (merge `facb26b`; branch `feat/bloco-b-socioeconomico`;
+  commit `df8ce13`). Nota técnica **NT_135**. Fatia 1 da **#137**: bloco **B
+  (socioeconômico)** do IVET por **arealização do setor censitário** (Censo 2022)
+  sobre a área de influência da escola (`influencia.md`, Tier 3).
+- **Banco — change `escola_entorno_socioeconomico`**:
+  - `clean.escola_entorno_socioeconomico` (grão `(co_entidade, nu_ano_censo,
+    raio_m)`) + `clean.refresh_escola_entorno_socioeconomico(p_raios,
+    p_co_entidades)` (idempotente, UPSERT). `verify/` usa gate `DO $$ …
+    RAISE EXCEPTION` (issue #160).
+  - **Peso = área de interseção geodésica** (`ST_Area(ST_Intersection(...)::geography)`).
+    Setor com `supressao_celula_pequena` fica **fora do numerador e do
+    denominador** (#154); `cobertura_pct` registra a fração da área usada
+    (0 = nenhum setor com dado → componentes `NULL`). Estimador: **média
+    ponderada por área das proporções do setor** (não razão de somas) —
+    consistente com `renda` e `pop`; conferido contra SQL direta (erro abs.
+    máx. 4,7e-5). `pop_total` = `Σ(pop_setor·w/area_setor)` (erro rel. máx. 0,5%).
+- **Fórmula (R puro)** — `analysis/edumapsr/R/ivet-socioeconomico.R`:
+  `ivet_bloco_socioeconomico()` mapeia componente → dimensão B em `[0,1]` (maior
+  = mais vulnerável); usa **`ivet_agregar()`** (ausente fora do denominador), não
+  `ivet_dimensao()`. Teto `IVET_TETO_RENDA` = 2 SM jul/2022 = **R$ 2.424**.
+  Preto/pardo calculado e exposto, **fora** da dimensão por omissão (decisão de
+  equidade exige justificativa — §4.3). `NAMESPACE` +4 exports; `DESCRIPTION`
+  `Collate` +1 (**sem** o `Collate` o `R CMD INSTALL` no deploy falha).
+- **Testes**: `backend/t/escola_entorno_socioeconomico.t` 7 subtests **PASS**;
+  `analysis/edumapsr/tests/testthat/test-ivet-socioeconomico.R` 30 asserções;
+  `sqitch verify` **PASS**. CI do PR: `Perl contra o banco de fixtures` PASS 12m14s.
+- **Validação e2e no produto** (2026-10-16, 20 escolas reais): buffers + entorno
+  60 + 60 linhas; `pop_total` e `pct_preto_pardo` conferem com SQL direta.
+  **Amostra removida no fim** (produto deixado como estava: `escola_influencia`
+  e `escola_entorno_socioeconomico` voltaram a 0).
+- **Dois bugs corrigidos durante a validação/deploy** (ambos invisíveis nos
+  testes sintéticos): (1) `cor_total` incluía `cor_sem_decl`, que é **sempre
+  NULL** (#238) → `pct_preto_pardo` saía NULL para tudo; (2) `R CMD INSTALL`
+  falhava porque `ivet-socioeconomico.R` faltava no `Collate`.
+- 🔴 **Caveat de dados (#238) — bloco B sai `NA` no produto.** O loader
+  `SetoresCenso2022` carrega só básico (domicílios), demografia e cor/raça;
+  `esc_*`, `rend_media`, `rend_per_capita`, `cor_sem_decl` ficam **NULL por
+  decisão** (Censo 2022 não publica por setor). Medido: `count(rend_per_capita)=0`
+  em 468.097 setores. Logo a dimensão B (renda/instrução) é `NA` (ausente ≠ 0,
+  #154) e o **único** componente com dado é `pct_preto_pardo`. Para o bloco B ter
+  renda/instrução arealizadas é preciso **estender o loader** (alfabetização e
+  `caracteristicas_domicilio` estão nos brutos do IBGE, mas não são carregados).
+  Documentado em `docs/analises/ivet.md` §4.5.
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_analytics_dev` +
+  `deploy_backend_dev` (hosts LXC). No produto, a change foi re-deployada com
+  `sqitch revert db:pg://…/edumaps_dev --to escola_influencia` + deploy (o
+  `change_id` `45f09208…` **não** muda com edição do corpo do script — só
+  `requires`/ordem o mudam). Imagens Docker locais `sqitch` e `analytic`
+  reconstruídas (função R presente na imagem).
+- **Pendências**: estender o loader do setor para renda/instrução (#238);
+  reconciliação de fórmula B↔C (§6 — bloco A precisa ser **invertido**: no
+  sistema B maior = melhor); extração C–G; e2e real da camada (local tem buffers
+  e 0 setores; produto tem setores e 0 buffers — exige popular um lado).
+
 ## Sessão 2026-10-16 — #255/#137 (Tier 1): painel "Área de influência (IVET)"
 
 - **PR #261 MERGEADO** (merge `dab913e`; branch `feat/painel-influencia-ivet`;

@@ -30,6 +30,10 @@ querem uma leitura comum entre a escola e os órgãos públicos.
   e chuva).
 - Sistema pode **desenhar no mapa** a escola e cada anel, com **legenda** que
   liga e desliga cada raio e mostra a **área em km²** de cada um.
+- Sistema pode usar essa mesma área como base das **leituras de território** da
+  escola — inclusive o **contexto socioeconômico do entorno** (população,
+  densidade e composição por cor/raça do setor censitário), lido por arealização
+  da área de influência e reunido no IVET.
 - Sistema pode informar a **proveniência** do dado — de que versão da
   metodologia veio e quando foi calculado.
 - Sistema pode distinguir **"área ainda não calculada"** de um entorno vazio:
