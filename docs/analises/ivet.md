@@ -1,7 +1,7 @@
 # IVET — fórmula, coeficientes e decisão de leitura
 
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
-> 2 (decisão de leitura), 3 (núcleo reprodutível + extração do bloco B),
+> 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
 > **Versão da fórmula**: `ivet-v1.2` (histórico: `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-10-17.
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
@@ -227,9 +227,9 @@ bug do `iqd` é justamente uma contagem crua).
 | **B. Socioeconômico** | instrução + renda do responsável + saneamento do setor censitário | `censobr`/IBGE (#123, #238) | **implementado** (extração: arealização do setor, §4.5) |
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
 | **D. Saúde** | PeNSE (saúde escolar) | #127 | **pendente** (LGPD) |
-| **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **pendente** (LGPD) |
-| **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241 | parcial |
-| **G. Recursos** | SIOPE/SICONFI | catálogo #123 | parcial |
+| **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
+| **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241 | parcial (proxy de cobertura do solo — pendente) |
+| **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
 
 ### 4.3 Pesos e critério de publicação
 
@@ -388,6 +388,74 @@ fora — #154): mede o domicílio, não o serviço isolado.
   interseção); a dimensão B usa `renda_resp_media`.
 
 
+### 4.5.1 Bloco E — extração (segurança pública)
+
+O bloco **E** é lido de `clean.brazilcrime_municipio` (SINESP, via pacote R
+BrazilCrime; #126), grão **município × ano** — a escola é o ponto de observação e
+o **município** onde ela está é o território observado (§1). A extração tem duas
+metades, como o bloco B:
+
+- **Banco** — as contagens por evento (`homicidio_doloso`, `latrocinio`,
+  `lesao_corporal_seguida_de_morte`) já são carregadas com **supressão de célula
+  pequena** (valores 1..4 ocultados; change `brazilcrime_*`). A escola entra por
+  junção no município (`clean.malha_municipio` / `codigo_ibge`).
+- **R puro** — o mapeamento contagem → componente em
+  `analysis/edumapsr/R/ivet-seguranca.R`.
+
+| componente | bruto (tabela) | normalização | direção |
+|---|---|---|---|
+| homicídio doloso | `homicidio_doloso` (contagem) | `clamp(taxa / 50)` | mais = + |
+| latrocínio | `latrocinio` (contagem) | `clamp(taxa / 5)` | mais = + |
+| lesão corporal seguida de morte | `lesao_corporal_seguida_de_morte` | `clamp(taxa/5)` | mais = + |
+
+`taxa = contagem / população × 100.000` (`ivet_taxa_100k()`). O default do bloco é
+`componentes = c("homicidio_doloso", "latrocinio", "lesao_corporal_seguida_de_morte")`.
+
+- **Tetos** (`IVET_TETO_HOMICIDIO_DOLOSO = 50`, `IVET_TETO_LATROCINIO = 5`,
+  `IVET_TETO_LESAO_CORPORAL_SEGUIDA_DE_MORTE = 5`, por 100 mil) são **parâmetros de
+  produto** — calibrados no dev (média municipal 2021–2023: homicídio doloso p90 ≈
+  46/100k; latrocínio e lesão seguida de morte são raros, p90 = 0). Mudá-los exige
+  registro e nova versão da fórmula.
+- **Denominador populacional**: a **população por ano** não existe hoje no banco —
+  `clean.v_ibge_municipio_ano.populacao` está 100% `NULL`. A extração usa
+  `clean.populacao_municipal` (snapshot) como denominador, documentado; a série
+  anual é pendência de dado.
+- **#154 (supressão ≠ 0)**: uma célula suprimida (contagem 1..4 ocultada pela
+  fonte) vira material `NA` e **fica fora do denominador** da dimensão; uma
+  contagem `0` publicada é `0` real. `ivet_taxa_100k(contagem, populacao,
+  suprimido = TRUE)` força o `NA` quando o chamador tem o sinal por célula.
+- **Código**: `ivet_bloco_seguranca()`, `ivet_bloco_seguranca_componentes()`,
+  `ivet_taxa_100k()`, `ivet_componente_taxa()`, `ivet_componente_crime()`; testes em
+  `tests/testthat/test-ivet-seguranca.R` e contrato no card (`test-ivet-card.R`).
+
+### 4.5.2 Bloco G — extração (recursos fiscais)
+
+O bloco **G** é lido de `analytics.esforco_fiscal_educacao` (SIOPE/SICONFI;
+catálogo #123), grão **município × exercício**, também por junção no município da
+escola. Os indicadores de recurso medem **"quanto maior, melhor"**, logo são
+**invertidos** para a direção do IVET (`1 − clamp(valor/teto)`, como a renda do
+bloco B):
+
+| componente | bruto (tabela) | normalização | direção |
+|---|---|---|---|
+| FUNDEB por aluno | `fundeb_por_aluno` (R$/aluno) | `1 − clamp(x/10000)` | menor verba = + |
+| despesa em educação por aluno | `despesa_educ_por_aluno` (R$/aluno) | `1 − clamp(x/15000)` | menos investido = + |
+| autonomia fiscal | `autonomia_fiscal_pct` (%) | `1 − clamp(x/50)` | menos autonomia = + |
+
+- O default é `componentes = c("fundeb_por_aluno", "despesa_educ_por_aluno",
+  "autonomia_fiscal_pct")`.
+- **`pct_receita_em_educ` não é usado**: está **corrompido** na tabela (valores
+  fora de `[0,100]`), achado da medição no dev a 2026-10-17.
+- **Tetos** (`IVET_TETO_FUNDEB_POR_ALUNO` = 10.000,
+  `IVET_TETO_DESPESA_EDUC_POR_ALUNO` = 15.000, `IVET_TETO_AUTONOMIA_FISCAL_PCT` =
+  50) calibrados pelo p90 municipal (≈ 9.336, 14.521 e 30,9%, respectivamente) e
+  são parâmetros de produto.
+- **#154**: valor `NULL` (município sem dado fiscal) vira componente `NA`, fora do
+  denominador — nunca 0.
+- **Código**: `ivet_bloco_recursos()`, `ivet_bloco_recursos_componentes()`,
+  `ivet_componente_investimento()`; testes em `tests/testthat/test-ivet-recursos.R`
+  e contrato no card.
+
 ### 4.6 Vigência e retreino
 
 Um número do IVET só vale como retrato do **presente** enquanto o dado de
@@ -419,11 +487,11 @@ chave; os dados derivados não são hasheados linha a linha.
 
 A ficha do índice vive **no mesmo lugar do código**, não num slide: o artefato
 legível por máquina `analysis/edumapsr/inst/ivet-card.yml`, exposto por
-`ivet_card()`. Ele declara fórmula, leitura, blocos, componentes do bloco B,
-teto de renda, proveniência e vigência — e é **contratual**:
+`ivet_card()`. Ele declara fórmula, leitura, blocos, componentes dos blocos B, E
+e G, teto de renda, proveniência e vigência — e é **contratual**:
 `tests/testthat/test-ivet-card.R` falha se o card divergir de `ivet_versao()`,
-`ivet_blocos()`, `ivet_bloco_socioeconomico_componentes()` ou `IVET_TETO_RENDA`.
-Card e código não podem se separar.
+`ivet_blocos()`, `ivet_bloco_socioeconomico_componentes()`, `IVET_TETO_RENDA` ou
+dos componentes/tetos de E e G. Card e código não podem se separar.
 
 
 ---
@@ -473,9 +541,17 @@ fórmula em R puro (`ivet_bloco_socioeconomico()` /
 Cobertura: `backend/t/05-tasks/setores_censo_loader.t`,
 `backend/t/escola_entorno_socioeconomico.t` e
 `tests/testthat/test-ivet-socioeconomico.R`. A reconciliação *de fórmula* B↔C foi
-**implementada** (§4.4.1); **falta** a extração de C–G (blocos territoriais). O
-versionamento do passo `raw`→`clean`→`analytics` está feito (§4.6,
-[`versionamento_datasets.md`](versionamento_datasets.md)).
+**implementada** (§4.4.1).
+
+**Blocos E e G — extração pronta (entregável 3).** O mapeamento R puro dos
+blocos territoriais **E (segurança)** e **G (recursos)** está em
+`analysis/edumapsr/R/ivet-seguranca.R` e `R/ivet-recursos.R` (§4.5.1/§4.5.2),
+com testes em `tests/testthat/test-ivet-seguranca.R` e `test-ivet-recursos.R` e
+contrato no card. **Faltam** as extrações de **C** (mobilidade — bloqueado, sem
+isócrona), **D** (saúde — depende do fix da view de saúde) e **F** (meio
+ambiente — só há proxy de cobertura do solo; a exposição a risco do §4.2 depende
+de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feito
+(§4.6, [`versionamento_datasets.md`](versionamento_datasets.md)).
 
 ---
 
@@ -485,7 +561,7 @@ versionamento do passo `raw`→`clean`→`analytics` está feito (§4.6,
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração do bloco B (§4.5) + pin `raw`→`analytics` (§4.6)** | falta a extração de C–G; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2) |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C, D e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **D** depende do fix da view de saúde |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 

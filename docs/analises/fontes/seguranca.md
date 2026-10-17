@@ -256,3 +256,21 @@ métricas municipais agregadas e forte disciplina de LGPD. Isso torna segurança
 pública a **lacuna mais barata** de fechar (um `library(BrazilCrime)`) e também
 a de **maior risco ético** — deve entrar no ciclo com revisão de LGPD antes de
 qualquer exposição na interface.
+
+---
+
+## Extração no IVET (bloco E)
+
+O bloco **E — segurança** do IVET já tem o mapeamento R puro implementado
+(`analysis/edumapsr/R/ivet-seguranca.R`, §4.5.1 de [`ivet.md`](../ivet.md)). A
+fonte é `clean.brazilcrime_municipio`, com a **supressão de célula pequena**
+(valores 1..4 ocultados) respeitada: a contagem ocultada vira `NA` — ausência,
+nunca 0 (#154).
+
+- Componentes: taxa/100 mil de `homicidio_doloso` (teto 50), `latrocinio` (teto 5)
+  e `lesao_corporal_seguida_de_morte` (teto 5).
+- Denominador: `clean.populacao_municipal` (snapshot) — a população **por ano**
+  não existe hoje no banco (`clean.v_ibge_municipio_ano.populacao` está 100%
+  `NULL`), pendência de dado registrada na doc do IVET.
+- A exposição a risco no *frontend* continua vedada até a revisão de LGPD; o
+  bloco existe apenas na camada analítica.
