@@ -60,6 +60,31 @@ test_that("card: componentes do bloco A batem com o código (reconciliação B�
   }
 })
 
+test_that("card: componentes do bloco E batem com o código (segurança)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_seguranca_componentes()
+  expect_setequal(names(card$bloco_e$componentes), names(comps))
+  expect_equal(card$bloco_e$default, IVET_BLOCO_E_COMPONENTES)
+  expect_true(all(card$bloco_e$default %in% names(card$bloco_e$componentes)))
+  expect_equal(card$bloco_e$componentes$homicidio_doloso$teto, IVET_TETO_HOMICIDIO_DOLOSO)
+  expect_equal(card$bloco_e$componentes$latrocinio$teto, IVET_TETO_LATROCINIO)
+  expect_equal(card$bloco_e$componentes$lesao_corporal_seguida_de_morte$teto,
+               IVET_TETO_LESAO_CORPORAL_SEGUIDA_DE_MORTE)
+})
+
+test_that("card: componentes do bloco G batem com o código (recursos)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_recursos_componentes()
+  expect_setequal(names(card$bloco_g$componentes), names(comps))
+  expect_equal(card$bloco_g$default, IVET_BLOCO_G_COMPONENTES)
+  expect_true(all(card$bloco_g$default %in% names(card$bloco_g$componentes)))
+  expect_equal(card$bloco_g$componentes$fundeb_por_aluno$teto, IVET_TETO_FUNDEB_POR_ALUNO)
+  expect_equal(card$bloco_g$componentes$despesa_educ_por_aluno$teto,
+               IVET_TETO_DESPESA_EDUC_POR_ALUNO)
+  expect_equal(card$bloco_g$componentes$autonomia_fiscal_pct$teto,
+               IVET_TETO_AUTONOMIA_FISCAL_PCT)
+})
+
 test_that("card: proveniência cobre as duas chaves e a vigência", {
   card <- ivet_card()
   expect_match(card$proveniencia$dataset_version, "lock")
