@@ -4,6 +4,61 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #137 fatia E/G: extração R dos blocos segurança e recursos (PR #272)
+
+- **PR #272 MERGEADO** (merge commit `2cb95c0`, branch
+  `feat/analytics-ivet-bloco-eg` removida): commit `c5109a8`
+  `feat(analytics): extrai blocos E e G do IVET`. Nota técnica **142**.
+- **Desenho alinhado com o developer** via pergunta antes do código (o alvo de
+  E/F/G **não** estava especificado nos docs, só a fonte): aprovado E+G, **F
+  adiado** (o `clean.mapbiomas_cobertura` é só proxy de cobertura do solo, não a
+  "exposição a risco" do §4.2 — depende de #241/#255).
+- **Bloco E — segurança** (`R/ivet-seguranca.R`): `clean.brazilcrime_municipio`
+  (município × ano). Componentes = taxa/100 mil de `homicidio_doloso` (teto 50),
+  `latrocinio` (5) e `lesao_corporal_seguida_de_morte` (5); `ivet_taxa_100k()`,
+  `ivet_componente_taxa()`, `ivet_componente_crime()`,
+  `ivet_bloco_seguranca[_componentes]()`.
+- **Bloco G — recursos** (`R/ivet-recursos.R`):
+  `analytics.esforco_fiscal_educacao`. `fundeb_por_aluno` (teto 10.000),
+  `despesa_educ_por_aluno` (15.000) e `autonomia_fiscal_pct` (50) **invertidos**
+  (`1 − clamp(x/teto)`); `ivet_componente_investimento()`,
+  `ivet_bloco_recursos[_componentes]()`. **`pct_receita_em_educ` excluído** —
+  **corrompido** na tabela (valores fora de `[0,100]`).
+- **#154 preservado**: célula suprimida (1..4 ocultada em `brazilcrime`) vira
+  `NA` e fica **fora do denominador**; `0` publicado é `0` real. `NULL` fiscal
+  (bloco G) também vira `NA`, nunca 0.
+- **Tetos = parâmetros de produto documentados** (como `IVET_TETO_RENDA`),
+  calibrados pelo p90 municipal medido no dev a 2026-10-17 (E: homicídio p90 ≈
+  46/100k; G: fundeb p90 ≈ 9.336, despesa p90 ≈ 14.521, autonomia p90 ≈ 30,9%).
+  Fórmula segue **`ivet-v1.2`** (slots dos blocos já existiam; agregado do IVET
+  permanece `NA` até C+D+E).
+- **Achado de dado**: **não existe população por ano** — a nota antiga
+  ("`clean.v_ibge_municipio_ano.populacao` 2014–2023") está **errada**: a coluna
+  está **100% `NULL`**. Denominador do bloco E = `clean.populacao_municipal`
+  (snapshot, 5.571 municípios), documentado; a série anual é pendência.
+- **Medições** (dev `database.edumaps`): taxa/100k média 2021–2023 em 5.570
+  municípios (4.523 com ≥1 ano suprimido) — homicídio p50 0 · p90 46,3 · p99
+  103,5 · máx 3.501,7; latrocínio p90 0 · máx 27,1; lesão seguida de morte p90 0
+  · máx 92,9. G — fundeb/aluno p50 5.651 · p90 9.336 · máx 16.370; despesa/aluno
+  p50 9.848 · p90 14.521; autonomia p50 13,2% · p90 30,9%.
+- **`pct_receita_em_educ` corrompido** (valores fora de `[0,100]`) — excluído do
+  bloco e registrado em `nao_usados` no card.
+- **Validação**: testes `ivet` **216 PASS** (R puro + contrato do card); suíte R
+  completa **1822 PASS**, com as **2 falhas pré-existentes** (`test-censo-dictionary`,
+  `test-cluster`, não relacionadas). Card contratual atualizado (`bloco_e`/
+  `bloco_g` + tetos + lista de validação).
+- **Deploy**: `rex prepare` + `rex -H analytic.edumaps deploy_analytics_dev`;
+  imagem local `analytic` reconstruída (`docker compose build analytic`) e
+  verificada (`exists("ivet_bloco_seguranca")`/`ivet_bloco_recursos`/`ivet_taxa_100k`
+  = TRUE dentro da imagem e no pacote deployado, versão 0.3.2).
+- **Docs**: `docs/analises/ivet.md` (§4.2 E/G implementados e F parcial; §4.5.1/
+  §4.5.2 novas; §4.7, §5, §6) e `docs/analises/fontes/seguranca.md` (nota da
+  extração do bloco E).
+- **Próximo**: extrair **D** (saúde) em PR à parte, sobre a fonte já sã
+  (acessibilidade CNES). **F** adiado. **C (mobilidade)** segue bloqueado (sem
+  isócrona). Backlog: #137 → #255 → #168 → **#138** → **#139** (#268 adiada).
+  **#137 segue aberta.**
+
 ## Sessão 2026-10-17 — #137 bloco D (saúde): fix do CNES na acessibilidade escolar (PR #271)
 
 - **PR #271 MERGEADO** (merge commit `bf0e4c4`, branch
