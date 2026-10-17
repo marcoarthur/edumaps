@@ -145,6 +145,14 @@ EduMaps já usa) e ao Censo (que dá o lado da demanda).
 > em % (ver `EduMaps::Ingestion::Job::SISAB`). Para cobertura de APS, usar
 > `(Σ ativas_ff + equipe_esf) ÷ população IBGE × 10.000` (o `iv_saude_cobertura_aps`
 > acima).
+>
+> **Uso no IVET — bloco D (2026-10-17).** A view `analytics.acessibilidade_saude`
+> é a **fonte do bloco D (saúde)** do IVET (`analysis/edumapsr/R/ivet-saude.R`,
+> `docs/analises/ivet.md` §4.5.3): `dist_min_km_ubs` (grão escola) e a razão de
+> equipes por 10 mil hab entram no default; `n_ubs_municipio` e
+> `efetividade_vagas_aps` ficam disponíveis **fora do default**; `cobertura_aps`
+> (população do PMMB) e `categoria_ivs` (vulnerabilidade social do MS) **não** são
+> usados.
 
 **Prioridade:** `[alta]` — 16 pontos
 

@@ -72,6 +72,24 @@ test_that("card: componentes do bloco E batem com o código (segurança)", {
                IVET_TETO_LESAO_CORPORAL_SEGUIDA_DE_MORTE)
 })
 
+test_that("card: componentes do bloco D batem com o código (saúde)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_saude_componentes()
+  expect_setequal(names(card$bloco_d$componentes), names(comps))
+  expect_equal(card$bloco_d$default, IVET_BLOCO_D_COMPONENTES)
+  expect_true(all(card$bloco_d$default %in% names(card$bloco_d$componentes)))
+  expect_equal(card$bloco_d$componentes$distancia_ubs$teto, IVET_TETO_DISTANCIA_UBS_KM)
+  expect_equal(card$bloco_d$componentes$cobertura_aps$teto,
+               IVET_TETO_COBERTURA_APS_POR_10K)
+  expect_equal(card$bloco_d$componentes$presenca_ubs$teto,
+               IVET_TETO_PRESENCA_UBS_POR_10K)
+  expect_equal(card$bloco_d$componentes$efetividade_vagas_aps$teto,
+               IVET_TETO_EFETIVIDADE_VAGAS_APS_PCT)
+  # presenca_ubs e efetividade ficam fora do default
+  expect_true(isTRUE(card$bloco_d$componentes$presenca_ubs$no_default))
+  expect_true(isTRUE(card$bloco_d$componentes$efetividade_vagas_aps$no_default))
+})
+
 test_that("card: componentes do bloco G batem com o código (recursos)", {
   card <- ivet_card()
   comps <- ivet_bloco_recursos_componentes()
