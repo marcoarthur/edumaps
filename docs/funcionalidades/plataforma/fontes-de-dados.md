@@ -129,6 +129,12 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   (fórmula, componentes, fontes, proveniência e critério de vigência), legível
   por máquina e conferida automaticamente contra a implementação — para a
   descrição não divergir do cálculo.
+- Sistema pode **reconciliar definições concorrentes de um índice**: quando há
+  mais de um sistema produzindo os mesmos atributos, adota um como **canônico** e
+  trata o outro como **refinamento opcional**, sem alterar os números que os
+  consumidores já exibem (ranking, similaridade). Cada componente do índice fica
+  com uma origem declarada e o resultado é invertido para a direção da
+  vulnerabilidade de forma auditável.
 - Sistema **só busca dados de origens autorizadas**: cada carga confere a
   origem contra uma lista de fontes aprovadas. As regras de proteção de dados
   pessoais, que vetam bases individualizadas, valem para todas as cargas.

@@ -47,6 +47,19 @@ test_that("card: subcomponentes de saneamento batem com o código", {
                   IVET_SANEAMENTO_COMPONENTES)
 })
 
+test_that("card: componentes do bloco A batem com o código (reconciliação B↔C)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_escola_componentes()
+  expect_setequal(names(card$bloco_a$componentes), names(comps))
+  expect_equal(card$bloco_a$default, IVET_BLOCO_A_COMPONENTES)
+  expect_true(all(card$bloco_a$default %in% names(card$bloco_a$componentes)))
+  # os componentes do sistema C estão marcados como fora do default
+  for (nm in IVET_ESCOLA_COMPONENTES_C) {
+    expect_true(isTRUE(card$bloco_a$componentes[[nm]]$no_default), info = nm)
+    expect_equal(card$bloco_a$componentes[[nm]]$sistema, "C", info = nm)
+  }
+})
+
 test_that("card: proveniência cobre as duas chaves e a vigência", {
   card <- ivet_card()
   expect_match(card$proveniencia$dataset_version, "lock")

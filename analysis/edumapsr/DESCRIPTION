@@ -95,5 +95,6 @@ Collate:
     'app-report.R'
     'ivet.R'
     'ivet-socioeconomico.R'
+    'ivet-escola.R'
     'ivet-card.R'
 Config/roxygen2/version: 8.0.0

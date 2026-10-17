@@ -223,7 +223,7 @@ bug do `iqd` é justamente uma contagem crua).
 
 | Bloco | Dimensões | Fonte | Status |
 |-------|-----------|-------|--------|
-| **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (reconciliar em um só) | **implementado** (dividido em 4 sistemas) |
+| **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (**reconciliados**: B canônico, C opcional — §4.4.1) | **implementado** (um só: B canônico) |
 | **B. Socioeconômico** | instrução + renda do responsável + saneamento do setor censitário | `censobr`/IBGE (#123, #238) | **implementado** (extração: arealização do setor, §4.5) |
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
 | **D. Saúde** | PeNSE (saúde escolar) | #127 | **pendente** (LGPD) |
@@ -256,6 +256,54 @@ Regra de peso (v1.2, explícita e auditável):
   `dataset_version` (pin da entrada `raw`) **e** o `transform_version` (pin do
   código `raw`→`clean`→`analytics`), ambos do lockfile de datasets
   ([#135](versionamento_datasets.md)) — ver §4.6.
+
+### 4.4.1 Bloco A — reconciliação B↔C (implementado)
+
+**Decisão (produto, 2026-10-17)**: o bloco **A (escola)** é lido do **sistema B
+canônico** (`clean.mv_escolas_scores`, §2.2/§3) e **invertido** para a direção do
+IVET (vulnerabilidade: maior = pior, §4.1):
+
+```
+componente = 1 − clamp(score / 10, 0, 1)
+```
+
+O **sistema C** (`EduMaps::Model::Indicator::School::*`, §2.3) é a **camada de
+análise** — legítima, mas **não** o índice canônico (§3). Na reconciliação, C
+entra apenas como **refinamento opcional** (`*_c`), **fora do default**, para o
+analista que precisar do grão que B agrega (`score_infraestrutura` junta
+infraestrutura, pedagógico, acessibilidade e tecnologia):
+
+| Componente | Fonte | Sistema | Papel |
+|------------|-------|---------|-------|
+| capacidade_atendimento | `score_capacidade_atendimento` | B | default |
+| infraestrutura | `score_infraestrutura` | B | default |
+| capacitacao_docente | `score_capacitacao_docente` | B | default |
+| diversidade_discente | `score_diversidade_discente` | B | default |
+| capacidade_gestora | `score_capacidade_gestora` | B | default |
+| sustentabilidade | `score_sustentabilidade` | B | default |
+| acessibilidade_c | `iai` | C | opcional |
+| tecnologia_c | `itd` | C | opcional |
+| oferta_c | `ioc` | C | opcional |
+| qualificacao_docente_c | `iqd` | C | opcional (clampado) |
+
+Mapeamento para as dimensões nomeadas no §4.2: *infraestrutura* → `score_infraestrutura`
+(+ `score_sustentabilidade`); *docentes* → `score_capacitacao_docente`; *gestão* →
+`score_capacidade_gestora`; **oferta** → `score_capacidade_atendimento` +
+`score_diversidade_discente`; as `acessibilidade` e **tecnologia** do §4.2 vivem
+**dentro** de `score_infraestrutura` (não separadas em B) — daí os opcionais
+`acessibilidade_c`/`tecnologia_c` do sistema C.
+
+- **Consumidores de B não mudam**: ranking, similaridade e cluster continuam
+  lendo `clean.mv_escolas_scores` **intacto**; a reconciliação vive só no IVET.
+- **`iqd`** viola `[0,1]` no sistema C (razão aluno/docente crua, §2.3); o
+  componente `qualificacao_docente_c` o **clampa** — a correção mora na camada
+  que o consome, sem tocar no indicador de origem.
+- **Vazio ≠ zero (#154)**: score `NA` (escola inativa/sem dado) vira componente
+  `NA` e fica fora do denominador; sem nenhum componente a dimensão A é `NA`.
+- **Código**: `analysis/edumapsr/R/ivet-escola.R` (`ivet_bloco_escola()`,
+  `ivet_bloco_escola_componentes()`, `ivet_componente_score()`,
+  `ivet_componente_indicador()`); testes em `tests/testthat/test-ivet-escola.R` e
+  contrato no card (`test-ivet-card.R`).
 
 ### 4.5 Bloco B — extração (arealização do setor censitário)
 
@@ -315,8 +363,8 @@ fora — #154): mede o domicílio, não o serviço isolado.
   é o que o Censo 2022 publica por setor — não a uma renda per capita.
 - **Direção**: `[0,1]`, maior = mais vulnerável (coerente com o nome do índice e
   o §1). Consequência para a reconciliação: o bloco **A** (scores 0–10 do sistema
-  B, onde maior = melhor) precisa ser **invertido** para a mesma direção — é o
-  follow-up da reconciliação B↔C (§6).
+  B, onde maior = melhor) é **invertido** para a mesma direção — implementado em
+  §4.4.1.
 - **#154**: componente ausente entra como `NA` (fora do denominador), **nunca**
   como 0; sem nenhum componente a dimensão é `NA`. Por isso o bloco B usa
   `ivet_agregar()` e **não** `ivet_dimensao()` (§4.1, cujo `NA→0` vale para o
@@ -424,9 +472,9 @@ fórmula em R puro (`ivet_bloco_socioeconomico()` /
 `ivet_bloco_socioeconomico_componentes()`, `analysis/edumapsr/R/ivet-socioeconomico.R`).
 Cobertura: `backend/t/05-tasks/setores_censo_loader.t`,
 `backend/t/escola_entorno_socioeconomico.t` e
-`tests/testthat/test-ivet-socioeconomico.R`. **Falta** a reconciliação *de
-fórmula* B↔C (decisão de produto — §6) e a extração de C–G. O versionamento do
-passo `raw`→`clean`→`analytics` está feito (§4.6,
+`tests/testthat/test-ivet-socioeconomico.R`. A reconciliação *de fórmula* B↔C foi
+**implementada** (§4.4.1); **falta** a extração de C–G (blocos territoriais). O
+versionamento do passo `raw`→`clean`→`analytics` está feito (§4.6,
 [`versionamento_datasets.md`](versionamento_datasets.md)).
 
 ---
@@ -437,7 +485,7 @@ passo `raw`→`clean`→`analytics` está feito (§4.6,
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + extração do bloco B (§4.5) + pin `raw`→`analytics` (§4.6)** | falta reconciliação B↔C e extração C–G |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração do bloco B (§4.5) + pin `raw`→`analytics` (§4.6)** | falta a extração de C–G; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2) |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 
@@ -455,10 +503,14 @@ Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
   *uma* definição canônica (§3) em vez de quatro concorrentes (§2).
 - **`with_vulnerability_score` continua `die`** (não implementar antes do IVET
   v1.2 ter as dimensões C–E).
+- **`with_vulnerability_score` continua `die`** (não implementar antes do IVET
+  v1.2 ter as dimensões C–E).
+- **Reconciliação *de fórmula* B↔C — implementada** no IVET (§4.4.1): B é a
+  fonte do bloco A; C é refinamento opcional. Os consumidores de B (ranking,
+  similaridade, cluster) **não** foram alterados.
 - **Follow-ups** (não neste ciclo): remoção definitiva do código morto A/D;
-  reconciliação *de fórmula* entre B e C — é decisão de produto (muda
-  similaridade/ranking) e conflita com o alvo `ivet-v1.2`; alinhar o *fallback*
-  em memória de `Profile` (sistema C) ao espaço canônico de B.
+  alinhar o *fallback* em memória de `Profile` (sistema C) ao espaço canônico de
+  B; ponderação registrada (sobe para `ivet-v1.3`).
 
 
 ---
