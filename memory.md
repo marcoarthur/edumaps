@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #137 bloco D (saúde): fix do CNES na acessibilidade escolar (PR #271)
+
+- **PR #271 MERGEADO** (merge commit `bf0e4c4`, branch
+  `fix/data_pipeline-ubs-cnes` removida): commit `17cf311`
+  `fix(data_pipeline): corrige UBS e distância da acessibilidade saúde`.
+  Nota técnica **141**.
+- **Três defeitos medidos** em `analytics.acessibilidade_saude` (view do bloco D,
+  `#137`), 2026-10-17:
+  1. **filtro CNES** `codigo_tipo_unidade IN (11, 12)` — códigos que **não
+     existem** no dicionário oficial (`/cnes/tipounidades`); a atenção básica é
+     `1` (Posto de Saúde) e `2` (Centro de Saúde/UBS). Com o filtro errado,
+     `dist_min_km_ubs` saía NULL em **100%** das 145.734 escolas e todas eram
+     "Sem UBS no município";
+  2. **distância em graus** — `ST_Distance` sobre SRID 4674 devolve graus, não
+     metros; trocado por `ST_DistanceSphere` (esférica, metros);
+  3. **zero real virava NULL** — município sem UBS passa a `0` (`COALESCE`), não
+     `NULL` (#154).
+- **Change nova** `analytics_acessibilidade_saude_ubs` (deploy/revert/verify);
+  como a view é **materializada** (#158), reconstrói a MV
+  `analytics.mv_acessibilidade_saude` e a fachada (padrão da
+  `analytics_views_materializadas`, via `pg_get_viewdef`). Nunca editar change
+  deployada (regra do `change_id`).
+- **Evidência** (dev `database.edumaps`): escolas com distância 0 → **145.723**
+  (p50 0,54 km · p90 7,25 km); `n_ubs_municipio` NULL 100% → **0**; classificação
+  antes 100% "Sem UBS" → depois excelente 102.972 · bom 17.454 · regular 5.797 ·
+  difícil 19.500 · sem UBS 11.
+- **Validação**: `sqitch` local (deploy+verify+revert, imagem `sqitch`
+  reconstruída); **gate de CI** `db/fixtures/ci_db.sh up && verify` num banco novo
+  (plano completo, tudo `ok`); deploy em `database.edumaps` via
+  `rex prepare` + `deploy_db_dev`.
+- **Docs**: `docs/analises/fontes/saude.md` (nota da correção + aviso de que
+  `cobertura_aps` é a **população** coberta do PMMB, não cobertura APS).
+- **Fonte D (IVET)** — de facto será a acessibilidade CNES, já que a fonte
+  documentada (PeNSE, #127) **não está carregada**. Ainda sem extração R (PR de D
+  vem depois).
+- **Próximo**: extrações **E+G+F** num PR único (segurança, recursos, meio
+  ambiente); depois **D**. Backlog: #137 → #255 → #168 → **#138** → **#139**
+  (#268 adiada). **#137 segue aberta.**
+
 ## Sessão 2026-10-17 — #137 fatia B/C (parte 1): reconciliação B↔C no bloco A do IVET (PR #270)
 
 - **PR #270 MERGEADO** (merge commit `c328423`, branch
