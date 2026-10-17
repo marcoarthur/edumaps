@@ -58,8 +58,11 @@
 - **Pendência**: o **conteúdo de renda no produto** exige re-executar o loader
   (tema renda) e re-materializar o entorno (`refresh_entorno_socioeconomico` /
   `clean.refresh_escola_entorno_socioeconomico`, ~2 h+ país) — não rodado neste
-  ciclo (foi código + deploy). Até lá, `renda_resp_media` fica `NULL` no produto
-  e o bloco B segue com instrução+saneamento (renda fora, pois `NA`).
+  ciclo (foi código + deploy). **Issue #268** aberta para isso. Medido no produto
+  (2026-10-17): `entorno` = 470.448 linhas mas **0 em `ivet-v1.2`**;
+  `censo2022_setor.rend_media` = **0** linhas. Até lá, `renda_resp_media` fica
+  `NULL` no produto e o bloco B segue com instrução+saneamento (renda fora, pois
+  `NA`).
 
 ## Sessão 2026-10-16 — #264/#137: materializar o bloco B (task de refresh do entorno) + influência global
 
