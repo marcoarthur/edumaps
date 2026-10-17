@@ -226,7 +226,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (**reconciliados**: B canônico, C opcional — §4.4.1) | **implementado** (um só: B canônico) |
 | **B. Socioeconômico** | instrução + renda do responsável + saneamento do setor censitário | `censobr`/IBGE (#123, #238) | **implementado** (extração: arealização do setor, §4.5) |
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
-| **D. Saúde** | PeNSE (saúde escolar) | #127 | **pendente** (LGPD) |
+| **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
 | **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241 | parcial (proxy de cobertura do solo — pendente) |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
@@ -456,6 +456,55 @@ bloco B):
   `ivet_componente_investimento()`; testes em `tests/testthat/test-ivet-recursos.R`
   e contrato no card.
 
+### 4.5.3 Bloco D — extração (saúde)
+
+O bloco **D** é lido de `analytics.acessibilidade_saude` (CNES + SISAB/PMMB; ver
+[`fontes/saude.md`](fontes/saude.md) e a change `analytics_acessibilidade_saude_ubs`,
+que corrigiu o filtro de tipos do CNES e a distância em graus). A view tem **uma
+linha por escola**, mas o bloco **mistura dois grãos**: `dist_min_km_ubs` é da
+escola; `n_ubs_municipio`, `ativas_ff`, `equipe_esf` e `efetividade_vagas_aps`
+são do município (junção por `codigo_ibge`).
+
+A **distância** mede "mais = pior" (pior acesso espacial) e entra **direta**; a
+**provisão** de atenção básica mede "mais = melhor" e é **invertida** (como a
+renda do bloco B e o bloco G):
+
+| componente | bruto (tabela) | normalização | direção |
+|---|---|---|---|
+| distância à UBS | `dist_min_km_ubs` (km) | `clamp(dist/5)` | mais longe = + |
+| cobertura de APS | `(equipe_esf + ativas_ff) / população × 1e4` | `1 − clamp(x/8)` | menos equipes = + |
+
+- O default é `componentes = c("distancia_ubs", "cobertura_aps")`.
+- **`cobertura_aps` da tabela NÃO é usada**: apesar do nome, a coluna carrega a
+  **população** coberta do PMMB (pessoas), que pode passar de 100% da população
+  (máx medido ≈ 25.421/10 mil). A cobertura usada é a razão de **equipes por 10
+  mil habitantes** (`iv_saude_cobertura_aps` da ficha de saúde:
+  `(Σ ativas_ff + equipe_esf) ÷ população × 10.000`).
+- **Fora do default**: `presenca_ubs` (UBS por 10 mil hab; correlaciona 0,78 com
+  `cobertura_aps` — duplicaria o sinal) e `efetividade_vagas_aps` (ocupação das
+  vagas do PMMB; p50 = 98,8% — quase saturada). **`categoria_ivs` não entra**: é
+  uma categoria de vulnerabilidade **social** do MS, que duplicaria o bloco B.
+- **Tetos** (`IVET_TETO_DISTANCIA_UBS_KM` = 5, `IVET_TETO_COBERTURA_APS_POR_10K`
+  = 8, `IVET_TETO_PRESENCA_UBS_POR_10K` = 8,
+  `IVET_TETO_EFETIVIDADE_VAGAS_APS_PCT` = 100) calibrados no dev a 2026-10-17
+  (distância p90 = 7,25 km, com 5 km sendo o limiar "acesso difícil (>5 km)" da
+  própria view; equipes/10 mil p90 ≈ 8,4; UBS/10 mil p90 ≈ 8,4) e são parâmetros
+  de produto.
+- **Denominador populacional**: `clean.populacao_municipal` (snapshot), o mesmo do
+  bloco E (a população por ano não existe no banco — §4.5.1).
+- **#154 (ausência ≠ 0)**: `dist_min_km_ubs` `NULL` vira componente `NA`, fora do
+  denominador; `n_ubs_municipio = 0` é **zero real** (município sem UBS) e vira
+  componente `1` (vulnerabilidade máxima).
+- **Código**: `ivet_bloco_saude()`, `ivet_bloco_saude_componentes()`,
+  `ivet_taxa_10k()`, `ivet_componente_distancia()`,
+  `ivet_componente_cobertura_aps()`, `ivet_componente_presenca_ubs()`,
+  `ivet_componente_efetividade_aps()`; testes em `tests/testthat/test-ivet-saude.R`
+  e contrato no card.
+
+⚠️ **O agregado continua `NA`.** Os blocos territoriais mínimos são **C+D+E**;
+com **C (mobilidade)** ainda bloqueado (sem isócrona — §4.2), D fecha a extração
+mas não torna o índice publicável.
+
 ### 4.6 Vigência e retreino
 
 Um número do IVET só vale como retrato do **presente** enquanto o dado de
@@ -543,12 +592,12 @@ Cobertura: `backend/t/05-tasks/setores_censo_loader.t`,
 `tests/testthat/test-ivet-socioeconomico.R`. A reconciliação *de fórmula* B↔C foi
 **implementada** (§4.4.1).
 
-**Blocos E e G — extração pronta (entregável 3).** O mapeamento R puro dos
-blocos territoriais **E (segurança)** e **G (recursos)** está em
-`analysis/edumapsr/R/ivet-seguranca.R` e `R/ivet-recursos.R` (§4.5.1/§4.5.2),
-com testes em `tests/testthat/test-ivet-seguranca.R` e `test-ivet-recursos.R` e
-contrato no card. **Faltam** as extrações de **C** (mobilidade — bloqueado, sem
-isócrona), **D** (saúde — depende do fix da view de saúde) e **F** (meio
+**Blocos D, E e G — extração pronta (entregável 3).** O mapeamento R puro dos
+blocos territoriais **D (saúde)**, **E (segurança)** e **G (recursos)** está em
+`analysis/edumapsr/R/ivet-saude.R`, `R/ivet-seguranca.R` e `R/ivet-recursos.R`
+(§4.5.3/§4.5.1/§4.5.2), com testes em `tests/testthat/test-ivet-saude.R`,
+`test-ivet-seguranca.R` e `test-ivet-recursos.R` e contrato no card. **Faltam**
+as extrações de **C** (mobilidade — bloqueado, sem isócrona) e **F** (meio
 ambiente — só há proxy de cobertura do solo; a exposição a risco do §4.2 depende
 de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feito
 (§4.6, [`versionamento_datasets.md`](versionamento_datasets.md)).
@@ -561,7 +610,7 @@ de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feit
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C, D e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **D** depende do fix da view de saúde |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **F** só tem proxy de cobertura do solo (#255) |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 
