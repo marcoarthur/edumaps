@@ -12,16 +12,20 @@ use Getopt::Long qw(GetOptions);
 # ============================================================================
 # bin/datasets_lock.pl — manifesto de hashes dos datasets (#135)
 #
-# Fixa (pin) o conjunto de dados do pipeline num lockfile versionado no git,
-# a partir de clean.import_metadata.raw_manifest (sha256 por arquivo bruto,
-# gravado pelo job de ingestão desde o #231).
+# Fixa (pin) o pipeline em duas pontas, num lockfile versionado no git:
+#   - a ENTRADA `raw`, de clean.import_metadata.raw_manifest (sha256 por arquivo
+#     bruto, gravado pelo job de ingestão desde o #231) -> dataset_version;
+#   - a TRANSFORMAÇÃO (`raw`→`clean`→`analytics`) que o IVET (#137) consome:
+#     sha256 da definição do objeto que materializa cada camada derivada, mais
+#     o row_count observado. -> transform_version
 #
 # Uso:
-#   perl bin/datasets_lock.pl --write            # (re)gera o lockfile
-#   perl bin/datasets_lock.pl --write --out F    # grava em outro caminho
-#   perl bin/datasets_lock.pl --verify           # falha (exit 1) se houver deriva
-#   perl bin/datasets_lock.pl --check-files      # re-hash dos blobs em disco
-#   perl bin/datasets_lock.pl --print-version    # só a chave de conteúdo
+#   perl bin/datasets_lock.pl --write                    # (re)gera o lockfile
+#   perl bin/datasets_lock.pl --write --out F            # grava em outro caminho
+#   perl bin/datasets_lock.pl --verify                   # falha (exit 1) se houver deriva
+#   perl bin/datasets_lock.pl --check-files              # re-hash dos blobs em disco
+#   perl bin/datasets_lock.pl --print-version            # só dataset_version
+#   perl bin/datasets_lock.pl --print-transform-version  # só transform_version
 #
 # Saída:
 #   data_pipeline/datasets.lock.json  (default; versionado no git)
@@ -37,19 +41,20 @@ my $DEFAULT_LOCK = "$FindBin::Bin/../../data_pipeline/datasets.lock.json";
 
 my %opt = (lock => $DEFAULT_LOCK);
 GetOptions(
-  'write'         => \$opt{write},
-  'verify'        => \$opt{verify},
-  'check-files'   => \$opt{check_files},
-  'print-version' => \$opt{print_version},
-  'out=s'         => \$opt{out},
-  'lock=s'        => \$opt{lock},
-) or die "uso: $0 [--write | --verify | --print-version] [--check-files] [--out F | --lock F]\n";
+  'write'                   => \$opt{write},
+  'verify'                  => \$opt{verify},
+  'check-files'             => \$opt{check_files},
+  'print-version'           => \$opt{print_version},
+  'print-transform-version' => \$opt{print_transform_version},
+  'out=s'                   => \$opt{out},
+  'lock=s'                  => \$opt{lock},
+) or die "uso: $0 [--write | --verify | --print-version | --print-transform-version] [--check-files] [--out F | --lock F]\n";
 
 $opt{out} = $opt{lock} if $opt{write} && !defined $opt{out};
 
-my @acoes = grep { $opt{$_} } qw(write verify print_version);
-die "escolha no máximo uma ação entre --write/--verify/--print-version\n" if @acoes > 1;
-die "informe uma ação (--write/--verify/--print-version/--check-files)\n"
+my @acoes = grep { $opt{$_} } qw(write verify print_version print_transform_version);
+die "escolha no máximo uma ação entre --write/--verify/--print-version/--print-transform-version\n" if @acoes > 1;
+die "informe uma ação (--write/--verify/--print-version/--print-transform-version/--check-files)\n"
   unless @acoes || $opt{check_files};
 
 binmode STDOUT, ':encoding(UTF-8)';
@@ -75,6 +80,9 @@ if (@acoes) {
   if ($opt{print_version}) {
     print $lockm->dataset_version($lock), "\n";
   }
+  elsif ($opt{print_transform_version}) {
+    print $lockm->transform_version($lock), "\n";
+  }
   elsif ($opt{write}) {
     my $doc = $lockm->document($lock);
     open my $fh, '>:encoding(UTF-8)', $opt{out} or die "não abri $opt{out}: $!\n";
@@ -82,9 +90,13 @@ if (@acoes) {
     close $fh;
     my $n       = scalar @{ $doc->{tables} };
     my $com_raw = scalar grep { @{ $_->{raw} } } @{ $doc->{tables} };
+    my $nt      = scalar @{ $doc->{transformations} };
+    my $com_def = scalar grep { defined $_->{def_sha256} } @{ $doc->{transformations} };
     print "datasets.lock.json escrito em $opt{out}\n";
     print "  tabelas: $n ($com_raw com hashes raw)\n";
+    print "  transformações: $nt ($com_def com definição resolvida)\n";
     print "  dataset_version: $doc->{dataset_version}\n";
+    print "  transform_version: $doc->{transform_version}\n";
   }
   elsif ($opt{verify}) {
     die "lockfile não encontrado: $opt{lock} (rode --write)\n" unless -f $opt{lock};
@@ -93,13 +105,17 @@ if (@acoes) {
     my @drift       = @{ $lockm->diff($doc, $lock) };
     my $dv_esperado = $doc->{dataset_version} // '(sem dataset_version)';
     my $dv_atual    = $lockm->dataset_version($lock);
+    my $tv_esperado = $doc->{transform_version} // '(sem transform_version)';
+    my $tv_atual    = $lockm->transform_version($lock);
 
-    if (!@drift && $dv_esperado eq $dv_atual) {
-      print "datasets.lock.json OK — sem deriva (dataset_version $dv_atual)\n";
+    if (!@drift && $dv_esperado eq $dv_atual && $tv_esperado eq $tv_atual) {
+      print "datasets.lock.json OK — sem deriva "
+          . "(dataset_version $dv_atual; transform_version $tv_atual)\n";
     }
     else {
       print "DERIVA detectada entre o lockfile e a base:\n";
-      print "  dataset_version lock=$dv_esperado base=$dv_atual\n" if $dv_esperado ne $dv_atual;
+      print "  dataset_version lock=$dv_esperado base=$dv_atual\n"     if $dv_esperado ne $dv_atual;
+      print "  transform_version lock=$tv_esperado base=$tv_atual\n"   if $tv_esperado ne $tv_atual;
       print "  $_\n" for @drift;
       $exit = 1;
     }

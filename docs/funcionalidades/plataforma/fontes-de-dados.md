@@ -115,10 +115,20 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode **guardar o arquivo bruto de cada carga**, fora do banco e com
   um manifesto de integridade (origem, tamanho, assinatura, data). Assim, uma
   restauração do banco não apaga dados que não podem ser baixados de novo.
-- Sistema pode **fixar a versão exata dos dados**: um manifesto de hashes
-  versionado no repositório identifica a versão de cada base carregada, e uma
-  verificação automática acusa quando o dado carregado diverge do manifesto —
-  respondendo "de qual versão dos dados veio este número?".
+- Sistema pode **fixar a versão exata dos dados e do cálculo**: um manifesto de
+  hashes versionado no repositório identifica a versão de cada base de entrada
+  **e** a definição dos passos que a transformam em indicador; uma verificação
+  automática acusa quando o dado carregado ou o cálculo diverge do manifesto —
+  respondendo "de qual versão dos dados veio este número?" e "o cálculo que o
+  gerou ainda é o vigente?".
+- Sistema pode **dizer se um indicador publicado continua vigente**: comparando
+  o resultado com o manifesto corrente, sinaliza quando o dado de entrada, o
+  cálculo ou a fórmula mudaram e o número precisa ser recalculado antes de ser
+  lido como retrato do presente.
+- Sistema pode **publicar a ficha de um índice** junto do próprio código
+  (fórmula, componentes, fontes, proveniência e critério de vigência), legível
+  por máquina e conferida automaticamente contra a implementação — para a
+  descrição não divergir do cálculo.
 - Sistema **só busca dados de origens autorizadas**: cada carga confere a
   origem contra uma lista de fontes aprovadas. As regras de proteção de dados
   pessoais, que vetam bases individualizadas, valem para todas as cargas.

@@ -1,5 +1,5 @@
 {
-   "dataset_version" : "122b32dd6e505ec9ea228d13cd4e874e678ce4ec590bb311f3c7f32d3ed610f7",
+   "dataset_version" : "a33c32ab9a1f0156639ead02e215c4a02276990cec5daadeabc59fd3c5d1375d",
    "tables" : [
       {
          "raw" : [],
@@ -66,9 +66,19 @@
       {
          "raw" : [
             {
+               "bytes" : 142133036,
+               "sha256" : "3b2de94e0099d9b6aa32bf967b1e96321a0f6ee7df674bbac984c3b751c8a17b",
+               "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_alfabetizacao_BR.zip"
+            },
+            {
                "bytes" : 15418417,
                "sha256" : "ec04624286233d699ebe69c7b9625744a1cfdfc8352126f30245bdef5e9bdc63",
                "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_basico_BR_20260520.zip"
+            },
+            {
+               "bytes" : 83971374,
+               "sha256" : "513f8a0d9c84b1325487f651f6d5d90bbc6f5ad7af60460b53598555ac008759",
+               "url" : "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_caracteristicas_domicilio2_BR_20250417.zip"
             },
             {
                "bytes" : 43838759,
@@ -488,6 +498,30 @@
          "table_name" : "clean.transferencia_educ"
       }
    ],
-   "version" : 1
+   "transform_version" : "4b66f4c2b6c8d503ac8f023d6e1b530ee9c0feb8ad4ccabe0178c92efa9c8198",
+   "transformations" : [
+      {
+         "def_sha256" : "fedbbcaf9a2832ea2112cfefa951902e67d3ff23fa29d7dbcdb9dadf48cc1320",
+         "kind" : "function",
+         "method" : "clean.refresh_escola_entorno_socioeconomico",
+         "row_count" : 470448,
+         "table_name" : "clean.escola_entorno_socioeconomico"
+      },
+      {
+         "def_sha256" : "de00dbd79bfdaebca54be6cb94b4aa171080baf5bee1e3b21ca8f7dc8d652ed7",
+         "kind" : "function",
+         "method" : "clean.refresh_escola_influencia",
+         "row_count" : 470448,
+         "table_name" : "clean.escola_influencia"
+      },
+      {
+         "def_sha256" : "4075d9d6d858228c447d64451e8a786a52121e28dcaf715cbf2c6ff199a9fa6c",
+         "kind" : "matview",
+         "method" : "clean.mv_escolas_scores",
+         "row_count" : 180540,
+         "table_name" : "clean.mv_escolas_scores"
+      }
+   ],
+   "version" : 2
 }
 

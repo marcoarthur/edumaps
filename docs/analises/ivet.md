@@ -1,7 +1,8 @@
 # IVET — fórmula, coeficientes e decisão de leitura
 
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
-> 2 (decisão de leitura) e 3 (núcleo reprodutível da fórmula, `R/ivet.R`).
+> 2 (decisão de leitura), 3 (núcleo reprodutível + extração do bloco B),
+> 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
 > **Versão da fórmula**: `ivet-v1.2` (histórico: `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-10-17.
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
@@ -230,7 +231,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241 | parcial |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | parcial |
 
-### 4.3 Pesos — regra de vigência
+### 4.3 Pesos e critério de publicação
 
 Enquanto as dimensões territoriais (C–E) não tiverem dado, **o IVET v1.2 não é
 publicado como número**: publica-se apenas o bloco **A (escola)** com a
@@ -251,9 +252,10 @@ Regra de peso (v1.2, explícita e auditável):
   reproduzível, em vez de quatro (§2).
 - A leitura **territorial** (§1) torna o agregado um índice de *território com
   escola observada*, e não uma média de atributos do prédio.
-- O número publicado fica **rastreável**: `ivet-v1.2` + versão do dataset de
-  entrada (a chave de conteúdo do [#135](versionamento_datasets.md) já fixa a
-  ponta `raw`; falta versionar o passo `raw`→`clean`→`analytics`).
+- O número publicado fica **rastreável ponta a ponta**: carimba `ivet-v1.2`, o
+  `dataset_version` (pin da entrada `raw`) **e** o `transform_version` (pin do
+  código `raw`→`clean`→`analytics`), ambos do lockfile de datasets
+  ([#135](versionamento_datasets.md)) — ver §4.6.
 
 ### 4.5 Bloco B — extração (arealização do setor censitário)
 
@@ -338,6 +340,44 @@ fora — #154): mede o domicílio, não o serviço isolado.
   interseção); a dimensão B usa `renda_resp_media`.
 
 
+### 4.6 Vigência e retreino
+
+Um número do IVET só vale como retrato do **presente** enquanto o dado de
+entrada, o código da transformação e a fórmula não mudarem. A vigência compara o
+resultado com o lockfile de datasets
+([`versionamento_datasets.md`](versionamento_datasets.md)):
+
+| Chave | Pina | Responde |
+|-------|------|----------|
+| `formula` | `ivet_versao()` | "a regra de cálculo mudou?" |
+| `dataset_version` | a entrada `raw` (#135) | "os dados de origem mudaram?" |
+| `transform_version` | o código `raw`→`clean`→`analytics` que o IVET lê | "o cálculo intermediário mudou?" |
+
+- **`ivet_v1()`** carimba as três chaves (lê `dataset_version`/`transform_version`
+  do lockfile quando recebe `lock_path`).
+- **`ivet_vigencia(resultado, lock_path)`** devolve `vigente` (as três chaves do
+  resultado conferem com o lockfile corrente) e `motivos` da não-vigência.
+- **Gatilho de retreino**: `!vigente` ⇒ o número precisa ser **recalculado** antes
+  de ser lido como retrato do presente. Operacionalmente: rode
+  `bin/datasets_lock.pl --write` depois de uma carga e `--verify` contra a base
+  (ver [`versionamento_datasets.md`](versionamento_datasets.md)); se o lockfile
+  derivou, o número antigo deixou de valer.
+
+O pin da transformação é o `sha256` da **definição** do objeto que materializa
+cada camada derivada (função `refresh_*` ou matview) — muda o código, muda a
+chave; os dados derivados não são hasheados linha a linha.
+
+### 4.7 Card do índice
+
+A ficha do índice vive **no mesmo lugar do código**, não num slide: o artefato
+legível por máquina `analysis/edumapsr/inst/ivet-card.yml`, exposto por
+`ivet_card()`. Ele declara fórmula, leitura, blocos, componentes do bloco B,
+teto de renda, proveniência e vigência — e é **contratual**:
+`tests/testthat/test-ivet-card.R` falha se o card divergir de `ivet_versao()`,
+`ivet_blocos()`, `ivet_bloco_socioeconomico_componentes()` ou `IVET_TETO_RENDA`.
+Card e código não podem se separar.
+
+
 ---
 
 ## 5. Reprodutibilidade
@@ -362,12 +402,16 @@ bloco A enquanto C–E forem `NULL`.
   denominador;
 - `ivet_v1()` — fórmula completa: publica o agregado **só** quando as dimensões
   territoriais mínimas (C–E) existem, senão `NA` + bloco escola;
-- `ivet_dataset_version()` — lê a chave de conteúdo do
+- `ivet_dataset_version()` / `ivet_transform_version()` — leem as chaves de
+  conteúdo (entrada `raw` e transformação) do
   [`datasets.lock.json`](versionamento_datasets.md) (#135) para carimbar a
-  proveniência.
+  proveniência;
+- `ivet_vigencia()` — compara um resultado com o lockfile corrente (§4.6);
+- `ivet_card()` — lê a ficha do índice (`inst/ivet-card.yml`, §4.7).
 
 É a metade *determinística* do entregável: mesma entrada → mesma saída, sem
-banco, coberta por `tests/testthat/test-ivet.R`.
+banco, coberta por `tests/testthat/test-ivet.R` e
+`tests/testthat/test-ivet-card.R`.
 
 **Bloco B — extração pronta (entregável 3, parte de extração).** A extração dos
 componentes socioeconômicos existe nas três camadas descritas em §4.5: a
@@ -380,9 +424,10 @@ fórmula em R puro (`ivet_bloco_socioeconomico()` /
 `ivet_bloco_socioeconomico_componentes()`, `analysis/edumapsr/R/ivet-socioeconomico.R`).
 Cobertura: `backend/t/05-tasks/setores_censo_loader.t`,
 `backend/t/escola_entorno_socioeconomico.t` e
-`tests/testthat/test-ivet-socioeconomico.R`. **Falta** a reconciliação *de fórmula*
-B↔C (decisão de produto — §6), a extração de C–G e o versionamento do passo
-`raw`→`clean`→`analytics`.
+`tests/testthat/test-ivet-socioeconomico.R`. **Falta** a reconciliação *de
+fórmula* B↔C (decisão de produto — §6) e a extração de C–G. O versionamento do
+passo `raw`→`clean`→`analytics` está feito (§4.6,
+[`versionamento_datasets.md`](versionamento_datasets.md)).
 
 ---
 
@@ -392,9 +437,9 @@ B↔C (decisão de produto — §6), a extração de C–G e o versionamento do 
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo pronto** (`R/ivet.R`) + **extração do bloco B** (§4.5) | falta reconciliação B↔C, extração C–G e versionar `raw`→`clean`→`analytics` |
-| 4. Critério de vigência e retreino | pendente | 3 |
-| 5. Card do modelo (features, importance, métrica, data) | pendente | 3 |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + extração do bloco B (§4.5) + pin `raw`→`analytics` (§4.6)** | falta reconciliação B↔C e extração C–G |
+| 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
+| 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 
 > **Gate dos blocos territoriais (B–F) e da #255 — resolvido**: a **metodologia
 > da área de influência da escola** (buffer × setor × isócrona) foi **decidida**

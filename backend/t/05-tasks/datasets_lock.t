@@ -116,22 +116,138 @@ my $drift_nova = $m->build_lock([ @rows,
 like join("\n", @{ $m->diff($doc, $drift_nova) }), qr/nova na base/,
   'diff acusa tabela nova na base';
 
-# --- from_db: decodifica raw_manifest (texto JSON e arrayref) ----------
+# --- build_transformations: pin da transformação (raw->clean->analytics) ---
+my @steps = (
+  {
+    table_name => 'clean.mv_escolas_scores',
+    method     => 'clean.mv_escolas_scores',
+    kind       => 'matview',
+    row_count  => 214192,
+    def        => 'SELECT * FROM scores',
+  },
+  {
+    table_name => 'clean.escola_influencia',
+    method     => 'clean.refresh_escola_influencia',
+    kind       => 'function',
+    row_count  => 156816,
+    def        => 'CREATE FUNCTION clean.refresh_escola_influencia(...) ...',
+  },
+);
+
+my $tr = $m->build_transformations([ reverse @steps ]);
+is_deeply [ map { $_->{table_name} } @$tr ],
+  ['clean.escola_influencia', 'clean.mv_escolas_scores'], 'transformações ordenadas por table_name';
+is scalar @$tr, 2, 'build_transformations emite uma entrada por etapa';
+my ($tr_ent) = grep { $_->{table_name} eq 'clean.escola_influencia' } @$tr;
+ok defined $tr_ent->{def_sha256}, 'definição presente -> def_sha256 calculado';
+is $tr_ent->{row_count}, 156816, 'row_count preservado';
+is $tr_ent->{kind}, 'function', 'kind preservado';
+
+my $tr_estavel = $m->build_transformations([ { %{ $steps[1] }, def => 'MESMA' } ]);
+is $m->build_transformations([ { %{ $steps[1] }, def => 'MESMA' } ])->[0]{def_sha256},
+   $tr_estavel->[0]{def_sha256}, 'mesma definição -> mesmo def_sha256';
+isnt $m->build_transformations([ { %{ $steps[1] }, def => 'OUTRA' } ])->[0]{def_sha256},
+   $tr_estavel->[0]{def_sha256}, 'definição diferente -> def_sha256 diferente';
+
+my $tr_ausente = $m->build_transformations([ { %{ $steps[1] }, def => undef } ]);
+ok !defined $tr_ausente->[0]{def_sha256}, 'definição ausente -> def_sha256 undef';
+is $tr_ausente->[0]{row_count}, 156816, 'row_count preservado mesmo sem definição';
+
+# O catálogo do Postgres pode devolver a definição com a flag utf8 ligada
+# ("wide"); o hash precisa ser dos BYTES UTF-8 (não rebenta no Digest::SHA).
+my $wide = "CREATE FUNCTION clean.refresh caf\x{e9}";
+utf8::upgrade($wide);
+my $tr_wide = $m->build_transformations([ { table_name => 'clean.wide', method => 'f', kind => 'function', def => $wide } ]);
+ok defined $tr_wide->[0]{def_sha256}, 'definição wide (utf8) é hasheada como bytes UTF-8';
+
+# --- transform_version: estável à ordem, sensível ao conteúdo ----------
+my $lock_t = $m->build_lock([]);
+$lock_t->{transformations} = $m->build_transformations(\@steps);
+my $tv = $m->transform_version($lock_t);
+is $m->transform_version({ version => $lock_t->{version}, transformations => $m->build_transformations([ reverse @steps ]) }), $tv,
+  'transform_version não muda com a ordem de entrada';
+isnt $m->transform_version({ version => $lock_t->{version}, transformations => $m->build_transformations([ { %{ $steps[0] }, def => 'OUTRO' }, $steps[1] ]) }), $tv,
+  'definição diferente -> transform_version diferente';
+
+# dataset_version ignora as transformações (chaves independentes)
+is $m->dataset_version($lock_t), $m->dataset_version($m->build_lock([])),
+  'dataset_version não muda com as transformações';
+
+# --- document: embute as duas chaves ----------------------------------
+my $doc_t = $m->document($lock_t);
+is $doc_t->{transform_version}, $tv, 'document() embute transform_version';
+is $m->document_transform_version($doc_t), $tv, 'document_transform_version() recalcula a chave';
+
+# --- diff: deriva na transformação ------------------------------------
+is_deeply $m->diff($doc_t, $lock_t), [], 'sem deriva (com transformações) -> diff vazio';
+
+my $drift_def = { %$lock_t, transformations => $m->build_transformations([ { %{ $steps[0] }, def => 'MUDOU' }, $steps[1] ]) };
+like join("\n", @{ $m->diff($doc_t, $drift_def) }), qr/definição da transformação mudou/,
+  'diff acusa definição da transformação alterada';
+
+my $drift_tr_rc = { %$lock_t, transformations => $m->build_transformations([ { %{ $steps[0] }, row_count => 999 }, $steps[1] ]) };
+like join("\n", @{ $m->diff($doc_t, $drift_tr_rc) }), qr/row_count derivado mudou/,
+  'diff acusa row_count derivado alterado';
+
+my $drift_sem_tr = { %$lock_t, transformations => [] };
+like join("\n", @{ $m->diff($doc_t, $drift_sem_tr) }), qr/transformação ausente/,
+  'diff acusa transformação do lockfile ausente na base';
+
+my $drift_tr_nova = { %$lock_t, transformations => $m->build_transformations([ @steps, { table_name => 'clean.nova', method => 'f', kind => 'function', def => 'x' } ]) };
+like join("\n", @{ $m->diff($doc_t, $drift_tr_nova) }), qr/transformação nova na base/,
+  'diff acusa transformação nova na base';
+
+# --- from_db: tabelas + transformações (catálogo) ---------------------
 {
   package FakeDBH;
-  sub new { bless { rows => $_[1] }, $_[0] }
-  sub selectall_arrayref { $_[0]{rows} }
+  sub new { bless { tables => $_[1], rel => $_[2] // [], func => $_[3] // [], counts => $_[4] // {} }, $_[0] }
+  sub selectall_arrayref {
+    my ($self, $sql) = @_;
+    return $self->{tables} if $sql =~ /clean\.import_metadata/;
+    return $self->{rel}    if $sql =~ /pg_class/;
+    return $self->{func}   if $sql =~ /pg_proc/;
+    return [];
+  }
+  sub selectrow_array {
+    my ($self, $sql) = @_;
+    if ($sql =~ /count\(\*\)\s+FROM\s+(\S+)/) {
+      my $t = $1;
+      return exists $self->{counts}{$t} ? $self->{counts}{$t} : undef;
+    }
+    return undef;
+  }
 }
-my $fake = FakeDBH->new([
-  { table_name => 'clean.a', source_url => 'u1', source_license => 'CC0-1.0', row_count_loaded => 1,
-    raw_manifest => JSON::PP->new->encode([ { url => 'u', sha256 => 'h', bytes => 4, caminho => '/x' } ]) },
-  { table_name => 'clean.b', row_count_loaded => 2, raw_manifest => [ { url => 'v', sha256 => 'i', bytes => 5 } ] },
-  { table_name => 'clean.c', row_count_loaded => 3, raw_manifest => undef },
+my $fake = FakeDBH->new(
+  [
+    { table_name => 'clean.a', source_url => 'u1', source_license => 'CC0-1.0', row_count_loaded => 1,
+      raw_manifest => JSON::PP->new->encode([ { url => 'u', sha256 => 'h', bytes => 4, caminho => '/x' } ]) },
+    { table_name => 'clean.b', row_count_loaded => 2, raw_manifest => [ { url => 'v', sha256 => 'i', bytes => 5 } ] },
+    { table_name => 'clean.c', row_count_loaded => 3, raw_manifest => undef },
+  ],
+  [
+    { name => 'clean.escola_influencia',         relkind => 'r', viewdef => undef },
+    { name => 'clean.mv_escolas_scores',         relkind => 'm', viewdef => 'SELECT * FROM scores' },
+  ],
+  [
+    { name => 'clean.refresh_escola_influencia', def => 'CREATE FUNCTION refresh_escola_influencia ...' },
+  ],
+  { 'clean.escola_influencia' => 156816 },
+);
+my $db_lock = $m->from_db($fake, [
+  { table_name => 'clean.escola_influencia', method => 'clean.refresh_escola_influencia', kind => 'function' },
+  { table_name => 'clean.mv_escolas_scores', method => 'clean.mv_escolas_scores',         kind => 'matview' },
 ]);
-my $db_lock = $m->from_db($fake);
-is scalar @{ $db_lock->{tables} }, 3, 'from_db lê as 3 tabelas';
+is scalar @{ $db_lock->{tables} }, 3, 'from_db lê as 3 tabelas de entrada';
 is $db_lock->{tables}[0]{raw}[0]{sha256}, 'h', 'from_db decodifica raw_manifest em texto JSON';
 is scalar @{ $db_lock->{tables}[1]{raw} }, 1, 'from_db aceita raw_manifest já como arrayref';
 is_deeply $db_lock->{tables}[2]{raw}, [], 'from_db trata raw_manifest NULL como vazio';
+
+is scalar @{ $db_lock->{transformations} }, 2, 'from_db monta as 2 transformações';
+my ($db_ent) = grep { $_->{table_name} eq 'clean.escola_influencia' } @{ $db_lock->{transformations} };
+is $db_ent->{row_count}, 156816, 'from_db conta as linhas da tabela derivada (kind=function)';
+ok defined $db_ent->{def_sha256}, 'from_db resolve a definição da função de refresh';
+my ($db_mv) = grep { $_->{table_name} eq 'clean.mv_escolas_scores' } @{ $db_lock->{transformations} };
+ok defined $db_mv->{def_sha256}, 'from_db resolve o viewdef da matview';
+ok !defined $db_mv->{row_count}, 'from_db deixa row_count undef quando a tabela não está no catálogo';
 
 done_testing;
