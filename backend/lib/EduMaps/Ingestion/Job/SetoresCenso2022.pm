@@ -31,11 +31,19 @@ use utf8;
 #                     domicílio/saneamento: água (forma de abastecimento,
 #                     V00111..V00118), esgoto (V00309..V00316), lixo
 #                     (V00397..V00402) e banheiro (V00494/V00495)
+#      renda_responsavel
+#                     renda do responsável (produto separado, ver URL_RENDA):
+#                     rend_media=V06004 (rendimento nominal médio mensal do
+#                     responsável), rend_mediana=V06006 (mediano),
+#                     rend_resp_count=V06001 (responsáveis, peso da arealização)
 #    A 1ª coluna do CSV varia por tema (CD_SETOR, CD_setor ou setor): o
 #    cabeçalho é normalizado para maiúsculas e `setor` é tratado como
-#    CD_SETOR. Sem fonte no Censo 2022 por setor (decisão do developer, #238):
-#    esc_* (o tema publicado é só alfabetização), rend_media, rend_per_capita
-#    e cor_sem_decl ficam NULL. Não se inventa.
+#    CD_SETOR. O CSV de renda usa PONTO como separador decimal (os demais usam
+#    a convenção pt-BR, vírgula) — ver %DECIMAL_PONTO.
+#    Sem fonte no Censo 2022 por setor (decisão do developer, #238, revista a
+#    2026-10-17): esc_* (o tema publicado é só alfabetização), rend_per_capita
+#    (o produto de renda é do responsável, não per capita) e cor_sem_decl
+#    ficam NULL. Não se inventa.
 #    Supressão: o IBGE escreve "X" na célula suprimida por sigilo. Vira NULL
 #    e marca supressao_celula_pequena = true no setor — nunca 0.
 #
@@ -61,6 +69,9 @@ use constant {
   URL_GPKG  => 'https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/setores/gpkg/BR/BR_setores_CD2022.gpkg',
   CAMADA    => 'BR_setores_CD2022',
   URL_CSVS  => 'https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv',
+  # A renda do responsável é um PRODUTO separado (pasta irmã), não um tema de
+  # Agregados_por_Setor_csv. Nome do arquivo e URL verificados em 2026-10-17.
+  URL_RENDA => 'https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel',
   # Tabela de passagem do ogr2ogr: num schema que já existe (raw), apagada
   # ao fim da carga (sucesso ou falha). Não é tabela do modelo.
   STAGE     => 'raw.stage_setores_cd2022',
@@ -76,7 +87,19 @@ our %ZIP = (
   alfabetizacao => 'Agregados_por_setores_alfabetizacao_BR.zip',
   caracteristicas_domicilio2 =>
     'Agregados_por_setores_caracteristicas_domicilio2_BR_20250417.zip',
+  renda_responsavel =>
+    'Agregados_por_setores_renda_responsavel_BR_20260508_csv.zip',
 );
+
+# Tema cujo CSV usa ponto como separador decimal (os demais usam a convenção
+# pt-BR: ponto de milhar e vírgula decimal).
+our %DECIMAL_PONTO = (renda_responsavel => 1);
+
+# URL de download por tema: a renda vive em pasta própria (URL_RENDA).
+sub _url_zip ($self, $tema) {
+  my $base = $DECIMAL_PONTO{$tema} ? URL_RENDA : URL_CSVS;
+  return "$base/$ZIP{$tema}";
+}
 
 # Colunas do GPKG usadas (confirmadas no DDL do arquivo, 2026-10-13).
 our @COLUNAS_GPKG = qw(CD_SETOR SITUACAO CD_UF CD_MUN NM_MUN);
@@ -159,12 +182,25 @@ our %MAPA = (
     dom_banheiro_exclusivo => ['V00494'],
     dom_sem_banheiro       => ['V00495'],
   },
+  # Renda do responsável (produto separado). Valores em R$/mês; a 1ª coluna é
+  # CD_SETOR. `rend_resp_count` (responsáveis em DPPO) é o peso da arealização.
+  renda_responsavel => {
+    rend_media      => ['V06004'],    # rendimento nominal médio mensal
+    rend_mediana    => ['V06006'],    # rendimento nominal mediano mensal
+    rend_resp_count => ['V06001'],    # pessoas responsáveis (DPPO ocupados)
+  },
 );
 
-# Sem fonte no Censo 2022 por setor: ficam NULL (decisão do developer, #238).
+# Colunas de valor não-inteiro: o jsonb_to_recordset precisa do tipo certo.
+# Ausente => integer (contagens).
+our %TIPO_COLUNA = (rend_media => 'numeric', rend_mediana => 'numeric');
+
+# Sem fonte no Censo 2022 por setor: ficam NULL (decisão do developer, #238;
+# a renda SAIU desta lista em 2026-10-17 — o produto `renda_responsavel` tem
+# fonte por setor; só esc_*, rend_per_capita e cor_sem_decl continuam sem).
 our @SEM_FONTE = qw(
   esc_sem_instrucao esc_fund_incomp esc_fund_comp esc_med_incomp esc_med_comp
-  esc_sup_incomp esc_sup_comp rend_media rend_per_capita cor_sem_decl
+  esc_sup_incomp esc_sup_comp rend_per_capita cor_sem_decl
 );
 
 # Temas além de `basico`, na ordem de carga (as colunas destes temas são
@@ -177,6 +213,7 @@ our %TEMA_ROTULO = (
   cor_ou_raca                => 'cor/raça',
   alfabetizacao              => 'alfabetização',
   caracteristicas_domicilio2 => 'domicílio/saneamento',
+  renda_responsavel          => 'renda do responsável',
 );
 
 sub tabelas ($self, $args = {}) {
@@ -216,7 +253,7 @@ sub _dry_run_sanidade ($self, $args) {
   my $so = $args->{so} // '';
   my @urls;
   push @urls, URL_GPKG unless $so eq 'censo' || $args->{gpkg};
-  push @urls, map { URL_CSVS . "/$ZIP{$_}" } sort keys %ZIP
+  push @urls, map { $self->_url_zip($_) } sort keys %ZIP
     unless $so eq 'malha' || $args->{dir_zips};
   for my $url (@urls) {
     $self->exigir_allowlist($url);
@@ -436,9 +473,10 @@ sub carregar_censo ($self, $args, $uf = undef) {
     $r{carregados}, $detalhe, $r{suprimidos}, $r{orfaos}));
   die "Censo 2022: nenhum setor carregado (a malha foi carregada antes?)\n" unless $r{carregados};
 
-  $self->upsert_metadata(TAB_CENSO, join(' + ', map { $ZIP{$_} } sort keys %ZIP), URL_CSVS, LICENCA,
+  $self->upsert_metadata(TAB_CENSO, join(' + ', map { $ZIP{$_} } sort keys %ZIP),
+    join(' ; ', URL_CSVS, URL_RENDA), LICENCA,
     $r{carregados},
-    sprintf('Agregados por Setores Censitários do Censo 2022 (#238).%s %d setores (basico); %s; %d setores com supressao_celula_pequena (célula "X" do IBGE = NULL, não zero); %d setores fora por ausência na malha_setor_censitario (FK). Sem fonte no Censo 2022 por setor, ficam NULL: %s.',
+    sprintf('Agregados por Setores Censitários do Censo 2022 + renda do responsável (produto Rendimento_do_Responsavel), IBGE FTP (#238).%s %d setores (basico); %s; %d setores com supressao_celula_pequena (célula "X" do IBGE = NULL, não zero); %d setores fora por ausência na malha_setor_censitario (FK). Sem fonte no Censo 2022 por setor, ficam NULL: %s.',
       ($uf ? " Recorte UF=$SIGLA_UF{$uf}." : ''), $r{carregados}, $detalhe,
       $r{suprimidos}, $r{orfaos}, join(', ', @SEM_FONTE)));
   return $r{carregados};
@@ -446,7 +484,7 @@ sub carregar_censo ($self, $args, $uf = undef) {
 
 sub _obter_zip ($self, $args, $tema) {
   my $nome = $ZIP{$tema};
-  my $url = URL_CSVS . "/$nome";
+  my $url = $self->_url_zip($tema);
   my $tab = [TAB_CENSO];
   if (my $dir = $args->{dir_zips}) {
     my $local = path($dir, $nome);
@@ -508,7 +546,11 @@ sub converter_linha ($self, $tema, $h) {
       $v =~ s/^\s+|\s+$//g;
       if ($v eq 'X') { $row{suprimido} = 1; $nulo = 1; next }
       if ($v eq '' || $v eq '.') { $nulo = 1; next }
-      $v =~ s/\.//g; $v =~ s/,/./;
+      if ($DECIMAL_PONTO{$tema}) {
+        $v =~ s/,//g;                 # no arquivo de renda não há milhar; vírgula seria lixo
+      } else {
+        $v =~ s/\.//g; $v =~ s/,/./;  # convenção pt-BR: ponto de milhar, vírgula decimal
+      }
       die "$tema: valor não numérico em $var ($h->{CD_SETOR}): '$v'\n"
         unless $v =~ /^-?\d+(?:\.\d+)?$/;
       $soma += $v;
@@ -588,7 +630,8 @@ sub _gravar_tema ($self, $dbh, $tema, $lote) {
   my @validos = grep { ($_->{codigo_setor} // '') =~ /^\d{15}$/ } @$lote;
   return 0 unless @validos;
   my @vars = sort keys %{ $MAPA{$tema} };
-  my %tipos = (codigo_setor => 'text', map { $_ => 'integer' } @vars);
+  my %tipos = (codigo_setor => 'text',
+               map { $_ => ($TIPO_COLUNA{$_} // 'integer') } @vars);
   my $decl = _rec_decl(['codigo_setor', @vars], \%tipos, 1);
   my $n = $dbh->do(qq{
     UPDATE clean.censo2022_setor t SET

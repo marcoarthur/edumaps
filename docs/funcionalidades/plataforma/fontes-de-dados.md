@@ -48,8 +48,10 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   sexo, idade e cor/raça, domicílios), junto com o **desenho de cada setor
   no mapa**. Isso permite olhar o território abaixo do nível do município.
   Onde o IBGE omite um número por sigilo estatístico, o valor fica vazio e
-  marcado, nunca zero. O que o Censo não publica por setor (escolaridade,
-  renda) não é estimado.
+  marcado, nunca zero. O Censo também publica, por setor, a **renda do
+  responsável** (rendimento médio e mediano), usada para o contexto
+  socioeconômico do entorno. O que ele não publica por setor (escolaridade
+  das pessoas de 25 anos ou mais) não é estimado.
 - Sistema pode usar a presença do **Programa Mais Médicos** em cada
   município: equipes, vagas ocupadas, população coberta e vulnerabilidade.
   A série se forma a cada atualização mensal, porque a fonte publica só a

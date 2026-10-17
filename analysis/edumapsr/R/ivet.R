@@ -1,11 +1,15 @@
 # R/ivet.R
 #
-# IVET v1.1 — núcleo reprodutível da fórmula do Índice de Vulnerabilidade
+# IVET v1.2 — núcleo reprodutível da fórmula do Índice de Vulnerabilidade
 # Educacional Territorial (docs/analises/ivet.md §4, issue #137 entregável 3).
 #
-# v1.1 (§4.3): o bloco B troca `renda`/`sem_instrucao` (sem fonte por setor no
-# Censo 2022, #238) por `analfabetismo` (alfabetização 15+) e `saneamento`
-# (esgoto/água/lixo/banheiro). Ver o cabeçalho de R/ivet-socioeconomico.R.
+# v1.1 (§4.3): o bloco B troca `sem_instrucao`/`fund_incomp` (sem fonte por setor
+# no Censo 2022, #238) por `analfabetismo` (alfabetização 15+) e `saneamento`
+# (esgoto/água/lixo/banheiro).
+# v1.2 (2026-10-17): a renda volta ao bloco B, agora COM fonte por setor — a
+# renda do RESPONSÁVEL (produto Rendimento_do_Responsavel, #238 revisto),
+# arealizada em `clean.escola_entorno_socioeconomico.renda_resp_media`. Ver o
+# cabeçalho de R/ivet-socioeconomico.R.
 #
 # O IVET é um índice TERRITORIAL: a escola é o ponto de observação, não a
 # unidade medida (§1). A estrutura é fixada, de baixo para cima:
@@ -35,7 +39,7 @@
 
 #' Versão da fórmula do IVET implementada neste arquivo.
 #' @export
-ivet_versao <- function() "ivet-v1.1"
+ivet_versao <- function() "ivet-v1.2"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export

@@ -140,3 +140,5 @@ escola_influencia [quarantine_censo_escolas_scores censo_escolar_2025] 2026-10-1
 escola_entorno_socioeconomico [escola_influencia censo2022_setor] 2026-10-16T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: arealizacao socioeconomica do entorno (setores Censo 2022)
 censo2022_setor_instrucao_saneamento [censo2022_setor] 2026-10-16T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: alfabetizacao e saneamento crus do setor (Censo 2022)
 escola_entorno_socioeconomico_saneamento [escola_entorno_socioeconomico censo2022_setor_instrucao_saneamento] 2026-10-16T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: analfabetismo e saneamento no entorno; ivet-v1.1
+censo2022_setor_renda_responsavel [censo2022_setor comments_ingestao_p2] 2026-10-17T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #238: renda do responsavel por setor (V06001/V06004/V06006) — produto Rendimento_do_Responsavel
+escola_entorno_socioeconomico_renda [escola_entorno_socioeconomico_saneamento censo2022_setor_renda_responsavel] 2026-10-17T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco B: renda do responsavel no entorno; ivet-v1.2

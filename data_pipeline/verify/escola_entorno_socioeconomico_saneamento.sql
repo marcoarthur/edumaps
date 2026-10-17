@@ -31,13 +31,16 @@ BEGIN
   END IF;
 
   -- 3. default da versão
+  --    (a change escola_entorno_socioeconomico_renda, posterior no plano, sobe
+  --    o default para ivet-v1.2; o verify roda contra o estado FINAL, por isso
+  --    aqui se espera v1.2, o valor vigente com o bloco B completo.)
   SELECT pg_get_expr(d.adbin, d.adrelid) INTO v_def
   FROM pg_attrdef d
   JOIN pg_attribute a ON a.attrelid = d.adrelid AND a.attnum = d.adnum
   WHERE d.adrelid = 'clean.escola_entorno_socioeconomico'::regclass
     AND a.attname = 'versao';
-  IF v_def IS NULL OR position('ivet-v1.1' in v_def) = 0 THEN
-    RAISE EXCEPTION 'escola_entorno_socioeconomico_saneamento: versao default esperada ivet-v1.1, encontrada %', v_def;
+  IF v_def IS NULL OR position('ivet-v1.2' in v_def) = 0 THEN
+    RAISE EXCEPTION 'escola_entorno_socioeconomico_saneamento: versao default esperada ivet-v1.2 (v1.1 até a change da renda), encontrada %', v_def;
   END IF;
 END;
 $$;

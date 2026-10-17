@@ -72,6 +72,24 @@ subtest 'converter_linha: "X" vira NULL e marca supressão; "." é NULL sem marc
   is($s->{suprimido}, 1, 'e o setor fica marcado');
 };
 
+subtest 'converter_linha: renda do responsável usa ponto decimal e X vira NULL' => sub {
+  my %h = (CD_SETOR => '110001505000002', V06001 => '336', V06002 => '928',
+           V06003 => '1.67', V06004 => '2453.03', V06005 => '13047638.93',
+           V06006 => '1212');
+  my $r = job()->converter_linha('renda_responsavel', \%h);
+  is($r->{rend_media}, 2453.03, 'V06004 lido com ponto decimal (não 245303)');
+  is($r->{rend_mediana}, 1212, 'V06006 = mediana');
+  is($r->{rend_resp_count}, 336, 'V06001 = responsáveis (peso da arealização)');
+  is($r->{suprimido}, 0, 'sem supressão');
+
+  my $x = job()->converter_linha('renda_responsavel',
+    {CD_SETOR => '1', V06001 => 'X', V06004 => '', V06006 => '1000'});
+  ok(!defined $x->{rend_media}, 'vazio -> NULL (não 0)');
+  ok(!defined $x->{rend_resp_count}, 'X -> NULL');
+  is($x->{rend_mediana}, 1000, 'o presente segue');
+  is($x->{suprimido}, 1, 'supressão marcada');
+};
+
 subtest 'converter_linha: basico traz identificação, sigla e domicílios' => sub {
   my %h = (CD_SETOR => '110001505000002', SITUACAO => 'Urbana', CD_UF => '11', CD_MUN => '1100015',
            NM_MUN => "Alta Floresta D'Oeste", V0002 => '376', V0003 => '376', V0004 => '0');
@@ -240,6 +258,8 @@ subtest 'integração: malha + censo no banco do CI' => sub {
     alfabetizacao => qq{"CD_setor";"V00900";"V00901"\n"$setores[0]";"7";"3"\n},
     caracteristicas_domicilio2 => '"setor";' . join(';', map { qq{"$_"} } @vars_dom2) . "\n"
       . qq{"$setores[0]";} . join(';', map { qq{"$v{$_}"} } @vars_dom2) . "\n",
+    renda_responsavel => qq{"CD_SETOR";"V06001";"V06002";"V06003";"V06004";"V06005";"V06006"\n}
+      . qq{"$setores[0]";"10";"30";"1.67";"2453.03";"1000.25";"1212"\n},
   );
   for my $tema (keys %csv) {
     my $zip = "$tmp/$EduMaps::Ingestion::Job::SetoresCenso2022::ZIP{$tema}";
@@ -279,7 +299,10 @@ subtest 'integração: malha + censo no banco do CI' => sub {
     ok(!defined $r->{cor_preta}, 'X -> NULL na cor');
     is($r->{cor_amarela}, 0, 'zero real fica zero');
     ok($r->{supressao_celula_pequena}, 'supressão marcada');
-    ok(!defined $r->{$_}, "$_ NULL (sem fonte)") for qw(esc_sup_comp rend_media cor_sem_decl);
+    ok(!defined $r->{$_}, "$_ NULL (sem fonte)") for qw(esc_sup_comp rend_per_capita cor_sem_decl);
+    is($r->{rend_media}, 2453.03, 'renda: média do responsável (ponto decimal)');
+    is($r->{rend_mediana}, 1212, 'renda: mediana do responsável');
+    is($r->{rend_resp_count}, 10, 'renda: responsáveis (peso da arealização)');
     is($r->{alf_sabe_15mais}, 7, 'alfabetização: sabe ler/escrever');
     is($r->{alf_nao_sabe_15mais}, 3, 'alfabetização: não sabe');
     is($r->{dom_agua_rede}, 10, 'água: rede geral');
