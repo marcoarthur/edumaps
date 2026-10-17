@@ -37,18 +37,24 @@
   passou a ser **sequencial, maior UF primeiro** (SP é o poste de ~3 h),
   progresso em `/tmp/entorno_progress.txt` (retomável; UPSERT idempotente).
 - **Influência global já no produto**: `clean.refresh_escola_influencia()` →
-  **470.448 linhas** (156.816 escolas com geometria × 3 raios), 58 s, 353 MB. O
-  entorno projeta ~5–6 h para o país (rodando em background no
-  `database.edumaps`, iniciado 2026-10-16T22:57Z).
+  **470.448 linhas** (156.816 escolas com geometria × 3 raios), 58 s, 353 MB.
+  **Entorno: concluído no produto** (2026-10-17T04:29Z; 22:57Z → 04:29Z = **5 h
+  32 min**, sequencial, 27 UFs, `[ok]` em todas; MA/BA/AC puladas do piloto). A
+  projeção de 5–6 h bateu. SP sozinha = 85.578 linhas / 8.019 s (~2 h 14 m). #264
+  **fechada**.
+- **Validação (#264, critério atendido)**: `count(*)` = **470.448**,
+  `count(DISTINCT co_entidade)` = **156.816**, 3 raios (156.816 cada), 0
+  duplicatas de PK, 0 escolas com geometria sem entorno. Componentes com dado:
+  analfabetismo 470.131, sem_banheiro 467.178, preto_pardo 462.671, lixo 427.513,
+  água 426.483, esgoto 417.980 (as lacunas são a ausência por célula, #154).
 - **Deploy**: `rex prepare` + `deploy_backend_dev` + `deploy_minion_dev` (md5
   de `Entorno.pm`/`EduMaps.pm` confere no container). Imagens locais
   `backend`/`minion` reconstruídas pós-merge.
 - **Docs**: `docs/analises/influencia.md` §8.1 (tabela de refresh + nota de
   escala/chunked) e `docs/analises/ivet.md` §4.5 (task de refresh).
-- **Pendências**: concluir o lote do entorno (validar `count = 470.448` e
-  `count(DISTINCT co_entidade) = 156.816`); o bloco B ainda sai `NA` até a
-  extensão do loader (#238) **e** a materialização terminarem; #264 segue aberta
-  como tracker.
+- **Pendências**: só resta o **bloco B sair do `NA`**: exige o **#238** (loader de
+  renda/instrução) — o mecanismo e a materialização (influência + entorno) estão
+  prontos no produto. #264 **fechada**.
 - **Nota**: nenhum leitor em `analysis/` fixa um raio — a extração do bloco B
   consome as 3 linhas de raio da camada; materializar os 3 raios é o correto.
 
