@@ -26,6 +26,60 @@ pesos:
   dimensao_ausente: fica fora do numerador e do denominador (nao penaliza)
   componente_ausente: vira 0 dentro da dimensao
 
+bloco_a:
+  # Reconciliacao B<->C (#137, fatia C): B e o sistema canonico; C e a camada de
+  # analise e entra so como refinamento opcional (*_c), fora do default.
+  fonte: clean.mv_escolas_scores
+  escala_fonte: "0-10 (maior = melhor)"
+  normalizacao: "1 - clamp(score/10)"
+  direcao: "+"
+  default: [capacidade_atendimento, infraestrutura, capacitacao_docente, diversidade_discente, capacidade_gestora, sustentabilidade]
+  sistema_c:
+    nota: "camada de analise (EduMaps::Model::Indicator::School::*), 0-1; entra so por escolha"
+    normalizacao: "1 - clamp(indicador)"
+  componentes:
+    capacidade_atendimento:
+      fonte: score_capacidade_atendimento
+      sistema: B
+      no_default: false
+    infraestrutura:
+      fonte: score_infraestrutura
+      sistema: B
+      no_default: false
+    capacitacao_docente:
+      fonte: score_capacitacao_docente
+      sistema: B
+      no_default: false
+    diversidade_discente:
+      fonte: score_diversidade_discente
+      sistema: B
+      no_default: false
+    capacidade_gestora:
+      fonte: score_capacidade_gestora
+      sistema: B
+      no_default: false
+    sustentabilidade:
+      fonte: score_sustentabilidade
+      sistema: B
+      no_default: false
+    acessibilidade_c:
+      fonte: iai
+      sistema: C
+      no_default: true
+    tecnologia_c:
+      fonte: itd
+      sistema: C
+      no_default: true
+    oferta_c:
+      fonte: ioc
+      sistema: C
+      no_default: true
+    qualificacao_docente_c:
+      fonte: iqd
+      sistema: C
+      no_default: true
+      nota: "clampado (viola [0,1] no sistema C)"
+
 bloco_b:
   # Default da formula ivet-v1.2: instrucao + renda do responsavel + saneamento.
   default: [analfabetismo, renda, saneamento]
@@ -92,4 +146,4 @@ proveniencia:
   vigencia: "ivet_vigencia(): vigente se dataset_version, transform_version e formula conferem com o lockfile"
 
 validacao:
-  testes: [tests/testthat/test-ivet.R, tests/testthat/test-ivet-socioeconomico.R, tests/testthat/test-ivet-card.R]
+  testes: [tests/testthat/test-ivet.R, tests/testthat/test-ivet-socioeconomico.R, tests/testthat/test-ivet-escola.R, tests/testthat/test-ivet-card.R]
