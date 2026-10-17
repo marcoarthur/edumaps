@@ -4,7 +4,58 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #137 fatia D: extração R do bloco saúde (PR #273)
+
+- **PR #273 MERGEADO** (merge commit `d4199f1`, branch
+  `feat/analytics-ivet-bloco-d` removida): commit `e138161`
+  `feat(analytics): extrai bloco D (saúde) do IVET`. Nota técnica **143**.
+- **Fonte do bloco D** = `analytics.acessibilidade_saude` (CNES + SISAB/PMMB), sã
+  desde o PR #271. Uma linha por **escola**, mas o bloco **mistura dois grãos**:
+  `dist_min_km_ubs` é da escola; `n_ubs_municipio`, `ativas_ff`, `equipe_esf` e
+  `efetividade_vagas_aps` são do município (junção por `codigo_ibge`).
+- **Bloco D — saúde** (`R/ivet-saude.R`, novo): `ivet_taxa_10k()`,
+  `ivet_componente_distancia()`, `ivet_componente_cobertura_aps()`,
+  `ivet_componente_presenca_ubs()`, `ivet_componente_efetividade_aps()`,
+  `ivet_bloco_saude[_componentes]()`.
+- **Default** (decisão de produto, alinhada com o developer):
+  `distancia_ubs` (acesso espacial, grão escola) + `cobertura_aps` (provisão
+  municipal). `presenca_ubs` fica **fora do default** — redundante com
+  `cobertura_aps` (correlação bruta UBS×equipes = **0,78**); `efetividade_vagas_aps`
+  também fora (quase saturada: p50 = 98,8%, p90 = 100%).
+- **`cobertura_aps` da tabela NÃO é usada**: apesar do nome, a coluna carrega a
+  **população** coberta do PMMB (pessoas) — máx medido ≈ 25.421/10 mil (>100% da
+  população). A cobertura usada é a razão de **equipes por 10 mil**
+  (`(equipe_esf + ativas_ff) / população × 1e4`), conforme a ficha `saude.md`.
+- **`categoria_ivs` não entra**: categoria de vulnerabilidade **social** do MS —
+  duplicaria o bloco B e não mede acesso a saúde.
+- **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-17):
+  `IVET_TETO_DISTANCIA_UBS_KM` = 5 (limiar "acesso difícil (>5 km)" da própria
+  view; p90 = 7,25), `IVET_TETO_COBERTURA_APS_POR_10K` = 8 (p90 ≈ 8,4),
+  `IVET_TETO_PRESENCA_UBS_POR_10K` = 8, `IVET_TETO_EFETIVIDADE_VAGAS_APS_PCT` = 100.
+- **#154 preservado**: `dist_min_km_ubs` `NULL` → componente `NA` (fora do
+  denominador); `n_ubs_municipio = 0` é **zero real** (município sem UBS) →
+  componente `1`. Denominador = `clean.populacao_municipal` (snapshot), como no E.
+- **Medições** (dev `database.edumaps`, 145.734 escolas): distância p50 0,54 ·
+  p90 7,25 · p99 38,8 · máx 575 km (classificação: excelente 102.972 · bom 17.454
+  · regular 5.797 · difícil 19.500 · sem UBS 11); UBS/10k p50 4,48 · p90 8,45;
+  equipes/10k p50 3,30 · p90 8,39; efetividade p50 98,8 · p90 100.
+- **Fórmula segue `ivet-v1.2`**: o slot D já existia; nenhuma versão nova.
+- **Validação**: testes `ivet` **270 PASS** (0 fail); suíte R completa **1876
+  PASS**, com as **2 falhas pré-existentes** (`test-censo-dictionary`,
+  `test-cluster`). Card contratual atualizado (`bloco_d` + tetos + validação).
+- **Deploy**: `rex prepare` + `rex -H analytic.edumaps deploy_analytics_dev`;
+  imagem local `analytic` reconstruída (`docker compose build analytic` + `up -d`)
+  e verificada: `exists("ivet_bloco_saude")` / `ivet_componente_distancia` /
+  `ivet_taxa_10k` = TRUE e `"bloco_d" %in% names(ivet_card())`.
+- ⚠️ **O agregado do IVET continua `NA`** — os blocos territoriais mínimos são
+  **C+D+E** e **C (mobilidade)** segue bloqueado (sem isócrona/Tier 2). D fecha a
+  extração, **não** publica o índice.
+- **Próximo**: **#255** (cobertura do solo por área de influência — GIS/raster
+  30 m, destrava F); depois **#168**, **#138**, **#139** (#268 adiada). **#137
+  segue aberta** (faltam C e F).
+
 ## Sessão 2026-10-17 — #137 fatia E/G: extração R dos blocos segurança e recursos (PR #272)
+
 
 - **PR #272 MERGEADO** (merge commit `2cb95c0`, branch
   `feat/analytics-ivet-bloco-eg` removida): commit `c5109a8`
