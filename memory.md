@@ -4,6 +4,47 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #137 fatia B/C (parte 1): reconciliação B↔C no bloco A do IVET (PR #270)
+
+- **PR #270 MERGEADO** (merge commit `c328423`, branch
+  `feat/analytics-ivet-bloco-a-bc` removida): commit `87ce81e`
+  `feat(analytics): reconciliação B↔C no bloco A`. Nota técnica **140**.
+- **Decisão de produto (developer, 2026-10-17)**: a reconciliação B↔C vive **só
+  no IVET**; B (`clean.mv_escolas_scores`, canônico, 0–10) é a fonte do bloco A;
+  o sistema C (`EduMaps::Model::Indicator::School::*`, camada de análise) entra
+  só como **refinamento opcional** (`*_c`), fora do default. **Não** alterar os
+  consumidores de B (ranking/similaridade/cluster) — sem regressão.
+- **Código** (`analysis/edumapsr/R/ivet-escola.R`, novo): bloco A lido de B e
+  **invertido** (`1 − clamp(score/10, 0, 1)`); `ivet_componente_indicador()`
+  clampa o sistema C (corrige o `iqd`, que viola `[0,1]` — razão aluno/docente
+  crua). `ivet_bloco_escola()`/`ivet_bloco_escola_componentes()`; default
+  `IVET_BLOCO_A_COMPONENTES` = só os 6 de B. Card `bloco_a` +
+  `test-ivet-escola.R` (40) + contrato em `test-ivet-card.R`. **149/149**.
+- **Não** mexeu em ranking/similaridade/cluster (consumidores de B intactos);
+  `mv_escolas_scores` intacto. **Sem bump de fórmula** (`ivet-v1.2` continua):
+  nada mudou nos pesos/agregador nem no default do bloco B; entrou a *extração*
+  do bloco A (que já era dimensão).
+- **Docs**: `docs/analises/ivet.md` §4.4.1 (+§4.2/§4.5/§6);
+  `docs/funcionalidades/plataforma/fontes-de-dados.md` (nova capacidade:
+  definição canônica em vez de sistemas concorrentes).
+- **Deploy**: `rex prepare` + `deploy_analytics_dev`; md5 confere em
+  `analytic.edumaps` **e** dentro do container (`/pkg/R/ivet-escola.R`); imagem
+  local `analytic` reconstruída + `up -d`; `edumaps-sqitch` saiu 0.
+- 🔴 **Bloqueio mapeado (bloco C — mobilidade)**: `clean.isocrona_escolar` = 0 e
+  `analytics.mobilidade_escola.isocronas_por_tempo`/`antt_od_*` vazios. Depende
+  do **Tier 2** (isócrona OSRM/Valhalla auto-hospedado, `influencia.md` §146).
+  Como `ivet_blocos_territoriais_minimos()` = {mobilidade, saude, seguranca},
+  **o IVET agregado segue `NA`** mesmo com D/E prontos (§4.3). Decisão: manter
+  mobilidade `NA` e adiar.
+- **Estado das fontes C–G medido** (dev): D saúde `analytics.acessibilidade_saude`
+  (145.734); E segurança `clean.brazilcrime_municipio` (61.192) +
+  `clean.renaest_sinistro` (2,27 M); F meio ambiente `clean.mapbiomas_cobertura`
+  (690.340, município — parcial; 30 m por influência = #255); G recursos
+  `analytics.esforco_fiscal_educacao` (5.525). **C mobilidade bloqueado.**
+- **Próximo passo / alinhar**: extração **D/E/G** (dado pronto) e **F** parcial;
+  decidir se a **isócrona (#125, Tier 2)** vira pré-requisito antes de seguir,
+  já que o agregado fica `NA` sem C. **#137 segue aberta.**
+
 ## Sessão 2026-10-17 — #137 fatia A: pin da transformação, vigência e card do IVET (PR #269)
 
 - **PR #269 MERGEADO** (merge commit `7b757db`, branch
