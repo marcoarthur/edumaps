@@ -4,6 +4,60 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #137 fatia A: pin da transformação, vigência e card do IVET (PR #269)
+
+- **PR #269 MERGEADO** (merge commit `7b757db`, branch
+  `feat/analytics-ivet-pin-vigencia` removida): commit `b71318d`
+  `feat(analytics): pin, vigência e card do IVET`. Nota técnica **139**.
+- **Escopo**: fatia A do #137 — entregáveis 3 (parte de versionamento), 4
+  (vigência/retreino) e 5 (card). Fatias B/C (extração C–G, reconciliação B↔C)
+  ficam para depois; o IVET segue sem materialização no banco
+  (`with_vulnerability_score` continua `die`).
+- **Pin da transformação** (`backend/lib/EduMaps/Ingestion/DatasetsLock.pm`):
+  `@DERIVED_STEPS` **declarado** (não auto-descoberto) com as 3 camadas que o
+  IVET lê — `clean.escola_influencia` ← `refresh_escola_influencia` (function),
+  `clean.escola_entorno_socioeconomico` ← `refresh_escola_entorno_socioeconomico`
+  (function), `clean.mv_escolas_scores` (matview). Chave = `sha256` da
+  **definição** do objeto (`pg_get_functiondef`/`pg_get_viewdef`) + `row_count`;
+  **não** hasheia linhas. `transform_version` = `sha256{version,
+  transformations}`; `dataset_version` segue `sha256{version, tables}`
+  (compatível). `LOCK_VERSION` 1→2. CLI: `--print-transform-version`; `--verify`
+  cobre as duas pontas.
+- **Bug real (deploy do pin)**: `DBD::Pg` devolve `pg_get_functiondef` com a
+  flag utf8 ligada (string *wide*) e o `Digest::SHA` recusa
+  (`Wide character in subroutine entry`). `build_transformations()` normaliza
+  para **bytes UTF-8** (`utf8::is_utf8 ? encode`) antes de hashear; teste de
+  regressão com string acentuada.
+- **Vigência** (`analysis/edumapsr/R/ivet.R`): `ivet_lock()` (interno),
+  `ivet_transform_version()`, `ivet_vigencia(resultado, lock_path)` (compara
+  fórmula + `dataset_version` + `transform_version`; devolve `vigente`+`motivos`).
+  `ivet_v1()` carimba as duas chaves (parâmetro novo **no fim**, sem quebrar
+  chamadas posicionais). `!vigente` ⇒ retreino.
+- **Card** (`inst/ivet-card.yml` + `ivet_card()`): teste de contrato
+  `test-ivet-card.R` falha se o card divergir de `ivet_versao()`,
+  `ivet_blocos()`, `ivet_blocos_territoriais_minimos()`,
+  `ivet_bloco_socioeconomico_componentes()` ou `IVET_TETO_RENDA`.
+- **Lockfile regenerado** contra o dev (`version: 2`, 49 tabelas + 3
+  transformações; `dataset_version a33c32ab…`, `transform_version 4b66f4c2…`).
+  `--write` no `backend.edumaps` (o `ubaxala` não tem rota p/ `172.19.198.3`) +
+  scp de volta; `--verify` sem deriva.
+- **Validação**: `prove -l t/05-tasks/datasets_lock.t` **48/48**;
+  `testthat::test_local(filter="ivet")` **98/98**.
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_minion_dev` + `deploy_analytics_dev`; md5 confere nos 3 hosts; imagens
+  locais `sqitch`/`backend`/`minion`/`analytic` reconstruídas + `up -d`; md5 no
+  container confere, `edumaps-sqitch` saiu 0.
+- **Docs**: `docs/analises/versionamento_datasets.md` (novas chaves + uso +
+  follow-up do pipeline reprodutível encerrado); `docs/analises/ivet.md` (§4.6
+  vigência/retreino, §4.7 card, tabela de entregáveis, §4.3 renomeada p/
+  "Pesos e critério de publicação"); `docs/funcionalidades/`
+  (`fontes-de-dados.md`: versão fixada de dados **e** cálculo + vigência + ficha
+  do índice; `README.md`).
+- **Registro**: comentário na **#137** com os entregáveis 3/4/5. **#137 segue
+  aberta** (fatias B/C).
+- **Pendências**: fatias B/C do #137; **#268** (conteúdo de renda no produto —
+  re-executar loader + refresh do entorno, ~5–6 h).
+
 ## Sessão 2026-10-17 — #266/#137: renda do responsável no bloco B (ivet-v1.2)
 
 - **PR #267 MERGEADO** (merge commit `d253f54`, branch
