@@ -78,10 +78,11 @@ test_that("ivet_dataset_version lê a chave de conteúdo do lockfile (#135)", {
 
 test_that("ivet_v1 propaga dataset_version lido do lockfile", {
   tmp <- tempfile(fileext = ".json")
-  writeLines('{"dataset_version":"deadbeef","version":1,"tables":[]}', tmp)
+  writeLines('{"dataset_version":"deadbeef","transform_version":"cafe","version":2}', tmp)
 
   res <- ivet_v1(c(escola = 0.5), lock_path = tmp)
   expect_equal(res$dataset_version, "deadbeef")
+  expect_equal(res$transform_version, "cafe")
 })
 
 test_that("ivet_v1: bloco escola ausente vira NA, não erro", {
@@ -89,4 +90,51 @@ test_that("ivet_v1: bloco escola ausente vira NA, não erro", {
   expect_true(is.na(res$bloco_escola))
   expect_true(res$publicavel)
   expect_equal(res$ivet, 0.5)
+})
+
+test_that("ivet_transform_version lê a chave da transformação do lockfile (#137)", {
+  tmp <- tempfile(fileext = ".json")
+  writeLines('{"dataset_version":"abc","transform_version":"tr123","version":2}', tmp)
+  expect_equal(ivet_transform_version(tmp), "tr123")
+
+  tmp2 <- tempfile(fileext = ".json")
+  writeLines('{"dataset_version":"abc","version":2}', tmp2)
+  expect_error(ivet_transform_version(tmp2), "transform_version")
+
+  expect_error(ivet_transform_version(tempfile()), "não encontrado")
+})
+
+test_that("ivet_vigencia: resultado que confere com o lockfile está vigente", {
+  tmp <- tempfile(fileext = ".json")
+  writeLines('{"dataset_version":"d1","transform_version":"t1","version":2}', tmp)
+
+  res <- ivet_v1(c(escola = 0.5), lock_path = tmp)
+  v <- ivet_vigencia(res, tmp)
+
+  expect_true(v$vigente)
+  expect_length(v$motivos, 0)
+  expect_equal(v$dataset_version, "d1")
+  expect_equal(v$transform_version, "t1")
+  expect_equal(v$formula, ivet_versao())
+})
+
+test_that("ivet_vigencia: dado ou transformação que mudou -> não vigente (retreino)", {
+  tmp <- tempfile(fileext = ".json")
+  writeLines('{"dataset_version":"d1","transform_version":"t1","version":2}', tmp)
+
+  res <- ivet_v1(c(escola = 0.5), dataset_version = "VELHO", transform_version = "t1")
+  v <- ivet_vigencia(res, tmp)
+  expect_false(v$vigente)
+  expect_match(paste(v$motivos, collapse = "; "), "dataset_version")
+
+  res2 <- ivet_v1(c(escola = 0.5), dataset_version = "d1", transform_version = "VELHO")
+  v2 <- ivet_vigencia(res2, tmp)
+  expect_false(v2$vigente)
+  expect_match(paste(v2$motivos, collapse = "; "), "transform_version")
+
+  res3 <- ivet_v1(c(escola = 0.5))
+  v3 <- ivet_vigencia(res3, tmp)
+  expect_false(v3$vigente)
+  expect_match(paste(v3$motivos, collapse = "; "), "sem dataset_version")
+  expect_match(paste(v3$motivos, collapse = "; "), "sem transform_version")
 })

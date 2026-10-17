@@ -36,6 +36,12 @@
 # é decisão de produto registrada como follow-up (§6) e não vive aqui.
 #
 # Versão da fórmula: use `ivet_versao()` para carimbá-la no resultado.
+#
+# Proveniência (ivet-v1.2): `ivet_v1()` carimba `dataset_version` (pin da entrada
+# `raw`) e `transform_version` (pin do código `raw`→`clean`→`analytics`) lidos do
+# `data_pipeline/datasets.lock.json` (#135); `ivet_vigencia()` diz se um
+# resultado continua sendo o retrato do presente ou se precisa ser recalculado
+# (#137, entregável 4).
 
 #' Versão da fórmula do IVET implementada neste arquivo.
 #' @export
@@ -151,12 +157,15 @@ ivet_agregar <- function(dimensoes, pesos = NULL) {
 #' @param dataset_version chave de conteúdo dos datasets de entrada (ver
 #'   `docs/analises/versionamento_datasets.md`, #135). `NA` se desconhecida.
 #' @param lock_path caminho do `datasets.lock.json`; se informado e
-#'   `dataset_version` for `NA`, a versão é lida do lockfile
-#'   (`ivet_dataset_version()`).
+#'   `dataset_version`/`transform_version` forem `NA`, as versões são lidas do
+#'   lockfile (`ivet_dataset_version()` / `ivet_transform_version()`).
+#' @param transform_version chave de conteúdo da transformação
+#'   (`raw`→`clean`→`analytics`). `NA` se desconhecida.
 #' @return lista com o IVET, o bloco escola, o que foi publicado e a
-#'   proveniência.
+#'   proveniência (fórmula + as duas chaves de conteúdo).
 #' @export
-ivet_v1 <- function(blocos, dataset_version = NA_character_, lock_path = NULL) {
+ivet_v1 <- function(blocos, dataset_version = NA_character_, lock_path = NULL,
+                    transform_version = NA_character_) {
   nomes <- names(blocos)
   valores <- suppressWarnings(as.numeric(unlist(blocos, use.names = FALSE)))
   names(valores) <- nomes
@@ -169,8 +178,13 @@ ivet_v1 <- function(blocos, dataset_version = NA_character_, lock_path = NULL) {
   territoriais_faltando <- setdiff(ivet_blocos_territoriais_minimos(), disponiveis)
   publicavel <- length(territoriais_faltando) == 0
 
-  if (is.na(dataset_version) && !is.null(lock_path)) {
-    dataset_version <- ivet_dataset_version(lock_path)
+  if (!is.null(lock_path)) {
+    if (is.na(dataset_version)) {
+      dataset_version <- ivet_dataset_version(lock_path)
+    }
+    if (is.na(transform_version)) {
+      transform_version <- ivet_transform_version(lock_path)
+    }
   }
 
   list(
@@ -181,28 +195,102 @@ ivet_v1 <- function(blocos, dataset_version = NA_character_, lock_path = NULL) {
     dimensoes_disponiveis  = disponiveis,
     territoriais_faltando  = territoriais_faltando,
     dataset_version        = dataset_version,
+    transform_version      = transform_version,
     computado_em           = format(Sys.time(), tz = "UTC", usetz = TRUE)
   )
 }
 
+# Lê o lockfile de datasets (#135) inteiro. Interno: as chaves de conteúdo são
+# expostas por ivet_dataset_version()/ivet_transform_version(), e a vigência
+# por ivet_vigencia().
+ivet_lock <- function(lock_path = NULL) {
+  if (is.null(lock_path)) {
+    lock_path <- Sys.getenv("EDUMAPS_DATASETS_LOCK", unset = "")
+  }
+  if (!nzchar(lock_path) || !file.exists(lock_path)) {
+    stop("ivet_lock: lockfile não encontrado (",
+         if (nzchar(lock_path)) lock_path else "EDUMAPS_DATASETS_LOCK não definido",
+         ")")
+  }
+  jsonlite::fromJSON(lock_path)
+}
+
 #' Lê a chave de conteúdo (`dataset_version`) do lockfile de datasets (#135).
+#'
+#' `dataset_version` pin a **entrada** (`raw`): "de qual versão dos dados veio
+#' este número?".
 #'
 #' @param lock_path caminho do `datasets.lock.json`. Se `NULL`, usa a variável
 #'   de ambiente `EDUMAPS_DATASETS_LOCK`.
 #' @return a string `dataset_version`.
 #' @export
 ivet_dataset_version <- function(lock_path = NULL) {
-  if (is.null(lock_path)) {
-    lock_path <- Sys.getenv("EDUMAPS_DATASETS_LOCK", unset = "")
-  }
-  if (!nzchar(lock_path) || !file.exists(lock_path)) {
-    stop("ivet_dataset_version: lockfile não encontrado (",
-         if (nzchar(lock_path)) lock_path else "EDUMAPS_DATASETS_LOCK não definido",
-         ")")
-  }
-  lock <- jsonlite::fromJSON(lock_path)
+  lock <- ivet_lock(lock_path)
   if (is.null(lock$dataset_version) || !nzchar(lock$dataset_version)) {
     stop("ivet_dataset_version: lockfile sem 'dataset_version'")
   }
   lock$dataset_version
+}
+
+#' Lê a chave de conteúdo da transformação (`transform_version`) do lockfile.
+#'
+#' `transform_version` pin o **código** que produz as camadas derivadas
+#' (`raw`→`clean`→`analytics`) que o IVET consome: "o cálculo que gerou este
+#' número ainda é o vigente?".
+#'
+#' @param lock_path caminho do `datasets.lock.json`. Se `NULL`, usa a variável
+#'   de ambiente `EDUMAPS_DATASETS_LOCK`.
+#' @return a string `transform_version`.
+#' @export
+ivet_transform_version <- function(lock_path = NULL) {
+  lock <- ivet_lock(lock_path)
+  if (is.null(lock$transform_version) || !nzchar(lock$transform_version)) {
+    stop("ivet_transform_version: lockfile sem 'transform_version'")
+  }
+  lock$transform_version
+}
+
+#' Critério de vigência do IVET (#137, entregável 4): o número ainda vale?
+#'
+#' Compara um resultado de `ivet_v1()` com o lockfile corrente. Um resultado está
+#' **vigente** quando as suas duas chaves de conteúdo conferem com o lockfile e a
+#' fórmula é a atual — ou seja, quando o dado de entrada, o código da
+#' transformação e a fórmula não mudaram desde o cálculo. Se deixou de estar
+#' vigente, o número precisa ser **recalculado** (retreino) antes de ser lido
+#' como retrato do presente (§4.3/§6).
+#'
+#' @param resultado lista devolvida por `ivet_v1()`.
+#' @param lock_path caminho do `datasets.lock.json` corrente (ver `ivet_lock`).
+#' @return lista com `vigente` (lógico), `motivos` (por que não está vigente),
+#'   a `formula` vigente e as chaves de conteúdo do lockfile.
+#' @export
+ivet_vigencia <- function(resultado, lock_path = NULL) {
+  lock <- ivet_lock(lock_path)
+  motivos <- character(0)
+
+  chave_ok <- function(x) length(x) == 1 && !is.na(x) && nzchar(x)
+
+  if (!chave_ok(resultado$dataset_version)) {
+    motivos <- c(motivos, "resultado sem dataset_version")
+  } else if (!identical(resultado$dataset_version, lock$dataset_version)) {
+    motivos <- c(motivos, "dataset_version do resultado difere do lockfile")
+  }
+
+  if (!chave_ok(resultado$transform_version)) {
+    motivos <- c(motivos, "resultado sem transform_version")
+  } else if (!identical(resultado$transform_version, lock$transform_version)) {
+    motivos <- c(motivos, "transform_version do resultado difere do lockfile")
+  }
+
+  if (!chave_ok(resultado$formula) || !identical(resultado$formula, ivet_versao())) {
+    motivos <- c(motivos, "fórmula do resultado difere da vigente")
+  }
+
+  list(
+    vigente           = length(motivos) == 0,
+    motivos           = motivos,
+    formula           = ivet_versao(),
+    dataset_version   = lock$dataset_version,
+    transform_version = lock$transform_version
+  )
 }
