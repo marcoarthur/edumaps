@@ -48,8 +48,9 @@ test_that("saneamento ignora sub-indicador ausente (#154) e só é NA se todos f
   expect_true(is.na(comps0[["saneamento"]]))
 })
 
-test_that("ivet_bloco_socioeconomico: default (v1.1) = média de analfabetismo + saneamento", {
+test_that("ivet_bloco_socioeconomico: default (v1.2) = média de analfabetismo + renda + saneamento", {
   # analfabetismo 0.2; saneamento = (0.1+0.3+0.5+0.7)/4 = 0.4; média = 0.3
+  # (sem renda informada, o componente renda é NA e fica fora — #154)
   expect_equal(
     ivet_bloco_socioeconomico(
       pct_analfabeto = 0.2,
@@ -57,6 +58,12 @@ test_that("ivet_bloco_socioeconomico: default (v1.1) = média de analfabetismo +
       pct_lixo_inadequado = 0.5, pct_sem_banheiro = 0.7
     ),
     0.3
+  )
+  # a renda PASSOU a entrar no default (v1.2): renda 0 -> componente 1
+  # média de analfabetismo (0.2) e renda (1) = 0.6
+  expect_equal(
+    ivet_bloco_socioeconomico(pct_analfabeto = 0.2, renda = 0),
+    0.6
   )
 })
 
@@ -111,7 +118,7 @@ test_that("componentes selecionáveis (inclui equidade, fora por omissão)", {
     ivet_bloco_socioeconomico(pct_preto_pardo = 0.6, componentes = "preto_pardo"),
     0.6
   )
-  # fonte legada (renda) ainda calculável
+  # renda do responsável ainda calculável isoladamente
   expect_equal(
     ivet_bloco_socioeconomico(renda = 1212, teto_renda = 2424, componentes = "renda"),
     0.5
