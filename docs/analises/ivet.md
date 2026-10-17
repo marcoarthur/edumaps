@@ -2,7 +2,7 @@
 
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura) e 3 (núcleo reprodutível da fórmula, `R/ivet.R`).
-> **Versão da fórmula**: `ivet-v1.1` (histórico: `ivet-v1.0`) · **Data**: 2026-10-16.
+> **Versão da fórmula**: `ivet-v1.2` (histórico: `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-10-17.
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
 > das dimensões territoriais** dependem de dado (#125–#127) e do versionamento
@@ -202,7 +202,7 @@ chamado por ninguém**:
 
 ---
 
-## 4. Fórmula-alvo do IVET `ivet-v1.1` (territorial)
+## 4. Fórmula-alvo do IVET `ivet-v1.2` (territorial)
 
 ### 4.1 Estrutura e ordem de agregação
 
@@ -223,7 +223,7 @@ bug do `iqd` é justamente uma contagem crua).
 | Bloco | Dimensões | Fonte | Status |
 |-------|-----------|-------|--------|
 | **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (reconciliar em um só) | **implementado** (dividido em 4 sistemas) |
-| **B. Socioeconômico** | instrução + saneamento do setor censitário | `censobr`/IBGE (#123) | **implementado** (extração: arealização do setor, §4.5) |
+| **B. Socioeconômico** | instrução + renda do responsável + saneamento do setor censitário | `censobr`/IBGE (#123, #238) | **implementado** (extração: arealização do setor, §4.5) |
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
 | **D. Saúde** | PeNSE (saúde escolar) | #127 | **pendente** (LGPD) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **pendente** (LGPD) |
@@ -232,16 +232,16 @@ bug do `iqd` é justamente uma contagem crua).
 
 ### 4.3 Pesos — regra de vigência
 
-Enquanto as dimensões territoriais (C–E) não tiverem dado, **o IVET v1.1 não é
+Enquanto as dimensões territoriais (C–E) não tiverem dado, **o IVET v1.2 não é
 publicado como número**: publica-se apenas o bloco **A (escola)** com a
 identidade declarada, e o IVET agregado fica **`NULL`** (ver a semântica `NULL`
 = sem extração / `0` = sem resultado / `>0` = valor real, `#154`).
 
-Regra de peso (v1.1, explícita e auditável):
+Regra de peso (v1.2, explícita e auditável):
 - **peso igual entre dimensões disponíveis** (`W_j = 1`) — default reprodutível;
 - qualquer ponderação diferente **exige justificativa registrada** (literatura
   IDEB/DEA, Zotero 10453/10454/10673/10456) e sobe a versão da fórmula
-  (`ivet-v1.2`, …).
+  (`ivet-v1.3`, …).
 - **dimensão ausente não é 0**: entra como `NULL` e fica fora do denominador
   (não penaliza o território por falta de dado — mesma lógica do §4.3 e do #154).
 
@@ -251,7 +251,7 @@ Regra de peso (v1.1, explícita e auditável):
   reproduzível, em vez de quatro (§2).
 - A leitura **territorial** (§1) torna o agregado um índice de *território com
   escola observada*, e não uma média de atributos do prédio.
-- O número publicado fica **rastreável**: `ivet-v1.1` + versão do dataset de
+- O número publicado fica **rastreável**: `ivet-v1.2` + versão do dataset de
   entrada (a chave de conteúdo do [#135](versionamento_datasets.md) já fixa a
   ponta `raw`; falta versionar o passo `raw`→`clean`→`analytics`).
 
@@ -287,7 +287,7 @@ extração tem duas metades:
 
 Componentes e direção (a dimensão mede **vulnerabilidade**: maior = pior):
 
-| Componente | Coluna (banco) | Normalização | Papel (default v1.1) |
+| Componente | Coluna (banco) | Normalização | Papel (default v1.2) |
 |------------|----------------|--------------|----------------------|
 | analfabetismo | `pct_analfabeto` (15+) | proporção | componente (peso 1) |
 | água sem rede | `pct_agua_sem_rede` | proporção | componente (peso 1) |
@@ -295,20 +295,22 @@ Componentes e direção (a dimensão mede **vulnerabilidade**: maior = pior):
 | lixo inadequado | `pct_lixo_inadequado` | proporção | componente (peso 1) |
 | sem banheiro | `pct_sem_banheiro` | proporção | componente (peso 1) |
 | **saneamento** | — | média dos 4 acima (`ivet_agregar`) | componente (peso 1) |
-| renda | `renda_per_capita` | `1 − clamp(renda / teto, 0, 1)` | calculado, **sem fonte por setor** (#238) |
+| renda do responsável | `renda_resp_media` | `1 − clamp(renda / teto, 0, 1)` | componente (peso 1) |
 | sem instrução | `pct_sem_instrucao` (25+) | proporção | calculado, **sem fonte por setor** |
 | fundamental incompleto | `pct_fund_incomp` (25+) | proporção | calculado, **sem fonte por setor** |
 | preto/pardo (equidade) | `pct_preto_pardo` | proporção | calculado, **fora** por omissão |
 
-O default do bloco (**fórmula `ivet-v1.1`**) é `componentes =
-c("analfabetismo", "saneamento")` — **instrução + saneamento**, a fonte que o
-Censo 2022 por setor efetivamente publica (#238). O componente `saneamento` é a
-média dos quatro indicadores disponíveis (`ivet_agregar`, `NA` fora — #154):
-mede o domicílio, não o serviço isolado.
+O default do bloco (**fórmula `ivet-v1.2`**) é `componentes =
+c("analfabetismo", "renda", "saneamento")` — **instrução + renda do responsável +
+saneamento**. A renda entrou no *default* em v1.2: há fonte por setor (produto
+`Rendimento_do_Responsavel`, ver §4.5 e `fontes/socioeconomico.md`). O componente
+`saneamento` é a média dos quatro indicadores disponíveis (`ivet_agregar`, `NA`
+fora — #154): mede o domicílio, não o serviço isolado.
 
 - **Teto de renda** (`IVET_TETO_RENDA`, default = 2 salários mínimos de jul/2022
   = R$ 2.424) é **parâmetro de produto**: mudá-lo exige registo e nova versão da
-  fórmula (§4.3).
+  fórmula (§4.3). Aplica-se à **renda do responsável** (`renda_resp_media`), que
+  é o que o Censo 2022 publica por setor — não a uma renda per capita.
 - **Direção**: `[0,1]`, maior = mais vulnerável (coerente com o nome do índice e
   o §1). Consequência para a reconciliação: o bloco **A** (scores 0–10 do sistema
   B, onde maior = melhor) precisa ser **invertido** para a mesma direção — é o
@@ -320,17 +322,20 @@ mede o domicílio, não o serviço isolado.
 - A proporção preto/pardo é calculada e exposta, mas fica fora da dimensão por
   omissão: tratá-la como componente de vulnerabilidade é decisão de **equidade**
   que exige justificativa registada (§4.3).
-- **Disponibilidade do dado hoje (#238)**: a ingestão do setor
-  (`EduMaps::Ingestion::Job::SetoresCenso2022`) carrega o básico (domicílios), a
-  demografia, a cor/raça, a **alfabetização (15+)** e o **domicílio parte 2**
-  (água/esgoto/lixo/banheiro) — os brutos `Agregados_por_setores_alfabetizacao` e
-  `Agregados_por_setores_caracteristicas_domicilio2`. Renda (`rend_*`) e
-  escolaridade 25+ (`esc_*`) continuam **`NULL` por decisão**: o Censo 2022 **não
-  publica esses temas por setor** — não há ZIP a carregar. São mantidos no código
-  apenas para outra fonte (ex.: renda municipal). Consequência medida por setor:
-  `renda_per_capita`, `pct_sem_instrucao` e `pct_fund_incomp` seguem `NULL`
-  (ausência, nunca 0 — #154); a dimensão B passa a ter dado real via
-  `analfabetismo` e `saneamento`.
+- **Disponibilidade do dado hoje (#238, revisto a 2026-10-17)**: a ingestão do
+  setor (`EduMaps::Ingestion::Job::SetoresCenso2022`) carrega o básico
+  (domicílios), a demografia, a cor/raça, a **alfabetização (15+)**, o
+  **domicílio parte 2** (água/esgoto/lixo/banheiro) e a **renda do responsável**
+  (produto `Rendimento_do_Responsavel`, brutos
+  `Agregados_por_setores_renda_responsavel`): rendimento médio (V06004) e mediano
+  (V06006), com o nº de responsáveis (V06001) como peso. A escolaridade 25+
+  (`esc_*`) continua **`NULL` por decisão**: o Censo 2022 **não publica esse tema
+  por setor** — não há ZIP a carregar. Consequência medida por setor:
+  `pct_sem_instrucao` e `pct_fund_incomp` seguem `NULL` (ausência, nunca 0 —
+  #154); `renda_per_capita` também segue `NULL`, porque o produto é da **renda do
+  responsável**, não per capita. A arealização expõe
+  `renda_resp_media`/`renda_resp_mediana` (peso = nº estimado de responsáveis na
+  interseção); a dimensão B usa `renda_resp_media`.
 
 
 ---
@@ -344,12 +349,12 @@ mede o domicílio, não o serviço isolado.
 | C | `EduMaps::Model::Domain::SchoolQuality->new(schema=>…, geo_tag=>codigo_ibge)->all_scores` |
 | D | `$rs->with_all_scores` (hoje sem chamador) |
 
-Para o IVET v1.1: recalcular A→B reconciliados, aplicar §4.1 e publicar só o
+Para o IVET v1.2: recalcular A→B reconciliados, aplicar §4.1 e publicar só o
 bloco A enquanto C–E forem `NULL`.
 
 **Núcleo da fórmula como código (entregável 3, parte pronta).** A estrutura
 `componente → dimensão → IVET` de §4.1/§4.3 vive como código R **puro** em
-`analysis/edumapsr/R/ivet.R` (fórmula `ivet-v1.1`):
+`analysis/edumapsr/R/ivet.R` (fórmula `ivet-v1.2`):
 
 - `ivet_normalizar()` — binário/proporção/contagem (contagem sempre contra teto);
 - `ivet_dimensao()` — média ponderada dos componentes (`undef`→0);
@@ -404,10 +409,10 @@ Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
   `DEPRECATED` no código; **C** declarada camada de análise (§3.1). O efeito é
   *uma* definição canônica (§3) em vez de quatro concorrentes (§2).
 - **`with_vulnerability_score` continua `die`** (não implementar antes do IVET
-  v1.1 ter as dimensões C–E).
+  v1.2 ter as dimensões C–E).
 - **Follow-ups** (não neste ciclo): remoção definitiva do código morto A/D;
   reconciliação *de fórmula* entre B e C — é decisão de produto (muda
-  similaridade/ranking) e conflita com o alvo `ivet-v1.1`; alinhar o *fallback*
+  similaridade/ranking) e conflita com o alvo `ivet-v1.2`; alinhar o *fallback*
   em memória de `Profile` (sistema C) ao espaço canônico de B.
 
 
