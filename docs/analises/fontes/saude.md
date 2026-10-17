@@ -130,6 +130,22 @@ EduMaps já usa) e ao Censo (que dá o lado da demanda).
 - `iv_saude_urgencia_proximidade` = existência e distância de SU/SUDEN com centro cirúrgico e obstétrico (resolutividade)
 - `iv_saude_acesso_ponderado` = escore de acesso por distância-tempo simulado sobre a malha viária do OSM — **aproveita o pipeline de roteamento que o EduMaps já tem**
 
+> ⚠️ **Correção do tipo de unidade (2026-10-17, #137 bloco D).** O
+> `analytics.acessibilidade_saude` filtrava os tipos `11/12`, que **não existem**
+> no dicionário oficial (`/cnes/tipounidades`): a atenção básica está em **1
+> (Posto de Saúde)** e **2 (Centro de Saúde/Unidade Básica de Saúde)**. Com o
+> filtro errado, `dist_min_km_ubs` saía NULL em **100%** das escolas e todas eram
+> classificadas "Sem UBS no município". A distância também era **planar** sobre
+> SRID 4674 (graus, não metros); passou a `ST_DistanceSphere` (esférica, metros).
+> Além disso, município sem UBS agora sai **0** (zero real), não NULL. Change:
+> `analytics_acessibilidade_saude_ubs`.
+>
+> ⚠️ **`cobertura_aps` não é cobertura APS.** Apesar do nome, a coluna carrega a
+> **população coberta estimada do PMMB (Programa Mais Médicos)** — em pessoas, não
+> em % (ver `EduMaps::Ingestion::Job::SISAB`). Para cobertura de APS, usar
+> `(Σ ativas_ff + equipe_esf) ÷ população IBGE × 10.000` (o `iv_saude_cobertura_aps`
+> acima).
+
 **Prioridade:** `[alta]` — 16 pontos
 
 **Justificativa:** ⭐⭐ (endereça a lacuna de forma estrutural — oferta, não
