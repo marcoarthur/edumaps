@@ -273,46 +273,8 @@ sub process_csv ($self, $csv_path) {
   return \@rows;
 }
 
-# Compara o cabecalho do CSV com o contrato e devolve SO as diferencas.
-#
-# Cada elemento e' [ $coluna, $pos_contrato, $pos_csv ], com posicao 0-based:
-#
-#   $pos_contrato undef -> a coluna nao esta no contrato  ("a mais")
-#   $pos_csv      undef -> a coluna do contrato falta      ("faltam")
-#   ambos definidos, diferentes -> esta na posicao errada ("fora de ordem")
-#   ambos definidos, iguais    -> conforme, e portanto NAO entra na lista
-#
-# Medido: a versao anterior fazia push de toda a coluna do cabecalho sem
-# comparar nada, e o `die` seguinte comparava um NOME com uma POSICAO
-# ("codigo_ibge" ne 0), que e' sempre verdadeiro -- o job abortava mesmo
-# com o CSV exactamente igual ao contrato. Os dois lados juntos faziam
-# do teste de contrato um no-op que so passava por o dies nunca ter sido
-# alcancado com o caminho real.
-sub _comparar_colunas ($self, $header, $esperado) {
-  my %pos_esp = map { $esperado->[$_] => $_ } 0 .. $#$esperado;
-  my %pos_hdr = map { $header->[$_]  => $_ } 0 .. $#$header;
-  my @dif;
-
-  # Colunas que o CSV traz. Se nao estao no contrato, sao "a mais".
-  for my $i (0 .. $#$header) {
-    my $h = $header->[$i];
-    if (!exists $pos_esp{$h}) {
-      push @dif, [ $h, undef, $i ];
-    }
-    elsif ($pos_esp{$h} != $i) {
-      push @dif, [ $h, $pos_esp{$h}, $i ];
-    }
-  }
-
-  # Colunas do contrato que o CSV nao traz. Nao contam as "a mais":
-  # a posicao no contrato e' a do indice, mesmo que no CSV nao exista.
-  for my $i (0 .. $#$esperado) {
-    my $e = $esperado->[$i];
-    push @dif, [ $e, $i, undef ] unless exists $pos_hdr{$e};
-  }
-
-  return @dif;
-}
+# O contrato de colunas é conferido com _comparar_colunas(), agora no Base
+# (era privada aqui; é comum aos loaders que orquestram R).
 
 # -----------------------------------------------------------------
 # 6. Carga

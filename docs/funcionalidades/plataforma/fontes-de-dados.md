@@ -63,6 +63,10 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
 - Sistema pode usar a **cobertura e uso da terra** de cada município (floresta,
   pastagem, agricultura, área urbana, água…) ano a ano, de 2015 a 2024. Os
   números são a estatística oficial do MapBiomas.
+- Sistema pode usar a **cobertura do solo ao redor de cada escola** — a fração
+  de vegetação natural, área agropecuária, área urbana/infraestrutura e água na
+  área de influência —, lida do mapa de uso da terra de 30 m do MapBiomas, ano a
+  ano (série de 1985 a 2025).
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 - Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota

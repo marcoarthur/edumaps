@@ -144,6 +144,19 @@ COMMENT antiga da tabela prometia e que os indicadores acima projetam — **fico
 de fora** desta carga: é a **#255** (grão município aqui é decisão registrada em
 `docs/specs/2026-10-13-ingestao-real-plano.md` §8).
 
+**Decisão de ingestão (#255, 2026-10-17) — o recorte por escola entra:** o
+raster de 30 m da **Coleção 11** (1985–2025, ~748 MB/ano, CC BY 4.0, COG público
+sem token) é arealizado sobre o buffer de `clean.escola_influencia` pelo job
+`MapBiomasEscola`, gravando **fração por classe-folha** em
+`clean.mapbiomas_escola` (grão escola × ano do Censo × ano do raster × raio ×
+classe; grupos na view `clean.v_mapbiomas_escola_grupos`). O raster **não** vai
+para o banco (~22 GB/ano descomprimido; a base tem ~5,5 GB livres): é lido em
+*streaming* com `terra::extract` no host de ingestão (`backend.edumaps`, que tem
+GDAL 3.6.2). Primeiro ciclo = **piloto 1 UF (ES), 2024, raio 1 km**. Detalhe em
+[`../influencia.md`](../influencia.md) §8.2 e [`../ivet.md`](../ivet.md) §4.5.4.
+A **exposição a risco** (ISH, declividade, queimada) — o resto do bloco F —
+continua pendente.
+
 ---
 
 ### INMET — séries históricas diárias (BDMEP)

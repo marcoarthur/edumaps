@@ -228,7 +228,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
 | **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
-| **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241 | parcial (proxy de cobertura do solo — pendente) |
+| **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241/#255 | **parcial** (cobertura do solo por escola — §4.5.4; exposição a risco pendente) |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
 
 ### 4.3 Pesos e critério de publicação
@@ -505,6 +505,39 @@ renda do bloco B e o bloco G):
 com **C (mobilidade)** ainda bloqueado (sem isócrona — §4.2), D fecha a extração
 mas não torna o índice publicável.
 
+### 4.5.4 Bloco F — extração (cobertura do solo)
+
+O bloco **F** começa pela **cobertura do solo** — a dimensão que o MapBiomas
+entrega pixel a pixel. A change `mapbiomas_escola` materializa
+`clean.mapbiomas_escola` (grão escola × ano do Censo × ano do raster × raio ×
+classe-folha) arealizando o **raster de 30 m da Coleção 11** sobre o buffer de
+`clean.escola_influencia` (Tier 1, §8.2 de [`influencia.md`](influencia.md)).
+
+- A **fração** de cada classe-folha (`fracao`, soma 1 por escola × ano × raio) é
+  o dado bruto; a view `clean.v_mapbiomas_escola_grupos` reagrupa na taxonomia
+  nível 1 (vegetação natural, agropecuário, urbano-infra, água, …) sem
+  reprocessar. Componentes do IVET leem os grupos, não as 31 classes.
+- **Direção**: a vegetação natural mede "mais = melhor" (mais amparo) e é
+  **invertida** para vulnerabilidade (como a renda do bloco B); o antrópico
+  entra direto. Os **pesos** e o recorte do bloco F são decisão de produto ainda
+  em aberto — esta change entrega a **extração**, não o componente da fórmula.
+- **#154 (ausência ≠ 0)**: buffer sem interseção com o raster fica **sem
+  linha** — nunca 0 — e aparece no relatório de órfãos do job. Isso distingue
+  "sem cobertura" de "zero de vegetação".
+- **Fonte**: COG nacional `brazil_coverage-col11_<ANO>.tif` (Coleção 11,
+  1985–2025, ~748 MB/ano, CC BY 4.0), pinado no job `MapBiomasEscola`; o ano é
+  validado no intervalo. O raster **não** entra no banco (≈22 GB/ano
+  descomprimido); a arealização lê o COG em *streaming* com `terra::extract` no
+  host de ingestão e grava só as frações.
+- **Código**: job `EduMaps::Ingestion::Job::MapBiomasEscola` + script
+  `backend/templates/rscripts/ingestion/extract_mapbiomas_escola.R`; testes em
+  `backend/t/05-tasks/mapbiomas_escola_loader.t`.
+
+⚠️ **F não fecha o agregado.** O bloco F entra na fórmula só quando a **exposição
+a risco** (ISH, declividade — §4.2) estiver extraída; e o agregado continua `NA`
+enquanto **C (mobilidade)** estiver bloqueado (§4.2). Esta change é pré-requisito
+de F, não a sua conclusão.
+
 ### 4.6 Vigência e retreino
 
 Um número do IVET só vale como retrato do **presente** enquanto o dado de
@@ -610,7 +643,7 @@ de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feit
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **F** só tem proxy de cobertura do solo (#255) |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **F** com a cobertura do solo extraída (§4.5.4, #255), mas a exposição a risco ainda pendente |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 
