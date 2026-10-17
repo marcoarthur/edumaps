@@ -4,6 +4,63 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-17 — #266/#137: renda do responsável no bloco B (ivet-v1.2)
+
+- **PR #267 MERGEADO** (merge commit `d253f54`, branch
+  `feat/renda-responsavel-bloco-b` removida): commits `bfcc79e`
+  `feat(data): renda do responsavel (setor + entorno)`, `b3110b6`
+  `feat(analytics): componente renda no IVET v1.2`, `6e35f8d`
+  `docs: renda do responsavel no bloco B do IVET`.
+- **Issue #266 criada** (não havia issue para a pendência):
+  `feat(analytics): renda do responsável no bloco B do IVET (ivet-v1.2)`
+  (labels `type:data`, `domain:backend`, `domain:data`, `analytics`,
+  `priority:medium`). **Revisa a decisão da #238**: o "sem fonte por setor para
+  renda" estava **incompleto**.
+- **Achado**: os *Agregados por Setores* não trazem renda, mas o IBGE publica a
+  **renda do responsável** num produto **irmão**:
+  `Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel/`
+  (`Agregados_por_setores_renda_responsavel_BR_20260508_csv.zip`). Variáveis
+  V06001 (responsáveis), V06004 (média), V06006 (mediana). O CSV usa **ponto**
+  decimal (os demais temas usam vírgula). `X`/vazio → NULL (+ flag de supressão).
+- **Loader** (`SetoresCenso2022.pm`): tema `renda_responsavel`, `URL_RENDA` +
+  `_url_zip($tema)`, `%DECIMAL_PONTO`, `%TIPO_COLUNA` (numeric); `rend_media`
+  (V06004) **sai** de `@SEM_FONTE`; novas `rend_mediana` (V06006) e
+  `rend_resp_count` (V06001). `esc_*`, `rend_per_capita` e `cor_sem_decl` seguem
+  sem fonte (a escolaridade 25+ **não é publicada por setor** — limitação de
+  dado, não bloqueio).
+- **Duas changes Sqitch** (append no plano; nada de editar/reordenar o existente):
+  - `censo2022_setor_renda_responsavel` (`requires censo2022_setor
+    comments_ingestao_p2`): `ADD rend_mediana NUMERIC, rend_resp_count INTEGER`;
+    re-COMMENT de `rend_media` (com fonte) e `rend_per_capita` (segue sem).
+  - `escola_entorno_socioeconomico_renda` (`requires
+    escola_entorno_socioeconomico_saneamento censo2022_setor_renda_responsavel`):
+    `renda_resp_media`/`renda_resp_mediana` na arealização; **peso = nº estimado
+    de responsáveis** na interseção (`rend_resp_count × w/area_setor`), não área;
+    redefine `refresh_escola_entorno_socioeconomico()`.
+  - O verify de `escola_entorno_socioeconomico_saneamento.sql` foi **editado**
+    (assert de versão v1.1 → v1.2): `sqitch verify` roda todos os verifies no
+    estado final; editar corpo de verify **não muda** `change_id`.
+- **IVET v1.2** (`analysis/edumapsr`): componente `renda` ligado a
+  `renda_resp_media`; entra no **default** do bloco B
+  (`c("analfabetismo","renda","saneamento")`); `ivet_versao()` → `ivet-v1.2`;
+  teto `IVET_TETO_RENDA` (2 SM jul/2022 = R$ 2.424) documentado como aplicado à
+  **renda do responsável** (não per capita). man/*.Rd são **gitignored** (gerados).
+- **Validação**: `sqitch deploy` + `verify` global verde no `dev_docker`;
+  `setores_censo_loader.t` PASS (renda lê `2453.03`; `X`/vazio → NULL);
+  `escola_entorno_socioeconomico.t` PASS (ponderação por responsáveis; ausência →
+  NULL; `versao` = ivet-v1.2); `testthat::test_local(filter="ivet")` PASS; CI
+  "Perl contra o banco de fixtures" **pass** (7m37s).
+- **Deploy**: `rex prepare` + `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_minion_dev` + `deploy_analytics_dev`. Produto (`database.edumaps`)
+  confirmado: `censo2022_setor` tem `rend_media/rend_mediana/rend_resp_count`;
+  `versao` default = `ivet-v1.2`. Imagens locais `sqitch`/`backend`/`minion`/
+  `analytic` reconstruídas pós-merge (md5 do loader confere no container).
+- **Pendência**: o **conteúdo de renda no produto** exige re-executar o loader
+  (tema renda) e re-materializar o entorno (`refresh_entorno_socioeconomico` /
+  `clean.refresh_escola_entorno_socioeconomico`, ~2 h+ país) — não rodado neste
+  ciclo (foi código + deploy). Até lá, `renda_resp_media` fica `NULL` no produto
+  e o bloco B segue com instrução+saneamento (renda fora, pois `NA`).
+
 ## Sessão 2026-10-16 — #264/#137: materializar o bloco B (task de refresh do entorno) + influência global
 
 - **PR #265 MERGEADO** (merge commit `d72727d`, 2026-10-16; branch
