@@ -228,7 +228,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **C. Acesso/mobilidade** | exposição viária (sinistros RENAEST + frota RENAVM); isócrona pendente | #125 | **implementado** (proxy — §4.5.5; isócrona pendente) |
 | **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
-| **F. Meio ambiente/clima** | cobertura do solo + exposição a risco (fogo/solo) | #125/#241/#255/#278 | **parcial** (extração pronta — §4.5.4; **pesos em aberto**) |
+| **F. Meio ambiente/clima** | cobertura do solo + exposição a risco (fogo/solo) | #125/#241/#255/#278 | **definido** (3 componentes — §4.5.4; tetos provisórios) |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
 
 ### 4.3 Pesos e critério de publicação
@@ -542,10 +542,13 @@ classe-folha) arealizando o **raster de 30 m da Coleção 11** sobre o buffer de
   o dado bruto; a view `clean.v_mapbiomas_escola_grupos` reagrupa na taxonomia
   nível 1 (vegetação natural, agropecuário, urbano-infra, água, …) sem
   reprocessar. Componentes do IVET leem os grupos, não as 31 classes.
-- **Direção**: a vegetação natural mede "mais = melhor" (mais amparo) e é
-  **invertida** para vulnerabilidade (como a renda do bloco B); o antrópico
-  entra direto. Os **pesos** e o recorte do bloco F são decisão de produto ainda
-  em aberto — esta change entrega a **extração**, não o componente da fórmula.
+- **Direção e componentes (definidos 2026-10-18)**: o bloco tem **3
+  componentes**, peso **igual** entre os disponíveis — `risco_fogo` (MapBiomas
+  Fogo, **direto**: mais fogo = pior), `vegetacao_natural` (Coleção 11,
+  **invertida**: mais vegetação = melhor) e `carbono_solo` (**invertido**: mais
+  carbono = melhor). Os tetos de fogo/carbono são **provisórios** (a calibrar na
+  corrida nacional). Ficha e lastro em [`ivet-coeficientes.md`](ivet-coeficientes.md)
+  §2/§5.1; código em `R/ivet-meio-ambiente.R`.
 - **#154 (ausência ≠ 0)**: buffer sem interseção com o raster fica **sem
   linha** — nunca 0 — e aparece no relatório de órfãos do job. Isso distingue
   "sem cobertura" de "zero de vegetação".
@@ -558,10 +561,13 @@ classe-folha) arealizando o **raster de 30 m da Coleção 11** sobre o buffer de
   `backend/templates/rscripts/ingestion/extract_mapbiomas_escola.R`; testes em
   `backend/t/05-tasks/mapbiomas_escola_loader.t`.
 
-⚠️ **F não fecha o agregado.** O bloco F entra na fórmula só quando a **exposição
-a risco** (ISH, declividade — §4.2) estiver extraída; e o agregado continua `NA`
-enquanto **C (mobilidade)** estiver bloqueado (§4.2). Esta change é pré-requisito
-de F, não a sua conclusão.
+⚠️ **F é parcial.** O bloco F já tem **componentes definidos** (fogo + vegetação
++ solo) e entra no agregado **onde houver dado** (cada componente ausente cai
+fora — #154). Mas a cobertura ainda é **desigual**: fogo/carbono só em parte do
+território (SP/MG hoje, nacional em curso) e a **cobertura do solo** só no **ES**
+(ano 2024, 3.156 escolas, **disjunta** da anterior). Enquanto isso, F é lido como
+fogo+solo na maior parte. O **ISH/declividade** (§4.2) seguem **fora** — não estão
+no `mapbiomas-public`.
 
 #### Exposição a risco (#278)
 
@@ -577,8 +583,10 @@ no disco do host (~3 GB livres): são lidos em *streaming* por **`/vsicurl`**,
 com **recorte à AOI** antes de extrair. Aplicação **gradual** por **região
 imediata** (`backend/script/ingestao/mapbiomas_risco.sh`).
 
-⚠️ Os **pesos do bloco F** ainda **não estão definidos** — é a fila de revisão
-de [`ivet-coeficientes.md`](ivet-coeficientes.md) §5.
+Os **componentes e pesos do bloco F** foram definidos em 2026-10-18 (peso igual;
+fogo direto, vegetação e carbono invertidos) — ficha e lastro de construto em
+[`ivet-coeficientes.md`](ivet-coeficientes.md) §2/§5.1. Restam os **tetos
+provisórios** de fogo/carbono, a calibrar com a corrida nacional.
 
 ### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
 ⚠️ **PROXY (decisão de produto, 2026-10-18).** A dimensão central de C é o
@@ -713,10 +721,11 @@ Cobertura: `backend/t/05-tasks/setores_censo_loader.t`,
 blocos territoriais **D (saúde)**, **E (segurança)** e **G (recursos)** está em
 `analysis/edumapsr/R/ivet-saude.R`, `R/ivet-seguranca.R` e `R/ivet-recursos.R`
 (§4.5.3/§4.5.1/§4.5.2), com testes em `tests/testthat/test-ivet-saude.R`,
-`test-ivet-seguranca.R` e `test-ivet-recursos.R` e contrato no card. **Faltam**
-as extrações de **C** (mobilidade — bloqueado, sem isócrona) e **F** (meio
-ambiente — só há proxy de cobertura do solo; a exposição a risco do §4.2 depende
-de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feito
+`test-ivet-seguranca.R` e `test-ivet-recursos.R` e contrato no card. **F** também
+já tem componentes (§4.5.4: fogo + vegetação natural + carbono do solo), com
+**cobertura ainda parcial**. Resta **C** (mobilidade — **proxy** de exposição
+viária; a isócrona segue bloqueada por falta de motor de roteamento). O
+versionamento do passo `raw`→`clean`→`analytics` está feito
 (§4.6, [`versionamento_datasets.md`](versionamento_datasets.md)).
 
 ---
@@ -727,7 +736,7 @@ de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feit
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), C (§4.5.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | falta a **exposição a risco do F** (ISH/declividade/queimada); **C é um proxy** de exposição viária (isócrona pendente); com C+D+E, **o agregado é publicável** |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), C (§4.5.5), D (§4.5.3), E (§4.5.1), F (§4.5.4) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | falta a **cobertura nacional do F** (fogo/solo em curso; vegetação só no ES) e o **ISH/declividade**; **C é um proxy** de exposição viária (isócrona pendente); com C+D+E, **o agregado é publicável** |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 

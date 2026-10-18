@@ -241,6 +241,42 @@ bloco_e:
       teto: 5
       teto_nota: "por 100 mil habitantes; evento raro (p90 = 0)"
 
+bloco_f:
+  # Meio ambiente (MapBiomas). Duas metades extraidas: cobertura do solo
+  # (#255, clean.v_mapbiomas_escola_grupos: vegetacao natural) e exposicao a
+  # risco (#278, clean.mapbiomas_escola_risco: fogo + carbono do solo).
+  # Direcao: maior = mais vulneravel — o FOGO entra direto; a VEGETACAO e o
+  # CARBONO entram invertidos (1 - clamp), como a renda do bloco B.
+  # Pesos iguais entre os componentes disponiveis.
+  # ATENCAO: a cobertura do solo hoje so cobre o ES (ano 2024, 3.156 escolas) e
+  # a exposicao a risco cobre MG/SP (ano 2020); onde um componente falta ele cai
+  # fora do denominador (#154), e o bloco degrada para fogo+solo. Tetos de fogo
+  # e carbono PROVISORIOS ate a corrida nacional do F terminar
+  # (ivet-coeficientes.md secao 5).
+  fonte: clean.mapbiomas_escola_risco
+  default: [risco_fogo, vegetacao_natural, carbono_solo]
+  componentes:
+    risco_fogo:
+      fonte: clean.mapbiomas_escola_risco.fogo_frequencia_media
+      normalizacao: "clamp(freq/teto)"
+      direcao: "+"
+      no_default: false
+      teto: 1
+      teto_nota: "frequencia media de fogo 1985-2020 (MapBiomas Fogo); SP p50=0,005, p90=0,117, p99=0,563; TETO PROVISORIO (calibrar no nacional)"
+    vegetacao_natural:
+      fonte: "clean.v_mapbiomas_escola_grupos.fracao (grupo vegetacao_natural)"
+      normalizacao: "1 - clamp(fracao)"
+      direcao: "+"
+      no_default: false
+      teto_nota: "fracao da area de influencia (MapBiomas Colecao 11); sem teto (proporcao); ES p50=0,104, p90=0,356"
+    carbono_solo:
+      fonte: clean.mapbiomas_escola_risco.solo_carbono_medio
+      normalizacao: "1 - clamp(carbono/teto)"
+      direcao: "+"
+      no_default: false
+      teto: 500
+      teto_nota: "carbono organico do solo (tC/ha, MapBiomas); SP p50=180, p90=462, p99=791; TETO PROVISORIO; varia por bioma; bruto negativo (nodata) satura em 1"
+
 bloco_g:
   # Recursos fiscais (SIOPE/SICONFI). Indicadores "maior = melhor", invertidos
   # para a direcao do IVET (1 - clamp(valor/teto)). pct_receita_em_educ esta
@@ -278,4 +314,4 @@ proveniencia:
   vigencia: "ivet_vigencia(): vigente se dataset_version, transform_version e formula conferem com o lockfile"
 
 validacao:
-  testes: [tests/testthat/test-ivet.R, tests/testthat/test-ivet-socioeconomico.R, tests/testthat/test-ivet-escola.R, tests/testthat/test-ivet-seguranca.R, tests/testthat/test-ivet-recursos.R, tests/testthat/test-ivet-saude.R, tests/testthat/test-ivet-card.R]
+  testes: [tests/testthat/test-ivet.R, tests/testthat/test-ivet-socioeconomico.R, tests/testthat/test-ivet-escola.R, tests/testthat/test-ivet-seguranca.R, tests/testthat/test-ivet-recursos.R, tests/testthat/test-ivet-saude.R, tests/testthat/test-ivet-mobilidade.R, tests/testthat/test-ivet-meio-ambiente.R, tests/testthat/test-ivet-card.R]

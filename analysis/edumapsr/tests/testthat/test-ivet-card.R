@@ -103,6 +103,16 @@ test_that("card: componentes do bloco G batem com o código (recursos)", {
                IVET_TETO_AUTONOMIA_FISCAL_PCT)
 })
 
+test_that("card: componentes do bloco F batem com o código (meio ambiente)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_meio_ambiente_componentes()
+  expect_setequal(names(card$bloco_f$componentes), names(comps))
+  expect_equal(card$bloco_f$default, IVET_BLOCO_F_COMPONENTES)
+  expect_true(all(card$bloco_f$default %in% names(card$bloco_f$componentes)))
+  expect_equal(card$bloco_f$componentes$risco_fogo$teto, IVET_TETO_FOGO)
+  expect_equal(card$bloco_f$componentes$carbono_solo$teto, IVET_TETO_CARBONO_SOLO)
+})
+
 test_that("card: proveniência cobre as duas chaves e a vigência", {
   card <- ivet_card()
   expect_match(card$proveniencia$dataset_version, "lock")
