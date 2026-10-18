@@ -83,10 +83,15 @@ agregar <- function(d, ano, raio) {
   if (nrow(d) == 0) return(vazio)
 
   chave <- function(x) paste0(x$co_entidade, "\x1f", x$nu_ano_censo)
-  ids <- unique(chave(d))
+  chaves <- chave(d)
+  ids <- unique(chaves)
+  # Índice por chave calculado UMA vez (O(linhas)). Antes, chave(d) era
+  # recomputado para cada escola dentro do lapply: O(n²·pixels) — em blocos
+  # grandes (Campinas, 1875 escolas) passava de 3600s e morria no stall.
+  idx <- split(seq_len(nrow(d)), chaves)
 
   linhas <- lapply(ids, function(k) {
-    dd <- d[chave(d) == k, , drop = FALSE]
+    dd <- d[idx[[k]], , drop = FALSE]
     fogo <- dd[dd$indicador == "fogo", , drop = FALSE]
     solo <- dd[dd$indicador == "solo", , drop = FALSE]
     tot_fogo <- sum(fogo$peso)
