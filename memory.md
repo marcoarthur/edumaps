@@ -60,11 +60,43 @@
   `tools/notify/notify.sh` para o Telegram. Enquanto a sessão estiver viva e as
   duas tarefas rodando, o loop segue ativo.
 - **#268 (entorno)**: **ainda em curso** no `database.edumaps`
-  (`/tmp/refresh_entorno.sh`); log parou em **PR** (18/27 UF); faltam RJ, RN, RO,
-  RR, RS, SC, SE, **SP**, TO. Não fechar antes de terminar.
+  (`/tmp/refresh_entorno.sh`); **25/27 UF** (contadas por `UF=` no log); faltam
+  **SP** (em execução) e **TO**. Não fechar antes de terminar.
 - **⚠️ Armadilha medida**: **divisão inteira** no psql — `equipe_esf + ativas_ff` e
   `sinistros_12m` divididos por `populacao_estimada` (todos `integer`) dão 0 sem
   `::numeric`; os percentis saem 0 e parecem "base vazia".
+- **PR #284 MERGEADO** (merge `3b8b3c1`, branch `fix/backend-agregacao-f-o-n`):
+  o bloco F morria em **Campinas** (1875 escolas) por um **bug O(n²)** no
+  `agregar()` do `extract_mapbiomas_risco.R` — `chave(d)` (paste0 de ~13M
+  linhas) era recomputado **para cada escola** dentro do `lapply`. O modelo
+  `t = 86,5 + 0,00264·n²` ajustado aos 13 blocos concluídos (485→727s) previa
+  **~9.400s** (2,6h) para Campinas, contra `stall_timeout = 3600s` → o bloco
+  **nunca** completava; cada bloco grande de SP queimaria 3–4 tentativas (~4h)
+  e seguiria como `FALHOU`.
+  - **Evidência**: backtrace do R (gdb) só com frames `libR`
+    (`Rf_translateChar`/`applyClosure`), 97% CPU e `rchar` congelado —
+    extração já concluída, preso na agregação.
+  - **Correção**: `chaves <- chave(d)` uma vez + `split(seq_len(nrow(d)), chaves)`
+    indexando por chave → O(linhas). Validação por **equivalência exata**
+    (`identical()`) em sintéticos (NA, peso 0, chave só-de-solo, vazio) + escala
+    (velho ∝ K·n; novo linear). **CI verde em 13m05s** (run `39150832549`).
+  - **Medido depois do fix**: **Campinas OK em 233s** (log 18:01:39Z); run
+    retomada já com **17 OK / 0 FALHOU**. O diagnóstico fechou exato.
+- **Deploy do #284**: `rex prepare` + `deploy_backend_dev` (master key de
+  `~/.config/edumaps/dev_master_key`); md5 do template confere
+  local↔`backend.edumaps`; imagens locais `backend`/`minion` reconstruídas
+  (`/tmp/opencode/build284.log`, exit 0). F reiniciado com log em `>>` (preserva
+  o histórico de OK/FALHOU que o loop de status usa).
+- **`tools/notify/status_long_tasks.sh` versionado** (commit `0c7ba22`, direto em
+  `main` — ferramenta local, não deployável): é o loop de status de 20 min que
+  este ciclo usou em `/tmp/opencode/status_loop.sh` (encerra quando as duas
+  tarefas param; `ativo=1` se ao menos uma roda). README ganhou secção de uso +
+  **aviso de fuso**: hosts `*.edumaps` correm em **UTC** e o host local em
+  **UTC-3** (timestamps dos logs ~3h à frente — quase rendeu uma investigação
+  falsa de "loop morto").
+- **Nota técnica 150** (`docs/new_ideas/implementations_ideas/notas_tecnicas_150.md`)
+  fecha o ciclo: #281 (lastro dos tetos), #282 (F retomável), #283 (CI verde),
+  #284 (O(n²)) e o monitor versionado.
 
 ## Sessão 2026-10-18 — #278: exposição a risco (bloco F) — Fogo + Solo (PR #280)
 
