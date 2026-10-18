@@ -157,6 +157,31 @@ GDAL 3.6.2). Primeiro ciclo = **piloto 1 UF (ES), 2024, raio 1 km**. Detalhe em
 A **exposição a risco** (ISH, declividade, queimada) — o resto do bloco F —
 continua pendente.
 
+**Decisão de ingestão (#278, 2026-10-18) — a exposição a risco começa por fogo e
+solo.** Medido no bucket público: o **ISH/risco climático** e a **declividade**
+que esta ficha projetava **não estão** no `mapbiomas-public`; o que existe é
+**MapBiomas Fogo** (`brasil/fire/coverage-frequency-1/brasil_fire_frequency_1985_<ANO>.tif`,
+frequência acumulada de queimada — nº de anos em que o pixel ardeu, 1985–2020) e **MapBiomas Solo**
+(`brasil/soil/soil_total_carbon_<ANO>.tif`, carbono total, até 2021) — ambos
+30 m, EPSG:4326, CC BY 4.0. O job `MapBiomasRisco` arealiza-os sobre o buffer
+(`clean.mapbiomas_escola_risco`: frequência de queimada média/máx/fração e
+carbono do solo médio). Os rasters têm **~2 GB cada** — não cabem no disco do
+host de ingestão (~3 GB livres): são lidos em *streaming* pelo GDAL via
+**`/vsicurl`** (HTTP range), com **recorte à AOI** antes de extrair (sem o
+recorte, a leitura polígono a polígono é lenta demais — medido). A extração é
+aplicada **aos poucos**, por **região imediata**, pelo script
+`backend/script/ingestao/mapbiomas_risco.sh`:
+
+```
+script/ingestao/mapbiomas_risco.sh SP                       # todas as regiões de SP
+script/ingestao/mapbiomas_risco.sh SP 2020 1000 "São José dos Campos"   # uma região
+```
+
+O script lista as regiões imediatas da UF (`regioes_do_estado.pl`, sobre
+`clean.municipios_sp.nome_regiao_imediata`) e chama o job uma vez por região,
+passando a lista de municípios (`--arg municipios=`). Idempotente (UPSERT por
+ano × raio): re-rodar um bloco não duplica.
+
 ---
 
 ### INMET — séries históricas diárias (BDMEP)

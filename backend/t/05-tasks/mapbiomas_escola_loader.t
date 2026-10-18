@@ -153,6 +153,7 @@ like($@, qr/ano inválido/, 'nunca interpola texto livre no caminho');
 
   my ($del) = grep { $_->[0] =~ /^DELETE FROM clean\.mapbiomas_escola/ } @{ $dbh->{dos} };
   ok($del, 'faz DELETE do recorte antes de inserir');
+  like($del->[0], qr/co_entidade = ANY/, 'DELETE escopado às escolas da carga (blocos por região/UF)');
   like($del->[0], qr/ano = ANY/, 'DELETE limitado ao ano do recorte');
   like($del->[0], qr/raio_m = \?/, 'DELETE limitado ao raio do recorte');
 

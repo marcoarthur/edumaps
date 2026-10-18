@@ -145,3 +145,4 @@ escola_entorno_socioeconomico_renda [escola_entorno_socioeconomico_saneamento ce
 analytics_acessibilidade_saude_ubs [analytics_views_materializadas] 2026-10-17T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # #137 bloco D: UBS do CNES (tipos 1+2) e distancia esferica
 mapbiomas_escola [escola_influencia] 2026-10-17T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #255: cobertura do solo (raster MapBiomas 30m, Colecao 11) na area de influencia
 antt_acidente_trecho_grao [antt_acidente_trecho] 2026-10-18T01:30:00Z Marco Arthur <arthurpbs@gmail.com> # #168: grao do evento de acidente (data+horario+n_ocorrencia), nao km+dia
+mapbiomas_escola_risco [escola_influencia] 2026-10-18T11:00:00Z Marco Arthur <arthurpbs@gmail.com> # #278: exposicao a risco (MapBiomas Fogo+Solo) na area de influencia

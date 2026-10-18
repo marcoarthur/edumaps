@@ -351,6 +351,10 @@ sources:
         method: GET
         description: "GeoTIFF/COG nacional por coleção/ano (ex.: collection11/lulc/coverage/brazil_coverage/brazil_coverage-col11_2025.tif), sem token"
         license: "CC-BY-4.0 (MapBiomas)"
+      - path: "/mapbiomas-public/brasil"
+        method: GET
+        description: "COGs de produtos nacionais (fogo: brasil/fire/frequency/…; solo: brasil/soil/soil_total_carbon_<ano>.tif), 30 m, sem token — #278"
+        license: "CC-BY-4.0 (MapBiomas)"
     # Verificado 2026-10-13: brazil_coverage-col11_2025.tif → 200 image/tiff (~763 MB).
     # Só o prefixo do bucket mapbiomas-public; o resto de storage.googleapis.com fica fora.
 
