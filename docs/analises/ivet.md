@@ -225,7 +225,7 @@ bug do `iqd` é justamente uma contagem crua).
 |-------|-----------|-------|--------|
 | **A. Escola** | infraestrutura, docentes, gestão, oferta, acessibilidade, tecnologia | B e C (**reconciliados**: B canônico, C opcional — §4.4.1) | **implementado** (um só: B canônico) |
 | **B. Socioeconômico** | instrução + renda do responsável + saneamento do setor censitário | `censobr`/IBGE (#123, #238) | **implementado** (extração: arealização do setor, §4.5) |
-| **C. Acesso/mobilidade** | isócrona escolar, distância-tempo | OSRM/Valhalla (#125) | **pendente** |
+| **C. Acesso/mobilidade** | exposição viária (sinistros RENAEST + frota RENAVM); isócrona pendente | #125 | **implementado** (proxy — §4.5.5; isócrona pendente) |
 | **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
 | **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241/#255 | **parcial** (cobertura do solo por escola — §4.5.4; exposição a risco pendente) |
@@ -237,6 +237,12 @@ Enquanto as dimensões territoriais (C–E) não tiverem dado, **o IVET v1.2 nã
 publicado como número**: publica-se apenas o bloco **A (escola)** com a
 identidade declarada, e o IVET agregado fica **`NULL`** (ver a semântica `NULL`
 = sem extração / `0` = sem resultado / `>0` = valor real, `#154`).
+
+**Atualização (2026-10-18):** os três blocos mínimos — **C, D e E** — estão
+extraídos (C como **proxy de exposição viária**, §4.5.5), então
+`ivet_blocos_territoriais_minimos()` fica satisfeita e **o agregado do IVET é
+publicável**. O que falta agora é **F-exposição** (ISH/declividade/queimada) e a
+**isócrona** de C — que não bloqueiam o agregado.
 
 Regra de peso (v1.2, explícita e auditável):
 - **peso igual entre dimensões disponíveis** (`W_j = 1`) — default reprodutível;
@@ -538,6 +544,40 @@ a risco** (ISH, declividade — §4.2) estiver extraída; e o agregado continua 
 enquanto **C (mobilidade)** estiver bloqueado (§4.2). Esta change é pré-requisito
 de F, não a sua conclusão.
 
+### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
+
+⚠️ **PROXY (decisão de produto, 2026-10-18).** A dimensão central de C é o
+**acesso** — isócrona / distância-tempo —, e `clean.isocrona_escolar` está
+**vazia**: depende de um motor de roteamento (OSRM/Valhalla) que não existe em
+nenhum host. Enquanto isso, C é lido como **exposição viária** — o que a fonte de
+facto entrega: os sinistros de trânsito do RENAEST (município) e a frota do
+RENAVAM, em `analytics.mobilidade_escola` (grão municipal; a escola observa o
+território do seu município).
+
+| componente | bruto (tabela) | normalização | direção |
+|---|---|---|---|
+| risco de sinistros | `sinistros_12m` (RENAEST) | `clamp(taxa100k / 500)` | mais sinistros = + |
+| exposição da frota | `renavam_total_frota` (RENAVM) | `clamp((frota / pop) / 1)` | mais frota = + |
+
+- Default `componentes = c("risco_sinistros", "exposicao_frota")`.
+- **Fora do default**: `sinistros_fatais_12m` (RENAEST) — está **0 em todas as
+  escolas-município do dev**, é constante e não entra; `isocrona`, `antt_od` e
+  `vmda` estão **vazios** (fontes ausentes) e entram quando existirem, no mesmo
+  bloco, sem nova fórmula.
+- **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-18, por
+  município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
+  `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89).
+- **#154**: sem o dado, o componente é `NA` e fica **fora** do denominador da
+  dimensão; `0` real (sem sinistros / sem frota) é `0`.
+- **Código**: `ivet_bloco_mobilidade()`, `ivet_bloco_mobilidade_componentes()`,
+  `ivet_componente_risco_sinistros()`, `ivet_componente_exposicao_frota()`;
+  testes em `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
+
+✅ **Com C, o agregado do IVET passa a ser publicável**: a regra
+`ivet_blocos_territoriais_minimos()` (C+D+E) fica satisfeita — antes, C mantinha
+o agregado em `NA`. O bloco continua um **proxy** de exposição viária até a
+isócrona existir.
+
 ### 4.6 Vigência e retreino
 
 Um número do IVET só vale como retrato do **presente** enquanto o dado de
@@ -643,7 +683,7 @@ de #241/#255). O versionamento do passo `raw`→`clean`→`analytics` está feit
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | faltam as extrações de C e F; **C (mobilidade) bloqueado** (sem isócrona/ANTT — §4.2); **F** com a cobertura do solo extraída (§4.5.4, #255), mas a exposição a risco ainda pendente |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), C (§4.5.5), D (§4.5.3), E (§4.5.1) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | falta a **exposição a risco do F** (ISH/declividade/queimada); **C é um proxy** de exposição viária (isócrona pendente); com C+D+E, **o agregado é publicável** |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 

@@ -140,6 +140,36 @@ bloco_b:
       no_default: true
       nota: "leitura de equidade; exige justificativa para publicar"
 
+bloco_c:
+  # Acesso/mobilidade. ATENCAO: PROXY. A dimensao central de C e o acesso
+  # (isocrona/distancia-tempo), e clean.isocrona_escolar esta VAZIA (depende de
+  # OSRM/Valhalla, ausente em todos os hosts). Enquanto isso, C e lido como
+  # EXPOSICAO VIARIA — o que a fonte entrega: sinistros RENAEST + frota RENAVAM.
+  # Quando a isocrona existir, entra como componente do mesmo bloco.
+  fonte: analytics.mobilidade_escola
+  denominador: clean.populacao_municipal
+  default: [risco_sinistros, exposicao_frota]
+  nao_usados:
+    isocrona: "clean.isocrona_escolar VAZIA (sem motor de roteamento OSRM/Valhalla)"
+    antt_od: "clean.antt_od_municipio VAZIA (MONITRIIP, grao de viagem individual/LGPD)"
+    vmda: "clean.snv_trecho_vmda VAZIA (DNIT, nao ingerido)"
+    sinistros_fatais_12m: "0 em todas as escolas-municipio do dev (constante; nao entra)"
+  componentes:
+    risco_sinistros:
+      fonte: analytics.mobilidade_escola.sinistros_12m
+      normalizacao: "clamp(taxa100k/500)"
+      direcao: "+"
+      no_default: false
+      teto: 500
+      teto_nota: "sinistros por 100 mil hab (RENAEST); p50=60, p90=429, p99=988"
+    exposicao_frota:
+      fonte: analytics.mobilidade_escola.renavam_total_frota
+      normalizacao: "clamp((frota/populacao)/1)"
+      direcao: "+"
+      no_default: false
+      teto: 1
+      teto_nota: "veiculos por habitante (RENAVAM); p90=0,89; proxy de densidade de trafego, nao de acesso"
+
 bloco_d:
   # Atencao basica de saude (CNES + SISAB/PMMB). Distancia da escola a UBS
   # (grao escola) + provisao municipal (equipes por 10 mil hab). A coluna

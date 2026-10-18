@@ -99,5 +99,6 @@ Collate:
     'ivet-seguranca.R'
     'ivet-recursos.R'
     'ivet-saude.R'
+    'ivet-mobilidade.R'
     'ivet-card.R'
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
