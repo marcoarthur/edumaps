@@ -60,6 +60,23 @@ cp .env.example .env
 | **bloqueio** esperando permissão | `notify.sh --event blocked --title "preciso decidir X" --msg "..."` (comenta no PR/issue via gh) |
 | **fim de ciclo** (após PR merged + docs) | `notify.sh --event done --title "Ciclo concluído" --msg "PR #104 mergeado"` |
 
+### Monitor de tarefas longas (`status_long_tasks.sh`)
+
+Quando o ciclo roda jobs longos em background (ingestão por região,
+refresh de entorno etc.), o monitor envia status ao Telegram **a cada
+20 min** e encerra sozinho quando as duas tarefas param:
+
+```bash
+setsid nohup bash tools/notify/status_long_tasks.sh 1200 \
+  >/tmp/status_long_tasks.out 2>&1 </dev/null &
+```
+
+- Quais tarefas ele descreve fica **no cabeçalho do script** — ajustar
+  (comandos `f_status`/`e_status`) a cada ciclo que muda de tarefa.
+- Os hosts `*.edumaps` correm em **UTC** e o host local em **UTC-3**:
+  timestamps dos logs remotos vêm ~3h à frente do relógio local.
+- Um host fora do ar não derruba o loop (ssh falha → status vazio).
+
 ### Sobre o reforço no GitHub
 
 - Em `blocked`, o `notify.sh` comenta no **PR/issue do ciclo** (default
