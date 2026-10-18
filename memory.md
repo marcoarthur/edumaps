@@ -94,6 +94,20 @@
   **aviso de fuso**: hosts `*.edumaps` correm em **UTC** e o host local em
   **UTC-3** (timestamps dos logs ~3h à frente — quase rendeu uma investigação
   falsa de "loop morto").
+- **Disco do `backend.edumaps` (81% → 63%)**: removidos dois raws antigos de
+  `data/ingestao` (autorizado pelo developer) — `Acidentes_DadosAbertos_20260912.csv`
+  (2,6 GB) e `I_Frota_..._Setembro_2026.TXT` (1,2 GB), ~3,8 GB; o pool ZFS
+  (`subutai/fs/Backend-rls-2-2/rootfs`, 19 GB) foi de 2,9 GB para **7,0 GB livres**
+  e `data/ingestao` de 5,5 GB para 1,8 GB.
+  - ⚠️ **Correção do meu diagnóstico inicial**: ambos são **entradas que o loader
+    lê** (`Transportes.pm` dá `die` sem elas), não cache — removê-las é seguro
+    porque são **downloads públicos reproduzíveis**, mas re-rodar o #168 (parado)
+    exigirá baixá-las de novo. `Localidade_*.csv` (46 MB) **ficou**: é o de-para
+    `codigo_ibge`↔município que o loader exige.
+  - Candidato seguinte: `cgu/` (1,5 GB, `*_Transferencias.csv` 2025-01..05, recente
+    — não removido).
+  - Nota: o `df` do LXC ficou **preso no valor antigo por alguns segundos** após o
+    `rm` (ZFS) — re-medir antes de concluir que não liberou.
 - **Nota técnica 150** (`docs/new_ideas/implementations_ideas/notas_tecnicas_150.md`)
   fecha o ciclo: #281 (lastro dos tetos), #282 (F retomável), #283 (CI verde),
   #284 (O(n²)) e o monitor versionado.
