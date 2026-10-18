@@ -11,6 +11,10 @@
 # terminável. A carga é idempotente (UPSERT por ano × raio), então re-rodar um
 # bloco não duplica.
 #
+# RETOMÁVEL: antes de cada bloco, conta quantas escolas da região ainda não têm
+# linha para o ano × raio e pula as completas. Interromper e re-rodar o mesmo
+# comando continua de onde parou (a carga de um bloco é uma transação).
+#
 # Uso (a partir de backend/, com o Minion/runner disponível):
 #
 #   script/ingestao/mapbiomas_risco.sh SP             # todas as regiões de SP
@@ -34,8 +38,8 @@ log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
 log "MapBiomasRisco UF=$UF ano=$ANO raio=$RAIO${SO_REGIAO:+ regiao='$SO_REGIAO'}"
 
-# Regiões imediatas da UF e os seus municípios (uma linha por região).
-mapfile -t REGIOES < <(carton exec -- perl "$AQUI/regioes_do_estado.pl" "$UF" 2>/dev/null)
+# Regiões imediatas da UF, os seus municípios e quantos ainda faltam carregar.
+mapfile -t REGIOES < <(carton exec -- perl "$AQUI/regioes_do_estado.pl" "$UF" "$ANO" "$RAIO" 2>/dev/null)
 if [ "${#REGIOES[@]}" -eq 0 ]; then
   log "ERRO: não listei regiões para $UF"
   exit 1
@@ -44,13 +48,20 @@ fi
 falhas=0
 for linha in "${REGIOES[@]}"; do
   regiao="${linha%%$'\t'*}"
-  munis="${linha#*$'\t'}"
+  resto="${linha#*$'\t'}"
+  munis="${resto%%$'\t'*}"
+  pendentes="${resto#*$'\t'}"
+  [ "$pendentes" = "$resto" ] && pendentes=""   # sem 3º campo
   if [ -n "$SO_REGIAO" ] && [ "$regiao" != "$SO_REGIAO" ]; then
+    continue
+  fi
+  if [ "$pendentes" = "0" ]; then
+    log "--- $regiao: já carregada (0 pendentes), pulando"
     continue
   fi
 
   ini=$(date +%s)
-  log ">>> $regiao"
+  log ">>> $regiao${pendentes:+ ($pendentes pendentes)}"
   if carton exec -- perl ingestion_runner.pl \
        --job=MapBiomasRisco \
        --arg "ano=$ANO" --arg "raio=$RAIO" --arg "uf=$UF" --arg "municipios=$munis"; then
