@@ -4,6 +4,39 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #268: renda do responsável no produto (PR #279)
+
+- **PR #279 MERGEADO** (merge commit `6b8e7b2`, branch `feat/data-renda-responsavel`
+  removida): commit `2819521` `fix(data): renda do responsavel no produto (#268)`.
+  Nota técnica **148**.
+- **Bloqueio encontrado**: o loader `SetoresCenso2022` (#266) referenciava o ZIP da
+  renda numa **pasta irmã** (`Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel/`)
+  que **não estava no allowlist** → o job morreria no `exigir_allowlist`. Corrigido
+  (URL verificada 200, 2026-05-08).
+- **Materialização**: `so=censo` (816 s) → `clean.censo2022_setor` com **449.531**
+  setores com `rend_media`/`rend_mediana` (de 468.097; o resto é célula "X" →
+  `NULL`, #154) e 449.868 com `rend_resp_count`. ⚠️ O ZIP da renda **não estava no
+  raw** (só os 5 temas antigos) — foi baixado e os outros 5 reaproveitados
+  (hardlink para o dir do dia, que o `download_file` reusa).
+- **Re-materialização do entorno**: `clean.refresh_escola_entorno_socioeconomico`
+  já produz **`ivet-v1.2`** com a renda. **Em curso em background no
+  `database.edumaps`** (`/tmp/refresh_entorno.sh`, log `/tmp/refresh_entorno.log`),
+  **por UF**, retomável. Medido: **AC, 539 escolas → 89–100 s** → projeção
+  **~8 h** país (a issue estimava 5–6 h). ⚠️ **Não conclui nesta sessão** — o
+  script continua no servidor.
+- **Validação (piloto AC)**: `versao = ivet-v1.2`; 1.616/1.617 com
+  `renda_resp_media`/`renda_resp_mediana` (1 sem renda → `NULL`); média
+  `renda_resp_media` = R$ 2.226.
+- **`cobertura_pct` baixa** (AC 0,024; AP 0,071; RR 0,058) é **característica
+  pré-existente** do Censo 2022 por setor (~88% dos setores suprimidos), **não
+  regressão**.
+- **Testes**: `t/05-tasks/setores_censo_loader.t` (já cobria o tema renda: ponto
+  decimal, `X`→`NULL`, mapeamento) e `t/02-models/allowlist_real.t` — verdes.
+- **Docs**: `docs/analises/fontes/socioeconomico.md` (estado) e `docs/analises/ivet.md`
+  (§4.3 — bloco B com instrução + renda + saneamento).
+- **Pendência**: confirmar a conclusão da re-materialização (`/tmp/refresh_entorno.log`
+  termina com `FIM`) e medir `versao='ivet-v1.2'` no país.
+
 ## Sessão 2026-10-18 — #137 FECHADA (IVET como produto versionado)
 
 - **#137 FECHADA** (`completed`), com comentário de fecho. Os **5 entregáveis**
