@@ -694,6 +694,15 @@ Fontes (grão escola; safra por fonte): **A** `clean.mv_escolas_scores`; **B**
 Censo **2025**, crime **2021–2023**, **raio 1.000 m** (B e F) — todos
 conectáveis por parâmetro.
 
+**Primeira medição nacional** (2026-10-18; `analytic.edumaps`, censo 2025, raio
+1.000 m): 180.540 escolas, **145.732 publicáveis (80,7%)**. Cobertura por bloco
+(C+D+E=145.732; E quase total; F=46.923, ainda parcial). `ivet` (publicáveis):
+p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634. A distribuição é
+estreita porque o gate de publicação exige C+D+E — os blocos de cobertura quase
+total. O F ainda não cobre o país (fogo/solo em curso; vegetação só no ES),
+logo estes números **não** são a medição final: são o sanity check do harness e
+a base para calibrar os tetos do F quando a cobertura fechar.
+
 
 ---
 
