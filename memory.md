@@ -4,6 +4,41 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #278: exposição a risco (bloco F) — Fogo + Solo (PR #280)
+
+- **PR #280 MERGEADO** (merge commit `563c856`, branch `feat/analytics-ivet-bloco-f`
+  removida): commit `1a6db30` `feat(analytics): bloco F - Fogo e Solo (#278)`.
+  Nota técnica **149**.
+- **Decisão de produto**: começar a exposição a risco do F por **queimada + carbono
+  do solo**; a isócrona de C fica para depois.
+- **Peças**: migration `mapbiomas_escola_risco` → `clean.mapbiomas_escola_risco`
+  (grão escola × censo × ano × raio; `fogo_frequencia_media/max`,
+  `fogo_fracao_queimada`, `solo_carbono_medio`); job `MapBiomasRisco`; script R
+  `extract_mapbiomas_risco.R`; allowlist `…/mapbiomas-public/brasil`.
+- **Aplicação gradual** (pedido do developer): `backend/script/ingestao/` —
+  `mapbiomas_risco.sh <UF> [ano] [raio] [região]` (por **região imediata**,
+  idempotente) + `regioes_do_estado.pl` (lista as regiões de `clean.municipios_sp`).
+- **⚠️ Achados**: (1) o **ISH/risco climático e a declividade NÃO estão** no bucket
+  público — só Fogo e Solo; (2) os rasters têm **~2 GB cada** e o host ~3 GB livres
+  → leitura por **`/vsicurl`** + **crop à AOI** (sem o crop, 539 buffers > 30 min);
+  (3) **a URL do fogo importa**: `frequency/` e `coverage-frequency-1/` têm o mesmo
+  nome de arquivo mas unidades diferentes — `frequency/` dá `0,115,…,3541`;
+  `coverage-frequency-1/` dá `0–35` (anos queimados) — **esse** é o produto;
+  (4) `clean.municipios_sp.nome_regiao_imediata` vem em **latin1** (o helper agora
+  emite UTF-8).
+- **🔴 Defeito de *chunking* corrigido nos DOIS jobs de raster**: o `DELETE` do
+  recorte era por **ano × raio**, então cada bloco (região) **apagaria os blocos
+  anteriores**. Agora escopado às **co_entidades da carga** — `MapBiomasRisco`
+  (#278) **e** `MapBiomasEscola` (#255).
+- **Validação** (Vale do Paraíba / São José dos Campos, SP, 2020, 1 km, 1459 s):
+  **684 linhas** (684 com fogo + solo); `fogo_frequencia_max = 19` (≤36 ✓);
+  fração queimada média 0,039; `solo_carbono_medio` média 197 tC/ha (24–646).
+- **Testes**: `t/05-tasks/mapbiomas_risco_loader.t` (novo, 31) +
+  `mapbiomas_escola_loader.t` — **81/81**.
+- **Pendências**: **pesos do bloco F** (fila de revisão de `ivet-coeficientes.md`
+  §5; o F não é mínimo, não bloqueia o agregado); **isócrona de C**; **velocidade**
+  (~1,8 s/buffer; acelerar exige baixar o raster uma vez num volume maior).
+
 ## Sessão 2026-10-18 — #268: renda do responsável no produto (PR #279)
 
 - **PR #279 MERGEADO** (merge commit `6b8e7b2`, branch `feat/data-renda-responsavel`
