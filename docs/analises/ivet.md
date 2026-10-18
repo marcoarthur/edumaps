@@ -244,6 +244,10 @@ extraídos (C como **proxy de exposição viária**, §4.5.5), então
 publicável**. O que falta agora é **F-exposição** (ISH/declividade/queimada) e a
 **isócrona** de C — que não bloqueiam o agregado.
 
+> A **fundamentação dos coeficientes na literatura** (ficha por indicador, mapa
+> "escolha de peso → referência", registro das divergências e fila de revisão)
+> está em [`ivet-coeficientes.md`](ivet-coeficientes.md) (#139).
+
 Regra de peso (v1.2, explícita e auditável):
 - **peso igual entre dimensões disponíveis** (`W_j = 1`) — default reprodutível;
 - qualquer ponderação diferente **exige justificativa registrada** (literatura
