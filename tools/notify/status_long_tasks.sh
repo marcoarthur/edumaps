@@ -3,8 +3,9 @@
 # do developer durante ciclos longos (a cada 20 min).
 #
 # Tarefas monitoradas (ajustar conforme o ciclo):
-#   - F do IVET: ingestão por região imediata em SP  -> backend.edumaps
-#   - #268: re-materialização do entorno por UF      -> database.edumaps
+#   - F do IVET: ingestão por região imediata (drive em curso — SP, ou a
+#     cadeia nacional encadeada em /var/tmp/f_nacional.sh)   -> backend.edumaps
+#   - #268: re-materialização do entorno por UF               -> database.edumaps
 #
 # Uso: bash status_long_tasks.sh [intervalo_segundos]   (default 1200 = 20 min)
 # Encerra sozinho quando AS DUAS estiverem paradas (ativo=1 se ao menos
@@ -27,7 +28,7 @@ f_status() {
   ssh "${SSHOPTS[@]}" root@backend.edumaps '
     l=/var/tmp/risco_sp.log
     if [ ! -f "$l" ]; then echo "(sem log)"; exit 0; fi
-    echo "SP: OK=$(grep -ac "<<< .* OK" "$l") falhas=$(grep -ac FALHOU "$l") puladas=$(grep -ac pulando "$l")"
+    echo "F: OK=$(grep -ac "<<< .* OK" "$l") falhas=$(grep -ac FALHOU "$l") puladas=$(grep -ac pulando "$l")"
     grep -aE ">>>|---" "$l" | tail -2
     if pgrep -f "^bash script/ingestao/mapbiomas_risco\.sh" >/dev/null; then
       echo "[rodando]"
@@ -56,7 +57,7 @@ while :; do
   ativo=0
   case "$f$e" in *rodando*) ativo=1;; esac
 
-  msg="F (SP) no backend.edumaps:
+  msg="F (IVET) no backend.edumaps:
 $f
 
 #268 (entorno) no database.edumaps:
