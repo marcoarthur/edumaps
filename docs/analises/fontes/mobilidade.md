@@ -164,6 +164,22 @@ Censo/OSM/SIOPE (3) = **16**. **API (0)** e **pacote R (0)**.
   epistemologias de medição diferentes. Não cruzar como se fossem a mesma
   métrica.
 
+**Decisão de ingestão (#168, 2026-10-18) — 1 das 4 tabelas entrou.** O loader
+`ANTT` foi reescrito sobre a API CKAN real (`package_show?id=acidentes-rodovias`):
+44 CSVs, um por concessionária, separador `;` e ISO-8859-1, carregados em
+`clean.antt_acidente_trecho` — **958.043 acidentes** (2010–2026). O grão é o
+**evento** `(concessionaria, data_acidente, horario, n_ocorrencia)`: a chave
+original `(concessionaria, data, km, trecho)` era grossa demais (79 acidentes
+partilham km+dia+trecho; a fonte repete o evento por sentido), corrigida pela
+change `antt_acidente_trecho_grao`. `causa_provavel`/`condicao_tempo` **não
+existem na fonte** e ficam **NULL** — nunca 0 (#154). As outras três tabelas
+seguem **bloqueadas**: **não há geometria de trecho (LineString) no CKAN** (os
+únicos geo-recursos são KMZ de equipamentos e um SHP de pontos de km), logo
+`antt_trecho_geodados` — e, por FK, `antt_contagem_equipamento` — ficam sem
+fonte; `antt_od_municipio` (MONITRIIP) é grão de viagem individual
+(CNPJ/placa/IMEI), negado por LGPD, e a agregação a município é decisão de
+produto. Detalhe em `docs/new_ideas/implementations_ideas/notas_tecnicas_145.md`.
+
 ---
 
 ### DNIT — Sistema Nacional de Viação (SNV) e modelagem de VMDA por trecho
