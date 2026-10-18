@@ -212,13 +212,15 @@ parciais e disjuntas** (`ivet.md` §4.5.4).
   O teto do IVET (**8**) está **acima** da faixa: o município *típico* (p50 =
   3,30, exatamente a média da PNAB) fica com vulnerabilidade ≈ **0,59**. É uma
   leitura **relativa** (posição na distribuição), coerente com o p90; uma leitura
-  **normativa** usaria 5 (topo da faixa) e zeraria quem cumpre a PNAB. **Decisão
-  do developer** (mudança → nova versão da fórmula).
+  **normativa** usaria 5 (topo da faixa) e zeraria quem cumpre a PNAB. ✅
+  **Decidido (2026-10-18): manter 8** (leitura relativa/≈p90) — sem nova versão
+  da fórmula.
 - **E-homicídio (por 100 mil).** Dois marcos documentados: **> 10 = epidemia**
   (OMS) e a **referência nacional 23,4** (Atlas 2026). O teto **50** não é nenhum
   dos dois: ≈ o p90 (46,3). Alternativas registradas: **40** (o corte "muito
   alto" do Atlas, ≈ p90) ou **25** (≈ a referência nacional, saturando metade dos
-  municípios acima da média nacional). **Decisão do developer**.
+  municípios acima da média nacional). ✅ **Decidido (2026-10-18): manter 50**
+  (≈p90) — sem nova versão da fórmula.
 - **D-distância (5 km).** A busca não encontrou **limiar numérico** na literatura
   (os estudos de acesso rural descrevem barreiras, não um km de corte). O 5 km
   vem da própria view ("acesso difícil > 5 km"). Decisão de produto — 13,4% das
@@ -266,7 +268,7 @@ de virarem número publicável (ordem de risco):
 |---|---|---|---|
 | 1 | **Bloco C** (mobilidade) | ✅ **proxy confirmado** — a exposição viária (sinistros/frota) tem lastro externo OMS/ITF-IRTAD (§5.1); resta **substituir pela isócrona** quando houver motor de roteamento (infra) | `ivet.md` §4.5.5 · §5.1 |
 | 2 | **Tetos de todos os blocos** | ✅ feito — cada teto confrontado com p50/p90/p99 e com um lastro (norma / literatura / decisão de produto) | §5 |
-| 2b | **Escolha do teto de D (provisão) e E (homicídio)** | aberto — D: **relativo** (8 = p90) × **normativo** (5 = PNAB); E: 50 × 40 × 25 | §5.1 |
+| 2b | **Escolha do teto de D (provisão) e E (homicídio)** | ✅ **decidido** (2026-10-18) — **D = 8** (relativo, ≈p90) e **E = 50** (≈p90) **mantidos**; leitura de posição na distribuição. Nova versão da fórmula fica **dispensada** (tetos inalterados) | §5.1 |
 | 3 | **Bloco E** (segurança) | ✅ feito — OMS/PAHO (>10 = epidemia) + Atlas 2026 (23,4 nacional); a *escolha* do teto segue | §5.1 |
 | 4 | **Bloco D** (saúde) | ✅ feito — PNAB: 2.000–3.500 pessoas/equipe (média 3.000) | §5.1 |
 | 5 | **Bloco F** (meio ambiente) | ✅ feito — 3 componentes (fogo + vegetação natural + carbono do solo), peso igual; lastro **de construto** externo (fumaça × escola; Ross/AHP); **tetos provisórios** a calibrar no nacional | `ivet.md` §4.5.4 · §5.1 |
