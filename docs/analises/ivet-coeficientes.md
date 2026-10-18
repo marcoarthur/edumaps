@@ -59,7 +59,7 @@ implementação do projeto.
 | Normalização | **clamp** (saturação linear) — ver §4 (divergência) |
 | Peso | igual entre os componentes disponíveis |
 | Fonte | RENAEST + RENAVM (`analytics.mobilidade_escola`) |
-| **Referência** | **sem lastro na literatura do acervo.** Nenhum dos quatro trabalhos mede exposição viária; é um **proxy** decidido pelo produto (2026-10-18) enquanto a isócrona não existe (`ivet.md` §4.5.5). **Fila de revisão** (§5) |
+| **Referência** | **construto padrão de segurança viária** (lastro externo). A **OMS** trata *registered vehicles* como indicador de *road safety* (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes **por 100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** (*Road Safety Annual Report 2024*) lista **frota de veículos** e **população** explicitamente como *exposure data* e publica as mortes **por 10.000 veículos registados**. Logo `risco_sinistros` usa a forma-padrão da taxa e `exposicao_frota` (veíc/hab) é medida de **exposição**. ⚠️ A literatura mede **mortes**; a RENAEST dá **sinistros** (superset/morbidade) — decisão de produto. O **acervo** não tem literatura de trânsito; a **isócrona** (acesso) segue pendente de infraestrutura (`ivet.md` §4.5.5) |
 
 ### Bloco D — saúde
 
@@ -81,15 +81,15 @@ implementação do projeto.
 | Fonte | SINESP (`clean.brazilcrime_municipio`) |
 | **Referência** | **OMS/PAHO** tratam taxa **> 10 homicídios/100 mil** como *violência epidêmica* (World report on violence and health, 2002). **Atlas da Violência 2026** (Ipea/FBSP; dados 2024): municípios > 100 mil — mediana 20,2, média 24,0, **referência nacional 23,4**/100 mil; 46 municípios **> 40**/100 mil. O teto do IVET (**50**) fica entre a referência nacional e o topo da distribuição (p90 medido = 46,3; p99 = 103,5) — **decisão de produto** ancorada nesses marcos. A regra "**contagem nunca crua**" é do projeto (o defeito do `iqd`). Ver **§5** |
 
-### Bloco F — meio ambiente (parcial)
+### Bloco F — meio ambiente
 
 | campo | valor |
 |---|---|
-| Fórmula | cobertura do solo por fração de classe (MapBiomas 30 m); exposição a risco **pendente** |
-| Normalização | grupos nível 1 (vegetação natural, agropecuário, …) |
-| Peso | **não definido** (bloco não entra na fórmula até a exposição a risco existir) |
-| Fonte | MapBiomas Coleção 11 (`clean.mapbiomas_escola`) |
-| **Referência** | **sem lastro.** Bloco em construção (#255); pesos em aberto |
+| Fórmula | `risco_fogo` = `clamp(freq/teto)`; `vegetacao_natural` = `1 − clamp(fracao)`; `carbono_solo` = `1 − clamp(carbono/teto)` |
+| Normalização | clamp; **fogo entra direto**; **vegetação e carbono invertidos** ("mais = menos vulnerável", como a renda do bloco B) |
+| Peso | igual entre os componentes disponíveis |
+| Fonte | MapBiomas Fogo + Carbono do Solo (`clean.mapbiomas_escola_risco`); cobertura Coleção 11 (`clean.v_mapbiomas_escola_grupos`) |
+| **Referência** | **exposição a risco** (fogo): a fumaça de incêndio é risco respiratório documentado para **crianças e escolas** (CDC, *Health Effects of Wildfire Smoke in Children*, 2021; EPA, *Protecting Children from Wildfire Smoke and Ash*, 2018; Wildfires, 2003 — *missed school*), o que sustenta medir o **fogo no entorno** da escola. **Meio ambiente** (vegetação + solo): os **índices brasileiros de vulnerabilidade/fragilidade ambiental** (Ross, 1994; família AHP — ex. *Tarumã-Mirim*, 2025) combinam **uso e cobertura da terra** (vegetação natural) com **solos**; a cobertura da terra é apontada como a variável de **influência predominante**. ⚠️ É **lastro de construto** (existe a família de índices), **não de coeficiente**: tetos de fogo/carbono são **calibração empírica** (§5) |
 
 ### Bloco G — recursos
 
@@ -175,18 +175,24 @@ registrada. Nada sai da fila (§6) sem uma das duas coisas.
 
 Percentis medidos: **E** = média municipal 2021–2023 (5.570 municípios; a
 supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 escolas
-(distância) e 5.533 municípios (equipes/10 mil); **G** = por município.
+(distância) e 5.533 municípios (equipes/10 mil); **G** = por município; **F** =
+fogo/carbono em 23.292 escolas de **SP** (ano 2020, raio 1 km) e vegetação em
+3.156 escolas do **ES** (ano 2024) — as duas metades do F ainda cobrem **amostras
+parciais e disjuntas** (`ivet.md` §4.5.4).
 
 | bloco | componente (unidade) | teto | p50 | p90 | p99 | lastro |
 |---|---|---|---|---|---|---|
 | B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
-| C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — sem referência de *sinistros*; ver §5.1 |
-| C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) |
+| C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — a *taxa por 100 mil hab* é a forma-padrão OMS/WHO e ITF/IRTAD; teto empírico (ver §5.1) |
+| C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) — *frota* é **exposição** explícita no IRTAD (veíc/hab ≈ motorization rate) |
 | D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
 | D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
 | E | `homicidio_doloso` (por 100 mil) | 50 | ~0 | 46,3 | 103,5 | **OMS/PAHO**: > **10**/100 mil = *violência epidêmica*. **Atlas 2026**: referência nacional **23,4** (2024), 46 municípios **> 40**. Teto 50 ≈ p90 ≈ 2× a referência nacional → decisão de produto ancorada |
 | E | `latrocinio`, `lesao_corporal_seguida_de_morte` (por 100 mil) | 5 | 0 | 0 | ~0 | **produto** — eventos raros (p90 = 0); o teto evita que **um único caso** sature |
+| F | `risco_fogo` (freq. média 1985–2020) | **1** | 0,005 | 0,117 | 0,563 | **produto** (provisório) — a fumaça de incêndio é risco à **criança na escola** (CDC 2021; EPA 2018); teto provisório, calibrar no nacional |
+| F | `vegetacao_natural` (fração) | — | 0,104 | 0,356 | 0,903 | **produto** — a cobertura da terra é a variável de **influência predominante** nos índices de vulnerabilidade ambiental (Ross 1994; AHP); sem teto (proporção), invertida |
+| F | `carbono_solo` (tC/ha) | **500** | 180 | 462 | 791 | **produto** (provisório) — **solos** entram nos índices de vulnerabilidade ambiental (Ross 1994; AHP); teto provisório ⚠️ varia por bioma e o bruto tem negativo (nodata) |
 | G | `fundeb_por_aluno` | 10.000 | — | 9.336 | — | **produto** (≈ p90) |
 | G | `despesa_educ_por_aluno` | 15.000 | — | 14.521 | — | **produto** (≈ p90) |
 | G | `autonomia_fiscal_pct` | 50 | 13,2 | 30,9 | — | **produto** (≈ 1,6 × p90) |
@@ -217,13 +223,39 @@ supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 es
   (os estudos de acesso rural descrevem barreiras, não um km de corte). O 5 km
   vem da própria view ("acesso difícil > 5 km"). Decisão de produto — 13,4% das
   escolas acima (p90 = 7,25 km).
-- **C e G.** Sem lastro temático no acervo (a literatura lida é de desempenho
+- **C (exposição viária).** O **construto** tem lastro externo: a OMS trata
+  **veículos registados** como indicador de segurança viária (WHO GHO) e a
+  **GSRRS 2023** dá a taxa de mortes por **100 mil habitantes e por 100 mil
+  veículos**; o **ITF/IRTAD** lista **frota** e **população** como *exposure
+  data* e publica mortes **por 10.000 veículos registados**. Logo `exposicao_frota`
+  (veíc/hab) é medida de **exposição** consagrada e `risco_sinistros` (por 100
+  mil hab) usa a forma-padrão da taxa. O acervo do projeto **não** tem literatura
+  de trânsito. Os **tetos** (500 sinistros; 1 veíc/hab) seguem **empíricos**
+  (≈ p90) — decisão de produto. ⚠️ **Desfecho diferente**: a literatura mede
+  **mortes** (*fatalities*); a RENAEST mede **sinistros** (acidentes), um
+  superset — mais sensível, mas não comparável 1:1 às taxas internacionais.
+- **F (meio ambiente).** O **construto** tem lastro externo em **duas frentes**.
+  (1) *Fogo*: a **fumaça de incêndio** é risco respiratório documentado para
+  **crianças e escolas** — o CDC (2021) revisa os efeitos e trata do ambiente
+  escolar; o EPA (2018) orienta a proteção da criança; e o estudo das queimadas
+  do sul da Califórnia (2003) mediu **dias de aula perdidos**. (2) *Cobertura
+  do solo*: os índices brasileiros de **vulnerabilidade/fragilidade ambiental**
+  (Ross, 1994; família AHP) combinam **uso e cobertura da terra** com **solos**,
+  apontando a cobertura da terra como a variável de **influência predominante**.
+  ⚠️ É lastro de **construto**, não de **coeficiente**: os tetos de fogo (**1**)
+  e carbono (**500**) são **provisórios** (calibração ≈ p90 do recorte SP), a
+  recalibrar com a corrida nacional do F. ⚠️ O acervo do projeto **não** tem
+  literatura de meio ambiente — o lastro é **externo**.
+- **G.** Sem lastro temático no acervo (a literatura lida é de desempenho
   escolar). Tetos empíricos, decisão de produto.
 
 **Referências desta seção:** OMS/PAHO, *World report on violence and health*
 (2002) — limiar > 10 homicídios/100 mil; Ipea & FBSP, *Atlas da Violência 2026*
 (Cerqueira & Bueno, coord.; dados 2024); Ministério da Saúde, **Portaria nº
-2.436/2017** e **Portaria de Consolidação nº 2/2017, Anexo XXII** (PNAB).
+2.436/2017** e **Portaria de Consolidação nº 2/2017, Anexo XXII** (PNAB); **WHO**
+— Global Health Observatory, *Road safety: registered vehicles* (IMRID 194) e
+*Global Status Report on Road Safety 2023*; **ITF/OECD** — *IRTAD Road Safety
+Annual Report 2024* (§5.1, bloco C).
 
 ## 6. Fila de revisão
 
@@ -232,12 +264,12 @@ de virarem número publicável (ordem de risco):
 
 | # | item | situação | onde |
 |---|---|---|---|
-| 1 | **Bloco C** (mobilidade) | aberto — confirmar o proxy de exposição viária ou substituir pela isócrona | `ivet.md` §4.5.5 |
+| 1 | **Bloco C** (mobilidade) | ✅ **proxy confirmado** — a exposição viária (sinistros/frota) tem lastro externo OMS/ITF-IRTAD (§5.1); resta **substituir pela isócrona** quando houver motor de roteamento (infra) | `ivet.md` §4.5.5 · §5.1 |
 | 2 | **Tetos de todos os blocos** | ✅ feito — cada teto confrontado com p50/p90/p99 e com um lastro (norma / literatura / decisão de produto) | §5 |
 | 2b | **Escolha do teto de D (provisão) e E (homicídio)** | aberto — D: **relativo** (8 = p90) × **normativo** (5 = PNAB); E: 50 × 40 × 25 | §5.1 |
 | 3 | **Bloco E** (segurança) | ✅ feito — OMS/PAHO (>10 = epidemia) + Atlas 2026 (23,4 nacional); a *escolha* do teto segue | §5.1 |
 | 4 | **Bloco D** (saúde) | ✅ feito — PNAB: 2.000–3.500 pessoas/equipe (média 3.000) | §5.1 |
-| 5 | **Bloco F** (meio ambiente) | aberto — definir componentes e pesos (exposição a risco) | `ivet.md` §4.5.4 |
+| 5 | **Bloco F** (meio ambiente) | ✅ feito — 3 componentes (fogo + vegetação natural + carbono do solo), peso igual; lastro **de construto** externo (fumaça × escola; Ross/AHP); **tetos provisórios** a calibrar no nacional | `ivet.md` §4.5.4 · §5.1 |
 | 6 | **Z:10454** | aberto — ler o trabalho (sensibilidade do IDEB por modelo matemático) e incorporar | §1 |
 
 **Regra da fila:** um indicador novo (vindo de `docs/funcionalidades/analise/`)
@@ -270,3 +302,25 @@ entra nesta fila **no momento em que é especificado**, e só sai quando a ficha
 - **Atlas da Violência 2026** — Cerqueira, D.; Bueno, S. (coord.). Brasília:
   Ipea; FBSP, 2026 (dados 2024). Municípios > 100 mil: referência nacional
   **23,4** homicídios/100 mil; 46 municípios > **40**/100 mil.
+- **OMS / WHO (trânsito)** — World Health Organization, *Global Health
+  Observatory: Road safety — registered vehicles* (IMRID 194) e *Global Status
+  Report on Road Safety 2023* (mortalidade **por 100 mil habitantes** e **por
+  100 mil veículos**). §5.1 (C).
+- **ITF/OECD (trânsito)** — International Transport Forum, ***IRTAD* Road
+  Safety Annual Report 2024**: **frota de veículos** e **população** constam como
+  *exposure data* e as mortes saem **por 10.000 veículos registados** — base do
+  proxy de exposição viária do bloco C (§5.1).
+- **MapBiomas** — *Coleção 11 da Série Anual de Mapas de Uso e Cobertura da
+  Terra do Brasil* (cobertura do solo, #255); *MapBiomas Fogo* (frequência de
+  fogo 1985–2020); *Carbono Orgânico do Solo*. Fontes do bloco F (§5.1).
+- **CDC (fumaça × criança)** — Centers for Disease Control and Prevention,
+  *Health Effects of Wildfire Smoke in Children and Public Health Tools: A
+  Narrative Review* (2021): revisa os efeitos respiratórios em crianças e trata
+  do **ambiente escolar**.
+- **EPA (fumaça × criança)** — U.S. Environmental Protection Agency,
+  *Protecting Children from Wildfire Smoke and Ash* (2018).
+- **Ross (1994)** — Ross, J. L. S. *Análise empírica da fragilidade dos
+  ambientes naturais e antropizados*. Revista do Departamento de Geografia (USP),
+  n. 8, 1994. Base da família de **índices de vulnerabilidade/fragilidade
+  ambiental** (AHP) que combina **uso e cobertura da terra** com **solos** —
+  lastro de construto do bloco F (§5.1).
