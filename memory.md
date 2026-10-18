@@ -6,8 +6,11 @@
 
 ## Sessão 2026-10-18 (cont. 2) — harness da medição do `ivet-v1.2` nacional
 
-- **Entregável 3 do #137** (medição nacional) — branch `feat/analytics-ivet-nacional`,
-  commit `c4f98f2` (`feat(analytics): mede o ivet-v1.2 nacional`). Ainda **sem PR**.
+- **Entregável 3 do #137** (medição nacional) — **PR #286 MERGEADO** (merge
+  `c9ee810`, branch `feat/analytics-ivet-nacional`), commits `c4f98f2`
+  (`feat(analytics): mede o ivet-v1.2 nacional`) e `f639ae5` (`docs`). Nota
+  técnica **152**. Imagem Docker local `analytic` reconstruída; deploy feito em
+  `analytic.edumaps`.
 - **Harness** em `analysis/edumapsr/R/ivet-nacional.R`, em duas camadas:
   `ivet_painel(dados)` (**pura**: data.frame grão escola → `bloco_A..G`, `ivet`,
   `publicavel`; coluna ausente = `NA`, #154) e `ivet_medir_nacional()` (abre
@@ -39,8 +42,11 @@
   **2905753** (`bash /var/tmp/f_nacional.sh 2904899`), log `/var/tmp/risco_sp.log`;
   faltam **21 UFs** (PR PE CE PA MA GO AM ES PB RN MT PI AL DF MS SE RO TO AC AP RR).
   Fila sequencial: nomes fixos de arquivo intermediário impedem paralelismo.
-- **Pendente**: criar o PR do branch (após aceite); quando o F fechar, **calibrar os
-  tetos** provisórios (fogo=1, carbono=500) com a cobertura nacional → nova change/versão.
+- **Ciclo**: PR #286 mergeado (`c9ee810`); nota técnica
+  [152](../docs/new_ideas/implementations_ideas/notas_tecnicas_152.md); imagem
+  Docker `leaflet-analytic:latest` reconstruída. **Pendente**: quando o F fechar,
+  **calibrar os tetos** provisórios (fogo=1, carbono=500) com a cobertura nacional
+  → nova change/versão.
 
 ## Sessão 2026-10-18 (cont.) — bloco F do IVET (fila 5) + lastro do proxy de C (fila 1)
 
