@@ -188,14 +188,14 @@ bloco_d:
       direcao: "+"
       no_default: false
       teto: 5
-      teto_nota: "km; limiar 'acesso dificil (>5km)' da propria view; p90 = 7,25"
+      teto_nota: "km; limiar 'acesso dificil (>5km)' da propria view (13,4% das escolas); p90 = 7,25. Sem limiar numerico na literatura - decisao de produto (ivet-coeficientes.md secao 5)"
     cobertura_aps:
       fonte: "analytics.acessibilidade_saude.(equipe_esf + ativas_ff) / populacao"
       normalizacao: "1 - clamp(taxa10k/8)"
       direcao: "+"
       no_default: false
       teto: 8
-      teto_nota: "equipes de atencao basica por 10 mil hab; p90 = 8,39"
+      teto_nota: "equipes de atencao basica por 10 mil hab; p50 = 3,30, p90 = 8,39. Lastro: PNAB (Portaria 2.436/2017; Port. Cons. 2/2017 Anexo XXII) = 1 equipe por 2.000-3.500 pessoas (media 3.000; max 4.000) -> 2,86-5,0/10 mil; o p50 medido cai na media normativa, e o teto 8 (= p90) e leitura relativa, acima da faixa normativa. Escolha em aberto (8 x 5) - ivet-coeficientes.md secao 5"
     presenca_ubs:
       fonte: analytics.acessibilidade_saude.n_ubs_municipio
       normalizacao: "1 - clamp(taxa10k/8)"
@@ -225,7 +225,7 @@ bloco_e:
       direcao: "+"
       no_default: false
       teto: 50
-      teto_nota: "por 100 mil habitantes; p90 municipal ~46"
+      teto_nota: "por 100 mil habitantes; p50 municipal ~0, p90 = 46,3 (media 2021-23). Lastro: OMS/PAHO (>10 = violencia epidemica) e Atlas da Violencia 2026 (Ipea/FBSP, 2024: referencia nacional 23,4; 46 municipios > 40). Teto 50 = p90 = ~2x a referencia nacional; escolha em aberto (50 x 40 x 25) - ivet-coeficientes.md secao 5"
     latrocinio:
       fonte: clean.brazilcrime_municipio.latrocinio
       normalizacao: "clamp(taxa/5)"

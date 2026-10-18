@@ -180,7 +180,10 @@ script/ingestao/mapbiomas_risco.sh SP 2020 1000 "São José dos Campos"   # uma 
 O script lista as regiões imediatas da UF (`regioes_do_estado.pl`, sobre
 `clean.municipios_sp.nome_regiao_imediata`) e chama o job uma vez por região,
 passando a lista de municípios (`--arg municipios=`). Idempotente (UPSERT por
-ano × raio): re-rodar um bloco não duplica.
+ano × raio): re-rodar um bloco não duplica. **Retomável** — com `<ano> <raio>`,
+o helper conta as escolas da região ainda **sem linha** para o ano × raio e o
+script **pula** as regiões completas, então interromper e re-rodar o mesmo
+comando continua de onde parou (útil num SP de 50+ blocos).
 
 ---
 

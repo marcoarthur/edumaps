@@ -69,7 +69,7 @@ implementação do projeto.
 | Normalização | clamp; a provisão é **invertida** ("mais provisão = menos vulnerável") |
 | Peso | igual entre `distancia_ubs` e `cobertura_aps` |
 | Fonte | CNES + SISAB/PMMB |
-| **Referência** | **sem lastro na literatura do acervo.** A **direção invertida** segue o mesmo princípio da renda (Z:10673: mais recurso = melhor), mas os **tetos (5 km, 8/10 mil)** são calibração empírica do dev, não da literatura |
+| **Referência** | A **direção invertida** segue o princípio de Z:10673 (mais recurso = melhor). A **provisão** ancora na **PNAB** (Portaria nº 2.436/2017; Portaria de Consolidação nº 2/2017, Anexo XXII): 1 equipe por **2.000–3.500 pessoas** (média 3.000, máx. 4.000) = **2,86–5,0 equipes/10 mil**; o **p50 medido (3,30)** cai exatamente na média recomendada. O teto do IVET (**8/10 mil = p90**) é **escolha de produto** acima da faixa normativa. A **distância (5 km)** não tem limiar na literatura → decisão de produto. Ver **§5** |
 
 ### Bloco E — segurança
 
@@ -79,7 +79,7 @@ implementação do projeto.
 | Normalização | `clamp(taxa100k / teto)` — **contagem nunca entra crua** |
 | Peso | igual entre os três |
 | Fonte | SINESP (`clean.brazilcrime_municipio`) |
-| **Referência** | **sem lastro na literatura do acervo.** A regra "**contagem nunca crua**" é do projeto (o defeito do `iqd`), e os tetos são calibração empírica (p90) |
+| **Referência** | **OMS/PAHO** tratam taxa **> 10 homicídios/100 mil** como *violência epidêmica* (World report on violence and health, 2002). **Atlas da Violência 2026** (Ipea/FBSP; dados 2024): municípios > 100 mil — mediana 20,2, média 24,0, **referência nacional 23,4**/100 mil; 46 municípios **> 40**/100 mil. O teto do IVET (**50**) fica entre a referência nacional e o topo da distribuição (p90 medido = 46,3; p99 = 103,5) — **decisão de produto** ancorada nesses marcos. A regra "**contagem nunca crua**" é do projeto (o defeito do `iqd`). Ver **§5** |
 
 ### Bloco F — meio ambiente (parcial)
 
@@ -155,33 +155,98 @@ Divergir da literatura é permitido; **divergir sem dizer por quê** é o defeit
 4. **Bloco C sem lastro.** É um **proxy** de exposição viária (decisão de
    produto, 2026-10-18), não uma dimensão de acesso — a literatura do acervo não
    mede mobilidade. Registrado em `ivet.md` §4.5.5. **Fila de revisão**.
-5. **Tetos sem lastro.** Todos os tetos (`5 km`, `8/10 mil`, `50/5/5`, `500`,
-   `1`) são **calibração empírica do dev** (p90/p99), não coeficientes da
-   literatura. São **parâmetros de produto** — mudá-los exige registro e nova
-   versão da fórmula.
+5. **Tetos — de "sem lastro" a parcialmente ancorados (§5).** O confronto com
+   p90/p99 foi refeito e o lastro da literatura foi buscado: **E** ancora em
+   OMS/PAHO + Atlas da Violência 2026; **D/provisão** ancora na PNAB. Os
+   restantes (`5 km`, `latrocínio`/`lesão` = 5, `sinistros` = 500, `frota` = 1,
+   tetos de G) seguem **calibração empírica declarada como decisão de produto** —
+   não há coeficiente de literatura para eles no acervo. Mudar um teto exige
+   registro e nova versão da fórmula.
 6. **Bloco B é a exceção com lastro forte.** Z:10673 sustenta a **presença** e a
    **direção** do bloco socioeconômico; a composição fina (instrução × renda ×
    saneamento) continua decisão do projeto.
 
-## 5. Fila de revisão
+## 5. Lastro dos tetos
+
+Todo teto é o valor em que a **vulnerabilidade satura em 1**. Esta seção
+confronta cada teto com a **distribuição medida em `edumaps_dev`** (2026-10-18)
+e com o **lastro** disponível — literatura, norma, ou **decisão de produto**
+registrada. Nada sai da fila (§6) sem uma das duas coisas.
+
+Percentis medidos: **E** = média municipal 2021–2023 (5.570 municípios; a
+supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 escolas
+(distância) e 5.533 municípios (equipes/10 mil); **G** = por município.
+
+| bloco | componente (unidade) | teto | p50 | p90 | p99 | lastro |
+|---|---|---|---|---|---|---|
+| B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
+| C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — sem referência de *sinistros*; ver §5.1 |
+| C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) |
+| D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
+| D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
+| D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
+| E | `homicidio_doloso` (por 100 mil) | 50 | ~0 | 46,3 | 103,5 | **OMS/PAHO**: > **10**/100 mil = *violência epidêmica*. **Atlas 2026**: referência nacional **23,4** (2024), 46 municípios **> 40**. Teto 50 ≈ p90 ≈ 2× a referência nacional → decisão de produto ancorada |
+| E | `latrocinio`, `lesao_corporal_seguida_de_morte` (por 100 mil) | 5 | 0 | 0 | ~0 | **produto** — eventos raros (p90 = 0); o teto evita que **um único caso** sature |
+| G | `fundeb_por_aluno` | 10.000 | — | 9.336 | — | **produto** (≈ p90) |
+| G | `despesa_educ_por_aluno` | 15.000 | — | 14.521 | — | **produto** (≈ p90) |
+| G | `autonomia_fiscal_pct` | 50 | 13,2 | 30,9 | — | **produto** (≈ 1,6 × p90) |
+
+> Os percentis foram calculados direto no banco. A conferência bateu com as
+> anotações do card (E p90 = 46,3; D distância p90 = 7,25; D equipes p90 = 8,39;
+> C sinistros p90 = 429, p99 = 988).
+>
+> ⚠️ **Divisão inteira** é uma armadilha aqui: `equipe_esf + ativas_ff` e
+> `sinistros_12m`, divididos por `populacao_estimada` (todos `integer`), dão 0
+> sem `::numeric`.
+
+### 5.1 O que a literatura sustenta — e a escolha que fica aberta
+
+- **D-provisão (equipes/10 mil).** A PNAB fixa a população adscrita (2.000–3.500,
+  média 3.000, máx. 4.000), dando a faixa normativa **2,86–5,0 equipes/10 mil**.
+  O teto do IVET (**8**) está **acima** da faixa: o município *típico* (p50 =
+  3,30, exatamente a média da PNAB) fica com vulnerabilidade ≈ **0,59**. É uma
+  leitura **relativa** (posição na distribuição), coerente com o p90; uma leitura
+  **normativa** usaria 5 (topo da faixa) e zeraria quem cumpre a PNAB. **Decisão
+  do developer** (mudança → nova versão da fórmula).
+- **E-homicídio (por 100 mil).** Dois marcos documentados: **> 10 = epidemia**
+  (OMS) e a **referência nacional 23,4** (Atlas 2026). O teto **50** não é nenhum
+  dos dois: ≈ o p90 (46,3). Alternativas registradas: **40** (o corte "muito
+  alto" do Atlas, ≈ p90) ou **25** (≈ a referência nacional, saturando metade dos
+  municípios acima da média nacional). **Decisão do developer**.
+- **D-distância (5 km).** A busca não encontrou **limiar numérico** na literatura
+  (os estudos de acesso rural descrevem barreiras, não um km de corte). O 5 km
+  vem da própria view ("acesso difícil > 5 km"). Decisão de produto — 13,4% das
+  escolas acima (p90 = 7,25 km).
+- **C e G.** Sem lastro temático no acervo (a literatura lida é de desempenho
+  escolar). Tetos empíricos, decisão de produto.
+
+**Referências desta seção:** OMS/PAHO, *World report on violence and health*
+(2002) — limiar > 10 homicídios/100 mil; Ipea & FBSP, *Atlas da Violência 2026*
+(Cerqueira & Bueno, coord.; dados 2024); Ministério da Saúde, **Portaria nº
+2.436/2017** e **Portaria de Consolidação nº 2/2017, Anexo XXII** (PNAB).
+
+## 6. Fila de revisão
 
 Indicadores que entram em produção **sem lastro** e devem ser revistos **antes**
 de virarem número publicável (ordem de risco):
 
-| # | item | o que falta | onde |
+| # | item | situação | onde |
 |---|---|---|---|
-| 1 | **Bloco C** (mobilidade) | confirmar o proxy de exposição viária ou substituir pela isócrona | `ivet.md` §4.5.5 |
-| 2 | **Tetos de todos os blocos** | confrontar com p90/p99 e com a literatura de cada tema | card `IVET_TETO_*` |
-| 3 | **Bloco E** (segurança) | buscar referência para os tetos de taxa/100 mil | `ivet.md` §4.5.1 |
-| 4 | **Bloco D** (saúde) | referência para os tetos de acesso/provisão | `ivet.md` §4.5.3 |
-| 5 | **Bloco F** (meio ambiente) | definir componentes e pesos (exposição a risco) | `ivet.md` §4.5.4 |
-| 6 | **Z:10454** | ler o trabalho (sensibilidade do IDEB por modelo matemático) e incorporar | §1 |
+| 1 | **Bloco C** (mobilidade) | aberto — confirmar o proxy de exposição viária ou substituir pela isócrona | `ivet.md` §4.5.5 |
+| 2 | **Tetos de todos os blocos** | ✅ feito — cada teto confrontado com p50/p90/p99 e com um lastro (norma / literatura / decisão de produto) | §5 |
+| 2b | **Escolha do teto de D (provisão) e E (homicídio)** | aberto — D: **relativo** (8 = p90) × **normativo** (5 = PNAB); E: 50 × 40 × 25 | §5.1 |
+| 3 | **Bloco E** (segurança) | ✅ feito — OMS/PAHO (>10 = epidemia) + Atlas 2026 (23,4 nacional); a *escolha* do teto segue | §5.1 |
+| 4 | **Bloco D** (saúde) | ✅ feito — PNAB: 2.000–3.500 pessoas/equipe (média 3.000) | §5.1 |
+| 5 | **Bloco F** (meio ambiente) | aberto — definir componentes e pesos (exposição a risco) | `ivet.md` §4.5.4 |
+| 6 | **Z:10454** | aberto — ler o trabalho (sensibilidade do IDEB por modelo matemático) e incorporar | §1 |
 
 **Regra da fila:** um indicador novo (vindo de `docs/funcionalidades/analise/`)
 entra nesta fila **no momento em que é especificado**, e só sai quando a ficha
 (§2) tiver a referência — ou o registro explícito de que é decisão de produto.
 
-## 6. Referências
+## 7. Referências
+
+### 7.1 Do acervo (Zotero)
 
 - **Z:10456** — Colucci, L. (2014). *O impacto na ponderação do peso da Prova
   Brasil e do indicador de rendimento no perfil das escolas municipais do ensino
@@ -193,3 +258,15 @@ entra nesta fila **no momento em que é especificado**, e só sai quando a ficha
 - **Z:10454** — *A sensibilidade do Ideb a variáveis educacionais avaliada por um
   modelo matemático* (2015), PUC-SP. (por ler)
 - **Z:10453** — PUC-SP (instituição).
+
+### 7.2 Normas e relatórios (§5)
+
+- **PNAB** — Brasil, Ministério da Saúde, **Portaria nº 2.436/2017** (Política
+  Nacional de Atenção Básica) e **Portaria de Consolidação nº 2/2017, Anexo
+  XXII**: 1 equipe de SF/AB por **2.000–3.500 pessoas** (média 3.000, máx.
+  4.000). Vigência 2017→.
+- **OMS/PAHO** — *World report on violence and health* (2002): taxa **> 10
+  homicídios por 100 mil habitantes** caracteriza **violência epidêmica**.
+- **Atlas da Violência 2026** — Cerqueira, D.; Bueno, S. (coord.). Brasília:
+  Ipea; FBSP, 2026 (dados 2024). Municípios > 100 mil: referência nacional
+  **23,4** homicídios/100 mil; 46 municípios > **40**/100 mil.

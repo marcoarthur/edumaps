@@ -427,9 +427,14 @@ metades, como o bloco B:
 
 - **Tetos** (`IVET_TETO_HOMICIDIO_DOLOSO = 50`, `IVET_TETO_LATROCINIO = 5`,
   `IVET_TETO_LESAO_CORPORAL_SEGUIDA_DE_MORTE = 5`, por 100 mil) são **parâmetros de
-  produto** — calibrados no dev (média municipal 2021–2023: homicídio doloso p90 ≈
-  46/100k; latrocínio e lesão seguida de morte são raros, p90 = 0). Mudá-los exige
-  registro e nova versão da fórmula.
+  produto** — calibrados no dev (média municipal 2021–2023: homicídio doloso p50 ≈
+  0, **p90 ≈ 46,3**, p99 ≈ 103,5; latrocínio e lesão seguida de morte são raros,
+  p90 = 0). A **conferência na literatura** ([`ivet-coeficientes.md`](ivet-coeficientes.md) §5):
+  a **OMS/PAHO** tratam **> 10**/100 mil como *violência epidêmica*, e o **Atlas
+  da Violência 2026** (Ipea/FBSP, 2024) usa a referência nacional **23,4**/100 mil
+  (46 municípios > 40). O teto 50 ≈ p90 ≈ 2× a referência nacional — a escolha
+  fica registrada em aberto (50 × 40 × 25). Mudá-lo exige registro e nova versão
+  da fórmula.
 - **Denominador populacional**: a **população por ano** não existe hoje no banco —
   `clean.v_ibge_municipio_ano.populacao` está 100% `NULL`. A extração usa
   `clean.populacao_municipal` (snapshot) como denominador, documentado; a série
@@ -500,10 +505,16 @@ renda do bloco B e o bloco G):
   uma categoria de vulnerabilidade **social** do MS, que duplicaria o bloco B.
 - **Tetos** (`IVET_TETO_DISTANCIA_UBS_KM` = 5, `IVET_TETO_COBERTURA_APS_POR_10K`
   = 8, `IVET_TETO_PRESENCA_UBS_POR_10K` = 8,
-  `IVET_TETO_EFETIVIDADE_VAGAS_APS_PCT` = 100) calibrados no dev a 2026-10-17
-  (distância p90 = 7,25 km, com 5 km sendo o limiar "acesso difícil (>5 km)" da
-  própria view; equipes/10 mil p90 ≈ 8,4; UBS/10 mil p90 ≈ 8,4) e são parâmetros
-  de produto.
+  `IVET_TETO_EFETIVIDADE_VAGAS_APS_PCT` = 100) calibrados no dev
+  (distância p50 = 0,54 e **p90 = 7,25 km**, com 5 km sendo o limiar "acesso
+  difícil (>5 km)" da própria view — 13,4% das escolas acima; **equipes/10 mil
+  p50 = 3,30**, p90 = 8,39, p99 = 12,39). O lastro está em
+  [`ivet-coeficientes.md`](ivet-coeficientes.md) §5: a **PNAB** (Portaria nº
+  2.436/2017; Anexo XXII da Portaria de Consolidação nº 2/2017) fixa 1 equipe por
+  **2.000–3.500 pessoas** = **2,86–5,0 equipes/10 mil** — o p50 medido cai
+  exatamente na média normativa (3.000), e o teto do IVET (8 = p90) é uma leitura
+  **relativa**, acima da faixa. Distância e escolha do teto seguem *parâmetros de
+  produto*.
 - **Denominador populacional**: `clean.populacao_municipal` (snapshot), o mesmo do
   bloco E (a população por ano não existe no banco — §4.5.1).
 - **#154 (ausência ≠ 0)**: `dist_min_km_ubs` `NULL` vira componente `NA`, fora do
