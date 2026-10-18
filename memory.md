@@ -4,6 +4,51 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 (cont.) — bloco F do IVET (fila 5) + lastro do proxy de C (fila 1)
+
+- **Fila 1 — lastro do proxy de C** ✅ (docs-only, direto em `main`, commit
+  `3b8b2ff`): a ficha do bloco C e a §5.1 de `ivet-coeficientes.md` passam de
+  "sem lastro" a **construto padrão de segurança viária**. Lastro **externo** (o
+  acervo não tem literatura de trânsito): **OMS GHO** (*registered vehicles*,
+  IMRID 194) e **GSRRS 2023** (morte **por 100 mil hab** e **por 100 mil
+  veículos**); **ITF/IRTAD** *Road Safety Annual Report 2024* (Fig. 7: morte
+  **por 10.000 veículos registados**; frota e população são ***exposure data***).
+  ⚠️ Ressalva: a literatura mede **mortes**; a RENAEST mede **sinistros**
+  (superset/morbidade). Tetos de C seguem empíricos (≈ p90).
+- **Fila 5 — bloco F (meio ambiente)** ✅ **PR #285 MERGEADO** (merge `f0ceda1`,
+  branch `feat/analytics-ivet-bloco-f`). Definidos **3 componentes, peso igual**:
+  `risco_fogo` (MapBiomas Fogo, **direto**), `vegetacao_natural` (Coleção 11,
+  **invertida**) e `carbono_solo` (**invertido**). Implementado o bloco R
+  (`analysis/edumapsr/R/ivet-meio-ambiente.R`), o `bloco_f` no card, o teste de
+  contrato e o teste do bloco; `DESCRIPTION`/`NAMESPACE` regenerados por roxygen.
+  - **Lastro de construto** (externo): fumaça de incêndio × **criança na escola**
+    (CDC 2021; EPA 2018; queimadas da Califórnia 2003 — *missed school*);
+    cobertura do solo + solos nos **índices de vulnerabilidade/fragilidade
+    ambiental** (Ross 1994; família AHP). ⚠️ É lastro de **construto**, não de
+    coeficiente.
+  - **Tetos PROVISÓRIOS**: fogo = **1**, carbono = **500** (≈ p90 do recorte SP),
+    a recalibrar com a corrida nacional do F (#278).
+  - **Caveat de cobertura**: as duas metades do F cobrem **amostras parciais e
+    disjuntas** — fogo/carbono: **SP/MG**, 23.292 escolas, ano **2020**;
+    cobertura do solo: **ES**, 3.156 escolas, ano **2024**. Cada componente
+    ausente cai fora do denominador (#154) → F degrada para **fogo+solo** onde a
+    vegetação não existe.
+  - **Medido no dev** (SP, ano 2020, raio 1 km): fogo p50 = 0,005, p90 = 0,117,
+    p99 = 0,563 (máx 14,4); carbono p50 = 180, p90 = 462, p99 = 791 (mín
+    **−169,7** — artefato de nodata). ES (ano 2024): vegetação natural p50 =
+    0,104, p90 = 0,356.
+- **Testes**: `devtools::test(filter="ivet")` verde (F: 32; card: 54). `lintr`
+  ausente no host (o pre-commit só avisa).
+- **Deploy**: `rex prepare` + `deploy_analytics_dev` em `analytic.edumaps`
+  (md5 confere; `ivet_bloco_meio_ambiente()` responde `0.5`). Imagem Docker
+  local `analytic` reconstruída.
+- **`docs/funcionalidades/` NÃO mudou**: a capacidade (usar MapBiomas
+  Fogo/Solo/cobertura) já estava documentada; o que mudou é a **fórmula**, que
+  vive em `docs/analises/`. O aviso do pre-commit é falso-positivo aqui.
+- **F nacional (background)** segue: SP concluído (421 s, `<<< São Paulo OK`),
+  MG em curso; 60 OK / 0 FALHOU no último snapshot. Fim do F nacional →
+  **calibrar os tetos** (fila 5).
+
 ## Sessão 2026-10-18 — lastro dos tetos (fila §5, itens 2–4) + F em background
 
 - **O que foi feito**: os itens 2–4 da **fila de revisão** do IVET ganharam lastro
