@@ -6,9 +6,15 @@
 
 ## Sessão 2026-10-18 — #255: uso do solo na área de influência (PR #274)
 
-- **PR #274 ABERTO** (`feat/analytics-mapbiomas-escola` → `main`): commits
-  `5b1ae42` `feat(analytics): uso do solo na influência (#255)` + `192485f`
-  `fix(analytics): corrige o piloto MapBiomasEscola`. Nota técnica **144**.
+- **PR #274 MERGEADO** (merge commit `f7921c9`, branch
+  `feat/analytics-mapbiomas-escola` removida): commits `5b1ae42`
+  `feat(analytics): uso do solo na influência (#255)` + `192485f`
+  `fix(analytics): corrige o piloto MapBiomasEscola` + `aefe205`
+  `docs(memory): #255 uso do solo (PR #274)`. Nota técnica **144**.
+- **Após o merge**: imagens Docker locais reconstruídas (`sqitch backend
+  minion`), stack `up -d`; o container `edumaps-backend` tem o código novo
+  (md5 de `MapBiomasEscola.pm` bate) e o `sqitch` deployou `mapbiomas_escola`
+  no db local (`clean.mapbiomas_escola` + view presentes).
 - **O que entrega**: arealização do **raster de cobertura de 30 m do MapBiomas
   (Coleção 11)** sobre o buffer de `clean.escola_influencia` — bloco **F** do
   IVET. Fonte pinada:
