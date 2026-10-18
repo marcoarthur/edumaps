@@ -407,20 +407,23 @@ sources:
     # errado). Os termos dos DADOS (SINESP) seguem a confirmar.
 
   - id: antt_acidentes
-    name: "ANTT - Acidentes e geodados por trecho"
+    name: "ANTT - Acidentes em rodovias federais concedidas (CKAN)"
     host: dados.antt.gov.br
     base_url: "https://dados.antt.gov.br"
     resources:
-      - path: "/dataset/acidentes"
+      - path: "/api/3/action/package_show"
         method: GET
-        params: [limit, offset]
-        description: "Acidentes em rodovias federais por trecho (Concessionaria;Data;Km;Trecho) — sem município, requer join com geodados ANTT"
+        description: "Descoberta CKAN do dataset acidentes-rodovias (id=acidentes-rodovias) — devolve os 44 recursos CSV, um por concessionária"
         license: "CC-BY-4.0 (ANTT)"
-      - path: "/dataset/trechos"
+      - path: "/dataset/ef0171a8-f0df-4817-a4ed-b4ff94d87194"
         method: GET
-        params: [limit, offset]
-        description: "Geodados de trechos rodoviários (Concessionaria;Trecho;Km_Inicial;Km_Final;Municipio) — permite resolver trecho → município"
+        description: "Recursos do dataset acidentes-rodovias (44 CSVs por concessionária; separador ';' e ISO-8859-1) — verificados 2026-10-18"
         license: "CC-BY-4.0 (ANTT)"
+    # Medido 2026-10-18: o portal CKAN responde (106 datasets, API package_show ok).
+    # Os paths antigos /dataset/acidentes e /dataset/trechos davam 404 (o dataset
+    # real é /dataset/acidentes-rodovias). NÃO há geometria de trecho (LineString)
+    # no CKAN: os únicos geo-recursos são KMZ de equipamentos (radar/SAT/PMV) e um
+    # SHP de pontos de km — por isso antt_trecho_geodados segue sem fonte.
 
   - id: transportes_renatest
     name: "Transportes - RENAEST sinistro (agregado por localidade)"

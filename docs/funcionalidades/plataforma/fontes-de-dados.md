@@ -69,9 +69,10 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   ano (série de 1985 a 2025).
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
-- Sistema pode usar **dados oficiais de trânsito** (acidentes registados e frota
-  municipal) para melhorar a leitura de mobilidade e segurança no entorno das
-  escolas e do município.
+- Sistema pode usar **dados oficiais de trânsito** (acidentes registados nas
+  rodovias federais concedidas, por trecho e quilômetro, e frota municipal) para
+  melhorar a leitura de mobilidade e segurança no entorno das escolas e do
+  município.
 
 ### Dicionário de dados do Censo Escolar
 
