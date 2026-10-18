@@ -4,6 +4,44 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 (cont. 2) — harness da medição do `ivet-v1.2` nacional
+
+- **Entregável 3 do #137** (medição nacional) — branch `feat/analytics-ivet-nacional`,
+  commit `c4f98f2` (`feat(analytics): mede o ivet-v1.2 nacional`). Ainda **sem PR**.
+- **Harness** em `analysis/edumapsr/R/ivet-nacional.R`, em duas camadas:
+  `ivet_painel(dados)` (**pura**: data.frame grão escola → `bloco_A..G`, `ivet`,
+  `publicavel`; coluna ausente = `NA`, #154) e `ivet_medir_nacional()` (abre
+  `analytics_db_connection()`, roda `ivet_sql_escolas()`, chama `ivet_painel()`).
+  Ainda `ivet_resumo_nacional()` e o CLI
+  `analysis/edumapsr/inst/scripts/medir-ivet-nacional.R` (resumo + opção `IVET_SAIDA`).
+  **NÃO materializa** o IVET no banco (`with_vulnerability_score` segue `die`).
+- **Testes**: `tests/testthat/test-ivet-nacional.R` (50) verde; suíte `filter="ivet"`
+  verde (385 no total). Mock DBI com classes próprias (`MockIvetCon`/`MockIvetResult`,
+  `dbSendQuery`+`dbFetch`+`dbHasCompleted`) — precisou de `dbSendQuery`, não só
+  `dbGetQuery`.
+- **`Collate`**: `devtools::document()` **não** adicionou `ivet-nacional.R` (roxygen só
+  reescreve o `DESCRIPTION` quando detecta `@include`); a linha foi posta **à mão**
+  (depois de `ivet-meio-ambiente.R`) e persistiu.
+- **Detalhes do SQL** (conferidos em `database.edumaps`): espinha =
+  `clean.censo_escolas` (`tp_situacao_funcionamento=1`, `nu_ano_censo=2025`) → **180.540
+  escolas** (das 214.192 do ano). `codigo_ibge` é **integer** em mobilidade/acessibilidade,
+  **text** em esforço/crime e **varchar** em população → cast p/ texto. Matview
+  `clean.mv_escolas_scores` cobertura 100%. E = média de `crime_anos` (2021–2023);
+  G = `DISTINCT ON (codigo_ibge) … exercicio DESC`.
+- **1ª medição nacional** (`analytic.edumaps`, censo 2025, raio 1000 m): **145.732
+  publicáveis (80,7%)** de 180.540. Cobertura: A 180.540 · B 145.718 · C 145.734 ·
+  D 145.734 · E 180.533 · **F 46.923 (parcial)** · G 177.397. `ivet` p25/p50/p75 =
+  0,305 / **0,339** / 0,376; p90 0,418; máx 0,634. Distribuição estreita porque o gate
+  exige C+D+E (os blocos de cobertura quase total). ⚠️ **Não é a medição final**: o F
+  ainda não cobre o país.
+- **F nacional (background, `backend.edumaps`)**: **174 regiões OK / 0 FALHOU**
+  (SP 52 · MG 70 · RJ 14 · BA 34 · RS 4, em curso) ≈ 34% das ~510. PID
+  **2905753** (`bash /var/tmp/f_nacional.sh 2904899`), log `/var/tmp/risco_sp.log`;
+  faltam **21 UFs** (PR PE CE PA MA GO AM ES PB RN MT PI AL DF MS SE RO TO AC AP RR).
+  Fila sequencial: nomes fixos de arquivo intermediário impedem paralelismo.
+- **Pendente**: criar o PR do branch (após aceite); quando o F fechar, **calibrar os
+  tetos** provisórios (fogo=1, carbono=500) com a cobertura nacional → nova change/versão.
+
 ## Sessão 2026-10-18 (cont.) — bloco F do IVET (fila 5) + lastro do proxy de C (fila 1)
 
 - **Fila 1 — lastro do proxy de C** ✅ (docs-only, direto em `main`, commit

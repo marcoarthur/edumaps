@@ -667,6 +667,42 @@ e G, teto de renda, proveniência e vigência — e é **contratual**:
 `ivet_blocos()`, `ivet_bloco_socioeconomico_componentes()`, `IVET_TETO_RENDA` ou
 dos componentes/tetos de E e G. Card e código não podem se separar.
 
+### 4.8 Medição nacional (painel por escola)
+
+O IVET **não é materializado no banco** (§3): a fórmula vive em R puro e o
+número nacional é uma **medição**, não uma view. O harness está em
+`analysis/edumapsr/R/ivet-nacional.R`:
+
+- **`ivet_painel(dados)`** — pura e testável: recebe um `data.frame` (1
+  linha/escola) com as colunas brutas dos blocos e devolve
+  `bloco_A`…`bloco_G`, `ivet` e `publicavel` (C+D+E disponíveis). Ausência →
+  `NA` (#154); o agregado sai `NA` enquanto faltar algum bloco territorial
+  mínimo.
+- **`ivet_medir_nacional()`** — abre a conexão analítica
+  (`analytics_db_connection()`), roda a extração (`ivet_sql_escolas()`) e chama
+  `ivet_painel()`. Não escreve nada no banco.
+- **`ivet_resumo_nacional(painel)`** e o CLI
+  `inst/scripts/medir-ivet-nacional.R` imprimem o resumo (cobertura por bloco e
+  distribuição do `ivet`).
+
+Fontes (grão escola; safra por fonte): **A** `clean.mv_escolas_scores`; **B**
+`clean.escola_entorno_socioeconomico`; **C** `analytics.mobilidade_escola`; **D**
+`analytics.acessibilidade_saude`; **E** `clean.brazilcrime_municipio` (média de
+`crime_anos`); **F** `clean.mapbiomas_escola_risco` +
+`clean.v_mapbiomas_escola_grupos`; **G** `analytics.esforco_fiscal_educacao`
+(último exercício); denominador `clean.populacao_municipal`. Safra default:
+Censo **2025**, crime **2021–2023**, **raio 1.000 m** (B e F) — todos
+conectáveis por parâmetro.
+
+**Primeira medição nacional** (2026-10-18; `analytic.edumaps`, censo 2025, raio
+1.000 m): 180.540 escolas, **145.732 publicáveis (80,7%)**. Cobertura por bloco
+(C+D+E=145.732; E quase total; F=46.923, ainda parcial). `ivet` (publicáveis):
+p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634. A distribuição é
+estreita porque o gate de publicação exige C+D+E — os blocos de cobertura quase
+total. O F ainda não cobre o país (fogo/solo em curso; vegetação só no ES),
+logo estes números **não** são a medição final: são o sanity check do harness e
+a base para calibrar os tetos do F quando a cobertura fechar.
+
 
 ---
 
@@ -736,7 +772,7 @@ versionamento do passo `raw`→`clean`→`analytics` está feito
 |------------|--------|------------|
 | 1. Fórmula documentada/versionada | **este documento** | — |
 | 2. Decisão de leitura (territorial) | **decidida e registrada** (§1 + comentário na #137) | — |
-| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B (§4.5), C (§4.5.5), D (§4.5.3), E (§4.5.1), F (§4.5.4) e G (§4.5.2) + pin `raw`→`analytics` (§4.6)** | falta a **cobertura nacional do F** (fogo/solo em curso; vegetação só no ES) e o **ISH/declividade**; **C é um proxy** de exposição viária (isócrona pendente); com C+D+E, **o agregado é publicável** |
+| 3. Pipeline reprodutível em `analysis/edumapsr/` | **núcleo (`R/ivet.R`) + bloco A reconciliado (§4.4.1) + extração dos blocos B–G (§4.5) + medição nacional (`ivet_medir_nacional()`, §4.8) + pin `raw`→`analytics` (§4.6)** | falta a **cobertura nacional do F** (fogo/solo em curso; vegetação só no ES) e o **ISH/declividade**; **C é um proxy** de exposição viária (isócrona pendente); com C+D+E, **o agregado é publicável** |
 | 4. Critério de vigência e retreino | **implementado** (`ivet_vigencia()`, §4.6) | — |
 | 5. Card do índice | **implementado** (`inst/ivet-card.yml` + `ivet_card()`, §4.7) | — |
 
