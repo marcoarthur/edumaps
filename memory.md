@@ -4,6 +4,43 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #168: loader ANTT de acidentes por trecho (PR #275)
+
+- **PR #275 MERGEADO** (merge commit `930ae9e`, branch `feat/data-loader-antt`
+  removida): commits `2622afa` `feat(data): loader ANTT de acidentes (#168)` +
+  `953c71c` `docs(analytics): nota tecnica 145 do ANTT (#168)`. Nota técnica **145**.
+- **O que entrega**: reescreve o job `ANTT` sobre a API **CKAN** real e carrega
+  **1 das 4 tabelas** — `clean.antt_acidente_trecho`.
+- **Descoberta**: `dados.antt.gov.br` responde (CKAN, **106 datasets**).
+  `package_show?id=acidentes-rodovias` → **44 CSVs** (um por concessionária,
+  `;` + ISO-8859-1). Os paths do allowlist (`/dataset/acidentes`,
+  `/dataset/trechos`) davam **404** — trocados pelos reais.
+- **Migration nova** `antt_acidente_trecho_grao`: o grão do evento é
+  `(concessionaria, data_acidente, horario, n_ocorrencia)`. A chave original
+  `(concessionaria, data, km, trecho)` era grossa demais — medido: **79 acidentes
+  partilham km+dia+trecho**; a nova chave tem **0 duplicados**.
+- **Validação**: **958.043 linhas** (2010–2026), 41 concessionárias, chave do
+  evento única, `causa_provavel`/`condicao_tempo` = **NULL** (#154), 124 s.
+- **4 defeitos achados no piloto (corrigidos)**: (1) **truncagem silenciosa** —
+  `"` no meio de campos fazia o `Text::CSV` parar cedo (56 mil linhas → 44);
+  `allow_loose_quotes`/`escapes` + guarda por `eof`; (2) **COPY × watchdog** — o
+  `SIGALRM` do Runner consulta a BD a cada 60 s na MESMA conexão e abortava o
+  `COPY FROM STDIN`; bloqueado com `POSIX::sigprocmask` durante a carga
+  (defeito de interação, não do job); (3) **NUL (0x00)** removido; (4)
+  **duplicados por sentido** (a fonte repete o evento Crescente/Decrescente) —
+  desduplicados pela chave do evento (1.876).
+- **Pendências (as outras 3 tabelas) — precisam de DECISÃO de produto**: não há
+  **geometria de trecho (LineString) no CKAN** (só KMZ de equipamentos e um SHP
+  de pontos de km) → `antt_trecho_geodados` e, por FK, `antt_contagem_equipamento`
+  ficam sem fonte; `antt_od_municipio` (MONITRIIP) é grão de viagem individual
+  (CNPJ/placa/IMEI), negado por LGPD, e a agregação a município é decisão.
+- **Testes**: `t/05-tasks/antt_loader.t` **55/55**; regressão verde
+  (`mapbiomas_escola_loader`, `brazilcrime_loader`, `ingestion_runner`,
+  `esic_jobs`, `ingestao_p0`, `check_dependencies`, `allowlist_real`).
+- **Próximo**: **#138** (similaridade/PgVector) → **#139** (coeficientes na
+  literatura). **#137** segue aberta (faltam C e F-exposição). O merge do #274
+  (ciclo anterior) foi feito no início desta sessão.
+
 ## Sessão 2026-10-18 — #255: uso do solo na área de influência (PR #274)
 
 - **PR #274 MERGEADO** (merge commit `f7921c9`, branch
