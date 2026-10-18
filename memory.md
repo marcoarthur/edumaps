@@ -4,6 +4,37 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #139: fundamentar os coeficientes do IVET (PR #277)
+
+- **PR #277 MERGEADO** (merge commit `d4cb9ba`, branch
+  `docs/analytics-ivet-coeficientes` removida): commit `81904f0`
+  `docs(analytics): coeficientes do IVET (#139)`. Nota técnica **147**.
+- **Novo doc** `docs/analises/ivet-coeficientes.md`: **ficha por indicador**
+  (blocos A–G + agregação), **mapa "escolha de peso → referência"** (caso
+  **Z:10456** explícito), **registro das divergências** (6) e **fila de revisão**.
+- **Fontes lidas**: **Z:10673** (PLOS ONE 2021, full text público — normalização
+  **z-score**, importância por **GBM**, dominância socioeconômica; vigência 2017;
+  escolas públicas estaduais+municipais) e **Z:10456** (Colucci 2014, resumo BDTD
+  — **DEA**, 1 input/2 outputs, **5 padrões de ponderação**; vigência 2011;
+  **17.124 escolas municipais**). ⚠️ **Z:10454 ficou por ler** (na fila).
+- ⚠️ **O storage do Zotero NÃO existe no host** — só o `zotero.sqlite`, sem os
+  PDFs. As leituras vieram do full text online (PLOS ONE CC BY; BDTD/USP).
+- **Achado central (Z:10456)**: variar a ponderação dos outputs da DEA **muda o
+  eixo geográfico** das escolas eficientes (NE → SE/S) — a **escolha de peso é
+  uma escolha metodológica**. Daí o IVET fixar **peso igual** por default e exigir
+  **justificativa + nova versão** para qualquer outra ponderação.
+- **Divergências registradas**: z-score (Z:10673) × **clamp** (IVET); ausente=0
+  (literatura) × **`NA` fora do denominador** (IVET, #154); bloco C **sem lastro**
+  (proxy); **tetos sem lastro** (calibração empírica p90/p99); bloco B como a
+  exceção com lastro forte.
+- **Correção incluída**: o card dizia `componente_ausente: vira 0 dentro da
+  dimensao`, mas a implementação preserva `NA` — corrigido para
+  `fica fora do denominador da dimensao (NA, #154) — nunca 0`.
+- **Deploy**: `rex prepare` + `rex -H analytic.edumaps deploy_analytics_dev`;
+  imagem local `analytic` reconstruída. Suíte do IVET toda verde.
+- **#139 fechada.** Restam do IVET: **F-exposição** e a **isócrona** de C (nenhum
+  bloqueia o agregado). **#138** segue, por desenho, a esperar as dimensões novas.
+
 ## Sessão 2026-10-18 — #137: bloco C (mobilidade) do IVET — PR #276
 
 - **PR #276 MERGEADO** (merge commit `e3d4dd8`, branch
