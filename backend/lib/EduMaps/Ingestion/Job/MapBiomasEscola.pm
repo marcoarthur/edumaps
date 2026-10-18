@@ -76,7 +76,12 @@ sub run ($self, $args = {}) {
   die sprintf("MapBiomasEscola: nenhum buffer para raio=%d%s\n",
       $raio, defined $uf ? " uf=$uf" : '') unless $n_buffers;
 
-  my (@todas, $n_orfaos) = ((), 0);
+  # NÃO usar `my (@todas, $n_orfaos) = ((), 0)`: medido a 2026-10-18, essa
+  # forma deixa @todas = ("0") e $n_orfaos = undef — o "0" do lado direito
+  # acaba DENTRO do array (a lista `((), 0)` é avaliada como um escalar) e a
+  # carga recebe um "0" no lugar de uma linha ("Can't use string as HASH ref").
+  my @todas;
+  my $n_orfaos = 0;
   for my $ano (@anos) {
     my $cog = $self->download_file($self->url_cog($ano), undef, {}, tabelas => [TAB]);
 
@@ -340,10 +345,17 @@ sub carregar ($self, $rows, $anos, $raio) {
           . ' ON CONFLICT (co_entidade, nu_ano_censo, ano, raio_m, classe) DO UPDATE SET'
           . ' classe_desc = EXCLUDED.classe_desc, fracao = EXCLUDED.fracao,'
           . ' colecao = EXCLUDED.colecao, computado_em = now()';
-        $dbh->do($sql, undef, map {
-          ($_->{co_entidade}, $_->{nu_ano_censo}, $_->{ano}, $_->{raio_m},
-           $_->{classe}, $_->{classe_desc}, $_->{fracao}, COLECAO)
-        } @lote);
+        # `for` explícito, não `map { $_->{...} }`: um elemento que não seja
+        # hashref tem de morrer com o índice, não com "Can't use string as
+        # HASH ref" (que foi como o defeito do acumulador apareceu, 2026-10-18).
+        my @bind;
+        for my $r (@lote) {
+          die "MapBiomasEscola: linha de carga não é hashref: " . (defined $r ? "'$r'" : 'undef') . "\n"
+            unless ref $r eq 'HASH';
+          push @bind, $r->{co_entidade}, $r->{nu_ano_censo}, $r->{ano}, $r->{raio_m},
+                      $r->{classe}, $r->{classe_desc}, $r->{fracao}, COLECAO;
+        }
+        $dbh->do($sql, undef, @bind);
         $n += @lote;
       }
     });

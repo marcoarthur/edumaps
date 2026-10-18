@@ -161,6 +161,14 @@ like($@, qr/ano inválido/, 'nunca interpola texto livre no caminho');
   like($ins->[0], qr/ON CONFLICT \(co_entidade, nu_ano_censo, ano, raio_m, classe\)/,
     'ON CONFLICT pela PK completa');
   is(scalar(grep { $_ eq 'collection11' } @$ins), 2, 'grava a coleção em cada linha');
+
+  # Guarda (2026-10-18): uma linha que não seja hashref morre com o índice, não
+  # com "Can't use string as HASH ref" — foi assim que o defeito do acumulador
+  # (`my (@todas, $x) = ((), 0)` deixa @todas=("0")) apareceu no piloto.
+  eval { $j->carregar(
+    [ { co_entidade => 1, nu_ano_censo => 2025, ano => 2024, raio_m => 1000,
+        classe => '3', classe_desc => 'x', fracao => 0.5 }, '0' ], [2024], 1000) };
+  like($@, qr/não é hashref/, 'recusa linha que não é hashref (com índice, não erro críptico)');
 }
 
 # ---------------------------------------------------------------- process_csv
@@ -214,6 +222,8 @@ subtest 'R: normalização peso -> fração (modo --dados)' => sub {
     '100,2025,999,0',    # peso 0: descartado, nunca conta como 0
     '200,2025,24,2',
     '200,2025,999,2',    # classe fora da legenda: desc de fallback
+    '300,2025,3,999999',
+    '300,2025,33,1',     # fração minúscula: write.csv escreveria 1e-06
   ) . "\n");
   my $saida  = File::Spec->catfile($dir, 'saida.csv');
   my $script = File::Spec->rel2abs(
@@ -235,13 +245,17 @@ subtest 'R: normalização peso -> fração (modo --dados)' => sub {
   }
   close $fh;
 
-  is(scalar keys %l, 4, '4 linhas de saída (o peso 0 foi descartado)');
-  is($l{'100|3'}[6], '0.75', 'classe 3 = 3/4 = 0.75');
-  is($l{'100|15'}[6], '0.25', 'classe 15 = 1/4 = 0.25');
-  is($l{'200|24'}[6], '0.5', 'classe 24 = 2/4 = 0.5');
-  is($l{'200|999'}[6], '0.5', 'classe fora da legenda = 2/4 = 0.5');
+  is(scalar keys %l, 6, '6 linhas de saída (o peso 0 foi descartado)');
+  is($l{'100|3'}[6], '0.750000', 'classe 3 = 3/4 = 0.75');
+  is($l{'100|15'}[6], '0.250000', 'classe 15 = 1/4 = 0.25');
+  is($l{'200|24'}[6], '0.500000', 'classe 24 = 2/4 = 0.5');
+  is($l{'200|999'}[6], '0.500000', 'classe fora da legenda = 2/4 = 0.5');
   like($l{'200|999'}[5], qr/ausente da legenda/, 'classe fora da legenda ganha desc de fallback');
   ok(!exists $l{'100|999'}, 'peso 0 é descartado (nunca 0 na saída)');
+  # Regressão do piloto (2026-10-18): write.csv escrevia 1e-06 e o contrato
+  # do loader recusava. A fração sai com 6 casas fixas.
+  is($l{'300|33'}[6], '0.000001', 'fração minúscula sai em notação fixa, não científica');
+  unlike($l{'300|33'}[6], qr/e/i, 'nenhuma fração em notação científica');
   is($l{'100|3'}[2], '2024', 'ano propagado pelo script');
   is($l{'100|3'}[3], '1000', 'raio propagado pelo script');
 };

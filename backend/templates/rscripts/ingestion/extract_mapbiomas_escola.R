@@ -144,6 +144,10 @@ normalizar <- function(d, ano, raio) {
   res$ano          <- as.integer(res$ano)
   res$raio_m       <- as.integer(res$raio_m)
   res$fracao       <- as.numeric(res$fracao)
+  # Fração com 6 casas FIXAS: o write.csv usa notação científica para valores
+  # pequenos (5.1e-05), que o contrato do loader não aceita. numeric(7,6) no
+  # banco tem exatamente esta precisão.
+  res$fracao <- sprintf("%.6f", res$fracao)
   res
 }
 
