@@ -26,6 +26,10 @@ requires "Fcntl" => "0";
 requires "File::Copy" => "0";
 requires "File::Path" => "0";
 requires "File::Find" => "0";
+# script/ingestao/regioes_do_estado.pl faz `use FindBin` (+ `use lib`) para
+# achar ../../lib. Core declarado por convenção do repo — o inventário (#177)
+# só o apanhou depois que o gate do verify voltou a passar.
+requires "FindBin" => "0";
 requires "Future::AsyncAwait" => "0";
 requires "Getopt::Long" => "0";
 requires "HTTP::Tiny" => "0";
