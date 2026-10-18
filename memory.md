@@ -36,14 +36,25 @@
   <raio>` passou a emitir o 3º campo (**pendentes**) e o script **pula** a região
   completa — essa mudança entrou no **PR #282** (branch `feat/ingestao-f-retomavel`,
   merge `8f5da5c` em `main`).
-- **⚠️ `backend-tests` está VERMELHO em `main` há vários commits** (falha no mesmo
-  gate em `ba178ff`, `badf5f9`, `688c91`, `105ad8d`): o `verify` de
-  `import_metadata_uniq_table_name` esperava **31** linhas e encontrou **33**.
-  É **pré-existente** — não foi causado pelo #281 nem pelo #282 (que só mexem em
-  `docs/` e `script/ingestao/`). Como não afeta a lógica do PR #282 (script de
-  ingestão F) e a falha já estava em `main`, mergei. **Pendência de registro**:
-  investigar por que o verify espera 31 vs 33 no produto (`clean.import_metadata`)
-  e corrigir o `verify/*.sql` ou o seed de fixtures.
+- **PR #283 MERGEADO** (merge `5fcefe6`, branch `fix/data_pipeline-verify-import-metadata`)
+  — **`backend-tests` VERDE de novo em `main`** (12m11s, run `39146303320`), depois de
+  **meses vermelho**. Eram **duas falhas encadeadas** na mesma pipeline, e a primeira
+  mascarava a segunda (o passo seguinte só roda se o anterior passar):
+  1. **`verify/import_metadata_uniq_table_name.sql`** esperava contagem **exata** de 31
+     linhas em `clean.import_metadata`; `mapbiomas_escola` e `mapbiomas_escola_risco`
+     (posteriores) registram fonte e cada uma insere 1 linha → **33**. Asserção 3 virou
+     **piso** (`n < 31`) — que era o que o comentário já declarava; asserções 1/2/4
+     (unicidade, sem duplicados, `ON CONFLICT` real) intactas. Editar verify **não**
+     muda `change_id` (metadados: nome, `requires`, pai) → registry intacto.
+  2. **`backend/cpanfile`** não declarava **`FindBin`**, usado em
+     `script/ingestao/regioes_do_estado.pl` (entrou no PR #280). A falha só apareceu
+     porque o inventário (#177) nunca era alcançado enquanto o verify falhava. Core
+     declarado por convenção (como `Carp`/`Fcntl`/`File::Find` já eram).
+  - Falhas pré-existentes no mesmo check: `ba178ff`, `badf5f9`, `688c91`, `105ad8d` —
+    **não** causadas por #281/#282 (só `docs/` e `script/ingestao/`).
+  - **Lição**: um gate vermelho **encobre** os defeitos dos passos seguintes — cada
+    correção pode expor a próxima falha; validar com o CI completo, não só o passo
+    corrigido.
 - **Status monitoring em loop** (`/tmp/opencode/status_loop.sh`): um loop que a
   cada 20 min envia o status das tarefas longas (F em SP + #268 no entorno) via
   `tools/notify/notify.sh` para o Telegram. Enquanto a sessão estiver viva e as
