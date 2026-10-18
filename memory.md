@@ -4,6 +4,43 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #137: bloco C (mobilidade) do IVET — PR #276
+
+- **PR #276 MERGEADO** (merge commit `e3d4dd8`, branch
+  `feat/analytics-ivet-bloco-c` removida): commit `1da3398`
+  `feat(analytics): bloco C (mobilidade) do IVET`. Nota técnica **146**.
+- **Contexto**: o developer pediu "terminar o IVET". O único bloco territorial
+  que faltava era o **C (mobilidade)** — `ivet_blocos_territoriais_minimos()` =
+  C+D+E, e sem C o agregado ficava `NA`. C **não tinha nem card nem R**.
+- **Decisão de produto (2026-10-18): C por PROXY do que existe.** A dimensão
+  central de C é o **acesso** (isócrona/distância-tempo), e
+  `clean.isocrona_escolar` está **vazia** (depende de OSRM/Valhalla, ausente em
+  todos os hosts). Enquanto isso, C é lido como **exposição viária**.
+- **Componentes** (de `analytics.mobilidade_escola` + `clean.populacao_municipal`):
+  `risco_sinistros` = sinistros RENAEST por 100 mil → `clamp(taxa/500)`;
+  `exposicao_frota` = frota RENAVM por habitante → `clamp((frota/pop)/1)`. Ambos
+  "mais = pior" (diretos). Tetos (produto, dev): `IVET_TETO_SINISTROS_100K` = 500
+  (p50≈60, p90≈429, p99≈988), `IVET_TETO_FROTA_POR_HAB` = 1 (p90≈0,89).
+- **Fora do default**: `sinistros_fatais_12m` (0 em todas as escolas-município do
+  dev — constante); `isocrona`/`antt_od`/`vmda` **vazios** (entram quando
+  existirem, no mesmo bloco, sem nova fórmula).
+- **✅ Com C+D+E, o AGREGADO DO IVET PASSA A SER PUBLICÁVEL** — antes era `NA`.
+  A regra `ivet_blocos_territoriais_minimos()` fica satisfeita. O bloco continua
+  um **proxy** de exposição viária até a isócrona existir.
+- **Peças**: `R/ivet-mobilidade.R` (novo), card `inst/ivet-card.yml` (seção
+  `bloco_c`), `tests/testthat/test-ivet-mobilidade.R` (**28 PASS**), `ivet.md`
+  (§4.2, §4.3, **§4.5.5**, §6). `NAMESPACE`/`DESCRIPTION` regenerados por
+  `roxygen2`; `Collate` editado à mão (o `Collate` não é gerado).
+- **Deploy**: `rex prepare` + `rex -H analytic.edumaps deploy_analytics_dev`.
+  ⚠️ **O pacote chama-se `edumapsAnalytics`** (não `edumapsr`) — `library(edumapsr)`
+  falha. Validado: `exists("ivet_bloco_mobilidade")` = TRUE e o valor 0,5.
+- **O que ainda falta no IVET**: **F-exposição** (ISH/declividade/queimada, com o
+  pipeline de raster da #255) e a **isócrona** de C — nenhum dos dois bloqueia o
+  agregado agora.
+- **Próximo**: **#139** (coeficientes na literatura) — a #138 (similaridade)
+  continua, por desenho, a esperar as dimensões novas. **#137** pode ser fechada
+  (blocos mínimos extraídos).
+
 ## Sessão 2026-10-18 — #168: loader ANTT de acidentes por trecho (PR #275)
 
 - **PR #275 MERGEADO** (merge commit `930ae9e`, branch `feat/data-loader-antt`
