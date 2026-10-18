@@ -331,10 +331,17 @@ sub process_csv ($self, $csv_path, $ano, $raio) {
 sub carregar ($self, $rows, $anos, $raio) {
   my $dbh = $self->app->schema->storage->dbh;
   my $n = 0;
+  # O DELETE é escopado às ESCOLAS desta carga (não ao ano×raio inteiro): a
+  # extração pode ser aplicada em BLOCOS (região/UF) e um DELETE por ano×raio
+  # apagaria os blocos já carregados (#278).
+  my %cos;
+  $cos{ $_->{co_entidade} } = 1 for grep { ref $_ eq 'HASH' } @$rows;
+  my @cos = sort { $a <=> $b } keys %cos;
   my $ok = eval {
     $self->app->schema->storage->txn_do(sub {
-      $dbh->do('DELETE FROM ' . TAB . ' WHERE ano = ANY(?::smallint[]) AND raio_m = ?',
-        undef, $anos, $raio);
+      $dbh->do('DELETE FROM ' . TAB
+        . ' WHERE co_entidade = ANY(?::bigint[]) AND ano = ANY(?::smallint[]) AND raio_m = ?',
+        undef, \@cos, $anos, $raio);
       for (my $i = 0; $i < @$rows; $i += LOTE) {
         my $fim = $i + LOTE - 1;
         $fim = $#$rows if $fim > $#$rows;

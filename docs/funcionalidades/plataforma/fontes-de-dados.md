@@ -67,6 +67,9 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   de vegetação natural, área agropecuária, área urbana/infraestrutura e água na
   área de influência —, lida do mapa de uso da terra de 30 m do MapBiomas, ano a
   ano (série de 1985 a 2025).
+- Sistema pode usar a **exposição a risco ao redor de cada escola** — a
+  frequência de queimada e o carbono do solo na área de influência —, lida dos
+  mapas de 30 m de Fogo e Solo do MapBiomas.
 - Sistema pode usar o **OpenStreetMap** para os equipamentos públicos ao redor
   das escolas (transporte, saúde, cultura e lazer, segurança etc.).
 - Sistema pode usar **dados oficiais de trânsito** (acidentes registados nas

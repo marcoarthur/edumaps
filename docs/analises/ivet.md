@@ -228,7 +228,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **C. Acesso/mobilidade** | exposição viária (sinistros RENAEST + frota RENAVM); isócrona pendente | #125 | **implementado** (proxy — §4.5.5; isócrona pendente) |
 | **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
-| **F. Meio ambiente/clima** | MapBiomas/exposição | #125/#241/#255 | **parcial** (cobertura do solo por escola — §4.5.4; exposição a risco pendente) |
+| **F. Meio ambiente/clima** | cobertura do solo + exposição a risco (fogo/solo) | #125/#241/#255/#278 | **parcial** (extração pronta — §4.5.4; **pesos em aberto**) |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
 
 ### 4.3 Pesos e critério de publicação
@@ -552,8 +552,24 @@ a risco** (ISH, declividade — §4.2) estiver extraída; e o agregado continua 
 enquanto **C (mobilidade)** estiver bloqueado (§4.2). Esta change é pré-requisito
 de F, não a sua conclusão.
 
-### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
+#### Exposição a risco (#278)
 
+A segunda metade do F é a **exposição a risco**. Medido no bucket MapBiomas
+(2026-10-18): o **ISH/risco climático** e a **declividade** projetados em
+`fontes/meio-ambiente.md` **não estão** no `mapbiomas-public`; o que existe é
+**Fogo** (frequência acumulada de queimada, 1985–2020) e **Solo** (carbono
+total, até 2021). A change `mapbiomas_escola_risco` materializa
+`clean.mapbiomas_escola_risco` (grão escola × ano do Censo × ano × raio) com
+**frequência de queimada média/máx/fração** e **carbono do solo médio**,
+arealizados pelo job `MapBiomasRisco`. Os rasters têm **~2 GB cada** — não cabem
+no disco do host (~3 GB livres): são lidos em *streaming* por **`/vsicurl`**,
+com **recorte à AOI** antes de extrair. Aplicação **gradual** por **região
+imediata** (`backend/script/ingestao/mapbiomas_risco.sh`).
+
+⚠️ Os **pesos do bloco F** ainda **não estão definidos** — é a fila de revisão
+de [`ivet-coeficientes.md`](ivet-coeficientes.md) §5.
+
+### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
 ⚠️ **PROXY (decisão de produto, 2026-10-18).** A dimensão central de C é o
 **acesso** — isócrona / distância-tempo —, e `clean.isocrona_escolar` está
 **vazia**: depende de um motor de roteamento (OSRM/Valhalla) que não existe em
