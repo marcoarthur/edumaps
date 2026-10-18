@@ -607,6 +607,15 @@ território do seu município).
 - **Código**: `ivet_bloco_mobilidade()`, `ivet_bloco_mobilidade_componentes()`,
   `ivet_componente_risco_sinistros()`, `ivet_componente_exposicao_frota()`;
   testes em `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
+- **Lastro do construto** (2026-10-18): medir **exposição viária** não é
+  arbitrário — a OMS trata *registered vehicles* como indicador de segurança
+  viária (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes por
+  **100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** lista **frota** e
+  **população** como *exposure data* (*Annual Report 2024*). Logo `exposicao_frota`
+  (veíc/hab) é medida de **exposição** consagrada e `risco_sinistros` usa a
+  forma-padrão da taxa. ⚠️ A literatura mede **mortes**; a RENAEST mede
+  **sinistros** (superset/morbidade). Ficha do bloco e §5.1 em
+  [`ivet-coeficientes.md`](ivet-coeficientes.md).
 
 ✅ **Com C, o agregado do IVET passa a ser publicável**: a regra
 `ivet_blocos_territoriais_minimos()` (C+D+E) fica satisfeita — antes, C mantinha

@@ -59,7 +59,7 @@ implementação do projeto.
 | Normalização | **clamp** (saturação linear) — ver §4 (divergência) |
 | Peso | igual entre os componentes disponíveis |
 | Fonte | RENAEST + RENAVM (`analytics.mobilidade_escola`) |
-| **Referência** | **sem lastro na literatura do acervo.** Nenhum dos quatro trabalhos mede exposição viária; é um **proxy** decidido pelo produto (2026-10-18) enquanto a isócrona não existe (`ivet.md` §4.5.5). **Fila de revisão** (§5) |
+| **Referência** | **construto padrão de segurança viária** (lastro externo). A **OMS** trata *registered vehicles* como indicador de *road safety* (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes **por 100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** (*Road Safety Annual Report 2024*) lista **frota de veículos** e **população** explicitamente como *exposure data* e publica as mortes **por 10.000 veículos registados**. Logo `risco_sinistros` usa a forma-padrão da taxa e `exposicao_frota` (veíc/hab) é medida de **exposição**. ⚠️ A literatura mede **mortes**; a RENAEST dá **sinistros** (superset/morbidade) — decisão de produto. O **acervo** não tem literatura de trânsito; a **isócrona** (acesso) segue pendente de infraestrutura (`ivet.md` §4.5.5) |
 
 ### Bloco D — saúde
 
@@ -180,8 +180,8 @@ supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 es
 | bloco | componente (unidade) | teto | p50 | p90 | p99 | lastro |
 |---|---|---|---|---|---|---|
 | B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
-| C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — sem referência de *sinistros*; ver §5.1 |
-| C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) |
+| C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — a *taxa por 100 mil hab* é a forma-padrão OMS/WHO e ITF/IRTAD; teto empírico (ver §5.1) |
+| C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) — *frota* é **exposição** explícita no IRTAD (veíc/hab ≈ motorization rate) |
 | D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
 | D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
@@ -217,13 +217,27 @@ supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 es
   (os estudos de acesso rural descrevem barreiras, não um km de corte). O 5 km
   vem da própria view ("acesso difícil > 5 km"). Decisão de produto — 13,4% das
   escolas acima (p90 = 7,25 km).
-- **C e G.** Sem lastro temático no acervo (a literatura lida é de desempenho
+- **C (exposição viária).** O **construto** tem lastro externo: a OMS trata
+  **veículos registados** como indicador de segurança viária (WHO GHO) e a
+  **GSRRS 2023** dá a taxa de mortes por **100 mil habitantes e por 100 mil
+  veículos**; o **ITF/IRTAD** lista **frota** e **população** como *exposure
+  data* e publica mortes **por 10.000 veículos registados**. Logo `exposicao_frota`
+  (veíc/hab) é medida de **exposição** consagrada e `risco_sinistros` (por 100
+  mil hab) usa a forma-padrão da taxa. O acervo do projeto **não** tem literatura
+  de trânsito. Os **tetos** (500 sinistros; 1 veíc/hab) seguem **empíricos**
+  (≈ p90) — decisão de produto. ⚠️ **Desfecho diferente**: a literatura mede
+  **mortes** (*fatalities*); a RENAEST mede **sinistros** (acidentes), um
+  superset — mais sensível, mas não comparável 1:1 às taxas internacionais.
+- **G.** Sem lastro temático no acervo (a literatura lida é de desempenho
   escolar). Tetos empíricos, decisão de produto.
 
 **Referências desta seção:** OMS/PAHO, *World report on violence and health*
 (2002) — limiar > 10 homicídios/100 mil; Ipea & FBSP, *Atlas da Violência 2026*
 (Cerqueira & Bueno, coord.; dados 2024); Ministério da Saúde, **Portaria nº
-2.436/2017** e **Portaria de Consolidação nº 2/2017, Anexo XXII** (PNAB).
+2.436/2017** e **Portaria de Consolidação nº 2/2017, Anexo XXII** (PNAB); **WHO**
+— Global Health Observatory, *Road safety: registered vehicles* (IMRID 194) e
+*Global Status Report on Road Safety 2023*; **ITF/OECD** — *IRTAD Road Safety
+Annual Report 2024* (§5.1, bloco C).
 
 ## 6. Fila de revisão
 
@@ -232,7 +246,7 @@ de virarem número publicável (ordem de risco):
 
 | # | item | situação | onde |
 |---|---|---|---|
-| 1 | **Bloco C** (mobilidade) | aberto — confirmar o proxy de exposição viária ou substituir pela isócrona | `ivet.md` §4.5.5 |
+| 1 | **Bloco C** (mobilidade) | ✅ **proxy confirmado** — a exposição viária (sinistros/frota) tem lastro externo OMS/ITF-IRTAD (§5.1); resta **substituir pela isócrona** quando houver motor de roteamento (infra) | `ivet.md` §4.5.5 · §5.1 |
 | 2 | **Tetos de todos os blocos** | ✅ feito — cada teto confrontado com p50/p90/p99 e com um lastro (norma / literatura / decisão de produto) | §5 |
 | 2b | **Escolha do teto de D (provisão) e E (homicídio)** | aberto — D: **relativo** (8 = p90) × **normativo** (5 = PNAB); E: 50 × 40 × 25 | §5.1 |
 | 3 | **Bloco E** (segurança) | ✅ feito — OMS/PAHO (>10 = epidemia) + Atlas 2026 (23,4 nacional); a *escolha* do teto segue | §5.1 |
@@ -270,3 +284,11 @@ entra nesta fila **no momento em que é especificado**, e só sai quando a ficha
 - **Atlas da Violência 2026** — Cerqueira, D.; Bueno, S. (coord.). Brasília:
   Ipea; FBSP, 2026 (dados 2024). Municípios > 100 mil: referência nacional
   **23,4** homicídios/100 mil; 46 municípios > **40**/100 mil.
+- **OMS / WHO (trânsito)** — World Health Organization, *Global Health
+  Observatory: Road safety — registered vehicles* (IMRID 194) e *Global Status
+  Report on Road Safety 2023* (mortalidade **por 100 mil habitantes** e **por
+  100 mil veículos**). §5.1 (C).
+- **ITF/OECD (trânsito)** — International Transport Forum, ***IRTAD* Road
+  Safety Annual Report 2024**: **frota de veículos** e **população** constam como
+  *exposure data* e as mortes saem **por 10.000 veículos registados** — base do
+  proxy de exposição viária do bloco C (§5.1).
