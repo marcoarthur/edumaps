@@ -24,7 +24,7 @@ blocos_territoriais_minimos: [mobilidade, saude, seguranca]
 pesos:
   regra: peso igual entre as dimensoes disponiveis (W=1)
   dimensao_ausente: fica fora do numerador e do denominador (nao penaliza)
-  componente_ausente: vira 0 dentro da dimensao
+  componente_ausente: fica fora do denominador da dimensao (NA, #154) — nunca 0
 
 bloco_a:
   # Reconciliacao B<->C (#137, fatia C): B e o sistema canonico; C e a camada de
