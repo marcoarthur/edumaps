@@ -186,6 +186,14 @@ publicada é a **do responsável**, não per capita. O loader é um dos poucos E
 nome de arquivo fixo (`%ZIP` por tema); ao subir uma revisão do IBGE, atualizar a
 tabela `%ZIP` (o resto é por variável, não por nome).
 
+**Estado (2026-10-18, #268).** A renda do responsável foi **carregada e
+materializada**: `clean.censo2022_setor` passou a ter `rend_media`/`rend_mediana`/
+`rend_resp_count` em **449.531 setores** (de 468.097 — o resto é célula suprimida
+"X", `NULL`, #154), e `clean.escola_entorno_socioeconomico` foi re-materializado em
+**`ivet-v1.2`** com `renda_resp_media`/`renda_resp_mediana`. O loader exigiu uma
+entrada **nova** no allowlist (`…_Rendimento_do_Responsavel/*.zip`) — a pasta irmã
+não estava coberta, e sem ela o job morria no `exigir_allowlist` (corrigido).
+
 **Relevância para o EduMaps:** é a **fonte mais próxima da lacuna "saúde,
 contexto domiciliar e vulnerabilidade"**, e a única que permite resolução **abaixo
 do município**. Traz população (sexo, idade, **cor ou raça**), alfabetização,

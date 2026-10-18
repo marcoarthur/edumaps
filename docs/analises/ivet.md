@@ -244,6 +244,10 @@ extraídos (C como **proxy de exposição viária**, §4.5.5), então
 publicável**. O que falta agora é **F-exposição** (ISH/declividade/queimada) e a
 **isócrona** de C — que não bloqueiam o agregado.
 
+O bloco **B** ganhou a **renda do responsável**: carregada (#268, 449.531 setores)
+e o entorno re-materializado em **`ivet-v1.2`** — o bloco B agrega, agora,
+**instrução + renda + saneamento** (§4.5).
+
 > A **fundamentação dos coeficientes na literatura** (ficha por indicador, mapa
 > "escolha de peso → referência", registro das divergências e fila de revisão)
 > está em [`ivet-coeficientes.md`](ivet-coeficientes.md) (#139).

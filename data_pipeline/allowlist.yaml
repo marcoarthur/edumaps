@@ -293,8 +293,15 @@ sources:
         method: GET
         description: "Dicionário de dados dos agregados por setor"
         license: "Domínio público (IBGE)"
+      - path: "/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel/*.zip"
+        method: GET
+        description: "Rendimento do Responsável por setor (produto separado: rend_media/rend_mediana/rend_resp_count) — agregado, sem microdado"
+        license: "Domínio público (IBGE)"
     # Verificado 2026-10-13 (#238): listagem Agregados_por_Setor_csv/ → 200;
     # basico_BR_20260520.zip 15 MB, demografia 23 MB, cor_ou_raca 44 MB.
+    # Verificado 2026-10-18 (#268): o produto Rendimento_do_Responsavel vive em
+    # PASTA IRMÃ (…_Rendimento_do_Responsavel), não em Agregados_por_Setor_csv —
+    # sem esta entrada o loader (#266) morria no allowlist. ZIP → 200, 2026-05-08.
 
   # ------------------------------------------------------------
   # MEIO AMBIENTE / CLIMA
