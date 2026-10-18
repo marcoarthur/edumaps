@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #137 FECHADA (IVET como produto versionado)
+
+- **#137 FECHADA** (`completed`), com comentário de fecho. Os **5 entregáveis**
+  estão cumpridos: fórmula versionada (`ivet.md`, `ivet-v1.2`), decisão de leitura
+  (territorial), pipeline reprodutível (núcleo + blocos A/B/C/D/E/G + pin
+  `raw`→`analytics`), critério de vigência/retreino (`ivet_vigencia()`) e card
+  (`inst/ivet-card.yml`).
+- **O agregado do IVET é publicável**: os mínimos **C+D+E** estão extraídos (o C
+  entrou como proxy no PR #276).
+- **Coeficientes fundamentados** (#139, PR #277).
+- **Reconciliação**: dos 4 sistemas de score paralelos, **B** é o canônico, **A** e
+  **D** quarentenados, **C** como refinamento opcional (§4.4.1).
+- **Rastreio do que resta: #278** — (1) **F-exposição** (ISH/declividade/queimada;
+  o F só tem cobertura do solo, #255) e (2) a **isócrona** de C (OSRM/Valhalla;
+  piloto 1 UF cabe, nacional não). Ambos entram **sem nova fórmula**.
+- **RandomForest NÃO foi promovido**: o caminho foi o **índice transparente** com
+  lastro na literatura — o issue já alertava o risco de caixa preta.
+
 ## Sessão 2026-10-18 — #139: fundamentar os coeficientes do IVET (PR #277)
 
 - **PR #277 MERGEADO** (merge commit `d4cb9ba`, branch
