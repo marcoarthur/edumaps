@@ -279,6 +279,47 @@ por UF** (chunked): cada UF é uma transação curta e a operação é retomáve
 (UPSERT; uma UF re-executada só refaz o upsert). `{uf}` monta a lista de escolas
 no banco — não trafega dezenas de milhares de INEPs.
 
+### 8.2 Segundo consumidor do Tier 1 — zonal statistics do raster (#255)
+
+O bloco **F (meio ambiente)** do IVET consome o Tier 1 por **arealização de um
+raster**: a cobertura do solo de **30 m do MapBiomas (Coleção 11)** é cruzada com
+o buffer da escola. Ao contrário do bloco B, a fonte **não está no PostGIS** — o
+raster nacional tem ≈22 GB/ano descomprimido e a base do produto tem ~5,5 GB
+livres. A arealização lê o COG em *streaming*, no host de ingestão, e grava só as
+frações.
+
+| Peça | Onde |
+|------|------|
+| Change Sqitch | `data_pipeline/deploy/mapbiomas_escola.sql` (`requires: escola_influencia`) |
+| Tabela | `clean.mapbiomas_escola(co_entidade, nu_ano_censo, ano, raio_m, classe, classe_desc, fracao, colecao, versao, computado_em)` — PK `(co_entidade, nu_ano_censo, ano, raio_m, classe)` |
+| View de grupos | `clean.v_mapbiomas_escola_grupos` — taxonomia nível 1 (vegetação natural, agropecuário, urbano-infra, água, …) |
+| Job | `EduMaps::Ingestion::Job::MapBiomasEscola` (Minion) |
+| Script R | `backend/templates/rscripts/ingestion/extract_mapbiomas_escola.R` (`terra::extract`, `weights = TRUE`) |
+| Teste | `backend/t/05-tasks/mapbiomas_escola_loader.t` |
+
+Notas de implementação:
+
+- **Fonte pinada**: `brazil_coverage-col11_<ANO>.tif`, Coleção 11, **1985–2025**,
+  ~748 MB/ano, EPSG:4326, categórico (código da legenda). O `ano` é validado no
+  intervalo; o caminho nunca é montado com texto do usuário.
+- **Grão** escola × ano do Censo × ano do raster × raio × **classe-folha**; a
+  fração é a composição da área do buffer (soma 1). A classe-folha é o dado
+  bruto; a view reagrupa sem reprocessar.
+- **#154 (ausência ≠ 0)**: buffer sem interseção com o raster fica **sem linha**
+  (nunca 0) e vai para o relatório de órfãos do job.
+- **SRID**: o buffer é 4674 (SIRGAS2000) e o raster 4326 (WGS84); a diferença é
+  sub-métrica, abaixo de um pixel de 30 m — o script **atribui** o CRS do raster
+  à geometria em vez de reprojetar (evita uma passagem PROJ quase-identidade).
+- **Dependências do host**: `terra` (compilado do CRAN) + cabeçalhos
+  `libgdal-dev`/`libgeos-dev`/`libproj-dev`/`libudunits2-dev`, instalados por
+  `deploy_minion_dev` (`backend/script/deploy/Rexfile`).
+- **Piloto** (decisão de produto, 2026-10-17): 1 UF (ES), 2024, raio 1 km; a
+  escala nacional e os demais raios entram nos ciclos seguintes.
+
+⚠️ **Não fecha o agregado do IVET**: F (meio ambiente) só entra na fórmula com a
+**exposição a risco** extraída, e o agregado continua `NA` enquanto **C
+(mobilidade)** estiver bloqueado (Tier 2 sem isócrona — §4.2).
+
 ---
 
 ## 9. Referências

@@ -201,6 +201,19 @@ task deploy_minion_dev => 'backend.edumaps' => sub {
   # gdal-bin (#238): ogr2ogr carrega a malha de setores do Censo 2022 (GPKG
   # de 1,49 GB) direto no PostgreSQL; não há GDAL em nenhum outro host.
 
+  # #255: o job MapBiomasEscola arealiza o raster de 30 m com terra::extract.
+  # O terra é compilado do CRAN (não há pacote Debian para o R 4.2) e liga-se ao
+  # GDAL/GEOS/PROJ do sistema — daí os cabeçalhos -dev. A instalação é
+  # idempotente (só corre se o pacote faltar) e pode levar alguns minutos na
+  # primeira vez. `terra::vect` lê o GeoJSON dos buffers pelo driver GeoJSON do
+  # GDAL, logo não é preciso o `sf`.
+  pkg $_, ensure => 'present' for qw(
+    r-base r-base-dev
+    libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+  );
+  run q{Rscript --vanilla -e 'install.packages("terra", repos="https://cloud.r-project.org")'},
+    unless => q{Rscript --vanilla -e 'quit(status = !requireNamespace("terra", quietly = TRUE))'};
+
   run q{
     git clone https://github.com/brechtsanders/xlsxio.git /opt/xlsxio
   }, unless => 'test -d /opt/xlsxio';

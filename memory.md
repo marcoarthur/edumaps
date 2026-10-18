@@ -4,6 +4,65 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 — #255: uso do solo na área de influência (PR #274)
+
+- **PR #274 ABERTO** (`feat/analytics-mapbiomas-escola` → `main`): commits
+  `5b1ae42` `feat(analytics): uso do solo na influência (#255)` + `192485f`
+  `fix(analytics): corrige o piloto MapBiomasEscola`. Nota técnica **144**.
+- **O que entrega**: arealização do **raster de cobertura de 30 m do MapBiomas
+  (Coleção 11)** sobre o buffer de `clean.escola_influencia` — bloco **F** do
+  IVET. Fonte pinada:
+  `.../collection11/lulc/coverage/brazil_coverage/brazil_coverage-col11_<ANO>.tif`
+  (**1985–2025**, ~748 MB/ano, EPSG:4326, CC BY 4.0, sem token). O `ano` é
+  validado no intervalo; o caminho nunca é montado com texto do usuário.
+- **Decisões (produto, 2026-10-17/18, alinhadas com o developer)**: (1)
+  orquestração em **`backend.edumaps` + Job Minion** (onde já há GDAL 3.6.2);
+  (2) piloto **1 UF (ES), 2024, raio 1 km** — escala nacional depois; (3) saída
+  = **fração por classe-folha** + view de grupos.
+- **Por que não PostGIS**: o raster não cabe no banco (~22 GB/ano
+  descomprimido; a base tem ~5,5 GB livres). O COG é lido em *streaming* com
+  `terra::extract(weights=TRUE)` no host de ingestão e grava só as frações.
+- **Peças**: migration `mapbiomas_escola` (`clean.mapbiomas_escola` grão
+  escola × ano do Censo × ano do raster × raio × classe, `fracao` em [0,1]; view
+  `clean.v_mapbiomas_escola_grupos` = taxonomia nível 1); job
+  `EduMaps::Ingestion::Job::MapBiomasEscola`; script
+  `backend/templates/rscripts/ingestion/extract_mapbiomas_escola.R` (com modo
+  `--dados` para testar a normalização sem raster); Rex `deploy_minion_dev`
+  ganhou `libgdal-dev`/`libgeos-dev`/`libproj-dev`/`libudunits2-dev` + `terra`
+  (idempotente).
+- **`_comparar_colunas` movido do `BrazilCrime` para o `Base`** (contrato de CSV
+  de extração, comum aos loaders que orquestram R). Teste do BrazilCrime segue
+  verde (chama via herança).
+- **Regra #154**: buffer sem interseção com o raster fica **sem linha** (nunca
+  0) e vai para o relatório de órfãos.
+- **Piloto validado** (`database.edumaps`, ES · 2024 · 1 km): **19.898 linhas**
+  (3.156 escolas × 21 classes), **0 órfãos**, soma das frações = 1 em todas as
+  escolas, proveniência `ok` / CC-BY-4.0. Grupos (média): urbano_infra 0,46 ·
+  agropecuario 0,46 · vegetacao_natural 0,15 · agua 0,06 · outros_naturais 0,02
+  · nao_observado 0,003. Arealização = **155 s** (COG de 748 MB; download ~12 min
+  na 1ª vez).
+- **Dois defeitos que o teste unitário não pegava, achados no piloto**: (1)
+  `write.csv` escrevia fração minúscula em notação científica (`5.1e-05`) e o
+  contrato recusava → agora **6 casas fixas**; (2)
+  `my (@todas, $n_orfaos) = ((), 0)` deixa `@todas = ("0")` (a lista `((), 0)` é
+  avaliada como escalar) e a carga recebia `"0"` como linha → trocado por
+  inicialização explícita + guarda de `ref` no `carregar`. Ambos com regressão no
+  teste.
+- **Testes**: `t/05-tasks/mapbiomas_escola_loader.t` **49/49**;
+  `brazilcrime_loader`, `ingestion_runner`, `esic_jobs`, `check_dependencies`,
+  `allowlist_real`, `ingestao_p0` — verdes.
+- **Deploy**: `rex prepare`; migration deployada em `database.edumaps` (sqitch
+  `mapbiomas_escola`, registry limpo, só essa change pendente); `rex -H
+  backend.edumaps deploy_minion_dev` → `terra 1.9.50` + GDAL 3.6.2.
+- **Docs**: `docs/analises/ivet.md` §4.5.4 · `docs/analises/influencia.md` §8.2 ·
+  `docs/analises/fontes/meio-ambiente.md` · `docs/funcionalidades/plataforma/fontes-de-dados.md`.
+- ⚠️ **O agregado do IVET continua `NA`**: **F** só entra na fórmula com a
+  **exposição a risco** (ISH, declividade) extraída, e **C (mobilidade)** segue
+  bloqueado (sem isócrona/Tier 2).
+- **Próximo**: merge do #274 → reconstruir as imagens locais (`sqitch`,
+  `backend`/`minion`) → **#168** (loader ANTT), **#138**, **#139**. **#137 segue
+  aberta** (faltam C e F-exposição).
+
 ## Sessão 2026-10-17 — #137 fatia D: extração R do bloco saúde (PR #273)
 
 - **PR #273 MERGEADO** (merge commit `d4199f1`, branch
