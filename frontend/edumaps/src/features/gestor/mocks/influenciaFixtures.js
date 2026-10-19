@@ -20,6 +20,14 @@ function ring(m) {
 
 const COMPUTADO_EM = new Date(Date.now() - 3 * 86_400_000).toISOString();
 
+// Leitura do entorno socioeconômico (Censo 2022) por raio, como o backend
+// devolve em properties.entorno; `null` = sem leitura (ausência ≠ 0, #154).
+const ENTORNO = {
+  500: { pop_total: 5362, densidade_pop_km2: 6867.39 },
+  1000: { pop_total: 20039, densidade_pop_km2: 6416.18 },
+  2000: { pop_total: 68556, densidade_pop_km2: 5487.59 },
+};
+
 function feature(raio_m) {
   return {
     type: "Feature",
@@ -30,6 +38,7 @@ function feature(raio_m) {
       versao: "influencia-v1",
       // área real de um buffer circular, arredondada como no SQL
       area_km2: Number((Math.PI * (raio_m / 1000) ** 2).toFixed(4)),
+      entorno: ENTORNO[raio_m] ?? null,
       computado_em: COMPUTADO_EM,
     },
   };

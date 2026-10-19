@@ -19,6 +19,7 @@
     radiusColor,
     radiusLabel,
     radiusPurpose,
+    entornoLabel,
     formatAreaKm2,
     formatComputedAt,
   } from "../constants/influencia.js";
@@ -81,7 +82,8 @@
       title="O que é a área de influência"
       text="É o entorno da escola usado para ler o território no índice IVET. A base é um buffer de raio documentado ao redor da escola, calculado e materializado no servidor (metodologia influencia-v1)."
       items={[
-        'Cada raio serve a um grupo de indicadores: 500 m (equipamentos e vias), 1 km (uso do solo), 2 km (queimada e chuva).',
+        'A leitura exibida é a população e a densidade estimadas no entorno da escola, por raio (Censo 2022). Onde não há dado, aparece "—" (nunca zero).',
+        'Cada raio serve a um grupo de indicadores na metodologia: 500 m (equipamentos e vias), 1 km (uso do solo), 2 km (queimada e chuva) — leituras ainda não materializadas.',
         'A geometria já vem calculada do banco — este painel apenas a exibe, sem recalcular.',
         'A geometria por escola só é mostrada ao gestor da própria escola; não é dado público.',
       ]}
@@ -107,8 +109,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="flex flex-col gap-3">
         <p class="text-sm text-gray-600">
-          A plataforma considera o entorno da escola em três raios, cada um para um
-          grupo de indicadores. Ligue ou desligue um raio na legenda.
+          A plataforma considera o entorno da escola em três raios. A leitura é a
+          população e a densidade estimadas no entorno (Censo 2022). Ligue ou
+          desligue um raio na legenda.
         </p>
 
         <ul class="flex flex-col gap-2">
@@ -130,6 +133,9 @@
                   <span class="min-w-0">
                     <span class="text-gray-900 font-medium">{radiusLabel(raio)}</span>
                     <span class="block text-xs text-gray-500">{radiusPurpose(raio)}</span>
+                    <span class="block text-xs text-gray-700">
+                      {entornoLabel(feature.properties.entorno)}
+                    </span>
                   </span>
                 </span>
                 <span class="font-mono text-gray-700 whitespace-nowrap">

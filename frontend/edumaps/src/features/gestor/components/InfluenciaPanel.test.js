@@ -28,6 +28,9 @@ describe("InfluenciaPanel", () => {
     expect(screen.getByText("2 km")).toBeInTheDocument();
     expect(screen.getByText(/0,7854 km²/)).toBeInTheDocument();
 
+    // leitura do entorno socioeconômico (Censo 2022) por raio
+    expect(screen.getByText(/5\.362 hab · 6\.867 hab\/km²/)).toBeInTheDocument();
+
     // proveniência da camada
     expect(screen.getByText(/influencia-v1/)).toBeInTheDocument();
     expect(screen.getByText(/tier buffer/)).toBeInTheDocument();
