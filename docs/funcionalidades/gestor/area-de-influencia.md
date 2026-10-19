@@ -14,7 +14,8 @@ relacionadas: [painel, equipamentos-entorno, painel-escola]
 
 O gestor vê, no mapa, a **área de influência da sua escola** — o entorno
 considerado nas leituras de território da plataforma — já calculado, com um
-polígono por raio e a legenda de para que serve cada um.
+polígono por raio, a **leitura do entorno** (população e densidade, Censo 2022)
+e a legenda de para que serve cada um.
 
 ## Para quem
 
@@ -30,6 +31,10 @@ querem uma leitura comum entre a escola e os órgãos públicos.
   e chuva).
 - Sistema pode **desenhar no mapa** a escola e cada anel, com **legenda** que
   liga e desliga cada raio e mostra a **área em km²** de cada um.
+- Sistema pode **identificar cada anel no próprio mapa**, com uma cartela sobre
+  a borda de cada raio que traz o **raio**, a **leitura do entorno** (população e
+  densidade estimadas no entorno, Censo 2022) e a **área em km²**; quando não há
+  leitura, mostra "—" — nunca zero.
 - Sistema pode usar essa mesma área como base das **leituras de território** da
   escola — inclusive o **contexto socioeconômico do entorno** (**instrução,
   renda do responsável e saneamento**: analfabetismo, rendimento médio/mediano do

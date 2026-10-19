@@ -18,6 +18,12 @@ my $has_table = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.escola_influencia')"
 );
 
+# Tabela do entorno (bloco B) é uma change posterior à da influência: o teste
+# da leitura só roda onde ela existe.
+my $has_entorno = $t->app->schema->storage->dbh->selectrow_array(
+  "SELECT to_regclass('clean.escola_entorno_socioeconomico')"
+);
+
 # INEPs sintéticos (8 dígitos, ausentes da base) para não tocar dados reais:
 # todo o teste é criação -> leitura -> limpeza do que ele mesmo criou.
 my $INEP   = '99000001';   # escola de teste
@@ -45,6 +51,8 @@ my $cleanup = sub {
     my $dbh = $t->app->schema->storage->dbh;
     $dbh->do('DELETE FROM clean.escola_influencia WHERE co_entidade IN (?, ?)', {}, $INEP, $OUTRO)
       if $has_table;
+    $dbh->do('DELETE FROM clean.escola_entorno_socioeconomico WHERE co_entidade IN (?, ?)', {}, $INEP, $OUTRO)
+      if $has_entorno;
     # sessões/telemetria e contas criadas pelo perfil/login de teste
     my $sub = 'SELECT id FROM clean.gestores WHERE email IN (?, ?)';
     $dbh->do("DELETE FROM clean.session_tracking WHERE gestor_id IN ($sub)", {}, $EMAIL, $OEMAIL);
@@ -125,6 +133,33 @@ subtest 'GET: metadados + GeoJSON dos buffers' => sub {
   is $f0->{properties}{tier}, 'buffer', 'tier na feição';
   ok( ($f0->{properties}{area_km2} // 0) > 0.7 && $f0->{properties}{area_km2} < 0.79,
     "área do buffer de 500 m (~0.785 km²): $f0->{properties}{area_km2}" );
+};
+
+subtest 'GET: leitura do entorno socioeconômico por raio (#137)' => sub {
+  plan skip_all => 'clean.escola_entorno_socioeconomico ausente' unless $has_entorno;
+
+  my $dbh = $t->app->schema->storage->dbh;
+  # Só 500 m e 1 km têm leitura; o 2 km deve vir null (ausência ≠ 0, #154).
+  $dbh->do(q{
+    INSERT INTO clean.escola_entorno_socioeconomico
+      (co_entidade, nu_ano_censo, raio_m, n_setores, pop_total, densidade_pop_km2, versao)
+    VALUES (?, 2025, 500, 1, 5362, 6867.39, 'ivet-v1.2'),
+           (?, 2025, 1000, 2, 20039, 6416.18, 'ivet-v1.2')
+  }, {}, $INEP, $INEP);
+
+  my $json = $t->get_ok("/api/gestor/$INEP/influencia", { Authorization => "Bearer $token" })
+    ->status_is(200)->tx->res->json;
+
+  my ($f500)  = grep { $_->{properties}{raio_m} == 500 }  @{ $json->{geojson}{features} };
+  my ($f2000) = grep { $_->{properties}{raio_m} == 2000 } @{ $json->{geojson}{features} };
+
+  is $f500->{properties}{entorno}{pop_total}, 5362,
+    'população do entorno no raio de 500 m';
+  is $f500->{properties}{entorno}{densidade_pop_km2}, 6867.39,
+    'densidade do entorno no raio de 500 m';
+  is $f500->{properties}{entorno}{versao}, 'ivet-v1.2', 'versão da arealização';
+  ok !defined $f2000->{properties}{entorno},
+    'raio sem linha no entorno vem null (ausência ≠ 0)';
 };
 
 subtest 'GET: sem vazamento de outra escola (IDOR)' => sub {

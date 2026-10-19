@@ -26,6 +26,21 @@ export function radiusColor(m) {
   return INFLUENCIA_COLORS[Number(m)] ?? "#64748b";
 }
 
+/**
+ * Conteúdo da cartela de um anel, desenhada sobre a própria geometria no mapa.
+ *
+ * Identifica o entorno — raio, leitura do entorno (Censo 2022) e área em km².
+ * Pura e testável; o `InfluenciaMap` a converte em HTML do `divIcon`.
+ */
+export function ringCartela(props = {}) {
+  return {
+    label: radiusLabel(props.raio_m),
+    entorno: entornoLabel(props.entorno),
+    area: formatAreaKm2(props.area_km2),
+    color: radiusColor(props.raio_m),
+  };
+}
+
 // Grupo de indicadores que usa cada raio (defaults do §4 da metodologia).
 export const INFLUENCIA_PURPOSE = {
   500: "Equipamentos e vias (feições locais)",
@@ -36,6 +51,44 @@ export const INFLUENCIA_PURPOSE = {
 /** Para que serve o raio (default genérico se não for um raio conhecido). */
 export function radiusPurpose(m) {
   return INFLUENCIA_PURPOSE[Number(m)] ?? "Área de influência";
+}
+
+/** Formata um inteiro pt-BR; ausente vira "—" (ausência ≠ 0, #154). */
+export function formatCount(value) {
+  const n = Number(value);
+  if (value === null || value === undefined || value === "" || !Number.isFinite(n)) {
+    return "—";
+  }
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+}
+
+/**
+ * Densidade (hab/km²) no padrão pt-BR. Abaixo de 10 guarda 1 decimal (um "0"
+ * cru seria lido como ausência); acima, arredonda (o banco já grava 2 casas).
+ */
+export function formatDensity(value) {
+  const n = Number(value);
+  if (value === null || value === undefined || value === "" || !Number.isFinite(n)) {
+    return "—";
+  }
+  return n.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(n) < 10 ? 1 : 0,
+  });
+}
+
+/**
+ * Leitura do entorno socioeconômico (Censo 2022) de um anel:
+ * "5.362 hab · 6.867 hab/km²". Sem leitura (null), devolve "—" (#154).
+ */
+export function entornoLabel(entorno) {
+  if (!entorno) return "—";
+  const partes = [];
+  const pop = formatCount(entorno.pop_total);
+  const dens = formatDensity(entorno.densidade_pop_km2);
+  if (pop !== "—") partes.push(`${pop} hab`);
+  if (dens !== "—") partes.push(`${dens} hab/km²`);
+  return partes.length ? partes.join(" · ") : "—";
 }
 
 /** Formata uma área em km² no padrão pt-BR. */
