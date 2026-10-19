@@ -228,7 +228,7 @@ bug do `iqd` é justamente uma contagem crua).
 | **C. Acesso/mobilidade** | exposição viária (sinistros RENAEST + frota RENAVM); isócrona pendente | #125 | **implementado** (proxy — §4.5.5; isócrona pendente) |
 | **D. Saúde** | distância à UBS + cobertura de atenção básica | CNES + SISAB/PMMB (`analytics.acessibilidade_saude`) | **implementado** (mapeamento R, §4.5.3) |
 | **E. Segurança** | BrazilCrime (município, célula ≥5) | #126 | **implementado** (mapeamento R, §4.5.1) |
-| **F. Meio ambiente/clima** | cobertura do solo + exposição a risco (fogo/solo) | #125/#241/#255/#278 | **definido** (3 componentes — §4.5.4; tetos provisórios) |
+| **F. Meio ambiente/clima** | cobertura do solo + exposição a risco (fogo/solo) | #125/#241/#255/#278 | **definido** (3 componentes — §4.5.4; tetos = p99 nacional) |
 | **G. Recursos** | SIOPE/SICONFI | catálogo #123 | **implementado** (mapeamento R, §4.5.2) |
 
 ### 4.3 Pesos e critério de publicação
@@ -546,8 +546,8 @@ classe-folha) arealizando o **raster de 30 m da Coleção 11** sobre o buffer de
   componentes**, peso **igual** entre os disponíveis — `risco_fogo` (MapBiomas
   Fogo, **direto**: mais fogo = pior), `vegetacao_natural` (Coleção 11,
   **invertida**: mais vegetação = melhor) e `carbono_solo` (**invertido**: mais
-  carbono = melhor). Os tetos de fogo/carbono são **provisórios** (a calibrar na
-  corrida nacional). Ficha e lastro em [`ivet-coeficientes.md`](ivet-coeficientes.md)
+  carbono = melhor). Os tetos de fogo/carbono são o **p99 nacional** (calibrados
+  em 2026-10-19; ver §4.8). Ficha e lastro em [`ivet-coeficientes.md`](ivet-coeficientes.md)
   §2/§5.1; código em `R/ivet-meio-ambiente.R`.
 - **#154 (ausência ≠ 0)**: buffer sem interseção com o raster fica **sem
   linha** — nunca 0 — e aparece no relatório de órfãos do job. Isso distingue
@@ -563,10 +563,10 @@ classe-folha) arealizando o **raster de 30 m da Coleção 11** sobre o buffer de
 
 ⚠️ **F é parcial.** O bloco F já tem **componentes definidos** (fogo + vegetação
 + solo) e entra no agregado **onde houver dado** (cada componente ausente cai
-fora — #154). Mas a cobertura ainda é **desigual**: fogo/carbono só em parte do
-território (SP/MG hoje, nacional em curso) e a **cobertura do solo** só no **ES**
-(ano 2024, 3.156 escolas, **disjunta** da anterior). Enquanto isso, F é lido como
-fogo+solo na maior parte. O **ISH/declividade** (§4.2) seguem **fora** — não estão
+fora — #154). A **exposição a risco** (fogo/carbono) já é **nacional** (156.816
+escolas, ano 2020, pendentes = 0), mas a **cobertura do solo** só cobre o **ES**
+(ano 2024, 2.967 escolas, **disjunta** da anterior). Enquanto isso, F é lido como
+fogo+solo fora do ES. O **ISH/declividade** (§4.2) seguem **fora** — não estão
 no `mapbiomas-public`.
 
 #### Exposição a risco (#278)
@@ -585,8 +585,9 @@ imediata** (`backend/script/ingestao/mapbiomas_risco.sh`).
 
 Os **componentes e pesos do bloco F** foram definidos em 2026-10-18 (peso igual;
 fogo direto, vegetação e carbono invertidos) — ficha e lastro de construto em
-[`ivet-coeficientes.md`](ivet-coeficientes.md) §2/§5.1. Restam os **tetos
-provisórios** de fogo/carbono, a calibrar com a corrida nacional.
+[`ivet-coeficientes.md`](ivet-coeficientes.md) §2/§5.1. A **corrida nacional do
+F fechou em 2026-10-19** (156.816 escolas, pendentes = 0) e os **tetos de
+fogo/carbono foram calibrados no p99** (§4.8).
 
 ### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
 ⚠️ **PROXY (decisão de produto, 2026-10-18).** A dimensão central de C é o
@@ -696,12 +697,20 @@ conectáveis por parâmetro.
 
 **Primeira medição nacional** (2026-10-18; `analytic.edumaps`, censo 2025, raio
 1.000 m): 180.540 escolas, **145.732 publicáveis (80,7%)**. Cobertura por bloco
-(C+D+E=145.732; E quase total; F=46.923, ainda parcial). `ivet` (publicáveis):
-p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634. A distribuição é
-estreita porque o gate de publicação exige C+D+E — os blocos de cobertura quase
-total. O F ainda não cobre o país (fogo/solo em curso; vegetação só no ES),
-logo estes números **não** são a medição final: são o sanity check do harness e
-a base para calibrar os tetos do F quando a cobertura fechar.
+(C+D+E=145.732; E quase total; **F=46.923, ainda parcial** — só SP/MG).
+`ivet` (publicáveis): p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634.
+
+**Segunda medição — tetos calibrados** (2026-10-19, com o **p99 nacional** e o
+**F já nacional**): mesmas **145.732 publicáveis**, mas a cobertura do F saltou de
+46.923 para **145.734** escolas. Cobertura por bloco: A 180.540 · B 145.718 ·
+C 145.734 · D 145.734 · E 180.533 · **F 145.734** · G 177.397. `ivet`
+(publicáveis): mín 0,1470 · p25 0,3137 · p50 **0,3441** · p75 0,3750 · p90
+0,4082 · máx 0,6022 (média 0,3460). As duas medições ficam **muito próximas**
+(p50 +0,005; máx −0,03): o F é **1 de 7** blocos do agregado e a calibração move
+os componentes em **direções opostas** — o fogo cai (teto maior) e o carbono sobe
+(`1 − c/teto` com teto maior). A distribuição é estreita porque o gate de
+publicação exige C+D+E — os blocos de cobertura quase total. A **vegetação
+natural** do F segue só no **ES**, logo o F nacional é lido como **fogo+solo**.
 
 
 ---

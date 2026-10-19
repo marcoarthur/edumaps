@@ -43,7 +43,9 @@ test_that("ivet_bloco_meio_ambiente_componentes devolve os três indicadores", {
   comps <- ivet_bloco_meio_ambiente_componentes(
     fogo_frequencia_media = 0.5,
     fracao_vegetacao_natural = 0.5,
-    solo_carbono_medio = 250
+    solo_carbono_medio = 250,
+    teto_fogo = 1,
+    teto_carbono_solo = 500
   )
   expect_named(comps, c("risco_fogo", "vegetacao_natural", "carbono_solo"))
   expect_equal(unname(comps), c(0.5, 0.5, 0.5))
@@ -54,28 +56,47 @@ test_that("ivet_bloco_meio_ambiente: média das disponíveis, NA fora (#154)", {
     ivet_bloco_meio_ambiente(
       fogo_frequencia_media = 0.5,
       fracao_vegetacao_natural = 0.5,
-      solo_carbono_medio = 250
+      solo_carbono_medio = 250,
+      teto_fogo = 1,
+      teto_carbono_solo = 500
     ),
     0.5
   )
   # só fogo+solo (vegetação ausente, ex.: fora do ES hoje) -> média dos dois
   expect_equal(
-    ivet_bloco_meio_ambiente(fogo_frequencia_media = 0.2, solo_carbono_medio = 250),
+    ivet_bloco_meio_ambiente(
+      fogo_frequencia_media = 0.2, solo_carbono_medio = 250,
+      teto_fogo = 1, teto_carbono_solo = 500
+    ),
     0.35
   )
   # nenhum componente -> NA (dimensão não calculada, nunca 0)
   expect_true(is.na(ivet_bloco_meio_ambiente()))
   # subconjunto explícito
   expect_equal(
-    ivet_bloco_meio_ambiente(fogo_frequencia_media = 0.5, componentes = "risco_fogo"),
+    ivet_bloco_meio_ambiente(
+      fogo_frequencia_media = 0.5, componentes = "risco_fogo", teto_fogo = 1
+    ),
     0.5
   )
+})
+
+test_that("tetos do bloco F são o p99 nacional (calibração #278, documentada)", {
+  # Corrida nacional fechada em 2026-10-19 (156.816 escolas, pendentes = 0).
+  # Mudar exige recalibração — o valor está documentado no cabeçalho do R/.
+  expect_equal(IVET_TETO_FOGO, 2.463)
+  expect_equal(IVET_TETO_CARBONO_SOLO, 705.98)
+  # clamp: no teto zera (carbono) / satura em 1 (fogo)
+  expect_equal(ivet_componente_risco_fogo(IVET_TETO_FOGO), 1)
+  expect_equal(ivet_componente_carbono_solo(IVET_TETO_CARBONO_SOLO), 0)
 })
 
 test_that("bloco F entra no agregado como dimensão disponível (não é mínimo)", {
   blocos <- list(
     mobilidade = 0.2, saude = 0.4, seguranca = 0.6,
-    meio_ambiente = ivet_bloco_meio_ambiente(fogo_frequencia_media = 0.5)
+    meio_ambiente = ivet_bloco_meio_ambiente(
+      fogo_frequencia_media = 0.5, teto_fogo = 1
+    )
   )
   ivet <- ivet_v1(blocos)
   expect_true(ivet$publicavel)                       # C+D+E já bastam
