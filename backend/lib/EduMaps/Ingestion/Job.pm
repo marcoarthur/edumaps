@@ -64,7 +64,13 @@ sub run_r_script ($self, $script_path, $args = []) {
     my @cmd = ('Rscript', '--vanilla', $script_path, @$args);
     $self->log->info("Executando R: @cmd");
     my $output = `$cmd[0] @cmd[1..$#cmd] 2>&1`;
-    my $exit_code = $? >> 8;
+    my $status = $?;
+    # Sinal antes do exit code: `$? >> 8` é 0 para filho morto por sinal
+    # (dash faz exec do comando final) — ver Base::_abortar_se_morreu_por_sinal.
+    my $sinal = $status & 127;
+    die "R script morreu por sinal $sinal" . ($sinal == 9 ? ' (SIGKILL — provável OOM)' : '') . ": $output"
+      if $sinal;
+    my $exit_code = $status >> 8;
     die "R script falhou (exit $exit_code): $output" if $exit_code;
     return $output;
   }, "R script $script_path");
@@ -75,7 +81,10 @@ sub run_perl_script ($self, $script_path, $args = []) {
     my @cmd = ('perl', $script_path, @$args);
     $self->log->info("Executando Perl: @cmd");
     my $output = `$cmd[0] @cmd[1..$#cmd] 2>&1`;
-    my $exit_code = $? >> 8;
+    my $status = $?;
+    my $sinal = $status & 127;
+    die "Perl script morreu por sinal $sinal: $output" if $sinal;
+    my $exit_code = $status >> 8;
     die "Perl script falhou (exit $exit_code): $output" if $exit_code;
     return $output;
   }, "Perl script $script_path");
