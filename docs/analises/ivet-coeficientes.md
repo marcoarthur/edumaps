@@ -176,9 +176,9 @@ registrada. Nada sai da fila (§6) sem uma das duas coisas.
 Percentis medidos: **E** = média municipal 2021–2023 (5.570 municípios; a
 supressão de célula 1–4 vira `NULL` — 23.185 células); **D** = 145.723 escolas
 (distância) e 5.533 municípios (equipes/10 mil); **G** = por município; **F** =
-fogo/carbono em 23.292 escolas de **SP** (ano 2020, raio 1 km) e vegetação em
-3.156 escolas do **ES** (ano 2024) — as duas metades do F ainda cobrem **amostras
-parciais e disjuntas** (`ivet.md` §4.5.4).
+fogo/carbono **nacional** em 156.816 escolas (ano 2020, raio 1 km, censo 2025) e
+vegetação em 2.967 escolas do **ES** (ano 2024) — as duas metades do F cobrem
+amostras **disjuntas** (`ivet.md` §4.5.4).
 
 | bloco | componente (unidade) | teto | p50 | p90 | p99 | lastro |
 |---|---|---|---|---|---|---|
@@ -190,9 +190,9 @@ parciais e disjuntas** (`ivet.md` §4.5.4).
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
 | E | `homicidio_doloso` (por 100 mil) | 50 | ~0 | 46,3 | 103,5 | **OMS/PAHO**: > **10**/100 mil = *violência epidêmica*. **Atlas 2026**: referência nacional **23,4** (2024), 46 municípios **> 40**. Teto 50 ≈ p90 ≈ 2× a referência nacional → decisão de produto ancorada |
 | E | `latrocinio`, `lesao_corporal_seguida_de_morte` (por 100 mil) | 5 | 0 | 0 | ~0 | **produto** — eventos raros (p90 = 0); o teto evita que **um único caso** sature |
-| F | `risco_fogo` (freq. média 1985–2020) | **1** | 0,005 | 0,117 | 0,563 | **produto** (provisório) — a fumaça de incêndio é risco à **criança na escola** (CDC 2021; EPA 2018); teto provisório, calibrar no nacional |
+| F | `risco_fogo` (freq. média 1985–2020) | **2,463** | 0,006 | 0,320 | 2,463 | **produto** (p99 nacional) — a fumaça de incêndio é risco à **criança na escola** (CDC 2021; EPA 2018); teto = p99 nacional (156.816 escolas) |
 | F | `vegetacao_natural` (fração) | — | 0,104 | 0,356 | 0,903 | **produto** — a cobertura da terra é a variável de **influência predominante** nos índices de vulnerabilidade ambiental (Ross 1994; AHP); sem teto (proporção), invertida |
-| F | `carbono_solo` (tC/ha) | **500** | 180 | 462 | 791 | **produto** (provisório) — **solos** entram nos índices de vulnerabilidade ambiental (Ross 1994; AHP); teto provisório ⚠️ varia por bioma e o bruto tem negativo (nodata) |
+| F | `carbono_solo` (tC/ha) | **705,98** | 233,6 | 485,7 | 705,98 | **produto** (p99 nacional) — **solos** entram nos índices de vulnerabilidade ambiental (Ross 1994; AHP); teto = p99 nacional ⚠️ varia por bioma e o bruto tem negativo (nodata) |
 | G | `fundeb_por_aluno` | 10.000 | — | 9.336 | — | **produto** (≈ p90) |
 | G | `despesa_educ_por_aluno` | 15.000 | — | 14.521 | — | **produto** (≈ p90) |
 | G | `autonomia_fiscal_pct` | 50 | 13,2 | 30,9 | — | **produto** (≈ 1,6 × p90) |
@@ -244,9 +244,10 @@ parciais e disjuntas** (`ivet.md` §4.5.4).
   do solo*: os índices brasileiros de **vulnerabilidade/fragilidade ambiental**
   (Ross, 1994; família AHP) combinam **uso e cobertura da terra** com **solos**,
   apontando a cobertura da terra como a variável de **influência predominante**.
-  ⚠️ É lastro de **construto**, não de **coeficiente**: os tetos de fogo (**1**)
-  e carbono (**500**) são **provisórios** (calibração ≈ p90 do recorte SP), a
-  recalibrar com a corrida nacional do F. ⚠️ O acervo do projeto **não** tem
+  ⚠️ É lastro de **construto**, não de **coeficiente**: os tetos de fogo
+  (**2,463**) e carbono (**705,98**) são **calibrados no p99 nacional** (156.816
+  escolas; `clean.mapbiomas_escola_risco`, 2026-10-19), sem lastro de literatura
+  para o **valor** (decisão de produto). ⚠️ O acervo do projeto **não** tem
   literatura de meio ambiente — o lastro é **externo**.
 - **G.** Sem lastro temático no acervo (a literatura lida é de desempenho
   escolar). Tetos empíricos, decisão de produto.
@@ -271,7 +272,7 @@ de virarem número publicável (ordem de risco):
 | 2b | **Escolha do teto de D (provisão) e E (homicídio)** | ✅ **decidido** (2026-10-18) — **D = 8** (relativo, ≈p90) e **E = 50** (≈p90) **mantidos**; leitura de posição na distribuição. Nova versão da fórmula fica **dispensada** (tetos inalterados) | §5.1 |
 | 3 | **Bloco E** (segurança) | ✅ feito — OMS/PAHO (>10 = epidemia) + Atlas 2026 (23,4 nacional); a *escolha* do teto segue | §5.1 |
 | 4 | **Bloco D** (saúde) | ✅ feito — PNAB: 2.000–3.500 pessoas/equipe (média 3.000) | §5.1 |
-| 5 | **Bloco F** (meio ambiente) | ✅ feito — 3 componentes (fogo + vegetação natural + carbono do solo), peso igual; lastro **de construto** externo (fumaça × escola; Ross/AHP); **tetos provisórios** a calibrar no nacional | `ivet.md` §4.5.4 · §5.1 |
+| 5 | **Bloco F** (meio ambiente) | ✅ feito — 3 componentes (fogo + vegetação natural + carbono do solo), peso igual; lastro **de construto** externo (fumaça × escola; Ross/AHP); **tetos calibrados no p99 nacional** (fogo 2,463 · carbono 705,98) | `ivet.md` §4.5.4 · §5.1 |
 | 6 | **Z:10454** | aberto — ler o trabalho (sensibilidade do IDEB por modelo matemático) e incorporar | §1 |
 
 **Regra da fila:** um indicador novo (vindo de `docs/funcionalidades/analise/`)

@@ -248,10 +248,10 @@ bloco_f:
   # Direcao: maior = mais vulneravel — o FOGO entra direto; a VEGETACAO e o
   # CARBONO entram invertidos (1 - clamp), como a renda do bloco B.
   # Pesos iguais entre os componentes disponiveis.
-  # ATENCAO: a cobertura do solo hoje so cobre o ES (ano 2024, 3.156 escolas) e
-  # a exposicao a risco cobre MG/SP (ano 2020); onde um componente falta ele cai
-  # fora do denominador (#154), e o bloco degrada para fogo+solo. Tetos de fogo
-  # e carbono PROVISORIOS ate a corrida nacional do F terminar
+  # ATENCAO: a cobertura do solo hoje so cobre o ES (ano 2024, 2.967 escolas) e
+  # a exposicao a risco cobre o PAIS (ano 2020, 156.816 escolas, pendentes = 0);
+  # onde um componente falta ele cai fora do denominador (#154), e o bloco
+  # degrada para fogo+solo. Tetos de fogo e carbono CALIBRADOS no p99 nacional
   # (ivet-coeficientes.md secao 5).
   fonte: clean.mapbiomas_escola_risco
   default: [risco_fogo, vegetacao_natural, carbono_solo]
@@ -261,8 +261,8 @@ bloco_f:
       normalizacao: "clamp(freq/teto)"
       direcao: "+"
       no_default: false
-      teto: 1
-      teto_nota: "frequencia media de fogo 1985-2020 (MapBiomas Fogo); SP p50=0,005, p90=0,117, p99=0,563; TETO PROVISORIO (calibrar no nacional)"
+      teto: 2.463
+      teto_nota: "frequencia media de fogo 1985-2020 (MapBiomas Fogo); nacional p50=0,006, p90=0,320, p99=2,463 (max 16,345); teto = p99 nacional"
     vegetacao_natural:
       fonte: "clean.v_mapbiomas_escola_grupos.fracao (grupo vegetacao_natural)"
       normalizacao: "1 - clamp(fracao)"
@@ -274,8 +274,8 @@ bloco_f:
       normalizacao: "1 - clamp(carbono/teto)"
       direcao: "+"
       no_default: false
-      teto: 500
-      teto_nota: "carbono organico do solo (tC/ha, MapBiomas); SP p50=180, p90=462, p99=791; TETO PROVISORIO; varia por bioma; bruto negativo (nodata) satura em 1"
+      teto: 705.98
+      teto_nota: "carbono organico do solo (tC/ha, MapBiomas); nacional p50=233,6, p90=485,7, p99=705,98 (max 2.833,8); teto = p99 nacional; varia por bioma; bruto negativo (nodata) satura em 1"
 
 bloco_g:
   # Recursos fiscais (SIOPE/SICONFI). Indicadores "maior = melhor", invertidos

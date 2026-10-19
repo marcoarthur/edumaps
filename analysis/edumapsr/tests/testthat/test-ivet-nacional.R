@@ -31,8 +31,9 @@ fixture_ivet_linha <- function() {
     # E — 25 homicídios/100 mil (teto 50); latrocínio/lesão = 0
     homicidio_doloso = 25, latrocinio = 0,
     lesao_corporal_seguida_de_morte = 0,
-    # F — fogo 0,5 (teto 1); vegetação 0,5; carbono 250 (teto 500)
-    fogo_frequencia_media = 0.5, solo_carbono_medio = 250,
+    # F — metade de cada teto (0,5); vegetação 0,5
+    fogo_frequencia_media = IVET_TETO_FOGO / 2,
+    solo_carbono_medio = IVET_TETO_CARBONO_SOLO / 2,
     fracao_vegetacao_natural = 0.5,
     # G — metade de cada teto -> 0,5
     fundeb_por_aluno = 5000, despesa_educ_por_aluno = 7500,

@@ -22,20 +22,23 @@
 # Vazio ≠ zero (#154): sem o dado, o componente é `NA` e fica FORA do
 # denominador da dimensão — nunca 0.
 #
-# ⚠️ TETOS PROVISÓRIOS. Calibração medida em `edumaps_dev` (2026-10-18, SP):
-# fogo médio (1985–2020) p50 = 0,005, p90 = 0,117, p99 = 0,563 (máx. 14,4;
-# n = 23.292); carbono do solo p50 = 180, p90 = 462, p99 = 791 tC/ha (mín.
-# -169,7 — artefato de nodata). Os tetos abaixo são **provisórios** até a
-# corrida nacional do F (#278) terminar (ivet-coeficientes.md §5).
+# ✅ TETOS CALIBRADOS (p99 nacional). A corrida nacional do F (#278) fechou em
+# 2026-10-19: `clean.mapbiomas_escola_risco` cobre **156.816 escolas** (censo
+# 2025, raio 1000 m, ano 2020), **pendentes = 0**. Tetos = **p99** da amostra:
+#   fogo   p50 = 0,006 · p90 = 0,320 · p99 = 2,463   · máx 16,345
+#   carbono p50 = 233,6 · p90 = 485,7 · p99 = 705,98  · máx 2.833,8 tC/ha
+# (690 linhas com carbono < 0 — artefato de nodata — saturam no pior caso;
+# follow-up em aberto.) Ver ivet-coeficientes.md §5.
 #
 # ⚠️ COBERTURA DESIGUAL. A cobertura do solo (#255) hoje só cobre o **ES**
-# (3.156 escolas, ano 2024) e a exposição a risco (#278) cobre MG/SP (ano 2020);
-# as duas metades não coexistem escola a escola. Como cada componente ausente
-# cai fora (#154), o bloco degrada para fogo+solo onde a vegetação não existe.
+# (2.967 escolas, ano 2024) e a exposição a risco (#278) cobre o **país**
+# (156.816 escolas, ano 2020); as duas metades não coexistem escola a escola.
+# Como cada componente ausente cai fora (#154), o bloco degrada para fogo+solo
+# onde a vegetação não existe.
 
-# Tetos PROVISÓRIOS (parâmetros de produto; recalibrar com o dado nacional).
-IVET_TETO_FOGO <- 1
-IVET_TETO_CARBONO_SOLO <- 500
+# Tetos CALIBRADOS (p99 nacional, ver acima). Parâmetros de produto.
+IVET_TETO_FOGO <- 2.463
+IVET_TETO_CARBONO_SOLO <- 705.98
 
 # Default do bloco F: as duas metades extraídas (fogo + vegetação + solo).
 IVET_BLOCO_F_COMPONENTES <- c("risco_fogo", "vegetacao_natural", "carbono_solo")
@@ -48,7 +51,7 @@ IVET_BLOCO_F_COMPONENTES <- c("risco_fogo", "vegetacao_natural", "carbono_solo")
 #'
 #' @param fogo_frequencia_media frequência média de fogo
 #'   (`clean.mapbiomas_escola_risco.fogo_frequencia_media`, MapBiomas Fogo).
-#' @param teto teto provisório documentado (> 0) em frequência de fogo
+#' @param teto teto documentado (> 0, p99 nacional) em frequência de fogo
 #'   (default `IVET_TETO_FOGO`).
 #' @return numérico em `[0,1]`, ou `NA_real_`.
 #' @export
@@ -90,12 +93,12 @@ ivet_componente_vegetacao_natural <- function(fracao_vegetacao_natural) {
 #' **invertido**: `1 - clamp(carbono / teto, 0, 1)`. `NA`/vazio devolve `NA`
 #' (nunca 0 — #154).
 #'
-#' ⚠️ O teto é provisório e o carbono do solo varia naturalmente por bioma; o
-#' valor bruto negativo (artefato de nodata) satura em 1.
+#' ⚠️ O carbono do solo varia naturalmente por bioma; o valor bruto negativo
+#' (artefato de nodata) satura em 1 (follow-up em aberto).
 #'
 #' @param solo_carbono_medio carbono orgânico médio do solo em tC/ha
 #'   (`clean.mapbiomas_escola_risco.solo_carbono_medio`).
-#' @param teto teto provisório documentado (> 0) em tC/ha
+#' @param teto teto documentado (> 0, p99 nacional) em tC/ha
 #'   (default `IVET_TETO_CARBONO_SOLO`).
 #' @return numérico em `[0,1]`, ou `NA_real_`.
 #' @export
@@ -122,7 +125,7 @@ ivet_componente_carbono_solo <- function(
 #' @param fracao_vegetacao_natural fração de vegetação natural (MapBiomas
 #'   Coleção 11).
 #' @param solo_carbono_medio carbono orgânico médio do solo (tC/ha).
-#' @param teto_fogo,teto_carbono_solo tetos provisórios documentados (> 0).
+#' @param teto_fogo,teto_carbono_solo tetos documentados (> 0, p99 nacional).
 #' @return vetor nomeado com os três componentes.
 #' @export
 ivet_bloco_meio_ambiente_componentes <- function(
@@ -146,7 +149,7 @@ ivet_bloco_meio_ambiente_componentes <- function(
 #'
 #' @param fogo_frequencia_media,fracao_vegetacao_natural,solo_carbono_medio
 #'   indicadores das fontes do bloco F.
-#' @param teto_fogo,teto_carbono_solo tetos provisórios documentados (> 0).
+#' @param teto_fogo,teto_carbono_solo tetos documentados (> 0, p99 nacional).
 #' @param componentes quais componentes entram na dimensão (por omissão,
 #'   `IVET_BLOCO_F_COMPONENTES`).
 #' @return a dimensão em `[0,1]`, ou `NA_real_` se nada estiver disponível.
