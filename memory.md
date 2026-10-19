@@ -4,6 +4,45 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-18 (cont. 3) — leitura do entorno nas cartelas da influência (PR #287)
+
+- **PR #287 MERGEADO** (`08c7f15`, branch `feat/ivet-entorno-por-raio`), commits
+  `33aca3a` `feat(backend): expor leitura do entorno por raio`, `03f122f`
+  `feat(frontend): leitura do entorno na cartela`, `eee2f7b` `docs`. Nota
+  técnica **153**. CI verde (Perl contra fixtures + vitest). `rex prepare` +
+  `deploy_backend_dev` + `deploy_frontend_dev` e rebuild das imagens locais
+  `backend`/`minion`/`frontend` feitos **antes** do PR (validação visual
+  aprovada pelo developer).
+- **Cartela = `raio · leitura · área`**. A finalidade metodológica **saiu da
+  cartela** e fica só na legenda do painel (decisão do usuário): cartela = o que
+  varia por anel, legenda = o método, uma vez. Helpers puros em
+  `frontend/.../constants/influencia.js` (`ringCartela`, `entornoLabel`,
+  `formatCount`, `formatDensity`); `CARTELA_W` 210 → 240 px.
+- **`EduMaps::Model::Influencia::entorno_por_raio()`** lê
+  `clean.escola_entorno_socioeconomico` e `status()` anexa
+  `properties.entorno` por `raio_m` com o **objeto inteiro** (pop, densidade,
+  renda, instrução, saneamento, `cobertura_pct`, `n_setores`, `versao`) — trocar
+  o indicador exibido é mudança só de frontend. Ausente → `null` (#154);
+  `_tem_tabela_entorno()` (`to_regclass`) degrada se a change não estiver
+  aplicada. `cobertura_pct` **não** é gate de presença (escola 32000030:
+  `cobertura_pct=0.0` com `pop_total=6`).
+- **Formato**: densidade com 1 casa decimal abaixo de 10 hab/km² (um `0` cru
+  seria lido como ausência — a inversão que #154 proíbe), 0 casas acima;
+  `null` → `—`.
+- **Testes**: `t/04-api/gestor/influencia.t` 6/6 PASS (novo subteste: anel sem
+  linha → `entorno: null`); `t/04-api/gestor` 13/14 (`finance_siope.t`
+  pré-existente); vitest `src/features/gestor` 44/48 (as 4 de upload multipart
+  pré-existentes, reproduzidas no `main` limpo) e constants 10/10.
+- **Validação CDP**: 3 cartelas (`500 m / 5.362 hab · 6.867 hab/km² / 0,7808
+  km²`), `overlaps: []`, `clipped: false`; desligar 1 km → 2 cartelas/2 anéis.
+  **Aprovada visualmente pelo developer.**
+- **Higiene**: conta descartável `validador.ivet@edumaps.local` (gestor 53) +
+  2 sessões + 4 tracking removidas de `clean.*` (token antigo → 401); `node_modules/`
+  órfão criado por `npx` na raiz do repo removido.
+- **F nacional (background)**: **291 regiões OK / 0 FALHOU** (1 stall-retry no
+  início de SP, recuperado); 9 UFs iniciadas (SP MG RJ BA RS PR PE CE PA), em
+  **PA**. PID **2905753**, log `/var/tmp/risco_sp.log`.
+
 ## Sessão 2026-10-18 (cont. 2) — harness da medição do `ivet-v1.2` nacional
 
 - **Entregável 3 do #137** (medição nacional) — **PR #286 MERGEADO** (merge
