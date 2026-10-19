@@ -6,6 +6,7 @@ use utf8;
 use Test::More;
 use Mojo::Log;
 use Mojo::File qw(path);
+use Mojo::JSON qw(decode_json);
 use Text::CSV;
 use File::Temp qw(tempdir);
 use File::Spec;
@@ -123,6 +124,50 @@ like($@, qr/ano inválido/, 'solo: nunca interpola texto livre');
   ) . "\n");
   eval { $j->process_csv($csv) };
   like($@, qr/\[0,1\]/, 'recusa fração fora de [0,1]');
+}
+
+# ------------------------------------------------- exportação em lotes (OOM)
+# 404 buffers com geometria (1 sem) e TAMANHO_LOTE=400 -> lotes de 400 e 4.
+{
+  my @linhas = map { [ 1000 + $_, 2025, '{"type":"Point","coordinates":[-46,-23]}'] } 1 .. 405;
+  $linhas[2][2] = undef;    # sem geometria: não exporta, não conta
+  my $dbh = RbDBH->new(rows => \@linhas);
+  my $j = job(app => mock_app($dbh));
+  my $dir = tempdir(CLEANUP => 1);
+  my $lotes = $j->exportar_buffers_lotes(File::Spec->catfile($dir, 'buf'), 1000, 'SP', undef, undef);
+
+  is(scalar @$lotes, 2, '404 buffers -> 2 lotes (teto de 400, OOM)');
+  is_deeply([ map { $_->[2] } @$lotes ], [400, 4], 'tamanhos dos lotes');
+  is($lotes->[0][1], File::Spec->catfile($dir, 'buf.geojson'), 'lote 1 no caminho base');
+  is($lotes->[1][1], File::Spec->catfile($dir, 'buf_l2.geojson'), 'lote 2 em <base>_l2.geojson');
+
+  my $l1 = decode_json(path($lotes->[0][1])->slurp);
+  is($l1->{type}, 'FeatureCollection', 'lote 1 é uma FeatureCollection fechada');
+  is(scalar @{ $l1->{features} }, 400, 'lote 1 com 400 features');
+  is($l1->{features}[0]{properties}{co_entidade}, 1001, 'co_entidade preservado');
+  is($l1->{features}[0]{properties}{nu_ano_censo}, 2025, 'nu_ano_censo preservado');
+  is(scalar @{ decode_json(path($lotes->[1][1])->slurp)->{features} }, 4, 'lote 2 com as 4 restantes');
+  like($dbh->{consulta}, qr/tier = 'buffer'/, 'mesmo recorte de buffers de sempre');
+  like($dbh->{consulta}, qr/sg_uf/, 'recorte por UF aplicado');
+
+  my $vazio = job(app => mock_app(RbDBH->new(rows => [])));
+  is_deeply($vazio->exportar_buffers_lotes(File::Spec->catfile($dir, 'nada'), 1000, 'SP', undef, undef),
+    [], 'sem buffers -> sem lotes');
+}
+
+# ---------------------------------------------------------------- guarda do lote
+# csv + órfãos = buffers exportados (506/506 blocos saudáveis); o CSV do bloco
+# anterior era lido como sucesso em 2026-10-19 (SP/RJ/PE).
+{
+  my $j = job(app => mock_app(RbDBH->new));
+  eval { $j->conferir_lote('ano 2020, lote 3/28', 400, 399, 1) };
+  ok(!$@, 'a soma fecha (399 + 1 órfão = 400 buffers)');
+  eval { $j->conferir_lote('ano 2020, lote 3/28', 400, 0, 400) };
+  ok(!$@, 'lote inteiramente órfão também fecha (0 + 400)');
+  eval { $j->conferir_lote('ano 2020, lote 1/1', 11147, 154, 0) };
+  like($@, qr/linhas \(154\) \+ órfãos \(0\) ≠ buffers exportados \(11147\)/,
+    'CSV de outro bloco é recusado com o número na mensagem');
+  like($@, qr/nada carregado/, 'nada é carregado quando a soma não fecha');
 }
 
 # ---------------------------------------------------------------- R: agregação (--dados)

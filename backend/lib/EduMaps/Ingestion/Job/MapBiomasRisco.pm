@@ -52,6 +52,14 @@ use constant {
   ANO_MAX    => 2020,   # interseção fogo (..2020) × solo (..2021)
   ANO_PADRAO => 2020,
   RAIO_PADRAO => 1000,
+  # Buffers por chamada do R. O `terra::extract(weights=TRUE)` materializa uma
+  # linha por célula×buffer (~35 mil células de 30 m por buffer de 1 km), então
+  # um bloco grande estoura a RAM do host de ingestão (7,8 GB, sem swap) e o R
+  # morre com SIGKILL: SP (11.147 buffers ≈ 390 M linhas), RJ (5.846) e PE
+  # (2.136) falharam assim em 2026-10-19. 400 buffers ≈ 2 GB de pico — limiar
+  # validado na UF de SC (o maior bloco saudável teve 761; PE, com 2.136,
+  # morreu). A matemática por buffer é idêntica: mesma chamada, menos por vez.
+  TAMANHO_LOTE => 400,
 };
 
 my @RAIOS_VALIDOS = (500, 1000, 2000);
@@ -73,8 +81,10 @@ sub run ($self, $args = {}) {
   my $dir = path($self->config->{dir_trabalho} // 'data/ingestao');
   $dir->make_path;
 
-  my $buffers = "$dir/mapbiomas_risco_buffers.geojson";
-  my $n_buffers = $self->exportar_buffers($buffers, $raio, $uf, $nuc, $municipios);
+  my $lotes = $self->exportar_buffers_lotes("$dir/mapbiomas_risco_buffers",
+    $raio, $uf, $nuc, $municipios);
+  my $n_buffers = 0;
+  $n_buffers += $_->[2] for @$lotes;
   die sprintf("MapBiomasRisco: nenhum buffer para raio=%d%s%s\n",
       $raio, defined $uf ? " uf=$uf" : '',
       defined $municipios ? " municipios=" . scalar(@$municipios) : '') unless $n_buffers;
@@ -90,15 +100,31 @@ sub run ($self, $args = {}) {
     $self->exigir_allowlist($fogo);
     $self->exigir_allowlist($solo);
 
-    my $csv = "$dir/mapbiomas_risco_$ano.csv";
-    my $orf = "$dir/mapbiomas_risco_orfaos_$ano.csv";
-    $self->run_r_script($self->caminho_rscript('extract_mapbiomas_risco.R'), [
-      "--buffers=$buffers", "--raster_fogo=/vsicurl/$fogo", "--raster_solo=/vsicurl/$solo",
-      "--ano=$ano", "--raio=$raio", "--saida=$csv", "--orfaos=$orf",
-    ]);
+    # Um lote por chamada do R (TAMANHO_LOTE): o R morre com OOM acima de
+    # ~1.000–1.500 buffers, e a morte era invisível (ver Base.pm).
+    for my $l (@$lotes) {
+      my ($i, $arq, $n_lote) = @$l;
+      my $lote  = sprintf('lote %d/%d', $i, scalar @$lotes);
+      my $rotulo = sprintf('ano %d, %s', $ano, $lote);
+      my $csv = "$dir/mapbiomas_risco_${ano}_l$i.csv";
+      my $orf = "$dir/mapbiomas_risco_orfaos_${ano}_l$i.csv";
+      # Sobras de execuções anteriores nunca contam como resultado: apagar antes
+      # (2026-10-19: o CSV do bloco anterior foi lido 3× e reportado como "OK").
+      unlink $csv, $orf;
+      $self->run_r_script($self->caminho_rscript('extract_mapbiomas_risco.R'), [
+        "--buffers=$arq", "--raster_fogo=/vsicurl/$fogo", "--raster_solo=/vsicurl/$solo",
+        "--ano=$ano", "--raio=$raio", "--saida=$csv", "--orfaos=$orf",
+      ]);
 
-    $n_orfaos += $self->registrar_orfaos($orf, $ano);
-    push @todas, @{ $self->process_csv($csv) };
+      my $n_orf_l = $self->registrar_orfaos($orf, $ano, $lote);
+      my $rows_l  = $self->process_csv($csv, $lote);
+      # Invariante do lote: o R grava UMA linha por buffer com indicador e manda
+      # o resto para os órfãos, logo linhas + órfãos = buffers exportados. Vale
+      # em 506/506 blocos saudáveis e divergiu exatamente nos 6 silenciosos.
+      $self->conferir_lote($rotulo, $n_lote, scalar @$rows_l, $n_orf_l);
+      $n_orfaos += $n_orf_l;
+      push @todas, @$rows_l;
+    }
   }
 
   die "MapBiomasRisco: nenhuma linha extraída (ver o relatório de órfãos)\n"
@@ -231,7 +257,10 @@ sub caminho_rscript ($self, $nome) {
   return $p->to_string;
 }
 
-sub exportar_buffers ($self, $destino, $raio, $uf, $nu_ano_censo, $municipios) {
+# Exporta os buffers em lotes de até TAMANHO_LOTE feições (o teto de memória
+# do R — ver a constante). Devolve [[índice, caminho, n_buffers], ...], com o
+# lote 1 no caminho base e os seguintes em <base>_l<N>.geojson.
+sub exportar_buffers_lotes ($self, $base, $raio, $uf, $nu_ano_censo, $municipios) {
   my $dbh = $self->app->schema->storage->dbh;
   my $sql = q{
     SELECT i.co_entidade, i.nu_ano_censo, ST_AsGeoJSON(i.geom) AS geom
@@ -249,28 +278,44 @@ sub exportar_buffers ($self, $destino, $raio, $uf, $nu_ano_censo, $municipios) {
   my $sth = $dbh->prepare($sql);
   $sth->execute(@p);
 
-  $self->_garantir_dir($destino);
-  open my $fh, '>:encoding(UTF-8)', $destino or die "Não abriu $destino: $!\n";
-  print {$fh} '{"type":"FeatureCollection","features":[';
-  my ($n, $sep) = (0, '');
+  $self->_garantir_dir("$base.geojson");
+  my @lotes;
+  my ($fh, $arq, $n_lote, $sep);
+  my $total = 0;
+  my $fechar = sub {
+    return unless $fh;
+    print {$fh} ']}';
+    close $fh or die "Não fechou $arq: $!\n";
+    push @lotes, [ scalar(@lotes) + 1, $arq, $n_lote ];
+    $fh = undef;
+  };
   while (my $r = $sth->fetchrow_arrayref) {
     my ($co, $ano, $geom) = @$r;
     next unless defined $geom && length $geom;
+    if (!$fh || $n_lote >= TAMANHO_LOTE) {
+      $fechar->();
+      $arq = @lotes ? sprintf('%s_l%d.geojson', $base, scalar(@lotes) + 1) : "$base.geojson";
+      open $fh, '>:encoding(UTF-8)', $arq or die "Não abriu $arq: $!\n";
+      print {$fh} '{"type":"FeatureCollection","features":[';
+      ($n_lote, $sep) = (0, '');
+    }
     print {$fh} $sep,
       '{"type":"Feature","properties":{"co_entidade":', 0 + $co,
       ',"nu_ano_censo":', 0 + $ano, '},"geometry":', $geom, '}';
-    $sep = ','; $n++;
+    $sep = ','; $n_lote++; $total++;
   }
-  print {$fh} ']}';
-  close $fh or die "Não fechou $destino: $!\n";
+  $fechar->();
+  return \@lotes unless @lotes;
 
-  $self->log_info(sprintf('Buffers exportados: %d (raio %d m%s) -> %s',
-    $n, $raio, defined $uf ? ", uf $uf" : '', $destino));
-  return $n;
+  $self->log_info(sprintf('Buffers exportados: %d em %d lote(s) de até %d (raio %d m%s) -> %s%s',
+    $total, scalar @lotes, TAMANHO_LOTE, $raio, defined $uf ? ", uf $uf" : '',
+    $lotes[0][1], scalar(@lotes) > 1 ? sprintf(' (+%d)', scalar(@lotes) - 1) : ''));
+  return \@lotes;
 }
 
-sub registrar_orfaos ($self, $path, $ano) {
+sub registrar_orfaos ($self, $path, $ano, $rotulo = undef) {
   return 0 unless -f $path;
+  my $onde = defined $rotulo ? " ($rotulo)" : '';
   my $csv = Text::CSV->new({ binary => 1, auto_diag => 0, eol => "\n" });
   open my $fh, '<:encoding(UTF-8)', $path or do {
     $self->log_error("Relatório de órfãos ilegível: $path — $!");
@@ -285,15 +330,15 @@ sub registrar_orfaos ($self, $path, $ano) {
   }
   close $fh;
   if ($n) {
-    $self->log->warn(sprintf('[MapBiomasRisco] %d buffer(s) sem indicador em %d (sem linha, #154). Amostra: %s',
-      $n, $ano, join(', ', @amostra)));
+    $self->log->warn(sprintf('[MapBiomasRisco] %d buffer(s) sem indicador em %d%s (sem linha, #154). Amostra: %s',
+      $n, $ano, $onde, join(', ', @amostra)));
   } else {
-    $self->log_info("Órfãos em $ano: 0");
+    $self->log_info("Órfãos em $ano$onde: 0");
   }
   return $n;
 }
 
-sub process_csv ($self, $csv_path) {
+sub process_csv ($self, $csv_path, $rotulo = undef) {
   die "Não encontrei o CSV de saída: $csv_path\n" unless -f $csv_path;
   my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, eol => "\n" });
   open my $fh, '<:encoding(UTF-8)', $csv_path or die "Não abriu $csv_path: $!\n";
@@ -328,8 +373,20 @@ sub process_csv ($self, $csv_path) {
     push @rows, \%row;
   }
   close $fh;
-  $self->log_info(sprintf('CSV processado: %d linhas', scalar @rows));
+  $self->log_info(sprintf('CSV processado: %d linhas%s', scalar @rows,
+    defined $rotulo ? " ($rotulo)" : ''));
   return \@rows;
+}
+
+# A soma do lote tem de fechar com o exportado: o R grava UMA linha por buffer
+# com indicador e manda o resto para o relatório de órfãos. Se não fecha, o
+# CSV não é deste lote (sobra de execução anterior) ou o R morreu no meio —
+# nada é carregado. Inválido em 506/506 blocos saudáveis (2026-10-19).
+sub conferir_lote ($self, $rotulo, $n_buffers, $n_csv, $n_orfaos) {
+  return if $n_csv + $n_orfaos == $n_buffers;
+  die sprintf("MapBiomasRisco (%s): linhas (%d) + órfãos (%d) ≠ buffers exportados (%d)"
+    . " — CSV de outro lote ou R morto no meio; nada carregado.\n",
+    $rotulo, $n_csv, $n_orfaos, $n_buffers);
 }
 
 sub carregar ($self, $rows, $anos, $raio) {

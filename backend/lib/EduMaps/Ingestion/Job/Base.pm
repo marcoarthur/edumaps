@@ -304,6 +304,20 @@ sub _comparar_colunas ($self, $header, $esperado) {
   return @dif;
 }
 
+# A morte por sinal NÃO vira exit code: o /bin/sh (dash) faz `exec` do último
+# comando, logo o filho direto do Perl é o próprio script, e `$? >> 8` dá 0
+# quando ele morre por sinal. Sem este cheque o job seguia como SUCESSO — foi
+# assim que SP/RJ/PE ficaram sem gravar nada e reportaram "OK" (2026-10-19):
+# o R estourou a RAM (SIGKILL) e o CSV do bloco anterior foi lido como novo.
+sub _abortar_se_morreu_por_sinal ($self, $status, $rotulo, $output) {
+  my $sinal = $status & 127;
+  return unless $sinal;
+  my $dica = $sinal == 9  ? ' (SIGKILL — provável OOM: ver lotes/memória)'
+           : $sinal == 11 ? ' (SIGSEGV)' : '';
+  die sprintf("%s morreu por sinal %d%s. Última saída:\n%s",
+    $rotulo, $sinal, $dica, (defined $output && length $output) ? $output : '(sem saída)');
+}
+
 sub run_r_script ($self, $script_path, $args = []) {
   return $self->run_with_retry(sub {
     if ($self->dry_run) {
@@ -313,8 +327,13 @@ sub run_r_script ($self, $script_path, $args = []) {
     my @cmd = ('Rscript', '--vanilla', $script_path, @$args);
     $self->log->info("Executando R: @cmd");
     my $output = `$cmd[0] @cmd[1..$#cmd] 2>&1`;
-    my $exit_code = $? >> 8;
+    my $status = $?;
+    $self->_abortar_se_morreu_por_sinal($status, "R script $script_path", $output);
+    my $exit_code = $status >> 8;
     die "R script falhou (exit $exit_code): $output" if $exit_code;
+    # A saída do R é o único registro de "N linhas gravadas" — logar para o
+    # diagnóstico não se perder quando a falha acontecer noutro ponto.
+    $self->log->info("Saída do R: $_") for grep { length } split /\n/, ($output // '');
     return $output;
   }, "R script $script_path");
 }
@@ -328,7 +347,9 @@ sub run_perl_script ($self, $script_path, $args = []) {
     my @cmd = ('perl', $script_path, @$args);
     $self->log->info("Executando Perl: @cmd");
     my $output = `$cmd[0] @cmd[1..$#cmd] 2>&1`;
-    my $exit_code = $? >> 8;
+    my $status = $?;
+    $self->_abortar_se_morreu_por_sinal($status, "Perl script $script_path", $output);
+    my $exit_code = $status >> 8;
     die "Perl script falhou (exit $exit_code): $output" if $exit_code;
     return $output;
   }, "Perl script $script_path");
