@@ -4,6 +4,55 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-19 — F nacional fechado e tetos calibrados (PRs #288, #289)
+
+- **#288 MERGEADO** (`a6c9731`, branch `fix/backend-extracao-risco-oom`), commits
+  `a7ebaa0` `fix(backend): sinal de morte conta como falha` e `8cf932f`
+  `fix(backend): lotes de 400 buffers evitam OOM no R`. Nota técnica **154**.
+- **#289 MERGEADO** (`4134346`, branch `fix/analysis-tetos-ivet-f`), commits
+  `a5dd193` `fix(analysis): calibra tetos do F no p99 nacional` e `1ffd560`
+  `docs(analysis): registra 2ª medição nacional`. PR aberto **depois** do deploy
+  validado. Imagens locais `backend`/`minion`/`analytic` reconstruídas.
+- **Diagnóstico da falha silenciosa** (F "terminava" com blocos pendentes em
+  SP/RJ/PE): (1) OOM em `terra::extract(weights=TRUE)` matava o `Rscript`;
+  (2) o job só olhava `$? >> 8` e um filho morto por **sinal** dá `exit 0` (o
+  `dash` faz `exec`); (3) o CSV de nome fixo não era limpo → o loader **relia CSV
+  velho** (SC relido 3×). Invariante que achou os doentes: `CSV + Órfãos ==
+  Buffers exportados`.
+- **Fix**: `_abortar_se_morreu_por_sinal` (`Base.pm`, checa `$? & 127` antes do
+  `>>8`) + mesmo cheque inline na duplicata `Job.pm`; `MapBiomasRisco` exporta em
+  **lotes de ≤400** (`_l<N>.geojson`), `unlink` do CSV/órfãos por lote e
+  `conferir_lote` (morre se `linhas + órfãos != buffers`). Só Perl, sem migration.
+- **Corrida nacional fechou** (`/var/tmp/f_pendentes.sh` em `backend.edumaps`):
+  RJ 5.846 buffers / 70 min · PE 2.136 / 5 min · SP 11.147 / 28 lotes / 23 min;
+  **0 falhas** em cada UF; **pendentes nacionais = 0**. Tabela passou de 121.775
+  para **156.816** escolas (censo 2025, raio 1 km, ano 2020).
+- **Throughput — não era o `terra`**: a lentidão de `weights=TRUE` era
+  **contenção de CPU** (1,3 s controlado vs 39,6 s sob carga); `weights=TRUE` vs
+  `FALSE` difere ≤ 0,0004. **Sem mudança no R.**
+- **Tetos calibrados no p99 nacional** (n = 156.816): fogo p50 0,006 / p90 0,320 /
+  p99 **2,463** / máx 16,345; carbono (n = 156.814) p50 233,6 / p90 485,7 / p99
+  **705,98** / máx 2.833,8. `IVET_TETO_FOGO` 1 → **2,463**;
+  `IVET_TETO_CARBONO_SOLO` 500 → **705,98**. Só constantes (fórmula `ivet-v1.2`
+  intacta). Atualizados `R/ivet-meio-ambiente.R`, `inst/ivet-card.yml`, testes
+  (composição passa tetos explícitos; novo teste fixa os tetos; fixture nacional
+  usa metade do teto) e docs (`ivet.md`, `ivet-coeficientes.md`).
+- **2ª medição nacional** (2026-10-19, `analytic.edumaps`): mesmas **145.732
+  publicáveis**; cobertura **F 145.734** (antes 46.923); `ivet` mín 0,1470 · p25
+  0,3137 · p50 **0,3441** · p75 0,3750 · p90 0,4082 · máx 0,6022 (média 0,3460).
+  Quase igual à 1ª (p50 +0,005): F é 1 de 7 blocos e a calibração move fogo e
+  carbono em direções opostas.
+- **Testes**: backend 59/59 (`job_base_scripts.t` + `mapbiomas_risco_loader.t`) e
+  vizinhos 64/64; R `filter="ivet"` verde (389); suíte R completa só com 2 falhas
+  **pré-existentes** (`test-censo-dictionary.R:112`, `test-cluster.R:96`,
+  reproduzidas no stash).
+- **Achado em aberto**: **690 linhas** com `solo_carbono_medio < 0`
+  (mín −211,05) — nodata que satura no pior carbono (1,0). Correção (negativo →
+  `NA`) fica para change própria; **não** muda o p99.
+- **Pendências**: carbono negativo (§6 da nota 154); C/isócrona `NA` (sem
+  OSRM/Valhalla); `MapBiomasEscola.pm` tem cópia própria de `exportar_buffers`;
+  #168, #138, Fila 6 (Z:10454).
+
 ## Sessão 2026-10-18 (cont. 3) — leitura do entorno nas cartelas da influência (PR #287)
 
 - **PR #287 MERGEADO** (`08c7f15`, branch `feat/ivet-entorno-por-raio`), commits
