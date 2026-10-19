@@ -697,12 +697,20 @@ conectáveis por parâmetro.
 
 **Primeira medição nacional** (2026-10-18; `analytic.edumaps`, censo 2025, raio
 1.000 m): 180.540 escolas, **145.732 publicáveis (80,7%)**. Cobertura por bloco
-(C+D+E=145.732; E quase total; F=46.923, ainda parcial). `ivet` (publicáveis):
-p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634. A distribuição é
-estreita porque o gate de publicação exige C+D+E — os blocos de cobertura quase
-total. O F ainda não cobre o país (fogo/solo em curso; vegetação só no ES),
-logo estes números **não** são a medição final: são o sanity check do harness e
-a base para calibrar os tetos do F quando a cobertura fechar.
+(C+D+E=145.732; E quase total; **F=46.923, ainda parcial** — só SP/MG).
+`ivet` (publicáveis): p25 0,305 · p50 0,339 · p75 0,376 · p90 0,418 · máx 0,634.
+
+**Segunda medição — tetos calibrados** (2026-10-19, com o **p99 nacional** e o
+**F já nacional**): mesmas **145.732 publicáveis**, mas a cobertura do F saltou de
+46.923 para **145.734** escolas. Cobertura por bloco: A 180.540 · B 145.718 ·
+C 145.734 · D 145.734 · E 180.533 · **F 145.734** · G 177.397. `ivet`
+(publicáveis): mín 0,1470 · p25 0,3137 · p50 **0,3441** · p75 0,3750 · p90
+0,4082 · máx 0,6022 (média 0,3460). As duas medições ficam **muito próximas**
+(p50 +0,005; máx −0,03): o F é **1 de 7** blocos do agregado e a calibração move
+os componentes em **direções opostas** — o fogo cai (teto maior) e o carbono sobe
+(`1 − c/teto` com teto maior). A distribuição é estreita porque o gate de
+publicação exige C+D+E — os blocos de cobertura quase total. A **vegetação
+natural** do F segue só no **ES**, logo o F nacional é lido como **fogo+solo**.
 
 
 ---
