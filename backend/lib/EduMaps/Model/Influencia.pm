@@ -68,6 +68,60 @@ sub escola_localizacao($self, $co_entidade, $nu_ano_censo = undef) {
   };
 }
 
+# Número a partir de um valor do DBI (0 fallback); preserva a ausência (undef).
+sub _num($v) { defined $v ? 0 + $v : undef }
+
+# A tabela do entorno é uma change posterior à da influência: se ainda não foi
+# aplicada, o endpoint continua de pé (só sem leitura — ausência ≠ zero, #154).
+sub _tem_tabela_entorno($self) {
+  return $self->_dbh->selectrow_array(
+    "SELECT to_regclass('clean.escola_entorno_socioeconomico')") ? 1 : 0;
+}
+
+# Arealização socioeconômica do entorno (#137, bloco B) por raio: setores do
+# Censo 2022 intersectados com a área de influência. Devolve { raio_m => \%leitura }.
+# Ausência ≠ zero (#154): raio sem linha — ou componente sem insumo no Censo —
+# vem como undef, e o cliente mostra "—" em vez de 0.
+sub entorno_por_raio($self, $co_entidade, $nu_ano_censo) {
+  return {} unless $self->_tem_tabela_entorno;
+
+  my $rows = $self->_dbh->selectall_arrayref(qq{
+    SELECT raio_m, pop_total, densidade_pop_km2,
+           renda_per_capita, renda_resp_media, renda_resp_mediana,
+           pct_sem_instrucao, pct_fund_incomp, pct_medio_mais, pct_analfabeto,
+           pct_esgoto_inadequado, pct_agua_sem_rede, pct_lixo_inadequado,
+           pct_sem_banheiro, cobertura_pct,
+           n_setores, n_setores_suprimidos, versao
+      FROM clean.escola_entorno_socioeconomico
+     WHERE co_entidade = ? AND nu_ano_censo = ?
+  }, { Slice => {} }, $co_entidade, $nu_ano_censo);
+
+  my %por_raio;
+  for my $r (@$rows) {
+    $por_raio{ 0 + $r->{raio_m} } = {
+      pop_total             => _num($r->{pop_total}),
+      densidade_pop_km2     => _num($r->{densidade_pop_km2}),
+      renda_per_capita      => _num($r->{renda_per_capita}),
+      renda_resp_media      => _num($r->{renda_resp_media}),
+      renda_resp_mediana    => _num($r->{renda_resp_mediana}),
+      pct_sem_instrucao     => _num($r->{pct_sem_instrucao}),
+      pct_fund_incomp       => _num($r->{pct_fund_incomp}),
+      pct_medio_mais        => _num($r->{pct_medio_mais}),
+      pct_analfabeto        => _num($r->{pct_analfabeto}),
+      pct_esgoto_inadequado => _num($r->{pct_esgoto_inadequado}),
+      pct_agua_sem_rede     => _num($r->{pct_agua_sem_rede}),
+      pct_lixo_inadequado   => _num($r->{pct_lixo_inadequado}),
+      pct_sem_banheiro      => _num($r->{pct_sem_banheiro}),
+      cobertura_pct         => _num($r->{cobertura_pct}),
+      n_setores             => 0 + $r->{n_setores},
+      n_setores_suprimidos  => 0 + $r->{n_setores_suprimidos},
+      versao                => $r->{versao},
+    };
+  }
+
+  return \%por_raio;
+}
+
 # GeoJSON (FeatureCollection) dos buffers materializados — um polígono por raio,
 # ordenado do menor para o maior (o cliente desenha por cima o menor).
 sub geojson($self, $co_entidade, $nu_ano_censo) {
@@ -111,6 +165,14 @@ sub status($self, $co_entidade, $nu_ano_censo = undef) {
   return undef unless $meta;
 
   my $geojson = $self->geojson($co_entidade, $ano);
+
+  # Leitura do entorno socioeconômico (#137, bloco B) anexada a cada anel. Sem
+  # linha na tabela do entorno, `entorno` fica null (ausência ≠ 0, #154).
+  my $entorno = $self->entorno_por_raio($co_entidade, $ano);
+  for my $feat (@{ $geojson->{features} }) {
+    my $raio = 0 + ($feat->{properties}{raio_m} // 0);
+    $feat->{properties}{entorno} = $entorno->{$raio};
+  }
 
   return {
     co_entidade  => 0 + $co_entidade,
