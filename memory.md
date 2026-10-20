@@ -4,6 +4,41 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-20 (b) — pendências da #278: 45 min no bloco C + anti-OOM do MapBiomasEscola
+
+- **Decisão do developer** (question tool): `acesso_auto_45min` entra no
+  **default** agora — bloco C com 4 componentes (2 exposição + 2 acesso).
+  Base medido: correlação Spearman **0,715** com o acesso de 15 min (não
+  redundantes); viés de fronteira dos 45 min medido antes de decidir —
+  **2,90%** das células `NULL` (anel cruza MG/BA não carregados), 125 escolas
+  >20% e 10 >50% de subestimação.
+- **PR #293 MERGEADO** (`1b6bfa6`, commit `413a132`): componente
+  `ivet_componente_acesso_auto_45min()` invertido como os demais acessos;
+  teto provisório `IVET_TETO_ACESSO_45MIN` = **1.750.000** (p99 do piloto:
+  p50 168.496 / p99 1.765.458); `c_isocrona` soma as duas faixas com
+  `::double precision`; card com `cobertura` + `vies_nota`; docs (ivet.md
+  §4.5.5, coeficientes, influencia.md). Validação no produto: percentis
+  batem, só ES (2.897), bloco C ES **0,6377** (era 0,6263), resto intacto,
+  145.732 publicáveis. Suíte `filter="ivet"` verde (648 asserções).
+- **PR #294 MERGEADO** (`7e1675c`, commit `beb3e6e`): `exportar_buffers_lotes`
+  / `conferir_lote` / `_garantir_dir` / `TAMANHO_LOTE` (400) sobem para
+  **`Job::Base`** — MapBiomasRisco e MapBiomasEscola herdam (cópias removidas
+  dos dois); `run()` do Escola roda **um lote por chamada do R** (mesmo
+  anti-OOM do #288 — a cópia daqui morria igual em UF grandes), `unlink` do
+  CSV/órfãos por lote e invariante linhas+órfãos=buffers. `registrar_orfaos`
+  ganha rótulo do lote. Validado no LXC (md5 = local, `perl -c` OK com
+  vendors, minion `active`).
+- **Issues novas**: **#295** expansão da isócrona MG/BA + recalibração dos
+  tetos (corrige o viés de fronteira); **#296** isócrona como capacidade de
+  produto (API, camada no Leaflet, regra LGPD de agregação, capacidade em
+  `docs/funcionalidades/`).
+- **Stack local**: imagens `analytic`/`backend`/`minion` reconstruídas pós-
+  merge e conferidas por md5 (analytic: `/pkg/R/`); backend 3010 vivo (Mojo
+  responde), frontend 8080 → 200.
+- Pendências abertas: #168 (ANTT), #138 (PgVector), #295, #296.
+  `_garantir_dir` ainda duplicado em `BrazilCrime.pm` (idêntico) e
+  `IBGE.pm` (sem a linha de log) — dedup oportunista, fora do escopo.
+
 ## Sessão 2026-10-20 — #278 FECHADA: isócrona piloto do ES + acesso no bloco C (PR #291)
 
 - **#290 MERGEADO** (`48f8d94`, branch `fix/backend-carbono-nodata-negativo`,
