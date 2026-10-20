@@ -3,6 +3,7 @@ use Mojo::Base 'EduMaps::Ingestion::Job::Base', -signatures;
 use utf8;
 
 use Mojo::File qw(path);
+use Scalar::Util ();
 use Text::CSV;
 
 # =============================================================================
@@ -32,7 +33,9 @@ use Text::CSV;
 #   solo_carbono_medio     média ponderada do carbono do solo (tC/ha)
 #
 # Regra #154: buffer sem interseção com um raster → coluna NULL; sem NENHUM
-# indicador → SEM LINHA. Nunca 0.
+# indicador → SEM LINHA. Nunca 0. E nodata do MapBiomas (-3.4e38, repassado
+# cru pelo R como carbono negativo) → NULL também: medido em 690 de 156.816
+# buffers na calibração nacional (2026-10-19).
 #
 # Args (--arg): ano=2020 (1985..2020); uf=SP; raio=1000 (500/1000/2000);
 # nu_ano_censo=2025 (opcional).
@@ -358,6 +361,7 @@ sub process_csv ($self, $csv_path, $rotulo = undef) {
 
   my @rows;
   my $linha = 1;
+  my $carbono_negativo = 0;
   while (my $r = $csv->getline($fh)) {
     $linha++;
     my %row = map { $header->[$_] => $r->[$_] } 0 .. $#$header;
@@ -370,9 +374,22 @@ sub process_csv ($self, $csv_path, $rotulo = undef) {
       die sprintf("Linha %d: fração '%s' fora de [0,1] (#154)\n", $linha, $row{fogo_fracao_queimada})
         unless $row{fogo_fracao_queimada} =~ /^\d*\.?\d+$/ && $row{fogo_fracao_queimada} >= 0 && $row{fogo_fracao_queimada} <= 1;
     }
+    # O MapBiomas grava -3.4e38 em pixel sem dado e o R repassa o valor cru:
+    # carbono negativo não existe, é artefato de nodata. Vira NULL, nunca 0
+    # (#154). Medido na calibração nacional (2026-10-19): 690 de 156.816
+    # buffers, mín -211 tC/ha — e o teto p99 = 705,98 foi medido sem eles.
+    if (defined $row{solo_carbono_medio}
+      && Scalar::Util::looks_like_number($row{solo_carbono_medio})
+      && $row{solo_carbono_medio} < 0)
+    {
+      $row{solo_carbono_medio} = undef;
+      $carbono_negativo++;
+    }
     push @rows, \%row;
   }
   close $fh;
+  $self->log_info(sprintf('solo_carbono_medio negativo (nodata) mascarado em %d linha(s) (#154)',
+    $carbono_negativo)) if $carbono_negativo;
   $self->log_info(sprintf('CSV processado: %d linhas%s', scalar @rows,
     defined $rotulo ? " ($rotulo)" : ''));
   return \@rows;
