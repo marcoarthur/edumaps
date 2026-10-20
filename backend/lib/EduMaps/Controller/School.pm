@@ -108,6 +108,85 @@ sub ivet($self) {
   $self->render(json => $result);
 }
 
+# Isócrona da escola (#296, PR2): células H3 da área de influência
+# vigente em clean.isocrona_escolar (15 min a pé, r9; 45 min de carro,
+# r7). ?tempo=15|45 filtra a faixa. A conversão célula -> polígono é do
+# frontend (h3-js) — o backend não tem H3. Escola fora da cobertura
+# (nunca extraída) -> 404; tempo inválido -> 400. populacao NULL = sem
+# dado de população na célula (#154), nunca 0.
+sub isocrona($self) {
+  my $co = $self->param('cod_inep');
+
+  my $tempo = $self->param('tempo');
+  if (defined $tempo) {
+    return $self->render(
+      json   => { error => 'Parâmetro tempo deve ser 15 ou 45' },
+      status => 400,
+    ) unless $tempo =~ /^(15|45)$/;
+    $tempo = 0 + $tempo;
+  }
+
+  my $model = $self->instantiate_model(model => 'Ivet::Isocrona');
+  my $rows = eval { $model->por_escola($co, $tempo) };
+
+  if (my $err = $@) {
+    $self->app->log->error("school_isocrona[$co]: $err");
+    return $self->render(
+      json   => { error => 'Isócrona temporariamente indisponível' },
+      status => 500,
+    );
+  }
+
+  return $self->render(
+    json   => { error => 'Escola sem extração de isócrona' },
+    status => 404,
+  ) unless $rows && @$rows;
+
+  # envelope por faixa de tempo: células + totais da faixa
+  my %faixa;
+  for my $r (@$rows) {
+    my $f = $faixa{$r->{tempo_minutos}} //= {
+      tempo_minutos   => 0 + $r->{tempo_minutos},
+      resolucao_h3    => 0 + $r->{resolucao_h3},
+      n_celulas       => 0,
+      populacao_total => undef,
+      _pop            => 0,
+      _tem_pop        => 0,
+      celulas         => [],
+    };
+    $f->{n_celulas}++;
+    if (defined $r->{populacao_grade}) {
+      $f->{_pop}     += $r->{populacao_grade};
+      $f->{_tem_pop}++;
+    }
+    push @{$f->{celulas}}, {
+      grid_id   => $r->{grid_id},
+      populacao => $r->{populacao_grade},
+    };
+  }
+
+  my @tempos;
+  for my $t (sort { $a <=> $b } keys %faixa) {
+    my $f = $faixa{$t};
+    # total só existe se PELO MENOS uma célula tem população (#154)
+    $f->{populacao_total} = $f->{_tem_pop} ? $f->{_pop} : undef;
+    delete @{$f}{qw/_pop _tem_pop/};
+    push @tempos, $f;
+  }
+
+  my $primeiro = $rows->[0];
+  $self->render(json => {
+    co_entidade => 0 + $co,
+    dt_snapshot => "$primeiro->{dt_snapshot}",
+    engine      => {
+      nome               => $primeiro->{engine},
+      versao             => $primeiro->{engine_version},
+      tileset_build_date => "$primeiro->{tileset_build_date}",
+    },
+    tempos => \@tempos,
+  });
+}
+
 # Série histórica da escola (issue #110, roadmap do #105): ponte síncrona
 # para POST /school_evolution. Mesmo tratamento de erro do profile.
 sub evolution($self) {

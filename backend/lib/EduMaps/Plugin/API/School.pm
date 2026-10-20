@@ -16,6 +16,8 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/ivet' => $check)->to('school#ivet')->name('school_ivet');
 
+  $api->get('/:cod_inep/isocrona' => $check)->to('school#isocrona')->name('school_isocrona');
+
   $api->get('/:cod_inep/evolution' => $check)->to('school#evolution')->name('school_evolution');
 
   $api->get('/:cod_inep/info' => $check)->to('school#info')->name('school_info');
