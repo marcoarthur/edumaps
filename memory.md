@@ -4,7 +4,59 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-10-19 — F nacional fechado e tetos calibrados (PRs #288, #289)
+## Sessão 2026-10-20 — #278 FECHADA: isócrona piloto do ES + acesso no bloco C (PR #291)
+
+- **#290 MERGEADO** (`48f8d94`, branch `fix/backend-carbono-nodata-negativo`,
+  commits `2105ede` guard + `798082b` change): carbono negativo (nodata do
+  MapBiomas) vira `NULL` no loader e na tabela (máscara
+  `mapbiomas_risco_carbono_nodata`, registry 130); 692 NULLs, 0 negativos.
+  Testes 62/62. (Registrado aqui: a sessão anterior não chegou a escrever.)
+- **Infra Valhalla auto-hospedado (fora do repo, em `~/Code/Data/osm/`)**:
+  extract Geofabrik Sudeste → `es.osm.pbf` (bbox ES) via osmium; 173 tiles
+  (90 MB); container `valhalla-es` (3.5.1) em `localhost:8002`. ⚠️ o config
+  precisa de `tcp://` (não `ipc://`), senão o serviço não sobe. Roteiro de
+  reprodução em `db/isocrona/README.md`; o repo guarda o método + a
+  proveniência (`tileset_origin`, `engine_version` medido em `GET /status`).
+- **Change `isocrona_escolar_resolucao_h3`** (registry 131): coluna
+  `resolucao_h3 SMALLINT NOT NULL` — cada linha declara a sua resolução
+  (medida pela `sonda_h3.py`: r9 ≈ 0,105 km² p/ 15 min a pé — 18–25 células;
+  r7 ≈ 5,16 km² p/ 45 min carro — 76–313; r9 no carro daria 10–15 mil).
+  O comentário antigo do schema ("r10 ≈ 1 km") é **falso** (r10 ≈ 15 ha).
+  🔴 **Incidente**: o `revert/*.sql` foi rodado via `psql -f` e **dropou a
+  coluna de verdade** — restaurada reaplicando o deploy. Revert de change
+  é `sqitch revert <t> --to <change>`, nunca o script avulso.
+- **Piloto carregado** (`db/isocrona/piloto_es.sh`, 13 min): **2.897/2.897**
+  escolas do universo do IVET no ES, **711.815 linhas** (15 min: 44.836 ≈ 15
+  células/escola; 45 min: 666.979 ≈ 224), 97,3% das células com população,
+  **0 escolas sem rede** (`400` do Valhalla → sem linha, #154). Arealização =
+  `Σ pop_total × (área_interseção/área_setor)`; setor sem pop não contribui e
+  célula só-com-ausência fica `NULL`. `Σ pop` a pé: p50 4.325 · p90 19.871 ·
+  p99 40.590 · máx 60.984. 45 min extraído e armazenado, **fora da fórmula**.
+- **Componente `acesso_isocrona` no bloco C** (`69db3f5`): invertido como a
+  renda (mais alcance = menos vulnerável), `1 − clamp(pop/40.000)`; default do
+  C = `c(risco_sinistros, exposicao_frota, acesso_isocrona)`; fora do piloto
+  `NA` → fora do denominador (#154), C das outras escolas intacto. Teto
+  **provisório = p99 do piloto**; card: `isocrona` sai de `nao_usados`.
+- **`fix(a578c34)` integer64**: `sum()` sobre INTEGER devolve BIGINT e o DBI
+  traz `integer64` ao R — `quantile()`/`summary()` voltam **lixo em silêncio**
+  (medido no produto: p50 = 2e-320). O caminho de produção não sofria, mas a
+  coluna do painel virava bomba → `(...)::double precision` no SQL +
+  asserção no teste.
+- **Validação no produto** (`analytic.edumaps`, `deploy_analytics_dev`):
+  percentis do painel batem com o piloto; acesso em **2.897 ES e 0 fora**;
+  bloco C médio ES 0,6263 vs resto 0,3634; painel nacional 145.732
+  publicáveis. Testes `filter="ivet"` verdes (os 2 falhos do suíte completo —
+  `test-cluster.R` flake de kmeans e `test-censo-dictionary.R` `skip_if_no_db`
+  — reproduzem no `git stash`, não são regressão).
+- **Docs**: `ivet.md` §4.5.5 (bloco C deixa de ser proxy), `ivet-coeficientes.md`
+  (ficha + teto + lastro do acesso), `influencia.md` (Tier 2 vira piloto em
+  produção). **Nota técnica 155**. `docs/funcionalidades/` **não** mudou:
+  isócrona é insumo do IVET, não capacidade de produto (aviso do hook é
+  advisory).
+- **Pendências**: expansão por UF (MG/BA naturais: extract do Sudeste já
+  recortado) + recalibração do teto nacional; componente de transporte (45 min,
+  dado já carregado); `docs/funcionalidades/` só quando o gestor puder ver a
+  isócrona (aí com regra LGPD de agregação).
 
 - **#288 MERGEADO** (`a6c9731`, branch `fix/backend-extracao-risco-oom`), commits
   `a7ebaa0` `fix(backend): sinal de morte conta como falha` e `8cf932f`
