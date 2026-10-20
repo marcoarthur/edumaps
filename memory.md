@@ -4,6 +4,42 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-20 (e) — #296 PR2 mergeado: rota da isócrona (células H3)
+
+- **PR #299 MERGEADO** (`01de865`; commit `00940f1`): PR 2 de 3 da #296.
+  `GET /api/school/:cod_inep/isocrona?tempo=15|45` → células H3 da área de
+  influência vigente. **Backend só entrega a grade**; a conversão
+  célula→polígono é do `h3-js` no frontend (PR3) — o backend não tem H3.
+- **Modelo `Ivet::Isocrona::por_escola($co, $tempo=undef)`**: lê
+  `clean.isocrona_escolar` com **snapshot `max(dt_snapshot)` POR ESCOLA**
+  (mesma regra de `analytics.ivet_escola`/view nacional); ordena por
+  `populacao_grade DESC NULLS LAST`. Envelope montado no controller:
+  `{co_entidade, dt_snapshot, engine:{nome,versao,tileset_build_date},
+  tempos:[{tempo_minutos, resolucao_h3, n_celulas, populacao_total,
+  celulas:[{grid_id, populacao}]}]}`.
+- **#154**: `populacao` ausente → JSON null; `populacao_total` só existe se
+  **ao menos uma** célula tem população (nunca 0). 400 p/ `?tempo` fora de
+  `15|45`; 404 p/ escola fora da cobertura; 500 p/ falha de banco.
+- **Validação E2E no LXC**: MG `31000019` → 15 min: r9, 19 células, pop
+  921; 45 min: r7, 491 células, pop 4.823.423; célula NULL confirmada;
+  snapshot 2026-10-20; engine valhalla 3.5.1. `?tempo=30` → 400; RO
+  `11000023` (sem extração) → 404.
+- **Fixture do teste** (`t/04-api/school/isocrona.t`): `clean.isocrona_escolar`
+  tem **FK `codigo_ibge`→`clean.malha_municipio`** — a fixture usa município
+  real da malha e faz `skip_all` se a malha está vazia (CI recém-deployada).
+  Subtestes precisam repor a fixture que um subteste anterior limpou.
+- **Armadilha git (custou dois falsos PRs)**: `git checkout -b <branch>`
+  **falha se a branch já existe localmente**; o `git add`/`commit` seguinte
+  cai então em **`main`** e o `git push -u` empurra uma branch **sem commits**
+  (`No commits between main and <branch>`). Recuperação: `git checkout -B
+  <branch> <sha>` (mover o commit) + `git branch -f main <main-sha>`
+  (restaurar o main). **Conferir `git branch --show-current` antes de
+  commitar** ao abrir branch.
+- Testes: `t/04-api/school/` inteiro verde (9 arquivos, 37 testes).
+- **PR3** (próximo, único que muda capacidade de produto): card do IVET na
+  UI, camada Leaflet com `h3-js` (15 min a pé + 45 min de carro com legenda),
+  ranking por IVET, regra LGPD e `docs/funcionalidades/`.
+
 ## Sessão 2026-10-20 (d) — #296 PR1 mergeado: IVET materializado (tabela + refresh + API)
 
 - **PR #298 MERGEADO** (`0b4660b`; commits `850efa1` change Sqitch,
