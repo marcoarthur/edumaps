@@ -1,6 +1,8 @@
 <script>
   import LeafletMap from "@/features/map/components/LeafletMap.svelte";
   import { ICONS } from "../icons/icon-data.js";
+  import { ISOCRONA_FAIXAS, isocronaCor, isocronaRotulo } from "../../constants/ivet.js";
+  import { cellToBoundary } from "h3-js";
   import L from "leaflet";
 
   let {
@@ -8,6 +10,7 @@
     longitude,
     schoolName = "Escola",
     similarSchools = [],   // array com { latitude, longitude, nome }
+    isocrona = null,       // payload de getSchoolIsocrona() ou null
     zoom = 15,
     height = "300px",
     class: className = "",
@@ -16,9 +19,52 @@
   let mapRef = null;
   let markerRef = null;
   let similarGroup = null;
+  let isocronaGroup = null;
   let showSimilar = $state(false);
+  // Faixas visíveis (15/45): todas ligadas por padrão; o Set é reatribuído a
+  // cada toggle (padrão da skill frontend-svelte) para disparar a reatividade.
+  let hiddenFaixas = $state(new Set());
 
   const iconSvg = ICONS.edumaps.svg;
+
+  // ---- Isócrona: cada célula H3 vira um polígono do Leaflet ----
+  // O backend entrega só a grade (grid_id + população); a conversão
+  // célula→polígono é feita aqui com h3-js (cellToBoundary).
+  function drawIsocrona() {
+    if (!mapRef) return;
+    if (!isocronaGroup) isocronaGroup = L.layerGroup().addTo(mapRef);
+    isocronaGroup.clearLayers();
+
+    for (const faixa of isocrona?.tempos ?? []) {
+      if (hiddenFaixas.has(faixa.tempo_minutos)) continue;
+
+      const cor = isocronaCor(faixa.tempo_minutos);
+      for (const celula of faixa.celulas ?? []) {
+        // cellToBoundary devolve [lat, lng] em graus; o Leaflet usa [lat, lng].
+        const boundary = cellToBoundary(celula.grid_id);
+        const latlngs = boundary.map(([lat, lng]) => [lat, lng]);
+        const poly = L.polygon(latlngs, {
+          color: cor,
+          weight: 1,
+          fillColor: cor,
+          fillOpacity: 0.18,
+        });
+        const pop =
+          celula.populacao == null
+            ? "sem dado de população"
+            : `população: ${celula.populacao.toLocaleString("pt-BR")}`;
+        poly.bindTooltip(`${isocronaRotulo(faixa.tempo_minutos)}<br>${pop}`);
+        isocronaGroup.addLayer(poly);
+      }
+    }
+  }
+
+  function toggleFaixa(tempo) {
+    const next = new Set(hiddenFaixas);
+    if (next.has(tempo)) next.delete(tempo);
+    else next.add(tempo);
+    hiddenFaixas = next;
+  }
 
   // ---- Ícone da escola alvo (original) ----
   function createMainMarker(map) {
@@ -100,6 +146,8 @@
     createMainMarker(map);
     map.setView([latitude, longitude], zoom);
     similarGroup = L.layerGroup().addTo(map);
+    isocronaGroup = L.layerGroup().addTo(map);
+    drawIsocrona();
   }
 
   // ---- Reatividade ----
@@ -126,6 +174,13 @@
       updateSimilarMarkers();
     }
   });
+
+  $effect(() => {
+    // Isócrona: redesenha quando os dados ou as faixas visíveis mudam
+    if (mapRef && isocrona) {
+      drawIsocrona();
+    }
+  });
 </script>
 
 <!-- ===== TEMPLATE ===== -->
@@ -139,11 +194,31 @@
   />
 
   {#if similarSchools.length > 0}
-    <div class="map-control">
+    <div class="map-control" class:stacked={isocrona}>
       <label>
         <input type="checkbox" bind:checked={showSimilar} />
         <span>Mostrar similares</span>
       </label>
+    </div>
+  {/if}
+
+  {#if isocrona && isocrona.tempos?.length > 0}
+    <!-- Legenda clicável: liga/desliga cada faixa da isócrona sem recarregar -->
+    <div class="map-legend" aria-label="Legenda da área de influência">
+      <span class="legend-title">Área de influência</span>
+      {#each ISOCRONA_FAIXAS as faixa (faixa.tempo_minutos)}
+        {@const oculta = hiddenFaixas.has(faixa.tempo_minutos)}
+        <button
+          type="button"
+          class="legend-item"
+          class:off={oculta}
+          aria-pressed={!oculta}
+          onclick={() => toggleFaixa(faixa.tempo_minutos)}
+        >
+          <span class="swatch" style:background-color={faixa.cor}></span>
+          <span class="legend-label">{faixa.rotulo}</span>
+        </button>
+      {/each}
     </div>
   {/if}
 </div>
@@ -169,6 +244,58 @@
     gap: 6px;
     cursor: pointer;
     user-select: none;
+  }
+  /* Com a legenda da isócrona no canto inferior, o controle sobe para não
+     disputar o canto com ela em telas estreitas. */
+  .map-control.stacked {
+    top: 10px;
+  }
+  .map-legend {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+  .legend-title {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 2px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 4px;
+    color: #1f2937;
+  }
+  .legend-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .legend-item.off {
+    opacity: 0.5;
+  }
+  .legend-item.off .legend-label {
+    text-decoration: line-through;
+  }
+  .swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
   }
   .map-control label {
     display: flex;

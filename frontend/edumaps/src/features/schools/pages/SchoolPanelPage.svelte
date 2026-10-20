@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import SchoolPanel from '../components/panel/SchoolPanel.svelte';
   import { getSchoolPanelData } from '../api/schoolApi.js';
+  import { getSchoolIvet, getSchoolIsocrona } from '../api/schoolIvetApi.js';
   import { transformPanelData } from '../utils/transformPanelData.js';
   import { ApiError } from '@/shared/api/client.js';
 
@@ -15,11 +16,35 @@
   let loading = $state(true);
   let error = $state(null);
   let loadingSimilar = $state(false); // já vem junto na mesma requisição
+  let ivet = $state(null);            // GET /api/school/:cod_inep/ivet
+  let isocrona = $state(null);        // GET /api/school/:cod_inep/isocrona
+
+  // IVET e isócrona são acessórios: a ausência (404 = escola fora da
+  // cobertura) não pode derrubar o painel — ficam null e o card/Legenda
+  // mostram "não calculado".
+  async function loadIvet(codInep) {
+    try {
+      ivet = await getSchoolIvet(codInep);
+    } catch {
+      ivet = null;
+    }
+  }
+
+  async function loadIsocrona(codInep) {
+    try {
+      isocrona = await getSchoolIsocrona(codInep);
+    } catch {
+      isocrona = null;
+    }
+  }
 
   // Função para carregar os dados
   async function loadPanelData(codInep) {
     loading = true;
     error = null;
+    // Dispara IVET/isócrona em paralelo: não bloqueiam o painel principal.
+    loadIvet(codInep);
+    loadIsocrona(codInep);
     try {
       const raw = await getSchoolPanelData(codInep);
       const transformed = transformPanelData(raw);
@@ -104,6 +129,8 @@
       {indicators}
       {similarSchools}
       {desempenho}
+      {ivet}
+      {isocrona}
       loadingSimilarSchools={loadingSimilar}
       onSelectSimilarSchool={handleSelectSimilarSchool}
     />

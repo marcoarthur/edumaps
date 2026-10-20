@@ -6,6 +6,8 @@ import {
   RANKING_FIXTURES,
   PROFILE_FIXTURE,
   EVOLUTION_FIXTURE,
+  IVET_FIXTURE,
+  ISOCRONA_FIXTURE,
 } from "./fixtures.js";
 
 export const schoolsHandlers = [
@@ -79,5 +81,23 @@ export const schoolsHandlers = [
 
   http.get("/api/school/:codInep/indicators", () => {
     return HttpResponse.json([]);
+  }),
+
+  // IVET e isócrona (#296): demo tem medição publicável; demais INEPs 404
+  // (escola fora da cobertura / sem medição) — o painel tolera a ausência.
+  http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/ivet`, () => {
+    return HttpResponse.json(IVET_FIXTURE);
+  }),
+
+  http.get("/api/school/:codInep/ivet", () => {
+    return HttpResponse.json({ error: "Escola sem medição de IVET" }, { status: 404 });
+  }),
+
+  http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/isocrona`, () => {
+    return HttpResponse.json(ISOCRONA_FIXTURE);
+  }),
+
+  http.get("/api/school/:codInep/isocrona", () => {
+    return HttpResponse.json({ error: "Escola sem extração de isócrona" }, { status: 404 });
   }),
 ];
