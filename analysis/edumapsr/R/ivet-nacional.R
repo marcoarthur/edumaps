@@ -50,8 +50,9 @@ IVET_ENTRADAS_COLUNAS <- c(
   "pct_analfabeto", "pct_agua_sem_rede", "pct_esgoto_inadequado",
   "pct_lixo_inadequado", "pct_sem_banheiro", "renda_resp_media",
   "pct_sem_instrucao", "pct_fund_incomp", "pct_preto_pardo",
-  # C — mobilidade: exposição viária + acesso a pé (piloto ES — #278)
+  # C — mobilidade: exposição viária + acesso pé/carro (piloto ES — #278)
   "sinistros_12m", "renavam_total_frota", "pop_acessivel_15min",
+  "pop_acessivel_45min",
   # D — saúde
   "dist_min_km_ubs", "n_ubs_municipio", "ativas_ff", "equipe_esf",
   "efetividade_vagas_aps",
@@ -92,7 +93,8 @@ ivet_blocos_linha <- function(x, i) {
       sinistros_12m       = x$sinistros_12m[[i]],
       renavam_total_frota = x$renavam_total_frota[[i]],
       populacao           = x$populacao[[i]],
-      pop_acessivel_15min = x$pop_acessivel_15min[[i]]
+      pop_acessivel_15min = x$pop_acessivel_15min[[i]],
+      pop_acessivel_45min = x$pop_acessivel_45min[[i]]
     ),
     saude = ivet_bloco_saude(
       dist_min_km_ubs        = x$dist_min_km_ubs[[i]],
@@ -293,15 +295,20 @@ c AS (
     FROM analytics.mobilidade_escola
 ),
 c_isocrona AS (
-    -- Acesso a pé (piloto #278): soma da população das células H3 da isócrona
-    -- de 15 min. `populacao_grade` NULL (célula sem setor conhecido) fica fora
-    -- da soma; escola sem linha nenhuma chega como NULL — nunca 0 (#154). Usa
-    -- o snapshot mais recente, caso entrem recargas com data diferente.
+    -- Acessos do piloto #278: soma da população das células H3 da isócrona de
+    -- 15 min a pé e de 45 min de carro (costing `auto`). `populacao_grade` NULL
+    -- (célula sem setor conhecido) fica fora da soma; escola sem linha nenhuma
+    -- chega como NULL — nunca 0 (#154). O anel de 45 min cruza MG/BA e as
+    -- células de borda saem NULL (setores dessas UF não carregados — viés
+    -- medido no piloto, corrigido pela expansão por UF). Usa o snapshot mais
+    -- recente, caso entrem recargas com data diferente.
     SELECT co_entidade,
            -- ::double precision evita que o BIGINT chegue ao R como integer64
            -- (quantile/summary em integer64 voltam lixo em silêncio)
            (sum(populacao_grade) FILTER (WHERE tempo_minutos = 15))::double precision
-               AS pop_acessivel_15min
+               AS pop_acessivel_15min,
+           (sum(populacao_grade) FILTER (WHERE tempo_minutos = 45))::double precision
+               AS pop_acessivel_45min
       FROM clean.isocrona_escolar
      WHERE dt_snapshot = (SELECT max(dt_snapshot) FROM clean.isocrona_escolar)
      GROUP BY co_entidade
@@ -346,7 +353,7 @@ SELECT ce.co_entidade,
        b.pct_lixo_inadequado, b.pct_sem_banheiro, b.renda_resp_media,
        b.pct_sem_instrucao, b.pct_fund_incomp, b.pct_preto_pardo,
        c.sinistros_12m, c.renavam_total_frota,
-       ci.pop_acessivel_15min,
+       ci.pop_acessivel_15min, ci.pop_acessivel_45min,
        d.dist_min_km_ubs, d.n_ubs_municipio, d.ativas_ff, d.equipe_esf,
        d.efetividade_vagas_aps,
        e.homicidio_doloso, e.latrocinio, e.lesao_corporal_seguida_de_morte,

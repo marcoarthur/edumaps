@@ -143,12 +143,13 @@ bloco_b:
 bloco_c:
   # Acesso/mobilidade. A dimensao central de C e o acesso (isocrona); ele entrou
   # por fases (#278): o piloto do ES carregou clean.isocrona_escolar (Valhalla
-  # auto-hospedado) e o componente acesso_isocrona entrou no default. Fora do
-  # piloto o componente e NA (#154) e C segue lido como EXPOSICAO VIARIA — o
-  # que a fonte municipal entrega: sinistros RENAEST + frota RENAVAM.
+  # auto-hospedado) e os componentes acesso_isocrona (15 min a pe) e
+  # acesso_auto_45min (45 min de carro) entraram no default. Fora do piloto os
+  # componentes sao NA (#154) e C segue lido como EXPOSICAO VIARIA — o que a
+  # fonte municipal entrega: sinistros RENAEST + frota RENAVAM.
   fonte: analytics.mobilidade_escola + clean.isocrona_escolar
   denominador: clean.populacao_municipal
-  default: [risco_sinistros, exposicao_frota, acesso_isocrona]
+  default: [risco_sinistros, exposicao_frota, acesso_isocrona, acesso_auto_45min]
   nao_usados:
     antt_od: "clean.antt_od_municipio VAZIA (MONITRIIP, grao de viagem individual/LGPD)"
     vmda: "clean.snv_trecho_vmda VAZIA (DNIT, nao ingerido)"
@@ -176,6 +177,15 @@ bloco_c:
       teto: 40000
       teto_nota: "populacao alcancavel a pe em 15 min (H3 r9); PROVISORIO = p99 do piloto do ES (2.897 escolas, 2026-10-19: p50=4325, p90=19871, p99=40590); recalibrar na expansao nacional"
       cobertura: "piloto ES (2.897 escolas); fora dele NA (#154), nao zera"
+    acesso_auto_45min:
+      fonte: clean.isocrona_escolar.populacao_grade
+      normalizacao: "1 - clamp((soma 45min de carro)/teto)"
+      direcao: "-"
+      no_default: false
+      teto: 1750000
+      teto_nota: "populacao regional alcancavel em 45 min de carro (H3 r7, costing auto do Valhalla); PROVISORIO = p99 do piloto do ES (2.897 escolas, 2026-10-19: p50=168496, p99=1765458); recalibrar na expansao nacional"
+      cobertura: "piloto ES (2.897 escolas); fora dele NA (#154), nao zera"
+      vies_nota: "anel cruza MG/BA e os setores dessas UF nao estao carregados: 2,9% das celulas NULL, 125 escolas >20% subestimadas (10 >50%) — corrigido pela expansao por UF"
 
 bloco_d:
   # Atencao basica de saude (CNES + SISAB/PMMB). Distancia da escola a UBS
