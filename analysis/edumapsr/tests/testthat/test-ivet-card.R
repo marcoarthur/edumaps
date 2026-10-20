@@ -80,9 +80,9 @@ test_that("card: componentes do bloco C batem com o código (acesso + exposiçã
   expect_equal(card$bloco_c$componentes$acesso_auto_45min$direcao, "-")
   expect_false(isTRUE(card$bloco_c$componentes$acesso_isocrona$no_default))
   expect_false(isTRUE(card$bloco_c$componentes$acesso_auto_45min$no_default))
-  # o 45 min é piloto: a cobertura e o viés de fronteira ficam no card
-  expect_match(card$bloco_c$componentes$acesso_auto_45min$cobertura, "piloto")
-  expect_match(card$bloco_c$componentes$acesso_auto_45min$vies_nota, "MG/BA")
+  # a cobertura (expansão ES+MG) e o residual da borda MG↔BA ficam no card
+  expect_match(card$bloco_c$componentes$acesso_auto_45min$cobertura, "expansao")
+  expect_match(card$bloco_c$componentes$acesso_auto_45min$vies_nota, "MG<->BA")
 })
 
 test_that("card: componentes do bloco E batem com o código (segurança)", {

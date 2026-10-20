@@ -1,5 +1,10 @@
--- Carga do piloto de isócrona (#278) em clean.isocrona_escolar.
+-- Carga do piloto de isócrona (#278/#295) em clean.isocrona_escolar.
 -- Roda no host do banco (o CSV foi enviado para /tmp).
+--
+-- Variáveis obrigatórias (passadas pelo driver com -v):
+--   :snapshot     dt_snapshot da carga — igual para TODAS as UFs de uma mesma
+--                 rodada (a view nacional do IVET filtra por max(dt_snapshot))
+--   :build_date   tileset_build_date — data de build dos tiles usados
 --
 -- Idempotente: substitui as linhas das escolas presentes no CSV — recarregar
 -- o piloto não duplica (PK: co_entidade, tempo_minutos, grid_id, dt_snapshot).
@@ -32,11 +37,11 @@ SELECT t.codigo_ibge,
        t.grid_id,
        t.resolucao_h3,
        t.populacao_grade,
-       'geofabrik_sudeste_2026-10',   -- extract OSM recortado de ES em 2026-10-19
-       DATE '2026-10-19',
+       'geofabrik_sudeste_2026-10',   -- extract Geofabrik Sudeste (ES/MG/RJ/SP)
+       :'build_date'::date,
        'valhalla',
        '3.5.1',                       -- medido em GET /status
-       DATE '2026-10-19'
+       :'snapshot'::date
   FROM tmp_isocrona t;
 
 SELECT 'linhas: ' || count(*) ||

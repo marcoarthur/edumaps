@@ -608,7 +608,7 @@ censitário).
 | risco de sinistros | `sinistros_12m` (RENAEST) | `clamp(taxa100k / 500)` | mais sinistros = + |
 | exposição da frota | `renavam_total_frota` (RENAVAM) | `clamp((frota / pop) / 1)` | mais frota = + |
 | acesso a pé | `Σ populacao_grade` a 15 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 40.000)` | mais acesso = − |
-| acesso de carro | `Σ populacao_grade` a 45 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 1.750.000)` | mais acesso = − |
+| acesso de carro | `Σ populacao_grade` a 45 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 5.000.000)` | mais acesso = − |
 
 - Default `componentes = c("risco_sinistros", "exposicao_frota",
   "acesso_isocrona", "acesso_auto_45min")` — dois de exposição e dois de
@@ -620,10 +620,12 @@ censitário).
 - **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-18, por
   município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
   `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89); `IVET_TETO_ACESSO_15MIN` = 40.000
-  (**provisório**, = p99 do piloto do ES a 2026-10-19 — 2.897 escolas, p50 ≈
-  4.325, p90 ≈ 19.871, p99 ≈ 40.590 habitantes alcançáveis); `IVET_TETO_ACESSO_45MIN`
-  = 1.750.000 (**provisório**, = p99 do mesmo piloto — p50 ≈ 168.496,
-  p99 ≈ 1.765.458). Todos recalibrados na expansão nacional.
+  (**provisório**, recalibrado na expansão ES+MG a 2026-10-20 — 16.782 escolas,
+  p50 ≈ 5.390, p90 ≈ 20.996, p99 ≈ 39.339; valor mantido, o p99 do piloto do ES
+  era 40.590); `IVET_TETO_ACESSO_45MIN`
+  = 5.000.000 (**provisório**, = p99 da mesma expansão — p50 ≈ 169.471,
+  p90 ≈ 4.567.800, p99 ≈ 4.889.715; era 1.750.000 medindo só o ES). Todos
+  recalibrados na expansão nacional.
 - **#154**: sem o dado, o componente é `NA` e fica **fora** do denominador da
   dimensão; `0` real (sem sinistros / sem frota) é `0`, e população acessível
   `0` (escola sem população no entorno) é `1` (pior acesso), não `NA`.

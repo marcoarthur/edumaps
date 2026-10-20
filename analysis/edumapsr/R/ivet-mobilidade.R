@@ -54,18 +54,21 @@ IVET_TETO_SINISTROS_100K <- 500
 IVET_TETO_FROTA_POR_HAB <- 1
 
 # Teto do acesso (população alcançável a pé em 15 min). **PROVISÓRIO**: medido
-# no piloto do ES (#278, 2.897 escolas a 2026-10-19) — p50 ≈ 4.325, p90 ≈ 19.871,
-# p99 ≈ 40.590 -> teto 40.000 satura o topo ~1%. Vale enquanto o acesso é um
-# componente de piloto: na expansão nacional o teto é recalibrado sobre o
-# conjunto das UF (mesma prática do #255 para o bloco F).
+# na expansão ES+MG (#295, 16.782 escolas a 2026-10-20) — p50 ≈ 5.390,
+# p90 ≈ 20.996, p99 ≈ 39.339 -> teto 40.000 satura o topo ~1% (o p99 do piloto
+# do ES, 40.590, era a mesma ordem — o teto se mantém). Vale enquanto o acesso
+# é um componente de cobertura parcial: na expansão nacional o teto é
+# recalibrado sobre o conjunto das UF (mesma prática do #255 para o bloco F).
 IVET_TETO_ACESSO_15MIN <- 40000
 
 # Teto do acesso de **45 min de carro** (população regional alcançável).
-# **PROVISÓRIO**: p99 do piloto do ES (#278, 2.897 escolas a 2026-10-19)
-# = 1.765.458 -> teto 1.750.000 satura o topo ~1%. p50 ≈ 168.496.
-# Recalibrar na expansão nacional — e ali também corrigir o viés de fronteira
-# (anel cruza MG/BA; setores dessas UF não carregados, 2,9% das células NULL).
-IVET_TETO_ACESSO_45MIN <- 1750000
+# **PROVISÓRIO**: recalibrado na expansão ES+MG (#295, 16.790 escolas a
+# 2026-10-20) — p50 ≈ 169.471, p90 ≈ 4.567.800, p99 ≈ 4.889.715 ->
+# teto 5.000.000 (era 1.750.000 = p99 só do ES; MG tem anéis de carro muito
+# maiores — p99 triplicou). Viés de fronteira corrigido nesta expansão
+# (setores da região + tiles do Sudeste): escolas >20% de células NULL
+# caíram de 125 para 5 (restam as da borda MG↔BA, #295/extract Nordeste).
+IVET_TETO_ACESSO_45MIN <- 5000000
 
 # Default do bloco C: exposição viária + os dois acessos (só sinalizam nas
 # escolas do piloto; as demais ficam `NA` — #154).
