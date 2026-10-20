@@ -4,6 +4,54 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-20 (d) — #296 PR1 mergeado: IVET materializado (tabela + refresh + API)
+
+- **PR #298 MERGEADO** (`0b4660b`; commits `850efa1` change Sqitch,
+  `21f5f9b` R de gravação, `6321474` backend, `2884d1a` Collate):
+  PR 1 de 3 da #296. Padrão escolhido = `analytics.ranking_escola`
+  (bloco B): **tabela materializada como artefato de entrega**, lógica
+  continua só no `edumapsr` (`ivet_medir_nacional` docstring atualizada
+  com o ponteiro para `ivet_refresh()`).
+- **`analytics.ivet_escola`**: PK `(co_entidade, nu_ano_censo, raio_m,
+  dt_snapshot)` — histórico por dia; API lê `max(dt_snapshot)` por
+  escola. `ivet`/`bloco_*` NULL = não calculado (#154). Verify com gate
+  `1/COUNT(*)` (#160). Change requer `isocrona_escolar_resolucao_h3`.
+- **R `ivet-gravacao.R`**: `ivet_gravacao_tabela()`/`ivet_gravacao_sql()`
+  (puras, testadas sem banco) + `ivet_gravar_painel()` (staging temp +
+  `INSERT..ON CONFLICT DO UPDATE`) + `ivet_refresh()` (medir→gravar).
+  CLI `inst/scripts/refresh-ivet.R` + endpoint Plumber `POST
+  /ivet/refresh`. ⚠️ `DESCRIPTION` tem `Collate` explícito — arquivo novo
+  em `R/` entra lá senão o `R CMD INSTALL` aborta (já aconteceu).
+- **Task `refresh_ivet`** (fila `analytics`, helper `apply_ivet_refresh`)
+  + `Client::run_ivet_refresh` com **`inactivity_timeout` próprio 3600s**:
+  o `analytics_timeout` default 300s mede o silêncio ENTRE bytes e mataria
+  o painel nacional (~minutos sem resposta parcial). `_post` aceita o opt
+  e cria UA dedicado.
+- **`GET /api/school/:cod_inep/ivet`** (`Model::Ivet::Escola::latest`):
+  snapshot vigente, `blocos {A..G}`, `publicavel` como JSON bool, 404 sem
+  medição, 500 em falha de banco. NULL propaga como JSON null (#154).
+- **Validação E2E no LXC**: job real 97265 enfileirado pela app via
+  `build_controller->apply_ivet_refresh()` → worker analytics → Plumber →
+  **180.540 linhas** (145.732 publicáveis, 34.808 `ivet` NULL) no
+  snapshot 2026-10-20; rota servindo `11000023` (ivet 0,388, blocos A–G)
+  e 404 no caso sem medição. Backend LXC escuta **:3000** (não :3010 —
+  essa é a porta do docker local).
+- **Armadilhas Perl/R descobertas**:
+  - `$app->helper('nome')` com **1 argumento NÃO é getter** em
+    Mojolicious: é `add_helper($nome, undef)` — **destrói o helper** e o
+    dynamic method do controller (`Can't locate object method`). Getter
+    real: `$app->renderer->get_helper('nome')`. O teste documenta.
+  - `setMethod` de DBI em mocks: sem assinatura explícita nas DUAS
+    posições, o default `(DBIConnection, character)` vence o dispatch e o
+    mock é ignorado; o formal do 1º arg do DBI é **`conn`**, não `con`.
+  - Test2::V1 (via `Imports`) **não exporta `is_deeply`** — só `is`/`ok`.
+    `subtest 'x' => sub {...};` fecha com `};`, não `});`.
+- Testes: R `filter="ivet"` verde (gravacao incluída), `t/05-tasks/ivet.t`
+  e `t/04-api/school/ivet.t` novos, pasta `t/04-api/school/` inteira verde.
+- **PR2** (próximo): rota isócrona `GET /api/school/:cod_inep/isocrona`
+  + h3-js no frontend. **PR3**: card, camada Leaflet, ranking, LGPD e
+  `docs/funcionalidades/` (único PR que muda capacidade de produto).
+
 ## Sessão 2026-10-20 (c) — #295 concluída: expansão ES+MG + recalibração dos tetos
 
 - **PR #297 MERGEADO** (`3275b95`; commits `3f66ee9` driver regionalizado,
