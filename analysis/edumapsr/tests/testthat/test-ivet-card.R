@@ -60,6 +60,23 @@ test_that("card: componentes do bloco A batem com o código (reconciliação B�
   }
 })
 
+test_that("card: componentes do bloco C batem com o código (acesso + exposição)", {
+  card <- ivet_card()
+  comps <- ivet_bloco_mobilidade_componentes()
+  expect_setequal(names(card$bloco_c$componentes), names(comps))
+  expect_equal(card$bloco_c$default, IVET_BLOCO_C_COMPONENTES)
+  expect_true(all(card$bloco_c$default %in% names(card$bloco_c$componentes)))
+  expect_equal(card$bloco_c$componentes$risco_sinistros$teto,
+               IVET_TETO_SINISTROS_100K)
+  expect_equal(card$bloco_c$componentes$exposicao_frota$teto,
+               IVET_TETO_FROTA_POR_HAB)
+  expect_equal(card$bloco_c$componentes$acesso_isocrona$teto,
+               IVET_TETO_ACESSO_15MIN)
+  # o acesso entra invertido (mais população = menos vulnerável)
+  expect_equal(card$bloco_c$componentes$acesso_isocrona$direcao, "-")
+  expect_false(isTRUE(card$bloco_c$componentes$acesso_isocrona$no_default))
+})
+
 test_that("card: componentes do bloco E batem com o código (segurança)", {
   card <- ivet_card()
   comps <- ivet_bloco_seguranca_componentes()

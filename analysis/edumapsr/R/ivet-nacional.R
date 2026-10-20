@@ -25,6 +25,7 @@
 #   A      clean.mv_escolas_scores (matview)          censo_ano
 #   B      clean.escola_entorno_socioeconomico        censo_ano × raio_m
 #   C      analytics.mobilidade_escola                snapshot
+#          clean.isocrona_escolar (piloto ES, #278)  snapshot
 #   D      analytics.acessibilidade_saude             snapshot
 #   E      clean.brazilcrime_municipio                média de crime_anos
 #   F      clean.mapbiomas_escola_risco               censo_ano × raio_m
@@ -49,8 +50,8 @@ IVET_ENTRADAS_COLUNAS <- c(
   "pct_analfabeto", "pct_agua_sem_rede", "pct_esgoto_inadequado",
   "pct_lixo_inadequado", "pct_sem_banheiro", "renda_resp_media",
   "pct_sem_instrucao", "pct_fund_incomp", "pct_preto_pardo",
-  # C — mobilidade (proxy de exposição viária)
-  "sinistros_12m", "renavam_total_frota",
+  # C — mobilidade: exposição viária + acesso a pé (piloto ES — #278)
+  "sinistros_12m", "renavam_total_frota", "pop_acessivel_15min",
   # D — saúde
   "dist_min_km_ubs", "n_ubs_municipio", "ativas_ff", "equipe_esf",
   "efetividade_vagas_aps",
@@ -90,7 +91,8 @@ ivet_blocos_linha <- function(x, i) {
     mobilidade = ivet_bloco_mobilidade(
       sinistros_12m       = x$sinistros_12m[[i]],
       renavam_total_frota = x$renavam_total_frota[[i]],
-      populacao           = x$populacao[[i]]
+      populacao           = x$populacao[[i]],
+      pop_acessivel_15min = x$pop_acessivel_15min[[i]]
     ),
     saude = ivet_bloco_saude(
       dist_min_km_ubs        = x$dist_min_km_ubs[[i]],
@@ -290,6 +292,18 @@ c AS (
     SELECT co_entidade, sinistros_12m, renavam_total_frota
     FROM analytics.mobilidade_escola
 ),
+c_isocrona AS (
+    -- Acesso a pé (piloto #278): soma da população das células H3 da isócrona
+    -- de 15 min. `populacao_grade` NULL (célula sem setor conhecido) fica fora
+    -- da soma; escola sem linha nenhuma chega como NULL — nunca 0 (#154). Usa
+    -- o snapshot mais recente, caso entrem recargas com data diferente.
+    SELECT co_entidade,
+           sum(populacao_grade) FILTER (WHERE tempo_minutos = 15)
+               AS pop_acessivel_15min
+      FROM clean.isocrona_escolar
+     WHERE dt_snapshot = (SELECT max(dt_snapshot) FROM clean.isocrona_escolar)
+     GROUP BY co_entidade
+),
 d AS (
     SELECT co_entidade, dist_min_km_ubs, n_ubs_municipio, ativas_ff,
            equipe_esf, efetividade_vagas_aps
@@ -330,6 +344,7 @@ SELECT ce.co_entidade,
        b.pct_lixo_inadequado, b.pct_sem_banheiro, b.renda_resp_media,
        b.pct_sem_instrucao, b.pct_fund_incomp, b.pct_preto_pardo,
        c.sinistros_12m, c.renavam_total_frota,
+       ci.pop_acessivel_15min,
        d.dist_min_km_ubs, d.n_ubs_municipio, d.ativas_ff, d.equipe_esf,
        d.efetividade_vagas_aps,
        e.homicidio_doloso, e.latrocinio, e.lesao_corporal_seguida_de_morte,
@@ -341,6 +356,7 @@ LEFT JOIN pop ON pop.codigo_ibge = ce.codigo_ibge
 LEFT JOIN a   ON a.co_entidade = ce.co_entidade
 LEFT JOIN b   ON b.co_entidade = ce.co_entidade
 LEFT JOIN c   ON c.co_entidade = ce.co_entidade
+LEFT JOIN c_isocrona ci ON ci.co_entidade = ce.co_entidade
 LEFT JOIN d   ON d.co_entidade = ce.co_entidade
 LEFT JOIN e   ON e.codigo_ibge = ce.codigo_ibge
 LEFT JOIN f_fogo ff ON ff.co_entidade = ce.co_entidade
