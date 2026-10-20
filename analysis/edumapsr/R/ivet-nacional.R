@@ -298,7 +298,9 @@ c_isocrona AS (
     -- da soma; escola sem linha nenhuma chega como NULL — nunca 0 (#154). Usa
     -- o snapshot mais recente, caso entrem recargas com data diferente.
     SELECT co_entidade,
-           sum(populacao_grade) FILTER (WHERE tempo_minutos = 15)
+           -- ::double precision evita que o BIGINT chegue ao R como integer64
+           -- (quantile/summary em integer64 voltam lixo em silêncio)
+           (sum(populacao_grade) FILTER (WHERE tempo_minutos = 15))::double precision
                AS pop_acessivel_15min
       FROM clean.isocrona_escolar
      WHERE dt_snapshot = (SELECT max(dt_snapshot) FROM clean.isocrona_escolar)
