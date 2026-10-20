@@ -102,5 +102,6 @@ Collate:
     'ivet-mobilidade.R'
     'ivet-meio-ambiente.R'
     'ivet-nacional.R'
+    'ivet-gravacao.R'
     'ivet-card.R'
 Config/roxygen2/version: 8.1.0

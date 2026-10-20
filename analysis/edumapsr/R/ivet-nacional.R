@@ -379,6 +379,8 @@ LEFT JOIN g   ON g.codigo_ibge = ce.codigo_ibge
 #' Abre a conexão analítica (`analytics_db_connection()`), roda a extração
 #' (`ivet_sql_escolas()`) e calcula o painel com `ivet_painel()`. **Não
 #' materializa** o IVET no banco — devolve o `data.frame` em memória.
+#' Para materializar (artefato de entrega da API, #296), use
+#' `ivet_refresh()`.
 #'
 #' @param con conexão DBI; por omissão, `analytics_db_connection()`.
 #' @param censo_ano ano do Censo Escolar (default 2025).

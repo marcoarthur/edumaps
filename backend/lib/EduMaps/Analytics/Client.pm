@@ -155,6 +155,18 @@ sub run_school_profile_batch ($self, $args = {}) {
   }, 'school_profile_batch', { cacheable => 0 });
 }
 
+# Refresh do IVET materializado (#296): mede o painel nacional no edumapsr
+# e faz upsert em analytics.ivet_escola. Job pesado — só pela task
+# refresh_ivet (fila analytics), nunca em requisição HTTP. O painel roda em
+# minutos sem resposta parcial, então o UA desta chamada recebe um
+# inactivity_timeout próprio (1h), maior que o default de 300s.
+sub run_ivet_refresh ($self, $args = {}) {
+  $self->_run('ivet/refresh', {
+    censo_ano => $args->{censo_ano},
+    raio_m    => $args->{raio_m},
+  }, 'ivet_refresh', { cacheable => 0, inactivity_timeout => 3600 });
+}
+
 sub run_similarity_db ($self, $args) {
   $self->_run('similarity/db', {
     schema        => $args->{schema},
@@ -303,7 +315,10 @@ sub _run ($self, $endpoint, $body, $analysis, $opts = {}) {
     }
   }
 
-  my $response = $self->_post($endpoint, $body, { get => $opts->{get} });
+  my $response = $self->_post($endpoint, $body, {
+    get               => $opts->{get},
+    inactivity_timeout => $opts->{inactivity_timeout},
+  });
 
   if ($self->cache_enabled && $cacheable && defined $response) {
     $self->_cache_write($analysis, $cache_params, $response);
@@ -317,9 +332,18 @@ sub _post ($self, $endpoint, $body, $opts = {}) {
   my $url = $self->url . '/';
   $url .= $endpoint;
 
+  # UA dedicado quando o caller pede mais folga que o analytics_timeout
+  # default: o inactivity_timeout mede o silêncio ENTRE bytes, então um
+  # endpoint longo sem resposta parcial (ex.: /ivet/refresh — minutos de
+  # painel nacional) cairia no corte mesmo com o servidor bem.
+  my $ua = $self->ua;
+  if (my $t = $opts->{inactivity_timeout}) {
+    $ua = Mojo::UserAgent->new(inactivity_timeout => $t);
+  }
+
   my $tx = $opts->{get}
-    ? $self->ua->get($url)
-    : $self->ua->post($url => json => $body);
+    ? $ua->get($url)
+    : $ua->post($url => json => $body);
 
   my $error = $tx->error;
   die EduMaps::Analytics::Client::Error->new(
