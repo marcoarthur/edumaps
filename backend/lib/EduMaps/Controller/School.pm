@@ -82,6 +82,32 @@ sub profile($self) {
   $self->render(json => $result);
 }
 
+# IVET materializado (#296): última medição vigente da escola em
+# analytics.ivet_escola (job refresh_ivet, fila analytics). Escola nunca
+# medida -> 404; indisponibilidade do banco -> 500. NULL (ivet/blocos
+# ausentes) propaga como JSON null — ausência nunca vira 0 (#154).
+sub ivet($self) {
+  my $co = $self->param('cod_inep');
+  my $model = $self->instantiate_model(model => 'Ivet::Escola');
+
+  my $result = eval { $model->latest($co) };
+
+  if (my $err = $@) {
+    $self->app->log->error("school_ivet[$co]: $err");
+    return $self->render(
+      json   => { error => 'Medição do IVET temporariamente indisponível' },
+      status => 500,
+    );
+  }
+
+  return $self->render(
+    json   => { error => 'Escola sem medição do IVET' },
+    status => 404,
+  ) unless $result;
+
+  $self->render(json => $result);
+}
+
 # Série histórica da escola (issue #110, roadmap do #105): ponte síncrona
 # para POST /school_evolution. Mesmo tratamento de erro do profile.
 sub evolution($self) {
