@@ -54,7 +54,11 @@ services:
     volumes:
       - ./data_pipeline/allowlist.yaml:/opt/edumaps/data_pipeline/allowlist.yaml:ro
     ports:
-      - "3000:3000"
+      # 3010 no host: a 3000 ficou com o WhatsApp bridge (~/.hermes) e os dois
+      # não coexistem (decisão do developer, 2026-10-20). Internamente o
+      # container continua em :3000 — o nginx do frontend usa `backend:3000`
+      # pelo nome do serviço, sem impacto.
+      - "3010:3000"
 
   minion:
     build: ./backend
