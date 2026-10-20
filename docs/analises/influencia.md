@@ -149,6 +149,12 @@ fonte, que elimina o SLA de servidores comunitários. O **buffer (Tier 1) é o
 fallback** quando não há rede/roteador. A isócrona de 15 min é o indicador de
 "alcance real" e a ponte para a população alcançável.
 
+✅ **Em piloto (2026-10-19, #278)**: Valhalla 3.5.1 auto-hospedado (extract
+Geofabrik Sudeste) carregou o **ES** — 2.897 escolas em
+`clean.isocrona_escolar` (grade H3 r9 a pé / r7 carro), e o componente
+`acesso_isocrona` entrou no default do bloco C (`ivet.md` §4.5.5). Fora do
+piloto o componente é `NA` (#154); a expansão é por UF, recalibrando o teto.
+
 ### Tier 3 — Setor censitário (unidade da arealização)
 
 O dado socioeconômico (bloco B) chega por **setor** (Censo 2022) ou por

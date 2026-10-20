@@ -51,15 +51,15 @@ implementação do projeto.
 | Fonte | Censo 2022 por setor (IBGE) |
 | **Referência** | **Z:10673** sustenta que o **status socioeconômico é o preditor mais relevante** do desempenho (GDP per capita, gasto, salário docente entre os três maiores em todos os ciclos) — daí o bloco existir e a **direção invertida** da renda. A **composição** (instrução + renda + saneamento) é do projeto |
 
-### Bloco C — mobilidade (proxy de exposição viária)
+### Bloco C — acesso/mobilidade
 
 | campo | valor |
 |---|---|
-| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)` |
+| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)`; `acesso_isocrona` = `1 − clamp(pop_acessível_15min/40.000)` |
 | Normalização | **clamp** (saturação linear) — ver §4 (divergência) |
 | Peso | igual entre os componentes disponíveis |
-| Fonte | RENAEST + RENAVM (`analytics.mobilidade_escola`) |
-| **Referência** | **construto padrão de segurança viária** (lastro externo). A **OMS** trata *registered vehicles* como indicador de *road safety* (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes **por 100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** (*Road Safety Annual Report 2024*) lista **frota de veículos** e **população** explicitamente como *exposure data* e publica as mortes **por 10.000 veículos registados**. Logo `risco_sinistros` usa a forma-padrão da taxa e `exposicao_frota` (veíc/hab) é medida de **exposição**. ⚠️ A literatura mede **mortes**; a RENAEST dá **sinistros** (superset/morbidade) — decisão de produto. O **acervo** não tem literatura de trânsito; a **isócrona** (acesso) segue pendente de infraestrutura (`ivet.md` §4.5.5) |
+| Fonte | RENAEST + RENAVAM (`analytics.mobilidade_escola`) + isócrona H3 (`clean.isocrona_escolar`, piloto ES) |
+| **Referência** | **construto padrão de segurança viária** (lastro externo). A **OMS** trata *registered vehicles* como indicador de *road safety* (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes **por 100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** (*Road Safety Annual Report 2024*) lista **frota de veículos** e **população** explicitamente como *exposure data* e publica as mortes **por 10.000 veículos registados**. Logo `risco_sinistros` usa a forma-padrão da taxa e `exposicao_frota` (veíc/hab) é medida de **exposição**. ⚠️ A literatura mede **mortes**; a RENAEST dá **sinistros** (superset/morbidade) — decisão de produto. O **acesso** (`acesso_isocrona`) é o construto original de C: 15 min a pé é o limiar canônico de "bairro de 15 minutos" e a ponte para população alcançável (`influencia.md` §Tier 2) — em **piloto no ES** desde 2026-10-19 (`ivet.md` §4.5.5) |
 
 ### Bloco D — saúde
 
@@ -185,6 +185,7 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
 | B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
 | C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — a *taxa por 100 mil hab* é a forma-padrão OMS/WHO e ITF/IRTAD; teto empírico (ver §5.1) |
 | C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) — *frota* é **exposição** explícita no IRTAD (veíc/hab ≈ motorization rate) |
+| C | `acesso_isocrona` (hab a pé/15 min) | 40.000 | 4.325 | 19.871 | 40.590 | **produto** (≈ p99) — **provisório**, medido no **piloto do ES** (#278, 2.897 escolas, 2026-10-19); recalibrar na expansão nacional. Direção **invertida**: mais população alcançável = menos vulnerável |
 | D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
 | D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
@@ -236,6 +237,14 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
   (≈ p90) — decisão de produto. ⚠️ **Desfecho diferente**: a literatura mede
   **mortes** (*fatalities*); a RENAEST mede **sinistros** (acidentes), um
   superset — mais sensível, mas não comparável 1:1 às taxas internacionais.
+- **C (acesso, isócrona).** O **acesso** é o construto original de C e o mais
+  direto: população que a escola alcança a pé em 15 min, pela **rede real** de
+  ruas (Valhalla sobre OSM), não por raio em linha reta. Entra **invertido**
+  (mais alcance = menos vulnerabilidade), como a renda no bloco B. O acervo
+  **não** tem literatura de trânsito; o limiar de 15 min a pé é o "bairro de
+  15 minutos" adotado como decisão de arquitetura (`influencia.md` §Tier 2) e
+  o **teto 40.000** é **empírico-provisório** (p99 do piloto do ES) — recalibrar
+  com a expansão nacional.
 - **F (meio ambiente).** O **construto** tem lastro externo em **duas frentes**.
   (1) *Fogo*: a **fumaça de incêndio** é risco respiratório documentado para
   **crianças e escolas** — o CDC (2021) revisa os efeitos e trata do ambiente
