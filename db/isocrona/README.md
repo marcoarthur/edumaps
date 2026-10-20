@@ -124,11 +124,34 @@ O **teto provisório** do componente (`IVET_TETO_ACESSO_15MIN` = 40.000) veio do
 p99 da coluna de 15 min e está registrado no card e em
 `docs/analises/ivet-coeficientes.md` §5.1.
 
-## Limitações do piloto (a documentar na expansão)
+## Resultado da expansão ES+MG (2026-10-20, #295)
+
+Mesma rodada, snapshot único `2026-10-20`, setores da região
+(`SETORES_UFS=ES,MG,RJ,SP`) e tiles do **Sudeste inteiro** (1.546 tiles,
+`valhalla-sudeste` :8003). O MG exigiu **retomada** (`--retomar`): o primeiro
+run morreu por SIGKILL silencioso (provável OOM) a 9.455/13.900 — a escrita
+incremental do CSV preservou tudo.
+
+| medida | valor |
+|---|---|
+| escolas carregadas | 16.796 (MG 13.899 + ES 2.897; 1 MG sem rede → `NULL`, #154) |
+| linhas | 4.788.919 (15 min: 297.893 · 45 min: 4.491.026) |
+| células com população | **99,72%** (era 97,3% no piloto ES) |
+| escolas >20% células `NULL` | **5** (eram 125) · >50%: 1 (eram 10) · média 0,30% |
+| `Σ pop` a pé 15 min | p50 = 5.390 · p90 = 20.996 · **p99 = 39.339** · máx = 60.984 |
+| `Σ pop` de carro 45 min | p50 = 169.471 · p90 = 4.567.800 · **p99 = 4.889.715** |
+
+**Tetos recalibrados** (`IVET_TETO_ACESSO_15MIN` = 40.000 mantido — p99
+39.339; `IVET_TETO_ACESSO_45MIN` **1.750.000 → 5.000.000** — p99 triplicou
+com MG). Restam as 5 escolas de borda **MG↔BA**: BA fica de fora até o
+extract do Nordeste (mesma #295).
+
+## Limitações (pós-expansão)
 
 - Cobertura ainda parcial (ES+MG); os tetos do componente são
   **provisórios** (p99 do que está carregado) e recalibram a cada ampliação
-  da cobertura.
+  da cobertura. RJ/SP já têm tiles e setores prontos (rodar é só tempo);
+  BA exige extract Nordeste + tiles próprios.
 - Isócrona de transporte = **carro** (`costing: auto`), não transporte
   coletivo — o Valhalla sem dados de transit não modela ônibus/trem.
 - População é do **Censo 2022** por setor censitário; a precisão da
