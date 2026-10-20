@@ -148,3 +148,4 @@ antt_acidente_trecho_grao [antt_acidente_trecho] 2026-10-18T01:30:00Z Marco Arth
 mapbiomas_escola_risco [escola_influencia] 2026-10-18T11:00:00Z Marco Arthur <arthurpbs@gmail.com> # #278: exposicao a risco (MapBiomas Fogo+Solo) na area de influencia
 mapbiomas_risco_carbono_nodata [mapbiomas_escola_risco] 2026-10-19T22:45:00Z Marco Arthur <arthurpbs@gmail.com> # #278/#154: nodata do carbono do solo (negativo) mascarado como NULL
 isocrona_escolar_resolucao_h3 [mapbiomas_risco_carbono_nodata] 2026-10-19T23:10:00Z Marco Arthur <arthurpbs@gmail.com> # #278: resolucao H3 explicita por linha (r9 a pe, r7 de carro)
+analytics_ivet_escola [isocrona_escolar_resolucao_h3] 2026-10-20T19:30:00Z Marco Arthur <arthurpbs@gmail.com> # #296: painel do IVET materializado por escola (refresh_ivet)
