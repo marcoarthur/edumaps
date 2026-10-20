@@ -23,7 +23,8 @@ use Text::CSV;
 # pacote R `terra` instalado pelo Rex), e só as frações vão para a base.
 #
 # Fluxo:
-#   1. exporta os buffers (clean.escola_influencia, tier='buffer') em GeoJSON;
+#   1. exporta os buffers (clean.escola_influencia, tier='buffer') em lotes de
+#      até 400 feições (Base::TAMANHO_LOTE, anti-OOM — #288);
 #   2. baixa o COG do ano (preservado no raw, com manifesto);
 #   3. roda extract_mapbiomas_escola.R (terra::extract, weights=TRUE) -> CSV;
 #   4. carga transacional (o recorte ano×raio é SUBSTITUÍDO) + metadados.
@@ -71,8 +72,10 @@ sub run ($self, $args = {}) {
   my $dir = path($self->config->{dir_trabalho} // 'data/ingestao');
   $dir->make_path;
 
-  my $buffers = "$dir/mapbiomas_escola_buffers.geojson";
-  my $n_buffers = $self->exportar_buffers($buffers, $raio, $uf, $nuc);
+  my $lotes = $self->exportar_buffers_lotes("$dir/mapbiomas_escola_buffers",
+    $raio, $uf, $nuc, undef);
+  my $n_buffers = 0;
+  $n_buffers += $_->[2] for @$lotes;
   die sprintf("MapBiomasEscola: nenhum buffer para raio=%d%s\n",
       $raio, defined $uf ? " uf=$uf" : '') unless $n_buffers;
 
@@ -85,15 +88,33 @@ sub run ($self, $args = {}) {
   for my $ano (@anos) {
     my $cog = $self->download_file($self->url_cog($ano), undef, {}, tabelas => [TAB]);
 
-    my $csv = "$dir/mapbiomas_escola_$ano.csv";
-    my $orf = "$dir/mapbiomas_escola_orfaos_$ano.csv";
-    $self->run_r_script($self->caminho_rscript('extract_mapbiomas_escola.R'), [
-      "--buffers=$buffers", "--raster=$cog", "--ano=$ano", "--raio=$raio",
-      "--saida=$csv", "--orfaos=$orf",
-    ]);
+    # Um lote por chamada do R (Base::TAMANHO_LOTE): o R morre com OOM acima
+    # de ~1.000–1.500 buffers — o mesmo defeito corrigido no MapBiomasRisco
+    # (#288); a cópia daqui ficou para trás e morria igual em UF grandes.
+    for my $l (@$lotes) {
+      my ($i, $arq, $n_lote) = @$l;
+      my $lote  = sprintf('lote %d/%d', $i, scalar @$lotes);
+      my $rotulo = sprintf('ano %d, %s', $ano, $lote);
+      my $csv = "$dir/mapbiomas_escola_${ano}_l$i.csv";
+      my $orf = "$dir/mapbiomas_escola_orfaos_${ano}_l$i.csv";
+      # Sobras de execuções anteriores nunca contam como resultado: apagar
+      # antes (2026-10-19: um R morto deixava o CSV do lote anterior e o
+      # loader relia dado velho).
+      unlink $csv, $orf;
+      $self->run_r_script($self->caminho_rscript('extract_mapbiomas_escola.R'), [
+        "--buffers=$arq", "--raster=$cog", "--ano=$ano", "--raio=$raio",
+        "--saida=$csv", "--orfaos=$orf",
+      ]);
 
-    $n_orfaos += $self->registrar_orfaos($orf, $ano);
-    push @todas, @{ $self->process_csv($csv, $ano, $raio) };
+      my $n_orf_l = $self->registrar_orfaos($orf, $ano, $lote);
+      my $rows_l  = $self->process_csv($csv, $ano, $raio);
+      # Invariante do lote: o R grava UMA linha por buffer com indicador e
+      # manda o resto para os órfãos, logo linhas + órfãos = buffers do lote
+      # (#288). Se não fecha, nada é carregado.
+      $self->conferir_lote($rotulo, $n_lote, scalar @$rows_l, $n_orf_l);
+      $n_orfaos += $n_orf_l;
+      push @todas, @$rows_l;
+    }
   }
 
   die "MapBiomasEscola: nenhuma linha extraída (ver o relatório de órfãos)\n"
@@ -214,52 +235,12 @@ sub caminho_rscript ($self, $nome) {
 }
 
 # -----------------------------------------------------------------------------
-# 1. Exportar os buffers em GeoJSON (o R não toca na base de dados).
-#    O join com censo_escolas dá o filtro de UF; a geometria sai em 4674.
-# -----------------------------------------------------------------------------
-sub exportar_buffers ($self, $destino, $raio, $uf, $nu_ano_censo) {
-  my $dbh = $self->app->schema->storage->dbh;
-  my $sql = q{
-    SELECT i.co_entidade, i.nu_ano_censo, ST_AsGeoJSON(i.geom) AS geom
-      FROM clean.escola_influencia i
-      JOIN clean.censo_escolas e
-        ON e.co_entidade = i.co_entidade AND e.nu_ano_censo = i.nu_ano_censo
-     WHERE i.tier = 'buffer' AND i.raio_m = ?
-  };
-  my @p = ($raio);
-  if (defined $uf)           { $sql .= ' AND e.sg_uf = ?';        push @p, $uf }
-  if (defined $nu_ano_censo) { $sql .= ' AND i.nu_ano_censo = ?'; push @p, $nu_ano_censo }
-  $sql .= ' ORDER BY i.co_entidade, i.nu_ano_censo';
-
-  my $sth = $dbh->prepare($sql);
-  $sth->execute(@p);
-
-  $self->_garantir_dir($destino);
-  open my $fh, '>:encoding(UTF-8)', $destino or die "Não abriu $destino: $!\n";
-  print {$fh} '{"type":"FeatureCollection","features":[';
-  my ($n, $sep) = (0, '');
-  while (my $r = $sth->fetchrow_arrayref) {
-    my ($co, $ano, $geom) = @$r;
-    next unless defined $geom && length $geom;
-    print {$fh} $sep,
-      '{"type":"Feature","properties":{"co_entidade":', 0 + $co,
-      ',"nu_ano_censo":', 0 + $ano, '},"geometry":', $geom, '}';
-    $sep = ','; $n++;
-  }
-  print {$fh} ']}';
-  close $fh or die "Não fechou $destino: $!\n";
-
-  $self->log_info(sprintf('Buffers exportados: %d (raio %d m%s) -> %s',
-    $n, $raio, defined $uf ? ", uf $uf" : '', $destino));
-  return $n;
-}
-
-# -----------------------------------------------------------------------------
 # 3. Relatório de órfãos: buffers sem NENHUMA interseção com o raster válido.
 #    É a regra #154 materializada — não entram com 0.
 # -----------------------------------------------------------------------------
-sub registrar_orfaos ($self, $path, $ano) {
+sub registrar_orfaos ($self, $path, $ano, $rotulo = undef) {
   return 0 unless -f $path;
+  my $onde = defined $rotulo ? " ($rotulo)" : '';
   my $csv = Text::CSV->new({ binary => 1, auto_diag => 0, eol => "\n" });
   open my $fh, '<:encoding(UTF-8)', $path or do {
     $self->log_error("Relatório de órfãos ilegível: $path — $!");
@@ -275,10 +256,10 @@ sub registrar_orfaos ($self, $path, $ano) {
   close $fh;
 
   if ($n) {
-    $self->log->warn(sprintf('[MapBiomasEscola] %d buffer(s) sem interseção com o raster em %d '
-      . '(sem linha, #154). Amostra: %s. Relatório: %s', $n, $ano, join(', ', @amostra), $path));
+    $self->log->warn(sprintf('[MapBiomasEscola] %d buffer(s) sem interseção com o raster em %d%s '
+      . '(sem linha, #154). Amostra: %s. Relatório: %s', $n, $ano, $onde, join(', ', @amostra), $path));
   } else {
-    $self->log_info("Órfãos em $ano: 0 — todos os buffers cruzaram o raster");
+    $self->log_info("Órfãos em $ano$onde: 0 — todos os buffers cruzaram o raster");
   }
   return $n;
 }
@@ -370,14 +351,6 @@ sub carregar ($self, $rows, $anos, $raio) {
   };
   die "MapBiomasEscola: carga falhou, nada gravado: $@" unless $ok;
   return $n;
-}
-
-sub _garantir_dir ($self, $file) {
-  my ($dir) = $file =~ m{^(.*)/[^/]+$};
-  return unless $dir && !-d $dir;
-  require File::Path;
-  File::Path::make_path($dir);
-  $self->log_info("Directório de trabalho criado: $dir");
 }
 
 1;

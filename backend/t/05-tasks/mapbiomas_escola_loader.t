@@ -6,6 +6,7 @@ use utf8;
 use Test::More;
 use Mojo::Log;
 use Mojo::File qw(path);
+use Mojo::JSON qw(decode_json);
 use Text::CSV;
 use File::Temp qw(tempdir);
 use File::Spec;
@@ -116,7 +117,11 @@ like($@, qr/ano inválido/, 'nunca interpola texto livre no caminho');
   is(scalar(grep { defined $_->[1] && defined $_->[2] } @troca), 2, 'detecta colunas fora de ordem');
 }
 
-# ---------------------------------------------------------------- exportar_buffers
+# --------------------------------------------- exportação em lotes (herdado do Base)
+# A exportação é a do Base.pm (exportar_buffers_lotes/conferir_lote, anti-OOM
+# #288) — a cópia single-shot morria com OOM em UF grandes, igual à que matou
+# o MapBiomasRisco. A mecânica de lotes é testada em mapbiomas_risco_loader.t;
+# aqui vale o recorte e o formato que ESTE job usa.
 {
   my $dbh = MbDBH->new(rows => [
     [ 100, 2025, '{"type":"Point","coordinates":[0,0]}' ],
@@ -124,18 +129,25 @@ like($@, qr/ano inválido/, 'nunca interpola texto livre no caminho');
     [ 300, 2025, undef ],    # sem geometria: não entra
   ]);
   my $j = job(app => mock_app($dbh));
-  my $dest = File::Spec->catfile(tempdir(CLEANUP => 1), 'buffers.geojson');
-  my $n = $j->exportar_buffers($dest, 1000, 'ES', undef);
-  is($n, 2, 'exporta só os buffers com geometria');
+  my $dir = tempdir(CLEANUP => 1);
+  my $lotes = $j->exportar_buffers_lotes(File::Spec->catfile($dir, 'buf'), 1000, 'ES', undef, undef);
+  is(scalar @$lotes, 1, 'dois buffers -> um lote');
+  is($lotes->[0][2], 2, 'exporta só os buffers com geometria');
   like($dbh->{consulta}, qr/clean\.escola_influencia/, 'lê a camada de influência');
   like($dbh->{consulta}, qr/i\.tier = 'buffer'/, 'filtra tier=buffer');
   like($dbh->{consulta}, qr/i\.raio_m = \?/, 'filtra por raio');
   like($dbh->{consulta}, qr/e\.sg_uf = \?/, 'filtra por UF');
   like($dbh->{consulta}, qr/ST_AsGeoJSON/, 'geometria sai como GeoJSON');
-  my $txt = path($dest)->slurp;
-  is(() = $txt =~ /"type":"Feature"/g, 2, 'duas features no GeoJSON');
-  like($txt, qr/"co_entidade":100/, 'propriedade co_entidade presente');
-  like($txt, qr/^\{"type":"FeatureCollection","features":\[/, 'GeoJSON FeatureCollection');
+  my $l1 = decode_json(path($lotes->[0][1])->slurp);
+  is($l1->{type}, 'FeatureCollection', 'lote é uma FeatureCollection fechada');
+  is(scalar @{ $l1->{features} }, 2, 'duas features no GeoJSON');
+  is($l1->{features}[0]{properties}{co_entidade}, 100, 'propriedade co_entidade presente');
+
+  # a guarda do lote também é herdada (linhas + órfãos = buffers)
+  eval { $j->conferir_lote('ano 2024, lote 1/1', 2, 1, 0) };
+  like($@, qr/nada carregado/, 'lote que não fecha recusa a carga');
+  eval { $j->conferir_lote('ano 2024, lote 1/1', 2, 1, 1) };
+  ok(!$@, 'lote que fecha passa');
 }
 
 # ---------------------------------------------------------------- carregar

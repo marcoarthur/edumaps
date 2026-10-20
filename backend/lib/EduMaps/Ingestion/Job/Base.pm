@@ -476,4 +476,94 @@ sub get_latest_snapshot ($self, $table_name) {
   return $sth->fetchrow_array;
 }
 
+# -----------------------------------------------------------------------------
+# Exportação de buffers em lotes + invariante do lote (compartilhado pelos
+# jobs MapBiomasRisco e MapBiomasEscola — a cópia em cada job era a mesma
+# rotina e o Escola ficou para trás na correção de OOM do #288).
+# -----------------------------------------------------------------------------
+
+# Buffers por chamada do R. O `terra::extract(weights=TRUE)` materializa uma
+# linha por célula×buffer (~35 mil células de 30 m por buffer de 1 km), então
+# um bloco grande estoura a RAM do host de ingestão (7,8 GB, sem swap) e o R
+# morre com SIGKILL: SP (11.147 buffers ≈ 390 M linhas), RJ (5.846) e PE
+# (2.136) falharam assim em 2026-10-19. 400 buffers ≈ 2 GB de pico — limiar
+# validado na UF de SC (o maior bloco saudável teve 761; PE, com 2.136,
+# morreu). A matemática por buffer é idêntica: mesma chamada, menos por vez.
+use constant TAMANHO_LOTE => 400;
+
+# Exporta os buffers (clean.escola_influencia, tier='buffer') em arquivos
+# GeoJSON de até TAMANHO_LOTE feições. Devolve [ [indice, arquivo, n], ... ]
+# (o primeiro sempre no caminho base, os seguintes com sufixo `_l<N>`).
+sub exportar_buffers_lotes ($self, $base, $raio, $uf, $nu_ano_censo, $municipios = undef) {
+  my $dbh = $self->app->schema->storage->dbh;
+  my $sql = q{
+    SELECT i.co_entidade, i.nu_ano_censo, ST_AsGeoJSON(i.geom) AS geom
+      FROM clean.escola_influencia i
+      JOIN clean.censo_escolas e
+        ON e.co_entidade = i.co_entidade AND e.nu_ano_censo = i.nu_ano_censo
+     WHERE i.tier = 'buffer' AND i.raio_m = ?
+  };
+  my @p = ($raio);
+  if (defined $uf)           { $sql .= ' AND e.sg_uf = ?';        push @p, $uf }
+  if (defined $nu_ano_censo) { $sql .= ' AND i.nu_ano_censo = ?'; push @p, $nu_ano_censo }
+  if (defined $municipios)   { $sql .= ' AND e.co_municipio::text = ANY(?::text[])'; push @p, $municipios }
+  $sql .= ' ORDER BY i.co_entidade, i.nu_ano_censo';
+
+  my $sth = $dbh->prepare($sql);
+  $sth->execute(@p);
+
+  $self->_garantir_dir("$base.geojson");
+  my @lotes;
+  my ($fh, $arq, $n_lote, $sep);
+  my $total = 0;
+  my $fechar = sub {
+    return unless $fh;
+    print {$fh} ']}';
+    close $fh or die "Não fechou $arq: $!\n";
+    push @lotes, [ scalar(@lotes) + 1, $arq, $n_lote ];
+    $fh = undef;
+  };
+  while (my $r = $sth->fetchrow_arrayref) {
+    my ($co, $ano, $geom) = @$r;
+    next unless defined $geom && length $geom;
+    if (!$fh || $n_lote >= TAMANHO_LOTE) {
+      $fechar->();
+      $arq = @lotes ? sprintf('%s_l%d.geojson', $base, scalar(@lotes) + 1) : "$base.geojson";
+      open $fh, '>:encoding(UTF-8)', $arq or die "Não abriu $arq: $!\n";
+      print {$fh} '{"type":"FeatureCollection","features":[';
+      ($n_lote, $sep) = (0, '');
+    }
+    print {$fh} $sep,
+      '{"type":"Feature","properties":{"co_entidade":', 0 + $co,
+      ',"nu_ano_censo":', 0 + $ano, '},"geometry":', $geom, '}';
+    $sep = ','; $n_lote++; $total++;
+  }
+  $fechar->();
+  return \@lotes unless @lotes;
+
+  $self->log_info(sprintf('Buffers exportados: %d em %d lote(s) de até %d (raio %d m%s) -> %s%s',
+    $total, scalar @lotes, TAMANHO_LOTE, $raio, defined $uf ? ", uf $uf" : '',
+    $lotes[0][1], scalar(@lotes) > 1 ? sprintf(' (+%d)', scalar(@lotes) - 1) : ''));
+  return \@lotes;
+}
+
+# A soma do lote tem de fechar com o exportado: o R grava UMA linha por buffer
+# com indicador e manda o resto para o relatório de órfãos. Se não fecha, o
+# CSV não é deste lote (sobra de execução anterior) ou o R morreu no meio —
+# nada é carregado. Inválido em 506/506 blocos saudáveis (2026-10-19, #288).
+sub conferir_lote ($self, $rotulo, $n_buffers, $n_csv, $n_orfaos) {
+  return if $n_csv + $n_orfaos == $n_buffers;
+  die sprintf("%s (%s): linhas (%d) + órfãos (%d) ≠ buffers exportados (%d)"
+    . " — CSV de outro lote ou R morto no meio; nada carregado.\n",
+    $self->job_name, $rotulo, $n_csv, $n_orfaos, $n_buffers);
+}
+
+sub _garantir_dir ($self, $file) {
+  my ($dir) = $file =~ m{^(.*)/[^/]+$};
+  return unless $dir && !-d $dir;
+  require File::Path;
+  File::Path::make_path($dir);
+  $self->log_info("Directório de trabalho criado: $dir");
+}
+
 1;
