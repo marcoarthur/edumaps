@@ -4,6 +4,55 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-20 (c) — #295 concluída: expansão ES+MG + recalibração dos tetos
+
+- **PR #297 MERGEADO** (`3275b95`; commits `3f66ee9` driver regionalizado,
+  `96f4957` retomada, `5e7265c` recalibração, `a622245` docs analises,
+  `ba59db9` README): rodada 1 da #295 = **ES re-run + MG**.
+- **Tileset Sudeste**: extract Geofabrik Sudeste (1,1G) → 1.546 tiles →
+  container **`valhalla-sudeste` :8003** (Valhalla 3.5.1). Serviço só aceita
+  `tcp://0.0.0.0:8002` no config (http:// é recusado — corrigido no
+  `build_valhalla.sh`, fora do repo). `valhalla-es` :8002 continua no ar com
+  tiles velhos — **obsoleto**, não usar.
+- **`SETORES_UFS`** no driver: arealização usa setores da REGIÃO
+  (`string_to_array`), não só da UF-alvo — era uma das duas raízes do viés
+  de borda (a outra eram os tiles só do ES). `SNAPSHOT`/`TILESET_BUILD_DATE`
+  parametrizados no `carregar.sql` (`:'snapshot'::date`).
+- **MG morreu por SIGKILL silencioso** (provável OOM) a 9.455/13.900 escolas,
+  sem traceback; causa raiz não determinada (RSS do python na retomada era
+  só 0,84 GB). `--retomar` (lê o CSV de saída, append incremental) completou
+  sem perda — **sempre usar a partir de agora**.
+- **Snapshot único `2026-10-20`** (regra: a view nacional do IVET filtra
+  `max(dt_snapshot)` — UF antiga some do painel se ficar p/ trás): MG 13.899
+  + ES re-extraído 2.897 = **16.796 escolas, 4.788.919 linhas, 99,72%**
+  células com população (97,3% no piloto). Escolas >20% NULL: **125 → 5**
+  (>50%: 10 → 1) — as 5 restantes são borda MG↔BA (extract Nordeste pendente).
+- **Tetos recalibrados**: 15 min = 40.000 **mantido** (p99 combinado 39.339);
+  45 min **1.750.000 → 5.000.000** (p99 4.889.715 — p99 do MG triplicou o do
+  ES; p50 169.471, p90 4.567.800). Card, testes, ivet.md §4.5,
+  coeficientes §5/§5.1, README do pipeline atualizados. Suíte `ivet` verde.
+- **Validação no produto** (painel reprocessado em `analytic.edumaps`):
+  comp 45 min med **0,966** ES e MG (MG antes `NA`), saturados no teto 0,0%,
+  publicáveis (C+D+E) 145.732 (80,7%).
+- **`carregar.sql` é seguro p/ multi-UF sem mudanças**: o DELETE vai por
+  `USING tmp_isocrona` (escolas do CSV) — idempotente por escola, nunca
+  apaga linhas de outras UF (confirmado na prática: ES sobreviveu à carga MG).
+- **#296** (plano aprovado e comentado na issue): PR1 = change Sqitch
+  `analytics.ivet_escola` + task Minion `refresh_ivet` + `GET
+  /api/school/:cod_inep/ivet`; PR2 = rota isócrona (h3-js no frontend);
+  PR3 = card + camada Leaflet + ranking + LGPD + `docs/funcionalidades/`.
+  Decisão: **tabela de resultado materializa** (padrão do bloco B), lógica
+  fica só no `edumapsr` (`ivet_medir_nacional()` → UPSERT; atualizar a
+  docstring "Não materializa" em `ivet-nacional.R`).
+- Artefatos fora do repo: `~/Code/Data/osm/piloto_mg/` (MG completo),
+  `~/Code/Data/osm/piloto_es_s2/` (re-run do ES; `piloto/` original é o ES
+  com tiles antigos — histórico). RAM host 15 Gi: extrações de UF grandes
+  são candidatas a OOM — retomada é a rede de segurança.
+- Próxima rodada da #295: **RJ/SP** (27.109 + 8.823 escolas; setores e tiles
+  já cobrem, rodar é só tempo) e **BA** (extract Nordeste + tileset próprio).
+- Pendências abertas: #168 (ANTT), #138 (PgVector), #295 (rodada 2),
+  #296 (PR1 em curso).
+
 ## Sessão 2026-10-20 (b) — pendências da #278: 45 min no bloco C + anti-OOM do MapBiomasEscola
 
 - **Decisão do developer** (question tool): `acesso_auto_45min` entra no
