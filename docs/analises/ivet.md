@@ -594,21 +594,25 @@ A dimensão central de C é o **acesso** — isócrona / distância-tempo. O ace
 entrou por fases (#278, 2026-10-19): o **piloto do ES** carregou
 `clean.isocrona_escolar` (Valhalla auto-hospedado 3.5.1 sobre o extract
 Geofabrik Sudeste; isócrona de 15 min a pé + 45 min de transporte, grade H3 r9
-e r7) e o componente `acesso_isocrona` entrou no default. Fora do piloto o
-componente é `NA` (#154) e C segue lido como **exposição viária** — o que a
-fonte municipal de facto entrega: sinistros de trânsito do RENAEST e frota do
-RENAVAM, em `analytics.mobilidade_escola` (grão municipal; a escola observa o
-território do seu município). A isócrona é **grão escola**: cada escola soma a
-população das células H3 da sua isócrona de 15 min (arealização por área ×
-`pop_total` do setor censitário).
+e r7) e os componentes `acesso_isocrona` (15 min a pé) e `acesso_auto_45min`
+(45 min de carro) entraram no default. Fora do piloto os componentes são `NA`
+(#154) e C segue lido como **exposição viária** — o que a fonte municipal de
+facto entrega: sinistros de trânsito do RENAEST e frota do RENAVAM, em
+`analytics.mobilidade_escola` (grão municipal; a escola observa o território do
+seu município). A isócrona é **grão escola**: cada escola soma a população das
+células H3 da sua isócrona (arealização por área × `pop_total` do setor
+censitário).
 
 | componente | bruto (tabela) | normalização | direção |
 |---|---|---|---|
 | risco de sinistros | `sinistros_12m` (RENAEST) | `clamp(taxa100k / 500)` | mais sinistros = + |
 | exposição da frota | `renavam_total_frota` (RENAVAM) | `clamp((frota / pop) / 1)` | mais frota = + |
 | acesso a pé | `Σ populacao_grade` a 15 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 40.000)` | mais acesso = − |
+| acesso de carro | `Σ populacao_grade` a 45 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 1.750.000)` | mais acesso = − |
 
-- Default `componentes = c("risco_sinistros", "exposicao_frota", "acesso_isocrona")`.
+- Default `componentes = c("risco_sinistros", "exposicao_frota",
+  "acesso_isocrona", "acesso_auto_45min")` — dois de exposição e dois de
+  acesso (decisão de produto, 2026-10-20).
 - **Fora do default**: `sinistros_fatais_12m` (RENAEST) — está **0 em todas as
   escolas-município do dev**, é constante e não entra; `antt_od` e `vmda` estão
   **vazios** (fontes ausentes) e entram quando existirem, no mesmo bloco, sem
@@ -617,8 +621,9 @@ população das células H3 da sua isócrona de 15 min (arealização por área 
   município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
   `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89); `IVET_TETO_ACESSO_15MIN` = 40.000
   (**provisório**, = p99 do piloto do ES a 2026-10-19 — 2.897 escolas, p50 ≈
-  4.325, p90 ≈ 19.871, p99 ≈ 40.590 habitantes alcançáveis; recalibrar na
-  expansão nacional).
+  4.325, p90 ≈ 19.871, p99 ≈ 40.590 habitantes alcançáveis); `IVET_TETO_ACESSO_45MIN`
+  = 1.750.000 (**provisório**, = p99 do mesmo piloto — p50 ≈ 168.496,
+  p99 ≈ 1.765.458). Todos recalibrados na expansão nacional.
 - **#154**: sem o dado, o componente é `NA` e fica **fora** do denominador da
   dimensão; `0` real (sem sinistros / sem frota) é `0`, e população acessível
   `0` (escola sem população no entorno) é `1` (pior acesso), não `NA`.
@@ -626,12 +631,14 @@ população das células H3 da sua isócrona de 15 min (arealização por área 
   linhas** em `clean.isocrona_escolar` (15 min a pé: 44.836 células ≈ 15 por
   escola; 45 min de carro: 666.979 ≈ 224). 97,3% das células com população
   conhecida e **todas as 2.897 escolas** com pelo menos uma célula populada.
-  A coluna de **45 min já é extraída e armazenada mas ainda fora da fórmula** —
-  entra quando o componente de transporte vier (mesmo bloco, sem nova fórmula).
+- **Viés de fronteira dos 45 min** (medido 2026-10-20): o anel de carro cruza
+  MG/BA e os setores daquelas UF não estão carregados — 2,9% das células saem
+  `NULL`, afetando 125 escolas >20% e 10 escolas >50% de subestimação da soma.
+  Documentado no card (`vies_nota`); corrigido pela expansão por UF.
 - **Código**: `ivet_bloco_mobilidade()`, `ivet_bloco_mobilidade_componentes()`,
   `ivet_componente_risco_sinistros()`, `ivet_componente_exposicao_frota()`,
-  `ivet_componente_acesso_isocrona()`; testes em
-  `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
+  `ivet_componente_acesso_isocrona()`, `ivet_componente_acesso_auto_45min()`;
+  testes em `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
 - **Lastro do construto** (2026-10-18): medir **exposição viária** não é
   arbitrário — a OMS trata *registered vehicles* como indicador de segurança
   viária (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes por

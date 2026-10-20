@@ -123,7 +123,9 @@ test_that("ivet_sql_escolas: cita as tabelas e medeia os anos de crime", {
   expect_match(sql, "analytics.mobilidade_escola", fixed = TRUE)
   expect_match(sql, "clean.isocrona_escolar", fixed = TRUE)
   expect_match(sql, "pop_acessivel_15min", fixed = TRUE)
+  expect_match(sql, "pop_acessivel_45min", fixed = TRUE)
   expect_match(sql, "tempo_minutos = 15", fixed = TRUE)
+  expect_match(sql, "tempo_minutos = 45", fixed = TRUE)
   # o BIGINT do sum() precisa chegar como numeric: integer64 no R é armadilha
   expect_match(sql, "::double precision", fixed = TRUE)
   expect_match(sql, "analytics.acessibilidade_saude", fixed = TRUE)

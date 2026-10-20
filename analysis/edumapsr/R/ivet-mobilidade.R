@@ -9,26 +9,32 @@
 # A dimensão central de C é o **acesso** — isócrona / distância-tempo. O acesso
 # entrou por fases (decisão de produto, 2026-10-19 — #278):
 #
-#   1. **PILOTE (vigente)**: `acesso_isocrona` cobre apenas as escolas com
+#   1. **PILOTE (vigente)**: `acesso_isocrona` (15 min a pé) e
+#      `acesso_auto_45min` (45 min de carro) cobrem apenas as escolas com
 #      isócrona carregada em `clean.isocrona_escolar` — hoje o **ES** (2.897
-#      escolas, Valhalla auto-hospedado). Fora do piloto o componente é `NA` e
-#      C segue lido como **exposição viária** (o que a fonte entrega).
+#      escolas, Valhalla auto-hospedado). Fora do piloto os componentes são
+#      `NA` e C segue lido como **exposição viária** (o que a fonte entrega).
 #   2. cobertura nacional, quando o motor de roteamento rodar para todas as UF.
+#      A expansão também **corrige o viés de fronteira** dos 45 min: o anel de
+#      carro cruza MG/BA e os setores daquelas UF não estão carregados (2,9%
+#      das células `NULL`, 125 escolas >20% subestimadas — medido no piloto).
 #
-# Enquanto o piloto não é nacional, `acesso_isocrona` entra no **default** mas
-# só sinaliza nas escolas cobertas (#154: sem dado → `NA` → fora do denominador
+# Enquanto o piloto não é nacional, os dois acessos entram no **default** mas
+# só sinalizam nas escolas cobertas (#154: sem dado → `NA` → fora do denominador
 # da dimensão — nunca 0).
 #
 # Direção: o IVET mede **vulnerabilidade** (maior = pior). Dois componentes
 # entram **diretos** (mais sinistros / mais frota por habitante = mais
-# exposição) e o de acesso entra **invertido** (mais população alcançável a pé
-# = menos vulnerável — mesma convenção da renda no bloco B):
+# exposição) e os dois de acesso entram **invertidos** (mais população
+# alcançável = menos vulnerável — mesma convenção da renda no bloco B):
 #
 #   componente        bruto (tabela)                     normalização
 #   ----------------  ---------------------------------  --------------------------
 #   risco_sinistros   sinistros_12m (RENAEST)            clamp(taxa100k/500)
 #   exposicao_frota   renavam_total_frota (RENAVAM)      clamp(frota_hab/1)
 #   acesso_isocrona   Σ populacao_grade, 15 min a pé     1 − clamp(pop/teto)
+#                     (clean.isocrona_escolar)
+#   acesso_auto_45min Σ populacao_grade, 45 min carro    1 − clamp(pop/teto)
 #                     (clean.isocrona_escolar)
 #
 #   taxa100k   = sinistros_12m / populacao * 1e5   (ivet_taxa_100k)
@@ -54,10 +60,17 @@ IVET_TETO_FROTA_POR_HAB <- 1
 # conjunto das UF (mesma prática do #255 para o bloco F).
 IVET_TETO_ACESSO_15MIN <- 40000
 
-# Default do bloco C: exposição viária + acesso (o acesso só sinaliza nas
+# Teto do acesso de **45 min de carro** (população regional alcançável).
+# **PROVISÓRIO**: p99 do piloto do ES (#278, 2.897 escolas a 2026-10-19)
+# = 1.765.458 -> teto 1.750.000 satura o topo ~1%. p50 ≈ 168.496.
+# Recalibrar na expansão nacional — e ali também corrigir o viés de fronteira
+# (anel cruza MG/BA; setores dessas UF não carregados, 2,9% das células NULL).
+IVET_TETO_ACESSO_45MIN <- 1750000
+
+# Default do bloco C: exposição viária + os dois acessos (só sinalizam nas
 # escolas do piloto; as demais ficam `NA` — #154).
 IVET_BLOCO_C_COMPONENTES <- c(
-  "risco_sinistros", "exposicao_frota", "acesso_isocrona"
+  "risco_sinistros", "exposicao_frota", "acesso_isocrona", "acesso_auto_45min"
 )
 
 #' Componente de risco de sinistros viários no município (maior = pior).
@@ -149,31 +162,71 @@ ivet_componente_acesso_isocrona <- function(
   1 - pmin(pmax(pop / teto, 0), 1)
 }
 
+#' Componente de acesso de carro a 45 min (maior = menos vulnerável, invertido).
+#'
+#' A população alcançável em **45 minutos de carro** (`clean.isocrona_escolar`,
+#' costing `auto` do Valhalla) mede o **acesso regional** da escola: isolamento
+#' geográfico = menos serviços e menor alcance = mais vulnerabilidade. Entra
+#' **invertido** — mesma convenção do acesso a pé e da renda no bloco B:
+#' `1 − clamp(pop / teto, 0, 1)`. `NA`/vazio devolve `NA` (nunca 0 — #154).
+#'
+#' ⚠️ **Viés de fronteira (piloto do ES)**: o anel de 45 min cruza MG/BA, cujos
+#' setores censitários não estão carregados — as células de borda ficam `NULL`
+#' e a soma sai **subestimada** (2,9% das células; 125 escolas >20%). Medido e
+#' documentado; corrigido pela expansão por UF. O componente é provisório junto
+#' com o teto (mesma prática do #255).
+#'
+#' @param pop_acessivel_45min população total das células H3 da isócrona de
+#'   45 min de carro (`Σ populacao_grade`, `clean.isocrona_escolar`). `NULL` —
+#'   escola sem isócrona carregada.
+#' @param teto teto documentado (> 0) em habitantes alcançáveis
+#'   (default `IVET_TETO_ACESSO_45MIN`).
+#' @return numérico em `[0,1]`, ou `NA_real_` se a população não vier dada.
+#' @export
+ivet_componente_acesso_auto_45min <- function(
+    pop_acessivel_45min,
+    teto = IVET_TETO_ACESSO_45MIN) {
+  if (is.null(teto) || !is.finite(teto) || teto <= 0) {
+    stop("ivet_componente_acesso_auto_45min: 'teto' precisa ser > 0")
+  }
+  pop <- suppressWarnings(as.numeric(pop_acessivel_45min))
+  if (length(pop) != 1 || !is.finite(pop)) {
+    return(NA_real_)
+  }
+  # população 0 é dado real (escola na rota, mas sem população no entorno) —
+  # vira o pior acesso possível, não `NA`
+  1 - pmin(pmax(pop / teto, 0), 1)
+}
+
 #' Componentes do bloco C em `[0,1]` (maior = mais vulnerável), `NA` preservado.
 #'
 #' Recebe os indicadores de `analytics.mobilidade_escola`, a população do
-#' município e a população alcançável a pé; devolve os três componentes na
-#' ordem `risco_sinistros`, `exposicao_frota`, `acesso_isocrona`. Vazio/`NA`
-#' vira `NA` (#154): fica fora do denominador da dimensão, não penaliza o
-#' território por falta de dado.
+#' município e as populações alcançáveis (pé e carro); devolve os quatro
+#' componentes na ordem `risco_sinistros`, `exposicao_frota`, `acesso_isocrona`,
+#' `acesso_auto_45min`. Vazio/`NA` vira `NA` (#154): fica fora do denominador da
+#' dimensão, não penaliza o território por falta de dado.
 #'
 #' @param sinistros_12m sinistros de trânsito em 12 meses (RENAEST).
 #' @param renavam_total_frota frota total do município (RENAVAM).
 #' @param populacao população do município (denominador).
 #' @param pop_acessivel_15min população alcançável a pé em 15 min
 #'   (`clean.isocrona_escolar`; `NULL` fora do piloto — #278).
-#' @param teto_sinistros_100k,teto_frota_por_hab,teto_acesso_15min tetos
-#'   documentados (> 0).
-#' @return vetor nomeado com os três componentes.
+#' @param pop_acessivel_45min população alcançável de carro em 45 min
+#'   (`clean.isocrona_escolar`; `NULL` fora do piloto — #278).
+#' @param teto_sinistros_100k,teto_frota_por_hab,teto_acesso_15min,teto_acesso_45min
+#'   tetos documentados (> 0).
+#' @return vetor nomeado com os quatro componentes.
 #' @export
 ivet_bloco_mobilidade_componentes <- function(
     sinistros_12m = NULL,
     renavam_total_frota = NULL,
     populacao = NULL,
     pop_acessivel_15min = NULL,
+    pop_acessivel_45min = NULL,
     teto_sinistros_100k = IVET_TETO_SINISTROS_100K,
     teto_frota_por_hab = IVET_TETO_FROTA_POR_HAB,
-    teto_acesso_15min = IVET_TETO_ACESSO_15MIN) {
+    teto_acesso_15min = IVET_TETO_ACESSO_15MIN,
+    teto_acesso_45min = IVET_TETO_ACESSO_45MIN) {
   c(
     risco_sinistros = ivet_componente_risco_sinistros(
       sinistros_12m, populacao, teto_sinistros_100k
@@ -183,6 +236,9 @@ ivet_bloco_mobilidade_componentes <- function(
     ),
     acesso_isocrona = ivet_componente_acesso_isocrona(
       pop_acessivel_15min, teto_acesso_15min
+    ),
+    acesso_auto_45min = ivet_componente_acesso_auto_45min(
+      pop_acessivel_45min, teto_acesso_45min
     )
   )
 }
@@ -191,17 +247,19 @@ ivet_bloco_mobilidade_componentes <- function(
 #'
 #' Média dos componentes disponíveis (`NA` fora do denominador — #154), maior =
 #' mais vulnerável. Com o piloto de isócrona (#278), C combina **exposição
-#' viária** (sinistros RENAEST + frota RENAVAM) e **acesso a pé** (população
-#' alcançável em 15 min) nas escolas cobertas; fora do piloto segue sendo só o
-#' proxy de exposição. Sem nenhum componente disponível devolve `NA` (dimensão
-#' não calculada), nunca 0.
+#' viária** (sinistros RENAEST + frota RENAVAM), **acesso a pé** (15 min) e
+#' **acesso regional de carro** (45 min) nas escolas cobertas; fora do piloto
+#' segue sendo só o proxy de exposição. Sem nenhum componente disponível
+#' devolve `NA` (dimensão não calculada), nunca 0.
 #'
 #' @param sinistros_12m,renavam_total_frota,populacao indicadores de
 #'   `analytics.mobilidade_escola` e a população do município.
 #' @param pop_acessivel_15min população alcançável a pé em 15 min
 #'   (`clean.isocrona_escolar`; `NULL` fora do piloto — #278).
-#' @param teto_sinistros_100k,teto_frota_por_hab,teto_acesso_15min tetos
-#'   documentados (> 0).
+#' @param pop_acessivel_45min população alcançável de carro em 45 min
+#'   (`clean.isocrona_escolar`; `NULL` fora do piloto — #278).
+#' @param teto_sinistros_100k,teto_frota_por_hab,teto_acesso_15min,teto_acesso_45min
+#'   tetos documentados (> 0).
 #' @param componentes quais componentes entram na dimensão (por omissão,
 #'   `IVET_BLOCO_C_COMPONENTES`).
 #' @return a dimensão em `[0,1]`, ou `NA_real_` se nada estiver disponível.
@@ -211,18 +269,22 @@ ivet_bloco_mobilidade <- function(
     renavam_total_frota = NULL,
     populacao = NULL,
     pop_acessivel_15min = NULL,
+    pop_acessivel_45min = NULL,
     teto_sinistros_100k = IVET_TETO_SINISTROS_100K,
     teto_frota_por_hab = IVET_TETO_FROTA_POR_HAB,
     teto_acesso_15min = IVET_TETO_ACESSO_15MIN,
+    teto_acesso_45min = IVET_TETO_ACESSO_45MIN,
     componentes = IVET_BLOCO_C_COMPONENTES) {
   comps <- ivet_bloco_mobilidade_componentes(
     sinistros_12m = sinistros_12m,
     renavam_total_frota = renavam_total_frota,
     populacao = populacao,
     pop_acessivel_15min = pop_acessivel_15min,
+    pop_acessivel_45min = pop_acessivel_45min,
     teto_sinistros_100k = teto_sinistros_100k,
     teto_frota_por_hab = teto_frota_por_hab,
-    teto_acesso_15min = teto_acesso_15min
+    teto_acesso_15min = teto_acesso_15min,
+    teto_acesso_45min = teto_acesso_45min
   )
 
   selecionados <- intersect(componentes, names(comps))

@@ -151,9 +151,12 @@ fallback** quando não há rede/roteador. A isócrona de 15 min é o indicador d
 
 ✅ **Em piloto (2026-10-19, #278)**: Valhalla 3.5.1 auto-hospedado (extract
 Geofabrik Sudeste) carregou o **ES** — 2.897 escolas em
-`clean.isocrona_escolar` (grade H3 r9 a pé / r7 carro), e o componente
-`acesso_isocrona` entrou no default do bloco C (`ivet.md` §4.5.5). Fora do
-piloto o componente é `NA` (#154); a expansão é por UF, recalibrando o teto.
+`clean.isocrona_escolar` (grade H3 r9 a pé / r7 carro), e **ambos os
+componentes** (`acesso_isocrona` de 15 min a pé e `acesso_auto_45min` de
+45 min de carro) entraram no default do bloco C desde 2026-10-20
+(`ivet.md` §4.5.5). Fora do piloto os componentes são `NA` (#154); a expansão
+é por UF, recalibrando os tetos — ela corrige também o viés de fronteira do
+anel de 45 min (cruza MG/BA com setores não carregados).
 
 ### Tier 3 — Setor censitário (unidade da arealização)
 

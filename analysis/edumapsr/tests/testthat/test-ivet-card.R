@@ -65,6 +65,7 @@ test_that("card: componentes do bloco C batem com o código (acesso + exposiçã
   comps <- ivet_bloco_mobilidade_componentes()
   expect_setequal(names(card$bloco_c$componentes), names(comps))
   expect_equal(card$bloco_c$default, IVET_BLOCO_C_COMPONENTES)
+  expect_equal(length(card$bloco_c$default), 4)  # 2 exposição + 2 acessos
   expect_true(all(card$bloco_c$default %in% names(card$bloco_c$componentes)))
   expect_equal(card$bloco_c$componentes$risco_sinistros$teto,
                IVET_TETO_SINISTROS_100K)
@@ -72,9 +73,16 @@ test_that("card: componentes do bloco C batem com o código (acesso + exposiçã
                IVET_TETO_FROTA_POR_HAB)
   expect_equal(card$bloco_c$componentes$acesso_isocrona$teto,
                IVET_TETO_ACESSO_15MIN)
-  # o acesso entra invertido (mais população = menos vulnerável)
+  expect_equal(card$bloco_c$componentes$acesso_auto_45min$teto,
+               IVET_TETO_ACESSO_45MIN)
+  # os dois acessos entram invertidos (mais população = menos vulnerável)
   expect_equal(card$bloco_c$componentes$acesso_isocrona$direcao, "-")
+  expect_equal(card$bloco_c$componentes$acesso_auto_45min$direcao, "-")
   expect_false(isTRUE(card$bloco_c$componentes$acesso_isocrona$no_default))
+  expect_false(isTRUE(card$bloco_c$componentes$acesso_auto_45min$no_default))
+  # o 45 min é piloto: a cobertura e o viés de fronteira ficam no card
+  expect_match(card$bloco_c$componentes$acesso_auto_45min$cobertura, "piloto")
+  expect_match(card$bloco_c$componentes$acesso_auto_45min$vies_nota, "MG/BA")
 })
 
 test_that("card: componentes do bloco E batem com o código (segurança)", {
