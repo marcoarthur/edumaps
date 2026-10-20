@@ -57,6 +57,11 @@
   recortado) + recalibração do teto nacional; componente de transporte (45 min,
   dado já carregado); `docs/funcionalidades/` só quando o gestor puder ver a
   isócrona (aí com regra LGPD de agregação).
+- **Pós-ciclo — porta 3000 do host (PR #292, merge `53f6985`)**: o WhatsApp bridge
+  do Hermes passou a usar `127.0.0.1:3000` e o `edumaps-backend` local não
+  subia mais. Decisão do developer: compose publica o backend em **3010**
+  (`3010:3000`; container segue 3000, nginx resolve pelo nome do serviço).
+  Smoke: backend 3010 responde `/api/school/suggestions`, frontend 8080 → 200.
 
 - **#288 MERGEADO** (`a6c9731`, branch `fix/backend-extracao-risco-oom`), commits
   `a7ebaa0` `fix(backend): sinal de morte conta como falha` e `8cf932f`
