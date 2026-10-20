@@ -55,7 +55,7 @@ implementação do projeto.
 
 | campo | valor |
 |---|---|
-| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)`; `acesso_isocrona` = `1 − clamp(pop_acessível_15min/40.000)`; `acesso_auto_45min` = `1 − clamp(pop_acessível_45min/1.750.000)` |
+| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)`; `acesso_isocrona` = `1 − clamp(pop_acessível_15min/40.000)`; `acesso_auto_45min` = `1 − clamp(pop_acessível_45min/5.000.000)` |
 | Normalização | **clamp** (saturação linear) — ver §4 (divergência) |
 | Peso | igual entre os componentes disponíveis |
 | Fonte | RENAEST + RENAVAM (`analytics.mobilidade_escola`) + isócrona H3 (`clean.isocrona_escolar`, piloto ES) |
@@ -185,8 +185,8 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
 | B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
 | C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — a *taxa por 100 mil hab* é a forma-padrão OMS/WHO e ITF/IRTAD; teto empírico (ver §5.1) |
 | C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) — *frota* é **exposição** explícita no IRTAD (veíc/hab ≈ motorization rate) |
-| C | `acesso_isocrona` (hab a pé/15 min) | 40.000 | 4.325 | 19.871 | 40.590 | **produto** (≈ p99) — **provisório**, medido no **piloto do ES** (#278, 2.897 escolas, 2026-10-19); recalibrar na expansão nacional. Direção **invertida**: mais população alcançável = menos vulnerável |
-| C | `acesso_auto_45min` (hab carro/45 min) | 1.750.000 | 168.496 | — | 1.765.458 | **produto** (≈ p99) — **provisório**, mesmo piloto do ES; direção **invertida**. ⚠️ Viés de fronteira medido (2,9% das células `NULL` — anel cruza MG/BA não carregados; 125 escolas >20% subestimadas): corrigido pela expansão por UF |
+| C | `acesso_isocrona` (hab a pé/15 min) | 40.000 | 5.390 | 20.996 | 39.339 | **produto** (≈ p99) — **provisório**, recalibrado na **expansão ES+MG** (#295, 16.782 escolas, 2026-10-20; p99 do piloto do ES era 40.590, teto mantido); recalibrar na expansão nacional. Direção **invertida**: mais população alcançável = menos vulnerável |
+| C | `acesso_auto_45min` (hab carro/45 min) | 5.000.000 | 169.471 | 4.567.800 | 4.889.715 | **produto** (≈ p99) — **provisório**, recalibrado na mesma expansão (era 1.750.000 = p99 só do ES; p99 do MG triplicou); direção **invertida**. ✅ Viés de fronteira **corrigido nesta expansão** (setores da região + tiles do Sudeste): escolas >20% `NULL` caíram de 125 para 5 — restam as da borda MG↔BA (extract Nordeste, #295) |
 | D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
 | D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
@@ -246,9 +246,10 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
   vulnerabilidade), como a renda no bloco B. O acervo **não** tem literatura de
   trânsito; o limiar de 15 min a pé é o "bairro de 15 minutos" adotado como
   decisão de arquitetura (`influencia.md` §Tier 2) e os **tetos 40.000**
-  (15 min) e **1.750.000** (45 min) são **empírico-provisórios** (p99 do
-  piloto do ES) — recalibrar com a expansão nacional, que corrige também o
-  viés de fronteira do anel de 45 min (cruza MG/BA, setores não carregados).
+  (15 min) e **5.000.000** (45 min) são **empírico-provisórios** (p99 da
+  expansão ES+MG, #295) — recalibrar com a expansão nacional. O viés de
+  fronteira do anel de 45 min (setores da região + tiles do Sudeste) já foi
+  **corrigido** nesta expansão; resta a borda com BA (extract Nordeste).
 - **F (meio ambiente).** O **construto** tem lastro externo em **duas frentes**.
   (1) *Fogo*: a **fumaça de incêndio** é risco respiratório documentado para
   **crianças e escolas** — o CDC (2021) revisa os efeitos e trata do ambiente
