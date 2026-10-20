@@ -589,33 +589,49 @@ fogo direto, vegetação e carbono invertidos) — ficha e lastro de construto e
 F fechou em 2026-10-19** (156.816 escolas, pendentes = 0) e os **tetos de
 fogo/carbono foram calibrados no p99** (§4.8).
 
-### 4.5.5 Bloco C — extração (mobilidade, proxy de exposição viária)
-⚠️ **PROXY (decisão de produto, 2026-10-18).** A dimensão central de C é o
-**acesso** — isócrona / distância-tempo —, e `clean.isocrona_escolar` está
-**vazia**: depende de um motor de roteamento (OSRM/Valhalla) que não existe em
-nenhum host. Enquanto isso, C é lido como **exposição viária** — o que a fonte de
-facto entrega: os sinistros de trânsito do RENAEST (município) e a frota do
+### 4.5.5 Bloco C — extração (acesso + exposição viária)
+A dimensão central de C é o **acesso** — isócrona / distância-tempo. O acesso
+entrou por fases (#278, 2026-10-19): o **piloto do ES** carregou
+`clean.isocrona_escolar` (Valhalla auto-hospedado 3.5.1 sobre o extract
+Geofabrik Sudeste; isócrona de 15 min a pé + 45 min de transporte, grade H3 r9
+e r7) e o componente `acesso_isocrona` entrou no default. Fora do piloto o
+componente é `NA` (#154) e C segue lido como **exposição viária** — o que a
+fonte municipal de facto entrega: sinistros de trânsito do RENAEST e frota do
 RENAVAM, em `analytics.mobilidade_escola` (grão municipal; a escola observa o
-território do seu município).
+território do seu município). A isócrona é **grão escola**: cada escola soma a
+população das células H3 da sua isócrona de 15 min (arealização por área ×
+`pop_total` do setor censitário).
 
 | componente | bruto (tabela) | normalização | direção |
 |---|---|---|---|
 | risco de sinistros | `sinistros_12m` (RENAEST) | `clamp(taxa100k / 500)` | mais sinistros = + |
-| exposição da frota | `renavam_total_frota` (RENAVM) | `clamp((frota / pop) / 1)` | mais frota = + |
+| exposição da frota | `renavam_total_frota` (RENAVAM) | `clamp((frota / pop) / 1)` | mais frota = + |
+| acesso a pé | `Σ populacao_grade` a 15 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 40.000)` | mais acesso = − |
 
-- Default `componentes = c("risco_sinistros", "exposicao_frota")`.
+- Default `componentes = c("risco_sinistros", "exposicao_frota", "acesso_isocrona")`.
 - **Fora do default**: `sinistros_fatais_12m` (RENAEST) — está **0 em todas as
-  escolas-município do dev**, é constante e não entra; `isocrona`, `antt_od` e
-  `vmda` estão **vazios** (fontes ausentes) e entram quando existirem, no mesmo
-  bloco, sem nova fórmula.
+  escolas-município do dev**, é constante e não entra; `antt_od` e `vmda` estão
+  **vazios** (fontes ausentes) e entram quando existirem, no mesmo bloco, sem
+  nova fórmula.
 - **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-18, por
   município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
-  `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89).
+  `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89); `IVET_TETO_ACESSO_15MIN` = 40.000
+  (**provisório**, = p99 do piloto do ES a 2026-10-19 — 2.897 escolas, p50 ≈
+  4.325, p90 ≈ 19.871, p99 ≈ 40.590 habitantes alcançáveis; recalibrar na
+  expansão nacional).
 - **#154**: sem o dado, o componente é `NA` e fica **fora** do denominador da
-  dimensão; `0` real (sem sinistros / sem frota) é `0`.
+  dimensão; `0` real (sem sinistros / sem frota) é `0`, e população acessível
+  `0` (escola sem população no entorno) é `1` (pior acesso), não `NA`.
+- **Piloto do ES (2026-10-19)**: 2.897 escolas × 2 isócronas = **711.815
+  linhas** em `clean.isocrona_escolar` (15 min a pé: 44.836 células ≈ 15 por
+  escola; 45 min de carro: 666.979 ≈ 224). 97,3% das células com população
+  conhecida e **todas as 2.897 escolas** com pelo menos uma célula populada.
+  A coluna de **45 min já é extraída e armazenada mas ainda fora da fórmula** —
+  entra quando o componente de transporte vier (mesmo bloco, sem nova fórmula).
 - **Código**: `ivet_bloco_mobilidade()`, `ivet_bloco_mobilidade_componentes()`,
-  `ivet_componente_risco_sinistros()`, `ivet_componente_exposicao_frota()`;
-  testes em `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
+  `ivet_componente_risco_sinistros()`, `ivet_componente_exposicao_frota()`,
+  `ivet_componente_acesso_isocrona()`; testes em
+  `tests/testthat/test-ivet-mobilidade.R` e contrato no card.
 - **Lastro do construto** (2026-10-18): medir **exposição viária** não é
   arbitrário — a OMS trata *registered vehicles* como indicador de segurança
   viária (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes por
@@ -628,8 +644,8 @@ território do seu município).
 
 ✅ **Com C, o agregado do IVET passa a ser publicável**: a regra
 `ivet_blocos_territoriais_minimos()` (C+D+E) fica satisfeita — antes, C mantinha
-o agregado em `NA`. O bloco continua um **proxy** de exposição viária até a
-isócrona existir.
+o agregado em `NA`. Com o piloto do ES, C passa a medir **acesso de facto** nas
+escolas cobertas; nas demais continua sendo o proxy de exposição viária.
 
 ### 4.6 Vigência e retreino
 
