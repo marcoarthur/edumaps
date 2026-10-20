@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -136,24 +137,39 @@ def main() -> int:
     ap.add_argument("--saida", required=True)
     ap.add_argument("--valhalla", default="http://localhost:8002")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--retomar", action="store_true",
+                    help="pula escolas já presentes no CSV de saída — retomada "
+                         "após queda (MG morreu por OOM a 9.455/13.900 em "
+                         "2026-10-20; a escrita é incremental, nada se perde)")
     args = ap.parse_args()
 
     with open(args.escolas, newline="") as fh:
         escolas = [tuple(r) for r in csv.reader(fh) if r and not r[0].startswith("co_entidade")]
     print(f"escolas: {len(escolas)}", flush=True)
 
+    feitas = set()
+    if args.retomar and os.path.exists(args.saida):
+        with open(args.saida, newline="") as fh:
+            feitas = {r[0] for r in csv.reader(fh) if r and r[0] != "co_entidade"}
+    pendentes = [e for e in escolas if e[0] not in feitas]
+    if feitas:
+        print(f"retomada: {len(feitas)} escolas já no CSV, "
+              f"{len(pendentes)} pendentes", flush=True)
+
     tree, geoms, pops = ler_setores(args.setores)
     print(f"setores censitários: {len(geoms)}", flush=True)
 
     t0 = time.time()
     cont_sem_isocrona = 0
-    with open(args.saida, "w", newline="") as fh:
+    anexar = bool(feitas)
+    with open(args.saida, "a" if anexar else "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["co_entidade", "codigo_ibge", "tempo_minutos", "grid_id",
-                    "resolucao_h3", "populacao_grade"])
+        if not anexar:
+            w.writerow(["co_entidade", "codigo_ibge", "tempo_minutos", "grid_id",
+                        "resolucao_h3", "populacao_grade"])
         with ThreadPoolExecutor(max_workers=args.threads) as pool:
             futuros = [pool.submit(processar_escola, args.valhalla, e, tree, geoms, pops)
-                       for e in escolas]
+                       for e in pendentes]
             for i, fut in enumerate(futuros, 1):
                 linhas = fut.result()
                 if not linhas:
@@ -161,10 +177,10 @@ def main() -> int:
                 for l in linhas:
                     w.writerow(l)
                 if i % 250 == 0:
-                    print(f"  {i}/{len(escolas)} escolas "
+                    print(f"  {i}/{len(pendentes)} escolas "
                           f"({time.time() - t0:.0f}s, sem isórona: {cont_sem_isocrona})",
                           flush=True)
-    print(f"pronto: {len(escolas)} escolas em {time.time() - t0:.0f}s; "
+    print(f"pronto: {len(pendentes)} escolas em {time.time() - t0:.0f}s; "
           f"sem isórona: {cont_sem_isocrona} (#154: não viram linha)", flush=True)
     return 0
 

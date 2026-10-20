@@ -79,7 +79,8 @@ echo "[2/4] isócronas + arealização..."
   --escolas "$TRABALHO/escolas.csv" \
   --setores "$TRABALHO/setores.csv" \
   --saida "$TRABALHO/isocrona_escolar.csv" \
-  --valhalla "$VALHALLA"
+  --valhalla "$VALHALLA" \
+  --retomar   # retomada automática se o CSV já existe (queda não perde lote)
 
 echo "[3/4] carregando em clean.isocrona_escolar..."
 scp -q -o ConnectTimeout=20 "$TRABALHO/isocrona_escolar.csv" \
