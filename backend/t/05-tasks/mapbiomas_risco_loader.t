@@ -118,6 +118,17 @@ like($@, qr/ano inválido/, 'solo: nunca interpola texto livre');
   is($rows->[0]{fogo_frequencia_max}, 3, 'inteiro preservado');
   ok(!defined $rows->[1]{solo_carbono_medio}, 'vazio -> undef (NULL, #154)');
 
+  # nodata do MapBiomas (-3.4e38) repassado cru pelo R como carbono negativo
+  path($csv)->spew(join("\n",
+    'co_entidade,nu_ano_censo,ano,raio_m,fogo_frequencia_media,fogo_frequencia_max,fogo_fracao_queimada,solo_carbono_medio',
+    '300,2025,2020,1000,1.0,2,0.2,-211.05',
+    '400,2025,2020,1000,1.0,2,0.2,-3.4e38'
+  ) . "\n");
+  $rows = $j->process_csv($csv);
+  ok(!defined $rows->[0]{solo_carbono_medio}, 'carbono negativo -> NULL, nunca 0 (#154)');
+  ok(!defined $rows->[1]{solo_carbono_medio}, 'nodata -3.4e38 também vira NULL');
+  is($rows->[0]{fogo_fracao_queimada}, '0.2', 'os outros indicadores ficam intactos');
+
   path($csv)->spew(join("\n",
     'co_entidade,nu_ano_censo,ano,raio_m,fogo_frequencia_media,fogo_frequencia_max,fogo_fracao_queimada,solo_carbono_medio',
     '100,2025,2020,1000,1.5,3,1.5,50' # fração > 1
