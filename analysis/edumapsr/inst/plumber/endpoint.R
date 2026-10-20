@@ -487,6 +487,37 @@ function(req, res) {
   )
 }
 
+#* @post /ivet/refresh
+function(req, res) {
+  payload <- req$body %||% list()
+
+  res$serializer <- plumber::serializer_json(auto_unbox = TRUE, na = "null", null = "null")
+
+  tryCatch(
+    {
+      con <- edumapsAnalytics:::analytics_db_connection()
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+      # Materializa o painel do IVET (#296): ivet_medir_nacional() ->
+      # upsert em analytics.ivet_escola. A lógica vive no pacote.
+      ivet_refresh(
+        con,
+        censo_ano   = if (is.null(payload$censo_ano)) 2025L else as.integer(payload$censo_ano),
+        raio_m      = if (is.null(payload$raio_m)) 1000L else as.integer(payload$raio_m),
+        dt_snapshot = if (is.null(payload$dt_snapshot)) Sys.Date() else as.Date(payload$dt_snapshot)
+      )
+    },
+    error = function(e) {
+      cat(sprintf(
+        "[edumapsAnalytics] erro interno em /ivet/refresh: %s\n",
+        conditionMessage(e)
+      ))
+      res$status <- 500
+      list(error = "Erro interno ao materializar o IVET")
+    }
+  )
+}
+
 #* @post /school_evolution
 function(req, res) {
   payload <- req$body
