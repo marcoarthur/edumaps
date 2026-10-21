@@ -4,6 +4,51 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-21 (g) — fix do CI do backend: `Mojo::JSON` no `Ivet::Escola` (PR #301)
+
+- **CI do backend estava vermelho** (`backend-tests`, run 39525868024, job
+  118980327195): o step **"compilar todos os módulos Perl (lib/)"** falhou com
+  `Bareword "Mojo::JSON::true"/"false" not allowed while "strict subs" in use at
+  lib/EduMaps/Model/Ivet/Escola.pm line 55`. O **exit 124** no resumo era
+  **pista falsa** — é o `timeout` do step a sair depois de o `xargs` abortar;
+  a mensagem real estava no log do step.
+- **Causa raiz**: `Escola.pm` (introduzido no #298) usa `Mojo::JSON::true`/`false`
+  **sem carregar `Mojo::JSON`**. Sob `strict subs`, bareword de sub inexistente
+  noutro namespace é erro de **compilação**. O step do CI roda `perl -c`
+  **por arquivo, isolado** — nada define `Mojo::JSON::true` antes de compilar.
+- **Porque a suíte local não apanhou** (medido, não conjecturado): com a linha
+  removida, `prove -l t/04-api/school/ivet.t` **PASSA** e
+  `perl -Ilib -c lib/EduMaps/Model/Ivet/Escola.pm` **FALHA**. O app Mojolicious
+  carrega `Mojo::JSON` (transitivamente) antes de `Escola.pm` compilar, definindo
+  os subs `true`/`false` → a bareword fica legal no contexto da suíte. O `perl -c`
+  isolado do CI não tem esse pré-carregamento. **Lição**: suíte que carrega o app
+  não substitui o `perl -c` isolado por arquivo para apanhar barewords.
+- **Fix (1 linha, padrão do repo)**: `use Mojo::JSON ();` (uso qualificado —
+  mesmo padrão de `Controller/Gestor.pm` e `Task/Relatorio.pm`).
+- **PR #301 MERGEADO** (`2a6393a`; commit `b4db310` em
+  `fix/backend-ivet-escola-mojo-json`). CI do PR **VERDE** (run 39670391143,
+  11m39s, todos os steps incl. compilação de `lib/` + suíte).
+- **Validação**: `perl -c` isolado OK; replica do step do CI sem bareword (única
+  falha restante = `DateTime::Format::ISO8601` ausente no perlbrew local — **está
+  no `cpanfile` linha 16** e é instalado no CI, não é defeito de código);
+  `prove -l t/04-api/school/{isocrona,ivet}.t` → **10/10 PASS**, incl.
+  "publicavel é JSON false"; serialização confirmada `true`/`false` literais.
+- **Pós-merge**: `docker compose build backend minion` + `up -d`; md5 de
+  `Escola.pm` **confere** local ↔ `edumaps-backend`
+  (`2eac673c3d7994f8755e801dfb2f0a9d`); backend inicializa ("EduMaps
+  inicializado com sucesso"). **Nota de infra local**: o `edumaps-backend`
+  publica em **`:3010`** (não `:3000`) e a SPA via nginx responde na **`:8080`**
+  (`/api/school/suggestions?q=freire` → 200).
+- **Sem deploy remoto**: é `fix` de código, mas o defeito era **só de compilação
+  no CI** — o módulo corria bem em runtime (o app sempre carrega `Mojo::JSON`).
+  Nada muda no comportamento do produto; o ciclo fechou no merge + rebuild local.
+- **Fora do PR (trabalho não relacionado preservado)**: os scripts da rodada 2
+  de isócronas (`db/isocrona/piloto_rj.sh`, `piloto_nordeste.sh`,
+  `status_piloto.sh`, `valhalla_watchdog.sh`, `README.md`) e
+  `docs/ajuda/gestor/ivet.md` + `docs/indice.md` ficaram **stashed** durante o fix
+  e foram **restaurados** depois — não entraram no PR #301 (regra: mudanças não
+  relacionadas nunca entram no PR).
+
 ## Sessão 2026-10-20 (f) — #296 PR3 mergeado: IVET + isócrona na UI (ciclo fechado)
 
 - **PR #300 MERGEADO** (`cab49ce`; commits `21d8c1b` frontend, `4bd0f2b`
