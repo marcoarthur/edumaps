@@ -1,6 +1,7 @@
 package EduMaps::Model::Ivet::Escola;
 use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
+use Mojo::JSON ();   # Mojo::JSON::true/false (uso qualificado)
 use utf8;
 
 # Leitura de analytics.ivet_escola (#296): o painel do IVET materializado
