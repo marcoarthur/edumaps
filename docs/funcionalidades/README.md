@@ -42,7 +42,7 @@
 ### analise
 | Capacidade | Resumo | Status |
 |------------|--------|--------|
-| [Painel da escola](analise/painel-escola.md) | Raio-x da escola: matrículas, docentes, infraestrutura, desempenho e similares. | 🟢 |
+| [Painel da escola](analise/painel-escola.md) | Raio-x da escola: matrículas, docentes, infraestrutura, desempenho, similares, vulnerabilidade de acesso (IVET com blocos) e área de influência no mapa. | 🟢 |
 | [Perfil analítico da escola](analise/perfil-escola.md) | Diagnóstico, posição relativa (município/rede/Brasil), benchmarking justo e sinais de atenção. | 🟢 |
 | [Ranking de escolas](analise/ranking.md) | Posicionar a escola por indicadores no município e no estado. | 🟢 |
 | [Clusters de escolas](analise/clusters.md) | Agrupar escolas por características e geografia. | 🟢 |
@@ -67,7 +67,7 @@
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
 | [Equipamentos no entorno](gestor/equipamentos-entorno.md) | Ver no mapa (e atualizar) os equipamentos públicos ao redor da escola; informa a completude da malha viária como medida de confiabilidade dos dados do OSM. | 🟢 |
-| [Área de influência](gestor/area-de-influencia.md) | Ver no mapa o entorno considerado nas leituras territoriais da escola, em três raios documentados (500 m, 1 km, 2 km), com a leitura do entorno (população e densidade, Censo 2022), cartelas, legenda, área, proveniência e aviso de "ainda não calculada". | 🟢 |
+| [Área de influência](gestor/area-de-influencia.md) | Ver no mapa o entorno considerado nas leituras territoriais da escola, em três raios documentados (500 m, 1 km, 2 km), e a isócrona (15 min a pé, 45 min de carro), com a leitura do entorno (população e densidade, Censo 2022), cartelas, legenda, área, proveniência e aviso de "ainda não calculada". | 🟢 |
 
 ### comunidade
 | Capacidade | Resumo | Status |

@@ -3,7 +3,7 @@ titulo: Painel da escola
 modulo: analise
 status: ativo
 audiencia: [gestor, pesquisador, investidor, comunidade]
-relacionadas: [escolas, similaridade, ranking, perfil-escola]
+relacionadas: [escolas, similaridade, ranking, perfil-escola, area-de-influencia]
 ---
 
 # Painel da escola
@@ -13,8 +13,9 @@ relacionadas: [escolas, similaridade, ranking, perfil-escola]
 ## Resumo
 
 Um raio-x de uma escola a partir dos dados públicos: matrículas, docentes,
-infraestrutura, equipamentos, acessibilidade e desempenho, com escolas
-semelhantes como referência.
+infraestrutura, equipamentos, acessibilidade, desempenho e **vulnerabilidade
+de acesso** (IVET), com escolas semelhantes como referência e a **área de
+influência** da escola no mapa.
 
 ## Para quem
 
@@ -29,11 +30,23 @@ uma escola.
   linguagem simples.
 - Sistema pode apresentar o desempenho (IDEB/SAEB) e escolas semelhantes para
   comparação.
+- Sistema pode exibir o **índice de vulnerabilidade de acesso (IVET)** da
+  escola — de 0 (sem barreira) a 1 (barreira máxima) — com a decomposição por
+  **bloco temático** (porte, contexto socioeconômico, acesso, segurança,
+  recursos, saúde e mobilidade).
+- Sistema pode **desenhar a área de influência** da escola no mapa (o quanto se
+  chega a pé em 15 min e de carro em 45 min), com legenda que liga e desliga
+  cada faixa.
+- Sistema pode distinguir **"ainda não medido"** de um valor baixo: quando o
+  índice ou uma de suas partes não foi calculado, informa isso, sem exibir zero.
+- Sistema pode **resguardar índices não publicáveis** (amostra insuficiente ou
+  dado sensível): informa que a medição existe, mas não exibe os valores.
 
 ## Valor
 
-Dá à escola e à rede uma leitura objetiva e comparável de sua situação,
-apoiando priorização e planejamento.
+Dá à escola e à rede uma leitura objetiva e comparável de sua situação — agora
+incluindo **quão acessível** a escola é no território —, apoiando priorização e
+planejamento.
 
 ## Relacionadas
 
@@ -41,3 +54,4 @@ apoiando priorização e planejamento.
 - [Escolas similares](../busca/similaridade.md)
 - [Ranking de escolas](ranking.md)
 - [Perfil analítico da escola](perfil-escola.md)
+- [Área de influência](../gestor/area-de-influencia.md)

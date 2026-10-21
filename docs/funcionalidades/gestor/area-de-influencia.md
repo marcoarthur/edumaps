@@ -2,20 +2,22 @@
 titulo: Área de influência
 modulo: gestor
 status: ativo
-audiencia: [gestor]
+audiencia: [gestor, comunidade]
 relacionadas: [painel, equipamentos-entorno, painel-escola]
 ---
 
 # Área de influência
 
-> Módulo: `gestor` · Status: 🟢 ativo · Público: gestor
+> Módulo: `gestor` · Status: 🟢 ativo · Público: gestor, comunidade
 
 ## Resumo
 
 O gestor vê, no mapa, a **área de influência da sua escola** — o entorno
 considerado nas leituras de território da plataforma — já calculado, com um
 polígono por raio, a **leitura do entorno** (população e densidade, Censo 2022)
-e a legenda de para que serve cada um.
+e a legenda de para que serve cada um. No painel da escola, a mesma base
+territorial aparece como **isócrona**: o alcance a pé em 15 min e de carro em
+45 min.
 
 ## Para quem
 
@@ -35,6 +37,9 @@ querem uma leitura comum entre a escola e os órgãos públicos.
   a borda de cada raio que traz o **raio**, a **leitura do entorno** (população e
   densidade estimadas no entorno, Censo 2022) e a **área em km²**; quando não há
   leitura, mostra "—" — nunca zero.
+- Sistema pode **desenhar a isócrona** da escola — o alcance a pé em **15 min**
+  e de carro em **45 min** — como grades hexagonais no mapa, cada faixa com sua
+  cor e um liga/desliga na legenda.
 - Sistema pode usar essa mesma área como base das **leituras de território** da
   escola — inclusive o **contexto socioeconômico do entorno** (**instrução,
   renda do responsável e saneamento**: analfabetismo, rendimento médio/mediano do
@@ -45,9 +50,6 @@ querem uma leitura comum entre a escola e os órgãos públicos.
 - Sistema pode distinguir **"área ainda não calculada"** de um entorno vazio:
   quando a escola ainda não teve a área materializada, informa isso, sem
   desenhar um buffer inventado.
-- Sistema pode **restringir a visão à própria escola**: a geometria por escola
-  é dado sensível (localização), então só o gestor da escola a vê — não é dado
-  público.
 
 ## Valor
 

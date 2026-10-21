@@ -7,6 +7,7 @@
   import SimilarSchools from './SimilarSchools.svelte';
   import SchoolPerformance from './SchoolPerformance.svelte';
   import SchoolMap from './SchoolMap.svelte';
+  import SchoolIvet from './SchoolIvet.svelte';
 
   /**
    * @typedef {Object} Props
@@ -25,6 +26,8 @@
    * @property {Array} [indicators] - saída de rank() para os indicadores exibidos
    * @property {Array} [similarSchools] - saída do endpoint de escolas semelhantes
    * @property {Array} [desempenho] - série histórica de IDEB { ano, etapa, ideb_observado }
+   * @property {Object|null} [ivet] - última medição vigente do IVET (#296)
+   * @property {Object|null} [isocrona] - células H3 da área de influência (#296)
    * @property {boolean} [loadingSimilarSchools]
    * @property {(schoolId: number) => void} [onSelectSimilarSchool]
    */
@@ -35,6 +38,8 @@
     indicators = [],
     similarSchools = [],
     desempenho = [],
+    ivet = null,
+    isocrona = null,
     loadingSimilarSchools = false,
     onSelectSimilarSchool = () => {},
   } = $props();
@@ -82,6 +87,11 @@
     </section>
   {/if}
 
+  <section class="flex flex-col gap-2">
+    <h2 class="text-base font-bold text-gray-900 mb-2">Vulnerabilidade de acesso</h2>
+    <SchoolIvet {ivet} />
+  </section>
+
   {#if school.latitude && school.longitude}
     <section class="flex flex-col gap-2">
       <h2 class="text-base font-bold text-gray-900 mb-2">Localização</h2>
@@ -91,6 +101,7 @@
         schoolName={school.nome}
         height="300px"
         similarSchools={similarSchools}
+        {isocrona}
       />
     </section>
   {/if}

@@ -226,3 +226,68 @@ export const EVOLUTION_FIXTURE = {
     ],
   },
 };
+
+// ---------------------------------------------------------------------------
+// IVET e isócrona (issue #296, PR3)
+// ---------------------------------------------------------------------------
+
+// Payload do GET /api/school/:cod_inep/ivet — escola publicável, todos os
+// blocos calculados.
+export const IVET_FIXTURE = {
+  co_entidade: 35123456,
+  nu_ano_censo: 2025,
+  raio_m: 1000,
+  ivet: 0.412,
+  publicavel: true,
+  blocos: { A: 0.398, B: 0.069, C: 0.39, D: 0.48, E: 0.306, F: 0.519, G: 0.555 },
+  formula: "ivet-v1.2",
+  dataset_version: null,
+  transform_version: null,
+  dt_snapshot: "2026-10-20",
+  calculado_em: "2026-10-20 21:17:14+00",
+};
+
+// IVET medido mas NÃO publicável (LGPD): valores nulos, aviso na UI.
+export const IVET_NAO_PUBLICAVEL_FIXTURE = {
+  co_entidade: 35123456,
+  nu_ano_censo: 2025,
+  raio_m: 1000,
+  ivet: null,
+  publicavel: false,
+  blocos: { A: null, B: null, C: null, D: null, E: null, F: null, G: null },
+  formula: "ivet-v1.2",
+  dataset_version: null,
+  transform_version: null,
+  dt_snapshot: "2026-10-20",
+  calculado_em: "2026-10-20 21:17:14+00",
+};
+
+// Payload do GET /api/school/:cod_inep/isocrona — duas faixas. Os grid_ids
+// são células H3 reais (resoluções 9 e 7) para o cellToBoundary do h3-js.
+export const ISOCRONA_FIXTURE = {
+  co_entidade: 35123456,
+  dt_snapshot: "2026-10-20",
+  engine: { nome: "valhalla", versao: "3.5.1", tileset_build_date: "2026-10-20" },
+  tempos: [
+    {
+      tempo_minutos: 15,
+      resolucao_h3: 9,
+      n_celulas: 2,
+      populacao_total: 640,
+      celulas: [
+        { grid_id: "89a88cd827bffff", populacao: 364 },
+        { grid_id: "89a88cd826fffff", populacao: 276 },
+      ],
+    },
+    {
+      tempo_minutos: 45,
+      resolucao_h3: 7,
+      n_celulas: 2,
+      populacao_total: 4823423,
+      celulas: [
+        { grid_id: "87a88cd827fffff", populacao: 4823000 },
+        { grid_id: "87a88cd826fffff", populacao: 423 },
+      ],
+    },
+  ],
+};
