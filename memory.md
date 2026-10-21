@@ -4,6 +4,38 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-20 (f) — #296 PR3 mergeado: IVET + isócrona na UI (ciclo fechado)
+
+- **PR #300 MERGEADO** (`cab49ce`; commits `21d8c1b` frontend, `4bd0f2b`
+  docs): PR 3 de 3 — **o único que muda capacidade de produto** (por isso
+  também mexe em `docs/funcionalidades/`). **#296 FECHADA.**
+- **Card `SchoolIvet.svelte`** (painel da escola): IVET 0–1 + blocos A–G
+  (porte, contexto socioeconômico, acesso, segurança, recursos, saúde,
+  mobilidade), proveniência (`formula` · snapshot). **LGPD**: `publicavel:
+  false` → informa que a medição existe mas **não exibe valores**.
+  **#154**: bloco nulo → "n/d"; escola nunca medida → "ainda não teve o
+  índice calculado" — nunca 0.
+- **Camada de isócrona** em `SchoolMap.svelte`: cada célula H3 vira polígono
+  com **`h3-js@4.5.0`** (`cellToBoundary` — devolve `[lat,lng]`); faixas 15
+  min (pé, r9) e 45 min (carro, r7); **legenda clicável** (`aria-pressed`,
+  `Set` reatribuído — padrão da skill `frontend-svelte`).
+- **`schoolIvetApi.js`**: `getSchoolIvet`/`getSchoolIsocrona`; 404 (fora da
+  cobertura) é tratado como **ausência e não derruba o painel** (as duas
+  chamadas correm em paralelo ao `panel/info`).
+- **Docs funcionais**: `analise/painel-escola.md` (vulnerabilidade de
+  acesso), `gestor/area-de-influencia.md` (passa a incluir a isócrona e a
+  ser público `[gestor, comunidade]`), `README.md` do índice.
+- Testes: **15 novos** (API, card incl. LGPD e `n/d`, legenda da isócrona);
+  feature `schools` 24 arqs/111 testes; **suíte completa 115 arqs/975
+  testes** verdes; `npm run build` OK (h3-js empacotado).
+- **Armadilha de import**: de `components/panel/` para `constants/` são
+  **dois** níveis (`../../constants/...`) — um só quebra o build com
+  "Failed to resolve import".
+- Rebuild local: imagem **`frontend`** (área `frontend/edumaps/`).
+- Buscou validação visual do developer antes do merge (Workflow passo 4) —
+  aprovada; notify `blocked` → merge. Ciclo #296 completo em 3 PRs
+  (#298/#299/#300), todos com E2E no LXC.
+
 ## Sessão 2026-10-20 (e) — #296 PR2 mergeado: rota da isócrona (células H3)
 
 - **PR #299 MERGEADO** (`01de865`; commit `00940f1`): PR 2 de 3 da #296.
