@@ -31,6 +31,8 @@ UF=${UF:-ES}
 SETORES_UFS=${SETORES_UFS:-$UF}
 SNAPSHOT=${SNAPSHOT:-$(date +%F)}
 TILESET_BUILD_DATE=${TILESET_BUILD_DATE:-$SNAPSHOT}
+# De qual extract vieram os tiles — gravado em tileset_origin (proveniência).
+TILESET_ORIGIN=${TILESET_ORIGIN:-geofabrik_sudeste_2026-10}
 TRABALHO=${TRABALHO:-/home/itaipu/Code/Data/osm/piloto}
 DIR_REPO=$(cd "$(dirname "$0")/../.." && pwd)
 PY=${PY:-/home/itaipu/Code/Data/osm/.venv/bin/python}
@@ -90,6 +92,7 @@ scp -q -o ConnectTimeout=20 "$DIR_REPO/db/isocrona/carregar.sql" \
 ssh -o ConnectTimeout=20 "$SSH_DB" \
   "sudo -u postgres psql -d $DB -v ON_ERROR_STOP=1 \
      -v snapshot='$SNAPSHOT' -v build_date='$TILESET_BUILD_DATE' \
+     -v origin='$TILESET_ORIGIN' \
      -f /tmp/carregar_isocrona.sql" \
   2>/dev/null | tail -4
 

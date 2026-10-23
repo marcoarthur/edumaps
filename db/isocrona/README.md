@@ -16,8 +16,10 @@ Sudeste e setores da região. Fora do Sudeste o componente é `NA` no IVET
 | arquivo | papel |
 |---|---|
 | `extrair_isocronas.py` | pede as isócronas ao Valhalla e arealiza a população por célula H3 (H3 + shapely; 8 threads) |
-| `carregar.sql` | carga idempotente em `clean.isocrona_escolar` (temp table + DELETE/INSERT) |
+| `carregar.sql` | carga idempotente em `clean.isocrona_escolar` (`COPY` direto + `DELETE` por escola, sem temp table de dados) |
 | `piloto_es.sh` | driver de ponta a ponta: exporta → extrai → carrega → resume |
+| `piloto_rj.sh` | variante da rodada 2 que **reaproveita** o `setores.csv` do Sudeste (já exportado na rodada de SP) e re-exporta só as escolas do RJ |
+| `piloto_nordeste.sh` | rodada 2 do Nordeste inteiro (BA, MA, PE, CE, PB, PI, RN, AL, SE) numa **única** passada de extração, sob tiles do Nordeste (:8004) |
 
 O driver roda do repo, mas **exporta/carrega via `ssh root@database.edumaps`**
 (o host local não alcança o Postgres do LXC). Os artefatos do piloto (CSVs,
@@ -53,6 +55,20 @@ docker run -d --name valhalla-sudeste -p 8003:8003 \
   -lc 'valhalla_service /tiles/valhalla.json'
 ```
 
+Para o **Nordeste** (rodada 2, 9 UFs) o mesmo com extract próprio — o serviço
+escuta em **8002 dentro** do container, logo o `-p` é `8004:8002`:
+
+```bash
+curl -L -o nordeste-latest.osm.pbf \
+  https://download.geofabrik.de/south-america/brazil/nordeste-latest.osm.pbf
+./build_valhalla.sh nordeste-latest.osm.pbf valhalla_nordeste   # 2.396 tiles, 835 MB
+docker run -d --name valhalla-nordeste -p 8004:8002 \
+  -v "$PWD/valhalla_nordeste:/tiles" --entrypoint bash \
+  ghcr.io/gis-ops/docker-valhalla/valhalla:latest \
+  -lc 'valhalla_service /tiles/valhalla.json'
+```
+
+
 (O diretório de tiles precisa de permissão 777: o container não roda como
 root e o build falha com `Permission denied`.)
 
@@ -84,8 +100,70 @@ Ambientes do driver:
 
 Para uma UF fora do Sudeste: baixar o extract da região (Geofabrik),
 construir tiles cobrindo a UF **e as vizinhas**, subir um container e rodar
-com `UF=<UF>` e `SETORES_UFS` da região (o driver não cria tiles). BA, por
-exemplo, exige o extract do Nordeste (#295).
+com `UF=<UF>` e `SETORES_UFS` da região (o driver não cria tiles).
+
+### Rodada 2 (#295): RJ, SP e Nordeste
+
+O Sudeste (tiles :8003) cobre SP, RJ e MG. O Nordeste exige extract e tiles
+próprios (:8004). Rodando nesta ordem:
+
+```bash
+# SP — driver genérico, tiles do Sudeste
+VALHALLA=http://localhost:8003 UF=SP SETORES_UFS=ES,MG,RJ,SP \
+  TRABALHO=~/Code/Data/osm/piloto_sp bash db/isocrona/piloto_es.sh
+
+# RJ — reaproveita o setores.csv do Sudeste (não re-exporta a região)
+VALHALLA=http://localhost:8003 UF=RJ \
+  TRABALHO=~/Code/Data/osm/piloto_rj bash db/isocrona/piloto_rj.sh
+
+# Nordeste — extract+tiles próprios, 9 UFs numa passada
+./build_valhalla.sh nordeste-latest.osm.pbf valhalla_nordeste   # :8004
+VALHALLA=http://localhost:8004 \
+  TRABALHO=~/Code/Data/osm/piloto_nordeste bash db/isocrona/piloto_nordeste.sh
+```
+
+Todas as UFs da rodada 2 usam o **mesmo** `SNAPSHOT` (a view nacional filtra
+por `max(dt_snapshot)`).
+
+### Operação longa: watchdog de memória e desacoplamento da sessão
+
+Duas armadilhas medidas na rodada 2 (2026-10-21/22):
+
+1. **Leak do Valhalla**: o `valhalla_service` **vaza ~0,2 GB/min** de uso
+   intenso de isócronas (não ~0,5 GB/h). Sem intervenção chega aos ~12 GB dos
+   15 GB da máquina e o kernel mata a extração **em silêncio** (foi assim que
+   MG e SP caíram). O `valhalla_watchdog.sh <container> <teto_mb> <intervalo>`
+   reinicia o container quando a RSS passa do teto; reiniciar é **seguro**
+   (tiles read-only + `--retomar` preserva o CSV) e **inofensivo** — a extração
+   seguiu com `sem isórona: 0` apesar de dezenas de reinícios. Com ~5 GB de RAM
+   disponível, o teto útil é **5000 MB** (o de 4000 MB reiniciava a cada ~2 min;
+   sob carga o working set é ~4–5 GB, logo os reinícios frequentes são o modo
+   correto de operação).
+
+2. **Processos filhos da sessão**: rodar extração/watchdog/monitor como filhos
+   do shell (background simples) faz **tudo morrer junto** quando a sessão do
+   agente termina — medido a 2026-10-21 13:27: a extração, os dois watchdogs e o
+   monitor morreram no mesmo instante, **sem** OOM nem reboot (`uptime` de 24
+   dias). Os containers Docker sobreviveram porque não são filhos do shell.
+   **Sempre** desacoplar: `setsid nohup <cmd> >log 2>&1 </dev/null &`.
+   Para a **carga no banco**, que roda por SSH, `setsid nohup` não bastou (o
+   `psql` ainda morria com o fim da conexão): usar um serviço transiente do
+   systemd no host do banco —
+   `systemd-run --unit=carga-<uf> --collect --property=Type=oneshot --setenv=PGPASSWORD=... /usr/bin/psql ...`.
+   Os drivers `piloto_rj.sh`/`piloto_nordeste.sh` já fazem isso e aguardam a
+   unit terminar antes do resumo.
+
+O monitor `status_piloto.sh [intervalo_s] [log]` reporta progresso + memória via
+Telegram (env `UF`, `CSV`, `ALVO`, `VALHALLA_CONTAINER`).
+
+```bash
+# retomada de uma rodada interrompida (o CSV preserva o progresso)
+setsid nohup bash db/isocrona/valhalla_watchdog.sh valhalla-sudeste 5000 120 \
+  >/tmp/wd_sudeste.out 2>&1 </dev/null &
+setsid nohup /home/itaipu/Code/Data/osm/.venv/bin/python db/isocrona/extrair_isocronas.py \
+  --escolas .../escolas.csv --setores .../setores.csv --saida .../isocrona_escolar.csv \
+  --valhalla http://localhost:8003 --retomar >>/tmp/isocrona_sp.log 2>&1 </dev/null &
+```
 
 ## Decisões de design
 
@@ -102,7 +180,22 @@ exemplo, exige o extract do Nordeste (#295).
   denominador. Nenhuma escola do ES caiu nesse caso.
 - **Proveniência gravada por carga**: `tileset_origin`,
   `tileset_build_date`, `engine`/`engine_version` (medido em `GET /status`) e
-  `dt_snapshot` — o IVET usa o snapshot mais recente.
+  `dt_snapshot` — o IVET usa o snapshot mais recente. `tileset_origin` é
+  **parametrizado por driver** (`-v origin`): os drivers do Sudeste/RJ passam
+  `geofabrik_sudeste_2026-10` e o do Nordeste `geofabrik_nordeste_2026-10`.
+  (Antes era hardcoded no `carregar.sql` e o Nordeste gravaria proveniência
+  mentirosa.) O caminho do CSV de entrada é fixo (`/tmp/isocrona_escolar.csv`
+  no host do banco): a substituição de variáveis do psql acontece na SQL, mas
+  não dentro do `COPY`, então cada driver copia o seu CSV para esse nome.
+- **Carga sem temp table de dados** (2026-10-23): o `COPY` vai **direto** na
+  tabela de destino. As 5 colunas de metadados são constantes por carga e
+  entram por `DEFAULT` **temporário** (`ALTER TABLE ... SET DEFAULT` dentro da
+  transação, com `DROP DEFAULT` no fim), então o CSV só precisa trazer as 6
+  colunas de dados. A abordagem antiga (`COPY` → temp table → `INSERT ...
+  SELECT`) exigia ~2 GB extras de pico numa carga de 28 M linhas, o que não
+  cabia no disco do banco. A idempotência continua: uma temp table **minúscula**
+  só com `co_entidade` (uma linha por escola) alimenta o `DELETE` antes do
+  `COPY`.
 - **Fronteira estadual (viés corrigido na expansão)**: os dois primeiros
   loads exportavam setores só da UF-alvo e usavam tiles só de ES — célula em
   UF vizinha ficava `NULL` e a estrada que cruza a fronteira não existia.
