@@ -128,6 +128,28 @@ mudança, em `git stash`.
 
 O build do frontend segue pelo container (`rex -H backend.edumaps deploy_frontend_dev`).
 
+## Running tests (analytics / R)
+
+Testes do pacote `analysis/edumapsr` (testthat). No CI rodam no workflow
+`analytics-tests`, contra o **mesmo banco de fixtures** do backend
+(`db/fixtures/ci_db.sh up`), então os testes de dicionário exercitam o schema
+real em vez de se auto-pularem.
+
+Localmente, com o Postgres do compose de pé:
+
+```bash
+cd analysis/edumapsr
+Rscript -e 'testthat::test_local(reporter = "summary")'          # host
+# ou, na mesma imagem/versão do CI (R 4.4.1):
+db/fixtures/ci_db.sh up
+PGHOST=127.0.0.1 PGPORT=55432 PGDATABASE=edumaps_ci \
+  PGUSER=ci PGPASSWORD=ci \
+  Rscript -e 'testthat::test_local(reporter = "summary")'
+```
+
+Sem banco, só `test-censo-dictionary.R` se auto-pula (`skip_if_no_db`); o resto
+é puro (fontes em memória) e roda sempre.
+
 ## Running tests (frontend e2e — browser real via CDP)
 
 Testes de integração/e2e da SPA rodam num **Chrome visível** (sem headless)

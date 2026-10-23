@@ -103,13 +103,18 @@ test_that("colunas PK marcadas (linha_id, nu_ano_censo, co_entidade)", {
   }
 })
 
-test_that("year_introduced preenchido (>= 2025)", {
+test_that("year_introduced preenchido (ano real do INEP)", {
   skip_if_no_db()
   con <- get_test_con()
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
   dict <- censo_dictionary(con)
-  expect_true(all(dict$year_introduced >= 2025, na.rm = TRUE))
+  # O dicionário do INEP grava o ano real de introdução de cada variável
+  # (2007 em diante), não mais um valor fixo 2025 — ver
+  # data_pipeline/deploy/censo_data_dictionary_inep.sql.
+  expect_false(anyNA(dict$year_introduced))
+  expect_true(all(dict$year_introduced >= 2007))
+  expect_true(all(dict$year_introduced <= as.integer(format(Sys.Date(), "%Y"))))
 })
 
 test_that("print e summary funcionam", {

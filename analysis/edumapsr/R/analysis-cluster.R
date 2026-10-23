@@ -96,7 +96,26 @@ CLUSTER_ALGORITHMS <- c("kmeans", "dbscan", "gmm", "spectral")
       centroid_features = features
     )
   } else if (algorithm == "spectral") {
-    fit <- kernlab::specc(x, centers = parameters$clusters)
+    # `kernlab::specc` roda um kmeans no embedding espectral e aborta com
+    # "agrupamento vazio" para certas inicializações. Com o seed fixo 42 isso
+    # acontece de forma determinística em dados bem separados (medido com
+    # kernlab 0.9.33 / R 4.6.1), embora o algoritmo funcione com outros seeds.
+    # Tentamos seeds alternativos e ficamos com o primeiro que convergir: o
+    # resultado continua reprodutível, mas deixa de depender da sorte do 42.
+    fit <- NULL
+    for (seed in c(42L, 1:9)) {
+      set.seed(seed)
+      fit <- tryCatch(
+        kernlab::specc(x, centers = parameters$clusters),
+        error = function(e) NULL
+      )
+      if (!is.null(fit)) break
+    }
+    if (is.null(fit)) {
+      stop_invalid_dataset(
+        "spectral não convergiu: nenhuma inicialização produziu clusters não vazios"
+      )
+    }
     cluster <- as.integer(fit)
     ids <- sort(unique(cluster))
     ws <- tryCatch(
