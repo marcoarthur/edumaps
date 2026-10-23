@@ -4,6 +4,64 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-10-23 — testes R no CI (PR #302) + rodada 2 de isócronas concluída (SP+RJ+NE)
+
+### CI da camada analítica (PR #302)
+
+- **PR #302 MERGEADO** (`58542b6`; commit `8fe0080`, branch
+  `ci/analytics-testes`): a suíte testthat de `analysis/edumapsr` (42 arquivos)
+  passa a rodar no GitHub Actions — era o único buraco de cobertura (backend e
+  frontend já tinham workflow).
+- **Workflow `analytics-tests`**: sobe o **mesmo banco de fixtures** do backend
+  (`db/fixtures/ci_db.sh up`; cache da imagem compartilhado com o
+  `backend-tests`, key = hash de `db/Dockerfile`), instala **R 4.4.1** (mesma
+  versão da imagem `analytic`) + deps do `DESCRIPTION` via `pak`/PPM +
+  `testthat`/`pkgload`/`plumber`/`eduBR` (commit fixo do `Remotes`, com
+  `dbplyr`/`parsnip`/`broom`) e roda `testthat::test_local`. Os testes de banco
+  **não são pulados**: `PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD` apontam para
+  o banco de fixtures. Gatilhos: `analysis/**`, `data_pipeline/**`, `db/**` e o
+  próprio workflow. **Primeiro run VERDE** (40020402587): testthat 3.3.2,
+  `eduBR: TRUE`, `plumber: TRUE`, **zero skips**.
+- **Duas falhas pré-existentes corrigidas na causa** (não mascaradas com skip):
+  (1) **spectral** (`test-cluster.R:96`) — o `set.seed(42)` fixo do pacote gera
+  inicialização degenerada no kernlab atual (`agrupamento vazio`; medido com
+  kernlab 0.9.33 / R 4.6.1, todos os seeds testados falhavam só com o 42);
+  agora tenta `c(42L, 1:9)` e fica com o primeiro que converge (continua
+  reprodutível). (2) **`year_introduced >= 2025`** (`test-censo-dictionary.R`)
+  ficou obsoleto com a carga do dicionário do INEP (anos reais desde 2007);
+  passa a exigir preenchido, `>= 2007` e `<=` ano corrente.
+- **Validação**: host R 4.6.1 + banco de dev → rc=0 (10 skips só de `plumber`);
+  imagem `analytic` R 4.4.1 + banco → **rc=0, zero skips** (inclui `/report` e
+  `eduBR`); YAML OK. **Deploy**: `rex prepare` + `deploy_analytics_dev` no
+  `analytic.edumaps` (service active, fix presente no arquivo, health 200) e
+  `docker compose build analytic` + `up -d` local (fix instalado no pacote,
+  conferido por `deparse(body(.cluster_fit))`).
+- **Docs**: `AGENTS.md` ganhou a seção *Running tests (analytics / R)*.
+
+### Rodada 2 das isócronas (SP + RJ + Nordeste)
+
+- **SP**: 27.109 escolas; **RJ**: 8.823; **NE** (9 UFs): **45.995 escolas,
+  1 sem isócrona** (não vira linha, #154). Extração do NE: 14.006 s; carga
+  commitada às 20:01:56.
+- **Snapshot nacional `2026-10-21`**: **31.872.454 linhas / 81.926 escolas**
+  (SP+RJ+NE), tabela **6,4 GB**. Por tempo: 15 min 805.669; 45 min ~19,5 M;
+  com população ~31,7 M (o resto é NULL, como manda a #154).
+- **Disco**: `/var` 28 G usados / **6,9 G livres** (quota de 34 G). O snapshot
+  antigo `2026-10-20` (ES/MG) foi apagado (superado; recuperável pelos CSVs).
+- **Carga**: `COPY` direto + `DEFAULT` temporário das 5 colunas de metadados
+  (economiza ~2 GB de pico); densidade real 211 B/linha; índices mínimos
+  (PK + `idx_isocrona_codigo_ibge`). A migration
+  `isocrona_escolar_indices_minimos` **já está deployada** no banco real
+  (`database.edumaps` → `edumaps_dev`), mas os arquivos **ainda não foram
+  commitados**.
+- **Pendente**: (1) recalibrar `IVET_TETO_ACESSO_15MIN`/`IVET_TETO_ACESSO_45MIN`
+  com a cobertura nova e reprocessar o painel; (2) branch → PR do
+  `db/isocrona/` (README, `carregar.sql`, drivers RJ/NE, monitor, watchdog) +
+  `data_pipeline/{deploy,revert,verify}/isocrona_escolar_indices_minimos.sql` +
+  `data_pipeline/sqitch.plan` (não reordenar: o change_id já foi deployado);
+  (3) `docs/ajuda/gestor/ivet.md` + `docs/indice.md` (docs-only, podem ir
+  direto na `main`).
+
 ## Sessão 2026-10-21 (g) — fix do CI do backend: `Mojo::JSON` no `Ivet::Escola` (PR #301)
 
 - **CI do backend estava vermelho** (`backend-tests`, run 39525868024, job
