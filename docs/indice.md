@@ -81,6 +81,12 @@
   índice/síntese em `docs/funcionalidades/README.md`. Mantido no Workflow
   (passo "Documentação funcional").
 
+## 11.1 Ajuda ao usuário (docs/ajuda)
+- 🟢 `docs/ajuda/gestor/ivet.md` — **ajuda do IVET para o gestor escolar**: o que
+  o índice mede, os sete blocos (A–G), como ler o resultado no painel, LGPD,
+  isócrona e FAQ. Linguagem simples, derivada de `docs/analises/ivet.md`
+  (`ivet-v1.2`) — mudou a fórmula, revisar.
+
 ## 12. Análises e catálogo de fontes (issue #123)
 - 🟢 `docs/analises/fontes_de_dados.md` — **matriz-mestre**: lacunas do IVET,
   método de pontuação, priorização das 61 fontes candidatas e plano de
