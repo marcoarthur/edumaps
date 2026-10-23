@@ -1,0 +1,133 @@
+# Suíte de testes da camada analítica (R/testthat), contra o mesmo banco de
+# fixtures do backend (db/fixtures/ci_db.sh).
+#
+# Por que um workflow separado: os testes R vivem em analysis/edumapsr (pacote
+# edumapsAnalytics) e não têm relação com o cpanfile do backend. Rodá-los no
+# job do Perl só somaria tempo de instalação de R sem ganho.
+#
+# O que o job faz:
+#   1. Sobe o banco de CI (imagem cacheada por hash de db/Dockerfile, espelho
+#      HTTPS local, sqitch deploy das migrations) — o mesmo caminho do
+#      backend-tests.yml, por isso o cache é compartilhado.
+#   2. Instala o R 4.4.1 (mesma versão da imagem analytic do compose) e as
+#      dependências do DESCRIPTION via pak (binários do PPM), mais o testthat,
+#      o pkgload (usado por testthat::test_local) e o plumber (testes do
+#      /report). O eduBR vem do commit fixo do Remotes, com as dependências de
+#      runtime que a imagem analytic instala à parte.
+#   3. Roda a suíte inteira. Os testes que precisam de banco usam as variáveis
+#      PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD (test-censo-dictionary.R) e
+#      apontam para o banco de fixtures — em vez de serem pulados, exercitam o
+#      schema real criado pelas migrations.
+#
+# Sem banco, os testes de dicionário se auto-pulam (skip_if_no_db). Localmente:
+#
+#   db/fixtures/ci_db.sh up
+#   cd analysis/edumapsr
+#   PGHOST=127.0.0.1 PGPORT=55432 PGDATABASE=edumaps_ci PGUSER=ci PGPASSWORD=ci \
+#     Rscript -e 'testthat::test_local(reporter = "summary")'
+
+name: analytics-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'analysis/**'
+      - 'data_pipeline/**'
+      - 'db/**'
+      - '.github/workflows/analytics-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: analytics-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analytics:
+    name: R (testthat) contra o banco de fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      # Lidas por test-censo-dictionary.R (get_test_con).
+      PGHOST: 127.0.0.1
+      PGPORT: '55432'
+      PGDATABASE: edumaps_ci
+      PGUSER: ci
+      PGPASSWORD: ci
+      TZ: America/Sao_Paulo
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # O mesmo cache do backend-tests: a imagem edumaps-db:ci só é construída
+      # quando db/Dockerfile muda (o Docker Hub regula pull anónimo por IP).
+      - name: cache da imagem do banco (edumaps-db:ci)
+        uses: actions/cache@v5
+        with:
+          path: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
+          key: edumaps-db-ci-${{ hashFiles('db/Dockerfile') }}
+
+      - name: sobe o banco de CI (imagem, espelho, sqitch deploy)
+        run: db/fixtures/ci_db.sh up
+        env:
+          EDUMAPS_CI_PORT: '55432'
+          EDUMAPS_CI_IMAGE_TARBALL_IN: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
+          EDUMAPS_CI_IMAGE_TARBALL_OUT: /tmp/edumaps-ci-image/edumaps-db-ci.tar.gz
+
+      - name: diagnóstico (espelho + banco) se o deploy falhar
+        if: failure()
+        run: |
+          docker logs edumaps-ci-db | tail -40
+          docker logs edumaps-ci-mirror | tail -40
+
+      - name: R 4.4.1 (mesma versão da imagem analytic)
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.1'
+          use-public-rspm: true
+
+      # Mesmo conjunto de headers que a imagem analytic instala: libpq
+      # (RPostgres), sodium (ellmer), xml2/curl/ssl (pacotes de rede) e X11
+      # (dependência de binários do PPM). O setup-r-dependencies tenta resolver
+      # isto sozinho, mas explícito evita falhas silenciosas de sistema.
+      - name: bibliotecas de sistema do R
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpq-dev libssl-dev libcurl4-openssl-dev libxml2-dev \
+            libsodium-dev libx11-dev
+
+      - name: dependências do pacote (DESCRIPTION + Suggests dos testes)
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: analysis/edumapsr
+          dependencies: '"hard"'
+          extra-packages: |
+            any::testthat
+            any::pkgload
+            any::plumber
+            any::dplyr
+            any::dbplyr
+            any::tibble
+            any::rlang
+            any::bit64
+            any::parsnip
+            any::broom
+            github::marcoarthur/eduBR@2dc9af929742896d575e2e147e7e2c253a346ba8
+          cache-version: 1
+
+      - name: inventário do que será usado (diagnóstico)
+        working-directory: analysis/edumapsr
+        run: |
+          Rscript -e 'sessioninfo::session_info()'
+          Rscript -e 'cat("testthat:", as.character(packageVersion("testthat")),
+                            "| eduBR:", requireNamespace("eduBR", quietly = TRUE),
+                            "| plumber:", requireNamespace("plumber", quietly = TRUE), "\n")'
+
+      - name: suíte de testes (testthat)
+        working-directory: analysis/edumapsr
+        run: Rscript -e 'testthat::test_local(reporter = "summary")'
