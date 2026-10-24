@@ -48,13 +48,13 @@ test_that("ivet_componente_acesso_isocrona: invertido (mais acesso = menos)", {
 
 test_that("ivet_componente_acesso_auto_45min: invertido (mais acesso = menos)", {
   # mesma convenção do acesso a pé: população no teto -> 0; zero -> 1 (pior)
-  expect_equal(ivet_componente_acesso_auto_45min(5000000), 0)
+  expect_equal(ivet_componente_acesso_auto_45min(20000000), 0)
   expect_equal(ivet_componente_acesso_auto_45min(0), 1)
-  expect_equal(ivet_componente_acesso_auto_45min(2500000), 0.5)
-  expect_equal(ivet_componente_acesso_auto_45min(99999999), 0) # satura
+  expect_equal(ivet_componente_acesso_auto_45min(10000000), 0.5)
+  expect_equal(ivet_componente_acesso_auto_45min(999999999), 0) # satura
   expect_equal(ivet_componente_acesso_auto_45min(-5), 1)       # clamp
   expect_equal(
-    ivet_componente_acesso_auto_45min(2500000, teto = 5000000), 0.5
+    ivet_componente_acesso_auto_45min(10000000, teto = 20000000), 0.5
   )
   # vazio/NA -> NA (#154): fora do piloto, sem penalidade
   expect_true(is.na(ivet_componente_acesso_auto_45min(NA)))
@@ -64,15 +64,15 @@ test_that("ivet_componente_acesso_auto_45min: invertido (mais acesso = menos)", 
 })
 
 test_that("tetos do acesso batem com os p99 medidos (expansão ES+MG, #295)", {
-  expect_equal(IVET_TETO_ACESSO_15MIN, 40000)      # p99 medido: 39.339 (16.782)
-  expect_equal(IVET_TETO_ACESSO_45MIN, 5000000)    # p99 medido: 4.889.715
+  expect_equal(IVET_TETO_ACESSO_15MIN, 65000)      # recalibrado na rodada 2 (#295, 81.925 escolas, p99 ~61.3k)
+  expect_equal(IVET_TETO_ACESSO_45MIN, 20000000)   # recalibrado na rodada 2 (#295, 81.925 escolas, p99 ~19,5M)
 })
 
 test_that("ivet_bloco_mobilidade_componentes devolve os quatro componentes", {
   comps <- ivet_bloco_mobilidade_componentes(
     sinistros_12m = 25, renavam_total_frota = 5000, populacao = 10000,
-    pop_acessivel_15min = 25000, teto_acesso_15min = 50000,
-    pop_acessivel_45min = 2500000, teto_acesso_45min = 5000000
+    pop_acessivel_15min = 32500, teto_acesso_15min = 65000,
+    pop_acessivel_45min = 10000000, teto_acesso_45min = 20000000
   )
   expect_named(
     comps,
@@ -83,6 +83,8 @@ test_that("ivet_bloco_mobilidade_componentes devolve os quatro componentes", {
   )
   expect_equal(comps[["risco_sinistros"]], 0.5)
   expect_equal(comps[["exposicao_frota"]], 0.5)
+  expect_equal(comps[["acesso_isocrona"]], 0.5)
+  expect_equal(comps[["acesso_auto_45min"]], 0.5)
   expect_equal(comps[["acesso_isocrona"]], 0.5)       # 25 mil de teto 50 mil
   expect_equal(comps[["acesso_auto_45min"]], 0.5)     # 2,5 mi de teto 5 mi
   # fora do piloto: acessos NA, os demais intactos
@@ -124,7 +126,7 @@ test_that("ivet_bloco_mobilidade: média das disponíveis, NA fora (#154)", {
   expect_equal(
     ivet_bloco_mobilidade(
       sinistros_12m = 25, renavam_total_frota = 5000, populacao = 10000,
-      pop_acessivel_15min = 0, teto_acesso_15min = 50000
+      pop_acessivel_15min = 0, teto_acesso_15min = 65000
     ),
     mean(c(0.5, 0.5, 1))
   )
@@ -132,8 +134,8 @@ test_that("ivet_bloco_mobilidade: média das disponíveis, NA fora (#154)", {
   expect_equal(
     ivet_bloco_mobilidade(
       sinistros_12m = 25, renavam_total_frota = 5000, populacao = 10000,
-      pop_acessivel_15min = 25000, teto_acesso_15min = 50000,
-      pop_acessivel_45min = 0, teto_acesso_45min = 5000000
+      pop_acessivel_15min = 32500, teto_acesso_15min = 65000,
+      pop_acessivel_45min = 0, teto_acesso_45min = 20000000
     ),
     mean(c(0.5, 0.5, 0.5, 1))
   )

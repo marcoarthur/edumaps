@@ -174,18 +174,18 @@ bloco_c:
       normalizacao: "1 - clamp((soma 15min a pe)/teto)"
       direcao: "-"
       no_default: false
-      teto: 40000
-      teto_nota: "populacao alcancavel a pe em 15 min (H3 r9); PROVISORIO = p99 da expansao ES+MG (16.782 escolas, 2026-10-20: p50=5390, p90=20996, p99=39339); recalibrar na expansao nacional"
-      cobertura: "expansao ES+MG (16.796 escolas); fora dela NA (#154), nao zera"
+      teto: 65000
+      teto_nota: "populacao alcancavel a pe em 15 min (H3 r9); recalibrado na rodada 2 SP+RJ+NE (#295, 81.925 escolas, 2026-10-23: p50=7201, p90=35229, p99=61349)"
+      cobertura: "expansao nacional SP+RJ+NE (81.926 escolas); fora dela NA (#154), nao zera"
     acesso_auto_45min:
       fonte: clean.isocrona_escolar.populacao_grade
       normalizacao: "1 - clamp((soma 45min de carro)/teto)"
       direcao: "-"
       no_default: false
-      teto: 5000000
-      teto_nota: "populacao regional alcancavel em 45 min de carro (H3 r7, costing auto do Valhalla); PROVISORIO = p99 da expansao ES+MG (16.790 escolas, 2026-10-20: p50=169471, p90=4567800, p99=4889715; era 1.750.000 so no ES); recalibrar na expansao nacional"
-      cobertura: "expansao ES+MG (16.796 escolas); fora dela NA (#154), nao zera"
-      vies_nota: "vies de fronteira CORRIGIDO nesta expansao (setores da regiao + tiles do Sudeste): escolas >20% de celulas NULL cairam de 125 para 5 (restam as da borda MG<->BA, pendente do extract Nordeste #295)"
+      teto: 20000000
+      teto_nota: "populacao regional alcancavel em 45 min de carro (H3 r7, costing auto do Valhalla); recalibrado na rodada 2 SP+RJ+NE (#295, 81.925 escolas, 2026-10-23: p50=520572, p90=12400728, p99=19486927; era 5.000.000 na expansao ES+MG)"
+      cobertura: "expansao nacional SP+RJ+NE (81.926 escolas); fora dela NA (#154), nao zera"
+      vies_nota: "viés de fronteira residual na borda MG<->BA, minimizado pela cobertura ampliada"
 
 bloco_d:
   # Atencao basica de saude (CNES + SISAB/PMMB). Distancia da escola a UBS
