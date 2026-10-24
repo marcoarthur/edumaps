@@ -4,6 +4,7 @@
 
 [![backend-tests](https://github.com/marcoarthur/edumaps/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/backend-tests.yml)
 [![frontend-tests](https://github.com/marcoarthur/edumaps/actions/workflows/frontend-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/frontend-tests.yml)
+[![analytics-tests](https://github.com/marcoarthur/edumaps/actions/workflows/analytics-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/analytics-tests.yml)
 
 Integra dados oficiais de educação, geografia e segurança para responder a
 perguntas que hoje só se respondem à folha de cálculo: **onde estão as escolas,
