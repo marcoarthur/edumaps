@@ -34,20 +34,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -r docs/ajuda/* _site/
-          python3 << 'PYEOF'
-import markdown, pathlib
-base = pathlib.Path('_site')
-readme = base / 'README.md'
-if readme.exists():
-    md = readme.read_text(encoding='utf-8')
-    html = markdown.markdown(md, extensions=['extra','toc','fenced_code','tables'])
-    (base / 'index.html').write_text(f'''<!doctype html>
-<html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ajuda EduMaps</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-</head><body><main><p><a href="https://github.com/marcoarthur/edumaps">← Repositório</a></p>{html}</main></body></html>''', encoding='utf-8')
-PYEOF
+          python3 -c "import markdown,pathlib; base=pathlib.Path('_site'); r=base/'README.md'; html=markdown.markdown(r.read_text(encoding='utf-8'),extensions=['extra','toc','fenced_code','tables']) if r.exists() else '<p>Ajuda EduMaps</p>'; (base/'index.html').write_text('<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Ajuda EduMaps</title><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/water.css@2/out/water.css\"></head><body><main><p><a href=\"https://github.com/marcoarthur/edumaps\">\u2190 Reposit\u00f3rio</a></p>'+html+'</main></body></html>',encoding='utf-8')"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
