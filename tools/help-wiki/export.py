@@ -52,6 +52,49 @@ def check_file(path):
             errors.append("status: parcial sem seção 'Limitações conhecidas'")
     return errors
 
+def collect_funcionalidades():
+    funcs = []
+    if not FUNC.exists():
+        return funcs
+    for md in FUNC.rglob("*.md"):
+        if md.name in {"README.md"}:
+            continue
+        try:
+            text = md.read_text(encoding="utf-8")
+            fm,_ = parse_frontmatter(text)
+        except Exception:
+            fm = None
+        status = fm.get("status") if fm else None
+        funcs.append({
+            "path": md,
+            "rel": md.relative_to(ROOT).as_posix(),
+            "status": status,
+            "fm": fm or {}
+        })
+    return funcs
+
+def collect_help_links():
+    links = set()
+    if not HELP.exists():
+        return links
+    for md in HELP.rglob("*.md"):
+        try:
+            text = md.read_text(encoding="utf-8")
+            fm,_ = parse_frontmatter(text)
+            if not fm:
+                continue
+            fn = fm.get("funcionalidade")
+            if not fn:
+                continue
+            target = (md.parent / fn).resolve()
+            try:
+                links.add(target.relative_to(ROOT).as_posix())
+            except Exception:
+                pass
+        except Exception:
+            continue
+    return links
+
 def main():
     if not HELP.exists():
         print(f"ERRO: {HELP} não existe")
@@ -72,6 +115,22 @@ def main():
             print(f"  - {e}")
         sys.exit(1)
     print("\nOK: front-matter e regras básicas validados.")
+
+    # Cobertura funcionalidades -> ajuda
+    funcs = collect_funcionalidades()
+    linked = collect_help_links()
+    ativos = [f for f in funcs if f["status"] == "ativo"]
+    missing = []
+    for f in ativos:
+        if f["rel"] not in linked:
+            missing.append(f["rel"])
+    print(f"\nCobertura: {len(ativos)} funcionalidades ativas, {len(ativos)-len(missing)} com página de ajuda")
+    if missing:
+        print(f"Sem página de ajuda ({len(missing)}):")
+        for m in sorted(missing):
+            print(f"  - {m}")
+    else:
+        print("Cobertura completa para funcionalidades ativas.")
     sys.exit(0)
 
 if __name__ == "__main__":

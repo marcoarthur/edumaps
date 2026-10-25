@@ -425,12 +425,15 @@ plano → execução → aprovação
 1. **Plano**: propor o plano e alinhar decisões antes de tocar em código.
 2. **Execução**: implementar e validar (testes/lint/build) conforme as
    convenções acima. Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
-3. **Documentação funcional**: sempre que uma **funcionalidade mudar** ou uma
+3. **Documentação funcional e de ajuda**: sempre que uma **funcionalidade mudar** ou uma
    **nova for criada**, atualizar o arquivo da capacidade em
    `docs/funcionalidades/<módulo>/` e o índice `docs/funcionalidades/README.md`
-   (ver seção "Documentação funcional" abaixo). Alto nível: descreva a
-   **capacidade de negócio**, não rotas/arquivos/funções. Mudanças só de
-   documentação não deployam.
+   (ver seção "Documentação funcional"). Além disso, **criar/atualizar a página de ajuda** em
+   `docs/ajuda/<perfil>/` vinculando-a via `funcionalidade: ../../funcionalidades/...`
+   (seguir [`docs/ajuda/_template.md`](/home/itaipu/Code/Data/leaflet/docs/ajuda/_template.md)).
+   Se não houver página de ajuda aplicável, justificar com **`[ajuda: não se aplica]`** na mensagem do commit.
+   Alto nível: descreva a **capacidade de negócio**, não rotas/arquivos/funções.
+   Mudanças só de documentação não deployam.
 4. **Aprovação**: só pedir PR após a validação visual do usuário (frontend)
    ou a aceite explícito da implementação.
 5. **Deploy (sempre que houver código)**: todo ciclo que altere **artefato de

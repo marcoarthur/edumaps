@@ -1,42 +1,29 @@
 package GitHooks::PreCommit;
 
-# Avisos de pré-commit (nunca bloqueia). Só core Perl.
-#
-# O aviso de documentação funcional é a única regra de negócio aqui; os linters
-# (perlcritic/lintr) são ligados condicionalmente pelo CLI
-# (`pre-commit.pl`), apenas se estiverem instalados.
-
 use strict;
 use warnings;
-use utf8;
-use Exporter 'import';
-
+use Exporter qw(import);
 our @EXPORT_OK = qw(docs_warning);
 
-my @CODE_AREAS = qw(backend/ frontend/ analysis/ data_pipeline/);
-my $DOCS_AREA  = 'docs/funcionalidades/';
-
-# Recebe a lista de caminhos staged e devolve a mensagem de aviso (ou undef)
-# quando o commit toca código e não toca docs/funcionalidades/ — passo 3 do
-# Workflow do AGENTS.md.
 sub docs_warning {
-  my (@files) = @_;
+  my (@staged) = @_;
 
-  my $touch_code = 0;
-  my $touch_docs = 0;
-  for my $file (@files) {
-    $touch_docs = 1 if index($file, $DOCS_AREA) == 0;
-    for my $area (@CODE_AREAS) {
-      if (index($file, $area) == 0) {
-        $touch_code = 1;
-        last;
-      }
-    }
+  return undef unless @staged;
+
+  my @code = grep { m{^(?:backend|frontend|analysis|data_pipeline|db)/} } @staged;
+  return undef unless @code;
+
+  my @docs_func = grep { m{^docs/funcionalidades/} } @staged;
+  my @docs_ajuda = grep { m{^docs/ajuda/} } @staged;
+
+  if (@docs_func || @docs_ajuda) {
+    return undef;
   }
 
-  return undef unless $touch_code && !$touch_docs;
-  return 'este commit toca código e não atualiza docs/funcionalidades/ '
-    . '(passo 3 do Workflow do AGENTS.md)';
+  return
+    "este commit toca código e não atualiza docs/funcionalidades/ nem docs/ajuda/ (passo 3 do Workflow). "
+    . "Crie/atualize a página de ajuda em docs/ajuda/<perfil>/ com funcionalidade: apontando para docs/funcionalidades/... "
+    . "ou justifique com [ajuda: não se aplica] na mensagem do commit.";
 }
 
 1;
