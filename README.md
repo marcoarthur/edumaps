@@ -4,6 +4,7 @@
 
 [![backend-tests](https://github.com/marcoarthur/edumaps/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/backend-tests.yml)
 [![frontend-tests](https://github.com/marcoarthur/edumaps/actions/workflows/frontend-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/frontend-tests.yml)
+[![Ajuda](https://img.shields.io/badge/Ajuda-GitHub%20Pages-blue)](https://marcoarthur.github.io/edumaps/)
 [![analytics-tests](https://github.com/marcoarthur/edumaps/actions/workflows/analytics-tests.yml/badge.svg?branch=main)](https://github.com/marcoarthur/edumaps/actions/workflows/analytics-tests.yml)
 
 Integra dados oficiais de educação, geografia e segurança para responder a
