@@ -1,13 +1,12 @@
 ---
-modulo: gestor
+titulo: "Ajuda — Professor"
+publico: [professor]
+modulo: professor
 nivel: basico
-publico:
-- gestor
 status: planejado
-titulo: professor
-ultima_revisao: '2026-10-25'
+ultima_revisao: 2026-10-25
 ---
 
-# Ajuda — professor
+# Ajuda — Professor
 
-> Escopo deste diretório. Status: em construção.
+> **Status:** Planejado. Escopo de acesso docente ainda em definição. Quando definido, serão adicionados artigos orientados a tarefas.
