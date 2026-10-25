@@ -1,3 +1,17 @@
+---
+funcionalidade: ../../funcionalidades/analise/assistente-censo.md
+modulo: gestor
+nivel: intermediario
+publico:
+- gestor
+relacionadas:
+- area-de-influencia
+- painel-da-escola
+status: parcial
+titulo: IVET — Índice de Vulnerabilidade Educacional Territorial
+ultima_revisao: '2026-10-25'
+---
+
 # IVET — Índice de Vulnerabilidade de Acesso
 
 > Documento de ajuda para **gestores escolares, coordenação e secretarias de
@@ -217,3 +231,9 @@ Sim. O IVET mede **vulnerabilidade** de acesso: **maior = mais barreira**.
 > Esta ajuda é **derivada** da formulação técnica do índice
 > (`docs/analises/ivet.md`, fórmula `ivet-v1.2`) e da ficha de coeficientes
 > (`docs/analises/ivet-coeficientes.md`). Mudou a fórmula → revise este arquivo.
+
+## Limitações conhecidas
+
+- Cobertura parcial por fonte/UF.
+- Ausência de dado aparece como **n/d** (nunca é zero, #154).
+- Os tetos dos componentes de acesso foram recalibrados com a cobertura ampliada (SP+RJ+NE).
