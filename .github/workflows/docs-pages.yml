@@ -26,41 +26,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Install deps
-        run: pip install markdown
+        run: pip install markdown pyyaml
       - name: Build site
         run: |
-          mkdir -p _site
-          cp docs/ajuda/README.md _site/
-          mkdir -p _site/gestor _site/comunidade _site/administrador _site/professor _site/desenvolvedor
-          cp docs/ajuda/gestor/*.md _site/gestor/ 2>/dev/null || true
-          cp docs/ajuda/comunidade/*.md _site/comunidade/ 2>/dev/null || true
-          cp docs/ajuda/administrador/*.md _site/administrador/ 2>/dev/null || true
-          cp docs/ajuda/professor/*.md _site/professor/ 2>/dev/null || true
-          cp docs/ajuda/desenvolvedor/*.md _site/desenvolvedor/ 2>/dev/null || true
-          cp docs/ajuda/_glossario.md _site/ 2>/dev/null || true
-          python3 -c "
-import markdown, pathlib, shutil, os
-base = pathlib.Path('_site')
-md = markdown.Markdown(extensions=['extra','toc','fenced_code','tables'])
-for root, dirs, files in os.walk(base):
-    for f in files:
-        if f.endswith('.md') and f != '_template.md':
-            p = pathlib.Path(root)/f
-            try:
-                content = p.read_text(encoding='utf-8')
-                if content.startswith('---'):
-                    parts = content.split('---',2)
-                    if len(parts)==3: content = parts[2].lstrip('\n')
-                html = md.convert(content); md.reset()
-                depth = len(p.relative_to(base).parts)-1
-                prefix = '../'*depth if depth>0 else ''
-                nav = f'<nav><a href=\"{prefix}index.html\">← Início</a> | <a href=\"https://github.com/marcoarthur/edumaps\">Repositório</a></nav>'
-                out = f'<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Ajuda EduMaps</title><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/water.css@2/out/water.css\"><style>body{{max-width:900px;margin:0 auto;padding:1rem}}nav{{margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #ddd}}</style></head><body>{nav}<main>{html}</main></body></html>'
-                p.with_suffix('.html').write_text(out, encoding='utf-8')
-            except: pass
-if (base/'README.md').exists():
-    shutil.copy(base/'README.html', base/'index.html')
-"
+          rm -rf _site && mkdir -p _site
+          python3 tools/help-wiki/build_pages.py
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
