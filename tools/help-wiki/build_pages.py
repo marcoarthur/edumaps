@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import markdown, pathlib, shutil, os, re
+import markdown, pathlib, shutil, os
 
 ROOT = pathlib.Path('.')
 SRC = ROOT / 'docs' / 'ajuda'
@@ -35,37 +35,36 @@ pre{{overflow-x:auto}}
 <body>{nav}<main>{html}</main></body>
 </html>'''
 
-# Copy and convert
-shutil.copy(SRC / 'README.md', DST / 'README.md')
-# Copy subdirs
-for sub in ['gestor', 'comunidade', 'administrador', 'professor', 'desenvolvedor']:
-    s = SRC / sub
-    if s.exists():
-        d = DST / sub
-        d.mkdir(exist_ok=True)
-        for f in s.glob('*.md'):
-            shutil.copy(f, d / f.name)
-for extra in ['_glossario.md', '_template.md']:
-    if (SRC / extra).exists():
-        shutil.copy(SRC / extra, DST / extra)
-
-# Convert all md
-for root, dirs, files in os.walk(DST):
+# Copy everything preserving structure
+for root, dirs, files in os.walk(SRC):
+    # Skip hidden dirs
+    dirs[:] = [d for d in dirs if not d.startswith('.')]
+    rel_root = pathlib.Path(root).relative_to(SRC)
+    dst_root = DST / rel_root
+    dst_root.mkdir(parents=True, exist_ok=True)
     for fname in files:
-        if not fname.endswith('.md'): continue
-        if fname == '_template.md': continue
-        p = pathlib.Path(root) / fname
-        try:
-            content = strip_frontmatter(p.read_text(encoding='utf-8'))
-            depth = len(p.relative_to(DST).parts) - 1
-            prefix = '../' * depth if depth > 0 else ''
-            html = render_html(content, p.stem.replace('-', ' ').title(), prefix)
-            p.with_suffix('.html').write_text(html, encoding='utf-8')
-            print(f'OK {p.relative_to(DST)}')
-        except Exception as e:
-            print(f'ERR {p}: {e}')
+        if fname.startswith('.'): continue
+        src_file = pathlib.Path(root) / fname
+        dst_file = dst_root / fname
+        if fname.endswith('.md') and fname not in ['_template.md']:
+            try:
+                content = strip_frontmatter(src_file.read_text(encoding='utf-8'))
+                depth = len((rel_root / fname).parts) - 1
+                prefix = '../' * depth if depth > 0 else ''
+                title = fname.replace('.md', '').replace('-', ' ').title()
+                html = render_html(content, title, prefix)
+                dst_file.with_suffix('.html').write_text(html, encoding='utf-8')
+                print(f'Converted {(rel_root/fname).as_posix()}')
+            except Exception as e:
+                print(f'ERR {fname}: {e}')
+        elif fname not in ['_template.md']:
+            shutil.copy2(src_file, dst_file)
 
-# index
+# Ensure index.html exists
 if (DST / 'README.html').exists():
     shutil.copy(DST / 'README.html', DST / 'index.html')
-    print('index.html created')
+    print('index.html ready')
+elif (DST / 'index.html').exists():
+    pass
+else:
+    (DST / 'index.html').write_text('<!doctype html><html><head><meta charset="utf-8"></head><body><h1>Ajuda EduMaps</h1></body></html>')
