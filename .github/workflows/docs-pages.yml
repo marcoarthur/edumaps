@@ -33,65 +33,56 @@ jobs:
       - name: Build site
         run: |
           mkdir -p _site
-          cp -r docs/ajuda/* _site/
+          cp docs/ajuda/README.md _site/
+          for dir in docs/ajuda/*/; do
+            [ -d "$dir" ] || continue
+            dname=$(basename "$dir")
+            [ "$dname" = "_" ] && continue
+            mkdir -p "_site/$dname"
+            cp "$dir"*.md "_site/$dname/" 2>/dev/null || true
+          done
+          cp docs/ajuda/_glossario.md _site/ 2>/dev/null || true
+          cp docs/ajuda/_template.md _site/ 2>/dev/null || true
           python3 << 'PYEOF'
-import markdown, pathlib, os, shutil
+import markdown, pathlib, shutil, os
 
 base = pathlib.Path('_site')
 md = markdown.Markdown(extensions=['extra','toc','fenced_code','tables'])
 
-def convert_md_to_html(md_path):
-    content = md_path.read_text(encoding='utf-8')
-    # Remove front matter if present
-    if content.startswith('---'):
-        parts = content.split('---', 2)
-        if len(parts) == 3:
-            content = parts[2].lstrip('\n')
-    html_content = md.convert(content)
-    md.reset()
-    
-    html = f'''<!doctype html>
+def convert_md_to_html(md_path, prefix=''):
+    try:
+        content = md_path.read_text(encoding='utf-8')
+        if content.startswith('---'):
+            parts = content.split('---', 2)
+            if len(parts) == 3:
+                content = parts[2].lstrip('\n')
+        html_content = md.convert(content)
+        md.reset()
+        rel = md_path.relative_to(base)
+        nav = f'<nav><a href="{prefix}index.html">← Início</a> | <a href="https://github.com/marcoarthur/edumaps">Repositório</a></nav>'
+        html = f'''<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{md_path.stem.replace('-', ' ').title()} - Ajuda EduMaps</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{md_path.stem} - Ajuda EduMaps</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-<style>
-body {{ max-width: 900px; margin: 0 auto; padding: 1rem; }}
-nav {{ margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }}
-</style>
-</head>
-<body>
-<nav>
-<a href="index.html">← Início</a> | <a href="https://github.com/marcoarthur/edumaps">Repositório</a>
-</nav>
-<main>
-{html_content}
-</main>
-</body>
-</html>'''
-    out_path = md_path.with_suffix('.html')
-    out_path.write_text(html, encoding='utf-8')
-    return out_path
+<style>body{{max-width:900px;margin:0 auto;padding:1rem}}nav{{margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #ddd}}</style>
+</head><body>{nav}<main>{html_content}</main></body></html>'''
+        out = md_path.with_suffix('.html')
+        out.write_text(html, encoding='utf-8')
+    except Exception as e:
+        print(e)
 
-# Convert all .md files to .html
 for root, dirs, files in os.walk(base):
     for f in files:
-        if f.endswith('.md'):
-            md_path = pathlib.Path(root) / f
-            try:
-                convert_md_to_html(md_path)
-                print(f'Converted {md_path}')
-            except Exception as e:
-                print(f'Error converting {md_path}: {e}')
+        if f.endswith('.md') and not f.startswith('_template'):
+            p = pathlib.Path(root)/f
+            depth = len(p.relative_to(base).parts) - 1
+            prefix = '../' * depth if depth > 0 else ''
+            convert_md_to_html(p, prefix)
 
-# Create index.html from README.md if not exists or replace
-readme = base / 'README.md'
-if readme.exists():
-    convert_md_to_html(readme)
-    shutil.copy(readme.with_suffix('.html'), base / 'index.html')
-    print('Created index.html')
+if (base/'README.md').exists():
+    convert_md_to_html(base/'README.md', '')
+    shutil.copy(base/'README.html', base/'index.html')
 PYEOF
 
       - name: Upload artifact
