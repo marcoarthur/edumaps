@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import markdown, pathlib, shutil, os
+import markdown, pathlib, shutil, os, re
 
 ROOT = pathlib.Path('.')
 SRC = ROOT / 'docs' / 'ajuda'
@@ -15,8 +15,15 @@ def strip_frontmatter(text):
             return parts[2].lstrip('\n')
     return text
 
+def fix_links(html):
+    # Convert .md links to .html
+    html = re.sub(r'href="([^"]+)\.md"', r'href="\1.html"', html)
+    html = re.sub(r"\bhref='([^']+)\.md'", r"href='\1.html'", html)
+    return html
+
 def render_html(content, title, prefix):
     html = md.convert(content)
+    html = fix_links(html)
     md.reset()
     nav = f'<nav><a href="{prefix}index.html">← Início</a> | <a href="https://github.com/marcoarthur/edumaps">Repositório</a></nav>'
     return f'''<!doctype html>
@@ -37,7 +44,6 @@ pre{{overflow-x:auto}}
 
 # Copy everything preserving structure
 for root, dirs, files in os.walk(SRC):
-    # Skip hidden dirs
     dirs[:] = [d for d in dirs if not d.startswith('.')]
     rel_root = pathlib.Path(root).relative_to(SRC)
     dst_root = DST / rel_root
@@ -64,7 +70,3 @@ for root, dirs, files in os.walk(SRC):
 if (DST / 'README.html').exists():
     shutil.copy(DST / 'README.html', DST / 'index.html')
     print('index.html ready')
-elif (DST / 'index.html').exists():
-    pass
-else:
-    (DST / 'index.html').write_text('<!doctype html><html><head><meta charset="utf-8"></head><body><h1>Ajuda EduMaps</h1></body></html>')
