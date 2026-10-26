@@ -34,7 +34,65 @@ jobs:
         run: |
           mkdir -p _site
           cp -r docs/ajuda/* _site/
-          python3 -c "import markdown,pathlib; base=pathlib.Path('_site'); r=base/'README.md'; html=markdown.markdown(r.read_text(encoding='utf-8'),extensions=['extra','toc','fenced_code','tables']) if r.exists() else '<p>Ajuda EduMaps</p>'; (base/'index.html').write_text('<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Ajuda EduMaps</title><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/water.css@2/out/water.css\"></head><body><main><p><a href=\"https://github.com/marcoarthur/edumaps\">\u2190 Reposit\u00f3rio</a></p>'+html+'</main></body></html>',encoding='utf-8')"
+          python3 << 'PYEOF'
+import markdown, pathlib, os, shutil
+
+base = pathlib.Path('_site')
+md = markdown.Markdown(extensions=['extra','toc','fenced_code','tables'])
+
+def convert_md_to_html(md_path):
+    content = md_path.read_text(encoding='utf-8')
+    # Remove front matter if present
+    if content.startswith('---'):
+        parts = content.split('---', 2)
+        if len(parts) == 3:
+            content = parts[2].lstrip('\n')
+    html_content = md.convert(content)
+    md.reset()
+    
+    html = f'''<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{md_path.stem.replace('-', ' ').title()} - Ajuda EduMaps</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+<style>
+body {{ max-width: 900px; margin: 0 auto; padding: 1rem; }}
+nav {{ margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }}
+</style>
+</head>
+<body>
+<nav>
+<a href="index.html">← Início</a> | <a href="https://github.com/marcoarthur/edumaps">Repositório</a>
+</nav>
+<main>
+{html_content}
+</main>
+</body>
+</html>'''
+    out_path = md_path.with_suffix('.html')
+    out_path.write_text(html, encoding='utf-8')
+    return out_path
+
+# Convert all .md files to .html
+for root, dirs, files in os.walk(base):
+    for f in files:
+        if f.endswith('.md'):
+            md_path = pathlib.Path(root) / f
+            try:
+                convert_md_to_html(md_path)
+                print(f'Converted {md_path}')
+            except Exception as e:
+                print(f'Error converting {md_path}: {e}')
+
+# Create index.html from README.md if not exists or replace
+readme = base / 'README.md'
+if readme.exists():
+    convert_md_to_html(readme)
+    shutil.copy(readme.with_suffix('.html'), base / 'index.html')
+    print('Created index.html')
+PYEOF
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
