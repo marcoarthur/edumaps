@@ -54,7 +54,7 @@ export default {
     {
       alvo: "gestor-matriculas",
       titulo: "Matrículas",
-      texto: "Como os alunos se distribuem por etapa de ensino e por turno.",
+      texto: "Como os alunos se distribuem por etapa de ensino, por faixa etária e por turno.",
       lado: "top",
     },
     {
