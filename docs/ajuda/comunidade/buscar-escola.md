@@ -42,3 +42,4 @@ Qualquer pessoa pode buscar escolas públicas pelo nome, município ou outros fi
 ## Veja também
 - [Painel público da escola](painel-publico-da-escola.md)
 - [Privacidade](privacidade.md)
+- [Ajuda guiada na tela](ajuda-guiada.md)
