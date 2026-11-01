@@ -179,11 +179,13 @@ export class TourManager {
    */
   aoNavegar(path, search = "") {
     if (this.ativo) {
-      // Voltar do navegador (popstate) ou link fora do tour: o alvo do passo
-      // sumiu da tela, então o tour não tem mais o que mostrar.
+      // Navegação feita pelo próprio tour (multi-página): nada a fazer.
       const rotaDoPasso = this.#tour?.passos[this.passo]?.rota;
-      if (rotaDoPasso && rotaDoPasso !== path) this.encerrar();
-      return false;
+      if (!rotaDoPasso || rotaDoPasso === path) return false;
+      // Voltar do navegador (popstate) ou link fora do tour: o alvo do passo
+      // sumiu da tela. Fecha e SEGUE avaliando a página nova — antes parava
+      // aqui, e o tour automático da página de destino nunca abria.
+      this.encerrar();
     }
 
     const pedido = new URLSearchParams(search).get("tour");

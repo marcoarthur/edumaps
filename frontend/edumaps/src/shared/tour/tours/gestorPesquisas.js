@@ -18,7 +18,7 @@ export default {
       alvo: "pesq-conteudo",
       titulo: "Pesquisas da escola",
       texto:
-        "Rascunhos, publicadas e arquivadas. Um rascunho você continua de onde parou; " +
+        "Aqui ficam as pesquisas da escola: rascunhos, publicadas e arquivadas. Um rascunho você continua de onde parou; " +
         "uma publicada tem “Copiar link”, para a comunidade responder sem criar conta, e “Resultados”, com contagens e percentuais. " +
         "Use as setas do teclado ou os botões; Esc fecha.",
       lado: "top",

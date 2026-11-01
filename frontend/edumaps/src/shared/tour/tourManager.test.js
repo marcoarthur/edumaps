@@ -158,6 +158,20 @@ describe("TourManager — navegação entre passos e páginas", () => {
     expect(tm.ativo).toBe("teste");
   });
 
+  it("sair da página com um tour aberto abre o automático da página nova", () => {
+    const OUTRO = {
+      id: "outro",
+      rotaInicial: "/c",
+      automatico: true,
+      passos: [{ alvo: "c", titulo: "C", texto: "c" }],
+    };
+    tm.registrar(OUTRO);
+    tm.iniciar("teste");
+    router.path = "/c";
+    expect(tm.aoNavegar("/c", "")).toBe(true);
+    expect(tm.ativo).toBe("outro");
+  });
+
   it("navegar para fora (voltar do navegador) encerra o tour", () => {
     tm.iniciar("teste");
     tm.aoNavegar("/outra", "");
