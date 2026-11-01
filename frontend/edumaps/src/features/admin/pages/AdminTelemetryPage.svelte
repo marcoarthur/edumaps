@@ -127,6 +127,7 @@
           </span>
         {/if}
         <button
+          data-tour="admin-atualizar"
           type="button"
           onclick={() => carregar()}
           disabled={atualizando}
@@ -169,7 +170,7 @@
       </div>
     {/if}
 
-    <section class="space-y-2">
+    <section class="space-y-2" data-tour="admin-logins">
       <h2 class="text-sm font-semibold text-gray-700">Logins de gestores</h2>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {#each LOGIN_CARDS as c (c.key)}
@@ -186,9 +187,11 @@
     <section class="space-y-2">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h2 class="text-sm font-semibold text-gray-700">Atividade na janela</h2>
-        <TelemetryWindows value={janela} onSelect={selecionarJanela} />
+        <div data-tour="admin-janela">
+          <TelemetryWindows value={janela} onSelect={selecionarJanela} />
+        </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4" data-tour="admin-atividade">
         <TelemetryStatCard label="Sessões ativas" value={data.sessions.active} />
         <TelemetryStatCard label="Logadas" value={data.sessions.logged} tone="positive" />
         <TelemetryStatCard label="Anônimas" value={data.sessions.anonymous} tone="muted" />
@@ -197,10 +200,16 @@
       </div>
     </section>
 
-    <TelemetryTimeseries series={data.series} granularity={data.granularity} />
+    <div data-tour="admin-serie">
+      <TelemetryTimeseries series={data.series} granularity={data.granularity} />
+    </div>
 
-    <TelemetryRoutesTable routes={data.top_routes} />
+    <div data-tour="admin-rotas">
+      <TelemetryRoutesTable routes={data.top_routes} />
+    </div>
 
-    <TelemetryToursTable tours={data.tours ?? []} />
+    <div data-tour="admin-tours">
+      <TelemetryToursTable tours={data.tours ?? []} />
+    </div>
   {/if}
 </div>
