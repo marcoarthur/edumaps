@@ -420,7 +420,7 @@
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">{error}</div>
   {:else}
     <!-- abas -->
-    <nav class="flex flex-wrap gap-1" aria-label="Seções do inventário">
+    <nav class="flex flex-wrap gap-1" aria-label="Seções do inventário" data-tour="inventario-abas">
       {#each ABAS as a (a.key)}
         <button
           type="button"
@@ -433,12 +433,13 @@
     </nav>
 
     {#if aba === "censo"}
-      <section class="space-y-4">
+      <section class="space-y-4" data-tour="inventario-censo">
         <div class="flex items-center justify-between gap-2">
           <p class="text-sm text-gray-600">
             Dados do Censo Escolar {censo?.ano ?? ""} — somente leitura. Importe para começar seu inventário.
           </p>
           <button
+            data-tour="inventario-importar"
             type="button"
             onclick={importar}
             disabled={importando}

@@ -103,6 +103,7 @@
       </a>
       <a
         href="/gestor/pesquisas/nova?inep={inep}"
+        data-tour="pesq-nova"
         class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
       >
         + Nova pesquisa
@@ -139,7 +140,7 @@
       {error}
     </div>
   {:else if data.length === 0}
-    <div class="rounded-card bg-white border border-gray-200 shadow-card p-10 text-center space-y-3">
+    <div class="rounded-card bg-white border border-gray-200 shadow-card p-10 text-center space-y-3" data-tour="pesq-conteudo">
       <p class="text-gray-500">Nenhuma pesquisa ainda para esta escola.</p>
       <a
         href="/gestor/pesquisas/nova?inep={inep}"
@@ -149,7 +150,7 @@
       </a>
     </div>
   {:else}
-    <ul class="space-y-3">
+    <ul class="space-y-3" data-tour="pesq-conteudo">
       {#each data as s (s.id)}
         <li class="rounded-card bg-white border border-gray-200 shadow-card p-4 flex flex-wrap items-center gap-3">
           <div class="flex-1 min-w-[220px]">

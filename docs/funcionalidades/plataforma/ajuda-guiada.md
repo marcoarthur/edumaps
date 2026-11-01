@@ -20,8 +20,9 @@ as entradas principais do menu; o da busca de escolas, que termina na
 comparação de redes do município; o do painel do gestor, que apresenta o
 raio-x da escola e os módulos de gestão; o das análises, que ensina a
 agrupar escolas parecidas e a ler o resultado no mapa; e um por módulo do
-gestor já coberto — relatórios, contatos, listas com QR code, envios de e-mail
-e listas dinâmicas.
+gestor — relatórios, contatos, listas com QR code, envios de e-mail, listas
+dinâmicas, pesquisas com a comunidade, reuniões e atas, inventário, relações
+institucionais e documentos e planos.
 
 ## Para quem
 
@@ -65,9 +66,8 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 
 - Têm roteiro a página inicial (primeiro acesso), a busca de escolas (com a
   passagem para a comparação de redes), o painel do gestor, as análises e os
-  módulos de relatórios, contatos, listas, envios e listas dinâmicas. Pesquisas,
-  reuniões, inventário, relações e documentos estão previstos; assistente e
-  administração ainda não têm.
+  dez módulos do gestor. O assistente e a administração ainda não têm. Telas
+  secundárias dos módulos (assistentes de criação, detalhes) também não.
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
 

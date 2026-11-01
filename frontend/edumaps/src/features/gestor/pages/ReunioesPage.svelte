@@ -143,10 +143,12 @@
       {/if}
       <a
         href="/gestor/contatos"
+        data-tour="reunioes-agenda"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Agenda</a>
       <a
         href="/gestor/reunioes/nova"
+        data-tour="reunioes-nova"
         class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
       >+ Nova reunião</a>
     </div>
@@ -161,6 +163,7 @@
   {:else}
     <!-- filtros -->
     <form
+      data-tour="reunioes-filtros"
       onsubmit={(e) => { e.preventDefault(); carregar(); }}
       class="rounded-card bg-white border border-gray-200 shadow-card p-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto_auto] items-end"
     >
@@ -194,7 +197,7 @@
       </button>
     </form>
 
-    <ul class="space-y-3">
+    <ul class="space-y-3" data-tour="reunioes-lista">
       {#each reunioes as r (r.id)}
         <li class="rounded-card bg-white border border-gray-200 shadow-card p-4 flex flex-wrap items-center gap-4">
           <div class="min-w-0 flex-1">
