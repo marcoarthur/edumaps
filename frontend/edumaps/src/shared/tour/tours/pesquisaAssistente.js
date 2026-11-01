@@ -29,6 +29,7 @@ export default {
       alvo: "pesquisa-etapa",
       titulo: "A etapa atual",
       texto:
+        "Na primeira vez, seus dados: nome, e-mail e uma senha para ver os resultados depois. " +
         "Em “Dados da pesquisa” vão o título, o convite à comunidade e as perguntas (até 30): escolha única, múltipla escolha, " +
         "lista suspensa ou resposta livre. Na revisão, “Finalizar e publicar” gera o link para a comunidade responder. " +
         "Para rever esta ajuda, use o “?” no menu.",
