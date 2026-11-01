@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (j) — fix da exclusão de pasta em Documentos (PR #321)
+
+- **PR #321 MERGEADO**: `excluirPasta` checa o conteúdo na árvore em memória
+  (`conteudoDaPasta`, em `constants/documentos.js`). Com conteúdo → aviso
+  (`avisoPastaNaoVazia`), sem confirmação. Vazia → "Excluir a pasta vazia…?
+  Esta ação não pode ser desfeita." O 409 `pasta_nao_vazia` do backend segue
+  tratado (corrida).
+- Mock de documentos guarda estado entre testes da página (subpasta criada
+  num teste aparece no seguinte): asserções de contagem exata ficam nos
+  testes unitários.
+- E2E: a escola 35211576 não tem pastas em `ubatexu.lan`. Testar exigiria
+  escrever na conta do developer, então não foi feito sem pedido.
+
 ## Sessão 2026-11-01 (i) — tours do gestor, lote 2 (PR #320): 10 módulos cobertos
 
 - **PR #320 MERGEADO** (`50e427e`): `gestor-pesquisas` (sem login, `?inep=`,

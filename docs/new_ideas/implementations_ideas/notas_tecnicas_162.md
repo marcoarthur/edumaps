@@ -233,7 +233,8 @@ têm tour; o catálogo fecha em 14 tours.
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
   Assistente e administração, e telas secundárias (assistentes de criação,
   detalhes), se houver demanda.
-- Documentos: confirmação de excluir pasta contradiz o backend
-  (`pasta_nao_vazia`). Bug de interface, fora do ciclo.
+- ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
+  **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
+  dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.
 - Reavaliar `svelte-tourlight` quando amadurecer. A troca fica restrita a
   `src/shared/tour/`.
