@@ -46,7 +46,8 @@ Nelas, dado ausente aparece como **“—”**, nunca como zero.
 ## Limitações conhecidas
 
 - Se o painel não carregar (por exemplo, código INEP inválido), o roteiro não
-  abre e continua pendente para a próxima visita em que o painel funcione.
+  abre e continua pendente para a próxima visita em que o painel funcione. O
+  botão **?** também só aparece quando o painel termina de carregar.
 - Enquanto o roteiro está aberto, as partes destacadas não recebem cliques.
   Feche-o para usar o painel.
 - A marca de “já visto” fica no seu navegador: em outro aparelho o roteiro

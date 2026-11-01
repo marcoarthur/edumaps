@@ -8,6 +8,18 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (f) (“?” na tela de erro do painel)
+
+Alvo `http://ubatexu.lan:8080` (deploy do branch `fix/frontend-ajuda-tela-erro`).
+
+| Verificação | Resultado |
+|---|---|
+| `/gestor/painel?inep=00000000` (“Escola não encontrada…”): **sem** “?” no menu | 🟢 |
+| Painel carregado (`inep=35211576`): “?” presente; nenhuma amostra com “?” sem o alvo | 🟢 |
+| “?” abre o tour no passo 1 com destaque em `gestor-escola` | 🟢 |
+| Outras páginas com tour (busca) seguem mostrando o “?” | 🟢 |
+| Testes unitários frontend | 🟢 117 arquivos / 1020 testes (3 novos: sem alvo, alvo chega/sai, alvo já presente) |
+
 ## Rodada 2026-11-01 (e) (telemetria da ajuda guiada)
 
 Alvo `http://ubatexu.lan:8080` (deploy do branch
@@ -115,9 +127,10 @@ painel responde 200 sem sessão).
 
 > **Não coberto**: estado logado (área de influência com mapa, equipamentos do
 > entorno). Sem login essas seções mostram “Entre como gestor desta escola…”;
-> o passo 8 destaca a seção nos dois estados. O “?” continua visível na tela de
-> erro do painel; aberto lá, cada passo espera o alvo e cai no popover
-> centralizado.
+> o passo 8 destaca a seção nos dois estados. O “?” continuava visível na tela
+> de erro do painel (cada passo caía no popover centralizado) — **corrigido no
+> branch `fix/frontend-ajuda-tela-erro`**: o “?” de tour com `prontoQuando` só
+> aparece quando o alvo existe.
 
 ## Rodada 2026-11-01 (b) (ajuda guiada — tour `primeiro-acesso`)
 

@@ -2,18 +2,41 @@
   // src/shared/tour/BotaoAjuda.svelte
   //
   // Botão "?" do menu: abre a ajuda guiada da página atual. Só aparece nas
-  // páginas que têm tour.
+  // páginas que têm tour — e, se o tour declara `prontoQuando` (página que
+  // carrega dados, ex.: painel do gestor), só quando esse alvo existe no
+  // DOM: nem em "Carregando…" nem na tela de erro, onde o tour não teria o
+  // que mostrar e cada passo cairia no popover centralizado.
   //
   // Não usar `disabled` enquanto o tour está aberto: o overlay já bloqueia o
   // clique, e um botão desabilitado perde o foco — o tourManager não
   // conseguiria devolvê-lo ao fechar.
+  import { seletorDoAlvo } from "./tourManager.svelte.js";
+
   /** @type {{ path: string, manager: import('./tourManager.svelte.js').TourManager }} */
   let { path, manager } = $props();
 
   let tour = $derived(manager.tourDaRota(path));
+
+  // Presença do alvo `prontoQuando`, acompanhada por MutationObserver só
+  // enquanto a página atual tem um tour assim (o observer é desligado ao
+  // trocar de página).
+  let alvoPronto = $state(false);
+  $effect(() => {
+    const seletor = tour?.prontoQuando ? seletorDoAlvo(tour.prontoQuando) : null;
+    if (!seletor) return;
+    const verificar = () => {
+      alvoPronto = document.querySelector(seletor) !== null;
+    };
+    verificar();
+    const observador = new MutationObserver(verificar);
+    observador.observe(document.body, { childList: true, subtree: true });
+    return () => observador.disconnect();
+  });
+
+  let disponivel = $derived(Boolean(tour) && (!tour.prontoQuando || alvoPronto));
 </script>
 
-{#if tour}
+{#if disponivel}
   <button
     type="button"
     onclick={() => manager.iniciar(tour.id)}
