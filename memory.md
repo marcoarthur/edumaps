@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (f) — telemetria do tour (PR #316) + "?" na tela de erro (PR #317)
+
+- **PR #316 MERGEADO** (`65afc6c`): evento `tour` → `session.tour`
+  (`tour_id`, `action`, `step` 1-based, `total`, `trigger` auto|button|link).
+  **`Controller::Session` agora valida VALORES** quando a regra declara
+  `valid`/`required`/`numeric` (padrão reutilizável para próximos eventos).
+  `Admin::Telemetry` → `tours` no overview; tabela "Ajuda guiada" no painel.
+- **Bug do driver.js (desde a fase 1)**: `onDestroyed` só dispara com elemento
+  ativo; fechar durante a animação (~0,6–1,2 s) travava o `TourManager`.
+  Agora tudo passa por `#finalizar()` via `onDestroyStarted`. **Não voltar a
+  usar `onDestroyed`.** No dublê: `destroy()` = API sem ganchos; `fechar()` =
+  ×/Esc.
+- **PR #317 MERGEADO** (`fdc4a8c`): `BotaoAjuda` só mostra o "?" de tour com
+  `prontoQuando` quando o alvo existe (MutationObserver só nessas páginas).
+- **Ao testar o driver.js por script**: `onHighlighted` só dispara após a
+  animação; ler estado < ~1,2 s após um passo dá falso negativo.
+- **Base real**: eventos de teste deste ciclo ficaram em `clean.event_store`
+  do dev (`database.edumaps`), ~10 aberturas de `busca-escola`.
+- Detalhe na nota técnica 162, §7.
+
 ## Sessão 2026-11-01 (e) — gzip dos estáticos no nginx (PR #315)
 
 - **PR #315 MERGEADO** (`0a91b85`; commits `fc07a0c`, `8cdccdf`): bloco

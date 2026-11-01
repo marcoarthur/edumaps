@@ -133,13 +133,44 @@ Lição de método: **medir no cliente antes de concluir pelo log do servidor**.
 - Teclas apertadas durante a animação do driver.js são ignoradas. Isso só
   aparece em automação.
 
+## 7. Pós-ciclo: telemetria e dois fixes (PRs #316, #317)
+
+| PR | Merge | Escopo |
+|---|---|---|
+| #316 | `65afc6c` | telemetria do tour (backend + frontend + painel admin) + fix do fechamento durante a animação |
+| #317 | `fdc4a8c` | “?” só aparece quando o painel do gestor carregou |
+
+**Telemetria.** Um evento `tour` (`tour_id`, `action` start/complete/dismiss,
+`step` 1-based, `total`, `trigger` auto/button/link). O
+`Controller::Session` passou a validar também os **valores** (padrão novo,
+genérico: `valid`/`required`/`numeric` por tipo). Valor fora do padrão
+descarta o evento inteiro, e um cliente adulterado não grava texto livre.
+Retomada após reload não conta como abertura. O Painel de Administração
+mostra, por tour, aberturas por gatilho, conclusões, fechamentos, taxa
+(“—” sem abertura) e passo de maior abandono.
+
+**Bug que a telemetria revelou (existia desde a fase 1).** O driver.js só
+chama `onDestroyed` se já há elemento ativo, e esse estado só existe depois
+da animação de cada passo (~0,6–1,2 s). Fechar nessa janela destruía o tour
+sem avisar: `ativo` ficava preso, sem `dismiss` e sem limpar a sessão, e
+**nenhum tour automático nem `?tour=` abria até recarregar a página**.
+Correção: todo encerramento passa por `#finalizar()` (idempotente), acionado
+por `onDestroyStarted` (chamado antes da checagem), `encerrar()` e conclusão.
+`onDestroyed` não é mais usado. Lição: **ganchos de biblioteca de UI podem ser
+condicionais. O dono do estado deve ter um caminho de encerramento próprio.**
+O dublê de teste foi ajustado para imitar o driver real (`destroy()` da API
+não chama ganchos; `fechar()` chama `onDestroyStarted`).
+
+**“?” na tela de erro.** Para tour com `prontoQuando`, o `BotaoAjuda` só se
+mostra quando o alvo existe no DOM (`MutationObserver` ativo só nessas
+páginas). Fecha a pendência da fase 3.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
   bundle 1030→304 KB, 1ª carga pós-deploy 12,6→1,5 s.
-- Telemetria do tour (iniciado/concluído/abandonado por passo, só agregados).
-- O “?” aparece na tela de erro do painel e os passos caem no popover
-  centralizado. Caso raro.
+- ~~Telemetria do tour~~ — **PR #316** (§7).
+- ~~“?” na tela de erro do painel~~ — **PR #317** (§7).
 - A abertura automática afeta e2e em perfil limpo. Pré-marcar
   `edumaps.tour.<id>.v1` no setup se incomodar.
 - Tours para módulos do gestor, assistente e administração, se houver demanda.
