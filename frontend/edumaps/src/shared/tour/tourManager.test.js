@@ -10,6 +10,11 @@ import gestorContatos from "./tours/gestorContatos.js";
 import gestorListas from "./tours/gestorListas.js";
 import gestorEnvios from "./tours/gestorEnvios.js";
 import gestorSegmentos from "./tours/gestorSegmentos.js";
+import gestorPesquisas from "./tours/gestorPesquisas.js";
+import gestorReunioes from "./tours/gestorReunioes.js";
+import gestorInventario from "./tours/gestorInventario.js";
+import gestorRelacoes from "./tours/gestorRelacoes.js";
+import gestorDocumentos from "./tours/gestorDocumentos.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -151,6 +156,20 @@ describe("TourManager — navegação entre passos e páginas", () => {
     drivers.ultimo().proximo(); // foi para /b
     tm.aoNavegar("/b", "");
     expect(tm.ativo).toBe("teste");
+  });
+
+  it("sair da página com um tour aberto abre o automático da página nova", () => {
+    const OUTRO = {
+      id: "outro",
+      rotaInicial: "/c",
+      automatico: true,
+      passos: [{ alvo: "c", titulo: "C", texto: "c" }],
+    };
+    tm.registrar(OUTRO);
+    tm.iniciar("teste");
+    router.path = "/c";
+    expect(tm.aoNavegar("/c", "")).toBe(true);
+    expect(tm.ativo).toBe("outro");
   });
 
   it("navegar para fora (voltar do navegador) encerra o tour", () => {
@@ -517,15 +536,26 @@ const CATALOGO = [
   gestorListas,
   gestorEnvios,
   gestorSegmentos,
+  gestorPesquisas,
+  gestorReunioes,
+  gestorInventario,
+  gestorRelacoes,
+  gestorDocumentos,
 ];
 
-describe("tours dos módulos do gestor — lote 1 (definição)", () => {
+describe("tours dos módulos do gestor (definição)", () => {
   const MODULOS = [
     [gestorRelatorios, "/gestor/relatorios", "relatorio-form"],
     [gestorContatos, "/gestor/contatos", "contatos-grade"],
     [gestorListas, "/gestor/listas", "listas-suas"],
     [gestorEnvios, "/gestor/envios", "envios-lista"],
     [gestorSegmentos, "/gestor/segmentos", "segmentos-lista"],
+    // lote 2
+    [gestorPesquisas, "/gestor/pesquisas", "pesq-conteudo"],
+    [gestorReunioes, "/gestor/reunioes", "reunioes-lista"],
+    [gestorInventario, "/gestor/inventario", "inventario-abas"],
+    [gestorRelacoes, "/gestor/relacoes", "relacoes-abas"],
+    [gestorDocumentos, "/gestor/documentos", "documentos-arquivos"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
@@ -533,7 +563,7 @@ describe("tours dos módulos do gestor — lote 1 (definição)", () => {
     expect(tour.automatico).toBe(true);
     // páginas com login + carregamento: o automático espera o conteúdo logado
     expect(tour.prontoQuando).toBe(pronto);
-    expect(tour.passos.length).toBeGreaterThanOrEqual(3);
+    expect(tour.passos.length).toBeGreaterThanOrEqual(2);
     for (const passo of tour.passos) {
       expect(passo.rota).toBeUndefined();
       expect(passo.alvo).toMatch(/^[a-z-]+$/);

@@ -56,6 +56,11 @@ reaberto pelo **?**:
 | **Listas e QR** | as listas, como criar (o que coletar, exigir confirmação) e o histórico de exclusões |
 | **Envios** | limites do dia, a lista de envios por estado e como criar um envio |
 | **Listas dinâmicas** | o que é, como filtrar e para que serve nos envios |
+| **Pesquisas** | rascunhos e publicadas, link para a comunidade, resultados e como criar |
+| **Reuniões e atas** | filtros, a lista de reuniões, como agendar e a agenda de contatos |
+| **Inventário** | as quatro seções e como começar importando do Censo |
+| **Relações** | as quatro seções, filtros, nova relação e o detalhe de cada uma |
+| **Documentos** | pastas e versões, envio de arquivo, tags e atividade recente |
 
 O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão
 “Enviar e-mail” de uma lista (direto no editor), ele fica para a próxima visita.

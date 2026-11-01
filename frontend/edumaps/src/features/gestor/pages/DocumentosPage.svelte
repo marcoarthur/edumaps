@@ -334,6 +334,7 @@
     {#if inep}
       <div class="flex items-center gap-2 flex-wrap">
         <button
+          data-tour="documentos-enviar"
           type="button"
           onclick={escolherArquivo}
           disabled={enviando}
@@ -342,6 +343,7 @@
           {enviando ? "Enviando…" : "⬆ Enviar arquivo"}
         </button>
         <button
+          data-tour="documentos-atividade"
           type="button"
           onclick={() => {
             mostraAtividade = !mostraAtividade;
@@ -378,7 +380,7 @@
     <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-4">{error}</div>
   {:else}
     <div class="grid lg:grid-cols-3 gap-5">
-      <section class="lg:col-span-2 border border-gray-200 rounded-lg p-3 space-y-2 bg-white">
+      <section class="lg:col-span-2 border border-gray-200 rounded-lg p-3 space-y-2 bg-white" data-tour="documentos-arquivos">
         <div class="flex items-center justify-between">
 <h2 class="font-semibold text-gray-800">
           Arquivos em <span class="text-indigo-700">{pastaNome(selecionada)}</span>
@@ -397,10 +399,10 @@
         </p>
       </section>
 
-      <aside class="border border-gray-200 rounded-lg p-3 bg-white h-fit">
+      <aside class="border border-gray-200 rounded-lg p-3 bg-white h-fit" data-tour="documentos-ajuda">
         <h2 class="font-semibold text-gray-800 mb-2">🧭 Como funciona</h2>
         <ul class="text-sm text-gray-600 space-y-1.5 list-disc pl-4">
-          <li><strong>Enviar arquivo</strong> público ou dentro de uma pasta.</li>
+          <li><strong>Enviar arquivo</strong> na pasta Raiz ou dentro de uma pasta.</li>
           <li>Mesmo nome, mesma pasta = <strong>nova versão</strong> (a anterior continua baixável).</li>
           <li><strong>Tags</strong> livres ajudam a achar rápido o PPP de cada ano.</li>
           <li>Tudo que muda fica no <strong>histórico</strong> com autor e data.</li>

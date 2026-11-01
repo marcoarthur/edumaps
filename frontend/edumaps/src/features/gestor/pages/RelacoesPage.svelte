@@ -376,7 +376,7 @@
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">{error}</div>
   {:else}
-    <nav class="flex flex-wrap gap-1" aria-label="Seções das relações">
+    <nav class="flex flex-wrap gap-1" aria-label="Seções das relações" data-tour="relacoes-abas">
       {#each ABAS as a (a.key)}
         <button type="button" onclick={() => (aba = a.key)}
           class={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${aba === a.key ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
@@ -388,7 +388,7 @@
     {#if aba === "relacoes"}
       <section class="space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2" data-tour="relacoes-filtros">
             <input bind:value={filtros.q} placeholder="Buscar assunto/entidade…" class="h-9 px-3 rounded-md border border-gray-300 text-sm" />
             <select bind:value={filtros.status} class="h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
               <option value="">Todos os status</option>
@@ -399,11 +399,11 @@
               {#each RELACAO_PRIORIDADES as p (p.value)}<option value={p.value}>{p.label}</option>{/each}
             </select>
           </div>
-          <button type="button" onclick={() => abrirRelacao()}
+          <button type="button" data-tour="relacoes-nova" onclick={() => abrirRelacao()}
             class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">+ Nova relação</button>
         </div>
 
-        <div class="rounded-card bg-white border border-gray-200 shadow-card divide-y divide-gray-100">
+        <div class="rounded-card bg-white border border-gray-200 shadow-card divide-y divide-gray-100" data-tour="relacoes-lista">
           {#each relacoesFiltradas as r (r.id)}
             <div class={`flex flex-wrap items-start justify-between gap-2 p-3 ${r.vencida ? "bg-red-50/50" : ""}`}>
               <div class="min-w-0">
