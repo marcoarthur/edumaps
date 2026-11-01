@@ -8,6 +8,18 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (f) (“?” na tela de erro do painel)
+
+Alvo `http://ubatexu.lan:8080` (deploy do branch `fix/frontend-ajuda-tela-erro`).
+
+| Verificação | Resultado |
+|---|---|
+| `/gestor/painel?inep=00000000` (“Escola não encontrada…”): **sem** “?” no menu | 🟢 |
+| Painel carregado (`inep=35211576`): “?” presente; nenhuma amostra com “?” sem o alvo | 🟢 |
+| “?” abre o tour no passo 1 com destaque em `gestor-escola` | 🟢 |
+| Outras páginas com tour (busca) seguem mostrando o “?” | 🟢 |
+| Testes unitários frontend | 🟢 117 arquivos / 1020 testes (3 novos: sem alvo, alvo chega/sai, alvo já presente) |
+
 ## Rodada 2026-11-01 (e) (telemetria da ajuda guiada)
 
 Alvo `http://ubatexu.lan:8080` (deploy do branch
