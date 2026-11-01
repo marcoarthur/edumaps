@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (b) — tour de primeiro acesso (PR #312)
+
+- **PR #312 MERGEADO** (`b8517ca`; commits `0eae50a`, `0ae3915`): tour
+  `primeiro-acesso` (7 passos) em `/`, automático na 1ª visita — apresentação,
+  atalhos da home, menu (Busca Escola, Análises, Assistente do Censo, Gestor)
+  e botão "?". Configurações/Administração/Sobre ficam fora (áreas internas).
+- **Alvos**: `NAV_LINKS` em `App.svelte` ganhou campo `tour` →
+  `data-tour={item.tour}`; `BotaoAjuda` tem `data-tour="menu-ajuda"`.
+- **Textos de tour devem bater com a ficha da funcionalidade**: o rascunho
+  dizia que o Assistente do Censo responde "com a fonte" — falso (exclusivo de
+  gestor com login, números + gráfico). Conferir `docs/funcionalidades/` antes
+  de escrever cada passo.
+- **Problema aberto (ambiente, não do tour)**: 2× a 1ª carga após
+  `deploy_frontend_dev` ficou em branco; `edumaps-frontend-access.log` mostra
+  `GET /` 200 **sem GET do bundle** `index-*.js` (13:28:28). Recarga resolve.
+  Investigar à parte (Chrome de automação × `index.html no-cache` × restart do
+  nginx).
+- **driver.js**: setas durante a animação são ignoradas (um passo por vez).
+- Ver nota técnica 160. Pendências da ajuda guiada: tours do painel do gestor
+  e das análises; telemetria do tour; nota consolidada ao fim da feature.
+
 ## Sessão 2026-11-01 — ajuda guiada interativa (PR #311)
 
 - **PR #311 MERGEADO** (`a3011e7`; commits `d4b9643`, `6612d64`, `7dbe268`,
