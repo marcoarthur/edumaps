@@ -8,6 +8,24 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (j) (tour do Assistente do Censo)
+
+Alvo `http://ubatexu.lan:8080/chat/censo` (branch
+`feat/frontend-tour-assistente`), com a sessão de gestor já aberta no Chrome
+(sem injeção de credencial). **Nenhuma pergunta enviada**: cada pergunta
+consome o serviço de IA da instalação.
+
+| Verificação | Resultado |
+|---|---|
+| Abre sozinho logado; 4/4 alvos certos (escopo, pergunta, conversa, ações), popover na janela | 🟢 |
+| Layout do chat intacto (alvo da conversa no contêiner flex; caixa de pergunta envolvida) | 🟢 (screenshot) |
+| Contrato `features/chat/pages/tourAlvos.test.js`: logado todos os alvos; sem sessão não abre | 🟢 2/2 |
+| Testes existentes do `ChatPage` | 🟢 11/11 |
+| Ficha `historico-conversas.md` dizia “salvar automaticamente”; o código só salva pelo botão | 🔴→🟢 (ficha corrigida) |
+| Suíte frontend | 🟢 120 arquivos / 1068 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (i) (tours dos módulos do gestor — lote 2)
 
 Tours: Pesquisas, Reuniões, Inventário, Relações, Documentos (branch
