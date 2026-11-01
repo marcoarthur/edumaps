@@ -8,6 +8,24 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (k) (tour do Painel de Administração)
+
+Alvo `http://ubatexu.lan:8080/admin` (branch `feat/frontend-tour-admin`).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Sessão de gestor **sem** perfil admin: tela “restrita”, nenhum tour, sem “?”, nada marcado | Chrome (sessão existente) | 🟢 |
+| Admin com dados: `prontoQuando` e os 7 alvos existem | vitest `features/admin/pages/tourAlvos.test.js` | 🟢 |
+| 403 (“restrita”) e sem sessão: não abre | vitest | 🟢 2/2 |
+| Testes existentes do `AdminTelemetryPage` | vitest | 🟢 5/5 |
+| Suíte frontend | vitest | 🟢 121 arquivos / 1072 testes |
+
+> **Não coberto pelo agente: o tour visível com perfil de administrador.** A
+> sessão aberta no Chrome não é de administrador, e o agente não digita nem
+> injeta credenciais. A validação visual fica com o developer.
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (j) (tour do Assistente do Censo)
 
 Alvo `http://ubatexu.lan:8080/chat/censo` (branch
