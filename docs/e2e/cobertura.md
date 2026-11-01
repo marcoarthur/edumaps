@@ -8,6 +8,31 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (b) (ajuda guiada — tour `primeiro-acesso`)
+
+Alvo `http://ubatexu.lan:8080` (deploy do branch
+`feat/frontend-tour-primeiro-acesso`), Chrome real via extensão.
+
+| Verificação | Resultado |
+|---|---|
+| 1ª visita a `/` abre o tour sozinho (“Bem-vindo ao EduMaps”, 1 de 7) | 🟢 |
+| Passos 1–2 destacam apresentação e atalhos da home | 🟢 |
+| Passos 3–6 destacam Busca Escola, Análises, Assistente do Censo, Gestor no menu escuro | 🟢 |
+| Passo 7 destaca o botão “?” (Concluir) | 🟢 |
+| Concluir → `edumaps.tour.primeiro-acesso.v1 = concluido` | 🟢 |
+| Revisita a `/` não reabre; “?” na home = “Ajuda guiada: Conhecer o EduMaps” | 🟢 |
+| Tour da busca continua independente (já visto → não reabre) | 🟢 |
+| Testes unitários frontend | 🟢 117 arquivos / 999 testes |
+
+> **Observação de ambiente (2ª ocorrência)**: a primeira carga após o
+> `deploy_frontend_dev` ficou em branco. O `edumaps-frontend-access.log` mostra
+> o `GET /` (200) às 13:28:28 **sem nenhum GET do bundle** `index-*.js` nessa
+> carga — o navegador não chegou a pedir o script; a recarga seguinte
+> funcionou. Não é do código do tour (nenhum JS do app rodou). Investigar à
+> parte (cache do Chrome de automação × `index.html` `no-cache`).
+> Comportamento do driver.js: setas apertadas durante a animação são
+> ignoradas (avança um passo por vez).
+
 ## Rodada 2026-11-01 (ajuda guiada — tour `busca-escola`)
 
 Alvo `http://ubatexu.lan:8080` (deploy `deploy_frontend_dev` do branch
