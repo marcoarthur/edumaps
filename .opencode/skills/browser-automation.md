@@ -43,6 +43,10 @@ os **e2e da SPA EduMaps** (cobertura em `docs/e2e/cobertura.md`).
   input.dispatchEvent(new Event('input', {bubbles:true}));
   ```
 - Após a ação, aguarde (SPA+API) e re-avalie até o estado esperado.
+- **Profile limpo abre tours da ajuda guiada sozinhos** (overlay bloqueia
+  cliques). Antes da primeira rota, navegar uma vez para
+  `http://ubatexu.lan:8080/?tour=off` (fica no `localStorage` do profile).
+  Botão “?” e `?tour=<id>` continuam funcionando; `?tour=on` religa.
 
 `browser_url` padrão: `http://127.0.0.1:9222` (ou env `OPENCODE_BROWSER_URL`).
 
