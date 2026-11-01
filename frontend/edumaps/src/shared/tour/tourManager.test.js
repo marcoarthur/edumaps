@@ -17,6 +17,7 @@ import gestorRelacoes from "./tours/gestorRelacoes.js";
 import gestorDocumentos from "./tours/gestorDocumentos.js";
 import assistenteCenso from "./tours/assistenteCenso.js";
 import adminPainel from "./tours/adminPainel.js";
+import configPainel from "./tours/configPainel.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -545,6 +546,7 @@ const CATALOGO = [
   gestorDocumentos,
   assistenteCenso,
   adminPainel,
+  configPainel,
 ];
 
 describe("tours dos módulos do gestor (definição)", () => {
@@ -564,6 +566,7 @@ describe("tours dos módulos do gestor (definição)", () => {
     [assistenteCenso, "/chat/censo", "chat-escopo"],
     // Painel de Administração (gestor com perfil admin)
     [adminPainel, "/admin", "admin-logins"],
+    [configPainel, "/config", "config-grade"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
