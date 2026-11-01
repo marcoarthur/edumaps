@@ -316,8 +316,8 @@
     </div>
   </div>
 {:else}
-  <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-6" data-tour="pesquisa-etapa">
+    <div class="flex flex-wrap items-center justify-between gap-3" data-tour="pesquisa-etapas">
       <StepsIndicator steps={stepLabels} current={step} />
       <p class="text-xs text-gray-500" aria-live="polite">{savedLabel()}</p>
     </div>

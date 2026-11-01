@@ -254,8 +254,8 @@
   {:else if precisaLogin}
     <GestorLoginCard onLogin={onLogin} mensagem="Entre para ver a reunião." />
   {:else if reuniao}
-    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-5">
-      <section class="flex flex-wrap items-center gap-2">
+    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-5" data-tour="reuniao-detalhe">
+      <section class="flex flex-wrap items-center gap-2" data-tour="reuniao-resumo">
         <span class={`rounded-full px-3 py-1 text-xs font-semibold ${REUNIAO_STATUS_BADGE[reuniao.status] ?? "bg-gray-100 text-gray-600"}`}>
           {REUNIAO_STATUS_LABELS[reuniao.status] ?? reuniao.status}
         </span>
@@ -290,7 +290,9 @@
       </dl>
 
       {#if convite}
-        <ConviteBox convite={convite} telefoneInicial={telefoneInicial} />
+        <div data-tour="reuniao-convite">
+          <ConviteBox convite={convite} telefoneInicial={telefoneInicial} />
+        </div>
       {/if}
 
       {#if reuniao.pauta_texto}
@@ -322,7 +324,7 @@
       </section>
 
       <!-- anexos pauta/ata -->
-      <section class="space-y-3">
+      <section class="space-y-3" data-tour="reuniao-anexos">
         <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Anexos</h2>
         {#each ["pauta", "ata"] as tipo (tipo)}
           {@const anexo = ax[tipo]}
@@ -359,7 +361,7 @@
       </section>
 
       <!-- ata em texto -->
-      <section class="space-y-2">
+      <section class="space-y-2" data-tour="reuniao-ata">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Ata (decisões da reunião)</h2>
           {#if reuniao.status === "cancelada"}

@@ -73,6 +73,43 @@ export function chaveVisto(tour) {
 }
 
 /**
+ * Rotas de tour podem ser padrões com segmentos `:param` (ex.:
+ * "/gestor/reunioes/:id") e `rotaInicial` pode ser uma lista (uma página que
+ * atende duas rotas, como “nova” e “editar”). Mesma regra do matchRoute do
+ * app: segmento a segmento, `:x` casa qualquer valor não vazio.
+ * @param {string|string[]|undefined} padrao
+ * @param {string} path - pathname, sem query
+ */
+export function rotaCasa(padrao, path) {
+  if (!padrao || typeof path !== "string") return false;
+  if (Array.isArray(padrao)) return padrao.some((p) => rotaCasa(p, path));
+  const limpa = (p) => p.split("?")[0].replace(/\/+$/, "") || "/";
+  const a = limpa(padrao).split("/").filter(Boolean);
+  const b = limpa(path).split("/").filter(Boolean);
+  return a.length === b.length && a.every((seg, i) => seg.startsWith(":") || seg === b[i]);
+}
+
+/**
+ * Quão específico é o casamento: menos segmentos `:param` = mais específico.
+ * Com `/x/nova` e `/x/:id` ambos casando `/x/nova`, vence o literal — sem
+ * depender da ordem de registro no catálogo.
+ * @returns {number} quantidade de `:param` do padrão que casou (Infinity se nenhum)
+ */
+function generalidade(padrao, path) {
+  const lista = Array.isArray(padrao) ? padrao : [padrao];
+  let melhor = Infinity;
+  for (const p of lista) {
+    if (rotaCasa(p, path)) melhor = Math.min(melhor, (p.match(/\/:/g) ?? []).length);
+  }
+  return melhor;
+}
+
+/** Rota concreta (sem `:param`) e única: dá para navegar até ela. */
+function navegavel(rota) {
+  return typeof rota === "string" && !rota.includes("/:");
+}
+
+/**
  * Normaliza a definição: todo passo fica com `rota` explícita (herda a do
  * passo anterior; o primeiro herda `rotaInicial`).
  */
@@ -150,10 +187,16 @@ export class TourManager {
 
   /** Tour cuja página inicial é `path` (é o que o botão de ajuda oferece). */
   tourDaRota(path) {
+    let escolhido = null;
+    let menor = Infinity;
     for (const tour of this.#tours.values()) {
-      if (tour.rotaInicial === path) return tour;
+      const g = generalidade(tour.rotaInicial, path);
+      if (g < menor) {
+        menor = g;
+        escolhido = tour;
+      }
     }
-    return null;
+    return escolhido;
   }
 
   jaVisto(tour) {
@@ -181,7 +224,7 @@ export class TourManager {
     if (this.ativo) {
       // Navegação feita pelo próprio tour (multi-página): nada a fazer.
       const rotaDoPasso = this.#tour?.passos[this.passo]?.rota;
-      if (!rotaDoPasso || rotaDoPasso === path) return false;
+      if (!rotaDoPasso || rotaCasa(rotaDoPasso, path)) return false;
       // Voltar do navegador (popstate) ou link fora do tour: o alvo do passo
       // sumiu da tela. Fecha e SEGUE avaliando a página nova — antes parava
       // aqui, e o tour automático da página de destino nunca abria.
@@ -195,14 +238,14 @@ export class TourManager {
     }
     if (pedido === "on") remover(this.#local, CHAVE_AUTOMATICO);
     if (pedido && this.#tours.has(pedido)) {
-      this.iniciar(pedido, { origem: "link" });
-      return true;
+      // pode recusar (tour de rota-padrão fora da página): devolve o resultado
+      return this.iniciar(pedido, { origem: "link" });
     }
 
     const salvo = this.#lerSessao();
     if (salvo) {
       const tour = this.#tours.get(salvo.id);
-      if (tour && tour.passos[salvo.passo]?.rota === path) {
+      if (tour && rotaCasa(tour.passos[salvo.passo]?.rota, path)) {
         this.iniciar(salvo.id, { passo: salvo.passo, origem: "resume" });
         return true;
       }
@@ -252,6 +295,13 @@ export class TourManager {
   iniciar(id, { passo = 0, origem = "button" } = {}) {
     const tour = this.#tours.get(id);
     if (!tour) return false;
+    // Passo inicial com rota-padrão (detalhe de um item, “nova”/“editar”):
+    // não há URL concreta para navegar — só abre já estando na página.
+    const rotaInicialDoPasso = tour.passos[passo]?.rota;
+    const caminhoAtual = this.#router.path.split("?")[0];
+    if (rotaInicialDoPasso && !navegavel(rotaInicialDoPasso) && !rotaCasa(rotaInicialDoPasso, caminhoAtual)) {
+      return false;
+    }
     if (this.ativo) this.encerrar();
 
     this.#tour = tour;
@@ -341,7 +391,7 @@ export class TourManager {
     // Atualiza o passo ANTES de navegar: a mudança de rota dispara
     // aoNavegar(), que encerraria o tour se a rota não batesse com o passo.
     this.passo = indice;
-    if (rota && rota !== this.#router.path) this.#router.navigate(rota);
+    if (navegavel(rota) && !rotaCasa(rota, this.#router.path)) this.#router.navigate(rota);
     this.#driver.drive(indice);
   }
 

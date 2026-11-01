@@ -289,7 +289,7 @@
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">{error}</div>
   {:else if relacao}
     <!-- resumo -->
-    <section class="rounded-card bg-white border border-gray-200 shadow-card p-4 space-y-2">
+    <section class="rounded-card bg-white border border-gray-200 shadow-card p-4 space-y-2" data-tour="relacao-resumo">
       <div class="flex flex-wrap items-center gap-2">
         <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_STATUS_BADGE[relacao.status] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_STATUS_LABELS[relacao.status] ?? relacao.status}</span>
         <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_PRIORIDADE_BADGE[relacao.prioridade] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_PRIORIDADE_LABELS[relacao.prioridade] ?? relacao.prioridade}</span>
@@ -305,7 +305,7 @@
     </section>
 
     <!-- timeline de interações -->
-    <section class="space-y-3">
+    <section class="space-y-3" data-tour="relacao-interacoes">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold text-gray-900">Histórico de interações</h2>
         <button type="button" onclick={novaInteracao} class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">+ Interação</button>
@@ -363,7 +363,7 @@
     </section>
 
     <!-- tarefas (checklist) -->
-    <section class="space-y-3">
+    <section class="space-y-3" data-tour="relacao-tarefas">
       <h2 class="text-sm font-semibold text-gray-900">Tarefas</h2>
       <div class="rounded-card border border-gray-200 bg-white p-3 space-y-2">
         <div class="grid gap-2 sm:grid-cols-3">
@@ -398,7 +398,7 @@
     </section>
 
     <!-- documentos -->
-    <section class="space-y-3">
+    <section class="space-y-3" data-tour="relacao-documentos">
       <h2 class="text-sm font-semibold text-gray-900">Documentos</h2>
       <div class="rounded-card border border-gray-200 bg-white p-3 space-y-2">
         <div class="grid gap-2 sm:grid-cols-3">

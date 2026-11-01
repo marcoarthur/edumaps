@@ -26,6 +26,11 @@ import gestorDocumentos from "./tours/gestorDocumentos.js";
 import assistenteCenso from "./tours/assistenteCenso.js";
 import adminPainel from "./tours/adminPainel.js";
 import configPainel from "./tours/configPainel.js";
+import pesquisaAssistente from "./tours/pesquisaAssistente.js";
+import pesquisaResultados from "./tours/pesquisaResultados.js";
+import reuniaoAssistente from "./tours/reuniaoAssistente.js";
+import reuniaoDetalhe from "./tours/reuniaoDetalhe.js";
+import relacaoDetalhe from "./tours/relacaoDetalhe.js";
 
 export const tourManager = new TourManager({
   router,
@@ -53,6 +58,12 @@ export const tourManager = new TourManager({
   assistenteCenso,
   adminPainel,
   configPainel,
+  // telas secundárias (rotas com :id e listas — ver rotaCasa)
+  pesquisaAssistente,
+  pesquisaResultados,
+  reuniaoAssistente,
+  reuniaoDetalhe,
+  relacaoDetalhe,
 );
 
 export { default as BotaoAjuda } from "./BotaoAjuda.svelte";

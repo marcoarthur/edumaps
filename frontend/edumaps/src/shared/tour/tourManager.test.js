@@ -1,6 +1,6 @@
 // src/shared/tour/tourManager.test.js
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { TourManager, chaveVisto, seletorDoAlvo, CHAVE_AUTOMATICO } from "./tourManager.svelte.js";
+import { TourManager, chaveVisto, seletorDoAlvo, CHAVE_AUTOMATICO, rotaCasa } from "./tourManager.svelte.js";
 import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
 import painelGestor from "./tours/painelGestor.js";
@@ -18,6 +18,11 @@ import gestorDocumentos from "./tours/gestorDocumentos.js";
 import assistenteCenso from "./tours/assistenteCenso.js";
 import adminPainel from "./tours/adminPainel.js";
 import configPainel from "./tours/configPainel.js";
+import pesquisaAssistente from "./tours/pesquisaAssistente.js";
+import pesquisaResultados from "./tours/pesquisaResultados.js";
+import reuniaoAssistente from "./tours/reuniaoAssistente.js";
+import reuniaoDetalhe from "./tours/reuniaoDetalhe.js";
+import relacaoDetalhe from "./tours/relacaoDetalhe.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -308,6 +313,92 @@ describe("TourManager — disparo", () => {
   });
 });
 
+describe("rotas com padrão (:id) e lista de rotas", () => {
+  it("rotaCasa: exata, padrão, lista, barra final e query", () => {
+    expect(rotaCasa("/gestor/reunioes", "/gestor/reunioes")).toBe(true);
+    expect(rotaCasa("/gestor/reunioes/:id", "/gestor/reunioes/42")).toBe(true);
+    expect(rotaCasa("/gestor/reunioes/:id", "/gestor/reunioes")).toBe(false);
+    expect(rotaCasa("/gestor/reunioes/:id", "/gestor/reunioes/42/editar")).toBe(false);
+    expect(rotaCasa("/gestor/reunioes/:id", "/gestor/reunioes/nova")).toBe(true); // como o matchRoute
+    expect(rotaCasa(["/a/nova", "/a/:id/editar"], "/a/7/editar")).toBe(true);
+    expect(rotaCasa(["/a/nova", "/a/:id/editar"], "/a/7")).toBe(false);
+    expect(rotaCasa("/x/", "/x?y=1")).toBe(true);
+    expect(rotaCasa(undefined, "/x")).toBe(false);
+  });
+
+  const DETALHE = {
+    id: "detalhe",
+    rotaInicial: "/itens/:id",
+    automatico: true,
+    passos: [
+      { alvo: "a", titulo: "A", texto: "a" },
+      { alvo: "b", titulo: "B", texto: "b" },
+    ],
+  };
+  const WIZ = {
+    id: "wiz",
+    rotaInicial: ["/itens/nova", "/itens/:id/editar"],
+    automatico: true,
+    passos: [{ alvo: "w", titulo: "W", texto: "w" }],
+  };
+
+  it("tour de detalhe abre na página do item e o “?” o encontra", () => {
+    tm.registrar(DETALHE);
+    router.path = "/itens/42";
+    expect(tm.tourDaRota("/itens/42")?.id).toBe("detalhe");
+    expect(tm.aoNavegar("/itens/42", "")).toBe(true);
+  });
+
+  it("avançar num tour de padrão NÃO navega para uma URL com :id", () => {
+    tm.registrar(DETALHE);
+    router.path = "/itens/42";
+    tm.iniciar("detalhe");
+    drivers.ultimo().proximo();
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(tm.passo).toBe(1);
+    expect(tm.ativo).toBe("detalhe");
+    // e a navegação do roteador não encerra o tour (o padrão casa)
+    tm.aoNavegar("/itens/42", "");
+    expect(tm.ativo).toBe("detalhe");
+  });
+
+  it("?tour=<id> de um tour de padrão fora da página não abre (não há URL para ir)", () => {
+    tm.registrar(DETALHE);
+    router.path = "/outra";
+    expect(tm.aoNavegar("/outra", "?tour=detalhe")).toBe(false);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(tm.ativo).toBeNull();
+  });
+
+  it("lista de rotas: o mesmo tour serve “nova” e “editar”", () => {
+    tm.registrar(WIZ);
+    expect(tm.tourDaRota("/itens/nova")?.id).toBe("wiz");
+    expect(tm.tourDaRota("/itens/9/editar")?.id).toBe("wiz");
+    router.path = "/itens/9/editar";
+    expect(tm.aoNavegar("/itens/9/editar", "")).toBe(true);
+  });
+
+  it("colisão /x/nova × /x/:id: vence o mais específico, em qualquer ordem de registro", () => {
+    const detalhe = { id: "det", rotaInicial: "/r/:id", passos: [{ alvo: "d", titulo: "D", texto: "d" }] };
+    const assistente = { id: "wz", rotaInicial: ["/r/nova", "/r/:id/editar"], passos: [{ alvo: "w", titulo: "W", texto: "w" }] };
+    for (const ordem of [[detalhe, assistente], [assistente, detalhe]]) {
+      const m = new TourManager({ router, criarDriver: drivers.criar }).registrar(...ordem);
+      expect(m.tourDaRota("/r/nova")?.id).toBe("wz");
+      expect(m.tourDaRota("/r/42")?.id).toBe("det");
+      expect(m.tourDaRota("/r/42/editar")?.id).toBe("wz");
+    }
+  });
+
+  it("retomada após recarregar casa a rota-padrão do passo salvo", () => {
+    tm.registrar(DETALHE);
+    sessao.setItem("edumaps.tour.em-andamento", JSON.stringify({ id: "detalhe", passo: 1 }));
+    local.setItem(chaveVisto(DETALHE), "visto");
+    router.path = "/itens/77";
+    expect(tm.aoNavegar("/itens/77", "")).toBe(true);
+    expect(tm.passo).toBe(1);
+  });
+});
+
 describe("TourManager — ?tour=off (perfil de e2e)", () => {
   it("desliga a abertura automática neste navegador, sem abrir nada", () => {
     expect(tm.aoNavegar("/qualquer", "?tour=off")).toBe(false);
@@ -547,6 +638,11 @@ const CATALOGO = [
   assistenteCenso,
   adminPainel,
   configPainel,
+  pesquisaAssistente,
+  pesquisaResultados,
+  reuniaoAssistente,
+  reuniaoDetalhe,
+  relacaoDetalhe,
 ];
 
 describe("tours dos módulos do gestor (definição)", () => {
@@ -567,10 +663,16 @@ describe("tours dos módulos do gestor (definição)", () => {
     // Painel de Administração (gestor com perfil admin)
     [adminPainel, "/admin", "admin-logins"],
     [configPainel, "/config", "config-grade"],
+    // telas secundárias (rotas :id e listas)
+    [pesquisaAssistente, ["/gestor/pesquisas/nova", "/gestor/pesquisas/editar"], "pesquisa-etapas"],
+    [pesquisaResultados, "/gestor/pesquisas/resultados", "pesq-resultados"],
+    [reuniaoAssistente, ["/gestor/reunioes/nova", "/gestor/reunioes/:id/editar"], "reuniao-passos"],
+    [reuniaoDetalhe, "/gestor/reunioes/:id", "reuniao-detalhe"],
+    [relacaoDetalhe, "/gestor/relacoes/:id", "relacao-resumo"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
-    expect(tour.rotaInicial).toBe(rota);
+    expect(tour.rotaInicial).toEqual(rota);
     expect(tour.automatico).toBe(true);
     // páginas com login + carregamento: o automático espera o conteúdo logado
     expect(tour.prontoQuando).toBe(pronto);

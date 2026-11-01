@@ -68,8 +68,10 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 - Têm roteiro a página inicial (primeiro acesso), a busca de escolas (com a
   passagem para a comparação de redes), o painel do gestor, as análises e os
   dez módulos do gestor, o Assistente do Censo e os painéis de Administração e
-  de Configuração — todas as páginas principais. Telas
-  secundárias dos módulos (assistentes de criação, detalhes) também não.
+  de Configuração — todas as páginas principais —, além das telas de criar e
+  editar pesquisa e reunião, dos resultados da pesquisa e dos detalhes de
+  reunião e de relação. Ainda sem roteiro: relatórios salvos, versões do
+  consentimento e histórico do Assistente (previstos).
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
 
