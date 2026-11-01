@@ -97,7 +97,7 @@
     </button>
   </header>
 
-  <div class="bg-white border border-gray-200 rounded-card shadow-card p-5 max-w-xl">
+  <div class="bg-white border border-gray-200 rounded-card shadow-card p-5 max-w-xl" data-tour="comparar-municipio">
     <InputAutocomplete
       id={CITY_KEY}
       label="Município"

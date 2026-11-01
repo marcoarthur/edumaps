@@ -112,7 +112,7 @@
 </script>
 
 <div class="space-y-6">
-  <header class="flex flex-wrap items-start justify-between gap-3">
+  <header class="flex flex-wrap items-start justify-between gap-3" data-tour="busca-cabecalho">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Busca de Escolas</h1>
       <p class="mt-1 text-sm text-gray-600">Encontre escolas pelo nome ou município.</p>
@@ -128,13 +128,15 @@
 
   <SchoolSearchForm loading={result.loading} onSearch={handleSearch} onClear={handleClear} />
 
-  <SchoolList
-    schools={result.data}
-    meta={result.meta}
-    loading={result.loading}
-    error={result.error}
-    {hasSearched}
-    onPageChange={handlePageChange}
-    onPerPageChange={handlePerPageChange}
-  />
+  <div data-tour="busca-resultados">
+    <SchoolList
+      schools={result.data}
+      meta={result.meta}
+      loading={result.loading}
+      error={result.error}
+      {hasSearched}
+      onPageChange={handlePageChange}
+      onPerPageChange={handlePerPageChange}
+    />
+  </div>
 </div>
