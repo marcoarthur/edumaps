@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TourManager, chaveVisto, seletorDoAlvo } from "./tourManager.svelte.js";
 import buscaEscola from "./tours/buscaEscola.js";
+import primeiroAcesso from "./tours/primeiroAcesso.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -273,6 +274,29 @@ describe("TourManager — disparo", () => {
     expect(document.activeElement).toBe(botao);
     botao.remove();
     noPopover.remove();
+  });
+});
+
+describe("tour primeiro-acesso (definição)", () => {
+  it("abre sozinho na página inicial, tudo na mesma página, termina no botão de ajuda", () => {
+    expect(primeiroAcesso.rotaInicial).toBe("/");
+    expect(primeiroAcesso.automatico).toBe(true);
+    for (const passo of primeiroAcesso.passos) {
+      expect(passo.rota).toBeUndefined();
+      expect(passo.alvo).toMatch(/^[a-z-]+$/);
+      expect(passo.titulo).toBeTruthy();
+      expect(passo.texto).toBeTruthy();
+    }
+    expect(primeiroAcesso.passos.at(-1).alvo).toBe("menu-ajuda");
+  });
+
+  it("convive com o tour da busca: cada página oferece o seu", () => {
+    const m = new TourManager({ router, criarDriver: drivers.criar }).registrar(
+      primeiroAcesso,
+      buscaEscola
+    );
+    expect(m.tourDaRota("/")?.id).toBe("primeiro-acesso");
+    expect(m.tourDaRota("/escola/search")?.id).toBe("busca-escola");
   });
 });
 
