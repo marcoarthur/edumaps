@@ -60,6 +60,54 @@ describe("DocumentosPage", () => {
     expect(await screen.findByText(/Replanejamento/)).toBeInTheDocument();
   });
 
+  describe("excluir pasta", () => {
+    it("com arquivos: não pede confirmação, avisa o que há dentro e não exclui", async () => {
+      render(DocumentosPage);
+      await screen.findByText(/Conselho de Classe/);
+
+      await fireEvent.click(screen.getByRole("button", { name: "Excluir pasta Conselho de Classe" }));
+
+      expect(window.confirm).not.toHaveBeenCalled();
+      expect(addToast).toHaveBeenCalledWith(
+        'A pasta "Conselho de Classe" não está vazia (1 arquivo). Mova ou exclua o conteúdo antes de excluí-la.',
+        "warning",
+      );
+      expect(screen.getByText(/Conselho de Classe/)).toBeInTheDocument();
+    });
+
+    it("com subpasta: idem, contando a subpasta", async () => {
+      render(DocumentosPage);
+      await screen.findByText(/Planejamento/);
+
+      await fireEvent.click(screen.getByRole("button", { name: "Excluir pasta Planejamento" }));
+
+      expect(window.confirm).not.toHaveBeenCalled();
+      // contagem exata coberta em constants/documentos.test.js; o mock guarda
+      // estado entre testes (outro teste cria subpasta em Planejamento)
+      expect(addToast).toHaveBeenCalledWith(expect.stringMatching(/não está vazia \(\d+ subpastas?\)/), "warning");
+    });
+
+    it("vazia: confirmação honesta (sem prometer preservar nada) e exclui", async () => {
+      render(DocumentosPage);
+      await screen.findByText(/Planejamento/);
+      await fireEvent.click(screen.getByRole("button", { name: /Nova pasta na raiz/ }));
+      await fireEvent.input(screen.getByPlaceholderText("Nome da pasta"), {
+        target: { value: "Pasta para excluir" },
+      });
+      await fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+      await screen.findByText(/Pasta para excluir/);
+
+      await fireEvent.click(screen.getByRole("button", { name: "Excluir pasta Pasta para excluir" }));
+
+      expect(window.confirm).toHaveBeenCalledWith(
+        'Excluir a pasta vazia "Pasta para excluir"? Esta ação não pode ser desfeita.',
+      );
+      expect(window.confirm.mock.calls[0][0]).not.toMatch(/preservad/);
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Pasta excluída.", "success"));
+      await waitFor(() => expect(screen.queryByText(/Pasta para excluir/)).toBeNull());
+    });
+  });
+
   it("exclui um documento (com confirmação)", async () => {
     render(DocumentosPage);
     await screen.findByText(/Planejamento/);
