@@ -36,11 +36,10 @@
   dizia que o Assistente do Censo responde "com a fonte" — falso (exclusivo de
   gestor com login, números + gráfico). Conferir `docs/funcionalidades/` antes
   de escrever cada passo.
-- **Problema aberto (ambiente, não do tour)**: 2× a 1ª carga após
-  `deploy_frontend_dev` ficou em branco; `edumaps-frontend-access.log` mostra
-  `GET /` 200 **sem GET do bundle** `index-*.js` (13:28:28). Recarga resolve.
-  Investigar à parte (Chrome de automação × `index.html no-cache` × restart do
-  nginx).
+- **Problema de ambiente — diagnóstico CORRIGIDO na sessão (d)**: a "1ª
+  carga em branco após deploy" é o `index-*.js` de 1 MB servido **sem gzip**
+  (~10 s para baixar); não houve "GET ausente" — o nginx loga ao fim da
+  requisição e eu li o log cedo demais. Ver `docs/e2e/cobertura.md` rodada (d).
 - **driver.js**: setas durante a animação são ignoradas (um passo por vez).
 - Ver nota técnica 160. Pendências da ajuda guiada: tours do painel do gestor
   e das análises; telemetria do tour; nota consolidada ao fim da feature.

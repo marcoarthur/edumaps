@@ -71,4 +71,5 @@ estado logado foi validado pelo developer: o agente não digita credenciais em
 - O “?” fica visível na tela de erro do painel; aberto lá, os passos caem no
   popover centralizado. Caso raro; registrado.
 - Telemetria do tour (iniciado/concluído/abandonado por passo).
-- Primeira carga em branco após deploy (nota 160, §4) segue aberta.
+- Primeira carga em branco após deploy (nota 160, §4): causa encontrada na
+  fase 4 — bundle sem gzip ([nota 162](notas_tecnicas_162.md)).

@@ -47,6 +47,11 @@ cada passo **a partir da ficha da funcionalidade**, não da memória da tela.
 
 ## 4. Observação de ambiente: primeira carga em branco após o deploy
 
+> **⚠️ Diagnóstico corrigido na fase 4 ([nota 162](notas_tecnicas_162.md)):**
+> o bundle **foi** pedido; o nginx registra a requisição ao terminar, e ela
+> levou ~10 s porque o `index-*.js` (1 MB) sai **sem gzip**. O texto abaixo
+> fica como registro do raciocínio original, que estava errado.
+
 Duas vezes (fases 1 e 2), a primeira carga logo após o `deploy_frontend_dev`
 ficou em branco. O `edumaps-frontend-access.log` mostra `GET /` 200 e
 **nenhum** GET do bundle `index-*.js` nessa carga; a recarga seguinte funciona.
