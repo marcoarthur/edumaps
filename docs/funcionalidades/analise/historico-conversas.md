@@ -23,8 +23,9 @@ anterior, e o pesquisador que precisa citá-lo.
 
 ## O que o sistema permite
 
-- Sistema pode salvar automaticamente as conversas do gestor e listá-las por
-  data, da mais recente para a mais antiga.
+- Sistema pode salvar a conversa quando o gestor pede (botão “Salvar
+  conversa”, com título opcional) e listar as conversas salvas por data, da
+  mais recente para a mais antiga. Conversa não salva não entra no histórico.
 - Sistema pode mostrar em que dias houve conversas, para o gestor localizar
   um assunto pelo período em vez de rolar a lista.
 - Sistema pode encontrar conversas pelo conteúdo das respostas, mostrando um

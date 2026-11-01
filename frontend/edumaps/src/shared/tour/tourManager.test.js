@@ -15,6 +15,7 @@ import gestorReunioes from "./tours/gestorReunioes.js";
 import gestorInventario from "./tours/gestorInventario.js";
 import gestorRelacoes from "./tours/gestorRelacoes.js";
 import gestorDocumentos from "./tours/gestorDocumentos.js";
+import assistenteCenso from "./tours/assistenteCenso.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -541,6 +542,7 @@ const CATALOGO = [
   gestorInventario,
   gestorRelacoes,
   gestorDocumentos,
+  assistenteCenso,
 ];
 
 describe("tours dos módulos do gestor (definição)", () => {
@@ -556,6 +558,8 @@ describe("tours dos módulos do gestor (definição)", () => {
     [gestorInventario, "/gestor/inventario", "inventario-abas"],
     [gestorRelacoes, "/gestor/relacoes", "relacoes-abas"],
     [gestorDocumentos, "/gestor/documentos", "documentos-arquivos"],
+    // Assistente do Censo (também exige login de gestor)
+    [assistenteCenso, "/chat/censo", "chat-escopo"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
