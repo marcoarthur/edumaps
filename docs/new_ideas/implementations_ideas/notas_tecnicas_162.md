@@ -194,6 +194,30 @@ continua sendo dado + `data-tour`.
   pela validação visual do developer. A conta de teste da stack local está em
   `~/.config/edumaps/e2e_gestor_local`, fora do repositório.
 
+## 9. Módulos do gestor, lote 2 (PR #320): os dez módulos cobertos
+
+Merge `50e427e`. Pesquisas (2 passos), Reuniões (4), Inventário (3),
+Relações (4) e Documentos (4). Com o lote 1, os **dez módulos do gestor**
+têm tour; o catálogo fecha em 14 tours.
+
+- **Pesquisas não tem login** (lista pública, exige `?inep=`) e alterna entre
+  lista e estado vazio. O mesmo `data-tour="pesq-conteudo"` foi posto nos
+  dois elementos (só um existe por vez), o que evitou reestruturar o
+  `{#if}`. O texto do 1º passo teve de servir aos dois estados.
+- **Abas**: Inventário e Relações só destacam a aba padrão. As outras não
+  existem antes de um clique, e o tour não opera a página.
+- **Fix de navegação no `TourManager`**: com um tour aberto, sair da página
+  fechava o tour e retornava cedo, e o automático da página de destino
+  nunca abria. Agora fecha e segue a avaliação.
+- **E2E logado sem credencial**: o Chrome de automação já tinha a sessão de
+  gestor que o developer abriu ao validar o lote 1. Com ela, os 5 tours foram
+  percorridos logado (só leitura), e o `?novo=1` de Envios (lote 1) foi
+  confirmado no estado real.
+- **Interface corrigida de passagem**: o painel “Como funciona” de Documentos
+  (alvo de um passo) dizia “Enviar arquivo público”. **Não corrigido**, por ser
+  bug de comportamento: a confirmação de excluir pasta promete preservar o
+  conteúdo, mas o backend recusa pasta não vazia.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -206,8 +230,10 @@ continua sendo dado + `data-tour`.
   Passo obrigatório no Setup de `docs/e2e/README.md`. Descartados: pré-gravar
   chaves de “visto” (quebra a cada tour/versão) e `navigator.webdriver` (não é
   ligado via `--remote-debugging-port`).
-- Tours dos módulos do gestor: ~~lote 1~~ (PR #319). **Lote 2: Pesquisas,
-  Reuniões, Inventário, Relações, Documentos.** Assistente e administração,
-  se houver demanda.
+- ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
+  Assistente e administração, e telas secundárias (assistentes de criação,
+  detalhes), se houver demanda.
+- Documentos: confirmação de excluir pasta contradiz o backend
+  (`pasta_nao_vazia`). Bug de interface, fora do ciclo.
 - Reavaliar `svelte-tourlight` quando amadurecer. A troca fica restrita a
   `src/shared/tour/`.

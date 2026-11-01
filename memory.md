@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (i) — tours do gestor, lote 2 (PR #320): 10 módulos cobertos
+
+- **PR #320 MERGEADO** (`50e427e`): `gestor-pesquisas` (sem login, `?inep=`,
+  alvo `pesq-conteudo` na lista E no vazio), `gestor-reunioes`,
+  `gestor-inventario`, `gestor-relacoes`, `gestor-documentos`. Catálogo: 14 tours.
+- **Fix `aoNavegar`**: sair da página com tour aberto agora avalia o
+  automático da página nova (antes retornava cedo).
+- **E2E logado**: o Chrome de automação tem a sessão de gestor aberta pelo
+  developer (validação do lote 1). Navegar/ler com ela é ok; **nunca**
+  injetar credencial.
+- **Bug aberto (fora do ciclo)**: Documentos, confirmação de excluir pasta diz
+  "serão preservados", mas o backend recusa pasta não vazia.
+
 ## Sessão 2026-11-01 (h) — tours dos módulos do gestor, lote 1 (PR #319)
 
 - **PR #319 MERGEADO** (`3177e78`): tours `gestor-relatorios`,
