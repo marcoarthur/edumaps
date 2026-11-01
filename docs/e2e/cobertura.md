@@ -29,10 +29,10 @@ sem nenhuma ação de escrita.
 | Contrato `tourAlvos.test.js`: 10 páginas com sessão + Pesquisas sem `?inep=` | 🟢 20/20 |
 | Suíte frontend | 🟢 118 arquivos / 1058 testes |
 
-> **Bug fora do escopo (não corrigido):** em Documentos, a confirmação de
-> excluir pasta diz “Pastas e arquivos internos serão preservados”, mas o
-> backend (`DocumentosEscolares.pm`, `pasta_nao_vazia`) **recusa** excluir pasta
-> com conteúdo. Corrigido neste ciclo só o texto “Enviar arquivo público”
+> **Bug fora do escopo (corrigido depois, branch `fix/frontend-excluir-pasta`):**
+> em Documentos, a confirmação de excluir pasta dizia “Pastas e arquivos
+> internos serão preservados”, mas o backend (`DocumentosEscolares.pm`,
+> `pasta_nao_vazia`) **recusa** excluir pasta com conteúdo. Corrigido neste ciclo só o texto “Enviar arquivo público”
 > do painel “Como funciona”, que o tour destaca.
 
 Profile da automação devolvido a `?tour=off`.

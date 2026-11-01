@@ -23,7 +23,12 @@
   import { addToast } from "@/shared/stores/toastStore.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
-  import { EXT_PERMITIDA, DOCUMENTOS_LIMITS as L } from "../constants/documentos.js";
+  import {
+    EXT_PERMITIDA,
+    DOCUMENTOS_LIMITS as L,
+    conteudoDaPasta,
+    avisoPastaNaoVazia,
+  } from "../constants/documentos.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import DocumentosArvore from "../components/documentos/DocumentosArvore.svelte";
   import VersoesModal from "../components/documentos/VersoesModal.svelte";
@@ -160,8 +165,16 @@
   }
 
   async function excluirPasta({ id, nome }) {
-    if (!window.confirm(`Excluir a pasta "${nome}"? Pastas e arquivos internos serão preservados.`))
+    // O backend recusa excluir pasta com conteúdo (409). A confirmação antiga
+    // prometia "preservar" o conteúdo e o pedido falhava logo depois: agora a
+    // pasta com conteúdo é barrada aqui, com o que fazer; o 409 abaixo fica
+    // para a corrida (conteúdo criado em outra sessão nesse meio-tempo).
+    const conteudo = conteudoDaPasta(pastas, documentos, id);
+    if (conteudo.subpastas + conteudo.arquivos > 0) {
+      addToast(avisoPastaNaoVazia(nome, conteudo), "warning");
       return;
+    }
+    if (!window.confirm(`Excluir a pasta vazia "${nome}"? Esta ação não pode ser desfeita.`)) return;
     try {
       await deletePasta(inep, id);
       if (selecionada === id) selecionada = null;
