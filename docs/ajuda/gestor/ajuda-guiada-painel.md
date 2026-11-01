@@ -43,6 +43,23 @@ reabri-lo quando quiser pelo botão **?** no menu do topo.
 O roteiro não mostra números próprios: ele aponta para as partes do painel.
 Nelas, dado ausente aparece como **“—”**, nunca como zero.
 
+## Roteiros dos módulos
+
+Além do painel, estes módulos têm um roteiro próprio, que abre na primeira
+visita (depois de entrar com a sua conta e a página carregar) e pode ser
+reaberto pelo **?**:
+
+| Módulo | O que o roteiro mostra |
+|---|---|
+| **Relatórios** | recorte, tema, como o texto é gerado (IA só com os números mostrados, fonte em cada número) e “Meus relatórios” |
+| **Contatos** | importação por colagem e da folha, grupos e a agenda |
+| **Listas e QR** | as listas, como criar (o que coletar, exigir confirmação) e o histórico de exclusões |
+| **Envios** | limites do dia, a lista de envios por estado e como criar um envio |
+| **Listas dinâmicas** | o que é, como filtrar e para que serve nos envios |
+
+O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão
+“Enviar e-mail” de uma lista (direto no editor), ele fica para a próxima visita.
+
 ## Limitações conhecidas
 
 - Se o painel não carregar (por exemplo, código INEP inválido), o roteiro não

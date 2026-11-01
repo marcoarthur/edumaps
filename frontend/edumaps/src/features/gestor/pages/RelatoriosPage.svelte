@@ -572,6 +572,7 @@
       {/if}
       <a
         href="/gestor/relatorios/salvos"
+        data-tour="relatorio-salvos"
         class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
       >Meus relatórios</a>
       <a
@@ -595,6 +596,7 @@
         gerar();
       }}
       data-testid="relatorio-form"
+      data-tour="relatorio-form"
     >
       {#if assistentes.length > 1}
         <fieldset class="space-y-2" data-testid="assistentes">
@@ -629,7 +631,7 @@
         </fieldset>
       {/if}
 
-      <fieldset class="space-y-2">
+      <fieldset class="space-y-2" data-tour="relatorio-recorte">
         <legend class="text-sm font-semibold text-gray-900">Recorte</legend>
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Nível do recorte">
           {#each niveisDisponiveis as n (n.valor)}
@@ -743,64 +745,67 @@
         {/if}
       </fieldset>
 
-      {#if composto}
-        <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold text-gray-900">Capítulos</legend>
-          {#if assistente.capitulos?.length}
-            <ol class="list-decimal pl-5 space-y-1 text-sm text-gray-800" data-testid="capitulos">
-              {#each assistente.capitulos as c, i (i)}
-                <li>{c.titulo ?? c.tema}</li>
-              {/each}
-            </ol>
-          {:else}
-            <p class="text-sm text-gray-500">O assistente define os capítulos ao gerar.</p>
-          {/if}
-          <p class="text-xs text-gray-500">
-            Os capítulos são fixos e saem em um relatório só, com um resumo geral.
-          </p>
-        </fieldset>
-      {:else}
-        <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold text-gray-900">Tema</legend>
-          {#if carregandoTemas}
-            <p class="text-sm text-gray-500">Carregando temas…</p>
-          {:else if erroTemas}
-            <p class="text-sm text-red-700" role="alert">{erroTemas}</p>
-          {:else if temas.length === 0}
-            <p class="text-sm text-gray-500">Nenhum tema disponível para este nível.</p>
-          {:else}
-            <ul class="space-y-2" data-testid="temas">
-              {#each temas as t (t.id)}
-                <li>
-                  <label class="flex items-start gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tema"
-                      value={t.id}
-                      checked={temaId === t.id}
-                      onchange={() => escolherTema(t.id)}
-                      aria-describedby="tema-desc-{t.id}"
-                      class="mt-1"
-                    />
-                    <span>
-                      <span class="font-medium text-gray-900">{t.titulo}</span>
-                      {#if t.profundidade === "profunda"}
-                        {" "}<span
-                          class="ml-1 inline-block align-middle text-[11px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
-                          data-testid="selo-profunda"
-                        >Análise aprofundada</span>
-                      {/if}
-                      {#if t.descricao}
-                        <span id="tema-desc-{t.id}" class="block text-gray-500">{t.descricao}</span>
-                      {/if}
-                    </span>
-                  </label>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </fieldset>
-      {/if}
+      <!-- tema ou capítulos: alvo único do tour, qualquer que seja o assistente -->
+      <div data-tour="relatorio-tema">
+        {#if composto}
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-semibold text-gray-900">Capítulos</legend>
+            {#if assistente.capitulos?.length}
+              <ol class="list-decimal pl-5 space-y-1 text-sm text-gray-800" data-testid="capitulos">
+                {#each assistente.capitulos as c, i (i)}
+                  <li>{c.titulo ?? c.tema}</li>
+                {/each}
+              </ol>
+            {:else}
+              <p class="text-sm text-gray-500">O assistente define os capítulos ao gerar.</p>
+            {/if}
+            <p class="text-xs text-gray-500">
+              Os capítulos são fixos e saem em um relatório só, com um resumo geral.
+            </p>
+          </fieldset>
+        {:else}
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-semibold text-gray-900">Tema</legend>
+            {#if carregandoTemas}
+              <p class="text-sm text-gray-500">Carregando temas…</p>
+            {:else if erroTemas}
+              <p class="text-sm text-red-700" role="alert">{erroTemas}</p>
+            {:else if temas.length === 0}
+              <p class="text-sm text-gray-500">Nenhum tema disponível para este nível.</p>
+            {:else}
+              <ul class="space-y-2" data-testid="temas">
+                {#each temas as t (t.id)}
+                  <li>
+                    <label class="flex items-start gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="tema"
+                        value={t.id}
+                        checked={temaId === t.id}
+                        onchange={() => escolherTema(t.id)}
+                        aria-describedby="tema-desc-{t.id}"
+                        class="mt-1"
+                      />
+                      <span>
+                        <span class="font-medium text-gray-900">{t.titulo}</span>
+                        {#if t.profundidade === "profunda"}
+                          {" "}<span
+                            class="ml-1 inline-block align-middle text-[11px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200"
+                            data-testid="selo-profunda"
+                          >Análise aprofundada</span>
+                        {/if}
+                        {#if t.descricao}
+                          <span id="tema-desc-{t.id}" class="block text-gray-500">{t.descricao}</span>
+                        {/if}
+                      </span>
+                    </label>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </fieldset>
+        {/if}
+      </div>
 
       {#if opcoesTema.length}
         <div class="grid gap-3 sm:grid-cols-3" data-testid="opcoes-tema">
@@ -824,7 +829,7 @@
         </div>
       {/if}
 
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3" data-tour="relatorio-gerar">
         <button
           type="submit"
           disabled={!podeGerar}

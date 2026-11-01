@@ -278,9 +278,9 @@
   {:else if precisaLogin}
     <GestorLoginCard onLogin={onLogin} mensagem="Entre para gerenciar os contatos." />
   {:else}
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-6 lg:grid-cols-2" data-tour="contatos-grade">
       <!-- Importação por colagem -->
-      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3">
+      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3" data-tour="contatos-importar">
         <h2 class="text-sm font-semibold text-gray-900">Importar contatos</h2>
         <p class="text-xs text-gray-500">
           Cole uma lista com uma pessoa por linha no formato
@@ -309,7 +309,7 @@
         {/if}
 
         <!-- importar da folha de pagamento -->
-        <div class="pt-2 border-t border-gray-100 space-y-2">
+        <div class="pt-2 border-t border-gray-100 space-y-2" data-tour="contatos-folha">
           <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Da folha de pagamento
           </h3>
@@ -325,7 +325,7 @@
         </div>
 
         <!-- grupos -->
-        <div class="pt-2 border-t border-gray-100 space-y-2">
+        <div class="pt-2 border-t border-gray-100 space-y-2" data-tour="contatos-grupos">
           <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Grupos</h3>
           <div class="flex gap-1 flex-wrap">
             {#each grupos as g (g.id)}
@@ -366,7 +366,7 @@
       </section>
 
       <!-- Lista de contatos -->
-      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3">
+      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3" data-tour="contatos-lista">
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-sm font-semibold text-gray-900">Contatos ({contatos.length})</h2>
           <button

@@ -168,7 +168,7 @@
         {inep ? `Escola ${inep} · ` : ""}junte e filtre as suas listas para enviar e-mails.
       </p>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2" data-tour="segmentos-atalhos">
       {#if gestor}
         <span class="text-xs text-gray-500">{gestor.nome}</span>
         <button
@@ -208,10 +208,11 @@
       />
     {/key}
   {:else}
-    <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3">
+    <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3" data-tour="segmentos-lista">
       <div class="flex items-center justify-between gap-2">
         <h2 class="text-sm font-semibold text-gray-900">Suas listas dinâmicas ({segmentos.length})</h2>
         <button
+          data-tour="segmentos-nova"
           type="button"
           onclick={() => abrirForm()}
           class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"

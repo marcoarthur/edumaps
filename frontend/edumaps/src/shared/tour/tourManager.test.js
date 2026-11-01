@@ -5,6 +5,11 @@ import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
 import painelGestor from "./tours/painelGestor.js";
 import analises from "./tours/analises.js";
+import gestorRelatorios from "./tours/gestorRelatorios.js";
+import gestorContatos from "./tours/gestorContatos.js";
+import gestorListas from "./tours/gestorListas.js";
+import gestorEnvios from "./tours/gestorEnvios.js";
+import gestorSegmentos from "./tours/gestorSegmentos.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -502,6 +507,52 @@ describe("TourManager — prontoQuando (página que carrega dados)", () => {
   });
 });
 
+const CATALOGO = [
+  primeiroAcesso,
+  buscaEscola,
+  painelGestor,
+  analises,
+  gestorRelatorios,
+  gestorContatos,
+  gestorListas,
+  gestorEnvios,
+  gestorSegmentos,
+];
+
+describe("tours dos módulos do gestor — lote 1 (definição)", () => {
+  const MODULOS = [
+    [gestorRelatorios, "/gestor/relatorios", "relatorio-form"],
+    [gestorContatos, "/gestor/contatos", "contatos-grade"],
+    [gestorListas, "/gestor/listas", "listas-suas"],
+    [gestorEnvios, "/gestor/envios", "envios-lista"],
+    [gestorSegmentos, "/gestor/segmentos", "segmentos-lista"],
+  ];
+
+  it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
+    expect(tour.rotaInicial).toBe(rota);
+    expect(tour.automatico).toBe(true);
+    // páginas com login + carregamento: o automático espera o conteúdo logado
+    expect(tour.prontoQuando).toBe(pronto);
+    expect(tour.passos.length).toBeGreaterThanOrEqual(3);
+    for (const passo of tour.passos) {
+      expect(passo.rota).toBeUndefined();
+      expect(passo.alvo).toMatch(/^[a-z-]+$/);
+      expect(passo.titulo).toBeTruthy();
+      expect(passo.texto).toBeTruthy();
+    }
+    expect(tour.passos.at(-1).texto).toMatch(/“\?”/); // termina apontando o "?"
+  });
+
+  it("envios espera a LISTA (o editor aberto por ?novo=1 não tem os alvos)", () => {
+    expect(gestorEnvios.prontoQuando).toBe("envios-lista");
+    expect(gestorEnvios.passos.map((p) => p.alvo)).toContain("envios-lista");
+  });
+
+  it("ids cabem na allowlist de valores do backend (slug, até 40)", () => {
+    for (const t of CATALOGO) expect(t.id).toMatch(/^[a-z][a-z0-9-]{0,39}$/);
+  });
+});
+
 describe("tour analises (definição)", () => {
   it("abre na página de análises, segue a ordem do formulário e termina no resultado", () => {
     expect(analises.rotaInicial).toBe("/cluster/geotag");
@@ -517,10 +568,10 @@ describe("tour analises (definição)", () => {
     ]);
   });
 
-  it("os quatro tours do catálogo têm ids e rotas iniciais distintas", () => {
-    const tours = [primeiroAcesso, buscaEscola, painelGestor, analises];
-    expect(new Set(tours.map((t) => t.id)).size).toBe(4);
-    expect(new Set(tours.map((t) => t.rotaInicial)).size).toBe(4);
+  it("os tours do catálogo têm ids e rotas iniciais distintas", () => {
+    const tours = CATALOGO;
+    expect(new Set(tours.map((t) => t.id)).size).toBe(tours.length);
+    expect(new Set(tours.map((t) => t.rotaInicial)).size).toBe(tours.length);
   });
 });
 
