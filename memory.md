@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (h) — tours dos módulos do gestor, lote 1 (PR #319)
+
+- **PR #319 MERGEADO** (`3177e78`): tours `gestor-relatorios`,
+  `gestor-contatos`, `gestor-listas`, `gestor-envios`, `gestor-segmentos`, todos
+  com `prontoQuando` no conteúdo logado. Envios espera `envios-lista` (por
+  `?novo=1` a página abre no editor).
+- **Lote 2 pendente** (decisão do developer: em lotes): Pesquisas, Reuniões,
+  Inventário, Relações, Documentos.
+- **Teste de contrato** `features/gestor/pages/tourAlvos.test.js`: estender a
+  cada tour de página com login (alvos × markup com MSW).
+- **E2E logado pelo agente não é possível**: injetar o token da conta de teste
+  local na aba é bloqueado pela política de permissões (materialização de
+  credencial). Não contornar. Cobrir com o teste de contrato e pedir a
+  validação logada ao developer. Conta de teste da stack local:
+  `~/.config/edumaps/e2e_gestor_local` (modo 600, INEP 35211576).
+- Componentes do gestor (LimitesPainel, ExclusoesHistorico, MembrosTable…) não
+  repassam atributos: `data-tour` só via `<div>` envoltório.
+
 ## Sessão 2026-11-01 (g) — `?tour=off` para e2e (PR #318)
 
 - **PR #318 MERGEADO** (`c479d72`): `?tour=off` desliga só a abertura

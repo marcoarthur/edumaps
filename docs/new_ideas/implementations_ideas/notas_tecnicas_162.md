@@ -165,6 +165,35 @@ não chama ganchos; `fechar()` chama `onDestroyStarted`).
 mostra quando o alvo existe no DOM (`MutationObserver` ativo só nessas
 páginas). Fecha a pendência da fase 3.
 
+## 8. Módulos do gestor, lote 1 (PR #319)
+
+Merge `3177e78`. Tours de Relatórios (5 passos), Contatos (4), Listas (4),
+Envios (3) e Listas dinâmicas (3), todos com `prontoQuando` no conteúdo
+logado. O desenho saiu da **fase 3 sem mudança no `TourManager`**: tour novo
+continua sendo dado + `data-tour`.
+
+- **Envios espera a lista, não os limites.** Por `?novo=1` (botão “Enviar
+  e-mail” de uma lista) a página abre direto no editor e a lista não existe.
+  Com os limites como `prontoQuando`, o tour abriria sobre o editor com os
+  passos sem alvo.
+- **Componentes sem repasse de atributos** (`LimitesPainel`,
+  `ExclusoesHistorico`…) descartam o `data-tour` em silêncio. Use `<div>`
+  envoltório, sem mexer na raiz do componente, que pode ser usado em outras
+  páginas.
+- **Teste de contrato novo** (`features/gestor/pages/tourAlvos.test.js`): com
+  sessão MSW, todo alvo de todo passo tem de existir no markup real; sem
+  sessão, o `prontoQuando` não aparece. É a resposta ao maior risco de
+  manutenção dos tours: perder um `data-tour` numa refatoração degradava o
+  tour sem nenhum aviso.
+- **Textos: ficha + código + tela.** Dois erros pegos no código antes do
+  deploy: capítulos do relatório municipal são fixos, e o filtro de envios
+  chama-se “Estado”.
+- **Limite do e2e logado.** A injeção de um token de teste local na aba foi
+  bloqueada pela política de permissões (materialização de credencial) e não
+  foi contornada. O estado logado ficou coberto pelo teste de contrato (MSW) e
+  pela validação visual do developer. A conta de teste da stack local está em
+  `~/.config/edumaps/e2e_gestor_local`, fora do repositório.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -177,6 +206,8 @@ páginas). Fecha a pendência da fase 3.
   Passo obrigatório no Setup de `docs/e2e/README.md`. Descartados: pré-gravar
   chaves de “visto” (quebra a cada tour/versão) e `navigator.webdriver` (não é
   ligado via `--remote-debugging-port`).
-- Tours para módulos do gestor, assistente e administração, se houver demanda.
+- Tours dos módulos do gestor: ~~lote 1~~ (PR #319). **Lote 2: Pesquisas,
+  Reuniões, Inventário, Relações, Documentos.** Assistente e administração,
+  se houver demanda.
 - Reavaliar `svelte-tourlight` quando amadurecer. A troca fica restrita a
   `src/shared/tour/`.
