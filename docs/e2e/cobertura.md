@@ -8,6 +8,22 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (g) (`?tour=off` para e2e em profile limpo)
+
+Alvo `http://ubatexu.lan:8080` (deploy do branch `fix/frontend-tour-e2e`).
+Profile “limpo” simulado apagando todas as chaves `edumaps.tour.*`.
+
+| Verificação | Resultado |
+|---|---|
+| `/?tour=off` → marca `edumaps.tour.automatico=off`, nada abre, `?tour` sai da URL | 🟢 |
+| Navegações completas a `/`, `/escola/search`, `/gestor/painel?inep=35211576`, `/cluster/geotag`: **nenhum** tour/overlay | 🟢 |
+| Nenhuma chave de “visto” gravada (tours seguem pendentes) | 🟢 |
+| Botão “?” continua abrindo (análises: “1 de 6”) | 🟢 |
+| `/?tour=on` → marca removida, tour de primeiro acesso abre sozinho | 🟢 |
+| Testes unitários frontend | 🟢 117 arquivos / 1025 testes (5 novos) |
+
+Profile da automação deixado com `?tour=off` (estado do runbook).
+
 ## Rodada 2026-11-01 (f) (“?” na tela de erro do painel)
 
 Alvo `http://ubatexu.lan:8080` (deploy do branch `fix/frontend-ajuda-tela-erro`).
