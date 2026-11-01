@@ -55,7 +55,7 @@ sub startup ($self) {
   # Telemetria (Middleware::Session + endpoint de eventos): eventos que só
   # têm o EventLogger na cadeia (persistência em lote) não precisam de
   # handler — só do no-op para silenciar o WARN a cada request.
-  $self->event_bus->on($_, sub { }) for qw/session.request session.navigate session.search session.login session.logout session.api_error/;
+  $self->event_bus->on($_, sub { }) for qw/session.request session.navigate session.search session.login session.logout session.api_error session.tour/;
 
   # ------------------------------------------------------------
   # Custom Validations

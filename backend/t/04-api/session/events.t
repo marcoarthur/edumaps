@@ -71,6 +71,41 @@ subtest 'Lote válido -> 204 + persistência com allowlist' => sub {
   is $sess->{seen_count}, 2, '2 interações contadas na sessão';
 };
 
+subtest 'tour: allowlist de chaves E de valores' => sub {
+  $db->delete('event_store', { event_type => 'session.tour' });
+
+  $t->post_ok(
+    '/api/session/events',
+    json => [
+      # válido: só as chaves da allowlist sobrevivem; step volta número
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'dismiss', step => 3, total => 7, texto => 'segredo' } },
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'start', trigger => 'auto', total => 7 } },
+      # inválidos: descartados inteiros
+      { type => 'tour', payload => { tour_id => 'Texto Livre Qualquer', action => 'start' } },
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'hackear' } },
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'start', trigger => 'resume' } },
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'dismiss', step => 'três' } },
+      { type => 'tour', payload => { tour_id => 'busca-escola', action => 'dismiss', step => { x => 1 } } },
+      { type => 'tour', payload => { action => 'start' } },
+    ],
+  )->status_is(204);
+  flush_logger();
+
+  my @ev = map { decode_json($_->{payload}) }
+    @{ $db->select('event_store', ['payload'], { event_type => 'session.tour' }, { -asc => 'id' })->hashes };
+  is scalar @ev, 2, 'só os 2 eventos válidos persistidos';
+
+  my ($dismiss) = grep { $_->{action} eq 'dismiss' } @ev;
+  is $dismiss->{tour_id}, 'busca-escola', 'tour_id gravado';
+  is $dismiss->{step}, 3, 'step gravado';
+  like Mojo::JSON::encode_json($dismiss), qr/"step":3[,}]/, 'step gravado como número, não string';
+  ok !exists $dismiss->{texto}, 'chave fora da allowlist descartada';
+
+  my ($start) = grep { $_->{action} eq 'start' } @ev;
+  is $start->{trigger}, 'auto', 'trigger gravado';
+  ok !exists $start->{step}, 'step ausente não vira chave vazia';
+};
+
 subtest 'Lote malformado -> 400' => sub {
   $t->post_ok('/api/session/events', json => { not => 'array' })->status_is(400);
 

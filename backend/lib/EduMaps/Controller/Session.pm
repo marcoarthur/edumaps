@@ -24,6 +24,23 @@ has type_map => sub { {
   'gestor:login'   => { type => 'session.login',     keys => [qw(ok)] },
   'gestor:logout'  => { type => 'session.logout',    keys => [] },
   'api:error'      => { type => 'session.api_error', keys => [qw(status route)] },
+  # Ajuda guiada (product tour). Além da allowlist de chaves, os VALORES são
+  # validados (`valid`): o id é slug do catálogo, ação e gatilho vêm de
+  # conjuntos fechados, passos são inteiros pequenos. Valor fora do padrão
+  # descarta o evento inteiro — um cliente adulterado não grava texto livre.
+  'tour' => {
+    type  => 'session.tour',
+    keys  => [qw(tour_id action step total trigger)],
+    valid => {
+      tour_id => qr/\A[a-z][a-z0-9-]{0,39}\z/,
+      action  => qr/\A(?:start|complete|dismiss)\z/,
+      trigger => qr/\A(?:auto|button|link)\z/,
+      step    => qr/\A[0-9]{1,3}\z/,
+      total   => qr/\A[0-9]{1,3}\z/,
+    },
+    required => [qw(tour_id action)],
+    numeric  => [qw(step total)],
+  },
 } };
 
 sub events ($self) {
@@ -41,6 +58,7 @@ sub events ($self) {
     my $client = ref $ev->{payload} eq 'HASH' ? $ev->{payload} : {};
     my %clean;
     $clean{$_} = $client->{$_} for @{ $rule->{keys} };   # allowlist de chaves
+    next unless _valid_values($rule, \%clean);          # allowlist de valores
     $clean{session_id} = $sid if defined $sid && length $sid;
 
     my $ts = $ev->{ts};
@@ -50,6 +68,28 @@ sub events ($self) {
   }
 
   $self->render(status => 204, text => '');
+}
+
+# Valida os valores de um evento cuja regra declara `valid`. Chave ausente é
+# removida; presente fora do padrão (ou não-escalar) invalida o evento todo;
+# `required` precisa estar presente. `numeric` volta a número, para o JSON
+# gravado não virar string depois do match.
+sub _valid_values ($rule, $clean) {
+  my $valid = $rule->{valid} or return 1;
+  for my $key (keys %$clean) {
+    my $v = $clean->{$key};
+    if (!defined $v) { delete $clean->{$key}; next }
+    return 0 if ref $v;
+    my $re = $valid->{$key} or next;
+    return 0 unless "$v" =~ $re;
+  }
+  for my $key (@{ $rule->{required} // [] }) {
+    return 0 unless defined $clean->{$key};
+  }
+  for my $key (@{ $rule->{numeric} // [] }) {
+    $clean->{$key} = 0 + $clean->{$key} if defined $clean->{$key};
+  }
+  return 1;
 }
 
 1;
@@ -67,7 +107,10 @@ B<POST /api/session/events> — corpo: array de eventos
   [{ "type": "navigate", "ts": 1720000000000, "payload": { "route": "/" } }]
 
 Tipos aceitos (allowlist): C<navigate>, C<schools:search> (sem texto — só
-C<q_len>/C<result_count>), C<gestor:login>, C<gestor:logout>, C<api:error>.
+C<q_len>/C<result_count>), C<gestor:login>, C<gestor:logout>, C<api:error>,
+C<tour> (ajuda guiada: C<tour_id>, C<action> start|complete|dismiss, C<step>,
+C<total>, C<trigger> auto|button|link — valores validados; fora do padrão o
+evento é descartado).
 
 =head1 LGPD
 

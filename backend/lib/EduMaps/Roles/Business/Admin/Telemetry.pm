@@ -14,6 +14,9 @@ use utf8;
 #               quebra logado (is_logged) vs. anônimo.
 #   - rotas    = session.navigate (páginas da SPA), top N com share.
 #   - série    = eventos por hora/dia, com buckets contínuos (sem furos).
+#   - tours    = session.tour (ajuda guiada), por tour: aberturas (por
+#                gatilho), conclusões, fechamentos, taxa de conclusão e o
+#                passo em que mais se fecha. Taxa sem abertura = null (#154).
 #
 # Os dados chegam em lote (flush ~30s do EventLogger): o painel é
 # near-real-time, não streaming.
@@ -88,6 +91,7 @@ sub overview ($self, $params = {}) {
     searches     => $self->_count_events('session.search', $w->{since}),
     events       => $self->_count_events(undef, $w->{since}),
     top_routes   => $self->_top_routes($w->{since}),
+    tours        => $self->_tours($w->{since}),
     series       => $self->_series($w),
   };
 }
@@ -155,6 +159,47 @@ sub _top_routes ($self, $since) {
       GROUP BY 1
       ORDER BY count DESC, route ASC
       LIMIT $top"
+  );
+}
+
+# Ajuda guiada por tour. `step` do dismiss é 1-based (passo exibido).
+# Retomada após reload não gera `start` (o cliente não emite), então
+# aberturas = tours efetivamente iniciados.
+sub _tours ($self, $since) {
+  return $self->_rows(
+    "WITH t AS (
+       SELECT payload->>'tour_id' AS tour_id,
+              payload->>'action'  AS action,
+              payload->>'trigger' AS trigger,
+              (payload->>'step')::int  AS step,
+              (payload->>'total')::int AS total
+         FROM clean.event_store
+        WHERE event_type = 'session.tour'
+          AND created_at >= $since
+          AND payload->>'tour_id' IS NOT NULL
+     ),
+     abandono AS (
+       SELECT DISTINCT ON (tour_id) tour_id, step
+         FROM t
+        WHERE action = 'dismiss' AND step IS NOT NULL
+        GROUP BY tour_id, step
+        ORDER BY tour_id, COUNT(*) DESC, step ASC
+     )
+     SELECT t.tour_id,
+            COUNT(*) FILTER (WHERE action = 'start')::int AS started,
+            COUNT(*) FILTER (WHERE action = 'start' AND trigger = 'auto')::int   AS started_auto,
+            COUNT(*) FILTER (WHERE action = 'start' AND trigger = 'button')::int AS started_button,
+            COUNT(*) FILTER (WHERE action = 'start' AND trigger = 'link')::int   AS started_link,
+            COUNT(*) FILTER (WHERE action = 'complete')::int AS completed,
+            COUNT(*) FILTER (WHERE action = 'dismiss')::int  AS dismissed,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE action = 'complete')
+                  / NULLIF(COUNT(*) FILTER (WHERE action = 'start'), 0), 1)::float8 AS completion_pct,
+            MAX(a.step) AS top_dismiss_step,
+            MAX(t.total) AS total_steps
+       FROM t
+       LEFT JOIN abandono a ON a.tour_id = t.tour_id
+      GROUP BY t.tour_id
+      ORDER BY started DESC, t.tour_id ASC"
   );
 }
 
