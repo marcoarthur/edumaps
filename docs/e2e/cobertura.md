@@ -8,6 +8,30 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (c) (ajuda guiada — tour `painel-gestor`)
+
+Alvo `http://ubatexu.lan:8080/gestor/painel?inep=35211576` (deploy do branch
+`feat/frontend-tour-painel-gestor`), Chrome real, **sem login** (a API do
+painel responde 200 sem sessão).
+
+| Verificação | Resultado |
+|---|---|
+| `?inep=00000000` (erro “Escola não encontrada”): tour **não** abre, chave não gravada | 🟢 |
+| INEP válido: abre ~100 ms após o cabeçalho da escola montar (`prontoQuando`) | 🟢 |
+| 8 passos com o alvo certo (escola, módulos, resumo, atalhos, matrículas, infraestrutura, similares, influência) | 🟢 |
+| Seções altas (matrículas 746 px, infraestrutura 649 px) enquadradas; popover ao lado | 🟢 |
+| Concluir → `edumaps.tour.painel-gestor.v1 = concluido` | 🟢 |
+| “?” reabre; passo 7 com o mapa Leaflet de similares carregado: mapa visível no destaque | 🟢 |
+| z-index medido: overlay 10000 > Leaflet panes 400 / controles 1000 | 🟢 |
+| Texto do passo “Matrículas” omitia a faixa etária | 🔴→🟢 (corrigido) |
+| Testes unitários frontend | 🟢 117 arquivos / 1004 testes |
+
+> **Não coberto**: estado logado (área de influência com mapa, equipamentos do
+> entorno). Sem login essas seções mostram “Entre como gestor desta escola…”;
+> o passo 8 destaca a seção nos dois estados. O “?” continua visível na tela de
+> erro do painel; aberto lá, cada passo espera o alvo e cai no popover
+> centralizado.
+
 ## Rodada 2026-11-01 (b) (ajuda guiada — tour `primeiro-acesso`)
 
 Alvo `http://ubatexu.lan:8080` (deploy do branch

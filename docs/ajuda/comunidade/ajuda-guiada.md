@@ -40,9 +40,10 @@ menu.
 
 ## Limitações conhecidas
 
-- Por enquanto, têm roteiro a página inicial e a busca de escolas (com a
-  passagem para a comparação de redes). O botão **?** só aparece nas páginas
-  que têm roteiro.
+- Por enquanto, têm roteiro a página inicial, a busca de escolas (com a
+  passagem para a comparação de redes) e o painel do gestor (ver
+  [ajuda do gestor](../gestor/ajuda-guiada-painel.md)). O botão **?** só
+  aparece nas páginas que têm roteiro.
 - Enquanto o roteiro está aberto, os campos destacados não recebem cliques: o
   roteiro explica, não preenche. Feche-o para fazer sua busca.
 - A lembrança de que você já viu o roteiro fica no seu navegador. Em outro

@@ -50,7 +50,7 @@
         Raio-x da escola em poucos minutos.
       </p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2" data-tour="gestor-modulos">
       {#if inep}
         <a
           href={`/gestor/pesquisas?inep=${inep}`}

@@ -56,7 +56,7 @@
   }
 </script>
 
-<section id="escolas-similares" class="space-y-4 scroll-mt-4">
+<section id="escolas-similares" class="space-y-4 scroll-mt-4" data-tour="gestor-similares">
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
       <h2 class="text-lg font-bold text-gray-900">Escolas similares</h2>

@@ -1,8 +1,9 @@
 // src/shared/tour/tourManager.test.js
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { TourManager, chaveVisto, seletorDoAlvo } from "./tourManager.svelte.js";
 import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
+import painelGestor from "./tours/painelGestor.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -274,6 +275,93 @@ describe("TourManager — disparo", () => {
     expect(document.activeElement).toBe(botao);
     botao.remove();
     noPopover.remove();
+  });
+});
+
+describe("TourManager — prontoQuando (página que carrega dados)", () => {
+  const TARDIO = {
+    id: "tardio",
+    rotaInicial: "/painel",
+    automatico: true,
+    prontoQuando: "cabecalho",
+    passos: [{ alvo: "cabecalho", titulo: "T", texto: "t" }],
+  };
+  let m;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    router.path = "/painel";
+    m = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      local: () => local,
+      sessao: () => sessao,
+      esperaMs: 1000,
+    }).registrar(TARDIO);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = "";
+  });
+
+  function montarAlvo() {
+    const el = document.createElement("header");
+    el.dataset.tour = "cabecalho";
+    document.body.appendChild(el);
+  }
+
+  it("espera o alvo aparecer para abrir", () => {
+    expect(m.aoNavegar("/painel", "")).toBe(false);
+    vi.advanceTimersByTime(300);
+    expect(m.ativo).toBeNull();
+
+    montarAlvo();
+    vi.advanceTimersByTime(150);
+    expect(m.ativo).toBe("tardio");
+  });
+
+  it("não abre nem marca 'visto' se o alvo nunca aparecer (painel com erro)", () => {
+    m.aoNavegar("/painel", "");
+    vi.advanceTimersByTime(1500);
+    montarAlvo(); // tarde demais: a espera já desistiu
+    vi.advanceTimersByTime(500);
+    expect(m.ativo).toBeNull();
+    expect(local.getItem(chaveVisto(TARDIO))).toBeNull();
+  });
+
+  it("desiste se a pessoa sair da página antes de carregar", () => {
+    m.aoNavegar("/painel", "");
+    router.path = "/outra";
+    montarAlvo();
+    vi.advanceTimersByTime(300);
+    expect(m.ativo).toBeNull();
+  });
+
+  it("o botão de ajuda abre na hora, sem esperar", () => {
+    expect(m.iniciar("tardio")).toBe(true);
+    expect(m.ativo).toBe("tardio");
+  });
+});
+
+describe("tour painel-gestor (definição)", () => {
+  it("abre no painel, espera o cabeçalho da escola e cobre as seções-chave", () => {
+    expect(painelGestor.rotaInicial).toBe("/gestor/painel");
+    expect(painelGestor.prontoQuando).toBe(painelGestor.passos[0].alvo);
+    expect(painelGestor.passos.map((p) => p.alvo)).toEqual([
+      "gestor-escola",
+      "gestor-modulos",
+      "gestor-resumo",
+      "gestor-atalhos",
+      "gestor-matriculas",
+      "gestor-infraestrutura",
+      "gestor-similares",
+      "gestor-influencia",
+    ]);
+    for (const passo of painelGestor.passos) {
+      expect(passo.rota).toBeUndefined();
+      expect(passo.texto).toBeTruthy();
+    }
   });
 });
 

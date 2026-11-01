@@ -51,7 +51,7 @@
 </script>
 
 <div class="space-y-7">
-  <header class="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 pb-4">
+  <header class="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 pb-4" data-tour="gestor-escola">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">{escola.nome}</h1>
       <p class="text-sm text-gray-600 mt-1">
@@ -83,13 +83,13 @@
     </div>
   </header>
 
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="gestor-resumo">
     {#each cards as card (card.key)}
       <StatCard label={card.label} value={card.value} icon={card.icon} />
     {/each}
   </section>
 
-  <nav class="flex flex-wrap gap-2">
+  <nav class="flex flex-wrap gap-2" data-tour="gestor-atalhos">
     {#each NAV as item}
       <a
         href={item.href}
@@ -100,7 +100,7 @@
     {/each}
   </nav>
 
-  <section id="matriculas" class="space-y-4 scroll-mt-4">
+  <section id="matriculas" class="space-y-4 scroll-mt-4" data-tour="gestor-matriculas">
     <h2 class="text-lg font-bold text-gray-900">Matrículas</h2>
     <EnrollmentSection {matriculas} {resumo} />
   </section>
@@ -110,7 +110,7 @@
     <TeachersSection {docentes} />
   </section>
 
-  <section id="infraestrutura" class="space-y-4 scroll-mt-4">
+  <section id="infraestrutura" class="space-y-4 scroll-mt-4" data-tour="gestor-infraestrutura">
     <h2 class="text-lg font-bold text-gray-900">Infraestrutura</h2>
 
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
