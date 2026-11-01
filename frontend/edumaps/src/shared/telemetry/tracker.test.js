@@ -29,6 +29,17 @@ describe("sanitizeClientEvent", () => {
     });
   });
 
+  it("tour: só id, ação, passo, total e gatilho (espelha Controller::Session)", () => {
+    const out = sanitizeClientEvent({
+      type: "tour",
+      payload: { tour_id: "analises", action: "start", total: 6, trigger: "auto", titulo: "Como agrupar" },
+    });
+    expect(out).toEqual({
+      type: "tour",
+      payload: { tour_id: "analises", action: "start", total: 6, trigger: "auto" },
+    });
+  });
+
   it("aceita tipos sem chaves (gestor:logout)", () => {
     expect(sanitizeClientEvent({ type: "gestor:logout", payload: { extra: 1 } })).toEqual({
       type: "gestor:logout",

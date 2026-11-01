@@ -188,12 +188,69 @@ subtest 'privacidade: resposta só tem agregados' => sub {
     ->status_is(200)->tx->res->json;
 
   is join(',', sort keys %$d),
-    'events,generated_at,granularity,logins,searches,series,sessions,top_routes,window',
+    'events,generated_at,granularity,logins,searches,series,sessions,top_routes,tours,window',
     'conjunto de chaves do topo';
   my $txt = $t->tx->res->body;
   unlike $txt, qr/tel-test-s\d/,     'não expõe session_id';
   unlike $txt, qr/anon-tel-test-s/,  'não expõe ip_anon';
   unlike $txt, qr/102\.0\.0|203\.0\.113/, 'não expõe IP';
+};
+
+subtest 'tours: aberturas por gatilho, conclusão e passo de abandono' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  seed_telemetry();
+
+  # busca-escola: 4 aberturas (2 auto, 1 botão, 1 link), 1 conclusão,
+  # 3 fechamentos (2 no passo 3, 1 no passo 5). painel-gestor: só fechamento,
+  # sem abertura na janela (taxa = null, nunca 0). Um evento antigo (40h) fica
+  # fora da janela de 24h.
+  my @tour = (
+    [ 'busca-escola', 'start',    'auto',   undef, 7, '50 minutes' ],
+    [ 'busca-escola', 'start',    'auto',   undef, 7, '40 minutes' ],
+    [ 'busca-escola', 'start',    'button', undef, 7, '30 minutes' ],
+    [ 'busca-escola', 'start',    'link',   undef, 7, '20 minutes' ],
+    [ 'busca-escola', 'complete', undef,    7,     7, '45 minutes' ],
+    [ 'busca-escola', 'dismiss',  undef,    3,     7, '35 minutes' ],
+    [ 'busca-escola', 'dismiss',  undef,    3,     7, '25 minutes' ],
+    [ 'busca-escola', 'dismiss',  undef,    5,     7, '15 minutes' ],
+    [ 'painel-gestor', 'dismiss', undef,    2,     8, '10 minutes' ],
+    [ 'analises',      'start',   'auto',   undef, 6, '40 hours' ],
+  );
+  my $i = 0;
+  for my $e (@tour) {
+    my %p = (tour_id => $e->[0], action => $e->[1], total => $e->[4]);
+    $p{trigger} = $e->[2] if defined $e->[2];
+    $p{step}    = $e->[3] if defined $e->[3];
+    $dbh->do(
+      q{INSERT INTO clean.event_store
+          (event_id, event_type, source, payload, session_id, created_at)
+        VALUES (?, 'session.tour', 'frontend', ?::jsonb, 'tel-test-s3', now() - ?::interval)},
+      {}, sprintf('tel-test-tour-%d', ++$i), Mojo::JSON::encode_json(\%p), $e->[5],
+    );
+  }
+
+  my $d = $t->get_ok('/api/admin/telemetry/overview?window=24h', { Authorization => "Bearer $admin_token" })
+    ->status_is(200)->tx->res->json;
+
+  my %por = map { $_->{tour_id} => $_ } @{ $d->{tours} };
+  is join(',', map { $_->{tour_id} } @{ $d->{tours} }), 'busca-escola,painel-gestor',
+    'ordenado por aberturas; tour só fora da janela não aparece';
+
+  my $b = $por{'busca-escola'};
+  is $b->{started},        4, 'aberturas';
+  is $b->{started_auto},   2, 'aberturas automáticas';
+  is $b->{started_button}, 1, 'aberturas pelo botão';
+  is $b->{started_link},   1, 'aberturas por link';
+  is $b->{completed},      1, 'conclusões';
+  is $b->{dismissed},      3, 'fechamentos';
+  is $b->{completion_pct}, 25, 'taxa de conclusão 25% (1 de 4)';
+  is $b->{top_dismiss_step}, 3, 'passo em que mais se fecha';
+  is $b->{total_steps},    7, 'total de passos';
+
+  my $p = $por{'painel-gestor'};
+  is $p->{started}, 0, 'painel-gestor sem abertura na janela';
+  ok !defined $p->{completion_pct}, 'taxa sem abertura = null, não 0 (#154)';
+  is $p->{top_dismiss_step}, 2, 'passo de abandono do painel';
 };
 
 done_testing;

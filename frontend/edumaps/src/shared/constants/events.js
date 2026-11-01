@@ -15,6 +15,9 @@ export const EVENTS = {
   // consumido pela telemetria (shared/telemetry) e, no futuro, por qualquer
   // observador que precise saber "a tela mudou" sem se acoplar ao roteador.
   NAVIGATE: "app:navigate",
+  // Ajuda guiada (shared/tour): abertura, conclusão e fechamento de um tour.
+  // Payload só com ids/números: { tour_id, action, step?, total, trigger? }.
+  TOUR: "tour:event",
   TOAST_ADD: "toast-add",
   TOAST_REMOVE: "toast-remove",
 };

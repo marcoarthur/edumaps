@@ -21,6 +21,7 @@ export const CLIENT_EVENT_TYPES = {
   "gestor:login": ["ok"],
   "gestor:logout": [],
   "api:error": ["status", "route"],
+  tour: ["tour_id", "action", "step", "total", "trigger"],
 };
 
 /**

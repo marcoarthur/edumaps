@@ -54,7 +54,12 @@ Nelas, dado ausente aparece como **“—”**, nunca como zero.
 
 ## Privacidade
 
-- O roteiro não envia nada ao servidor.
+- A marca de “já visto” fica apenas no seu navegador.
+- Para a plataforma saber se a ajuda está funcionando, o navegador envia uma
+  contagem anônima de uso: qual roteiro foi aberto, se foi concluído ou em que
+  passo foi fechado, e como foi aberto (sozinho, pelo botão **?** ou por link).
+  Não vai nada do que você digita nem dados pessoais, e o painel de
+  administração só mostra totais.
 - A área de influência continua visível só para o gestor da própria escola; o
   roteiro apenas a destaca.
 

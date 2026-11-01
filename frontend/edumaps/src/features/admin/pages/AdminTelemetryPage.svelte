@@ -15,6 +15,7 @@
   import TelemetryWindows from "../components/TelemetryWindows.svelte";
   import TelemetryStatCard from "../components/TelemetryStatCard.svelte";
   import TelemetryRoutesTable from "../components/TelemetryRoutesTable.svelte";
+  import TelemetryToursTable from "../components/TelemetryToursTable.svelte";
   import TelemetryTimeseries from "../components/TelemetryTimeseries.svelte";
 
   const REFRESH_MS = 30000;
@@ -199,5 +200,7 @@
     <TelemetryTimeseries series={data.series} granularity={data.granularity} />
 
     <TelemetryRoutesTable routes={data.top_routes} />
+
+    <TelemetryToursTable tours={data.tours ?? []} />
   {/if}
 </div>

@@ -8,6 +8,41 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (e) (telemetria da ajuda guiada)
+
+Alvo `http://ubatexu.lan:8080` (deploy do branch
+`feat/frontend-telemetria-tour`: backend + frontend), Chrome real; eventos
+conferidos na base real (`database.edumaps`, `172.19.198.3`, confirmado por
+`ss` no backend).
+
+| Verificação | Resultado |
+|---|---|
+| `?tour=` → `start` com `trigger=link`; “?” → `trigger=button` | 🟢 |
+| Esc no passo 2 → `dismiss` com `step=2` (número JSON, não string) | 🟢 |
+| Conclusão do tour `analises` → `complete` com `step=6` | 🟢 |
+| Nenhuma chave fora da allowlist no `event_store` | 🟢 |
+| Lote sai no `pagehide` via `sendBeacon` (interceptado no navegador) | 🟢 |
+| Agregação `_tours` rodada na base real bate com os eventos | 🟢 |
+| **Fechar pelo × durante a animação do passo** (~300 ms) | 🔴→🟢 (ver abaixo) |
+| Testes: vitest 117 arquivos / 1017; Perl `t/04-api/session`, `t/04-api/admin`, middleware de sessão: 44 | 🟢 |
+
+**Bug achado (existia desde a fase 1, exposto pela telemetria):** o driver.js
+só chama `onDestroyed` se já houver elemento ativo, e esse estado só existe
+depois da animação de cada passo (~0,6–1,2 s). Fechar (× ou Esc) nessa janela
+destruía o tour **sem avisar** o `TourManager`: nenhum `dismiss`, `ativo`
+preso e — consequência pior — nenhum tour automático nem `?tour=` abria de
+novo até recarregar a página. Reproduzido fechando pelo × a 300 ms.
+Correção: todo encerramento passa por `#finalizar()` (idempotente), acionado
+por `onDestroyStarted` (chamado antes da checagem), `encerrar()` e conclusão.
+Depois: × a 300 ms → `dismiss@1`, foco devolvido ao “?”, e `?tour=analises`
+abre em seguida na mesma sessão.
+
+> **Não coberto**: a tabela no Painel de Administração com login de admin
+> (o agente não digita credenciais em `ubatexu.lan`); coberta por vitest
+> (fixtures) e pela consulta direta na base. Os eventos destes testes ficaram
+> na telemetria do ambiente de dev (10 aberturas de `busca-escola`, várias sem
+> fechamento por causa do bug).
+
 ## Rodada 2026-11-01 (d) (ajuda guiada — tour `analises`)
 
 Alvo `http://ubatexu.lan:8080/cluster/geotag` (deploy do branch

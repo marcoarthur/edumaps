@@ -39,11 +39,13 @@ function driverFalso() {
         d.indice = i;
         config.onHighlighted?.(undefined, config.steps[i], { state: { activeIndex: i } });
       }),
+      // API destroy(): como no driver.js real (`y("api", false)`), não
+      // chama onDestroyStarted.
       destroy: vi.fn(() => {
-        if (!d.ativo) return;
         d.ativo = false;
-        config.onDestroyed?.(undefined, undefined, {});
       }),
+      // ×, Esc: o driver real chama onDestroyStarted e NÃO destrói.
+      fechar: () => config.onDestroyStarted?.(),
       // simulam o clique nos botões do popover
       proximo: () => config.onNextClick(),
       anterior: () => config.onPrevClick(),
@@ -179,12 +181,12 @@ describe("TourManager — persistência", () => {
 
   it("fechar no meio (Esc/×) mantém 'visto' e não rebaixa um 'concluido'", () => {
     tm.iniciar("teste");
-    drivers.ultimo().destroy();
+    drivers.ultimo().fechar();
     expect(local.getItem(chaveVisto(TOUR))).toBe("visto");
 
     local.setItem(chaveVisto(TOUR), "concluido");
     tm.iniciar("teste");
-    drivers.ultimo().destroy();
+    drivers.ultimo().fechar();
     expect(local.getItem(chaveVisto(TOUR))).toBe("concluido");
   });
 
@@ -230,7 +232,7 @@ describe("TourManager — persistência", () => {
     }).registrar(TOUR);
     expect(semStorage.aoNavegar("/a", "")).toBe(true);
     drivers.ultimo().proximo();
-    drivers.ultimo().destroy();
+    drivers.ultimo().fechar();
     expect(semStorage.ativo).toBeNull();
   });
 });
@@ -238,7 +240,7 @@ describe("TourManager — persistência", () => {
 describe("TourManager — disparo", () => {
   it("abre o tour automático na primeira visita, e só nela", () => {
     expect(tm.aoNavegar("/a", "")).toBe(true);
-    drivers.ultimo().destroy();
+    drivers.ultimo().fechar();
     expect(tm.aoNavegar("/a", "")).toBe(false);
   });
 
@@ -272,10 +274,101 @@ describe("TourManager — disparo", () => {
     const noPopover = document.createElement("button"); // driver.js foca o popover
     document.body.appendChild(noPopover);
     noPopover.focus();
-    drivers.ultimo().destroy();
+    drivers.ultimo().fechar();
     expect(document.activeElement).toBe(botao);
     botao.remove();
     noPopover.remove();
+  });
+});
+
+describe("TourManager — telemetria", () => {
+  let eventos, m;
+
+  beforeEach(() => {
+    eventos = [];
+    m = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      local: () => local,
+      sessao: () => sessao,
+      aoEvento: (e) => eventos.push(e),
+    }).registrar(TOUR);
+  });
+
+  it("abertura pelo botão (padrão) e conclusão com o total de passos", () => {
+    m.iniciar("teste");
+    const d = drivers.ultimo();
+    d.proximo();
+    d.proximo();
+    d.proximo();
+    expect(eventos).toEqual([
+      { tour_id: "teste", action: "start", total: 3, trigger: "button" },
+      { tour_id: "teste", action: "complete", step: 3, total: 3 },
+    ]);
+  });
+
+  it("fechamento registra o passo exibido (1-based)", () => {
+    m.iniciar("teste");
+    drivers.ultimo().proximo();
+    drivers.ultimo().fechar(); // Esc no passo 2
+    expect(eventos.at(-1)).toEqual({ tour_id: "teste", action: "dismiss", step: 2, total: 3 });
+  });
+
+  it("gatilho automático e por link", () => {
+    m.aoNavegar("/a", "");
+    drivers.ultimo().fechar();
+    m.aoNavegar("/a", "?tour=teste");
+    const aberturas = eventos.filter((e) => e.action === "start").map((e) => e.trigger);
+    expect(aberturas).toEqual(["auto", "link"]);
+  });
+
+  it("retomada após recarregar NÃO conta como nova abertura", () => {
+    sessao.setItem("edumaps.tour.em-andamento", JSON.stringify({ id: "teste", passo: 1 }));
+    local.setItem(chaveVisto(TOUR), "visto");
+    expect(m.aoNavegar("/a", "")).toBe(true);
+    expect(eventos.filter((e) => e.action === "start")).toHaveLength(0);
+    drivers.ultimo().fechar();
+    expect(eventos).toEqual([{ tour_id: "teste", action: "dismiss", step: 2, total: 3 }]);
+  });
+
+  it("abrir outro tour fecha o atual e registra o fechamento", () => {
+    m.iniciar("teste");
+    m.iniciar("teste");
+    expect(eventos.map((e) => e.action)).toEqual(["start", "dismiss", "start"]);
+  });
+
+  it("regressão: fechar durante a animação (antes de onHighlighted) libera o manager", () => {
+    // O driver.js só chama onDestroyed se já houver elemento ativo; fechar
+    // no meio da transição não o chamava e `ativo` ficava preso.
+    const d = (m.iniciar("teste"), drivers.ultimo());
+    expect(d.config.onDestroyed).toBeUndefined();
+    d.fechar();
+    expect(d.destroy).toHaveBeenCalledTimes(1);
+    expect(m.ativo).toBeNull();
+    expect(eventos.at(-1)).toMatchObject({ action: "dismiss", step: 1 });
+    // e o manager volta a abrir tours (antes, aoNavegar retornava cedo)
+    expect(m.aoNavegar("/a", "?tour=teste")).toBe(true);
+  });
+
+  it("encerrar duas vezes não emite dois fechamentos", () => {
+    m.iniciar("teste");
+    m.encerrar();
+    m.encerrar();
+    drivers.ultimo().fechar();
+    expect(eventos.filter((e) => e.action === "dismiss")).toHaveLength(1);
+  });
+
+  it("telemetria com erro não quebra o tour", () => {
+    const quebrado = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      aoEvento: () => {
+        throw new Error("bus fora");
+      },
+    }).registrar(TOUR);
+    expect(quebrado.iniciar("teste")).toBe(true);
+    drivers.ultimo().fechar();
+    expect(quebrado.ativo).toBeNull();
   });
 });
 
