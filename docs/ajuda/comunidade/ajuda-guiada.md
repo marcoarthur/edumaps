@@ -64,6 +64,10 @@ menu.
 - **Fechei sem querer. Como volto?** Volte à página em que estava (inicial,
   busca ou análises) e clique no **?** do menu.
 - **Recarreguei a página no meio do roteiro.** Ele continua do mesmo passo.
+- **Não quero que os roteiros abram sozinhos neste computador** (apresentação,
+  computador compartilhado). Abra o EduMaps com `?tour=off` no fim do endereço
+  (ex.: `.../?tour=off`). O botão **?** continua funcionando; para voltar ao
+  normal, use `?tour=on`.
 - **Dá para usar só com teclado ou leitor de tela?** Sim: setas avançam e
   voltam, Tab circula entre os botões do quadro, Esc fecha, e o quadro é
   anunciado como diálogo.

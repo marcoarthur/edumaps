@@ -27,6 +27,21 @@ curl -s http://127.0.0.1:9222/json/version   # espera JSON com webSocketDebugger
 Quando o Chrome abre, o navegador real está VISÍVEL na tela — qualquer
 interação/erro pode ser observado ao vivo.
 
+**Desligar os tours automáticos da ajuda guiada (obrigatório, uma vez por
+profile).** Num profile limpo, páginas com tour (home, busca, painel do
+gestor, análises) abrem um roteiro sozinhas na primeira visita, e o overlay
+bloqueia cliques e cobre a tela. Antes da primeira rota:
+
+```
+browser_navigate  http://ubatexu.lan:8080/?tour=off
+```
+
+A marca fica no `localStorage` do `--user-data-dir` (persiste entre sessões
+com o mesmo profile; um profile novo exige repetir). Só a abertura
+**automática** é desligada: o botão “?” e `?tour=<id>` continuam abrindo os
+tours. Para testar a abertura automática em si, use `?tour=on` e, se preciso,
+apague a chave do tour (`localStorage.removeItem('edumaps.tour.<id>.v<versao>')`).
+
 ## Ferramentas (plugin `opencode-chrome-devtools`)
 
 | Tool | Uso |
@@ -42,6 +57,8 @@ interação/erro pode ser observado ao vivo.
 
 ## Fluxo padrão
 
+0. (uma vez por profile) `browser_navigate` para `http://ubatexu.lan:8080/?tour=off`
+   — ver Setup.
 1. `browser_navigate` para **`http://ubatexu.lan:8080/<rota>`**.
 2. `sleep 2–4` (SPA hidrata; chamadas de API podem demorar).
 3. Assert de conteúdo inicial via `browser_eval`
@@ -66,6 +83,11 @@ interação/erro pode ser observado ao vivo.
 - Rotas de gestor forçam `GestorLoginCard` em 401 — para e2e com sessão, o
   login depende de credenciais reais do container; senão, testar o card de
   login e os fluxos públicos das mesmas páginas.
+- **Overlay escuro cobrindo a página / cliques sem efeito** = tour da ajuda
+  guiada aberto. Faltou o `?tour=off` do Setup (ou o profile é novo). Para
+  fechar na hora: `document.dispatchEvent(new KeyboardEvent('keyup',{key:'Escape',bubbles:true}))`.
+- Ao testar os próprios tours por script: o driver.js só conclui um passo
+  depois da animação (~0,6–1,2 s); ler estado antes disso dá falso negativo.
 - `curl` no container exige `-H "Host: ubatexu.lan"`; no `browser_navigate`
   use a URL completa com porta (`http://ubatexu.lan:8080`).
 

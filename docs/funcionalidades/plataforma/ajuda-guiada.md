@@ -43,6 +43,9 @@ quer rever uma tela.
 - Sistema pode reapresentar um roteiro quando o conteúdo dele for revisto.
 - Sistema pode abrir um roteiro a partir de um link, por exemplo numa página
   de ajuda ou num material de formação.
+- Sistema pode ter a abertura automática desligada num navegador por um link
+  (útil para apresentações, computadores compartilhados e testes
+  automatizados), sem perder o acesso aos roteiros pelo botão “?”.
 - Sistema pode medir o uso de cada roteiro — quantas vezes foi aberto (e se
   sozinho, pelo botão “?” ou por link), concluído ou fechado antes do fim, e o
   passo em que as pessoas mais desistem — de forma anônima e só em totais,

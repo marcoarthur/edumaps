@@ -1,6 +1,6 @@
 // src/shared/tour/tourManager.test.js
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { TourManager, chaveVisto, seletorDoAlvo } from "./tourManager.svelte.js";
+import { TourManager, chaveVisto, seletorDoAlvo, CHAVE_AUTOMATICO } from "./tourManager.svelte.js";
 import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
 import painelGestor from "./tours/painelGestor.js";
@@ -278,6 +278,70 @@ describe("TourManager — disparo", () => {
     expect(document.activeElement).toBe(botao);
     botao.remove();
     noPopover.remove();
+  });
+});
+
+describe("TourManager — ?tour=off (perfil de e2e)", () => {
+  it("desliga a abertura automática neste navegador, sem abrir nada", () => {
+    expect(tm.aoNavegar("/qualquer", "?tour=off")).toBe(false);
+    expect(local.getItem(CHAVE_AUTOMATICO)).toBe("off");
+    expect(tm.automaticoLigado()).toBe(false);
+    // a página com tour automático, nunca visto, não abre
+    expect(tm.aoNavegar("/a", "")).toBe(false);
+    expect(drivers.criados).toHaveLength(0);
+    // e não marca "visto": religando, ele ainda aparece
+    expect(local.getItem(chaveVisto(TOUR))).toBeNull();
+  });
+
+  it("vale para tours com prontoQuando também", () => {
+    vi.useFakeTimers();
+    try {
+      const tardio = new TourManager({
+        router: roteadorFalso("/painel"),
+        criarDriver: drivers.criar,
+        local: () => local,
+      }).registrar({
+        id: "tardio",
+        rotaInicial: "/painel",
+        automatico: true,
+        prontoQuando: "cab",
+        passos: [{ alvo: "cab", titulo: "T", texto: "t" }],
+      });
+      tardio.aoNavegar("/x", "?tour=off");
+      const el = document.createElement("div");
+      el.dataset.tour = "cab";
+      document.body.appendChild(el);
+      tardio.aoNavegar("/painel", "");
+      vi.advanceTimersByTime(500);
+      expect(tardio.ativo).toBeNull();
+      el.remove();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("botão e ?tour=<id> continuam abrindo com o automático desligado", () => {
+    tm.aoNavegar("/x", "?tour=off");
+    expect(tm.iniciar("teste")).toBe(true);
+    drivers.ultimo().fechar();
+    expect(tm.aoNavegar("/a", "?tour=teste")).toBe(true);
+  });
+
+  it("?tour=on religa", () => {
+    tm.aoNavegar("/x", "?tour=off");
+    expect(tm.aoNavegar("/a", "?tour=on")).toBe(true); // religou e abriu o automático
+    expect(local.getItem(CHAVE_AUTOMATICO)).toBeNull();
+  });
+
+  it("sem storage, o automático segue ligado (padrão)", () => {
+    const semStorage = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      local: () => {
+        throw new Error("bloqueado");
+      },
+    }).registrar(TOUR);
+    expect(semStorage.automaticoLigado()).toBe(true);
   });
 });
 

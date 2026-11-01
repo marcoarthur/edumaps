@@ -27,6 +27,10 @@
 
 const PREFIXO = "edumaps.tour";
 const CHAVE_SESSAO = `${PREFIXO}.em-andamento`;
+// `?tour=off` desliga só a abertura AUTOMÁTICA neste navegador (perfil de
+// e2e, apresentações); `?tour=on` religa. Botão "?", `?tour=<id>` e a
+// retomada após recarregar continuam funcionando.
+export const CHAVE_AUTOMATICO = `${PREFIXO}.automatico`;
 
 /** Lê/grava armazenamento sem nunca lançar (aba privada, site data bloqueado). */
 function ler(obterStorage, chave) {
@@ -156,6 +160,11 @@ export class TourManager {
     return ler(this.#local, chaveVisto(tour)) !== null;
   }
 
+  /** Abertura automática ligada neste navegador? (ver `?tour=off`). */
+  automaticoLigado() {
+    return ler(this.#local, CHAVE_AUTOMATICO) !== "off";
+  }
+
   /** Situação registrada do tour: null | "visto" | "concluido". */
   situacao(tour) {
     return ler(this.#local, chaveVisto(tour));
@@ -178,6 +187,11 @@ export class TourManager {
     }
 
     const pedido = new URLSearchParams(search).get("tour");
+    if (pedido === "off") {
+      gravar(this.#local, CHAVE_AUTOMATICO, "off");
+      return false;
+    }
+    if (pedido === "on") remover(this.#local, CHAVE_AUTOMATICO);
     if (pedido && this.#tours.has(pedido)) {
       this.iniciar(pedido, { origem: "link" });
       return true;
@@ -194,7 +208,7 @@ export class TourManager {
     }
 
     const tour = this.tourDaRota(path);
-    if (tour?.automatico && !this.jaVisto(tour)) {
+    if (tour?.automatico && !this.jaVisto(tour) && this.automaticoLigado()) {
       if (tour.prontoQuando) {
         this.#iniciarQuandoPronto(tour, path);
         return false;
