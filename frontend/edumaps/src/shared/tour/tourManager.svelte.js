@@ -15,7 +15,10 @@
 //   - disparo: botão de ajuda, primeira visita à página (uma vez só) e o
 //     parâmetro `?tour=<id>` na URL;
 //   - acessibilidade complementar: `aria-modal` e devolução do foco ao
-//     elemento que estava focado antes do tour.
+//     elemento que estava focado antes do tour;
+//   - telemetria: `aoEvento` recebe abertura (com o gatilho), conclusão e
+//     fechamento (com o passo, 1-based). Retomada após recarregar NÃO conta
+//     como abertura.
 //
 // Os alvos são atributos `data-tour="<nome>"` nos componentes, nunca classes
 // CSS — refatoração visual não pode quebrar a ajuda.
@@ -104,6 +107,7 @@ export class TourManager {
   #local;
   #sessao;
   #esperaMs;
+  #aoEvento;
 
   /**
    * @param {object} deps
@@ -112,13 +116,23 @@ export class TourManager {
    * @param {() => Storage | null} [deps.local]
    * @param {() => Storage | null} [deps.sessao]
    * @param {number} [deps.esperaMs] - quanto esperar o alvo aparecer
+   * @param {(evento: {tour_id: string, action: string, step?: number, total: number, trigger?: string}) => void} [deps.aoEvento]
+   *   telemetria; nunca deve lançar (erros são engolidos aqui)
    */
-  constructor({ router, criarDriver, local = () => null, sessao = () => null, esperaMs = 4000 }) {
+  constructor({
+    router,
+    criarDriver,
+    local = () => null,
+    sessao = () => null,
+    esperaMs = 4000,
+    aoEvento = () => {},
+  }) {
     this.#router = router;
     this.#criarDriver = criarDriver;
     this.#local = local;
     this.#sessao = sessao;
     this.#esperaMs = esperaMs;
+    this.#aoEvento = aoEvento;
   }
 
   registrar(...tours) {
@@ -165,7 +179,7 @@ export class TourManager {
 
     const pedido = new URLSearchParams(search).get("tour");
     if (pedido && this.#tours.has(pedido)) {
-      this.iniciar(pedido);
+      this.iniciar(pedido, { origem: "link" });
       return true;
     }
 
@@ -173,7 +187,7 @@ export class TourManager {
     if (salvo) {
       const tour = this.#tours.get(salvo.id);
       if (tour && tour.passos[salvo.passo]?.rota === path) {
-        this.iniciar(salvo.id, { passo: salvo.passo });
+        this.iniciar(salvo.id, { passo: salvo.passo, origem: "resume" });
         return true;
       }
       remover(this.#sessao, CHAVE_SESSAO);
@@ -185,7 +199,7 @@ export class TourManager {
         this.#iniciarQuandoPronto(tour, path);
         return false;
       }
-      this.iniciar(tour.id);
+      this.iniciar(tour.id, { origem: "auto" });
       return true;
     }
     return false;
@@ -207,14 +221,19 @@ export class TourManager {
         clearInterval(this.#espera);
       } else if (document.querySelector(seletor)) {
         clearInterval(this.#espera);
-        if (!this.jaVisto(tour)) this.iniciar(tour.id);
+        if (!this.jaVisto(tour)) this.iniciar(tour.id, { origem: "auto" });
       } else if (Date.now() - inicio > this.#esperaMs) {
         clearInterval(this.#espera);
       }
     }, 100);
   }
 
-  iniciar(id, { passo = 0 } = {}) {
+  /**
+   * @param {string} id
+   * @param {{passo?: number, origem?: "button"|"auto"|"link"|"resume"}} [opts]
+   *   `origem` vai para a telemetria; o padrão é o botão "?".
+   */
+  iniciar(id, { passo = 0, origem = "button" } = {}) {
     const tour = this.#tours.get(id);
     if (!tour) return false;
     if (this.ativo) this.encerrar();
@@ -229,6 +248,9 @@ export class TourManager {
 
     this.#driver = this.#criarDriver(this.#configuracao(tour));
     this.ativo = tour.id;
+    if (origem !== "resume") {
+      this.#emitir({ tour_id: tour.id, action: "start", total: tour.passos.length, trigger: origem });
+    }
     this.#irPara(passo);
     return true;
   }
@@ -302,6 +324,12 @@ export class TourManager {
   }
 
   #aoDestruir() {
+    const total = this.#tour.passos.length;
+    this.#emitir(
+      this.#concluido
+        ? { tour_id: this.#tour.id, action: "complete", step: total, total }
+        : { tour_id: this.#tour.id, action: "dismiss", step: this.passo + 1, total }
+    );
     if (this.#concluido) gravar(this.#local, chaveVisto(this.#tour), "concluido");
     remover(this.#sessao, CHAVE_SESSAO);
 
@@ -313,6 +341,15 @@ export class TourManager {
     this.passo = 0;
 
     if (foco?.isConnected && typeof foco.focus === "function") foco.focus();
+  }
+
+  /** Telemetria nunca quebra o tour. */
+  #emitir(evento) {
+    try {
+      this.#aoEvento(evento);
+    } catch {
+      /* fogo-e-esqueça */
+    }
   }
 
   #lerSessao() {

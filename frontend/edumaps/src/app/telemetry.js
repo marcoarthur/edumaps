@@ -29,6 +29,18 @@ const BUS_TO_CLIENT = {
     type: "api:error",
     payload: { status: p?.status, route: p?.url },
   }),
+  // Ajuda guiada: só id do tour, ação, passo/total e gatilho — o backend
+  // valida também os valores (Controller::Session#type_map).
+  [EVENTS.TOUR]: (p) => ({
+    type: "tour",
+    payload: {
+      tour_id: p?.tour_id,
+      action: p?.action,
+      step: p?.step,
+      total: p?.total,
+      trigger: p?.trigger,
+    },
+  }),
 };
 
 /**

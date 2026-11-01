@@ -42,6 +42,18 @@ describe("mapBusEvent", () => {
     ).toEqual({ type: "api:error", payload: { status: 503, route: "/api/gestor/me" } });
   });
 
+  it("ajuda guiada -> tour só com id, ação, passo, total e gatilho", () => {
+    expect(
+      mapBusEvent({
+        type: EVENTS.TOUR,
+        payload: { tour_id: "busca-escola", action: "dismiss", step: 3, total: 7, titulo: "x" },
+      }),
+    ).toEqual({
+      type: "tour",
+      payload: { tour_id: "busca-escola", action: "dismiss", step: 3, total: 7 },
+    });
+  });
+
   it("ignora eventos sem interesse", () => {
     expect(mapBusEvent({ type: EVENTS.TOAST_ADD, payload: {} })).toBeNull();
   });

@@ -279,6 +279,76 @@ describe("TourManager — disparo", () => {
   });
 });
 
+describe("TourManager — telemetria", () => {
+  let eventos, m;
+
+  beforeEach(() => {
+    eventos = [];
+    m = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      local: () => local,
+      sessao: () => sessao,
+      aoEvento: (e) => eventos.push(e),
+    }).registrar(TOUR);
+  });
+
+  it("abertura pelo botão (padrão) e conclusão com o total de passos", () => {
+    m.iniciar("teste");
+    const d = drivers.ultimo();
+    d.proximo();
+    d.proximo();
+    d.proximo();
+    expect(eventos).toEqual([
+      { tour_id: "teste", action: "start", total: 3, trigger: "button" },
+      { tour_id: "teste", action: "complete", step: 3, total: 3 },
+    ]);
+  });
+
+  it("fechamento registra o passo exibido (1-based)", () => {
+    m.iniciar("teste");
+    drivers.ultimo().proximo();
+    drivers.ultimo().destroy(); // Esc no passo 2
+    expect(eventos.at(-1)).toEqual({ tour_id: "teste", action: "dismiss", step: 2, total: 3 });
+  });
+
+  it("gatilho automático e por link", () => {
+    m.aoNavegar("/a", "");
+    drivers.ultimo().destroy();
+    m.aoNavegar("/a", "?tour=teste");
+    const aberturas = eventos.filter((e) => e.action === "start").map((e) => e.trigger);
+    expect(aberturas).toEqual(["auto", "link"]);
+  });
+
+  it("retomada após recarregar NÃO conta como nova abertura", () => {
+    sessao.setItem("edumaps.tour.em-andamento", JSON.stringify({ id: "teste", passo: 1 }));
+    local.setItem(chaveVisto(TOUR), "visto");
+    expect(m.aoNavegar("/a", "")).toBe(true);
+    expect(eventos.filter((e) => e.action === "start")).toHaveLength(0);
+    drivers.ultimo().destroy();
+    expect(eventos).toEqual([{ tour_id: "teste", action: "dismiss", step: 2, total: 3 }]);
+  });
+
+  it("abrir outro tour fecha o atual e registra o fechamento", () => {
+    m.iniciar("teste");
+    m.iniciar("teste");
+    expect(eventos.map((e) => e.action)).toEqual(["start", "dismiss", "start"]);
+  });
+
+  it("telemetria com erro não quebra o tour", () => {
+    const quebrado = new TourManager({
+      router,
+      criarDriver: drivers.criar,
+      aoEvento: () => {
+        throw new Error("bus fora");
+      },
+    }).registrar(TOUR);
+    expect(quebrado.iniciar("teste")).toBe(true);
+    drivers.ultimo().destroy();
+    expect(quebrado.ativo).toBeNull();
+  });
+});
+
 describe("TourManager — prontoQuando (página que carrega dados)", () => {
   const TARDIO = {
     id: "tardio",

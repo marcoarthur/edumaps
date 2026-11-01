@@ -43,6 +43,22 @@ describe("AdminTelemetryPage", () => {
     expect(screen.getByText("40.5%")).toBeInTheDocument();
   });
 
+  it("mostra a ajuda guiada por tour, com taxa ausente como “—”", async () => {
+    render(AdminTelemetryPage);
+
+    expect(await screen.findByText("Ajuda guiada")).toBeInTheDocument();
+    // nome do catálogo + id
+    expect(screen.getByText("Como buscar uma escola")).toBeInTheDocument();
+    expect(screen.getByText("busca-escola")).toBeInTheDocument();
+    expect(screen.getByText("auto 14 · botão 5 · link 1")).toBeInTheDocument();
+    expect(screen.getByText("45%")).toBeInTheDocument();
+    expect(screen.getByText("3 de 7")).toBeInTheDocument();
+    // painel-gestor sem abertura na janela: taxa “—”, nunca 0%
+    expect(screen.getByText("Conhecer o painel do gestor")).toBeInTheDocument();
+    expect(screen.queryByText("0%")).toBeNull();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
   it("trocar a janela refaz a consulta (números da janela de 6h)", async () => {
     render(AdminTelemetryPage);
     await screen.findByText("Painel de Administração");
