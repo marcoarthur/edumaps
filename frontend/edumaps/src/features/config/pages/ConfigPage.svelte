@@ -171,6 +171,7 @@
       <div class="flex items-center gap-2">
       <a
         href="/config/consentimento"
+        data-tour="config-consentimento"
         use:link
         class="px-4 py-2 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-md hover:bg-indigo-50"
       >
@@ -211,12 +212,12 @@
   {:else if error}
     <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-4">{error}</div>
   {:else}
-    <div class="grid lg:grid-cols-3 gap-5">
-      <section class="border border-gray-200 rounded-lg p-3 bg-white">
+    <div class="grid lg:grid-cols-3 gap-5" data-tour="config-grade">
+      <section class="border border-gray-200 rounded-lg p-3 bg-white" data-tour="config-categorias">
         <h2 class="font-semibold text-gray-800 mb-1">Categorias</h2>
         <ConfigArvore categories={categorias} {selecionada} onSelecionarItem={carregarItem} />
       </section>
-      <section class="lg:col-span-2 border border-gray-200 rounded-lg p-4 bg-white">
+      <section class="lg:col-span-2 border border-gray-200 rounded-lg p-4 bg-white" data-tour="config-editor">
         <ConfigEditor {item} {salvando} onSalvar={salvar} onValidar={validar} />
         {#if grupoTelegramPublico}
           {#key revisaoTelegram}

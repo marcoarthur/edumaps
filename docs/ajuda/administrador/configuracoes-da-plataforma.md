@@ -23,6 +23,13 @@ Gerencie configurações gerais da plataforma com cautela.
 3. **Salvar** e validar impacto
 4. **Documentar** alteração se relevante
 
+## Roteiro desta página
+
+Na primeira vez que o painel carrega (com perfil de administrador), um roteiro
+de 3 passos mostra as categorias (com o selo “Em breve” no que ainda não está
+disponível), como editar, validar e salvar um item (chaves secretas nunca são
+exibidas) e as versões do termo de consentimento. Reabra pelo **?** do menu.
+
 ## Limitações conhecidas
 - Alterações podem afetar toda a plataforma.
 - Nem todas as configurações são reversíveis imediatamente.
