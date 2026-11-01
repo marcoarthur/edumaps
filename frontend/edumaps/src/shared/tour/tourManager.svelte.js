@@ -97,6 +97,7 @@ export class TourManager {
   #driver = null;
   #concluido = false;
   #focoAnterior = null;
+  #espera = null;
 
   #router;
   #criarDriver;
@@ -180,10 +181,37 @@ export class TourManager {
 
     const tour = this.tourDaRota(path);
     if (tour?.automatico && !this.jaVisto(tour)) {
+      if (tour.prontoQuando) {
+        this.#iniciarQuandoPronto(tour, path);
+        return false;
+      }
       this.iniciar(tour.id);
       return true;
     }
     return false;
+  }
+
+  /**
+   * Tour automático de página que carrega dados antes de montar os alvos
+   * (ex.: painel do gestor): só abre quando `prontoQuando` aparece no DOM.
+   * Se não aparecer no prazo (erro, INEP inválido), não abre e não marca
+   * "visto" — a pessoa ainda o verá numa visita em que o painel carregue.
+   */
+  #iniciarQuandoPronto(tour, path) {
+    clearInterval(this.#espera);
+    const inicio = Date.now();
+    const seletor = seletorDoAlvo(tour.prontoQuando);
+    this.#espera = setInterval(() => {
+      const saiuDaPagina = this.#router.path.split("?")[0] !== path;
+      if (this.ativo || saiuDaPagina) {
+        clearInterval(this.#espera);
+      } else if (document.querySelector(seletor)) {
+        clearInterval(this.#espera);
+        if (!this.jaVisto(tour)) this.iniciar(tour.id);
+      } else if (Date.now() - inicio > this.#esperaMs) {
+        clearInterval(this.#espera);
+      }
+    }, 100);
   }
 
   iniciar(id, { passo = 0 } = {}) {

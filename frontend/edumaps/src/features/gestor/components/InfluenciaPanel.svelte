@@ -75,7 +75,7 @@
   });
 </script>
 
-<section id="influencia" class="space-y-4 scroll-mt-4">
+<section id="influencia" class="space-y-4 scroll-mt-4" data-tour="gestor-influencia">
   <div class="flex items-center gap-2">
     <h2 class="text-lg font-bold text-gray-900">Área de influência (IVET)</h2>
     <InfoHint

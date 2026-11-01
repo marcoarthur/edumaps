@@ -39,4 +39,5 @@ O EduMaps ajuda a entender a escola no seu território: indicadores educacionais
 
 ## Veja também
 - [Painel da escola](painel-da-escola.md)
+- [Ajuda guiada do painel](ajuda-guiada-painel.md)
 - [Glossário](_glossario.md)

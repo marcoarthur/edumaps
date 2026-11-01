@@ -14,10 +14,11 @@ relacionadas: [escolas, rede-municipal, telemetria-de-sessao]
 
 A plataforma conduz a pessoa pela tela, passo a passo: escurece o resto da
 página, destaca o campo ou botão em questão e explica para que ele serve, em
-português. Um mesmo roteiro pode continuar em outra página. Hoje há dois
+português. Um mesmo roteiro pode continuar em outra página. Hoje há três
 roteiros: o de primeiro acesso, na página inicial, que apresenta a plataforma e
-as entradas principais do menu; e o da busca de escolas, que termina na
-comparação de redes do município.
+as entradas principais do menu; o da busca de escolas, que termina na
+comparação de redes do município; e o do painel do gestor, que apresenta o
+raio-x da escola e os módulos de gestão.
 
 ## Para quem
 
@@ -29,6 +30,9 @@ quer rever uma tela.
 
 - Sistema pode apresentar um roteiro de ajuda na primeira visita a uma página
   que tenha roteiro, uma única vez, sem insistir em visitas seguintes.
+- Sistema pode esperar a página terminar de carregar os dados antes de abrir
+  o roteiro, e não abri-lo quando a página não carrega (por exemplo, escola
+  inexistente), para que a pessoa o veja numa visita em que a página funcione.
 - Sistema pode reabrir o roteiro da página a qualquer momento pelo botão “?”
   do menu.
 - Sistema pode destacar um elemento por vez (campo, botão, área de
@@ -49,9 +53,9 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 
 ## Limitações atuais
 
-- Têm roteiro a página inicial (primeiro acesso) e a busca de escolas (com a
-  passagem para a comparação de redes); painel do gestor e análises estão
-  previstos.
+- Têm roteiro a página inicial (primeiro acesso), a busca de escolas (com a
+  passagem para a comparação de redes) e o painel do gestor; análises estão
+  previstas.
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
 
@@ -59,4 +63,5 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 
 - [Busca de escolas](../busca/escolas.md)
 - [Rede municipal e comparação de redes](../analise/rede-municipal.md)
+- [Painel do gestor](../gestor/painel.md)
 - [Telemetria de sessão](telemetria-de-sessao.md)
