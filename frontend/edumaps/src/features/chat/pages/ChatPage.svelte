@@ -240,7 +240,7 @@
         </p>
       </div>
       {#if gestor && !precisaLogin}
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap" data-tour="chat-acoes">
         <button
           onclick={clearChat}
           disabled={messages.length === 0}
@@ -319,6 +319,7 @@
         class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4"
         aria-labelledby="chat-escopo-titulo"
         data-testid="chat-escopo"
+        data-tour="chat-escopo"
       >
         <h2 id="chat-escopo-titulo" class="font-semibold text-blue-800 mb-1 text-sm">
           Escopo da consulta
@@ -349,9 +350,12 @@
       mensagem="Entre para usar o Assistente do Censo."
     />
   {:else if gestor}
-    <div class="flex-1 min-h-0 flex flex-col">
+    <!-- o alvo fica no contêiner: um <div> em volta do ChatHistory quebraria o flex -->
+    <div class="flex-1 min-h-0 flex flex-col" data-tour="chat-conversa">
       <ChatHistory {messages} {loading} />
-      <ChatInput disabled={loading} contexto={contextoExibido} onsend={handleSend} />
+      <div data-tour="chat-pergunta">
+        <ChatInput disabled={loading} contexto={contextoExibido} onsend={handleSend} />
+      </div>
     </div>
   {/if}
 </div>

@@ -23,6 +23,7 @@ import gestorReunioes from "./tours/gestorReunioes.js";
 import gestorInventario from "./tours/gestorInventario.js";
 import gestorRelacoes from "./tours/gestorRelacoes.js";
 import gestorDocumentos from "./tours/gestorDocumentos.js";
+import assistenteCenso from "./tours/assistenteCenso.js";
 
 export const tourManager = new TourManager({
   router,
@@ -47,6 +48,7 @@ export const tourManager = new TourManager({
   gestorInventario,
   gestorRelacoes,
   gestorDocumentos,
+  assistenteCenso,
 );
 
 export { default as BotaoAjuda } from "./BotaoAjuda.svelte";

@@ -61,6 +61,7 @@ reaberto pelo **?**:
 | **Inventário** | as quatro seções e como começar importando do Censo |
 | **Relações** | as quatro seções, filtros, nova relação e o detalhe de cada uma |
 | **Documentos** | pastas e versões, envio de arquivo, tags e atividade recente |
+| **Assistente do Censo** | o escopo da consulta, como perguntar, como conferir a resposta (SQL e resultado) e como salvar e reencontrar conversas |
 
 O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão
 “Enviar e-mail” de uma lista (direto no editor), ele fica para a próxima visita.
