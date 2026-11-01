@@ -52,8 +52,12 @@ menu.
 
 ## Privacidade
 
-- O roteiro não envia nada ao servidor: a marca de “já visto” fica apenas no
-  seu navegador.
+- A marca de “já visto” fica apenas no seu navegador.
+- Para a plataforma saber se a ajuda está funcionando, o navegador envia uma
+  contagem anônima de uso: qual roteiro foi aberto, se foi concluído ou em que
+  passo foi fechado, e como foi aberto (sozinho, pelo botão **?** ou por link).
+  Não vai nada do que você digita nem dados pessoais, e o painel de
+  administração só mostra totais.
 
 ## Perguntas frequentes
 

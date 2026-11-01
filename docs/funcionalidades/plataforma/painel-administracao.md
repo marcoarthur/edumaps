@@ -34,6 +34,10 @@ uso para priorizar melhorias, dimensionar capacidade e perceber tendências.
   janela, com o volume e a participação percentual de cada uma.
 - Sistema pode contar as **buscas realizadas** — apenas o número de buscas, não
   o texto digitado — e o total de eventos no período.
+- Sistema pode mostrar o **uso da ajuda guiada** por roteiro na janela:
+  aberturas (separadas entre automáticas, pelo botão “?” e por link),
+  conclusões, fechamentos antes do fim, taxa de conclusão e o passo em que as
+  pessoas mais desistem — sem taxa quando não houve abertura (nunca “0%”).
 - Sistema pode apresentar a **atividade ao longo do tempo**, por hora (janelas
   de até um dia) ou por dia (janelas de 7 e 30 dias), num gráfico contínuo.
 - Sistema pode oferecer um **seletor de janela** (6 h, 12 h, 24 h, hoje,

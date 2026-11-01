@@ -38,8 +38,12 @@ precisa de evidências quantitativas de uso para priorizar melhorias.
   prazo — sem nunca gravar o texto digitado pelo visitante.
 - Sistema pode registrar eventos de interesse vindos do navegador
   (navegação entre telas, buscas — contagem, não o texto —, login/logout de
-  gestor e erros de API), com tipos e campos autorizados por uma lista
-  controlada no servidor.
+  gestor, erros de API e uso da ajuda guiada), com tipos e campos autorizados
+  por uma lista controlada no servidor.
+- Sistema pode, para eventos que exigem mais rigor, validar também os
+  **valores** recebidos (por exemplo, só nomes de roteiro do catálogo e ações
+  de um conjunto fechado), descartando o evento inteiro quando algo foge do
+  padrão — assim nenhum texto livre chega ao repositório.
 
 ## Nota de status
 
@@ -47,7 +51,8 @@ A telemetria está **ativa nas duas pontas**. No servidor, a sessão do visitant
 é identificada por cookie nos requests de API e as interações são persistidas
 em lotes. No navegador, um rastreador envia — também em lotes — os eventos de
 navegação entre telas, buscas (só a contagem de caracteres e o total de
-resultados, nunca o texto digitado), login/logout de gestor e erros de API.
+resultados, nunca o texto digitado), login/logout de gestor, erros de API e
+uso da ajuda guiada (qual roteiro, ação, passo e forma de abertura).
 Os tipos e campos aceitos são controlados por uma lista no servidor; o IP cru
 fica só na dimensão de sessão, com anonimização por hash diário para análises
 de longo prazo. Detalhes de implementação e limites de privacidade em

@@ -43,6 +43,10 @@ quer rever uma tela.
 - Sistema pode reapresentar um roteiro quando o conteúdo dele for revisto.
 - Sistema pode abrir um roteiro a partir de um link, por exemplo numa página
   de ajuda ou num material de formação.
+- Sistema pode medir o uso de cada roteiro — quantas vezes foi aberto (e se
+  sozinho, pelo botão “?” ou por link), concluído ou fechado antes do fim, e o
+  passo em que as pessoas mais desistem — de forma anônima e só em totais,
+  para orientar a revisão dos roteiros.
 - Sistema pode ser usado só pelo teclado (setas avançam e voltam, Esc fecha) e
   é anunciado como diálogo por leitores de tela.
 
@@ -65,5 +69,6 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 - [Busca de escolas](../busca/escolas.md)
 - [Rede municipal e comparação de redes](../analise/rede-municipal.md)
 - [Painel do gestor](../gestor/painel.md)
+- [Painel de Administração](painel-administracao.md)
 - [Agrupamento de escolas (clusters)](../analise/clusters.md)
 - [Telemetria de sessão](telemetria-de-sessao.md)
