@@ -64,7 +64,7 @@ export default {
       alvo: "analises-resultado",
       titulo: "O resultado",
       texto:
-        "O mapa mostra as escolas coloridas pelo grupo. Abaixo, a tabela resume cada grupo: " +
+        "Depois de gerar, o mapa mostra as escolas coloridas pelo grupo, e a tabela abaixo resume cada grupo: " +
         "quantas escolas tem e os três indicadores com os valores mais altos. " +
         "Para rever esta ajuda, use o “?” no menu.",
       lado: "top",
