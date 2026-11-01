@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (c) — tour do painel do gestor (PR #313)
+
+- **PR #313 MERGEADO** (`4388f4b`; commits `94017bb`, `e99d0f8`, `cd5e06d`):
+  tour `painel-gestor` (8 passos) em `/gestor/painel` — escola, módulos,
+  resumo, atalhos, matrículas, infraestrutura, similares, influência.
+- **`TourManager.prontoQuando`** (novo): tour automático de página que
+  carrega dados só abre quando o alvo indicado monta (poll 100 ms até
+  `esperaMs`); se não montar (painel com erro), **não abre e não marca
+  "visto"**. O "?" ignora a espera. Usar em qualquer tour de página com fetch.
+- **E2E do painel sem login funciona** (API do painel responde 200 sem
+  sessão), mas área de influência e OSM mostram "Entre como gestor…". Estado
+  logado **não testado por mim**: credenciais em `ubatexu.lan` não podem ser
+  digitadas pelo agente (não é host local/teste) — o developer valida logado.
+- **Leaflet × tour medido**: overlay z 10000 > panes 400 / controles 1000;
+  mapa de similares visível dentro do destaque.
+- **Texto conferido na tela, não só na ficha**: a ficha não citava o gráfico
+  por faixa etária; o e2e pegou.
+- Pendências: tour das análises (fase final → nota consolidada do ciclo);
+  "?" na tela de erro do painel abre passos sem alvo (caso raro, registrado).
+
 ## Sessão 2026-11-01 (b) — tour de primeiro acesso (PR #312)
 
 - **PR #312 MERGEADO** (`b8517ca`; commits `0eae50a`, `0ae3915`): tour
