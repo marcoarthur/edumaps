@@ -263,6 +263,14 @@ corrigidos. O teste de contrato (alvos × markup real, com sessão simulada)
 é a principal defesa de manutenção: refatorar uma página e perder um
 `data-tour` quebra o teste, e o tour não degrada sem aviso.
 
+## 12. Painel de Configuração (PR #324): todas as páginas principais
+
+Tour `config-painel` (3 passos), `prontoQuando` na grade de categorias + editor,
+mesmo critério de acesso do admin (`access_role === "admin"`). Os painéis
+extras (bot público, retenção, envios) dependem do grupo escolhido e ficaram
+só no texto. Catálogo final: **17 tours**, cobrindo todas as páginas
+principais da plataforma.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -277,8 +285,8 @@ corrigidos. O teste de contrato (alvos × markup real, com sessão simulada)
   ligado via `--remote-debugging-port`).
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
   ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
-  Configurações e telas secundárias (assistentes de criação, detalhes), se
-  houver demanda.
+  ~~Configurações~~ (PR #324). Telas secundárias (assistentes de criação,
+  detalhes, versões do consentimento), se houver demanda.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

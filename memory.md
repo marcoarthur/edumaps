@@ -4,6 +4,13 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (m) — tour do Painel de Configuração (PR #324)
+
+- **PR #324 MERGEADO**: tour `config-painel` (3 passos) em `/config`,
+  `prontoQuando: config-grade`. **17 tours, todas as páginas principais
+  cobertas.** Só telas secundárias sem roteiro.
+- Tour com perfil admin: só o developer valida (sessão do Chrome não é admin).
+
 ## Sessão 2026-11-01 (l) — tour do Painel de Administração (PR #323)
 
 - **PR #323 MERGEADO**: tour `admin-painel` (7 passos) em `/admin`,
