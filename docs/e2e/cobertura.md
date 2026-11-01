@@ -8,6 +8,35 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (i) (tours dos módulos do gestor — lote 2)
+
+Tours: Pesquisas, Reuniões, Inventário, Relações, Documentos (branch
+`feat/frontend-tour-gestor-lote2`), em `ubatexu.lan:8080`. Pesquisas não exige
+login. Para os outros quatro, o Chrome **já tinha uma sessão de gestor aberta**
+(da validação do lote 1). O agente não injetou credencial e só navegou e leu,
+sem nenhuma ação de escrita.
+
+| Verificação | Resultado |
+|---|---|
+| Pesquisas (`?inep=35211576`, estado vazio real): abre sozinho; alvo no `<div>` do vazio; 2 passos | 🟢 |
+| Reuniões logado: abre sozinho; 4/4 alvos certos, popover na janela | 🟢 |
+| Inventário logado: 3/3 | 🟢 |
+| Relações logado: 4/4 | 🟢 |
+| Documentos logado: 4/4 (painel “Como funciona” com o texto corrigido) | 🟢 |
+| Sair de uma página com tour aberto → abre o tour da página nova | 🔴→🟢 (fix no `aoNavegar`) |
+| Envios por `?novo=1` logado (lote 1): editor aberto, **nenhum** tour, sem “?”, nada marcado | 🟢 |
+| 1º passo de Pesquisas no estado vazio falava só de “rascunhos, publicadas…” | 🔴→🟢 (texto ajustado) |
+| Contrato `tourAlvos.test.js`: 10 páginas com sessão + Pesquisas sem `?inep=` | 🟢 20/20 |
+| Suíte frontend | 🟢 118 arquivos / 1058 testes |
+
+> **Bug fora do escopo (não corrigido):** em Documentos, a confirmação de
+> excluir pasta diz “Pastas e arquivos internos serão preservados”, mas o
+> backend (`DocumentosEscolares.pm`, `pasta_nao_vazia`) **recusa** excluir pasta
+> com conteúdo. Corrigido neste ciclo só o texto “Enviar arquivo público”
+> do painel “Como funciona”, que o tour destaca.
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (h) (tours dos módulos do gestor — lote 1)
 
 Tours: Relatórios, Contatos, Listas, Envios, Listas dinâmicas (branch
