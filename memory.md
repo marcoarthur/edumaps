@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (d) — tour das análises (PR #314) — ajuda guiada CONCLUÍDA
+
+- **PR #314 MERGEADO** (`c7f493e`; commits `d0499c0`, `c2fe0f2`, `36efe39`):
+  tour `analises` (6 passos) em `/cluster/geotag` — recorte, indicadores,
+  algoritmo, gerar, resultado. Sem `prontoQuando` (estrutura existe na carga).
+- **Feature ajuda guiada fechada** (4 tours: primeiro-acesso, busca-escola,
+  painel-gestor, analises). **Nota consolidada: 162** (fases 1–4; 159–161 são
+  detalhe de fase).
+- **Causa real da "tela em branco pós-deploy"**: `index-*.js` 1 MB **sem
+  gzip** (~10 s); `gzip_types` comentado no nginx; diagnóstico anterior
+  ("GET ausente") estava errado — nginx loga ao fim da requisição. Medido com
+  Resource Timing. **Pendente: PR `fix(infra)`** habilitando `gzip_types` em
+  `backend/script/deploy/files/edumaps-frontend-nginx.conf` e
+  `frontend/nginx.conf`.
+- `docker compose up -d frontend` sobe também `sqitch` (dependência): saiu 0,
+  "Nothing to deploy" — ok.
+- Pendências: gzip (acima), telemetria do tour, "?" na tela de erro do painel.
+
 ## Sessão 2026-11-01 (c) — tour do painel do gestor (PR #313)
 
 - **PR #313 MERGEADO** (`4388f4b`; commits `94017bb`, `e99d0f8`, `cd5e06d`):
