@@ -43,7 +43,22 @@ O nginx do container (`backend/script/deploy/files/edumaps-frontend-nginx.conf`
 Após cada deploy o bundle principal muda de hash e é baixado inteiro; checar a
 página antes de ~12 s parece “tela em branco”. Os registros anteriores (“o
 navegador não pediu o bundle”) estavam errados: o nginx loga ao **fim** da
-requisição. Correção proposta à parte (habilitar `gzip_types`).
+requisição. Correção aplicada no branch `fix/infra-gzip-nginx` (`gzip_types` nas duas
+configs; sem `gzip_proxied`, para não afetar a API/SSE).
+
+**Depois da correção** (1ª carga pós-deploy, bundle novo fora do cache):
+
+| | Antes | Depois |
+|---|---|---|
+| `index-*.js` transferido | 1030 KB | 🟢 304 KB |
+| download do bundle | 10,6 s | 🟢 1,3 s |
+| navegação completa | 12,6 s | 🟢 1,5 s |
+| app renderizado na 1ª checagem | 🔴 não | 🟢 sim |
+
+`Content-Encoding: gzip` + `Vary: Accept-Encoding` no LXC e na imagem Docker
+local (311 KB contra 1.055 KB). A API já vinha comprimida pelo próprio
+Mojolicious (`Server: Mojolicious` responde `gzip` direto na :3000), sem
+relação com esta mudança.
 
 ## Rodada 2026-11-01 (c) (ajuda guiada — tour `painel-gestor`)
 
