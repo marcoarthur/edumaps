@@ -23,6 +23,13 @@ O painel de administração permite acompanhar o estado da plataforma, usuários
 3. **Acessar** seções específicas conforme necessidade
 4. **Tomar ação** com base nas informações
 
+## Roteiro deste painel
+
+Na primeira vez que o painel carrega (com perfil de administrador), um roteiro
+de 7 passos apresenta cada bloco: logins de gestores, janela de tempo,
+atividade, série no tempo, rotas, ajuda guiada e a atualização automática
+(a cada 30 segundos). Reabra quando quiser pelo **?** do menu.
+
 ## Ajuda guiada (uso dos roteiros)
 A tabela **Ajuda guiada** mostra, para cada roteiro, na janela escolhida:
 - **Aberturas**, separadas em *auto* (primeira visita), *botão* (“?”) e *link*;

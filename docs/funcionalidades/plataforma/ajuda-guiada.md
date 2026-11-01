@@ -22,7 +22,8 @@ raio-x da escola e os módulos de gestão; o das análises, que ensina a
 agrupar escolas parecidas e a ler o resultado no mapa; e um por módulo do
 gestor — relatórios, contatos, listas com QR code, envios de e-mail, listas
 dinâmicas, pesquisas com a comunidade, reuniões e atas, inventário, relações
-institucionais e documentos e planos; e o do Assistente do Censo.
+institucionais e documentos e planos; o do Assistente do Censo; e o do
+Painel de Administração.
 
 ## Para quem
 
@@ -66,8 +67,8 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 
 - Têm roteiro a página inicial (primeiro acesso), a busca de escolas (com a
   passagem para a comparação de redes), o painel do gestor, as análises e os
-  dez módulos do gestor e o Assistente do Censo. A administração ainda não
-  tem. Telas
+  dez módulos do gestor, o Assistente do Censo e o Painel de Administração.
+  Configurações ainda não tem. Telas
   secundárias dos módulos (assistentes de criação, detalhes) também não.
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
