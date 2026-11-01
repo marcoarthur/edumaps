@@ -218,6 +218,23 @@ têm tour; o catálogo fecha em 14 tours.
   bug de comportamento: a confirmação de excluir pasta promete preservar o
   conteúdo, mas o backend recusa pasta não vazia.
 
+## 10. Assistente do Censo (PR #322)
+
+Tour `assistente-censo` (4 passos), `prontoQuando` no painel de escopo, que só
+existe com o gestor logado. Catálogo: 15 tours.
+
+- **Layout flex**: o histórico e a caixa de pergunta vivem num contêiner
+  `flex-1 min-h-0 flex flex-col`. Um `<div>` em volta do `ChatHistory`
+  quebraria o flex, então o alvo da conversa ficou no próprio contêiner.
+  Regra: antes de envolver um componente para pôr `data-tour`, ver se ele é
+  filho de flex/grid com papel de layout.
+- **Ficha corrigida pelo código**: `historico-conversas.md` dizia “salvar
+  automaticamente”. A única gravação é o `POST /api/chat/conversas` do botão
+  “Salvar conversa”. É o terceiro caso no ciclo de ficha que diverge do
+  código; os tours acabaram servindo também de auditoria das fichas.
+- **E2E sem custo**: percorrido logado sem enviar pergunta, porque cada uma
+  consome o serviço de IA da instalação.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -231,8 +248,8 @@ têm tour; o catálogo fecha em 14 tours.
   chaves de “visto” (quebra a cada tour/versão) e `navigator.webdriver` (não é
   ligado via `--remote-debugging-port`).
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
-  Assistente e administração, e telas secundárias (assistentes de criação,
-  detalhes), se houver demanda.
+  ~~Assistente do Censo~~ (PR #322). **Administração** e telas secundárias
+  (assistentes de criação, detalhes), se houver demanda.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

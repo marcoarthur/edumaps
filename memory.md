@@ -4,6 +4,14 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (k) — tour do Assistente do Censo (PR #322)
+
+- **PR #322 MERGEADO**: tour `assistente-censo` em `/chat/censo`
+  (`prontoQuando: chat-escopo`). Catálogo: 15 tours. Falta Administração.
+- Alvo da conversa no contêiner flex (não envolver `ChatHistory`).
+- Ficha `historico-conversas.md` corrigida: salvar conversa é **manual**.
+- E2E do chat: **nunca enviar pergunta** (consome o serviço de IA).
+
 ## Sessão 2026-11-01 (j) — fix da exclusão de pasta em Documentos (PR #321)
 
 - **PR #321 MERGEADO**: `excluirPasta` checa o conteúdo na árvore em memória
