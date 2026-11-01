@@ -27,8 +27,8 @@ Gestores escolares e os participantes convidados.
 - Sistema pode gerar um convite copiável (para enviar por WhatsApp/e-mail).
 - Sistema pode registrar a ata, anexar pauta e ata, e acompanhar o status
   (agendada, realizada, cancelada).
-- Sistema pode definir **um gestor responsável pela agenda** e transferir esse
-  vínculo entre gestores da escola.
+- *(Previsto — ainda não disponível.)* Definir **um gestor responsável pela
+  agenda** e transferir esse vínculo entre gestores da escola.
 
 ## Valor
 

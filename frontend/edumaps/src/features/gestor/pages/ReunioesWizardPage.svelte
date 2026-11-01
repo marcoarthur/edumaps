@@ -208,7 +208,7 @@
     <GestorLoginCard onLogin={onLogin} mensagem="Entre para agendar reuniões." />
   {:else}
     <!-- indicador de passos -->
-    <nav class="flex gap-1" aria-label="Passos">
+    <nav class="flex gap-1" aria-label="Passos" data-tour="reuniao-passos">
       {#each PASSOS as nome, i (i)}
         <button
           type="button"
@@ -226,7 +226,7 @@
       {/each}
     </nav>
 
-    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-4">
+    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-4" data-tour="reuniao-etapa">
       {#if passo === 0}
         <!-- passo 1: quando -->
         <label class="block">
@@ -370,7 +370,7 @@
         </label>
       {/if}
 
-      <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div class="flex items-center justify-between pt-2 border-t border-gray-100" data-tour="reuniao-navegacao">
         <button
           type="button"
           onclick={() => { if (passo > 0) passo -= 1; }}

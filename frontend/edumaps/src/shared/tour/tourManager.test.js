@@ -18,6 +18,11 @@ import gestorDocumentos from "./tours/gestorDocumentos.js";
 import assistenteCenso from "./tours/assistenteCenso.js";
 import adminPainel from "./tours/adminPainel.js";
 import configPainel from "./tours/configPainel.js";
+import pesquisaAssistente from "./tours/pesquisaAssistente.js";
+import pesquisaResultados from "./tours/pesquisaResultados.js";
+import reuniaoAssistente from "./tours/reuniaoAssistente.js";
+import reuniaoDetalhe from "./tours/reuniaoDetalhe.js";
+import relacaoDetalhe from "./tours/relacaoDetalhe.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -373,6 +378,17 @@ describe("rotas com padrão (:id) e lista de rotas", () => {
     expect(tm.aoNavegar("/itens/9/editar", "")).toBe(true);
   });
 
+  it("colisão /x/nova × /x/:id: vence o mais específico, em qualquer ordem de registro", () => {
+    const detalhe = { id: "det", rotaInicial: "/r/:id", passos: [{ alvo: "d", titulo: "D", texto: "d" }] };
+    const assistente = { id: "wz", rotaInicial: ["/r/nova", "/r/:id/editar"], passos: [{ alvo: "w", titulo: "W", texto: "w" }] };
+    for (const ordem of [[detalhe, assistente], [assistente, detalhe]]) {
+      const m = new TourManager({ router, criarDriver: drivers.criar }).registrar(...ordem);
+      expect(m.tourDaRota("/r/nova")?.id).toBe("wz");
+      expect(m.tourDaRota("/r/42")?.id).toBe("det");
+      expect(m.tourDaRota("/r/42/editar")?.id).toBe("wz");
+    }
+  });
+
   it("retomada após recarregar casa a rota-padrão do passo salvo", () => {
     tm.registrar(DETALHE);
     sessao.setItem("edumaps.tour.em-andamento", JSON.stringify({ id: "detalhe", passo: 1 }));
@@ -622,6 +638,11 @@ const CATALOGO = [
   assistenteCenso,
   adminPainel,
   configPainel,
+  pesquisaAssistente,
+  pesquisaResultados,
+  reuniaoAssistente,
+  reuniaoDetalhe,
+  relacaoDetalhe,
 ];
 
 describe("tours dos módulos do gestor (definição)", () => {
@@ -642,10 +663,16 @@ describe("tours dos módulos do gestor (definição)", () => {
     // Painel de Administração (gestor com perfil admin)
     [adminPainel, "/admin", "admin-logins"],
     [configPainel, "/config", "config-grade"],
+    // telas secundárias (rotas :id e listas)
+    [pesquisaAssistente, ["/gestor/pesquisas/nova", "/gestor/pesquisas/editar"], "pesquisa-etapas"],
+    [pesquisaResultados, "/gestor/pesquisas/resultados", "pesq-resultados"],
+    [reuniaoAssistente, ["/gestor/reunioes/nova", "/gestor/reunioes/:id/editar"], "reuniao-passos"],
+    [reuniaoDetalhe, "/gestor/reunioes/:id", "reuniao-detalhe"],
+    [relacaoDetalhe, "/gestor/relacoes/:id", "relacao-resumo"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {
-    expect(tour.rotaInicial).toBe(rota);
+    expect(tour.rotaInicial).toEqual(rota);
     expect(tour.automatico).toBe(true);
     // páginas com login + carregamento: o automático espera o conteúdo logado
     expect(tour.prontoQuando).toBe(pronto);

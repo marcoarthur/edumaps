@@ -136,8 +136,8 @@
   {:else if precisaLogin}
     <GestorLoginCard onLogin={onLogin} mensagem={null} />
   {:else if dados}
-    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-6">
-      <div class="flex items-center justify-between gap-3">
+    <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 space-y-6" data-tour="pesq-resultados">
+      <div class="flex items-center justify-between gap-3" data-tour="pesq-resultados-total">
         <p class="text-sm text-gray-600">
           <span class="text-2xl font-bold text-gray-900">{dados.n_respostas}</span>
           resposta{dados.n_respostas === 1 ? "" : "s"} no total
@@ -153,7 +153,7 @@
         </p>
       {/if}
 
-      <div class="grid gap-5">
+      <div class="grid gap-5" data-tour="pesq-resultados-perguntas">
         {#each dados.perguntas as p (p.id)}
           <section class="rounded-md border border-gray-200 p-4" aria-label={`Resultado pergunta ${p.ordem}`}>
             <p class="text-sm font-semibold text-gray-900">

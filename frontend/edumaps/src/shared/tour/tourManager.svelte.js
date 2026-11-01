@@ -89,6 +89,21 @@ export function rotaCasa(padrao, path) {
   return a.length === b.length && a.every((seg, i) => seg.startsWith(":") || seg === b[i]);
 }
 
+/**
+ * Quão específico é o casamento: menos segmentos `:param` = mais específico.
+ * Com `/x/nova` e `/x/:id` ambos casando `/x/nova`, vence o literal — sem
+ * depender da ordem de registro no catálogo.
+ * @returns {number} quantidade de `:param` do padrão que casou (Infinity se nenhum)
+ */
+function generalidade(padrao, path) {
+  const lista = Array.isArray(padrao) ? padrao : [padrao];
+  let melhor = Infinity;
+  for (const p of lista) {
+    if (rotaCasa(p, path)) melhor = Math.min(melhor, (p.match(/\/:/g) ?? []).length);
+  }
+  return melhor;
+}
+
 /** Rota concreta (sem `:param`) e única: dá para navegar até ela. */
 function navegavel(rota) {
   return typeof rota === "string" && !rota.includes("/:");
@@ -172,10 +187,16 @@ export class TourManager {
 
   /** Tour cuja página inicial é `path` (é o que o botão de ajuda oferece). */
   tourDaRota(path) {
+    let escolhido = null;
+    let menor = Infinity;
     for (const tour of this.#tours.values()) {
-      if (rotaCasa(tour.rotaInicial, path)) return tour;
+      const g = generalidade(tour.rotaInicial, path);
+      if (g < menor) {
+        menor = g;
+        escolhido = tour;
+      }
     }
-    return null;
+    return escolhido;
   }
 
   jaVisto(tour) {

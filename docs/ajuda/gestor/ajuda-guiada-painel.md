@@ -61,6 +61,11 @@ reaberto pelo **?**:
 | **Inventário** | as quatro seções e como começar importando do Censo |
 | **Relações** | as quatro seções, filtros, nova relação e o detalhe de cada uma |
 | **Documentos** | pastas e versões, envio de arquivo, tags e atividade recente |
+| **Montar pesquisa** (nova/editar) | as etapas, quando o rascunho é salvo sozinho e o que vai em cada etapa |
+| **Resultados da pesquisa** | total de respostas e o resultado por pergunta |
+| **Agendar reunião** (nova/editar) | os quatro passos e que nada é salvo até o botão final |
+| **Detalhe da reunião** | situação, convite para copiar, anexos e ata |
+| **Detalhe da relação** | resumo, interações, tarefas e documentos |
 | **Assistente do Censo** | o escopo da consulta, como perguntar, como conferir a resposta (SQL e resultado) e como salvar e reencontrar conversas |
 
 O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão

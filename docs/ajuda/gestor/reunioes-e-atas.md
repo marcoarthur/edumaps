@@ -5,7 +5,7 @@ modulo: gestor
 nivel: basico
 status: ativo
 relacionadas: [contatos-e-grupos]
-funcionalidade: ../../funcionalidades/gestor/pesquisas.md
+funcionalidade: ../../funcionalidades/gestor/reunioes-atas.md
 ultima_revisao: 2026-10-25
 ---
 
@@ -18,11 +18,15 @@ ultima_revisao: 2026-10-25
 O módulo de reuniões e atas ajuda a organizar pautas, participantes, deliberações e o histórico de reuniões da escola.
 
 ## Passo a passo
-1. **Onde ir:** Painel da Escola → *Gestão* → *Reuniões e atas*
-2. **Criar reunião** com data, horário, pauta e participantes
-3. **Registrar ata** durante ou após a reunião (presentes, deliberações, ações)
-4. **Salvar e compartilhar** conforme fluxo autorizado
-5. **Consultar histórico** quando necessário
+1. **Onde ir:** painel do gestor → **Reuniões da escola**
+2. **Criar reunião** em quatro passos (Quando, Quem, Aviso, Pauta). Nada é
+   salvo até o botão final **Agendar reunião**.
+3. **Avisar:** o convite fica pronto para você **copiar** e mandar por WhatsApp
+   ou e-mail — a plataforma não envia por você.
+4. **Registrar a ata** na página da reunião: um texto com o que foi decidido,
+   quem assume o quê e até quando (**Salvar ata**), e os anexos de pauta e ata
+   em arquivo. Reunião cancelada não aceita ata.
+5. **Consultar histórico** na lista, com filtros por título, status e período
 
 ## Entendendo os números
 - **n/d** = não disponível (#154). Ausência nunca é zero.

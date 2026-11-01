@@ -26,7 +26,9 @@ Pesquisas públicas permitem coletar respostas de famílias de forma organizada,
 
 ## Entendendo os números
 - **n/d** = não disponível (#154). Ausência nunca é zero.
-- Percentuais são calculados sobre **respostas válidas**. Se não há respostas, pode aparecer "n/d".
+- Em cada pergunta de escolha, cada opção mostra a contagem e o percentual.
+  Sem nenhuma resposta, a página avisa “Ninguém respondeu ainda” — não mostra
+  0%.
 
 ## Limitações conhecidas
 - Algumas perguntas podem ter poucos respondentes (leitura com cautela).
@@ -38,7 +40,9 @@ Pesquisas públicas permitem coletar respostas de famílias de forma organizada,
 - **LGPD:** respeite a finalidade informada no momento da divulgação.
 
 ## Perguntas frequentes
-- **Posso ver respostas individuais?** Depende das configurações e da necessidade autorizada. Prefira sempre visão agregada.
+- **Posso ver respostas individuais?** As perguntas de escolha aparecem
+  agregadas. As respostas livres aparecem uma a uma, com a data: trate-as como
+  dado sensível e não as compartilhe fora da gestão.
 - **Quantas respostas preciso?** Não há número mágico — leia com cautela quando houver poucos respondentes.
 
 ## Veja também
