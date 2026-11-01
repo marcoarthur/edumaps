@@ -8,6 +8,22 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (l) (tour do Painel de Configuração)
+
+Alvo `http://ubatexu.lan:8080/config` (branch `feat/frontend-tour-config`).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Sessão de gestor **sem** perfil admin: “restrita”, sem grade, nenhum tour, sem “?”, nada marcado | Chrome (sessão existente) | 🟢 |
+| Admin com dados: `prontoQuando` e os 3 alvos existem | vitest `features/config/pages/tourAlvos.test.js` | 🟢 |
+| “Restrita” e sem sessão: não abre | vitest | 🟢 2/2 |
+| Suíte frontend | vitest | 🟢 122 arquivos / 1076 testes |
+
+> **Não coberto pelo agente:** o tour visível com perfil de administrador (a
+> sessão aberta no Chrome não é admin). Validação visual com o developer.
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (k) (tour do Painel de Administração)
 
 Alvo `http://ubatexu.lan:8080/admin` (branch `feat/frontend-tour-admin`).
