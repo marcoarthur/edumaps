@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (e) — gzip dos estáticos no nginx (PR #315)
+
+- **PR #315 MERGEADO** (`0a91b85`; commits `fc07a0c`, `8cdccdf`): bloco
+  `gzip` (`gzip_types` JS/CSS/JSON/SVG/manifest, `gzip_vary`, nível 6) em
+  `backend/script/deploy/files/edumaps-frontend-nginx.conf` e
+  `frontend/nginx.conf`. **Sem `gzip_proxied`** (não mexer no SSE da API; a
+  API já é comprimida pelo próprio Mojolicious).
+- 1ª carga pós-deploy: bundle 1030→304 KB, 10,6→1,3 s; navegação 12,6→1,5 s.
+  **Resolve a "tela em branco pós-deploy".**
+- Mudança em `backend/script/deploy/` dispara também o CI do backend (~10 min).
+
 ## Sessão 2026-11-01 (d) — tour das análises (PR #314) — ajuda guiada CONCLUÍDA
 
 - **PR #314 MERGEADO** (`c7f493e`; commits `d0499c0`, `c2fe0f2`, `36efe39`):

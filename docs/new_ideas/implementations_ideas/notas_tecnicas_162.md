@@ -135,7 +135,8 @@ Lição de método: **medir no cliente antes de concluir pelo log do servidor**.
 
 ## Pendências
 
-- **gzip dos assets** no nginx (LXC e imagem Docker) — PR `fix(infra)`.
+- ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
+  bundle 1030→304 KB, 1ª carga pós-deploy 12,6→1,5 s.
 - Telemetria do tour (iniciado/concluído/abandonado por passo, só agregados).
 - O “?” aparece na tela de erro do painel e os passos caem no popover
   centralizado. Caso raro.
