@@ -235,6 +235,34 @@ existe com o gestor logado. Catálogo: 15 tours.
 - **E2E sem custo**: percorrido logado sem enviar pergunta, porque cada uma
   consome o serviço de IA da instalação.
 
+## 11. Painel de Administração (PR #323): cobertura completa
+
+Tour `admin-painel` (7 passos), `prontoQuando` no bloco de logins. Catálogo
+final: **16 tours**. Todas as páginas principais têm roteiro, menos
+Configurações.
+
+- **Três estados em vez de dois.** Além de logado e sem sessão, o admin tem
+  o “logado sem perfil” (403, tela “restrita”). O teste de contrato cobre
+  os três. No Chrome, a sessão aberta era justamente de gestor sem perfil
+  admin, e esse estado foi verificado ao vivo: sem tour, sem “?”, nada
+  marcado.
+- **Atualização automática** (30 s) troca os dados sem desmontar as seções,
+  então os alvos ficam estáveis durante o tour.
+
+### Balanço do ciclo (PRs #311–#323)
+
+Treze PRs no mesmo dia: 16 tours, telemetria de uso, gzip dos estáticos,
+`?tour=off` para e2e e quatro bugs corrigidos que os tours revelaram:
+- fechamento durante a animação;
+- “?” na tela de erro;
+- tour da página nova após sair;
+- confirmação de excluir pasta.
+
+Três fichas e dois textos de interface divergiam do código, e foram
+corrigidos. O teste de contrato (alvos × markup real, com sessão simulada)
+é a principal defesa de manutenção: refatorar uma página e perder um
+`data-tour` quebra o teste, e o tour não degrada sem aviso.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -248,8 +276,9 @@ existe com o gestor logado. Catálogo: 15 tours.
   chaves de “visto” (quebra a cada tour/versão) e `navigator.webdriver` (não é
   ligado via `--remote-debugging-port`).
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
-  ~~Assistente do Censo~~ (PR #322). **Administração** e telas secundárias
-  (assistentes de criação, detalhes), se houver demanda.
+  ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
+  Configurações e telas secundárias (assistentes de criação, detalhes), se
+  houver demanda.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

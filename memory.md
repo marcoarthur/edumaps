@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (l) — tour do Painel de Administração (PR #323)
+
+- **PR #323 MERGEADO**: tour `admin-painel` (7 passos) em `/admin`,
+  `prontoQuando: admin-logins`. Catálogo: **16 tours**; só Configurações (e
+  telas secundárias) sem roteiro.
+- A sessão de gestor aberta no Chrome de automação **não é admin** (tela
+  "restrita"). O tour com perfil admin só pode ser validado pelo developer.
+- Teste de contrato do admin cobre 3 estados (admin / 403 / sem sessão).
+- Balanço do ciclo inteiro na nota técnica 162, §11.
+
 ## Sessão 2026-11-01 (k) — tour do Assistente do Censo (PR #322)
 
 - **PR #322 MERGEADO**: tour `assistente-censo` em `/chat/censo`
