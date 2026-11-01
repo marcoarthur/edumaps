@@ -171,8 +171,12 @@ páginas). Fecha a pendência da fase 3.
   bundle 1030→304 KB, 1ª carga pós-deploy 12,6→1,5 s.
 - ~~Telemetria do tour~~ — **PR #316** (§7).
 - ~~“?” na tela de erro do painel~~ — **PR #317** (§7).
-- A abertura automática afeta e2e em perfil limpo. Pré-marcar
-  `edumaps.tour.<id>.v1` no setup se incomodar.
+- ~~A abertura automática afeta e2e em perfil limpo~~ — **PR #318**
+  (`c479d72`): `?tour=off` (marca `edumaps.tour.automatico=off` no
+  `localStorage` do profile) suprime só o automático; `?tour=on` religa.
+  Passo obrigatório no Setup de `docs/e2e/README.md`. Descartados: pré-gravar
+  chaves de “visto” (quebra a cada tour/versão) e `navigator.webdriver` (não é
+  ligado via `--remote-debugging-port`).
 - Tours para módulos do gestor, assistente e administração, se houver demanda.
 - Reavaliar `svelte-tourlight` quando amadurecer. A troca fica restrita a
   `src/shared/tour/`.

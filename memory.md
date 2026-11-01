@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (g) — `?tour=off` para e2e (PR #318)
+
+- **PR #318 MERGEADO** (`c479d72`): `?tour=off` desliga só a abertura
+  automática dos tours no navegador (`localStorage`
+  `edumaps.tour.automatico=off`); `?tour=on` religa; botão "?", `?tour=<id>` e
+  retomada seguem funcionando; não marca "visto".
+- **E2E: navegar para `http://ubatexu.lan:8080/?tour=off` uma vez por profile
+  antes da primeira rota** (Setup de `docs/e2e/README.md` e skill
+  `browser-automation`). Profile da automação do Claude ficou com `off`.
+- Para testar o automático: `?tour=on` + apagar `edumaps.tour.<id>.v<versao>`.
+
 ## Sessão 2026-11-01 (f) — telemetria do tour (PR #316) + "?" na tela de erro (PR #317)
 
 - **PR #316 MERGEADO** (`65afc6c`): evento `tour` → `session.tour`
