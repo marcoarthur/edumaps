@@ -4,6 +4,39 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 — ajuda guiada interativa (PR #311)
+
+- **PR #311 MERGEADO** (`a3011e7`; commits `d4b9643`, `6612d64`, `7dbe268`,
+  `0849b52`, branch `feat/frontend-ajuda-guiada`): product tour no frontend,
+  PoC no tour `busca-escola` (`/escola/search` → `/municipio/compare`).
+- **Biblioteca: `driver.js` ^1.10.2** (MIT, zero deps). Pesquisa registrada na
+  nota técnica 159. **Shepherd.js virou AGPL-3.0** (15.x) — não usar sem
+  licença comercial. `svelte-tourlight` (API boa, a11y completa) foi
+  descartada só por imaturidade (criada em 2026-10-24, v0.1.5, ★0): **reavaliar**
+  se for mantida.
+- **Arquitetura**: `src/shared/tour/` — `TourManager` (runes, deps injetáveis),
+  instância única em `index.js`, catálogo em `tours/`, `BotaoAjuda.svelte` no
+  `<nav>` do `App.svelte`, `$effect` em `App.svelte` chama `aoNavegar` a cada
+  rota (estado do tour em `untrack`). Alvos = `data-tour="..."`.
+- **Persistência**: `localStorage` `edumaps.tour.<id>.v<versao>` =
+  `visto`|`concluido` (subir `versao` reapresenta); `sessionStorage`
+  `edumaps.tour.em-andamento` = `{id, passo}` (retoma após reload).
+- **Armadilha (achada no e2e)**: não pôr `disabled` no gatilho do tour —
+  botão desabilitado perde o foco e a devolução de foco falha.
+- **Armadilha de ambiente**: `node_modules` do frontend tem ~31k arquivos de
+  root (rodadas antigas do container): `npm install` precisa rodar como root
+  no container e devolver a posse de `package*.json`.
+- **Armadilha de ambiente 2**: `rex` não está no `PATH` não-interativo; usar
+  `~/perl5/perlbrew/perls/perl-5.44.0/bin`.
+- **Validação**: vitest 117/997 🟢 (CI 🟢), e2e Chrome real 🟢 (ver
+  `docs/e2e/cobertura.md`), aprovação visual do developer. Deploy
+  `deploy_frontend_dev` + imagem local `frontend` reconstruída (bundle com
+  `edumaps.tour` conferido nas duas).
+- **Pendências**: tours de primeiro acesso, painel do gestor (precisa sessão) e
+  análises (mapa Leaflet: destacar contêiner/controles, não marcadores);
+  auto-abertura afeta e2e da busca em perfil limpo (marcar
+  `edumaps.tour.busca-escola.v1` antes, ou criar opt-out se incomodar).
+
 ## Sessão 2026-10-23 — testes R no CI (PR #302) + rodada 2 de isócronas concluída (SP+RJ+NE)
 
 ### CI da camada analítica (PR #302)
