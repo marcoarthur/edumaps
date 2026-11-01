@@ -8,6 +8,26 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (h) (tours dos módulos do gestor — lote 1)
+
+Tours: Relatórios, Contatos, Listas, Envios, Listas dinâmicas (branch
+`feat/frontend-tour-gestor-lote1`). Todas as páginas exigem login de gestor.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Sem sessão: tela de login, **nenhum** tour, **sem** “?”, nada marcado como visto (5 páginas, automático ligado) | Chrome, stack Docker local `127.0.0.1:8080` | 🟢 |
+| Com sessão (MSW): `prontoQuando` e **todos** os alvos de todos os passos existem no markup real | vitest `features/gestor/pages/tourAlvos.test.js` | 🟢 5/5 |
+| Sem sessão (MSW): `prontoQuando` não aparece | vitest | 🟢 5/5 |
+| Textos × código: “capítulos são fixos” (Relatórios) e filtro “Estado” (Envios) | leitura do código | 🔴→🟢 (corrigidos antes do deploy) |
+| Suíte frontend | vitest | 🟢 118 arquivos / 1042 testes |
+
+> **Não coberto pelo agente: o tour visível logado.** A injeção do token de
+> uma conta de teste local na aba foi **bloqueada pela política de
+> permissões** (materialização de credencial) — não contornada. A conta de
+> teste da stack local existe (credenciais em
+> `~/.config/edumaps/e2e_gestor_local`, fora do repositório, modo 600). A
+> validação visual logada fica com o developer.
+
 ## Rodada 2026-11-01 (g) (`?tour=off` para e2e em profile limpo)
 
 Alvo `http://ubatexu.lan:8080` (deploy do branch `fix/frontend-tour-e2e`).
