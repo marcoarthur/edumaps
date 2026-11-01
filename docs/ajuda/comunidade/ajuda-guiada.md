@@ -41,7 +41,8 @@ menu.
 ## Limitações conhecidas
 
 - Por enquanto, têm roteiro a página inicial, a busca de escolas (com a
-  passagem para a comparação de redes) e o painel do gestor (ver
+  passagem para a comparação de redes), as **Análises** (como agrupar escolas
+  parecidas e ler o mapa) e o painel do gestor (ver
   [ajuda do gestor](../gestor/ajuda-guiada-painel.md)). O botão **?** só
   aparece nas páginas que têm roteiro.
 - Enquanto o roteiro está aberto, os campos destacados não recebem cliques: o
@@ -56,8 +57,8 @@ menu.
 
 ## Perguntas frequentes
 
-- **Fechei sem querer. Como volto?** Volte à página em que estava (inicial
-  ou busca) e clique no **?** do menu.
+- **Fechei sem querer. Como volto?** Volte à página em que estava (inicial,
+  busca ou análises) e clique no **?** do menu.
 - **Recarreguei a página no meio do roteiro.** Ele continua do mesmo passo.
 - **Dá para usar só com teclado ou leitor de tela?** Sim: setas avançam e
   voltam, Tab circula entre os botões do quadro, Esc fecha, e o quadro é

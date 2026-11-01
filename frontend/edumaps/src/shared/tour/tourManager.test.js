@@ -4,6 +4,7 @@ import { TourManager, chaveVisto, seletorDoAlvo } from "./tourManager.svelte.js"
 import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
 import painelGestor from "./tours/painelGestor.js";
+import analises from "./tours/analises.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -341,6 +342,28 @@ describe("TourManager — prontoQuando (página que carrega dados)", () => {
   it("o botão de ajuda abre na hora, sem esperar", () => {
     expect(m.iniciar("tardio")).toBe(true);
     expect(m.ativo).toBe("tardio");
+  });
+});
+
+describe("tour analises (definição)", () => {
+  it("abre na página de análises, segue a ordem do formulário e termina no resultado", () => {
+    expect(analises.rotaInicial).toBe("/cluster/geotag");
+    expect(analises.automatico).toBe(true);
+    expect(analises.prontoQuando).toBeUndefined(); // estrutura existe na montagem
+    expect(analises.passos.map((p) => p.alvo)).toEqual([
+      "analises-cabecalho",
+      "analises-recorte",
+      "analises-indicadores",
+      "analises-algoritmo",
+      "analises-gerar",
+      "analises-resultado",
+    ]);
+  });
+
+  it("os quatro tours do catálogo têm ids e rotas iniciais distintas", () => {
+    const tours = [primeiroAcesso, buscaEscola, painelGestor, analises];
+    expect(new Set(tours.map((t) => t.id)).size).toBe(4);
+    expect(new Set(tours.map((t) => t.rotaInicial)).size).toBe(4);
   });
 });
 

@@ -11,12 +11,13 @@ import { TourManager } from "./tourManager.svelte.js";
 import buscaEscola from "./tours/buscaEscola.js";
 import primeiroAcesso from "./tours/primeiroAcesso.js";
 import painelGestor from "./tours/painelGestor.js";
+import analises from "./tours/analises.js";
 
 export const tourManager = new TourManager({
   router,
   criarDriver: driver,
   local: () => window.localStorage,
   sessao: () => window.sessionStorage,
-}).registrar(primeiroAcesso, buscaEscola, painelGestor);
+}).registrar(primeiroAcesso, buscaEscola, painelGestor, analises);
 
 export { default as BotaoAjuda } from "./BotaoAjuda.svelte";

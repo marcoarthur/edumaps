@@ -8,6 +8,43 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (d) (ajuda guiada — tour `analises`)
+
+Alvo `http://ubatexu.lan:8080/cluster/geotag` (deploy do branch
+`feat/frontend-tour-analises`), Chrome real.
+
+| Verificação | Resultado |
+|---|---|
+| 1ª visita abre o tour sozinho (“Agrupar escolas parecidas”, 1 de 6) | 🟢 |
+| 6 passos com o alvo certo (cabeçalho, recorte, indicadores, algoritmo, gerar, resultado) | 🟢 |
+| Popover dentro da janela em todos os passos (medido por `getBoundingClientRect`) | 🟢 |
+| Ordem lógica (onde → quais → como) rola para cima entre os passos 3 e 4 — legível | 🟢 |
+| Concluir → `edumaps.tour.analises.v1 = concluido`; “?” = “Ajuda guiada: Como agrupar escolas” | 🟢 |
+| Passo 6 dizia “O mapa mostra…” sobre o espaço ainda vazio | 🔴→🟢 (“Depois de gerar, o mapa mostra…”) |
+| Testes unitários frontend | 🟢 117 arquivos / 1006 testes |
+
+> **Não coberto**: mapa de clusters gerado (depende do motor R); o destaque
+> sobre mapa Leaflet já foi medido na rodada (c).
+
+### Causa da “primeira carga em branco” após deploy (3ª ocorrência, resolvida)
+
+Não é falha: é **lentidão**. Medido pela Resource Timing API nesta carga:
+
+| Recurso | Transferido | Duração |
+|---|---|---|
+| `index-*.js` (muda a cada deploy) | 1030 KB | **10,6 s** |
+| `vendor-*.js` / `*.css` (cache `immutable`) | 0 KB | < 0,3 s |
+| Navegação completa | — | 12,6 s |
+
+O nginx do container (`backend/script/deploy/files/edumaps-frontend-nginx.conf`
+/ `/etc/nginx/nginx.conf`) tem `gzip on`, mas **`gzip_types` comentado**: só
+`text/html` é comprimido (956 → 467 B); o JS vai cru (`Content-Length:
+1054856` mesmo com `Accept-Encoding: gzip`). O build indica ~310 KB com gzip.
+Após cada deploy o bundle principal muda de hash e é baixado inteiro; checar a
+página antes de ~12 s parece “tela em branco”. Os registros anteriores (“o
+navegador não pediu o bundle”) estavam errados: o nginx loga ao **fim** da
+requisição. Correção proposta à parte (habilitar `gzip_types`).
+
 ## Rodada 2026-11-01 (c) (ajuda guiada — tour `painel-gestor`)
 
 Alvo `http://ubatexu.lan:8080/gestor/painel?inep=35211576` (deploy do branch
@@ -56,6 +93,11 @@ Alvo `http://ubatexu.lan:8080` (deploy do branch
 > parte (cache do Chrome de automação × `index.html` `no-cache`).
 > Comportamento do driver.js: setas apertadas durante a animação são
 > ignoradas (avança um passo por vez).
+>
+> **⚠️ Diagnóstico corrigido na rodada (d)**: não houve “GET ausente”. O
+> nginx registra a requisição **ao terminar**; o GET do bundle às 13:28:38
+> (que atribuí ao meu `fetch` manual) era a própria carga, que levou ~10 s.
+> Causa real: `index-*.js` de 1 MB servido **sem gzip** (ver rodada (d)).
 
 ## Rodada 2026-11-01 (ajuda guiada — tour `busca-escola`)
 
