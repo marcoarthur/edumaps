@@ -233,7 +233,7 @@
 </script>
 
 <div class="space-y-6">
-  <header class="flex items-center justify-between flex-wrap gap-3">
+  <header class="flex items-center justify-between flex-wrap gap-3" data-tour="analises-cabecalho">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Clusterizar escolas por geotag</h1>
       <p class="text-sm text-gray-600 mt-1">
@@ -249,7 +249,7 @@
   </header>
 
   <!-- Recorte geotag -->
-  <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
+  <div class="bg-white border border-gray-200 rounded-card shadow-card p-5" data-tour="analises-recorte">
     <p class="font-semibold text-gray-800 text-sm mb-3">Recorte geotag</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -305,7 +305,7 @@
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
     <p class="font-semibold text-gray-800 text-sm mb-3">Parâmetros</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" data-tour="analises-algoritmo">
       <div>
         <label for="algorithm" class="block text-sm text-gray-600 mb-1">Algoritmo</label>
         <select id="algorithm" bind:value={algorithm} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
@@ -333,6 +333,7 @@
 
       <button
         onclick={generateClusters}
+        data-tour="analises-gerar"
         disabled={loading}
         class="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
       >
@@ -340,7 +341,7 @@
       </button>
     </div>
 
-    <div class="mt-6">
+    <div class="mt-6" data-tour="analises-indicadores">
       <p class="block text-sm text-gray-600 mb-2">
         Indicadores (features) — presets prontos ou seleção livre com busca
       </p>
@@ -387,7 +388,7 @@
     </div>
   {/if}
 
-  <div class="bg-white border border-gray-200 rounded-card shadow-card p-2">
+  <div class="bg-white border border-gray-200 rounded-card shadow-card p-2" data-tour="analises-resultado">
     {#if clustered && markers.length > 0}
       <ClusterSchoolMap {markers} height="460px" />
       <ClusterSummaryTable summary={clusterSummary} />

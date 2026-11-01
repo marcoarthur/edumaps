@@ -14,11 +14,12 @@ relacionadas: [escolas, rede-municipal, telemetria-de-sessao]
 
 A plataforma conduz a pessoa pela tela, passo a passo: escurece o resto da
 página, destaca o campo ou botão em questão e explica para que ele serve, em
-português. Um mesmo roteiro pode continuar em outra página. Hoje há três
+português. Um mesmo roteiro pode continuar em outra página. Hoje há quatro
 roteiros: o de primeiro acesso, na página inicial, que apresenta a plataforma e
 as entradas principais do menu; o da busca de escolas, que termina na
-comparação de redes do município; e o do painel do gestor, que apresenta o
-raio-x da escola e os módulos de gestão.
+comparação de redes do município; o do painel do gestor, que apresenta o
+raio-x da escola e os módulos de gestão; e o das análises, que ensina a
+agrupar escolas parecidas e a ler o resultado no mapa.
 
 ## Para quem
 
@@ -54,8 +55,8 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 ## Limitações atuais
 
 - Têm roteiro a página inicial (primeiro acesso), a busca de escolas (com a
-  passagem para a comparação de redes) e o painel do gestor; análises estão
-  previstas.
+  passagem para a comparação de redes), o painel do gestor e as análises. As
+  demais páginas (módulos do gestor, assistente, administração) ainda não têm.
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
 
@@ -64,4 +65,5 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
 - [Busca de escolas](../busca/escolas.md)
 - [Rede municipal e comparação de redes](../analise/rede-municipal.md)
 - [Painel do gestor](../gestor/painel.md)
+- [Agrupamento de escolas (clusters)](../analise/clusters.md)
 - [Telemetria de sessão](telemetria-de-sessao.md)
