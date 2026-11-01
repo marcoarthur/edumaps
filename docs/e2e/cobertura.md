@@ -8,6 +8,27 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (m) (telas secundárias — lote A)
+
+Branch `feat/frontend-tour-secundarias`, em `ubatexu.lan`, com a sessão de
+gestor já aberta (escola 35070212; sem injeção de credencial). Só leitura:
+nenhum clique fora do quadro do tour, nada digitado ou salvo.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Assistente de reunião (`/gestor/reunioes/nova`): abre sozinho, 3/3 alvos | Chrome | 🟢 |
+| Assistente de pesquisa (`/nova?inep=`): abre sozinho na 1ª tela de identidade, 2/2 alvos | Chrome | 🟢 |
+| Passo 2 de pesquisa falava só de “Dados da pesquisa” sobre a tela de identidade | Chrome | 🔴→🟢 (texto cobre as duas) |
+| Resultados, detalhe de reunião e de relação: alvos × markup | vitest `tourAlvosSecundarias.test.js` | 🟢 |
+| Colisão `/reunioes/nova` × `/reunioes/:id`: catálogo escolhe o tour certo (nova, 51, 51/editar) | vitest | 🟢 |
+| Suíte frontend | vitest | 🟢 123 arquivos / 1100 testes |
+
+> **Não coberto no Chrome:** detalhe de reunião, detalhe de relação e
+> resultados — a escola da sessão não tem reuniões, relações nem pesquisa
+> publicada; criar dados seria escrita na conta do developer.
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (l) (tour do Painel de Configuração)
 
 Alvo `http://ubatexu.lan:8080/config` (branch `feat/frontend-tour-config`).
