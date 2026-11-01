@@ -8,6 +8,31 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (ajuda guiada — tour `busca-escola`)
+
+Alvo `http://ubatexu.lan:8080` (deploy `deploy_frontend_dev` do branch
+`feat/frontend-ajuda-guiada`), Chrome real via extensão, perfil sem
+`localStorage` prévio.
+
+| Verificação | Resultado |
+|---|---|
+| 1ª visita a `/escola/search` abre o tour sozinho (“1 de 7”, destaque no cabeçalho) | 🟢 |
+| Setas ← → percorrem os 7 passos; textos PT-BR; botões Anterior/Próximo/Concluir | 🟢 |
+| Passo 6 → 7 navega para `/municipio/compare` e destaca o seletor de município | 🟢 |
+| Recarregar no passo 7 retoma em “7 de 7” (sessionStorage) | 🟢 |
+| ← no passo 7 volta para `/escola/search`, passo 6 | 🟢 |
+| Concluir: overlay some, `edumaps.tour.busca-escola.v1 = concluido`, sessão limpa | 🟢 |
+| Revisita: não abre sozinho; botão “?” no menu (aria-label) abre em “1 de 7” | 🟢 |
+| Popover com `role=dialog` + `aria-modal=true`; foco entra no popover | 🟢 |
+| Esc fecha e devolve o foco ao botão “?” | 🔴→🟢 (botão `disabled` perdia o foco; corrigido) |
+| `/about?tour=busca-escola` navega até a busca e abre o tour | 🟢 |
+| Voltar do navegador no meio do tour encerra o tour sem overlay órfão | 🟢 |
+| Testes unitários frontend | 🟢 117 arquivos / 997 testes (docker `node:22-slim`) |
+
+> **Nota**: logo após o `deploy_frontend_dev`, uma carga ficou em branco sem
+> erro no console; o `error.log` do nginx registra o restart abortando com
+> sockets abertos (13:15:21). Não se reproduziu em 5 recargas seguidas.
+
 ## Rodada 2026-09-28 (tiles OSM no lugar do CARTO)
 
 **Causa do bug "mapas sem tiles + tarja para definir chave API"**: o tile
