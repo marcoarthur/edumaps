@@ -256,7 +256,7 @@ export class TourManager {
   }
 
   encerrar() {
-    this.#driver?.destroy();
+    this.#finalizar();
   }
 
   // --- interno -------------------------------------------------------------
@@ -299,7 +299,13 @@ export class TourManager {
       onPopoverRender: (popover) => {
         popover.wrapper.setAttribute("aria-modal", "true");
       },
-      onDestroyed: () => this.#aoDestruir(),
+      // Fechamento pela pessoa (×, Esc): o driver chama onDestroyStarted e
+      // NÃO destrói — quem destrói somos nós, em #finalizar. Não usamos
+      // onDestroyed: o driver.js só o chama se já houver elemento ativo, e
+      // um fechamento durante a animação de um passo (~0,6–1,2 s) destruía o
+      // tour sem avisar, deixando `ativo` preso (sem dismiss, sem limpar a
+      // sessão, e nenhum tour automático abria até recarregar).
+      onDestroyStarted: () => this.#finalizar(),
     };
   }
 
@@ -308,7 +314,7 @@ export class TourManager {
     if (destino < 0) return;
     if (destino >= this.#tour.passos.length) {
       this.#concluido = true;
-      this.#driver.destroy();
+      this.#finalizar();
       return;
     }
     this.#irPara(destino);
@@ -321,6 +327,19 @@ export class TourManager {
     this.passo = indice;
     if (rota && rota !== this.#router.path) this.#router.navigate(rota);
     this.#driver.drive(indice);
+  }
+
+  /**
+   * Único caminho de encerramento: destrói o driver (a API `destroy()` não
+   * passa por onDestroyStarted, então não há recursão) e faz a limpeza.
+   * Idempotente.
+   */
+  #finalizar() {
+    const driver = this.#driver;
+    if (!driver || !this.#tour) return;
+    this.#driver = null;
+    driver.destroy();
+    this.#aoDestruir();
   }
 
   #aoDestruir() {
