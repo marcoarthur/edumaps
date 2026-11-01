@@ -271,6 +271,26 @@ extras (bot público, retenção, envios) dependem do grupo escolhido e ficaram
 só no texto. Catálogo final: **17 tours**, cobrindo todas as páginas
 principais da plataforma.
 
+## 13. Telas secundárias, lote A (PR #325)
+
+Os tours até aqui eram de rota exata. Telas de criação e de detalhe pedem
+**padrões** (`/gestor/reunioes/:id`) e **listas** (o mesmo assistente em
+`nova` e `editar`). Três decisões:
+
+- **Especificidade decide colisões.** `/gestor/reunioes/nova` casa
+  `/gestor/reunioes/:id`; vence o padrão com menos `:params`. Depender da
+  ordem de registro seria frágil, e o teste cobre as duas ordens.
+- **Padrão nunca é destino.** O motor não navega para um endereço com `:`;
+  um `?tour=` aberto fora da página que casa é recusado (e o retorno de
+  `aoNavegar` passou a refletir isso — antes dizia "abri" sem abrir).
+- **Contrato por URL.** O teste renderiza cada página com a URL real e
+  confere que o catálogo escolhe o tour certo e que todos os alvos existem.
+  Supre a validação ao vivo das telas que exigem dados que a conta de teste
+  não tem.
+
+Catálogo: **22 tours**. Escrever os textos lendo o código expôs mais três
+divergências de documentação (Reuniões e Pesquisa), corrigidas no PR.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -285,8 +305,8 @@ principais da plataforma.
   ligado via `--remote-debugging-port`).
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
   ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
-  ~~Configurações~~ (PR #324). Telas secundárias (assistentes de criação,
-  detalhes, versões do consentimento), se houver demanda.
+  ~~Configurações~~ (PR #324). Telas secundárias: lote A (PR #325, §13); lote B
+  (relatórios salvos, versões do consentimento, histórico do Assistente).
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (n) — tours das telas secundárias, lote A (PR #325)
+
+- **PR #325 MERGEADO** (`9536b1b`): 5 tours — `pesquisa-assistente`
+  (nova/editar), `pesquisa-resultados`, `reuniao-assistente` (nova/`:id`/editar),
+  `reuniao-detalhe` (`:id`), `relacao-detalhe` (`:id`). Catálogo: **22 tours**.
+- **Motor**: `rotaInicial` aceita padrão com `:param` e lista; vence o padrão
+  mais específico (menos `:params`), independente da ordem de registro
+  (`/gestor/reunioes/:id` também casa `/nova`). Rota com `:` nunca é navegada;
+  `?tour=` fora da página certa é recusado.
+- Validação: os dois assistentes ao vivo (escola 35070212, só leitura);
+  resultados/detalhes só por contrato (`tourAlvosSecundarias.test.js`) — a
+  escola não tem dados e criar seria escrita.
+- Docs corrigidas por divergirem do código: ficha/ajuda de Reuniões (sem
+  presentes, sem compartilhar ata, convite só copiar, "responsável" previsto),
+  ajuda de Pesquisa (sem "n/d", respostas livres individuais).
+- **Pendente (lote B)**: relatórios salvos (lista e detalhe), versões do
+  consentimento (admin), histórico do Assistente.
+
 ## Sessão 2026-11-01 (m) — tour do Painel de Configuração (PR #324)
 
 - **PR #324 MERGEADO**: tour `config-painel` (3 passos) em `/config`,
