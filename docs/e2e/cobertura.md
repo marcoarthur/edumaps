@@ -115,9 +115,10 @@ painel responde 200 sem sessão).
 
 > **Não coberto**: estado logado (área de influência com mapa, equipamentos do
 > entorno). Sem login essas seções mostram “Entre como gestor desta escola…”;
-> o passo 8 destaca a seção nos dois estados. O “?” continua visível na tela de
-> erro do painel; aberto lá, cada passo espera o alvo e cai no popover
-> centralizado.
+> o passo 8 destaca a seção nos dois estados. O “?” continuava visível na tela
+> de erro do painel (cada passo caía no popover centralizado) — **corrigido no
+> branch `fix/frontend-ajuda-tela-erro`**: o “?” de tour com `prontoQuando` só
+> aparece quando o alvo existe.
 
 ## Rodada 2026-11-01 (b) (ajuda guiada — tour `primeiro-acesso`)
 
