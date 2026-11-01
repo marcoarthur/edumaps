@@ -282,7 +282,9 @@
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4" role="alert">{error}</div>
   {:else}
-    <LimitesPainel {limites} />
+    <div data-tour="envios-limites">
+      <LimitesPainel {limites} />
+    </div>
 
     {#if modo === "editor"}
       {#key editorKey}
@@ -311,7 +313,7 @@
         />
       {/key}
     {:else}
-      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3">
+      <section class="rounded-card bg-white border border-gray-200 shadow-card p-5 space-y-3" data-tour="envios-lista">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="text-sm font-semibold text-gray-900">Envios ({envios.total})</h2>
           <div class="flex items-center gap-2">
@@ -330,6 +332,7 @@
               </select>
             </label>
             <button
+              data-tour="envios-novo"
               type="button"
               onclick={() => novoEnvio()}
               class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
