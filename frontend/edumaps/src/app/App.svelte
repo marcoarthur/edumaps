@@ -6,6 +6,8 @@
   import Toast from '@/shared/ui/components/Toast.svelte';
   import Logo from '@/shared/ui/components/Logo.svelte';
   import NovaVersaoAviso from '@/shared/ui/components/NovaVersaoAviso.svelte';
+  import { untrack } from "svelte";
+  import { tourManager, BotaoAjuda } from "@/shared/tour";
 
   const NAV_LINKS = [
     { to: "/", label: "Home" },
@@ -41,6 +43,23 @@
     );
   });
 
+  // Ajuda guiada: a cada rota, o tourManager decide se abre um tour
+  // (`?tour=<id>`, retomada após recarregar, ou primeira visita). Só
+  // `router.path` é dependência: o estado do próprio tour fica em `untrack`,
+  // senão o fim de um tour re-dispararia este efeito.
+  $effect(() => {
+    const path = router.path.split("?")[0];
+    untrack(() => {
+      tourManager.aoNavegar(path, window.location.search);
+      // `?tour=` é consumido uma vez: tirá-lo da URL evita reabrir no reload.
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("tour")) {
+        url.searchParams.delete("tour");
+        window.history.replaceState(window.history.state, "", url);
+      }
+    });
+  });
+
   function navLinkClass(path) {
     const state = router.path === path ? "bg-white/20" : "hover:bg-white/10";
     return `px-3 py-1.5 rounded-md transition-colors ${state}`;
@@ -65,6 +84,9 @@
             {item.label}
           </a>
         {/each}
+      </div>
+      <div class="ml-auto">
+        <BotaoAjuda path={router.path.split("?")[0]} manager={tourManager} />
       </div>
     </div>
   </nav>

@@ -67,47 +67,52 @@
 
 <form onsubmit={handleSubmit} class="bg-white border border-gray-200 rounded-card shadow-card p-5">
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <InputAutocomplete
-      id="nome-escola"
-      label="Nome da Escola"
-      placeholder="Ex: Paulo Freire"
-      bind:value={nomeEscola}
-      disabled={loading}
-      fetchSuggestions={fetchSchoolSuggestions}
-      getOptionLabel={(school) => school.nome}
-      getOptionKey={(school) => school.id}
-      noResultsText="Nenhuma escola encontrada"
-    >
-      {#snippet option(school)}
-        <span>{school.nome}</span>
-        {#if school.municipio}
-          <span class="text-gray-400"> · {school.municipio}</span>
-        {/if}
-      {/snippet}
-    </InputAutocomplete>
+    <div data-tour="busca-nome">
+      <InputAutocomplete
+        id="nome-escola"
+        label="Nome da Escola"
+        placeholder="Ex: Paulo Freire"
+        bind:value={nomeEscola}
+        disabled={loading}
+        fetchSuggestions={fetchSchoolSuggestions}
+        getOptionLabel={(school) => school.nome}
+        getOptionKey={(school) => school.id}
+        noResultsText="Nenhuma escola encontrada"
+      >
+        {#snippet option(school)}
+          <span>{school.nome}</span>
+          {#if school.municipio}
+            <span class="text-gray-400"> · {school.municipio}</span>
+          {/if}
+        {/snippet}
+      </InputAutocomplete>
+    </div>
 
-    <InputAutocomplete
-      id="municipio"
-      label="Município"
-      placeholder="Ex: Ubatuba"
-      bind:value={municipio}
-      disabled={loading}
-      fetchSuggestions={fetchMunicipioSuggestions}
-      getOptionLabel={(city) => city.nome}
-      getOptionKey={(city) => city.codigo_ibge}
-      noResultsText="Nenhum município encontrado"
-      onSelect={handleSelectMunicipio}
-    >
-      {#snippet option(city)}
-        <span>{city.nome}</span>
-        <span class="text-gray-400"> · {city.uf}</span>
-      {/snippet}
-    </InputAutocomplete>
+    <div data-tour="busca-municipio">
+      <InputAutocomplete
+        id="municipio"
+        label="Município"
+        placeholder="Ex: Ubatuba"
+        bind:value={municipio}
+        disabled={loading}
+        fetchSuggestions={fetchMunicipioSuggestions}
+        getOptionLabel={(city) => city.nome}
+        getOptionKey={(city) => city.codigo_ibge}
+        noResultsText="Nenhum município encontrado"
+        onSelect={handleSelectMunicipio}
+      >
+        {#snippet option(city)}
+          <span>{city.nome}</span>
+          <span class="text-gray-400"> · {city.uf}</span>
+        {/snippet}
+      </InputAutocomplete>
+    </div>
   </div>
   <p class="text-xs text-gray-500 mt-2">Mínimo de 3 caracteres em pelo menos um dos campos.</p>
   <div class="flex gap-3 mt-4">
     <button
       type="submit"
+      data-tour="busca-enviar"
       disabled={loading || !canSubmit}
       class="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-700 transition-colors"
     >
@@ -124,6 +129,7 @@
     <button
       type="button"
       onclick={handleCompareNetworks}
+      data-tour="busca-comparar"
       disabled={loading}
       class="px-4 py-2 border border-brand-600 text-brand-700 text-sm font-medium rounded-md hover:bg-brand-50 transition-colors"
       title={selectedCityCode
