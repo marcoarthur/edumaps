@@ -11,12 +11,12 @@
 
   const NAV_LINKS = [
     { to: "/", label: "Home" },
-    { to: "/escola/search", label: "Busca Escola" },
-    { to: "/cluster/geotag", label: "Análises" },
-    { to: "/chat/censo", label: "Assistente do Censo" },
+    { to: "/escola/search", label: "Busca Escola", tour: "menu-busca" },
+    { to: "/cluster/geotag", label: "Análises", tour: "menu-analises" },
+    { to: "/chat/censo", label: "Assistente do Censo", tour: "menu-assistente" },
     { to: "/config", label: "Configurações" },
     { to: "/admin", label: "Administração" },
-    { to: "/gestor", label: "Gestor" },
+    { to: "/gestor", label: "Gestor", tour: "menu-gestor" },
     { to: "/about", label: "Sobre o Refactor" },
   ];
 
@@ -80,7 +80,7 @@
       </a>
       <div class="flex gap-4 text-sm">
         {#each NAV_LINKS as item}
-          <a href={item.to} use:link class={navLinkClass(item.to)}>
+          <a href={item.to} use:link class={navLinkClass(item.to)} data-tour={item.tour}>
             {item.label}
           </a>
         {/each}

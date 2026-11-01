@@ -43,7 +43,7 @@
 </script>
 
 <article class="space-y-12">
-  <header class="text-center space-y-4 py-8">
+  <header class="text-center space-y-4 py-8" data-tour="home-apresentacao">
     <div class="flex justify-center">
       <Logo size={80} />
     </div>
@@ -53,7 +53,7 @@
       geolocalização, indicadores educacionais e ferramentas analíticas em uma só
       plataforma.
     </p>
-    <div class="flex flex-wrap justify-center gap-3 pt-2">
+    <div class="flex flex-wrap justify-center gap-3 pt-2" data-tour="home-atalhos">
       <a
         href="/escola/search"
         onclick={(event) => go(event, "/escola/search")}
