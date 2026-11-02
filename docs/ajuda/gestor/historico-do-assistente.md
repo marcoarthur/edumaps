@@ -45,7 +45,8 @@ exporta tudo, algumas ou uma só em Markdown.
 
 O número sobre cada dia é quantas conversas você salvou nele. O dia é o do seu
 relógio (o fuso do seu navegador), o mesmo da data “Criada em”: uma conversa
-salva às 23h aparece naquele dia, não no seguinte.
+salva às 23h aparece naquele dia, não no seguinte. As datas e horas dentro do arquivo
+exportado também saem no seu horário (por exemplo, “25/09/2026 23:03”).
 
 ## Limitações conhecidas
 

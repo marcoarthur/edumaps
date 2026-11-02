@@ -203,7 +203,8 @@
   }
 
   function exportSelected(ids) {
-    exportConversas({ ids })
+    // o fuso vai sempre: as datas do arquivo saem na hora de quem exporta
+    exportConversas(comFuso({ ids }))
       .then(salvarMarkdown)
       .catch(err => {
         error = "Falha ao exportar: " + err.message;

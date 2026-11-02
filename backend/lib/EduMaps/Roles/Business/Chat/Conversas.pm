@@ -279,24 +279,33 @@ sub export_conversas ($self, $gestor_id, $opts = {}) {
   # (a) era descartado e (b) deixava `id` ambíguo entre `chat_conversas` e
   # `chat_mensagens` — o filtro por ids estourava com "column reference id
   # is ambiguous" (500) sempre que se exportava uma seleção.
+  # Datas no fuso de quem exporta, legíveis ("25/09/2026 23:03"). Antes
+  # saía o timestamp cru do banco, em UTC: a conversa das 23h do dia 25 vinha
+  # "2026-09-26 02:03:39.129883+00" dentro do arquivo do dia 25. Sem `tz`,
+  # UTC, e o arquivo diz que é UTC.
+  my $tz       = $opts->{tz} // 'UTC';
+  my $sufixo   = defined $opts->{tz} ? '' : ' (UTC)';
+  my $local    = \[ "to_char(me.created_at AT TIME ZONE ?, 'DD/MM/YYYY HH24:MI')", $tz ];
   my $rs = $self->schema->resultset('ChatConversa')->search(
     $where,
-    { order_by => { -desc => 'created_at' } },
+    { order_by => { -desc => 'created_at' }, '+select' => [$local], '+as' => ['data_local'] },
   );
 
   my $md = '';
   while (my $c = $rs->next) {
     my $titulo = $c->titulo // 'Sem título';
-    my $data   = $c->created_at;
+    my $data   = $c->get_column('data_local') . $sufixo;
     $md .= "# Conversa: $titulo\n";
     $md .= "**Data:** $data\n\n---\n\n";
 
     my $n = 0;
-    for my $m ($c->mensagens->search({}, { order_by => 'created_at' })->all) {
+    my $msgs = $c->mensagens->search({},
+      { order_by => 'created_at', '+select' => [$local], '+as' => ['data_local'] });
+    for my $m ($msgs->all) {
       next unless $m->role =~ /^(user|assistant)$/;
       $n++ if $m->role eq 'user';
       my $label = $m->role eq 'user' ? "Pergunta $n" : "Resposta $n";
-      my $hora  = $m->created_at;
+      my $hora  = $m->get_column('data_local') . $sufixo;
       $md .= "## $label\n**$hora** — " . $m->content . "\n\n---\n\n";
     }
   }

@@ -181,10 +181,14 @@ subtest 'export: all=1 com from/to exporta só o dia escolhido' => sub {
   my @n = $md =~ /^# Conversa: /mg;
   is scalar @n, 1, 'só uma conversa no arquivo';
   like $res->headers->content_disposition, qr/conversas-2001-04-09\.md/, 'o arquivo leva o dia exportado';
+  like $md, qr/^\*\*Data:\*\* 09\/04\/2001 22:30$/m, 'data da conversa no fuso local, legível';
+  like $md, qr/^\*\*\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}\*\* — export-dia-9$/m,
+    'hora da mensagem no mesmo formato, sem o timestamp cru';
 
   my $sem_tz = $t->get_ok('/api/chat/conversas/export?all=1&from=2001-04-10&to=2001-04-10', $auth)->tx->res->text;
   my @n_utc = $sem_tz =~ /^# Conversa: export-dia-/mg;
   is scalar @n_utc, 2, 'sem tz conta em UTC: as duas caem em 10/04';
+  like $sem_tz, qr/^\*\*Data:\*\* 10\/04\/2001 01:30 \(UTC\)$/m, 'sem tz: data em UTC, dita como UTC';
 
   my $todas = $t->get_ok('/api/chat/conversas/export?all=1', $auth)->tx->res->text;
   like $todas, qr/export-dia-9/,  'sem dia, all=1 segue exportando tudo';

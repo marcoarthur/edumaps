@@ -220,6 +220,17 @@ describe("ChatHistoricoPage — exportar com dia escolhido", () => {
     await waitFor(() => expect(pedidosExport).toHaveLength(1));
     expect(pedidosExport[0].get("all")).toBe("1");
     expect(pedidosExport[0].get("from")).toBeNull();
+    // o fuso vai sempre: as datas do arquivo saem na hora local
+    expect(pedidosExport[0].get("tz")).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+
+  it("exportar uma conversa também manda o fuso", async () => {
+    render(ChatHistoricoPage);
+    await screen.findByText("IDEB");
+    await fireEvent.click(screen.getAllByRole("button", { name: "Exportar conversa" })[0]);
+    await waitFor(() => expect(pedidosExport).toHaveLength(1));
+    expect(pedidosExport[0].getAll("ids")).toEqual(["1"]);
+    expect(pedidosExport[0].get("tz")).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
   it("com dia: o botão vira “Exportar as do dia” e manda o dia e o fuso", async () => {
