@@ -26,6 +26,9 @@ $t->app->helper(canais_smtp => sub {
 });
 
 my $minion = $t->app->minion;
+# fila só deste teste: um worker de pé no mesmo banco não pega os jobs
+my $FILA = "teste_senha_$$";
+$t->app->config->{gestor_senha_fila} = $FILA;
 my $pesq   = $t->app->model('Pesquisa');
 my $cfgm   = $t->app->model('AppConfig');
 my $secret = $t->app->secrets->[0];
@@ -44,7 +47,7 @@ sub esqueci {
   chave(reset_email => $email); chave(reset_ip => $ip);
   $t->post_ok('/api/gestor/senha/esqueci', hdr($ip), json => { email => $email });
 }
-sub roda_jobs { $minion->perform_jobs_in_foreground({ tasks => ['gestor_senha_email'] }) }
+sub roda_jobs { $minion->perform_jobs_in_foreground({ queues => [$FILA] }) }
 sub ultimo_token {
   my ($link) = $enviados[-1]{envelope} =~ m{(\Q$BASE\E/gestor/redefinir-senha#\S+)};
   my ($tok) = ($link // '') =~ /#([A-Za-z0-9_-]{43})$/;
@@ -67,7 +70,7 @@ END {
   $dbh->do('DELETE FROM clean.sessoes WHERE gestor_id IN (SELECT id FROM clean.gestores WHERE email = ?)', {}, $EMAIL);
   $dbh->do('DELETE FROM clean.gestores WHERE email = ?', {}, $EMAIL);
   $dbh->do('DELETE FROM clean.escolas WHERE codigo_inep = ?', {}, $INEP);
-  $dbh->do(q{DELETE FROM minion_jobs WHERE task = 'gestor_senha_email'});
+  $dbh->do('DELETE FROM minion_jobs WHERE queue = ?', {}, $FILA);
   $dbh->do('DELETE FROM app_config.items WHERE key = ANY(?)', {}, \@CHAVES_CFG);
   $dbh->do('INSERT INTO app_config.items (key, value, secret, sensitive, secret_key_version, updated_by, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)', {}, @$_) for values %antes;
@@ -100,7 +103,7 @@ subtest 'pedido: mesma resposta exista a conta ou não' => sub {
   my $sem = esqueci("ninguem.$$\@edumaps.test", ip(11))->status_is(202)->tx->res->json;
   is $sem, $com, 'corpo idêntico';
 
-  my $jobs = $dbh->selectall_arrayref(q{SELECT args::text FROM minion_jobs WHERE task = 'gestor_senha_email' AND state = 'inactive'});
+  my $jobs = $dbh->selectall_arrayref(q{SELECT args::text FROM minion_jobs WHERE queue = ? AND state = 'inactive'}, {}, $FILA);
   is scalar(@$jobs), 1, 'só a conta existente gera job';
   unlike $jobs->[0][0], qr/[A-Za-z0-9_-]{43}/, 'argumentos do job não levam token';
 
