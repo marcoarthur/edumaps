@@ -342,6 +342,27 @@ Testar a busca no navegador expôs defeitos de exibição dos resultados
 para um ciclo próprio: corrigir o trecho sem `{@html}` pede trocar os
 marcadores do `ts_headline` por delimitadores seguros e montá-los no cliente.
 
+## 17. Trecho e contagem na busca (PR #329)
+
+O `ts_headline` devolve HTML (`<b>…</b>`). Renderizá-lo com `{@html}`
+abriria a porta a qualquer marcação vinda do conteúdo das conversas; mostrar
+como texto exibia as tags. A saída foi não trafegar HTML: o servidor marca
+o termo com caracteres de uso privado (removidos antes do conteúdo, para não
+colidirem), quebra o trecho em partes `{texto, destaque}` e o cliente monta
+`<mark>` só nas partes destacadas. O Markdown das respostas sai do trecho
+no servidor, junto.
+
+A consulta passou a `DISTINCT ON (c.id)`. O `DISTINCT` anterior incluía o
+trecho na chave, e cada mensagem que casava virava uma linha. O limite de 20
+contava mensagens, e o `total`, conversas. O cliente deduplicava, mas a
+página podia vir com menos de 20 conversas mesmo havendo mais. A contagem
+de mensagens, que só a lista devolvia, entrou na busca por subconsulta.
+
+Lição de operação: subir `backend`/`minion` com `docker compose up -d`
+recriou o `db` como dependência, e o `minion` caiu ao conectar no banco ainda
+reiniciando. Verificar o md5 com `docker exec` não pega isso; `docker compose
+ps` depois de alguns segundos pega.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -359,8 +380,9 @@ marcadores do `ts_headline` por delimitadores seguros e montá-los no cliente.
   ~~Configurações~~ (PR #324). ~~Telas secundárias~~: lote A (PR #325, §13) e
   lote B (PR #326, §14).
 - ~~Histórico: filtro por dia~~ — **PR #327** (§15). ~~Unificar os dois
-  campos de busca~~ — **PR #328** (§16). Restam: "Exportar todas" ignora o
-  dia escolhido; trecho da busca com marcações cruas e contagem vazia.
+  campos de busca~~ — **PR #328** (§16). ~~Trecho e contagem
+  na busca~~ — **PR #329** (§17). Resta: "Exportar todas" ignora o dia
+  escolhido.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

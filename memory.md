@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (r) — trecho e contagem na busca do histórico (PR #329)
+
+- **PR #329 MERGEADO** (`04979c5`): busca devolve `snippet_partes`
+  [{texto, destaque}] (delimitadores U+E000/E001 no `ts_headline`, Markdown
+  retirado) e o cliente monta `<mark>` sem `{@html}`; `msg_count` na busca;
+  `DISTINCT ON (c.id)` (uma linha por conversa, trecho da 1ª mensagem).
+- ⚠️ **Incidente local**: no ciclo do PR #327, `docker compose up -d backend
+  minion frontend` recriou também o `db`; o `minion` subiu antes do banco
+  ficar pronto, perdeu a conexão e saiu (exit 11). Ficou **~45 min parado**
+  sem eu notar, porque conferi só o md5 (o `docker exec` passa antes de o
+  container cair). Na reconstrução seguinte, subiu normal. **Depois de subir
+  backend/minion, conferir `docker compose ps` uns 30 s depois, não só o md5.**
+- Pendente no histórico: "Exportar todas" ignora o dia escolhido.
+
 ## Sessão 2026-11-01 (q) — busca única no histórico do Assistente (PR #328)
 
 - **PR #328 MERGEADO** (`3f6228b`): fica só o campo de busca da página;
