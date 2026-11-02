@@ -32,3 +32,6 @@ __pycache__/
 
 # Brutos da ingestão (#231): ZIPs/CSVs baixados — fora do Git
 /raw/
+
+# site de ajuda gerado por tools/help-wiki/build_pages.py
+_site/
