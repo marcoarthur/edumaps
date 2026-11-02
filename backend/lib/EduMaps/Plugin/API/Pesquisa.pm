@@ -26,6 +26,11 @@ sub register ($self, $app, @args) {
   my $public = $app->routes->under('/api/gestor');
   $public->post('/login')->to('pesquisa#login')->name('gestor_login');
 
+  # esqueci minha senha (#336) — anônimas
+  $public->get('/senha/disponivel')->to('pesquisa#senha_disponivel')->name('gestor_senha_disponivel');
+  $public->post('/senha/esqueci')->to('pesquisa#senha_esqueci')->name('gestor_senha_esqueci');
+  $public->post('/senha/redefinir')->to('pesquisa#senha_redefinir')->name('gestor_senha_redefinir');
+
   my $sessao = $app->routes->under('/api/gestor')->to('pesquisa#_require_gestor');
   $sessao->get('/me')->to('pesquisa#me')->name('gestor_me');
   $sessao->post('/logout')->to('pesquisa#logout')->name('gestor_logout');

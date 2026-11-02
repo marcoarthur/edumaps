@@ -211,6 +211,15 @@ my %TREE = (
             enabled     => 0,
           },
           {
+            key         => 'canais.email.public_base_url',
+            label       => 'URL pública da plataforma',
+            description => 'Endereço público do EduMaps, usado para montar links enviados por e-mail (ex.: redefinição de senha do gestor). Sem ela, "Esqueci minha senha" fica escondido.',
+            example     => 'https://edumaps.exemplo.org',
+            type        => 'text',
+            sensitive   => 0,
+            enabled     => 1,
+          },
+          {
             key         => 'canais.email.enabled',
             label       => 'Canal e-mail ativado',
             description => 'Liga/desliga o envio de e-mail. Desligado, nenhuma mensagem é entregue.',
@@ -783,7 +792,7 @@ sub _canais_group_config ($self, $prefix, $subs, $secret_subs) {
 sub email_config ($self) {
   my $cfg = $self->_canais_group_config(
     'canais.email',
-    [qw/smtp_host smtp_port smtp_user smtp_password smtp_tls from from_name enabled/],
+    [qw/smtp_host smtp_port smtp_user smtp_password smtp_tls from from_name public_base_url enabled/],
     [qw/smtp_password/],
   );
   $cfg->{enabled} = 0 unless defined $cfg->{enabled};

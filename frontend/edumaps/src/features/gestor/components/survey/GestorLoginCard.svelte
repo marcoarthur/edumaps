@@ -2,7 +2,8 @@
 <script>
   // Cartão de login do gestor (fase 2). Aparece antes dos resultados quando
   // ainda não há sessão válida (401). Devolve em onLogin o token/gestor.
-  import { loginGestor } from "../../api/gestorPesquisasApi.js";
+  import { onMount } from "svelte";
+  import { loginGestor, senhaDisponivel } from "../../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { LIMITS } from "../../constants/pesquisas.js";
 
@@ -18,6 +19,16 @@
   let senha = $state("");
   let erro = $state(null);
   let carregando = $state(false);
+  // "Esqueci minha senha" só quando o e-mail da plataforma está configurado
+  let podeRedefinir = $state(false);
+
+  onMount(async () => {
+    try {
+      podeRedefinir = !!(await senhaDisponivel())?.disponivel;
+    } catch {
+      podeRedefinir = false;
+    }
+  });
 
   function valido() {
     return /^\S+@\S+\.\S+$/.test(email.trim()) && senha.length >= LIMITS.SENHA_MIN;
@@ -88,4 +99,10 @@
       {carregando ? "Entrando…" : "Entrar"}
     </button>
   </form>
+
+  {#if podeRedefinir}
+    <p class="mt-4 text-center text-sm">
+      <a href="/gestor/esqueci-senha" class="text-blue-700 hover:underline">Esqueci minha senha</a>
+    </p>
+  {/if}
 </div>

@@ -29,6 +29,8 @@ import {
   GestorRelatoriosPage,
   GestorRelatoriosSalvosPage,
   GestorRelatorioSalvoPage,
+  GestorEsqueciSenhaPage,
+  GestorRedefinirSenhaPage,
 } from "@/features/gestor";
 import {
   SchoolSearchPage,
@@ -55,6 +57,8 @@ export const routes = [
   { path: "/escola/panel", component: SchoolPanelPage },
   { path: "/escola/perfil", component: SchoolProfilePage },
   { path: "/gestor", component: GestorAcessoPage },
+  { path: "/gestor/esqueci-senha", component: GestorEsqueciSenhaPage },
+  { path: "/gestor/redefinir-senha", component: GestorRedefinirSenhaPage },
   { path: "/gestor/painel", component: GestorPanelPage },
   { path: "/gestor/pesquisas", component: GestorPesquisasPage },
   { path: "/gestor/pesquisas/nova", component: GestorPesquisasWizardPage },

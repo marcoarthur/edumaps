@@ -158,6 +158,29 @@ export const gestorPesquisasHandlers = [
   }),
 
   // ---- fase 2: autenticação do gestor ------------------------------------
+  // esqueci minha senha (#336)
+  http.get("/api/gestor/senha/disponivel", () => HttpResponse.json({ disponivel: 1 })),
+  http.post("/api/gestor/senha/esqueci", () =>
+    HttpResponse.json(
+      {
+        ok: 1,
+        mensagem:
+          "Se houver uma conta com esse e-mail, enviamos um link para criar uma senha nova. Confira a caixa de entrada e o spam.",
+      },
+      { status: 202 },
+    ),
+  ),
+  http.post("/api/gestor/senha/redefinir", async ({ request }) => {
+    const body = await request.json();
+    if (body.token !== "t".repeat(43)) {
+      return HttpResponse.json(
+        { error: "Este link não vale mais (vencido ou já usado). Peça um novo em “Esqueci minha senha”." },
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json({ ok: 1 });
+  }),
+
   http.post("/api/gestor/login", async ({ request }) => {
     const body = await request.json();
     if (body.email !== SESSION_GESTOR.email || body.senha !== "senha123") {

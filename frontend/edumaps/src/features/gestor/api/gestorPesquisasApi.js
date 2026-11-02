@@ -90,6 +90,33 @@ export async function loginGestor(credenciais) {
   }
 }
 
+// ---------------------------------------------------------------
+// esqueci minha senha (#336)
+// ---------------------------------------------------------------
+
+/** O link "Esqueci minha senha" só aparece se o e-mail estiver configurado.
+ * @returns {Promise<{disponivel: number}>}
+ */
+export function senhaDisponivel() {
+  return apiClient.get("/api/gestor/senha/disponivel");
+}
+
+/** Pede o link por e-mail. Responde sempre igual (202), exista a conta ou não.
+ * @param {string} email
+ * @returns {Promise<{ok: number, mensagem: string}>}
+ */
+export function pedirRedefinicaoSenha(email) {
+  return apiClient.post("/api/gestor/senha/esqueci", { email });
+}
+
+/** Grava a senha nova a partir do token do link (uso único).
+ * @param {{token: string, senha: string}} payload
+ * @returns {Promise<{ok: number}>}
+ */
+export function redefinirSenha(payload) {
+  return apiClient.post("/api/gestor/senha/redefinir", payload);
+}
+
 /** Verifica a sessão atual no servidor.
  * @returns {Promise<{id:number, cod_inep:number, nome:string, email:string}>}
  */
