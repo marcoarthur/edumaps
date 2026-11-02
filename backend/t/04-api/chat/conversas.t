@@ -157,6 +157,36 @@ subtest 'GET /api/chat/conversas/search — busca full-text' => sub {
   ok defined $json->{items}[0]{snippet}, 'tem snippet destacado';
 };
 
+subtest 'busca: uma linha por conversa, trecho sem marcação, contagem' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  my $auth = { Authorization => "Bearer $admin_token" };
+
+  # termo raro, em DUAS mensagens da mesma conversa, com Markdown em volta
+  my $id = $t->post_ok('/api/chat/conversas', $auth => json => {
+    titulo => 'trecho',
+    messages => [
+      { role => 'user',      content => 'Quantas quixabeiras há na rede?' },
+      { role => 'assistant', content => "## Resumo\nHá **87** quixabeiras na `rede` municipal." },
+      { role => 'user',      content => 'E quixabeiras estaduais?' },
+    ],
+  })->status_is(201)->tx->res->json->{id};
+
+  my $json = $t->get_ok('/api/chat/conversas/search?q=quixabeiras', $auth)->status_is(200)->tx->res->json;
+  my @minha = grep { $_->{id} == $id } @{ $json->{items} };
+  is scalar(@minha), 1, 'a conversa aparece uma vez, mesmo com 3 mensagens que casam';
+  is $json->{total}, scalar(@{ $json->{items} }), 'total = conversas distintas';
+
+  my $c = $minha[0];
+  is $c->{msg_count}, 3, 'msg_count vem na busca';
+  unlike $c->{snippet}, qr/<\/?b>|\*\*|`|\x{E000}|\x{E001}/, 'trecho sem <b>, sem ** e sem os delimitadores';
+  my @destaques = grep { $_->{destaque} } @{ $c->{snippet_partes} };
+  ok @destaques, 'há parte destacada';
+  like $destaques[0]{texto}, qr/quixabeiras/i, 'o destaque é o termo';
+  is join('', map { $_->{texto} } @{ $c->{snippet_partes} }), $c->{snippet}, 'partes reconstroem o trecho';
+
+  $t->delete_ok("/api/chat/conversas/$id", $auth)->status_is(204);
+};
+
 subtest 'GET /api/chat/conversas/calendar — dias com conversas' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
 

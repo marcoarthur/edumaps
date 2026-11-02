@@ -29,7 +29,8 @@ exporta tudo, algumas ou uma só em Markdown.
    Clique num dia: a lista mostra só as conversas dele, e um aviso azul indica
    o dia escolhido. Clique de novo no mesmo dia, ou em **Ver todas**, para
    voltar à lista completa. Use as setas do calendário para mudar de mês.
-4. **Por texto:** digite no campo de busca, acima da lista. A busca e o filtro
+4. **Por texto:** digite no campo de busca, acima da lista. Cada conversa
+   encontrada aparece uma vez, com o trecho em que o termo aparece destacado. A busca e o filtro
    por dia não se somam:
    digitar uma busca desliga o dia, e escolher um dia limpa a busca.
 5. **Exportar:** **Exportar todas (.md)** baixa o histórico inteiro; marque
@@ -49,9 +50,7 @@ salva às 23h aparece naquele dia, não no seguinte.
 - Ainda não é possível reabrir uma conversa salva dentro do Assistente.
 - A busca procura no texto das mensagens, não no título da conversa.
 - A busca não ignora acentos (“matriculas” não encontra “Matrículas”).
-- No resultado da busca, o trecho encontrado aparece com marcações de
-  formatação visíveis (como `<b>…</b>` e `**…**`).
-- A busca mostra até 20 conversas, sem páginas seguintes: se o que procura não
+- A busca mostra as 20 conversas mais recentes que casam, sem páginas seguintes: se o que procura não
   aparecer, use um termo mais específico.
 - “Exportar todas” baixa o histórico inteiro, mesmo com um dia escolhido.
 

@@ -19,8 +19,8 @@ const hoje = new Date();
 const DIA = diaLocal(new Date(hoje.getFullYear(), hoje.getMonth(), 10));
 
 const TODAS = [
-  { id: 1, titulo: "Matrículas", created_at: "2026-10-10T13:00:00Z", total_mensagens: 2 },
-  { id: 2, titulo: "IDEB", created_at: "2026-10-03T13:00:00Z", total_mensagens: 2 },
+  { id: 1, titulo: "Matrículas", created_at: "2026-10-10T13:00:00Z", msg_count: 2 },
+  { id: 2, titulo: "IDEB", created_at: "2026-10-03T13:00:00Z", msg_count: 2 },
 ];
 
 let pedidosLista;
@@ -159,5 +159,39 @@ describe("ChatHistoricoPage — busca única", () => {
       target: { value: "ideb" },
     });
     await waitFor(() => expect(screen.queryByRole("navigation", { name: "Paginação" })).toBeNull());
+  });
+});
+
+describe("ChatHistoricoPage — resultado da busca", () => {
+  it("trecho com o termo destacado (sem HTML cru) e a contagem de mensagens", async () => {
+    server.use(
+      http.get("/api/chat/conversas/search", () =>
+        HttpResponse.json(
+          pagina([
+            {
+              ...TODAS[1],
+              msg_count: 3,
+              snippet: "Há 87 escolas na <b>rede</b>",
+              snippet_partes: [
+                { texto: "Há 87 ", destaque: false },
+                { texto: "escolas", destaque: true },
+                { texto: " na <b>rede</b>", destaque: false },
+              ],
+            },
+          ]),
+        ),
+      ),
+    );
+    render(ChatHistoricoPage);
+    await screen.findByText("Matrículas");
+    await fireEvent.input(screen.getByRole("textbox", { name: "Buscar nas conversas salvas" }), {
+      target: { value: "escolas" },
+    });
+
+    const trecho = await screen.findByTestId("conversa-trecho");
+    expect(trecho.querySelector("mark")).toHaveTextContent("escolas");
+    // texto do conteúdo nunca vira HTML: "<b>" fica como texto, sem elemento <b>
+    expect(trecho.querySelector("b")).toBeNull();
+    expect(screen.getByText("3 mensagens")).toBeInTheDocument();
   });
 });
