@@ -151,6 +151,7 @@
       {/if}
       <a
         href="/gestor/relatorios"
+        data-tour="salvos-novo"
         class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
       >Novo relatório</a>
       <a
@@ -167,7 +168,7 @@
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4" role="alert">{error}</div>
   {:else if total === 0}
-    <div class="bg-white border border-gray-200 rounded-card shadow-card p-8 text-center space-y-3" data-testid="salvos-vazio">
+    <div class="bg-white border border-gray-200 rounded-card shadow-card p-8 text-center space-y-3" data-testid="salvos-vazio" data-tour="salvos-lista">
       <p class="text-gray-700">Você ainda não salvou nenhum relatório.</p>
       <p class="text-sm text-gray-500">
         Gere um relatório e use "Salvar relatório" para guardá-lo aqui.
@@ -175,7 +176,7 @@
       <a href="/gestor/relatorios" class="inline-block text-sm text-blue-700 hover:underline">Gerar um relatório</a>
     </div>
   {:else}
-    <div class="bg-white border border-gray-200 rounded-card shadow-card overflow-x-auto" aria-busy={carregandoLista}>
+    <div class="bg-white border border-gray-200 rounded-card shadow-card overflow-x-auto" aria-busy={carregandoLista} data-tour="salvos-lista">
       <table class="min-w-full text-sm" data-testid="salvos-tabela">
         <caption class="sr-only">Relatórios salvos</caption>
         <thead class="bg-gray-50 text-gray-600">

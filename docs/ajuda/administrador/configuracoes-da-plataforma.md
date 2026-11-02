@@ -30,6 +30,11 @@ de 3 passos mostra as categorias (com o selo “Em breve” no que ainda não es
 disponível), como editar, validar e salvar um item (chaves secretas nunca são
 exibidas) e as versões do termo de consentimento. Reabra pelo **?** do menu.
 
+A página **Versões do consentimento** tem um roteiro próprio, de 2 passos: a
+lista (vigente, rascunhos e arquivadas; cada inscrição guarda a versão que
+aceitou) e como criar um rascunho e publicá-lo. Publicar arquiva a versão
+vigente, e a publicada não pode mais ser alterada.
+
 ## Limitações conhecidas
 - Alterações podem afetar toda a plataforma.
 - Nem todas as configurações são reversíveis imediatamente.

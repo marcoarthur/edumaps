@@ -14,6 +14,9 @@ import { resetConfigMockState } from "../mocks/configHandlers.js";
 import { seletorDoAlvo } from "@/shared/tour/tourManager.svelte.js";
 import configPainel from "@/shared/tour/tours/configPainel.js";
 import ConfigPage from "./ConfigPage.svelte";
+import consentimentoVersoes from "@/shared/tour/tours/consentimentoVersoes.js";
+import ConsentimentoVersoesPage from "./ConsentimentoVersoesPage.svelte";
+import { tourManager } from "@/shared/tour";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -55,5 +58,49 @@ describe("tour config-painel × markup do ConfigPage", () => {
     render(ConfigPage);
     await screen.findByText("Entrar como administrador");
     expect(pronto()).toBeNull();
+  });
+});
+
+// Lote B: versões do consentimento (mesmo critério de acesso do /config).
+describe("tour consentimento-versoes × markup", () => {
+  const prontoC = () => document.querySelector(seletorDoAlvo(consentimentoVersoes.prontoQuando));
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    setSessaoToken(SESSION_TOKEN);
+    setApiToken(SESSION_TOKEN);
+    resetConfigMockState();
+  });
+  afterEach(() => setApiToken(null));
+
+  it("o catálogo distingue /config de /config/consentimento", () => {
+    expect(tourManager.tourDaRota("/config")?.id).toBe(configPainel.id);
+    expect(tourManager.tourDaRota("/config/consentimento")?.id).toBe(consentimentoVersoes.id);
+  });
+
+  it("administrador: prontoQuando e todos os alvos existem", async () => {
+    render(ConsentimentoVersoesPage);
+    await waitFor(() => expect(prontoC()).not.toBeNull(), { timeout: 5000 });
+    const faltando = consentimentoVersoes.passos
+      .map((p) => p.alvo)
+      .filter((alvo) => document.querySelector(seletorDoAlvo(alvo)) === null);
+    expect(faltando).toEqual([]);
+  });
+
+  it("gestor sem perfil admin: não abre", async () => {
+    server.use(
+      http.get("/api/gestor/me", () => HttpResponse.json({ ...SESSION_GESTOR, access_role: "gestor" })),
+    );
+    render(ConsentimentoVersoesPage);
+    await screen.findByText(/restrita a administradores/);
+    expect(prontoC()).toBeNull();
+  });
+
+  it("sem sessão: não abre", async () => {
+    window.localStorage.clear();
+    setApiToken(null);
+    render(ConsentimentoVersoesPage);
+    await screen.findByText("Entrar como administrador");
+    expect(prontoC()).toBeNull();
   });
 });

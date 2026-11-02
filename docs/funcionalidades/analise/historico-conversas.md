@@ -30,7 +30,6 @@ anterior, e o pesquisador que precisa citá-lo.
   um assunto pelo período em vez de rolar a lista.
 - Sistema pode encontrar conversas pelo conteúdo das respostas, mostrando um
   trecho do texto que casou com a busca.
-- Sistema pode filtrar a lista por um dia específico a partir do calendário.
 - Sistema pode exportar uma conversa, um conjunto selecionado ou todo o
   histórico em um arquivo Markdown, para leitura, citação ou arquivo.
 - Sistema pode permitir que o gestor exclua uma conversa que não queira mais
@@ -50,6 +49,10 @@ documento de trabalho.
   não é possível retomar uma conversa salva dentro do assistente: a
   pergunta começa do zero. O histórico é registro e consulta, não sessão
   retomada.
+- **O calendário não filtra a lista.** Ele marca os dias com conversas
+  salvas, e clicar num dia apenas o destaca; filtrar a lista pelo dia é
+  previsto.
+- **Há dois campos de busca** na tela, que fazem a mesma busca.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.
 - **A busca devolve a mesma conversa mais de uma vez** quando mais de uma

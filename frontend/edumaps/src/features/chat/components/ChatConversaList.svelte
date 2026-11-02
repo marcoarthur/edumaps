@@ -65,7 +65,7 @@
         />
       </label>
     </div>
-    <div class="flex items-center gap-2 flex-wrap">
+    <div class="flex items-center gap-2 flex-wrap" data-tour="historico-exportar">
       <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
         <input
           type="checkbox"
