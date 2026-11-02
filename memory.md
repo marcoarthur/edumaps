@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (u) — site de ajuda + ajuda do gestor (PR #332, #304)
+
+- **PR #332 MERGEADO** (`abc4640`), só docs/tools/CI. Site do Pages espelha
+  `docs/` (`/ajuda/`, `/funcionalidades/`); links ajuda→ficha deixam de dar
+  404; endereços antigos redirecionam. Nota técnica **163**.
+- Validador (`tools/help-wiki/export.py` + `links.py`): links quebrados,
+  caminho absoluto e página fora do índice do perfil; roda no CI do PR.
+- Gestor: 6 páginas novas, 4 reescritas; índices por perfil; 6 fichas
+  corrigidas. Cobertura das ativas 11/27 → 20/26.
+- 🔴 **Pendente, segurança**: `POST /api/gestor/pesquisas/perfil` (anônimo)
+  faz upsert por e-mail e sobrescreve senha/escola de conta existente
+  (`Gestores.pm:20`) — tomada de conta, inclusive admin. Reportado ao
+  developer; aguarda decisão.
+- Prévia local do site: `python3 -m http.server -d _site` após `build_pages.py`.
+
 ## Sessão 2026-11-02 (t) — exportar respeita a busca (PR #331)
 
 - **PR #331 MERGEADO** (`9bb84ac`): export aceita `q` (1–200 chars, mesma
