@@ -6,10 +6,6 @@
   /**
    * @param {Array} conversas
    * @param {boolean} loading
-   * @param {string} searchQuery - precisa ser $bindable: a página passa
-   *   `bind:searchQuery`, senão o `bind:value` do input escreve só numa cópia
-   *   local e a busca deste campo nunca chega ao servidor.
-   * @param {Function} onSearch
    * @param {string} selectedDate
    * @param {Function} onExportSelected
    * @param {Function} onExportAll
@@ -21,8 +17,6 @@
   let {
     conversas = [],
     loading = false,
-    searchQuery = $bindable(""),
-    onSearch = () => {},
     selectedDate = "",
     onExportSelected = () => {},
     onExportAll = () => {},
@@ -54,19 +48,8 @@
 </script>
 
 <div class="flex-1 flex flex-col min-h-0">
-  <div class="flex flex-col sm:flex-row gap-3 mb-4 p-4 bg-gray-50 rounded-lg border">
-    <div class="flex-1">
-      <label class="block">
-        <span class="sr-only">Buscar conversas</span>
-        <input
-          type="text"
-          bind:value={searchQuery}
-          placeholder="Buscar por texto nas conversas..."
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          oninput={onSearch}
-        />
-      </label>
-    </div>
+  <!-- Só seleção e exportação: a busca é o campo único da página. -->
+  <div class="flex flex-col sm:flex-row sm:justify-end gap-3 mb-4 p-4 bg-gray-50 rounded-lg border">
     <div class="flex items-center gap-2 flex-wrap" data-tour="historico-exportar">
       <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
         <input

@@ -53,7 +53,8 @@ documento de trabalho.
   retomada.
 - **Um dia por vez.** O filtro do calendário não seleciona intervalos, e não
   se combina com a busca por texto.
-- **Há dois campos de busca** na tela, que fazem a mesma busca.
+- **A busca mostra até 20 conversas** (as primeiras que casam), sem páginas
+  seguintes; refine o termo se o que procura não aparecer.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.
 - **A busca devolve a mesma conversa mais de uma vez** quando mais de uma
