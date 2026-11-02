@@ -122,10 +122,12 @@ subtest 'auto-cadastro governado: 409 para novo e-mail em escola com agenda' => 
   })->status_is(409)->tx->res->json;
   like $err->{error}, qr/já tem um gestor responsável/, 'mensagem orienta transferência';
 
-  # o mesmo e-mail (upsert/re-login) continua permitido
+  # o e-mail de quem já tem conta não se recadastra: entra pelo login
   $t->post_ok('/api/gestor/pesquisas/perfil', json => {
     cod_inep => $INEP, nome => 'Responsável A', email => $email_a, senha => $SENHA,
-  })->status_is(200);
+  })->status_is(409)->json_like('/error', qr/já tem conta/);
+  $t->post_ok('/api/gestor/login', json => { email => $email_a, senha => $SENHA })
+    ->status_is(200);
 };
 
 subtest 'transferência: só o responsável transfere e só dentro da escola' => sub {

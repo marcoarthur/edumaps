@@ -1,10 +1,13 @@
 <!-- src/features/gestor/pages/GestorPesquisasPage.svelte -->
 <script>
-  // Lista de pesquisas do gestor de uma escola (?inep=): status, perguntas,
-  // gestor responsável e ações por estado (rascunho: continuar/excluir).
+  // Lista de pesquisas da escola do gestor logado: status, perguntas, gestor
+  // responsável e ações por estado (rascunho: continuar/excluir). A escola vem
+  // da sessão (/me), não da URL; sem sessão, mostra o login.
   import { onMount } from "svelte";
-  import { listPesquisas, deletePesquisa } from "../api/gestorPesquisasApi.js";
-  import { getGestorSession, clearGestorSession } from "../utils/gestorSession.js";
+  import { listPesquisas, deletePesquisa, fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
+  import { restaurarSessao } from "../utils/gestorAuth.js";
+  import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
+  import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import { STATUS_LABELS } from "../constants/pesquisas.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
@@ -15,19 +18,24 @@
   let loading = $state(true);
   let error = $state(null);
   let deleting = $state(null);
+  let precisaLogin = $state(false);
 
   async function load() {
-    if (!inep) return;
     loading = true;
     error = null;
+    precisaLogin = false;
     try {
+      gestor = await fetchMe();
+      inep = gestor.cod_inep;
       data = await listPesquisas(inep);
     } catch (err) {
       data = [];
-      error =
-        err instanceof ApiError
-          ? err.message
-          : "Erro ao carregar as pesquisas.";
+      if (err instanceof ApiError && err.status === 401) precisaLogin = true;
+      else
+        error =
+          err instanceof ApiError
+            ? err.message
+            : "Erro ao carregar as pesquisas.";
     } finally {
       loading = false;
     }
@@ -50,9 +58,22 @@
     }
   }
 
-  function mudarConta() {
-    clearGestorSession(inep);
+  async function sair() {
+    try {
+      await logoutGestor();
+    } catch {
+      // sessão já inválida no servidor — segue limpando localmente
+    }
+    clearSessaoToken();
     gestor = null;
+    data = [];
+    precisaLogin = true;
+  }
+
+  async function onLogin(sessao) {
+    setSessaoToken(sessao.token);
+    restaurarSessao();
+    await load();
   }
 
   async function copiarLink(s) {
@@ -80,8 +101,7 @@
   }
 
   onMount(() => {
-    inep = new URLSearchParams(window.location.search).get("inep") ?? null;
-    gestor = inep ? getGestorSession(inep) : null;
+    restaurarSessao();
     load();
   });
 </script>
@@ -119,22 +139,20 @@
       </p>
       <button
         type="button"
-        onclick={mudarConta}
+        onclick={sair}
         class="text-xs text-blue-700 hover:underline"
       >
-        Mudar conta
+        Sair
       </button>
     </div>
   {/if}
 
-  {#if !inep}
-    <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">
-      Nenhum código INEP informado (?inep=XXXXXXXX).
-    </div>
-  {:else if loading}
+  {#if loading}
     <div class="text-center py-12">
       <p class="text-gray-500">Carregando pesquisas…</p>
     </div>
+  {:else if precisaLogin}
+    <GestorLoginCard onLogin={onLogin} mensagem="Entre para ver as pesquisas da sua escola." />
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">
       {error}

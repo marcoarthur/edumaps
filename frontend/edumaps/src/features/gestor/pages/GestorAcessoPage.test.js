@@ -47,7 +47,7 @@ describe("GestorAcessoPage", () => {
       target: { value: "Marina Souza" },
     });
     await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
-      target: { value: "marina@edu.gov.br" },
+      target: { value: "nova.diretora@edu.gov.br" },
     });
     await fireEvent.input(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
       target: { value: "senha123" },
@@ -57,6 +57,26 @@ describe("GestorAcessoPage", () => {
     await waitFor(() =>
       expect(addToast).toHaveBeenCalledWith("Cadastro realizado. Bem-vindo(a)!", "success"),
     );
+  });
+
+  it("e-mail que já tem conta não é recadastrado: orienta a entrar", async () => {
+    window.history.replaceState({}, "", "/gestor?inep=11000040&modo=cadastro");
+    render(GestorAcessoPage);
+
+    await screen.findByRole("button", { name: "Já tenho conta" });
+    await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
+      target: { value: "Outra Pessoa" },
+    });
+    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
+      target: { value: "Marina@Edu.gov.br" },
+    });
+    await fireEvent.input(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
+      target: { value: "outrasenha" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: /cadastrar e entrar/i }));
+
+    await screen.findByText(/Este e-mail já tem conta. Entre com sua senha./);
+    expect(addToast).not.toHaveBeenCalledWith("Cadastro realizado. Bem-vindo(a)!", "success");
   });
 
   it("mostra atalho ao painel quando já há sessão", async () => {

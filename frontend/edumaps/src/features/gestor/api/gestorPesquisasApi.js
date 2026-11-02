@@ -1,8 +1,8 @@
 // src/features/gestor/api/gestorPesquisasApi.js
 //
 // Espelha EduMaps::Plugin::API::Pesquisa (base /api/gestor/pesquisas).
-// Fase 1: cadastro do gestor + CRUD de pesquisas (rascunho -> publicada).
-// Fase 2: login do gestor e link público de resposta (token) + resultados.
+// Cadastro do gestor (anônimo, só cria conta), login, CRUD de pesquisas e
+// resultados (com sessão; escola da sessão) e link público de resposta.
 import { apiClient, setApiToken } from "@/shared/api/client.js";
 import { eventBus } from "@/shared/events";
 import { GESTOR_EVENTS } from "../constants/events.js";
@@ -10,15 +10,16 @@ import { GESTOR_EVENTS } from "../constants/events.js";
 const BASE = "/api/gestor/pesquisas";
 
 /**
- * Cadastro/upsert do gestor por e-mail (senha obrigatória na fase 2).
+ * Cadastro do gestor: só cria conta. E-mail já cadastrado responde 409
+ * ("Este e-mail já tem conta. Entre com sua senha.").
  * @param {{cod_inep: string|number, nome: string, email: string, senha: string, telefone?: string, cargo?: string, cpf?: string}} perfil
  * @returns {Promise<{id: number, cod_inep: number, nome: string, email: string, senha? : never}>}
  */
-export function upsertGestor(perfil) {
+export function cadastrarGestor(perfil) {
   return apiClient.post(`${BASE}/perfil`, perfil);
 }
 
-/** Lista pesquisas de uma escola.
+/** Lista as pesquisas da escola da sessão (`inep` só confere; outra escola → 403).
  * @param {string|number} inep
  * @returns {Promise<Array>}
  */
@@ -27,7 +28,8 @@ export function listPesquisas(inep) {
 }
 
 /** Cria um rascunho de pesquisa.
- * @param {{gestor_id: number, titulo: string, descricao?: string, perguntas: Array}} payload
+ * O autor e a escola vêm da sessão.
+ * @param {{titulo: string, descricao?: string, perguntas: Array}} payload
  * @returns {Promise<object>} pesquisa detalhada
  */
 export function createPesquisa(payload) {

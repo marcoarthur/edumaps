@@ -91,13 +91,18 @@ describe("tours dos módulos do gestor × markup das páginas (logado)", () => {
 
 });
 
-// Pesquisas não tem login (a lista é pública); o que importa é ?inep= e o
-// alvo existir tanto na lista quanto no estado vazio.
+// Pesquisas exige a sessão do gestor (a escola vem da sessão). O alvo precisa
+// existir tanto na lista quanto no estado vazio; sem sessão, o tour não abre.
 describe("tour gestor-pesquisas × markup", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    setApiToken(null);
+  });
   afterEach(() => window.history.replaceState({}, "", "/"));
 
-  it("com ?inep=: prontoQuando e todos os alvos existem", async () => {
-    window.history.replaceState({}, "", "/gestor/pesquisas?inep=11000040");
+  it("logado: prontoQuando e todos os alvos existem", async () => {
+    window.localStorage.setItem("edumaps_gestor_token", SESSION_TOKEN);
+    window.history.replaceState({}, "", "/gestor/pesquisas");
     const { container } = render(GestorPesquisasPage);
     await waitFor(
       () => expect(container.querySelector(seletorDoAlvo(gestorPesquisas.prontoQuando))).not.toBeNull(),
@@ -109,10 +114,10 @@ describe("tour gestor-pesquisas × markup", () => {
     expect(faltando).toEqual([]);
   });
 
-  it("sem ?inep=: prontoQuando não aparece", async () => {
+  it("sem sessão: prontoQuando não aparece", async () => {
     window.history.replaceState({}, "", "/gestor/pesquisas");
     const { container, findByText } = render(GestorPesquisasPage);
-    await findByText(/Nenhum código INEP informado/);
+    await findByText(/Entre para ver as pesquisas da sua escola/);
     expect(container.querySelector(seletorDoAlvo(gestorPesquisas.prontoQuando))).toBeNull();
   });
 });

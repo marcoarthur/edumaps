@@ -1,7 +1,8 @@
 <!-- src/features/gestor/components/survey/SurveyWizard.svelte -->
 <script>
-  // Wizard de criação de pesquisas do gestor (fase 1). Fluxo:
-  //   0. Seus dados (upsert do gestor por e-mail — só se ainda não salvo)
+  // Wizard de criação de pesquisas do gestor. Exige a sessão do gestor (a
+  // página só o monta depois do login); o autor e a escola vêm da sessão.
+  // Fluxo:
   //   1. Dados da pesquisa (título + descrição)
   //   2..n. Uma pergunta por tela (autosave a cada edição)
   //   n+1. Revisão + Finalizar (publica → read-only)
@@ -12,8 +13,7 @@
   import StepsIndicator from "./StepsIndicator.svelte";
   import PhoneMockup from "./PhoneMockup.svelte";
   import QuestionEditor from "./QuestionEditor.svelte";
-  import { upsertGestor, createPesquisa, updatePesquisa, finalizarPesquisa } from "../../api/gestorPesquisasApi.js";
-  import { setGestorSession } from "../../utils/gestorSession.js";
+  import { createPesquisa, updatePesquisa, finalizarPesquisa } from "../../api/gestorPesquisasApi.js";
   import {
     emptyDraft,
     surveyToDraft,
@@ -27,29 +27,20 @@
 
   /** @type {{
    *   inep: string|number,
-   *   gestorId?: number|null,
    *   initialGestor?: object|null,
    *   initialSurvey?: object|null,
    *   readonly?: boolean,
    * }} */
   let {
     inep,
-    gestorId = null,
     initialGestor = null,
     initialSurvey = null,
     readonly = false,
   } = $props();
 
   // ---- estado -----------------------------------------------------------
-  let gestor = $state(initialGestor); // gestor salvo no servidor (id presente)
-  let gestorNome = $state(initialGestor?.nome ?? "");
-  let gestorEmail = $state(initialGestor?.email ?? "");
-  let gestorTelefone = $state(initialGestor?.telefone ?? "");
-  let gestorCargo = $state(initialGestor?.cargo ?? "");
-  let gestorCpf = $state("");
-  let gestorSenha = $state("");
-  let salvandoGestor = $state(false);
-  let gestorErro = $state(null);
+  // gestor da sessão (vem de /me pela página)
+  let gestor = $derived(initialGestor);
 
   let draft = $state(initialSurvey ? surveyToDraft(initialSurvey) : emptyDraft());
   let step = $state(0);
@@ -65,7 +56,6 @@
   // ---- etapas -----------------------------------------------------------
   let stepKeys = $derived((() => {
     const keys = [];
-    if (!gestor && !finalized) keys.push("gestor");
     if (!finalized) keys.push("info");
     for (let i = 0; i < draft.perguntas.length; i += 1) keys.push(`q${i}`);
     keys.push("revisao");
@@ -74,7 +64,6 @@
 
   let stepLabels = $derived(
     stepKeys.map((k) => {
-      if (k === "gestor") return "Seus dados";
       if (k === "info") return "Dados da pesquisa";
       if (k === "revisao") return "Revisão e finalizar";
       return `Pergunta ${Number(k.slice(1)) + 1}`;
@@ -97,53 +86,6 @@
   function goToKey(key) {
     const i = stepKeys.indexOf(key);
     if (i >= 0) step = i;
-  }
-
-  // ---- gestor -----------------------------------------------------------
-  function gestorValido() {
-    const senhaOk = gestorSenha.trim().length >= LIMITS.SENHA_MIN;
-    return (
-      gestorNome.trim().length >= LIMITS.NOME_MIN &&
-      senhaOk &&
-      /^\S+@\S+\.\S+$/.test(gestorEmail.trim())
-    );
-  }
-
-  async function saveGestor() {
-    if (!gestorValido()) {
-      gestorErro =
-        "Informe nome, e-mail e uma senha com pelo menos " + LIMITS.SENHA_MIN + " caracteres.";
-      return;
-    }
-    salvandoGestor = true;
-    gestorErro = null;
-    try {
-      const payload = {
-        cod_inep: inep,
-        nome: gestorNome.trim(),
-        email: gestorEmail.trim(),
-        senha: gestorSenha,
-      };
-      if (gestorTelefone.trim()) payload.telefone = gestorTelefone.trim();
-      if (gestorCargo.trim()) payload.cargo = gestorCargo.trim();
-      if (gestorCpf.replace(/\D/g, "") === "") {
-        // cpf vazio: não enviar (o backend preserva o anterior)
-      } else {
-        payload.cpf = gestorCpf.replace(/\D/g, "");
-      }
-      gestor = await upsertGestor(payload);
-      gestorSenha = "";
-      setGestorSession(inep, gestor);
-      goToKey("info");
-      addToast("Dados salvos. Vamos montar sua pesquisa!", "success");
-    } catch (err) {
-      gestorErro =
-        err instanceof ApiError
-          ? err.message
-          : "Não foi possível salvar seus dados.";
-    } finally {
-      salvandoGestor = false;
-    }
   }
 
   // ---- link público (publicada) -----------------------------------------
@@ -184,7 +126,7 @@
         draft = surveyToDraft(await updatePesquisa(draft.id, payload));
       } else {
         draft = surveyToDraft(
-          await createPesquisa({ gestor_id: gestor.id, ...payload }),
+          await createPesquisa(payload),
         );
       }
       savedAt = new Date();
@@ -256,7 +198,7 @@
     if (savedAt === "editando") return "Editando…";
     if (savedAt instanceof Date)
       return `Salvo às ${savedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-    return !gestor?.id ? "Salve seus dados para começar." : "Nada a salvar ainda.";
+    return "Nada a salvar ainda.";
   }
 </script>
 
@@ -328,93 +270,7 @@
       </div>
     {/if}
 
-    {#if currentKey === "gestor"}
-      <div class="space-y-4">
-        <header>
-          <h2 class="text-lg font-bold text-gray-900">Quem está montando a pesquisa?</h2>
-          <p class="text-sm text-gray-600 mt-1">
-            Sem login: usamos seu e-mail para reconhecer você na próxima visita
-            a esta escola. Seus dados ficam gravados com a escola.
-          </p>
-        </header>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700">Nome</span>
-            <input
-              type="text"
-              bind:value={gestorNome}
-              placeholder="Seu nome completo"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700">E-mail</span>
-            <input
-              type="email"
-              bind:value={gestorEmail}
-              placeholder="voce@escola.gov.br"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700">Telefone (opcional)</span>
-            <input
-              type="tel"
-              bind:value={gestorTelefone}
-              placeholder="(00) 00000-0000"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700">Cargo (opcional)</span>
-            <input
-              type="text"
-              bind:value={gestorCargo}
-              placeholder="Ex.: Professora, Diretora…"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label class="block sm:col-span-2">
-            <span class="block text-sm font-medium text-gray-700">CPF (opcional, usado só para fins de controle — é mascarado)</span>
-            <input
-              type="text"
-              inputmode="numeric"
-              bind:value={gestorCpf}
-              placeholder="000.000.000-00"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-          <label class="block sm:col-span-2">
-            <span class="block text-sm font-medium text-gray-700">
-              Senha (mínimo {LIMITS.SENHA_MIN} caracteres) — para ver os resultados depois
-            </span>
-            <input
-              type="password"
-              autocomplete="new-password"
-              minlength={LIMITS.SENHA_MIN}
-              maxlength={LIMITS.SENHA_MAX}
-              bind:value={gestorSenha}
-              placeholder="Crie uma senha"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
-        </div>
-        {#if gestorErro}
-          <p class="text-sm text-red-600">{gestorErro}</p>
-        {/if}
-        <div class="flex justify-end">
-          <button
-            type="button"
-            onclick={saveGestor}
-            disabled={salvandoGestor || !gestorValido()}
-            class="px-5 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {salvandoGestor ? "Salvando…" : "Salvar e começar"}
-          </button>
-        </div>
-      </div>
-
-    {:else if currentKey === "info"}
+    {#if currentKey === "info"}
       <div class="space-y-5">
         <header>
           <h2 class="text-lg font-bold text-gray-900">Dados da pesquisa</h2>

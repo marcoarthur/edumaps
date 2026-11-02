@@ -4,7 +4,7 @@
   // propriedade (o usuário informa a escola). Após entrar/cadastrar, vai para
   // o painel do gestor. Reusa os endpoints existentes de /perfil e /login.
   import { onMount } from "svelte";
-  import { upsertGestor, loginGestor, fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
+  import { cadastrarGestor, loginGestor, fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
@@ -72,7 +72,7 @@
 
     salvando = true;
     try {
-      await upsertGestor({
+      await cadastrarGestor({
         cod_inep: cod_inep.trim(),
         nome: nome.trim(),
         email: email.trim(),

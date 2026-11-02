@@ -4,14 +4,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import SurveyWizard from "./SurveyWizard.svelte";
 import { addToast } from "@/shared/stores/toastStore.js";
 import {
-  upsertGestor,
   createPesquisa,
   updatePesquisa,
   finalizarPesquisa,
 } from "../../api/gestorPesquisasApi.js";
 
 vi.mock("../../api/gestorPesquisasApi.js", () => ({
-  upsertGestor: vi.fn(),
   createPesquisa: vi.fn(),
   updatePesquisa: vi.fn(),
   finalizarPesquisa: vi.fn(),
@@ -57,68 +55,13 @@ function serverSurvey({ id, titulo, perguntas = [], status = "rascunho" }) {
   };
 }
 
-describe("SurveyWizard — nova pesquisa sem gestor salvo", () => {
-  it("começa pela etapa 'Seus dados' e avança ao salvar o gestor", async () => {
-    upsertGestor.mockResolvedValue(GESTOR);
-    render(SurveyWizard, { props: { inep: "11000040",} });
+describe("SurveyWizard — gestor da sessão", () => {
+  it("começa em 'Dados da pesquisa', sem pedir cadastro nem senha", () => {
+    render(SurveyWizard, { props: { inep: "11000040", initialGestor: GESTOR } });
 
-    expect(
-      screen.getByText(/Quem está montando a pesquisa?/),
-    ).toBeInTheDocument();
-
-    await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
-      target: { value: "Marina Souza" },
-    });
-    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
-      target: { value: "marina@edu.gov.br" },
-    });
-    await fireEvent.input(screen.getByPlaceholderText("Crie uma senha"), {
-      target: { value: "senha123" },
-    });
-    await fireEvent.click(screen.getByRole("button", { name: "Salvar e começar" }));
-
-    await waitFor(() => expect(upsertGestor).toHaveBeenCalled());
-    expect(upsertGestor).toHaveBeenCalledWith({
-      cod_inep: "11000040",
-      nome: "Marina Souza",
-      email: "marina@edu.gov.br",
-      senha: "senha123",
-    });
-    expect(
-      screen.getByRole("heading", { name: "Dados da pesquisa" }),
-    ).toBeInTheDocument();
-  });
-
-  it("mantém o botão desabilitado com nome curto ou senha curta", async () => {
-    render(SurveyWizard, { props: { inep: "11000040" } });
-    await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
-      target: { value: "M" },
-    });
-    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
-      target: { value: "marina@edu.gov.br" },
-    });
-    await fireEvent.input(screen.getByPlaceholderText("Crie uma senha"), {
-      target: { value: "123" },
-    });
-    expect(
-      screen.getByRole("button", { name: "Salvar e começar" }).hasAttribute("disabled"),
-    ).toBe(true);
-  });
-
-  it("avisa quando a senha está faltando", async () => {
-    render(SurveyWizard, { props: { inep: "11000040" } });
-    await fireEvent.input(screen.getByPlaceholderText("Seu nome completo"), {
-      target: { value: "Marina Souza" },
-    });
-    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
-      target: { value: "marina@edu.gov.br" },
-    });
-    await fireEvent.click(screen.getByRole("button", { name: "Salvar e começar" }));
-
-    expect(
-      screen.getByText(/Informe nome, e-mail e uma senha/),
-    ).toBeInTheDocument();
-    expect(upsertGestor).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Dados da pesquisa" })).toBeInTheDocument();
+    expect(screen.queryByText(/Seus dados/)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Crie uma senha")).not.toBeInTheDocument();
   });
 });
 
@@ -148,7 +91,7 @@ describe("SurveyWizard — fluxo completo de montagem e publicação", () => {
       target: { value: "Pesquisa de clima escolar" },
     });
 
-    // autosave cria o rascunho (POST) com gestor_id
+    // autosave cria o rascunho (POST); o autor vem da sessão, não do corpo
     await waitFor(
       () => {
         expect(createPesquisa).toHaveBeenCalled();
@@ -156,7 +99,7 @@ describe("SurveyWizard — fluxo completo de montagem e publicação", () => {
       { timeout: 2000 },
     );
     const createPayload = createPesquisa.mock.calls[0][0];
-    expect(createPayload.gestor_id).toBe(GESTOR.id);
+    expect(createPayload).not.toHaveProperty("gestor_id");
 
     // adiciona pergunta → editor
     await fireEvent.click(screen.getByRole("button", { name: "+ Adicionar pergunta" }));

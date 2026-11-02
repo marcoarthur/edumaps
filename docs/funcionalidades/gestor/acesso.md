@@ -21,7 +21,10 @@ Diretores, coordenadores e demais gestores escolares.
 
 ## O que o sistema permite
 
-- Sistema pode cadastrar o gestor informando a escola e seus dados.
+- Sistema pode cadastrar o gestor informando a escola e seus dados. O
+  cadastro só cria contas: um e-mail que já tem conta (com maiúsculas ou não)
+  não é recadastrado nem alterado por ali; a pessoa é orientada a entrar com a
+  senha.
 - Sistema pode autenticar o gestor e manter a sessão.
 - Sistema pode levar o gestor direto ao painel da sua escola após entrar.
 

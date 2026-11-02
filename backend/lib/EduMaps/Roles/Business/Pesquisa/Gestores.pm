@@ -3,28 +3,25 @@ use Mojo::Base -role, -signatures;
 use utf8;
 use Digest::SHA qw(hmac_sha256_hex);
 
-# Gestores escolares: cadastro/upsert por e-mail + login (fase 2).
+# Gestores escolares: cadastro (só cria conta) + login (fase 2).
 # LGPD: o CPF é armazenado, mas NUNCA é devolvido completo — apenas mascarado.
 # Senha: nunca em claro — hash HMAC-SHA256(senha, salt) no formato "<salt_hex>:<hmac_hex>".
 # Sessão: token bearer aleatório (uuid) em clean.sessoes, com expiração.
+# E-mail: gravado e comparado em minúsculas (índice único em lower(email)).
 
 requires qw(schema);
 
-sub upsert_gestor ($self, $params = {}) {
+# Cria a conta do gestor. Rota anônima: NUNCA altera uma conta existente.
+# Conflito (e-mail, em qualquer caixa, ou CPF já cadastrados) devolve undef;
+# o controller responde 409.
+sub cadastrar_gestor ($self, $params = {}) {
   # senha vem crua; o hash é calculado aqui (nunca vaza para o SQL).
-  my $senha_hash = $params->{senha} ? $self->_hash_senha($params->{senha}) : undef;
+  my $senha_hash = $self->_hash_senha($params->{senha});
 
   my $sql = <<~'SQL';
     INSERT INTO clean.gestores (cod_inep, nome, email, telefone, cargo, cpf, senha_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT (email) DO UPDATE SET
-      cod_inep   = EXCLUDED.cod_inep,
-      nome       = EXCLUDED.nome,
-      telefone   = EXCLUDED.telefone,
-      cargo      = EXCLUDED.cargo,
-      cpf        = COALESCE(EXCLUDED.cpf, clean.gestores.cpf),
-      senha_hash = COALESCE(EXCLUDED.senha_hash, clean.gestores.senha_hash),
-      updated_at = NOW()
+    VALUES (?, ?, lower(?), ?, ?, ?, ?)
+    ON CONFLICT DO NOTHING
     RETURNING id, cod_inep, nome, email, telefone, cargo, cpf, created_at, updated_at
   SQL
 
@@ -95,7 +92,7 @@ sub escola_tem_agenda ($self, $cod_inep) {
 
 sub login_gestor ($self, $email, $senha) {
   my $g = $self->_row(
-    'SELECT id, cod_inep, nome, email, senha_hash, access_role FROM clean.gestores WHERE email = ?',
+    'SELECT id, cod_inep, nome, email, senha_hash, access_role FROM clean.gestores WHERE lower(email) = lower(?)',
     $email,
   );
 
@@ -142,7 +139,7 @@ sub login_admin_config ($self, $email, $senha) {
   return unless defined $email && defined $senha;
 
   my $row = $self->_row(
-    'SELECT id FROM clean.gestores WHERE email = ?',
+    'SELECT id FROM clean.gestores WHERE lower(email) = lower(?)',
     $email,
   );
 
@@ -152,8 +149,8 @@ sub login_admin_config ($self, $email, $senha) {
   } else {
     my $new = $self->_row(
       'INSERT INTO clean.gestores (cod_inep, nome, email, senha_hash, access_role)
-       VALUES (0, ?, ?, ?, ?)
-       ON CONFLICT (email) DO NOTHING
+       VALUES (0, ?, lower(?), ?, ?)
+       ON CONFLICT DO NOTHING
        RETURNING id',
       'Administrador da Instalação',
       $email,

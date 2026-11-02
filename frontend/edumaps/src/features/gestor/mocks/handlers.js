@@ -17,12 +17,24 @@ const BASE = "/api/gestor/pesquisas";
 
 const answeredDispositivos = new Set();
 
+// Espelha o backend: a gestão das pesquisas exige a sessão do gestor.
+const semSessao = (request) =>
+  (request.headers.get("Authorization") ?? "") !== `Bearer ${SESSION_TOKEN}`
+    ? HttpResponse.json({ error: "Sessão inválida ou expirada" }, { status: 401 })
+    : null;
+
 export const gestorPesquisasHandlers = [
-  // upsert do gestor por e-mail (fase 2: senha obrigatória)
+  // cadastro: só cria conta; e-mail existente (qualquer caixa) é 409
   http.post(`${BASE}/perfil`, async ({ request }) => {
     const body = await request.json();
     if (!body.senha || body.senha.length < 6) {
       return HttpResponse.json({ error: "Senha com mínimo de 6 caracteres." }, { status: 400 });
+    }
+    if (String(body.email).toLowerCase() === SESSION_GESTOR.email) {
+      return HttpResponse.json(
+        { error: "Este e-mail já tem conta. Entre com sua senha." },
+        { status: 409 },
+      );
     }
     return HttpResponse.json({
       ...GESTOR_SURVEY_PERFIL,
@@ -33,23 +45,22 @@ export const gestorPesquisasHandlers = [
     });
   }),
 
-  // lista por escola
+  // lista da escola da sessão; outra escola é 403
   http.get(BASE, ({ request }) => {
-    const url = new URL(request.url);
-    const inep = url.searchParams.get("inep");
-    if (!inep) {
-      return HttpResponse.json({ error: "inep é obrigatório" }, { status: 400 });
+    const negado = semSessao(request);
+    if (negado) return negado;
+    const inep = new URL(request.url).searchParams.get("inep");
+    if (inep && inep !== String(SESSION_GESTOR.cod_inep)) {
+      return HttpResponse.json({ error: "Só o gestor da escola vê as pesquisas dela." }, { status: 403 });
     }
-    if (inep !== "11000040") return HttpResponse.json([]);
     return HttpResponse.json(SURVEY_FIXTURES);
   }),
 
   // create (rascunho)
   http.post(BASE, async ({ request }) => {
+    const negado = semSessao(request);
+    if (negado) return negado;
     const body = await request.json();
-    if (!body.gestor_id) {
-      return HttpResponse.json({ error: "gestor_id é obrigatório" }, { status: 400 });
-    }
     const created = {
       ...SURVEY_DETAIL,
       id: 99,
@@ -101,7 +112,9 @@ export const gestorPesquisasHandlers = [
   }),
 
   // detail
-  http.get(`${BASE}/:id`, ({ params }) => {
+  http.get(`${BASE}/:id`, ({ params, request }) => {
+    const negado = semSessao(request);
+    if (negado) return negado;
     if (params.id === "1") return HttpResponse.json(SURVEY_DETAIL);
     if (params.id === "2") {
       return HttpResponse.json({ ...SURVEY_PUBLIC_FORM, status: "publicada" });
@@ -111,6 +124,8 @@ export const gestorPesquisasHandlers = [
 
   // update (autosave)
   http.put(`${BASE}/:id`, async ({ params, request }) => {
+    const negado = semSessao(request);
+    if (negado) return negado;
     const body = await request.json();
     return HttpResponse.json({
       ...SURVEY_DETAIL,
@@ -129,12 +144,16 @@ export const gestorPesquisasHandlers = [
   }),
 
   // finalizar
-  http.post(`${BASE}/:id/finalizar`, () => {
+  http.post(`${BASE}/:id/finalizar`, ({ request }) => {
+    const negado = semSessao(request);
+    if (negado) return negado;
     return HttpResponse.json({ ...SURVEY_DETAIL, id: 1, status: "publicada" });
   }),
 
   // delete (só rascunho)
-  http.delete(`${BASE}/:id`, () => {
+  http.delete(`${BASE}/:id`, ({ request }) => {
+    const negado = semSessao(request);
+    if (negado) return negado;
     return new HttpResponse(null, { status: 204 });
   }),
 
