@@ -329,6 +329,19 @@ No cliente, `toISOString()` montava as chaves dos dias em UTC — correto no
 Brasil por acaso (UTC−3 empurra a meia-noite para o mesmo dia), errado a leste
 de Greenwich. A chave passou a ser a data local.
 
+## 16. Busca única no histórico (PR #328)
+
+O segundo campo existia porque o componente da lista tinha a sua própria
+busca, e a página, outra; um `bind:` os mantinha em sincronia. Ficou o da
+página (rotulado, com o estado "Buscando…"), e a lista virou só
+apresentação, seleção e exportação. A paginação passou a depender de não
+haver busca: ela pagina a lista completa, não os resultados.
+
+Testar a busca no navegador expôs defeitos de exibição dos resultados
+(trecho com `<b>`/`**` crus, contagem vazia), documentados como limitação
+para um ciclo próprio: corrigir o trecho sem `{@html}` pede trocar os
+marcadores do `ts_headline` por delimitadores seguros e montá-los no cliente.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -345,8 +358,9 @@ de Greenwich. A chave passou a ser a data local.
   ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
   ~~Configurações~~ (PR #324). ~~Telas secundárias~~: lote A (PR #325, §13) e
   lote B (PR #326, §14).
-- ~~Histórico: filtro por dia~~ — **PR #327** (§15). Restam: unificar os
-  dois campos de busca; "Exportar todas" ignora o dia escolhido.
+- ~~Histórico: filtro por dia~~ — **PR #327** (§15). ~~Unificar os dois
+  campos de busca~~ — **PR #328** (§16). Restam: "Exportar todas" ignora o
+  dia escolhido; trecho da busca com marcações cruas e contagem vazia.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

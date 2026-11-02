@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (q) — busca única no histórico do Assistente (PR #328)
+
+- **PR #328 MERGEADO** (`3f6228b`): fica só o campo de busca da página;
+  `ChatConversaList` perdeu `searchQuery`/`onSearch` (a barra só seleciona e
+  exporta). Com busca ativa, a paginação da lista completa some (paginava por
+  baixo sem mudar a tela).
+- Achados pré-existentes, documentados na ficha e na ajuda (não corrigidos):
+  busca só no texto das mensagens (não no título), máximo 20 resultados sem
+  páginas, trecho com `<b>`/`**` crus e contagem de mensagens vazia nos
+  resultados. Proposta: ciclo próprio para o trecho e a contagem.
+
 ## Sessão 2026-11-01 (p) — filtro por dia no histórico do Assistente (PR #327)
 
 - **PR #327 MERGEADO** (`63efce8`): clicar num dia do calendário filtra a
