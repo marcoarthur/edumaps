@@ -228,6 +228,13 @@ SQL
   };
 }
 
+# Data de hoje (YYYY-MM-DD) no fuso `tz` (já validado).
+sub hoje ($self, $tz) {
+  my ($dia) = $self->schema->storage->dbh->selectrow_array(
+    q{SELECT to_char(now() AT TIME ZONE ?, 'YYYY-MM-DD')}, undef, $tz);
+  return $dia;
+}
+
 # Fuso conhecido pelo Postgres? (`tz` vem do navegador; um nome inválido
 # faria o AT TIME ZONE estourar em 500.)
 sub fuso_valido ($self, $tz) {

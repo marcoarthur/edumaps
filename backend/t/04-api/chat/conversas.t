@@ -216,6 +216,12 @@ subtest 'export: all=1 com q exporta só as que casam com a busca' => sub {
   unlike $res->text, qr/exp-busca-nao/,               'e não a que não casa';
   like   $res->headers->content_disposition, qr/conversas-busca-\d{4}-\d{2}-\d{2}\.md/, 'arquivo diz que é busca';
 
+  # "hoje" no fuso de quem exporta: em Kiritimati (UTC+14) costuma ser outro dia
+  my $kiri = $t->app->schema->storage->dbh->selectrow_array(
+    q{SELECT to_char(now() AT TIME ZONE 'Pacific/Kiritimati', 'YYYY-MM-DD')});
+  like $t->get_ok('/api/chat/conversas/export?all=1&q=jabuticabeiras&tz=Pacific/Kiritimati', $auth)
+    ->tx->res->headers->content_disposition, qr/conversas-busca-$kiri\.md/, 'a data do nome é a de hoje no fuso enviado';
+
   like $t->get_ok('/api/chat/conversas/export?all=1', $auth)->tx->res->text, qr/exp-busca-nao/,
     'sem q, all=1 segue exportando tudo';
   is $t->get_ok('/api/chat/conversas/export?all=1&q=inexistentexyz', $auth)->status_is(200)->tx->res->text, '',

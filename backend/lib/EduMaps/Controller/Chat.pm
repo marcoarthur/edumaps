@@ -2,7 +2,6 @@ package EduMaps::Controller::Chat;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 use Mojo::JSON ();
-use POSIX qw(strftime);
 
 has _default_poll_time => 1;
 
@@ -330,7 +329,9 @@ sub export_conversas ($self) {
 
   # Um dia só: o arquivo leva o dia exportado, não a data de hoje. Uma busca:
   # "conversas-busca-<data>.md", para não confundir com o histórico inteiro.
-  my $date = (defined $from && defined $to && $from eq $to) ? $from : strftime('%Y-%m-%d', localtime);
+  # "Hoje" é o dia de quem exporta (o relógio do servidor está em UTC: às 22h
+  # em São Paulo já era amanhã no nome do arquivo).
+  my $date = (defined $from && defined $to && $from eq $to) ? $from : $model->hoje($tz // 'UTC');
   $date = "busca-$date" if defined $q;
   $self->res->headers->content_type('text/markdown; charset=utf-8');
   $self->res->headers->content_disposition("attachment; filename=\"conversas-$date.md\"");
