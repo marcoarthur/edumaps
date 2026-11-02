@@ -211,10 +211,17 @@
       });
   }
 
-  // Com um dia escolhido, "todas" são as daquele dia (o que a lista mostra).
+  // "Todas" segue o recorte da tela: com busca, as que casam com ela (todas,
+  // não só as 20 mostradas); com um dia escolhido, as daquele dia.
+  // (Busca e dia não coexistem: um desliga o outro.)
   function exportAll() {
-    const filtroDia = selectedDate ? { from: selectedDate, to: selectedDate } : {};
-    exportConversas(comFuso({ all: true, ...filtroDia }))
+    const termo = searchQuery.trim();
+    const recorte = termo
+      ? { q: termo }
+      : selectedDate
+        ? { from: selectedDate, to: selectedDate }
+        : {};
+    exportConversas(comFuso({ all: true, ...recorte }))
       .then(salvarMarkdown)
       .catch(err => {
         error = "Falha ao exportar: " + err.message;
@@ -304,7 +311,11 @@
         {/if}
         <ChatConversaList
           {mensagemVazia}
-          rotuloExportarTodas={selectedDate && !searchQuery.trim() ? "Exportar as do dia (.md)" : "Exportar todas (.md)"}
+          rotuloExportarTodas={searchQuery.trim()
+            ? "Exportar as da busca (.md)"
+            : selectedDate
+              ? "Exportar as do dia (.md)"
+              : "Exportar todas (.md)"}
           conversas={listaExibida}
           {loading}
           {selectedDate}
