@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (y) — esqueci minha senha do gestor (PR #339, fecha #336)
+
+- **PR #339 MERGEADO** (`72f3101`): link por e-mail (job `gestor_senha_email`,
+  token nasce no job, só hash em `clean.senha_redefinicoes`, 30 min, uso único,
+  token no `#`), resposta igual com/sem conta, limites 3/e-mail e 10/IP por
+  hora, redefinir encerra as sessões. Config `canais.email.public_base_url`.
+  Nota **167**. Fecha a série de autenticação (#333, #337, #338, #339).
+- 🔴→🟢 **Canal de e-mail não enviava texto com acento por SMTP real** ("Wide
+  character in syswrite") — corrigido (`2365af2`); achado só com o Mailpit.
+- **Mailpit local** rodando fora do compose (`edumaps-mailpit`, UI
+  127.0.0.1:8025); banco local com `canais.email.*` apontando para ele.
+  `t/03-plugins/channel/config.t` apaga essa config ao rodar.
+- LXC sem SMTP: link escondido até configurar SMTP + URL pública.
+- `canais_envio.t` falha com o minion local de pé (disputa a fila).
+
 ## Sessão 2026-11-02 (x) — limite de tentativas de login (PR #338, fecha #335)
 
 - **PR #338 MERGEADO** (`b2fd020`): 429 + Retry-After — login 10/e-mail e

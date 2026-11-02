@@ -50,4 +50,4 @@ autenticação (notas 164 e 165); falta a #336 (esqueci minha senha).
   `client_ip` e contagem fora da memória.
 - Docker local: a porta 3010 publicada aceita `X-Real-IP` forjado vindo da
   rede do Docker (só ambiente de desenvolvimento).
-- #336 — esqueci minha senha (usa este limite nos pedidos).
+- ~~#336 — esqueci minha senha~~ — PR #339 (nota 167).

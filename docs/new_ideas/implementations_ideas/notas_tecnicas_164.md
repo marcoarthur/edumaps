@@ -50,4 +50,4 @@ correção sair.
 
 - ~~#334 — hash de senha lento~~ — PR #337 (nota 165).
 - ~~#335 — limite de tentativas de login~~ — PR #338 (nota 166).
-- #336 — "esqueci minha senha" por link de uso único.
+- ~~#336 — "esqueci minha senha"~~ — PR #339 (nota 167).
