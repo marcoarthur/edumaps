@@ -8,6 +8,26 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-02 (t) (cadastro do gestor e pesquisas com sessão)
+
+Branch `fix/gestor-cadastro-e-pesquisas`, banco, backend e frontend em
+`ubatexu.lan`. Conta de teste descartável criada pela API e removida no fim;
+no navegador, só leitura (o assistente não recebeu texto, para o autosave não
+criar rascunho).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Sem sessão: listar, criar e excluir pesquisa | API (curl) | 🟢 401 |
+| Recadastro do mesmo e-mail, em outra caixa e com outra senha | API (curl) | 🟢 409, senha original segue valendo, a nova não |
+| Índice `uq_gestores_email_lower` em `database.edumaps` | psql | 🟢 |
+| Lista de pesquisas logado, sem `?inep`: escola da sessão | Chrome | 🟢 |
+| “+ Nova pesquisa” abre em “Dados da pesquisa”, sem “Seus dados” | Chrome | 🟢 |
+| Cadastro só cria; admin intacto; escopo por escola (401/403/404) | prove `t/04-api/pesquisa.t` | 🟢 14/14 (falha sem o fix) |
+| Arquivos que criam gestor pelo cadastro | prove (25 arquivos) | 🟢 sem regressão (só falhas antigas) |
+| Suíte frontend | vitest | 🟢 126 arquivos / 1136 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (s) (exportar respeita a busca)
 
 Branch `feat/historico-exportar-busca`, backend e frontend em `ubatexu.lan`.
