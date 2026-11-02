@@ -288,7 +288,8 @@ sub calendar_conversas ($self) {
 # GET /api/chat/conversas/export
 #
 # Exporta conversas selecionadas (ids[]) ou todas (all=1) para Markdown.
-# Query: ids[]=1,2,3 ou all=1
+# Query: ids[]=1,2,3 ou all=1; from/to (YYYY-MM-DD) e tz recortam por dia,
+# com o mesmo critério da lista (from = to = o dia escolhido no calendário).
 # Retorna text/markdown com header Content-Disposition.
 # ---------------------------------------------------------------------------
 
@@ -312,10 +313,21 @@ sub export_conversas ($self) {
   my $ids  = [grep { /^\d+$/ } @raw];
   my $all  = $hash->{all} // 0;
 
-  my $model = $self->instantiate_model(model => 'Chat::Conversas');
-  my $md = $model->export_conversas($gestor->{id} + 0, { ids => $ids, all => $all });
+  # Recorte por dia (o dia escolhido no calendário), como na lista.
+  my $v = $self->validation;
+  $v->optional('from', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('to', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('tz', 'trim');
+  return $self->bad_req if $v->has_error;
 
-  my $date = strftime('%Y-%m-%d', localtime);
+  my $model = $self->instantiate_model(model => 'Chat::Conversas');
+  my ($from, $to, $tz) = map { $v->param($_) } qw(from to tz);
+  return $self->bad_req if defined $tz && !$model->fuso_valido($tz);
+  my $md = $model->export_conversas($gestor->{id} + 0,
+    { ids => $ids, all => $all, from => $from, to => $to, tz => $tz });
+
+  # Um dia só: o arquivo leva o dia exportado, não a data de hoje.
+  my $date = (defined $from && defined $to && $from eq $to) ? $from : strftime('%Y-%m-%d', localtime);
   $self->res->headers->content_type('text/markdown; charset=utf-8');
   $self->res->headers->content_disposition("attachment; filename=\"conversas-$date.md\"");
   $self->render(text => $md);

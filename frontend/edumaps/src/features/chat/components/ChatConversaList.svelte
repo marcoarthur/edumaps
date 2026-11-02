@@ -13,6 +13,7 @@
    * @param {Function} onDelete
    * @param {Function} onOpen
    * @param {string} mensagemVazia - texto da lista vazia (ex.: dia sem conversa)
+   * @param {string} rotuloExportarTodas - "Exportar todas" ou "as do dia"
    */
   let {
     conversas = [],
@@ -24,6 +25,7 @@
     onDelete = () => {},
     onOpen = () => {},
     mensagemVazia = "Nenhuma conversa encontrada.",
+    rotuloExportarTodas = "Exportar todas (.md)",
   } = $props();
 
   let selectedIds = $state([]);
@@ -67,7 +69,7 @@
         class="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
         disabled={conversas.length === 0}
       >
-        Exportar todas (.md)
+        {rotuloExportarTodas}
       </button>
       <button
         onclick={handleExportSelected}

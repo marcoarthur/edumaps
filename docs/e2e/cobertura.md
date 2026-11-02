@@ -8,6 +8,22 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (r) (exportar respeita o dia escolhido)
+
+Branch `feat/historico-exportar-dia`, backend e frontend em `ubatexu.lan`. O
+download foi **suprimido na página** (clique do `<a download>` desligado por
+script): só o pedido à API e a resposta foram lidos, nenhum arquivo baixado.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Dia 26/09: botão vira “Exportar as do dia (.md)”; `all=1&from=to=2026-09-26&tz`; arquivo `conversas-2026-09-26.md` com as 3 conversas do dia | Chrome | 🟢 |
+| Dia 25/09: a conversa das 23:03 vinha com “Data: 2026-09-26 02:03:39.129883+00” (UTC cru) dentro do arquivo do dia 25 | Chrome | 🔴→🟢 “Data: 25/09/2026 23:03” |
+| Export por dia (fuso local), arquivo com o dia, datas legíveis no fuso, sem tz = UTC marcado, 400 em data/fuso inválidos (falha sem o fix) | prove `t/04-api/chat/conversas.t` | 🟢 16/16 |
+| Rótulo do botão, dia e fuso no pedido; fuso também no export de uma conversa | vitest `ChatHistoricoPage.test.js` | 🟢 |
+| Suíte frontend | vitest | 🟢 125 arquivos / 1133 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (q) (trecho e contagem na busca do histórico)
 
 Branch `fix/historico-busca-trecho`, backend e frontend em `ubatexu.lan`. Só
