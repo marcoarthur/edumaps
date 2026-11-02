@@ -267,7 +267,7 @@
     <div class="flex-1 flex flex-col min-h-0" data-tour={carregou ? "historico-conversas" : undefined}>
       <div class="mb-4">
         <label class="block">
-          <span class="sr-only">Buscar por texto</span>
+          <span class="sr-only">Buscar nas conversas salvas</span>
           <input
             type="text"
             bind:value={searchQuery}
@@ -286,10 +286,9 @@
              descartado, e a busca não filtrava nada na tela. Agora a lista
              recebe `listaExibida`, que escolhe entre os dois e ainda
              deduplica os ids repetidos que a busca devolve.
-             `bind:searchQuery` é obrigatório: sem ele o `bind:value` do
-             campo de busca da lista escreve numa cópia local e a busca
-             daquele campo nunca chega ao servidor. Os handlers de
-             exportar/excluir também eram stubs vazios na lista. -->
+             Há um único campo de busca, o desta página: a lista tinha um
+             segundo, ligado ao mesmo texto, que fazia a mesma busca. Os
+             handlers de exportar/excluir também eram stubs vazios na lista. -->
         {#if selectedDate && !searchQuery.trim()}
           <div
             class="mb-3 flex items-center justify-between gap-2 rounded-md bg-blue-50 border border-blue-100 px-3 py-2 text-sm text-blue-900"
@@ -303,9 +302,7 @@
         <ChatConversaList
           {mensagemVazia}
           conversas={listaExibida}
-          bind:searchQuery={searchQuery}
           {loading}
-          onSearch={handleSearchInput}
           {selectedDate}
           onExportSelected={ids => exportSelected(ids)}
           onExportAll={exportAll}
@@ -313,7 +310,9 @@
           onDelete={handleDelete}
           onOpen={abrirConversa}
         />
-      {#if totalPages > 1}
+      <!-- A paginação é da lista completa (ou do dia); com busca ativa a tela
+           mostra os resultados da busca, e paginar por baixo não muda nada. -->
+      {#if totalPages > 1 && !searchQuery.trim()}
     <nav class="mt-4 flex items-center justify-center gap-2" aria-label="Paginação">
       <button onclick={() => goToPage(page - 1)} disabled={page === 1} class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 disabled:opacity-50">Anterior</button>
       <span class="px-3 text-sm text-gray-600">Página {page} de {totalPages} ({total} conversas)</span>

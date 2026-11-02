@@ -8,6 +8,20 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (p) (busca única no histórico)
+
+Branch `fix/frontend-historico-busca-unica`, em `ubatexu.lan`. Só leitura.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Um só campo de busca (o da página); a barra da lista só seleciona e exporta | Chrome | 🟢 |
+| Busca “escolas” traz as conversas com trecho; “burro” (só no título) não traz nada | Chrome | 🟢 (busca é no texto das mensagens; documentado) |
+| Trecho do resultado com `<b>…</b>` e `**…**` crus; contagem de mensagens vazia | Chrome | 🔴 pré-existente, documentado |
+| Um campo; busca filtra pelo servidor; paginação some com busca ativa | vitest `ChatHistoricoPage.test.js` | 🟢 8/8 |
+| Suíte frontend | vitest | 🟢 125 arquivos / 1129 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (o) (filtro por dia no histórico do Assistente)
 
 Branch `feat/frontend-historico-filtro-dia`, backend e frontend em

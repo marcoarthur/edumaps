@@ -114,7 +114,7 @@ describe("ChatHistoricoPage — filtro por dia", () => {
     await fireEvent.click(await botaoDoDia());
     await screen.findByTestId("historico-filtro-dia");
 
-    const [busca] = screen.getAllByPlaceholderText(/Buscar por texto/);
+    const busca = screen.getByRole("textbox", { name: "Buscar nas conversas salvas" });
     await fireEvent.input(busca, { target: { value: "ideb" } });
     await waitFor(() => expect(screen.queryByTestId("historico-filtro-dia")).toBeNull());
     expect(pedidosLista.at(-1).get("from")).toBeNull();
@@ -124,12 +124,40 @@ describe("ChatHistoricoPage — filtro por dia", () => {
   it("escolher um dia limpa a busca", async () => {
     render(ChatHistoricoPage);
     await screen.findByText("IDEB");
-    const [busca] = screen.getAllByPlaceholderText(/Buscar por texto/);
+    const busca = screen.getByRole("textbox", { name: "Buscar nas conversas salvas" });
     await fireEvent.input(busca, { target: { value: "ideb" } });
 
     await fireEvent.click(await botaoDoDia());
     await waitFor(() => expect(busca).toHaveValue(""));
     expect(await screen.findByTestId("historico-filtro-dia")).toBeInTheDocument();
     expect(pedidosLista.at(-1).get("from")).toBe(DIA);
+  });
+});
+
+describe("ChatHistoricoPage — busca única", () => {
+  it("há um só campo de busca, e ele filtra a lista pelo servidor", async () => {
+    render(ChatHistoricoPage);
+    await screen.findByText("Matrículas");
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+
+    const busca = screen.getByRole("textbox", { name: "Buscar nas conversas salvas" });
+    await fireEvent.input(busca, { target: { value: "ideb" } });
+    expect(await screen.findByText("IDEB")).toBeInTheDocument();
+    expect(screen.queryByText("Matrículas")).toBeNull();
+  });
+
+  it("com busca ativa, a paginação da lista completa some", async () => {
+    server.use(
+      http.get("/api/chat/conversas", () =>
+        HttpResponse.json({ items: TODAS, total: 45, total_pages: 3, page: 1, per_page: 20 }),
+      ),
+    );
+    render(ChatHistoricoPage);
+    expect(await screen.findByRole("navigation", { name: "Paginação" })).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByRole("textbox", { name: "Buscar nas conversas salvas" }), {
+      target: { value: "ideb" },
+    });
+    await waitFor(() => expect(screen.queryByRole("navigation", { name: "Paginação" })).toBeNull());
   });
 });
