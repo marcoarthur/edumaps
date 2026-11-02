@@ -200,6 +200,48 @@ subtest 'login do gestor' => sub {
   })->status_is(200)->tx->res->json->{token};
 };
 
+subtest 'senha: Argon2id e conversão do formato antigo (#334)' => sub {
+  plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
+    unless $has_tables;
+
+  my $dbh  = $t->app->schema->storage->dbh;
+  my $hash = sub { $dbh->selectrow_array('SELECT senha_hash FROM clean.gestores WHERE id = ?', {}, $gestor_id) };
+
+  like $hash->(), qr/^\$argon2id\$v=19\$m=65536,t=3,p=1\$/, 'cadastro grava Argon2id';
+  unlike $hash->(), qr/\Q$SENHA\E/, 'hash não contém a senha';
+
+  # Simula uma conta do formato antigo: salt:HMAC-SHA256(senha, salt)
+  require Digest::SHA;
+  my $salt = 'a' x 32;
+  my $antigo = $salt . ':' . Digest::SHA::hmac_sha256_hex($SENHA, $salt);
+  $dbh->do('UPDATE clean.gestores SET senha_hash = ? WHERE id = ?', {}, $antigo, $gestor_id);
+
+  # senha errada: recusa e NÃO converte
+  $t->post_ok('/api/gestor/login', json => { email => $EMAIL, senha => $SENHA2 })->status_is(401);
+  is $hash->(), $antigo, 'senha errada não regrava o hash';
+
+  # senha certa: entra e o hash vira Argon2id
+  $t->post_ok('/api/gestor/login', json => { email => $EMAIL, senha => $SENHA })->status_is(200);
+  my $novo = $hash->();
+  like $novo, qr/^\$argon2id\$/, 'login com hash antigo regrava em Argon2id';
+
+  # o login seguinte usa o hash novo e não regrava de novo
+  $t->post_ok('/api/gestor/login', json => { email => $EMAIL, senha => $SENHA })->status_is(200);
+  is $hash->(), $novo, 'hash atual não é regravado sem necessidade';
+
+  # parâmetros mais fracos que os atuais também são regravados
+  require Crypt::Argon2;
+  my $fraco = Crypt::Argon2::argon2id_pass($SENHA, 'b' x 16, 1, '8M', 1, 32);
+  $dbh->do('UPDATE clean.gestores SET senha_hash = ? WHERE id = ?', {}, $fraco, $gestor_id);
+  $t->post_ok('/api/gestor/login', json => { email => $EMAIL, senha => $SENHA })->status_is(200);
+  like $hash->(), qr/m=65536,t=3,p=1/, 'Argon2id com custo abaixo do atual é regravado';
+
+  # formato desconhecido nunca entra
+  $dbh->do('UPDATE clean.gestores SET senha_hash = ? WHERE id = ?', {}, 'qualquer-coisa', $gestor_id);
+  $t->post_ok('/api/gestor/login', json => { email => $EMAIL, senha => $SENHA })->status_is(401);
+  $dbh->do('UPDATE clean.gestores SET senha_hash = ? WHERE id = ?', {}, $novo, $gestor_id);
+};
+
 subtest 'gestão de pesquisas exige sessão' => sub {
   plan skip_all => 'clean.gestor_pesquisas ausente (migration nao aplicada)'
     unless $has_tables;

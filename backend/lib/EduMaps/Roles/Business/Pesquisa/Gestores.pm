@@ -2,10 +2,26 @@ package EduMaps::Roles::Business::Pesquisa::Gestores;
 use Mojo::Base -role, -signatures;
 use utf8;
 use Digest::SHA qw(hmac_sha256_hex);
+use Crypt::Argon2 qw(argon2id_pass argon2_verify argon2_needs_rehash);
+use Crypt::URandom qw(urandom);
+
+# Argon2id (#334). 64 MiB, t=3, p=1 (2ª opção da RFC 9106, com p=1): medido
+# no backend.edumaps (4 núcleos) em ~128 ms por hash, dentro da meta de
+# 100–300 ms; o mínimo da OWASP (19 MiB, t=2) custava só 22 ms lá. Subir um
+# parâmetro faz os hashes antigos serem regravados no próximo login.
+use constant {
+  ARGON2_T_COST   => 3,
+  ARGON2_M_COST   => '64M',
+  ARGON2_PARALLEL => 1,
+  ARGON2_TAG_LEN  => 32,
+  ARGON2_SALT_LEN => 16,
+};
 
 # Gestores escolares: cadastro (só cria conta) + login (fase 2).
 # LGPD: o CPF é armazenado, mas NUNCA é devolvido completo — apenas mascarado.
-# Senha: nunca em claro — hash HMAC-SHA256(senha, salt) no formato "<salt_hex>:<hmac_hex>".
+# Senha: nunca em claro — Argon2id no formato padrão "$argon2id$v=19$m=…".
+#   Formato antigo (até 2026-11): "<salt_hex>:<hmac_sha256_hex>" — ainda aceito
+#   no login e regravado em Argon2id na hora (re-hash transparente).
 # Sessão: token bearer aleatório (uuid) em clean.sessoes, com expiração.
 # E-mail: gravado e comparado em minúsculas (índice único em lower(email)).
 
@@ -98,6 +114,13 @@ sub login_gestor ($self, $email, $senha) {
 
   return undef unless $g && $g->{senha_hash} && $self->_verify_senha($senha, $g->{senha_hash});
 
+  # Senha conferida: hash antigo (HMAC) ou com parâmetros abaixo dos atuais é
+  # regravado em Argon2id agora, sem pedir troca de senha.
+  if ($self->_senha_precisa_rehash($g->{senha_hash})) {
+    $self->_rows('UPDATE clean.gestores SET senha_hash = ? WHERE id = ?',
+      $self->_hash_senha($senha), $g->{id} + 0);
+  }
+
   # limpa sessões expiradas do gestor numa passada barata
   $self->_rows(
     'DELETE FROM clean.sessoes WHERE gestor_id = ? AND expires_at < NOW()',
@@ -183,14 +206,31 @@ sub logout_gestor ($self, $token) {
 }
 
 sub _hash_senha ($self, $senha) {
-  my $salt = $self->_row('SELECT gen_random_uuid() AS u')->{u} // '';
-  $salt =~ s/-//g;
-  return $salt . ':' . hmac_sha256_hex($senha, $salt);
+  return argon2id_pass($senha, urandom(ARGON2_SALT_LEN),
+    ARGON2_T_COST, ARGON2_M_COST, ARGON2_PARALLEL, ARGON2_TAG_LEN);
 }
 
 sub _verify_senha ($self, $senha, $stored) {
-  return unless $stored =~ /^([0-9a-f]{32}):([0-9a-f]{64})$/;
-  return hmac_sha256_hex($senha, $1) eq $2;
+  return 0 unless defined $senha && defined $stored;
+  return argon2_verify($stored, $senha) ? 1 : 0 if $stored =~ /^\$argon2/;
+
+  # formato antigo — só verificação; nada novo é gravado assim
+  return 0 unless $stored =~ /^([0-9a-f]{32}):([0-9a-f]{64})$/;
+  return _iguais(hmac_sha256_hex($senha, $1), $2);
+}
+
+sub _senha_precisa_rehash ($self, $stored) {
+  return 1 unless $stored =~ /^\$argon2id\$/;
+  return argon2_needs_rehash($stored, 'argon2id',
+    ARGON2_T_COST, ARGON2_M_COST, ARGON2_PARALLEL, ARGON2_TAG_LEN, ARGON2_SALT_LEN) ? 1 : 0;
+}
+
+# Comparação em tempo constante (o `eq` para no primeiro byte diferente).
+sub _iguais ($x, $y) {
+  return 0 unless length $x == length $y;
+  my $diff = 0;
+  $diff |= ord(substr $x, $_, 1) ^ ord(substr $y, $_, 1) for 0 .. length($x) - 1;
+  return $diff == 0 ? 1 : 0;
 }
 
 sub _mask_cpf ($self, $cpf) {

@@ -25,7 +25,10 @@ Diretores, coordenadores e demais gestores escolares.
   cadastro só cria contas: um e-mail que já tem conta (com maiúsculas ou não)
   não é recadastrado nem alterado por ali; a pessoa é orientada a entrar com a
   senha.
-- Sistema pode autenticar o gestor e manter a sessão.
+- Sistema pode autenticar o gestor e manter a sessão. A senha é guardada só
+  como resumo calculado com um método propositalmente lento e resistente a
+  adivinhação em massa (Argon2id); contas antigas passam a esse método no
+  próximo acesso, sem precisar trocar a senha.
 - Sistema pode levar o gestor direto ao painel da sua escola após entrar.
 
 ## Valor

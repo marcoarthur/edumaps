@@ -151,3 +151,4 @@ isocrona_escolar_resolucao_h3 [mapbiomas_risco_carbono_nodata] 2026-10-19T23:10:
 analytics_ivet_escola [isocrona_escolar_resolucao_h3] 2026-10-20T19:30:00Z Marco Arthur <arthurpbs@gmail.com> # #296: painel do IVET materializado por escola (refresh_ivet)
 isocrona_escolar_indices_minimos [analytics_ivet_escola] 2026-10-22T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #295: indices minimos da isocrona (libera ~6GB p/ rodada 2 SP+RJ+NE)
 gestores_email_unico_sem_caixa [isocrona_escolar_indices_minimos gestor_pesquisas] 2026-11-02T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # e-mail do gestor unico sem diferenciar caixa (cadastro so cria conta)
+gestores_senha_argon2id [gestores_email_unico_sem_caixa gestor_respostas] 2026-11-02T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #334: senha do gestor em Argon2id (comentario da coluna)
