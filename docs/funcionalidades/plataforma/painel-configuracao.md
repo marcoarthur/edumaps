@@ -39,7 +39,8 @@ rede), centralizando ajustes que hoje dependeriam de deploy ou acesso ao servido
   (cifrado, nunca exibido), chat de destino, ativação e a lista de ações
   autorizadas a disparar mensagem.
 - Sistema pode guardar e gerenciar a configuração dos canais de comunicação:
-  credenciais de e-mail (SMTP) e de WhatsApp, com segredos cifrados.
+  credenciais de e-mail (SMTP) e de WhatsApp, com segredos cifrados, e o
+  endereço público da plataforma usado nos links enviados por e-mail.
 - Sistema pode ligar ou desligar a autoinscrição pública por QR e ajustar seu
   endereço público e o limite antiabuso de submissões.
 - Sistema pode guardar a configuração do bot público do Telegram e da mensagem

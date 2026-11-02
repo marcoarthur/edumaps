@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [painel-de-administracao]
 funcionalidade: ../../funcionalidades/plataforma/painel-configuracao.md
-ultima_revisao: 2026-10-25
+ultima_revisao: 2026-11-02
 ---
 
 # Configurações da plataforma
@@ -34,6 +34,16 @@ A página **Versões do consentimento** tem um roteiro próprio, de 2 passos: a
 lista (vigente, rascunhos e arquivadas; cada inscrição guarda a versão que
 aceitou) e como criar um rascunho e publicá-lo. Publicar arquiva a versão
 vigente, e a publicada não pode mais ser alterada.
+
+## Ativar o “Esqueci minha senha” dos gestores
+
+O link **Esqueci minha senha** só aparece para os gestores quando o envio de
+e-mail está pronto. Em **Canais de comunicação → E-mail (SMTP)**, preencha:
+
+- servidor, remetente e **Canal e-mail ativado**;
+- **URL pública da plataforma**: o endereço que as pessoas usam para abrir o
+  EduMaps (ex.: `https://edumaps.exemplo.org`). Ele vai dentro do link do
+  e-mail; sem ele, o link fica escondido.
 
 ## Limitações conhecidas
 - Alterações podem afetar toda a plataforma.

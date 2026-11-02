@@ -47,6 +47,20 @@ Nas próximas vezes, basta entrar com o e-mail e a senha.
    escola. Se voltar ao menu **Gestor** já com a sessão aberta, verá “Você já
    está logado como …” com os botões **Ir para o painel** e **Sair**.
 
+### Esqueci minha senha
+
+1. **Onde ir:** na aba **Já tenho conta**, o link **Esqueci minha senha**
+   (abaixo do botão **Entrar**).
+2. **O que fazer:** informe o e-mail da conta e clique em **Enviar link**. A
+   tela responde sempre da mesma forma, tenha ou não uma conta com esse
+   e-mail.
+3. Abra o e-mail “Redefinição de senha do EduMaps” e clique no link. Ele vale
+   por **30 minutos** e só serve **uma vez**; se pedir de novo, só o último
+   link vale.
+4. Digite a **Senha nova** duas vezes e clique em **Salvar senha nova**.
+5. **Como saber que deu certo:** aparece “Senha alterada.” Você sai de todos
+   os aparelhos em que estava conectado; entre de novo com a senha nova.
+
 ### O que você vê primeiro
 
 Na primeira vez que o painel carrega, uma **ajuda guiada** apresenta as partes
@@ -68,7 +82,10 @@ escola tem zero daquilo.
   agendou reuniões, um e-mail novo não consegue se cadastrar nela. A mensagem
   orienta a usar o e-mail já cadastrado ou pedir a quem gerencia a agenda que
   transfira o acesso.
-- **Não há “esqueci minha senha”** na tela de acesso. Guarde a sua senha.
+- **“Esqueci minha senha” depende do e-mail da plataforma.** Se o link não
+  aparece na tela de acesso, o envio de e-mail ainda não foi configurado pela
+  administração; peça ajuda a ela.
+- **Pedidos de link são limitados**: até 3 por hora para o mesmo e-mail.
 - **Muitas tentativas suspendem o acesso por alguns minutos.** Depois de
   várias senhas erradas seguidas para o mesmo e-mail (ou de muitas tentativas
   vindas da mesma rede, como a da escola), aparece “Muitas tentativas. Tente de
@@ -99,6 +116,10 @@ escola tem zero daquilo.
 - **Não sei o código INEP da minha escola.** Procure a escola em **Busca
   Escola**: o código aparece no painel da escola. Pelo link **Você é o
   gestor?** do cartão da busca ele já vem preenchido.
+- **O e-mail com o link não chegou.** Confira o spam e se o e-mail digitado é
+  o da sua conta. A tela não diz se a conta existe, por segurança.
+- **O link diz que “não vale mais”.** Ele venceu (30 minutos), já foi usado ou
+  você pediu outro depois. Peça um novo em **Esqueci minha senha**.
 - **Apareceu “Muitas tentativas”.** Espere os minutos indicados e tente de
   novo com calma; tentar antes não adianta e não encurta a espera.
 - **Apareceu “E-mail ou senha inválidos”.** Confira os dois campos; a senha

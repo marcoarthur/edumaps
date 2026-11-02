@@ -133,11 +133,18 @@ sub _smtp_transaction ($self, $cfg, $to, $from, $envelope) {
     }
   }
 
+  # O corpo é declarado UTF-8 / 8bit: no fio tem de ir em BYTES. Texto com
+  # acento chegava como caracteres e o Net::SMTP morria com "Wide character in
+  # syswrite" — nenhum e-mail com acento saía por SMTP real (achado na #336; o
+  # transporte injetável dos testes não passa por aqui).
+  require Encode;
+  my $bytes = utf8::is_utf8($envelope) ? Encode::encode('UTF-8', $envelope) : $envelope;
+
   for my $step (
     [ mail    => $from ],
     [ to      => $to   ],
     [ data    => undef ],
-    [ datasend => $envelope ],
+    [ datasend => $bytes ],
     [ dataend => undef ],
   ) {
     my ($method, $arg) = @$step;

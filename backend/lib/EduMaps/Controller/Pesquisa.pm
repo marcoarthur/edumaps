@@ -19,6 +19,10 @@ my %LIMITE_PADRAO = (
   login_email => { max => 10, janela => 900 },
   login_ip    => { max => 50, janela => 900 },
   cadastro_ip => { max => 20, janela => 3600 },
+  # esqueci minha senha (#336): pedidos por e-mail e por IP; o IP também conta
+  # tokens inválidos em /senha/redefinir.
+  reset_email => { max => 3,  janela => 3600 },
+  reset_ip    => { max => 10, janela => 3600 },
 );
 
 # Redes de onde se aceita o X-Real-IP (o nginx). Config opcional
@@ -267,6 +271,83 @@ sub login($self) {
   # Acertou: zera as falhas do e-mail (as do IP seguem: outros e-mails ali).
   $model->auth_limpar('email', $escopos[0][1]);
   $self->render(json => $sessao);
+}
+
+# ---------------------------------------------------------------
+# esqueci minha senha (#336)
+# ---------------------------------------------------------------
+
+# E-mail habilitado e URL pública configurada? Sem isso a tela esconde o link.
+sub _senha_disponivel($self) {
+  my $cfg = $self->instantiate_model(model => 'Canal')->email_config;
+  return ($cfg->{enabled} && $cfg->{smtp_host} && $cfg->{from}
+          && ($cfg->{public_base_url} // '') =~ m{^https?://}) ? 1 : 0;
+}
+
+sub senha_disponivel($self) {
+  $self->render(json => { disponivel => $self->_senha_disponivel });
+}
+
+# Pedido de link. Responde SEMPRE a mesma coisa (202), exista a conta ou não;
+# o envio vai para um job (mesmo tempo nos dois casos).
+sub senha_esqueci($self) {
+  my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('email', 'trim')->like(EMAIL_RE);
+  return $self->_render_validation($v) if $v->has_error;
+
+  return $self->render(json => { error => 'Redefinição de senha por e-mail indisponível.' }, status => 409)
+    unless $self->_senha_disponivel;
+
+  my $model   = $self->instantiate_model(model => 'Pesquisa');
+  my $secret  = $self->app->secrets->[0];
+  my @escopos = (
+    ['reset_email', $model->auth_chave($secret, $v->param('email')), $self->_limite('reset_email')],
+    ['reset_ip',    $model->auth_chave($secret, $self->_ip),         $self->_limite('reset_ip')],
+  );
+  for my $e (@escopos) {
+    my $espera = $self->_espera($model, $e) or next;
+    return $self->_render_muitas_tentativas($espera, $e->[0]);
+  }
+  unless (_limites_off()) { $model->auth_registrar($_->[0], $_->[1]) for @escopos }
+
+  if (my $g = $model->gestor_por_email($v->param('email'))) {
+    $self->gestor_senha_enfileirar($g->{id});
+  }
+  $self->render(status => 202, json => {
+    ok       => 1,
+    mensagem => 'Se houver uma conta com esse e-mail, enviamos um link para criar uma senha nova. Confira a caixa de entrada e o spam.',
+  });
+}
+
+# Usa o link: senha nova, sessões encerradas. Token inválido, vencido ou já
+# usado recebem a mesma resposta.
+sub senha_redefinir($self) {
+  my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('token', 'trim')->like(qr/^[A-Za-z0-9_-]{43}$/);
+  $v->required('senha')->size(6, 64);
+  my $model  = $self->instantiate_model(model => 'Pesquisa');
+  my $secret = $self->app->secrets->[0];
+  my $ip_e   = ['reset_ip', $model->auth_chave($secret, $self->_ip), $self->_limite('reset_ip')];
+  if (my $espera = $self->_espera($model, $ip_e)) {
+    return $self->_render_muitas_tentativas($espera, 'reset_ip');
+  }
+  my $invalido = sub {
+    $model->auth_registrar($ip_e->[0], $ip_e->[1]) unless _limites_off();
+    $self->render(json => { error => 'Este link não vale mais (vencido ou já usado). Peça um novo em “Esqueci minha senha”.' }, status => 400);
+  };
+  if ($v->has_error) {
+    return $invalido->() if $v->has_error('token');
+    return $self->_render_validation($v);
+  }
+
+  my $g = $model->redefinicao_usar($v->param('token'), $v->param('senha')) or return $invalido->();
+  # senha nova: zera as falhas de login do e-mail
+  $model->auth_limpar('email', $model->auth_chave($secret, $g->{email}));
+  $self->render(json => { ok => 1 });
 }
 
 sub me($self) {
