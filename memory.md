@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (s) — exportar respeita o dia escolhido (PR #330)
+
+- **PR #330 MERGEADO** (`b4e4682`): export aceita `from`/`to`/`tz` (filtro
+  `_filtro_dia` compartilhado com a lista); com dia escolhido o botão vira
+  "Exportar as do dia (.md)" e o arquivo leva a data do dia.
+- **Fix**: datas do Markdown exportado saíam cruas em UTC ("2026-09-26
+  02:03:39.129883+00" no arquivo do dia 25). Agora `DD/MM/YYYY HH:MM` no `tz`;
+  o fuso vai em todos os exports; sem `tz`, marcado "(UTC)".
+- Validação no Chrome com download **suprimido por script** (fetch
+  interceptado, `<a>.click` desligado): nenhum arquivo baixado sem permissão.
+- Limitação aberta: com busca ativa, "Exportar todas" ignora a busca.
+  Histórico do Assistente: demais pendências da série fechadas (#327–#330).
+
 ## Sessão 2026-11-01 (r) — trecho e contagem na busca do histórico (PR #329)
 
 - **PR #329 MERGEADO** (`04979c5`): busca devolve `snippet_partes`

@@ -363,6 +363,26 @@ recriou o `db` como dependência, e o `minion` caiu ao conectar no banco ainda
 reiniciando. Verificar o md5 com `docker exec` não pega isso; `docker compose
 ps` depois de alguns segundos pega.
 
+## 18. Exportar respeita o dia escolhido (PR #330)
+
+O filtro por dia virou uma função (`_filtro_dia`) usada pela lista e pelo
+export, para que "o que a lista mostra" e "o que o arquivo traz" não possam
+divergir. Com o dia escolhido, "todas" significa "todas daquele dia". O
+rótulo do botão diz isso, e o arquivo leva a data do dia em vez da data de
+hoje.
+
+Validar o arquivo expôs o mesmo problema de fuso do §15, agora dentro do
+conteúdo: o Markdown trazia o timestamp cru do banco, em UTC. O dia do
+arquivo e a data escrita nele discordavam. As datas passaram a ser
+formatadas no Postgres (`to_char(created_at AT TIME ZONE ?)`) com o `tz`
+enviado, que agora acompanha todo export. Sem `tz`, o texto diz "(UTC)":
+quem lê sabe em que relógio está.
+
+Validação sem baixar arquivo: no Chrome, o `fetch` foi interceptado para ler
+o pedido e a resposta, e o clique do `<a download>` foi desligado por
+script. Baixar arquivos exige permissão explícita, e o teste não precisava
+do arquivo em disco.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -381,8 +401,9 @@ ps` depois de alguns segundos pega.
   lote B (PR #326, §14).
 - ~~Histórico: filtro por dia~~ — **PR #327** (§15). ~~Unificar os dois
   campos de busca~~ — **PR #328** (§16). ~~Trecho e contagem
-  na busca~~ — **PR #329** (§17). Resta: "Exportar todas" ignora o dia
-  escolhido.
+  na busca~~ — **PR #329** (§17). ~~"Exportar todas"
+  ignora o dia~~ — **PR #330** (§18). Resta: com busca ativa, "Exportar
+  todas" ignora a busca (documentado).
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.
