@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (p) — filtro por dia no histórico do Assistente (PR #327)
+
+- **PR #327 MERGEADO** (`63efce8`): clicar num dia do calendário filtra a
+  lista (de novo ou "Ver todas" limpa); busca e dia se excluem.
+- **Fix backend**: `list_conversas` comparava `created_at <= 'YYYY-MM-DD'`
+  (cortava o próprio dia `to`). Agora `(created_at AT TIME ZONE tz)::date`,
+  inclusivo, igual ao calendário.
+- **Fuso**: os bancos (Docker e `database.edumaps`) estão em **UTC**; o
+  calendário agrupava por dia UTC e a lista mostra hora local (conversa das 22h
+  caía no dia seguinte). Agora `tz` (IANA do navegador) em `calendar` e na
+  lista, validado em `pg_timezone_names` (inválido = 400; ausente = UTC).
+  Frontend: chaves de dia por data local (`features/chat/utils/dia.js`), não
+  `toISOString()`.
+- Tour `historico-assistente` v2; nova ajuda `docs/ajuda/gestor/historico-do-assistente.md`.
+- Limitações abertas: "Exportar todas" ignora o dia; dois campos de busca.
+
 ## Sessão 2026-11-01 (o) — tours das telas secundárias, lote B (PR #326)
 
 - **PR #326 MERGEADO** (`e491c2e`): `relatorios-salvos`, `relatorio-salvo`

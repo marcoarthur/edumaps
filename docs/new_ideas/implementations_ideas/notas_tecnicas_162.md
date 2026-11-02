@@ -308,6 +308,27 @@ Escrever o texto do calendário revelou mais uma promessa falsa da interface
 descreve o que o código faz, e o resto vira limitação documentada, não texto
 de ajuda.
 
+## 15. Filtro por dia no histórico (PR #327)
+
+O pedido saiu do §14: a interface prometia um filtro que não existia. Fazê-lo
+expôs dois defeitos que o tornariam errado mesmo implementado:
+
+- **Limite superior exclusivo por acidente.** `created_at <= '2026-09-26'` é
+  "até a meia-noite do dia 26": o dia marcado no calendário vinha vazio. O
+  teste que prova isso compara a lista com a contagem do próprio calendário,
+  então os dois critérios não podem mais divergir.
+- **Dia de quem?** Os bancos estão em UTC; o calendário contava dias UTC e a
+  lista exibia hora local. A decisão foi o cliente mandar o fuso IANA (`tz`)
+  e o servidor contar o dia nele, nas duas rotas. Alternativas descartadas:
+  fixar `America/Sao_Paulo` no servidor (errado fora do fuso, e esconde a
+  regra) e filtrar no cliente (a lista é paginada). Sem `tz`, UTC: nenhum
+  cliente antigo muda de comportamento; um nome inválido vira 400 antes de
+  chegar ao `AT TIME ZONE`.
+
+No cliente, `toISOString()` montava as chaves dos dias em UTC — correto no
+Brasil por acaso (UTC−3 empurra a meia-noite para o mesmo dia), errado a leste
+de Greenwich. A chave passou a ser a data local.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -324,8 +345,8 @@ de ajuda.
   ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
   ~~Configurações~~ (PR #324). ~~Telas secundárias~~: lote A (PR #325, §13) e
   lote B (PR #326, §14).
-- Histórico do Assistente: filtrar a lista pelo dia escolhido no calendário
-  (hoje só destaca) e unificar os dois campos de busca.
+- ~~Histórico: filtro por dia~~ — **PR #327** (§15). Restam: unificar os
+  dois campos de busca; "Exportar todas" ignora o dia escolhido.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.
