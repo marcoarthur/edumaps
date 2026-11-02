@@ -49,6 +49,10 @@ def broken_links(src):
     for target in links_in(src.read_text(encoding="utf-8")):
         if is_external(target) or "<" in target or "..." in target:
             continue
+        # Caminho absoluto só existe na máquina de quem escreveu
+        if target.startswith("/"):
+            out.append(f"{target} (caminho absoluto; use relativo)")
+            continue
         path = resolve(src, target)
         if path is not None and not path.exists():
             out.append(target)

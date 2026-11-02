@@ -13,8 +13,8 @@ ultima_revisao: 2026-10-25
 > **Tempo de leitura:** ~3 min
 
 ## Onde buscar informações
-- **Convenções e fluxo:** [`AGENTS.md`](/home/itaipu/Code/Data/leaflet/AGENTS.md)
-- **Histórico de decisões:** [`memory.md`](/home/itaipu/Code/Data/leaflet/memory.md)
+- **Convenções e fluxo:** [`AGENTS.md`](../../../AGENTS.md)
+- **Histórico de decisões:** [`memory.md`](../../../memory.md)
 - **Catálogo de funcionalidades:** [`docs/funcionalidades/`](../../funcionalidades/README.md)
 - **Ajuda ao usuário:** [`docs/ajuda/`](../README.md)
 
