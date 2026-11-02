@@ -2,8 +2,9 @@ package EduMaps::Controller::Pesquisa;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 
-# Rotas de pesquisas do gestor (fase 1: cadastro do gestor + CRUD de pesquisas).
-# Sem autenticação — o e-mail do gestor é a identidade da sessão (upsert).
+# Rotas de pesquisas do gestor.
+#   /perfil: cadastro anônimo — só CRIA conta, nunca altera uma existente.
+#   CRUD de pesquisas: exige a sessão do gestor; a escola vem da sessão.
 
 use constant EMAIL_RE => qr/^[\w.+\-]+@[\w.\-]+\.[A-Za-z]{2,}$/;
 
@@ -26,21 +27,27 @@ sub perfil($self) {
 
   my $model   = $self->instantiate_model(model => 'Pesquisa');
 
+  # Rota anônima: e-mail já cadastrado nunca é alterado por aqui (seria trocar
+  # a senha de outra pessoa). Quem já tem conta entra pelo login.
+  return $self->render(
+    json   => { error => 'Este e-mail já tem conta. Entre com sua senha.' },
+    status => 409,
+  ) if $model->gestor_email_existe($v->param('email'));
+
   # Escola precisa existir no cadastro (censo ou tabela curada).
   return $self->_render_not_found('Escola não encontrada para este INEP')
     unless $model->escola_existe($v->param('cod_inep'));
 
-  # Se o e-mail é novo (não existe na base) e a escola já tem um gestor
+  # E-mail novo (o existente já saiu acima) em escola que já tem um gestor
   # responsável pela agenda (reunião criada), bloqueia o cadastro.
-  if (!$model->gestor_email_existe(lc $v->param('email'))
-      && $model->escola_tem_agenda($v->param('cod_inep'))) {
+  if ($model->escola_tem_agenda($v->param('cod_inep'))) {
     return $self->render(
       json => { error => 'Esta escola já tem um gestor responsável pela agenda das reuniões. Use o e-mail já cadastrado ou peça a quem gerencia a agenda para transferir o acesso.' },
       status => 409,
     );
   }
 
-  my $gestor  = $model->upsert_gestor({
+  my $gestor  = $model->cadastrar_gestor({
     cod_inep => $v->param('cod_inep'),
     nome     => $v->param('nome'),
     email    => $v->param('email'),
@@ -50,30 +57,30 @@ sub perfil($self) {
     senha    => $v->param('senha'),
   });
 
-  return $self->_render_not_found("Gestor não pôde ser salvo") unless $gestor;
+  # Corrida (mesmo e-mail entre a checagem e o INSERT) ou CPF já cadastrado
+  return $self->render(
+    json   => { error => 'Já existe uma conta com este e-mail ou CPF. Entre com sua senha.' },
+    status => 409,
+  ) unless $gestor;
   $self->render(json => $gestor);
 }
 
+# Lista as pesquisas da escola da sessão. `?inep=` é aceito por compatibilidade,
+# mas só a própria escola: outra escola é 403 (como os resultados).
 sub index($self) {
-  my $v = $self->app->validator->validation;
-  $v->input($self->req->params->to_hash || {});
-  $v->required('inep', 'trim');
-  return $self->_render_validation($v) if $v->has_error;
-
-  # Formato inválido segue o padrão do projeto p/ codigo_ibge: 404 (não 400).
-  my $inep = $v->param('inep');
-  return $self->_render_not_found('Escola não encontrada para este INEP')
-    unless $inep =~ /^\d{8}$/;
+  my $escola = $self->_escola_da_sessao;
+  my $inep   = $self->param('inep');
+  return $self->render(json => { error => 'Só o gestor da escola vê as pesquisas dela.' }, status => 403)
+    if defined $inep && length $inep && $inep ne $escola;
 
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  $self->render(json => $model->list_surveys($inep));
+  $self->render(json => $model->list_surveys($escola));
 }
 
 sub create($self) {
   my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
   my $v = $self->app->validator->validation;
   $v->input($input);
-  $v->required('gestor_id', 'trim')->num;
   $v->required('titulo',    'trim')->size(3, 120);
   $v->optional('descricao', 'trim')->size(0, 500);
   return $self->_render_validation($v) if $v->has_error;
@@ -82,8 +89,9 @@ sub create($self) {
   return $self->render(json => {error => $payload->{error}}, status => 400) if $payload->{error};
 
   my $model  = $self->instantiate_model(model => 'Pesquisa');
+  # Autor = gestor da sessão; um gestor_id no corpo é ignorado.
   my $survey = $model->create_survey({
-    gestor_id  => $v->param('gestor_id'),
+    gestor_id  => $self->stash('gestor')->{id},
     titulo     => $v->param('titulo'),
     descricao  => $v->param('descricao'),
     perguntas  => $payload->{perguntas},
@@ -94,6 +102,7 @@ sub create($self) {
 }
 
 sub show($self) {
+  $self->_pesquisa_da_escola or return;
   my $model  = $self->instantiate_model(model => 'Pesquisa');
   my $survey = $model->survey_detail($self->param('id'));
   return $self->_render_not_found('Pesquisa não encontrada') unless $survey;
@@ -103,8 +112,7 @@ sub show($self) {
 sub update($self) {
   my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  my $state = $model->survey_state($self->param('id'));
-  return $self->_render_not_found('Pesquisa não encontrada') unless $state;
+  my $state = $self->_pesquisa_da_escola or return;
   return $self->_render_conflict('Pesquisa publicada não pode ser editada') if $state->{status} ne 'rascunho';
 
   my $v = $self->app->validator->validation;
@@ -127,8 +135,7 @@ sub update($self) {
 
 sub finalize($self) {
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  my $state = $model->survey_state($self->param('id'));
-  return $self->_render_not_found('Pesquisa não encontrada') unless $state;
+  my $state = $self->_pesquisa_da_escola or return;
   return $self->_render_conflict('Pesquisa já está publicada') if $state->{status} ne 'rascunho';
 
   my $detail = $model->survey_detail($self->param('id'));
@@ -142,8 +149,7 @@ sub finalize($self) {
 
 sub destroy($self) {
   my $model = $self->instantiate_model(model => 'Pesquisa');
-  my $state = $model->survey_state($self->param('id'));
-  return $self->_render_not_found('Pesquisa não encontrada') unless $state;
+  my $state = $self->_pesquisa_da_escola or return;
   return $self->_render_conflict('Pesquisa publicada não pode ser excluída') if $state->{status} ne 'rascunho';
 
   $model->delete_survey($self->param('id'));
@@ -170,7 +176,7 @@ sub login($self) {
   # só bate se BOTH email+senha conferirem; as credenciais NUNCA são logadas.
   unless ($sessao) {
     my $admin = $self->app->config->{admin} || {};
-    if (($admin->{email} // '') eq $v->param('email')
+    if (lc($admin->{email} // '') eq lc $v->param('email')
       && ($admin->{senha} // '') eq $v->param('senha')) {
       $sessao = $model->login_admin_config($v->param('email'), $v->param('senha'));
     }
@@ -188,6 +194,22 @@ sub logout($self) {
   my $model = $self->instantiate_model(model => 'Pesquisa');
   $model->logout_gestor($self->stash('gestor_token'));
   $self->render(status => 204, text => '');
+}
+
+sub _escola_da_sessao($self) {
+  return sprintf '%08d', $self->stash('gestor')->{cod_inep} || 0;
+}
+
+# Pesquisa do :id, se for da escola da sessão. Outra escola responde 404, como
+# se não existisse (não revela pesquisas alheias). Devolve o estado ou undef
+# (resposta já renderizada).
+sub _pesquisa_da_escola($self) {
+  my $state = $self->instantiate_model(model => 'Pesquisa')->survey_state($self->param('id'));
+  unless ($state && $state->{cod_inep} == ($self->stash('gestor')->{cod_inep} || 0)) {
+    $self->_render_not_found('Pesquisa não encontrada');
+    return;
+  }
+  return $state;
 }
 
 # Gatilho dos under() autenticados: valida o Bearer token e injeta o gestor no stash.
