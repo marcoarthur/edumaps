@@ -291,6 +291,23 @@ Os tours até aqui eram de rota exata. Telas de criação e de detalhe pedem
 Catálogo: **22 tours**. Escrever os textos lendo o código expôs mais três
 divergências de documentação (Reuniões e Pesquisa), corrigidas no PR.
 
+## 14. Telas secundárias, lote B (PR #326): cobertura completa
+
+Quatro tours: relatórios salvos (lista e detalhe), versões do consentimento e
+histórico do Assistente. Catálogo final: **26 tours**. Nenhuma mudança no
+motor: os padrões e a especificidade do §13 resolveram `/salvos` × `/salvos/:id`
+e `/config` × `/config/consentimento` sem caso especial.
+
+Uma decisão de marcação: o histórico desenha o layout inteiro mesmo sem
+sessão (mostra só um aviso de erro). Um `data-tour` fixo deixaria o tour abrir
+sobre a página vazia; o alvo `prontoQuando` virou atributo condicional, ligado
+após a primeira lista carregada. O teste cobre sem sessão e sessão expirada (401).
+
+Escrever o texto do calendário revelou mais uma promessa falsa da interface
+(filtrar por dia), em três lugares. A regra deste ciclo se manteve: o roteiro
+descreve o que o código faz, e o resto vira limitação documentada, não texto
+de ajuda.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -305,8 +322,10 @@ divergências de documentação (Reuniões e Pesquisa), corrigidas no PR.
   ligado via `--remote-debugging-port`).
 - ~~Tours dos módulos do gestor~~: lote 1 (PR #319) e lote 2 (PR #320).
   ~~Assistente do Censo~~ (PR #322). ~~Administração~~ (PR #323).
-  ~~Configurações~~ (PR #324). Telas secundárias: lote A (PR #325, §13); lote B
-  (relatórios salvos, versões do consentimento, histórico do Assistente).
+  ~~Configurações~~ (PR #324). ~~Telas secundárias~~: lote A (PR #325, §13) e
+  lote B (PR #326, §14).
+- Histórico do Assistente: filtrar a lista pelo dia escolhido no calendário
+  (hoje só destaca) e unificar os dois campos de busca.
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

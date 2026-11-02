@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-01 (o) — tours das telas secundárias, lote B (PR #326)
+
+- **PR #326 MERGEADO** (`e491c2e`): `relatorios-salvos`, `relatorio-salvo`
+  (`:id`), `consentimento-versoes` (admin), `historico-assistente`.
+  **Catálogo: 26 tours; todas as telas de trabalho cobertas.** Pedido "telas
+  secundárias" concluído (lotes A e B).
+- Histórico: a página renderiza o layout mesmo sem sessão, então o
+  `prontoQuando` (`historico-conversas`) é atributo condicional, ligado só
+  após a 1ª lista carregada.
+- **Achado**: o calendário do histórico não filtra a lista (clicar só destaca o
+  dia), mas o cabeçalho, o rodapé ("Clique para filtrar") e a ficha prometiam.
+  Textos corrigidos; filtro por dia e a busca duplicada (dois campos) ficaram
+  como limitações na ficha. Implementar o filtro: proposta para ciclo próprio.
+- Validação: relatórios salvos (lista e detalhe 12) e histórico ao vivo;
+  consentimento só por contrato (sessão não admin).
+
 ## Sessão 2026-11-01 (n) — tours das telas secundárias, lote A (PR #325)
 
 - **PR #325 MERGEADO** (`9536b1b`): 5 tours — `pesquisa-assistente`
