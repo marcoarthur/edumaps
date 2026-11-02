@@ -210,8 +210,10 @@
       });
   }
 
+  // Com um dia escolhido, "todas" são as daquele dia (o que a lista mostra).
   function exportAll() {
-    exportConversas({ all: true })
+    const filtroDia = selectedDate ? { from: selectedDate, to: selectedDate } : {};
+    exportConversas(comFuso({ all: true, ...filtroDia }))
       .then(salvarMarkdown)
       .catch(err => {
         error = "Falha ao exportar: " + err.message;
@@ -301,6 +303,7 @@
         {/if}
         <ChatConversaList
           {mensagemVazia}
+          rotuloExportarTodas={selectedDate && !searchQuery.trim() ? "Exportar as do dia (.md)" : "Exportar todas (.md)"}
           conversas={listaExibida}
           {loading}
           {selectedDate}

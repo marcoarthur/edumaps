@@ -33,8 +33,9 @@ anterior, e o pesquisador que precisa citá-lo.
 - Sistema pode encontrar conversas pelo conteúdo das mensagens, uma vez cada,
   mostrando o trecho que casou com o termo destacado e quantas mensagens a
   conversa tem.
-- Sistema pode exportar uma conversa, um conjunto selecionado ou todo o
-  histórico em um arquivo Markdown, para leitura, citação ou arquivo.
+- Sistema pode exportar uma conversa, um conjunto selecionado, as conversas
+  do dia escolhido no calendário ou todo o histórico em um arquivo Markdown,
+  para leitura, citação ou arquivo.
 - Sistema pode permitir que o gestor exclua uma conversa que não queira mais
   manter.
 
@@ -56,6 +57,8 @@ documento de trabalho.
   se combina com a busca por texto.
 - **A busca mostra até 20 conversas** (as mais recentes que casam), sem
   páginas seguintes; refine o termo se o que procura não aparecer.
+- **Exportar todas ignora a busca.** Com uma busca ativa, o export de
+  “todas” traz o histórico inteiro; a seleção resolve casos pontuais.
 - **A busca não olha o título** da conversa, só o texto das mensagens.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.

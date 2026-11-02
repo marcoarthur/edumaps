@@ -127,6 +127,9 @@ export function getCalendar(params) {
  * @param {Object} params
  * @param {Array<number>} [params.ids] - IDs das conversas a exportar
  * @param {boolean} [params.all] - Se true, exporta todas
+ * @param {string} [params.from] - Recorte por dia (YYYY-MM-DD), como na lista
+ * @param {string} [params.to]
+ * @param {string} [params.tz] - Fuso IANA em que o dia é contado
  * @returns {Promise<{blob: Blob, filename: string}>}
  */
 export function exportConversas(params) {
@@ -142,6 +145,9 @@ export function exportConversas(params) {
   }
   if (params.all) {
     qs.set("all", "1");
+  }
+  for (const k of ["from", "to", "tz"]) {
+    if (params[k]) qs.set(k, params[k]);
   }
   // a query vai no path: `download` faz `searchParams.set`, que não
   // repete chave.

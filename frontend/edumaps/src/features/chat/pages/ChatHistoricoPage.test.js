@@ -4,7 +4,7 @@
 // from = to = o dia (e o fuso do navegador), mostra o aviso do filtro e a
 // mensagem de dia vazio; clicar de novo ou em "Ver todas" volta à lista
 // completa; busca e dia não se combinam.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import { http, HttpResponse } from "msw";
 import { server } from "../../../mocks/server.js";
@@ -193,5 +193,48 @@ describe("ChatHistoricoPage — resultado da busca", () => {
     // texto do conteúdo nunca vira HTML: "<b>" fica como texto, sem elemento <b>
     expect(trecho.querySelector("b")).toBeNull();
     expect(screen.getByText("3 mensagens")).toBeInTheDocument();
+  });
+});
+
+describe("ChatHistoricoPage — exportar com dia escolhido", () => {
+  let pedidosExport;
+  beforeEach(() => {
+    pedidosExport = [];
+    server.use(
+      http.get("/api/chat/conversas/export", ({ request }) => {
+        pedidosExport.push(new URL(request.url).searchParams);
+        return new HttpResponse("# Conversa: x\n", {
+          headers: { "Content-Type": "text/markdown", "Content-Disposition": 'attachment; filename="c.md"' },
+        });
+      }),
+    );
+    // jsdom não implementa object URLs; o clique no <a download> é inofensivo
+    URL.createObjectURL = vi.fn(() => "blob:x");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it("sem dia: “Exportar todas” manda all=1 sem recorte", async () => {
+    render(ChatHistoricoPage);
+    await screen.findByText("IDEB");
+    await fireEvent.click(screen.getByRole("button", { name: "Exportar todas (.md)" }));
+    await waitFor(() => expect(pedidosExport).toHaveLength(1));
+    expect(pedidosExport[0].get("all")).toBe("1");
+    expect(pedidosExport[0].get("from")).toBeNull();
+  });
+
+  it("com dia: o botão vira “Exportar as do dia” e manda o dia e o fuso", async () => {
+    render(ChatHistoricoPage);
+    await screen.findByText("IDEB");
+    await fireEvent.click(await botaoDoDia());
+    await screen.findByTestId("historico-filtro-dia");
+
+    expect(screen.queryByRole("button", { name: "Exportar todas (.md)" })).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Exportar as do dia (.md)" }));
+    await waitFor(() => expect(pedidosExport).toHaveLength(1));
+    const q = pedidosExport[0];
+    expect(q.get("all")).toBe("1");
+    expect(q.get("from")).toBe(DIA);
+    expect(q.get("to")).toBe(DIA);
+    expect(q.get("tz")).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 });

@@ -157,6 +157,46 @@ subtest 'GET /api/chat/conversas/search — busca full-text' => sub {
   ok defined $json->{items}[0]{snippet}, 'tem snippet destacado';
 };
 
+subtest 'export: all=1 com from/to exporta só o dia escolhido' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  my $auth = { Authorization => "Bearer $admin_token" };
+
+  # duas conversas em dias distintos (no fuso de São Paulo)
+  my @ids;
+  for my $titulo ('export-dia-9', 'export-dia-10') {
+    push @ids, $t->post_ok('/api/chat/conversas', $auth => json => {
+      titulo => $titulo, messages => [ { role => 'user', content => $titulo } ],
+    })->status_is(201)->tx->res->json->{id};
+  }
+  my $rs = $t->app->schema->resultset('ChatConversa');
+  $rs->find($ids[0])->update({ created_at => '2001-04-10 01:30:00+00' }); # 09/04 22:30 em SP
+  $rs->find($ids[1])->update({ created_at => '2001-04-10 15:00:00+00' }); # 10/04 12:00 em SP
+
+  my $sp = 'tz=America/Sao_Paulo';
+  my $res = $t->get_ok("/api/chat/conversas/export?all=1&from=2001-04-09&to=2001-04-09&$sp", $auth)
+    ->status_is(200)->tx->res;
+  my $md = $res->text;
+  like   $md, qr/# Conversa: export-dia-9\n/,  'exporta a conversa do dia (no fuso local)';
+  unlike $md, qr/# Conversa: export-dia-10\n/, 'e não a do dia seguinte';
+  my @n = $md =~ /^# Conversa: /mg;
+  is scalar @n, 1, 'só uma conversa no arquivo';
+  like $res->headers->content_disposition, qr/conversas-2001-04-09\.md/, 'o arquivo leva o dia exportado';
+
+  my $sem_tz = $t->get_ok('/api/chat/conversas/export?all=1&from=2001-04-10&to=2001-04-10', $auth)->tx->res->text;
+  my @n_utc = $sem_tz =~ /^# Conversa: export-dia-/mg;
+  is scalar @n_utc, 2, 'sem tz conta em UTC: as duas caem em 10/04';
+
+  my $todas = $t->get_ok('/api/chat/conversas/export?all=1', $auth)->tx->res->text;
+  like $todas, qr/export-dia-9/,  'sem dia, all=1 segue exportando tudo';
+  like $todas, qr/export-dia-10/, '(as duas)';
+
+  $t->get_ok('/api/chat/conversas/export?all=1&from=ontem', $auth)->status_is(400);
+  $t->get_ok('/api/chat/conversas/export?all=1&from=2001-04-09&to=2001-04-09&tz=Marte/Olimpo', $auth)
+    ->status_is(400);
+
+  $t->delete_ok("/api/chat/conversas/$_", $auth)->status_is(204) for @ids;
+};
+
 subtest 'busca: uma linha por conversa, trecho sem marcação, contagem' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
   my $auth = { Authorization => "Bearer $admin_token" };

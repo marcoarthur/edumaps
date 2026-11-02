@@ -33,6 +33,18 @@ sub save_conversa ($self, $gestor_id, $args) {
   return $conv->id;
 }
 
+# Filtro por DIA de created_at, inclusivo nas duas pontas, no fuso `tz`
+# (o do navegador; sem ele, UTC, que é o fuso dos bancos) — o mesmo critério
+# do calendário. Usado pela lista e pelo export. Devolve pares para o `where`.
+sub _filtro_dia ($opts) {
+  my ($from, $to) = @{$opts}{qw(from to)};
+  my $tz = $opts->{tz} // 'UTC';
+  my @dia;
+  push @dia, \[ '(created_at AT TIME ZONE ?)::date >= ?::date', $tz, $from ] if $from;
+  push @dia, \[ '(created_at AT TIME ZONE ?)::date <= ?::date', $tz, $to ]   if $to;
+  return @dia ? (-and => \@dia) : ();
+}
+
 # Lista conversas do gestor (paginado, ordenado por created_at DESC)
 sub list_conversas ($self, $gestor_id, $opts = {}) {
   my $page     = $opts->{page} // 1;
@@ -40,17 +52,9 @@ sub list_conversas ($self, $gestor_id, $opts = {}) {
   my $from     = $opts->{from};
   my $to       = $opts->{to};
 
-  # Filtro por DIA, inclusivo nas duas pontas e com o mesmo critério do
-  # calendário: a data de created_at no fuso `tz` (o do navegador; sem ele,
-  # UTC, que é o fuso dos bancos). Comparar o timestamp
-  # com 'YYYY-MM-DD' cortava o próprio dia `to` (virava até 00:00 dele), e o
-  # dia marcado no calendário vinha vazio na lista.
-  my $tz    = $opts->{tz} // 'UTC';
-  my $where = { gestor_id => $gestor_id };
-  my @dia;
-  push @dia, \[ '(created_at AT TIME ZONE ?)::date >= ?::date', $tz, $from ] if $from;
-  push @dia, \[ '(created_at AT TIME ZONE ?)::date <= ?::date', $tz, $to ]   if $to;
-  $where->{-and} = \@dia if @dia;
+  # Comparar o timestamp com 'YYYY-MM-DD' cortava o próprio dia `to`
+  # (virava até 00:00 dele); ver _filtro_dia.
+  my $where = { gestor_id => $gestor_id, _filtro_dia($opts) };
 
   my $rs = $self->schema->resultset('ChatConversa')->search(
     $where,
@@ -264,7 +268,10 @@ sub export_conversas ($self, $gestor_id, $opts = {}) {
   my @ids = $opts->{ids} ? @{$opts->{ids}} : ();
   my $all = $opts->{all} // 0;
 
-  my $where = { gestor_id => $gestor_id };
+  # `from`/`to`/`tz` recortam por dia (o dia escolhido no calendário),
+  # inclusive no "todas": exportar "todas" com um dia escolhido é exportar
+  # as daquele dia.
+  my $where = { gestor_id => $gestor_id, _filtro_dia($opts) };
   $where->{id} = { -in => \@ids } if @ids && !$all;
 
   # Sem `prefetch`: o loop abaixo já busca as mensagens com
