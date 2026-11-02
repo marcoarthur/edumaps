@@ -383,6 +383,19 @@ o pedido e a resposta, e o clique do `<a download>` foi desligado por
 script. Baixar arquivos exige permissão explícita, e o teste não precisava
 do arquivo em disco.
 
+## 19. Exportar respeita a busca (PR #331)
+
+Mesmo princípio do §18: o export reaproveita a condição da lista. A busca
+entra como `id IN (SELECT conversa_id ... @@ plainto_tsquery(?))`, a mesma
+consulta full-text da tela. Com busca ativa, "todas" passa a significar
+"todas as que casam". O limite de 20 vale só para a tela, não para o arquivo:
+quem precisa de tudo o que casou não depende de refinar o termo.
+
+A validação revelou mais um relógio errado: o nome do arquivo usava a data
+do servidor (UTC), e às 22h47 de 01/11 no Brasil o arquivo saía com 02/11.
+O "hoje" passou a ser calculado no Postgres, no `tz` de quem exporta
+(`to_char(now() AT TIME ZONE ?)`), o mesmo relógio do §15 e do §18.
+
 ## Pendências
 
 - ~~**gzip dos assets** no nginx~~ — **resolvido no PR #315** (`0a91b85`):
@@ -402,8 +415,8 @@ do arquivo em disco.
 - ~~Histórico: filtro por dia~~ — **PR #327** (§15). ~~Unificar os dois
   campos de busca~~ — **PR #328** (§16). ~~Trecho e contagem
   na busca~~ — **PR #329** (§17). ~~"Exportar todas"
-  ignora o dia~~ — **PR #330** (§18). Resta: com busca ativa, "Exportar
-  todas" ignora a busca (documentado).
+  ignora o dia~~ — **PR #330** (§18). ~~"Exportar todas" ignora a
+  busca~~ — **PR #331** (§19).
 - ~~Documentos: confirmação de excluir pasta contradiz o backend~~ —
   **PR #321**: pasta com conteúdo é barrada antes, com aviso do que há
   dentro; a vazia pede confirmação honesta; o 409 segue tratado para a corrida.

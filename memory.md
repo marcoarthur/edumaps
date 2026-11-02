@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (t) — exportar respeita a busca (PR #331)
+
+- **PR #331 MERGEADO** (`9bb84ac`): export aceita `q` (1–200 chars, mesma
+  busca full-text da lista); com busca ativa o botão vira "Exportar as da
+  busca (.md)" e exporta **todas** as que casam (não só as 20 da tela), em
+  `conversas-busca-<data>.md`.
+- **Fix**: a data do nome do arquivo era o "hoje" do servidor (UTC): às 22h47
+  de 01/11 saía `...-2026-11-02.md`. Agora `hoje($tz)` no Postgres.
+- Chrome (download suprimido): "escolas" 5=5, "Tancredo" 3=3.
+- Histórico do Assistente: todas as pendências da série fechadas (#327–#331).
+
 ## Sessão 2026-11-01 (s) — exportar respeita o dia escolhido (PR #330)
 
 - **PR #330 MERGEADO** (`b4e4682`): export aceita `from`/`to`/`tz` (filtro
