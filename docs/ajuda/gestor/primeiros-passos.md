@@ -81,8 +81,10 @@ escola tem zero daquilo.
 
 - No cadastro ficam guardados o seu nome, e-mail e, se você informar, telefone
   e cargo. Eles servem para identificar você como gestor da escola.
-- A senha nunca fica guardada como texto: o sistema guarda só uma versão
-  cifrada, que não permite recuperá-la.
+- A senha nunca fica guardada como texto: o sistema guarda só um resumo
+  dela, feito com um método propositalmente lento, que não permite
+  recuperá-la e torna caro tentar adivinhá-la. Contas antigas passam a esse
+  método sozinhas no próximo acesso; você não precisa trocar a senha.
 - A sessão fica guardada no navegador em que você entrou. Em computador
   compartilhado, use **Sair** ao terminar (no menu **Gestor** ou no topo das
   telas dos módulos).

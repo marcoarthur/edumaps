@@ -8,6 +8,23 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-02 (u) (senha do gestor em Argon2id, #334)
+
+Branch `fix/senha-gestor-argon2`, banco e backend em `ubatexu.lan`. Conta de
+teste descartável criada pela API e removida no fim. Só API (sem mudança de
+tela).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Custo por hash no `backend.edumaps`: 19 MiB/t=2 = 22 ms; 64 MiB/t=3 = 128 ms (escolhido) | carton exec | 🟢 |
+| Cadastro grava `$argon2id$v=19$m=65536,t=3,p=1` | API + psql | 🟢 |
+| Conta no formato antigo (HMAC) entra e é regravada em Argon2id no 1º login | API + psql | 🟢 |
+| Senha errada | API | 🟢 401 |
+| Tempo do login completo | API | 🟢 0,16–0,25 s |
+| Comentário da coluna (change `gestores_senha_argon2id`) | psql | 🟢 |
+| Novo formato, conversão, senha errada não converte, custo baixo é regravado, formato desconhecido recusado | prove `t/04-api/pesquisa.t` | 🟢 15/15 (falha sem o fix) |
+| Arquivos que usam cadastro/login | prove (27 arquivos) | 🟢 só as 5 falhas antigas (iguais sem a mudança) |
+
 ## Rodada 2026-11-02 (t) (cadastro do gestor e pesquisas com sessão)
 
 Branch `fix/gestor-cadastro-e-pesquisas`, banco, backend e frontend em

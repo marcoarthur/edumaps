@@ -1,6 +1,11 @@
 requires "Carp" => "0";
 requires "CHI" => "0";
 requires "Class::Method::Modifiers" => "0";
+# Senha do gestor em Argon2id (#334). Crypt::Argon2 traz o C do argon2 e
+# compila com build-essential; >= 0.019 por argon2_needs_rehash.
+# Crypt::URandom: sal de 16 bytes do /dev/urandom.
+requires "Crypt::Argon2" => "0.019";
+requires "Crypt::URandom" => "0";
 requires "Data::Fake" => "0";
 requires "DateTime::Format::Strptime" => "0";
 requires "Hash::Merge" => "0";
