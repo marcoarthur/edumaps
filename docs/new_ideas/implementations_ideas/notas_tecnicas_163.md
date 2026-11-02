@@ -55,8 +55,8 @@ malha viária, calculada mas não exibida (ficha → 🟡 parcial).
 
 ## Achados fora do escopo
 
-- 🔴 **Segurança**: achado no cadastro do gestor, reportado ao developer;
-  correção em ciclo próprio.
+- 🔴 **Segurança**: achado no cadastro do gestor — corrigido no PR #333
+  (nota 164).
 - #154 na tela: "0 (0%)" em resultados de pesquisa sem resposta; faixa etária
   sem dado vira 0 no gráfico do painel do gestor.
 - Pesquisa publicada não pode ser encerrada; documentos sem caminho de volta à
@@ -68,4 +68,4 @@ malha viária, calculada mas não exibida (ficha → 🟡 parcial).
   municipal, similaridade, telemetria de sessão.
 - Decisões da epic ainda abertas: perfil professor (segue `planejado`),
   alcance de "comunidade".
-- Corrigir o achado de segurança no cadastro do gestor.
+- ~~Corrigir o achado de segurança no cadastro do gestor~~ — PR #333.

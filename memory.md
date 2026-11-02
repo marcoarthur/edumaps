@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (v) — cadastro do gestor só cria conta; pesquisas com sessão (PR #333)
+
+- **PR #333 MERGEADO** (`fa051d5`): cadastro anônimo não altera conta
+  existente (409); índice único `lower(email)` (change
+  `gestores_email_unico_sem_caixa`, aplicada local e LXC); gestão das pesquisas
+  exige sessão, escola da sessão. Assistente sem passo "Seus dados". Nota **164**.
+- ⚠️ Lição: achado de segurança aberto **não** vai com detalhe para
+  `memory.md`/notas (repo público) antes da correção — expus no ciclo (u) e
+  reduzi em `7966f8c`.
+- Imagem local do `sqitch` estava atrasada e aplicou junto
+  `isocrona_escolar_indices_minimos` (de 22/10).
+- Pendências: issues de hash de senha (Argon2/bcrypt), limite de tentativas de
+  login, "esqueci minha senha".
+
 ## Sessão 2026-11-02 (u) — site de ajuda + ajuda do gestor (PR #332, #304)
 
 - **PR #332 MERGEADO** (`abc4640`), só docs/tools/CI. Site do Pages espelha
@@ -13,8 +27,7 @@
   caminho absoluto e página fora do índice do perfil; roda no CI do PR.
 - Gestor: 6 páginas novas, 4 reescritas; índices por perfil; 6 fichas
   corrigidas. Cobertura das ativas 11/27 → 20/26.
-- 🔴 **Pendente, segurança**: achado no cadastro do gestor, reportado ao
-  developer; correção no ciclo seguinte.
+- 🔴 Achado de segurança no cadastro do gestor → corrigido no PR #333.
 - Prévia local do site: `python3 -m http.server -d _site` após `build_pages.py`.
 
 ## Sessão 2026-11-02 (t) — exportar respeita a busca (PR #331)
