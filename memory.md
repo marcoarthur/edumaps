@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (x) — limite de tentativas de login (PR #338, fecha #335)
+
+- **PR #338 MERGEADO** (`b2fd020`): 429 + Retry-After — login 10/e-mail e
+  50/IP em 15 min, cadastro 20/IP/h. Contagem em `clean.auth_falhas` (change
+  `auth_falhas`, só HMAC). Bloqueio antes da senha. E-mail inexistente
+  verifica hash fictício (76 × 76 ms). `X-Real-IP` só de proxy confiável
+  (`EduMaps::Util::ClientIP`; LXC: só loopback via `files/edumaps_db.conf`).
+  Nota **166**.
+- Testes: `t/lib/Imports.pm` liga `EDUMAPS_AUTH_LIMITE_OFF`; só
+  `login_limite.t` testa os limites. Nunca usar fora dos testes.
+- Pendências: limitador das inscrições por QR usa o IP do nginx; Docker local
+  aceita X-Real-IP forjado na 3010; #336 aberta.
+
 ## Sessão 2026-11-02 (w) — senha do gestor em Argon2id (PR #337, fecha #334)
 
 - **PR #337 MERGEADO** (`a0fdaaf`): Argon2id 64 MiB/t=3/p=1 (~128 ms no

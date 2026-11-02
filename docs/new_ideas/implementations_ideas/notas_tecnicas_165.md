@@ -51,9 +51,8 @@ deploy: 32 contas no formato antigo, convertidas conforme entram.
 
 - Remover o suporte ao formato antigo quando só restarem contas paradas
   (medir: `senha_hash ~ '^[0-9a-f]{32}:'`).
-- Login com e-mail inexistente responde mais rápido que com senha errada (não
-  calcula hash): enumeração de e-mail por tempo. Tratar junto da #335
-  (verificar contra um hash fictício quando a conta não existe).
+- ~~Enumeração de e-mail por tempo no login~~ — resolvido no PR #338
+  (hash fictício; nota 166).
 - `edumaps-analytic.service` no `backend.edumaps` em `failed` desde
   2026-10-31 (fora deste ciclo).
 - #335 (limite de tentativas) e #336 (esqueci minha senha) seguem abertas.
