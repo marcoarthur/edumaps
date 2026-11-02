@@ -8,6 +8,30 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-02 (w) (esqueci minha senha do gestor, #336)
+
+Branch `feat/gestor-esqueci-senha`. LXC: banco, backend, minion e frontend
+(sem SMTP configurado → link escondido, `disponivel: 0`). Fluxo completo no
+**Docker local** com um **Mailpit** (`axllent/mailpit:v1.20.0`, UI em
+`127.0.0.1:8025`) e `canais.email.*` + URL pública só no banco local. Conta
+de teste descartável criada pela API e apagada no fim.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| “Esqueci minha senha” aparece no login com e-mail configurado; escondido sem | Chrome / LXC | 🟢 |
+| Pedido → mensagem genérica (“Se houver uma conta…”) | Chrome | 🟢 |
+| 1ª tentativa: job falhou com “Wide character in syswrite” — **e-mail com acento não saía por SMTP real** (defeito do canal, também na confirmação por código) | Mailpit | 🔴→🟢 envelope em bytes UTF-8 |
+| E-mail recebido com acentos, link e validade; histórico com o token mascarado | Mailpit + psql | 🟢 |
+| Link abre a página e o token sai da barra de endereço | Chrome | 🟢 |
+| Senha nova salva → “Senha alterada.” | Chrome | 🟢 |
+| Senha antiga 401, nova 200, link reutilizado 400 “não vale mais”, token não está em claro no banco | API + psql | 🟢 |
+| Resposta igual com/sem conta, job sem token, hash só, pedido novo invalida, vencido, sessões encerradas, limites | prove `senha_redefinicao.t` | 🟢 (fila própria: o minion local de pé pegava os jobs) |
+| Net::SMTP recebe bytes (acentos e símbolo) | prove `email_smtp_utf8.t` | 🟢 (falha sem o fix) |
+| Páginas e link | vitest | 🟢 127 arquivos / 1147 testes |
+
+Achado lateral: `t/05-tasks/canais_envio.t` falha quando o minion local está de
+pé (disputa a mesma fila); com o minion parado, passa. Já existia.
+
 ## Rodada 2026-11-02 (v) (limite de tentativas de login, #335)
 
 Branch `fix/login-limite-tentativas`, banco e backend em `ubatexu.lan`. Só API
