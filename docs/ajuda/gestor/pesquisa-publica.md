@@ -23,12 +23,11 @@ uma.
 
 ## Passo a passo
 
-1. **Onde ir:** no **Painel do Gestor**, **📋 Pesquisas da comunidade**. A lista
-   mostra as pesquisas da escola com o estado (**Rascunho**, **Publicada**,
-   **Arquivada**).
+1. **Onde ir:** no **Painel do Gestor**, **📋 Pesquisas da comunidade**. É
+   preciso estar logado como gestor: sem login, a tela pede **E-mail** e
+   **Senha**. A lista mostra as pesquisas da **sua** escola com o estado
+   (**Rascunho**, **Publicada**, **Arquivada**).
 2. **Criar:** **+ Nova pesquisa**. O assistente tem etapas:
-   - **seus dados** (só na primeira vez): nome, e-mail e uma senha para ver os
-     resultados depois; telefone, cargo e CPF são opcionais;
    - **Dados da pesquisa**: o **Título** (3 letras ou mais) e o **Convite à
      comunidade (opcional)**;
    - uma etapa por pergunta, com **+ Adicionar pergunta** (até 30). Tipos:

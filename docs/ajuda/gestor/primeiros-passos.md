@@ -69,6 +69,9 @@ escola tem zero daquilo.
   orienta a usar o e-mail já cadastrado ou pedir a quem gerencia a agenda que
   transfira o acesso.
 - **Não há “esqueci minha senha”** na tela de acesso. Guarde a sua senha.
+- **Um e-mail, uma conta.** Se o e-mail já tem conta, **Criar conta** não a
+  altera: aparece “Este e-mail já tem conta. Entre com sua senha.” Use **Já
+  tenho conta**.
 - O código INEP precisa ser de uma escola que existe no cadastro; caso
   contrário, o cadastro é recusado.
 - A sessão fica aberta no navegador por até 30 dias. Depois disso (ou se você

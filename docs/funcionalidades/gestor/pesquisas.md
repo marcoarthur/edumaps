@@ -24,6 +24,9 @@ responde.
 
 - Sistema pode montar pesquisas por etapas, com perguntas de escolha e texto,
   salvando rascunhos automaticamente.
+- Sistema pode restringir a gestão das pesquisas (criar, editar, publicar,
+  excluir e ver resultados) ao gestor logado, e só às pesquisas da escola
+  dele; responder pelo link público continua sem conta.
 - Sistema pode gerar um link público de resposta para compartilhar.
 - Sistema pode bloquear respostas repetidas do mesmo dispositivo (bloqueio leve).
 - Sistema pode agregar as respostas em resultados com contagens e percentuais.
