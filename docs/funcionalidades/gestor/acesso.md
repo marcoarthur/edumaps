@@ -29,6 +29,11 @@ Diretores, coordenadores e demais gestores escolares.
   como resumo calculado com um método propositalmente lento e resistente a
   adivinhação em massa (Argon2id); contas antigas passam a esse método no
   próximo acesso, sem precisar trocar a senha.
+- Sistema pode frear tentativas repetidas de adivinhar senhas: depois de
+  várias senhas erradas para o mesmo e-mail, ou de muitas tentativas vindas da
+  mesma rede, o acesso fica suspenso por alguns minutos e a tela diz quanto
+  esperar. A resposta é a mesma exista ou não uma conta com aquele e-mail, e
+  o registro das tentativas não guarda e-mail nem endereço de rede legíveis.
 - Sistema pode levar o gestor direto ao painel da sua escola após entrar.
 
 ## Valor

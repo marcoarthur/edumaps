@@ -112,7 +112,14 @@ sub login_gestor ($self, $email, $senha) {
     $email,
   );
 
-  return undef unless $g && $g->{senha_hash} && $self->_verify_senha($senha, $g->{senha_hash});
+  # Sem conta (ou sem senha): verifica contra um hash fictício com os mesmos
+  # parâmetros, para a resposta levar o mesmo tempo de uma senha errada e o
+  # tempo não revelar quais e-mails têm conta (#335).
+  unless ($g && $g->{senha_hash}) {
+    $self->_verify_senha($senha, $self->_hash_ficticio);
+    return undef;
+  }
+  return undef unless $self->_verify_senha($senha, $g->{senha_hash});
 
   # Senha conferida: hash antigo (HMAC) ou com parâmetros abaixo dos atuais é
   # regravado em Argon2id agora, sem pedir troca de senha.
@@ -208,6 +215,12 @@ sub logout_gestor ($self, $token) {
 sub _hash_senha ($self, $senha) {
   return argon2id_pass($senha, urandom(ARGON2_SALT_LEN),
     ARGON2_T_COST, ARGON2_M_COST, ARGON2_PARALLEL, ARGON2_TAG_LEN);
+}
+
+# Calculado uma vez por processo (custa o mesmo que um hash real).
+my $HASH_FICTICIO;
+sub _hash_ficticio ($self) {
+  return $HASH_FICTICIO //= $self->_hash_senha(unpack 'H*', urandom(16));
 }
 
 sub _verify_senha ($self, $senha, $stored) {

@@ -10,6 +10,10 @@ our @DEFAULTS = (
 sub import {
   my $target = caller;
 
+  # Limites de tentativa de login/cadastro (#335) desligados na suíte: muitos
+  # testes cadastram gestores do mesmo 127.0.0.1. login_limite.t religa.
+  $ENV{EDUMAPS_AUTH_LIMITE_OFF} //= 1;
+
   feature->import::into($target, ':5.38');
   Test2::V1->import::into($target, '-ipP');
   Test2::Tools::Compare->import::into(
