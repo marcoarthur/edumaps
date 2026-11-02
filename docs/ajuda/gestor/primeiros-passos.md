@@ -69,6 +69,11 @@ escola tem zero daquilo.
   orienta a usar o e-mail já cadastrado ou pedir a quem gerencia a agenda que
   transfira o acesso.
 - **Não há “esqueci minha senha”** na tela de acesso. Guarde a sua senha.
+- **Muitas tentativas suspendem o acesso por alguns minutos.** Depois de
+  várias senhas erradas seguidas para o mesmo e-mail (ou de muitas tentativas
+  vindas da mesma rede, como a da escola), aparece “Muitas tentativas. Tente de
+  novo em N minutos.” Nesse intervalo nem a senha certa entra; espere o tempo
+  indicado. Criar contas também tem um limite por rede, por hora.
 - **Um e-mail, uma conta.** Se o e-mail já tem conta, **Criar conta** não a
   altera: aparece “Este e-mail já tem conta. Entre com sua senha.” Use **Já
   tenho conta**.
@@ -94,6 +99,8 @@ escola tem zero daquilo.
 - **Não sei o código INEP da minha escola.** Procure a escola em **Busca
   Escola**: o código aparece no painel da escola. Pelo link **Você é o
   gestor?** do cartão da busca ele já vem preenchido.
+- **Apareceu “Muitas tentativas”.** Espere os minutos indicados e tente de
+  novo com calma; tentar antes não adianta e não encurta a espera.
 - **Apareceu “E-mail ou senha inválidos”.** Confira os dois campos; a senha
   diferencia maiúsculas de minúsculas.
 - **Já entrei antes. Como volto ao painel?** Menu **Gestor** e **Ir para o

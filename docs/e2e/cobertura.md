@@ -8,6 +8,24 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-02 (v) (limite de tentativas de login, #335)
+
+Branch `fix/login-limite-tentativas`, banco e backend em `ubatexu.lan`. Só API
+(sem mudança de tela). As linhas de `clean.auth_falhas` criadas pela checagem
+foram apagadas no fim (120).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Pelo nginx: 10 falhas com e-mail inexistente, a 11ª | API | 🟢 429, `Retry-After: 896`, “Tente de novo em 15 minutos.” |
+| Direto na 3000 (dentro do LXC), `X-Real-IP` forjado e diferente a cada pedido: 50 falhas, a 51ª | API | 🟢 429 — o IP forjado não escapa |
+| Config do LXC com `proxies_confiaveis => ['127.0.0.1/32', '::1']` | edu_maps.conf | 🟢 |
+| Coluna `chave` só com HMAC | psql | 🟢 0 em claro |
+| E-mail inexistente × senha errada (mediana de 15) | Test::Mojo local | 🟢 76 ms × 76 ms |
+| Bloqueio por e-mail (inclusive com a senha certa), janela, acerto zera, soma por IP, e-mail sem conta, cadastro por IP, proxies do config | prove `login_limite.t` | 🟢 (falha sem o fix) |
+| IP do cliente (redes, cabeçalho forjado/malformado) | prove `t/01-app/client_ip.t` | 🟢 |
+| 429 na tela de acesso | vitest `GestorAcessoPage.test.js` | 🟢 5/5 |
+| Arquivos que usam cadastro/login | prove (28 arquivos) | 🟢 só as 5 falhas antigas |
+
 ## Rodada 2026-11-02 (u) (senha do gestor em Argon2id, #334)
 
 Branch `fix/senha-gestor-argon2`, banco e backend em `ubatexu.lan`. Conta de

@@ -6,6 +6,8 @@ import { setApiToken, getApiToken } from "@/shared/api/client.js";
 import { setSessaoToken } from "../utils/gestorSession.js";
 import { addToast } from "@/shared/stores/toastStore.js";
 import { SESSION_TOKEN } from "../mocks/fixtures.js";
+import { server } from "../../../mocks/server.js";
+import { http, HttpResponse } from "msw";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -34,6 +36,31 @@ describe("GestorAcessoPage", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
 
     await waitFor(() => expect(getApiToken()).toBe(SESSION_TOKEN));
+  });
+
+  it("muitas tentativas (429): mostra a espera e não guarda sessão", async () => {
+    server.use(
+      http.post("/api/gestor/login", () =>
+        HttpResponse.json(
+          { error: "Muitas tentativas. Tente de novo em 15 minutos." },
+          { status: 429, headers: { "Retry-After": "900" } },
+        ),
+      ),
+    );
+    window.history.replaceState({}, "", "/gestor");
+    render(GestorAcessoPage);
+
+    await screen.findByRole("button", { name: "Criar conta" });
+    await fireEvent.input(screen.getByPlaceholderText("voce@escola.gov.br"), {
+      target: { value: "marina@edu.gov.br" },
+    });
+    await fireEvent.input(screen.getByPlaceholderText("Sua senha"), {
+      target: { value: "senha123" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
+
+    await screen.findByText("Muitas tentativas. Tente de novo em 15 minutos.");
+    expect(getApiToken()).toBeNull();
   });
 
   it("cadastra o gestor com o INEP pré-preenchido", async () => {

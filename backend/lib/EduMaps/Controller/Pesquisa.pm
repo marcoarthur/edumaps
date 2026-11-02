@@ -6,9 +6,75 @@ use utf8;
 #   /perfil: cadastro anônimo — só CRIA conta, nunca altera uma existente.
 #   CRUD de pesquisas: exige a sessão do gestor; a escola vem da sessão.
 
+use EduMaps::Util::ClientIP qw(client_ip);
+
 use constant EMAIL_RE => qr/^[\w.+\-]+@[\w.\-]+\.[A-Za-z]{2,}$/;
 
+# Limites de tentativa (#335): janela deslizante em segundos. Sobrescrevíveis
+# no config (`auth_limite => { login_email => { max => .., janela => .. }, … }`).
+#   login_email: falhas de login por e-mail (exista a conta ou não);
+#   login_ip:    falhas de login por IP (folgado: escola atrás de um IP só);
+#   cadastro_ip: tentativas de cadastro por IP (o 409 revela e-mail existente).
+my %LIMITE_PADRAO = (
+  login_email => { max => 10, janela => 900 },
+  login_ip    => { max => 50, janela => 900 },
+  cadastro_ip => { max => 20, janela => 3600 },
+);
+
+# Redes de onde se aceita o X-Real-IP (o nginx). Config opcional
+# `auth_limite => { proxies_confiaveis => ['127.0.0.1/32'] }`; sem ela, o
+# padrão de EduMaps::Util::ClientIP (loopback + redes privadas). Onde a API
+# também escuta direto numa rede privada (LXC), restrinja ao IP do nginx.
+sub _ip($self) {
+  my $redes = ($self->app->config->{auth_limite} // {})->{proxies_confiaveis};
+  return client_ip($self, ref $redes eq 'ARRAY' ? $redes : undef) // '';
+}
+
+# EDUMAPS_AUTH_LIMITE_OFF=1 desliga os limites — SÓ para a suíte de testes
+# (t/lib/Imports.pm liga), onde dezenas de cadastros saem do mesmo 127.0.0.1.
+# t/04-api/gestor/login_limite.t a remove para testar os limites de verdade.
+sub _limites_off { $ENV{EDUMAPS_AUTH_LIMITE_OFF} ? 1 : 0 }
+
+sub _limite($self, $nome) {
+  my $cfg = ($self->app->config->{auth_limite} // {})->{$nome} // {};
+  return { %{ $LIMITE_PADRAO{$nome} }, %$cfg };
+}
+
+# Maior espera (s) entre os escopos [escopo, chave, limite]; 0 = liberado.
+sub _espera($self, $model, @escopos) {
+  return 0 if _limites_off();
+  my $espera = 0;
+  for my $e (@escopos) {
+    my ($escopo, $chave, $lim) = @$e;
+    my $s = $model->auth_retry_after($escopo, $chave, $lim->{max}, $lim->{janela});
+    $espera = $s if $s > $espera;
+  }
+  return $espera;
+}
+
+sub _render_muitas_tentativas($self, $espera, $escopo) {
+  # Log sem e-mail, senha nem IP: só o escopo que estourou.
+  $self->app->log->warn("auth: bloqueado por limite de tentativas (escopo=$escopo)");
+  my $min = int(($espera + 59) / 60) || 1;
+  $self->res->headers->header('Retry-After' => $espera);
+  $self->render(
+    json   => { error => "Muitas tentativas. Tente de novo em $min minuto" . ($min == 1 ? '' : 's') . '.' },
+    status => 429,
+  );
+}
+
 sub perfil($self) {
+  # Limite por IP antes de tudo: cada tentativa de cadastro conta.
+  my $model  = $self->instantiate_model(model => 'Pesquisa');
+  my $secret = $self->app->secrets->[0];
+  my $ip     = $self->_ip;
+  my $ip_key = $model->auth_chave($secret, $ip);
+  my $lim    = $self->_limite('cadastro_ip');
+  if (my $espera = $self->_espera($model, ['cadastro_ip', $ip_key, $lim])) {
+    return $self->_render_muitas_tentativas($espera, 'cadastro_ip');
+  }
+  $model->auth_registrar('cadastro_ip', $ip_key) unless _limites_off();
+
   my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
 
   # CPF aceita pontuação e é normalizado antes da validação (só dígitos).
@@ -24,8 +90,6 @@ sub perfil($self) {
   $v->optional('cpf',      'trim')->size(11, 11)->like(qr/^\d{11}$/);
   $v->required('senha',    'trim')->size(6, 64);
   return $self->_render_validation($v) if $v->has_error;
-
-  my $model   = $self->instantiate_model(model => 'Pesquisa');
 
   # Rota anônima: e-mail já cadastrado nunca é alterado por aqui (seria trocar
   # a senha de outra pessoa). Quem já tem conta entra pelo login.
@@ -168,7 +232,20 @@ sub login($self) {
   $v->required('senha', 'trim')->size(6, 64);
   return $self->_render_validation($v) if $v->has_error;
 
-  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $model  = $self->instantiate_model(model => 'Pesquisa');
+  my $secret = $self->app->secrets->[0];
+  my @escopos = (
+    ['email', $model->auth_chave($secret, $v->param('email')), $self->_limite('login_email')],
+    ['ip',    $model->auth_chave($secret, $self->_ip), $self->_limite('login_ip')],
+  );
+
+  # Bloqueado responde 429 ANTES de olhar a senha — senão a senha certa
+  # passaria pelo bloqueio. Mesma resposta exista a conta ou não.
+  for my $e (@escopos) {
+    my $espera = $self->_espera($model, $e) or next;
+    return $self->_render_muitas_tentativas($espera, $e->[0]);
+  }
+
   my $sessao = $model->login_gestor($v->param('email'), $v->param('senha'));
 
   # PROVISÓRIO — admin de instalação em texto plano no edu_maps.conf (bloco
@@ -182,7 +259,13 @@ sub login($self) {
     }
   }
 
-  return $self->render(json => { error => 'E-mail ou senha inválidos' }, status => 401) unless $sessao;
+  unless ($sessao) {
+    unless (_limites_off()) { $model->auth_registrar($_->[0], $_->[1]) for @escopos }
+    return $self->render(json => { error => 'E-mail ou senha inválidos' }, status => 401);
+  }
+
+  # Acertou: zera as falhas do e-mail (as do IP seguem: outros e-mails ali).
+  $model->auth_limpar('email', $escopos[0][1]);
   $self->render(json => $sessao);
 }
 

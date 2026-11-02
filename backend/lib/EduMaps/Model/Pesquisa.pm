@@ -4,6 +4,7 @@ use utf8;
 use Role::Tiny::With;
 
 with 'EduMaps::Roles::Business::Pesquisa::Gestores';
+with 'EduMaps::Roles::Business::Pesquisa::AuthLimite';
 with 'EduMaps::Roles::Business::Pesquisa::Surveys';
 with 'EduMaps::Roles::Business::Pesquisa::Respostas';
 
