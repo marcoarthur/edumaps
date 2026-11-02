@@ -24,13 +24,13 @@ documentos institucionais da escola.
 ## O que o sistema permite
 
 - Sistema pode organizar os documentos da escola em pastas e subpastas.
-- Sistema pode receber envios de arquivos (PDF, DOCX, XLSX, PNG, JPG/TXT);
+- Sistema pode receber envios de arquivos (PDF, DOCX, XLSX, PNG, JPG, TXT);
   enviar de novo o mesmo nome na mesma pasta **cria uma nova versão** e mantém
   as anteriores.
 - Sistema pode fazer download de **qualquer versão** de um documento.
 - Sistema pode renomear, mover entre pastas e excluir documentos e pastas.
-- Sistema pode marcar documentos com **tags livres**, facilitando achar o PPP de
-  cada ano e planos correlatos.
+- Sistema pode marcar documentos com **tags livres**, exibidas ao lado do nome
+  para identificar o PPP de cada ano e planos correlatos.
 - Sistema pode **auditar** toda a atividade (criação, atualização, tags,
   exclusão) com autor e data, e mostrar as ações recentes da escola.
 - Sistema pode impedir que uma pasta com conteúdo seja excluída (bloqueio com

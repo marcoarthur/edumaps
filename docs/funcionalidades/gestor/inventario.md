@@ -24,7 +24,7 @@ Gestores escolares.
 - Sistema pode montar um inventário por tipo de recurso (computadores, tablets,
   materiais pedagógicos, espaços) a partir do Censo.
 - Sistema pode gerir serviços e fornecedores (contas de água/luz/internet,
-  contratos, manutenção) com valores e prazos.
+  contratos, manutenção) com valores, periodicidade e data de aquisição.
 - Sistema pode criar categorias livremente e registrar campos próprios.
 - Sistema pode anexar fotos e notas fiscais aos itens.
 - Sistema pode importar o retrato do Censo como ponto de partida, sem alterar os
