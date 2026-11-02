@@ -169,6 +169,54 @@ subtest 'GET /api/chat/conversas/calendar — dias com conversas' => sub {
   ok exists $json->{$today}, "dia de hoje ($today) presente";
 };
 
+subtest 'GET /api/chat/conversas?from=&to= — filtro por dia (inclusivo)' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+
+  # Mesmo critério do calendário: o dia que ele marca tem de trazer conversas.
+  my $cal = $t->get_ok('/api/chat/conversas/calendar?from=2000-01-01&to=2100-12-31',
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->json;
+  my ($dia) = sort keys %$cal;
+  ok $dia, 'há ao menos um dia com conversa';
+
+  my $json = $t->get_ok("/api/chat/conversas?from=$dia&to=$dia&per_page=100",
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->json;
+  is $json->{total}, $cal->{$dia}, "from=to=$dia traz as $cal->{$dia} conversa(s) que o calendário conta";
+
+  my $vazio = $t->get_ok('/api/chat/conversas?from=1999-01-01&to=1999-01-01',
+    { Authorization => "Bearer $admin_token" })->status_is(200)->tx->res->json;
+  is $vazio->{total}, 0, 'dia sem conversa: lista vazia';
+
+  $t->get_ok("/api/chat/conversas?from=ontem", { Authorization => "Bearer $admin_token" })->status_is(400);
+};
+
+subtest 'tz: calendário e lista contam o dia no fuso do navegador' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  my $auth = { Authorization => "Bearer $admin_token" };
+
+  # Conversa às 01:30 UTC de 2001-03-10 = 22:30 de 2001-03-09 em São Paulo.
+  my $id = $t->post_ok('/api/chat/conversas', $auth => json => {
+    titulo => 'fuso', messages => [ { role => 'user', content => 'fuso' } ],
+  })->status_is(201)->tx->res->json->{id};
+  $t->app->schema->resultset('ChatConversa')->find($id)
+    ->update({ created_at => '2001-03-10 01:30:00+00' });
+
+  my $sp = 'tz=America/Sao_Paulo';
+  my $cal_utc = $t->get_ok('/api/chat/conversas/calendar?from=2001-03-01&to=2001-03-31', $auth)->tx->res->json;
+  my $cal_sp  = $t->get_ok("/api/chat/conversas/calendar?from=2001-03-01&to=2001-03-31&$sp", $auth)->tx->res->json;
+  is $cal_utc, { '2001-03-10' => 1 }, 'sem tz: dia UTC (compatível)';
+  is $cal_sp,  { '2001-03-09' => 1 }, 'tz=America/Sao_Paulo: dia local';
+
+  is $t->get_ok("/api/chat/conversas?from=2001-03-09&to=2001-03-09&$sp", $auth)->tx->res->json->{total}, 1,
+    'lista no dia local que o calendário marcou';
+  is $t->get_ok("/api/chat/conversas?from=2001-03-10&to=2001-03-10&$sp", $auth)->tx->res->json->{total}, 0,
+    'e não no dia UTC';
+
+  $t->get_ok('/api/chat/conversas?tz=Marte/Olimpo', $auth)->status_is(400);
+  $t->get_ok('/api/chat/conversas/calendar?from=2001-03-01&to=2001-03-31&tz=x%27', $auth)->status_is(400);
+
+  $t->delete_ok("/api/chat/conversas/$id", $auth)->status_is(204);
+};
+
 subtest 'GET /api/chat/conversas/export — exporta .md' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
 

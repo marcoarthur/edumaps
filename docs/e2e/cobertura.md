@@ -8,6 +8,24 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (o) (filtro por dia no histórico do Assistente)
+
+Branch `feat/frontend-historico-filtro-dia`, backend e frontend em
+`ubatexu.lan`, sessão de gestor já aberta. Só leitura (filtrar não grava nada).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Calendário conta o dia no fuso do navegador: conversa de 25/09 23:03 (local) marcada no 25, não no 26 (UTC) | Chrome | 🟢 |
+| Clicar no 25: só “noturno” (25/09 23:03); aviso “Mostrando… 25/09/2026”; dia com `aria-pressed` | Chrome | 🟢 |
+| Clicar no 26: as 3 conversas que o número indica, todas “Criada em 26/09” | Chrome | 🟢 |
+| Clicar de novo no 26: volta às 5, sem aviso | Chrome | 🟢 |
+| Antes: `to=<dia>` cortava o próprio dia (lista vazia no dia marcado) | prove `t/04-api/chat/conversas.t` (falha sem o fix) | 🔴→🟢 |
+| `tz` no calendário e na lista; fuso inválido → 400; sem `tz` = UTC | prove | 🟢 14/14 |
+| Ver todas, dia vazio, busca × dia (se excluem), fuso enviado | vitest `ChatHistoricoPage.test.js` | 🟢 6/6 |
+| Suíte frontend | vitest | 🟢 125 arquivos / 1127 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (n) (telas secundárias — lote B)
 
 Branch `feat/frontend-tour-secundarias-b`, em `ubatexu.lan`, com a sessão de

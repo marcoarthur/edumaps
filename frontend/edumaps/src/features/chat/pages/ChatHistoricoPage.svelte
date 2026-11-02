@@ -12,6 +12,12 @@
   } from "../api/chatApi.js";
   import ChatCalendar from "../components/ChatCalendar.svelte";
   import ChatConversaList from "../components/ChatConversaList.svelte";
+  import { diaLocal, formatarDia, fusoDoNavegador } from "../utils/dia.js";
+
+  // Os dias (calendário e filtro) são contados no fuso do navegador, o mesmo
+  // da data "Criada em" de cada conversa.
+  const fuso = fusoDoNavegador();
+  const comFuso = (params) => (fuso ? { ...params, tz: fuso } : params);
 
   // ---- estado ----
   let loading = $state(false);
@@ -20,6 +26,7 @@
   // Só depois da 1ª lista carregada com sessão: o tour (prontoQuando
   // "historico-conversas") não abre na tela de "Sessão não encontrada".
   let carregou = $state(false);
+  let ultimoPedido = 0;
 
   // lista
   let conversas = $state([]);
@@ -68,29 +75,35 @@
 
   async function loadConversas(resetPage = true) {
     if (resetPage) page = 1;
+    // Cliques rápidos em dias diferentes: só a resposta do último pedido vale.
+    const pedido = ++ultimoPedido;
     loading = true;
     error = null;
     try {
-      const res = await listConversas({ page, per_page: perPage });
+      // Dia escolhido no calendário: from = to = o dia (inclusivo no backend).
+      const filtroDia = selectedDate ? { from: selectedDate, to: selectedDate } : {};
+      const res = await listConversas(comFuso({ page, per_page: perPage, ...filtroDia }));
+      if (pedido !== ultimoPedido) return;
       conversas = res.items;
       total = res.total;
       totalPages = res.total_pages;
       carregou = true;
     } catch (err) {
+      if (pedido !== ultimoPedido) return;
       error = err instanceof ApiError ? err.message : "Falha ao carregar conversas";
       if (err instanceof ApiError && err.status === 401) sessaoExpirada = true;
     } finally {
-      loading = false;
+      if (pedido === ultimoPedido) loading = false;
     }
   }
 
   async function loadCalendar() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const firstDay = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month + 1, 0).toISOString().split("T")[0];
+    const firstDay = diaLocal(new Date(year, month, 1));
+    const lastDay = diaLocal(new Date(year, month + 1, 0));
     try {
-      const cal = await getCalendar({ from: firstDay, to: lastDay });
+      const cal = await getCalendar(comFuso({ from: firstDay, to: lastDay }));
       calendarData = cal;
     } catch (err) {
       console.warn("[historico] falha ao carregar calendário:", err);
@@ -120,13 +133,38 @@
     }, 300);
   }
 
+  // Busca e filtro por dia não se combinam (a busca do servidor não recebe
+  // datas): digitar uma busca desliga o dia, e escolher um dia limpa a busca.
   function handleSearchInput() {
+    if (searchQuery.trim() && selectedDate) {
+      selectedDate = "";
+      loadConversas();
+    }
     debouncedSearch();
   }
 
+  // Clicar no dia filtra a lista; clicar de novo no mesmo dia volta a todas.
   function onCalendarSelect(date) {
-    selectedDate = date;
+    selectedDate = date === selectedDate ? "" : date;
+    if (searchQuery.trim()) {
+      if (searchDebounce) clearTimeout(searchDebounce);
+      searchQuery = "";
+      searchResults = [];
+      isSearching = false;
+    }
+    loadConversas();
   }
+
+  function limparDia() {
+    selectedDate = "";
+    loadConversas();
+  }
+
+  const mensagemVazia = $derived(
+    selectedDate && !searchQuery.trim()
+      ? `Nenhuma conversa salva em ${formatarDia(selectedDate)}.`
+      : "Nenhuma conversa encontrada.",
+  );
 
   function handleMonthChange(m) {
     currentMonth = m;
@@ -195,7 +233,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Histórico de Conversas</h1>
         <p class="text-sm text-gray-600 mt-1">
           Gerencie suas conversas salvas com o Assistente do Censo. Busque por texto,
-          veja no calendário os dias com conversas e exporte em Markdown.
+          filtre por dia no calendário e exporte em Markdown.
         </p>
       </div>
     </div>
@@ -252,7 +290,18 @@
              campo de busca da lista escreve numa cópia local e a busca
              daquele campo nunca chega ao servidor. Os handlers de
              exportar/excluir também eram stubs vazios na lista. -->
+        {#if selectedDate && !searchQuery.trim()}
+          <div
+            class="mb-3 flex items-center justify-between gap-2 rounded-md bg-blue-50 border border-blue-100 px-3 py-2 text-sm text-blue-900"
+            role="status"
+            data-testid="historico-filtro-dia"
+          >
+            <span>Mostrando as conversas salvas em <strong>{formatarDia(selectedDate)}</strong>.</span>
+            <button type="button" onclick={limparDia} class="text-blue-700 font-medium hover:underline">Ver todas</button>
+          </div>
+        {/if}
         <ChatConversaList
+          {mensagemVazia}
           conversas={listaExibida}
           bind:searchQuery={searchQuery}
           {loading}

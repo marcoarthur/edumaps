@@ -28,6 +28,8 @@ anterior, e o pesquisador que precisa citá-lo.
   mais recente para a mais antiga. Conversa não salva não entra no histórico.
 - Sistema pode mostrar em que dias houve conversas, para o gestor localizar
   um assunto pelo período em vez de rolar a lista.
+- Sistema pode filtrar a lista por um dia escolhido no calendário, contando o
+  dia no fuso de quem usa (o mesmo da data exibida em cada conversa).
 - Sistema pode encontrar conversas pelo conteúdo das respostas, mostrando um
   trecho do texto que casou com a busca.
 - Sistema pode exportar uma conversa, um conjunto selecionado ou todo o
@@ -49,9 +51,8 @@ documento de trabalho.
   não é possível retomar uma conversa salva dentro do assistente: a
   pergunta começa do zero. O histórico é registro e consulta, não sessão
   retomada.
-- **O calendário não filtra a lista.** Ele marca os dias com conversas
-  salvas, e clicar num dia apenas o destaca; filtrar a lista pelo dia é
-  previsto.
+- **Um dia por vez.** O filtro do calendário não seleciona intervalos, e não
+  se combina com a busca por texto.
 - **Há dois campos de busca** na tela, que fazem a mesma busca.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.

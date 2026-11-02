@@ -171,7 +171,8 @@ sub save_conversa ($self) {
 # GET /api/chat/conversas
 #
 # Lista conversas do gestor logado (paginado).
-# Query: page, per_page, from (YYYY-MM-DD), to (YYYY-MM-DD)
+# Query: page, per_page, from (YYYY-MM-DD), to (YYYY-MM-DD), tz (fuso IANA;
+# os dias são contados nele, como no calendário; default UTC)
 # ---------------------------------------------------------------------------
 
 sub list_conversas ($self) {
@@ -182,14 +183,18 @@ sub list_conversas ($self) {
   $v->optional('per_page', 'trim')->num;
   $v->optional('from', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
   $v->optional('to', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('tz', 'trim');
   return $self->bad_req if $v->has_error;
 
   my $model = $self->instantiate_model(model => 'Chat::Conversas');
+  my $tz = $v->param('tz');
+  return $self->bad_req if defined $tz && !$model->fuso_valido($tz);
   my $res = $model->list_conversas($gestor->{id} + 0, {
     page     => $v->param('page') // 1,
     per_page => $v->param('per_page') // 20,
     from     => $v->param('from'),
     to       => $v->param('to'),
+    tz       => $tz,
   });
   $self->render(json => $res);
 }
@@ -259,7 +264,7 @@ sub search_conversas ($self) {
 # GET /api/chat/conversas/calendar
 #
 # Dias com conversas no intervalo [from, to].
-# Query: from (YYYY-MM-DD), to (YYYY-MM-DD)
+# Query: from (YYYY-MM-DD), to (YYYY-MM-DD), tz (fuso IANA; default UTC)
 # Retorna { "YYYY-MM-DD": count, ... }
 # ---------------------------------------------------------------------------
 
@@ -269,10 +274,13 @@ sub calendar_conversas ($self) {
   my $v = $self->validation;
   $v->required('from', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
   $v->required('to', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
+  $v->optional('tz', 'trim');
   return $self->bad_req if $v->has_error;
 
   my $model = $self->instantiate_model(model => 'Chat::Conversas');
-  my $cal = $model->calendar_conversas($gestor->{id} + 0, $v->param('from'), $v->param('to'));
+  my $tz = $v->param('tz');
+  return $self->bad_req if defined $tz && !$model->fuso_valido($tz);
+  my $cal = $model->calendar_conversas($gestor->{id} + 0, $v->param('from'), $v->param('to'), $tz // 'UTC');
   $self->render(json => $cal);
 }
 
