@@ -13,8 +13,9 @@ relacionadas: [acesso, painel-escola, pesquisas, reunioes-atas, inventario, rela
 ## Resumo
 
 É a central de gestão da escola: reúne o raio-x da unidade e dá acesso aos
-módulos de gestão (pesquisas, reuniões, contatos, inventário e relações
-institucionais).
+módulos de gestão (pesquisas, reuniões, inventário, documentos e planos,
+relações institucionais e relatórios; contatos e listas a partir de reuniões e
+do inventário).
 
 ## Para quem
 

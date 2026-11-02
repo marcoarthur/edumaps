@@ -39,4 +39,4 @@ Ao receber um link ou QR Code de pesquisa da escola, você pode responder de for
 
 ## Veja também
 - [Privacidade](privacidade.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

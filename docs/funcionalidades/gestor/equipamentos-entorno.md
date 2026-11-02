@@ -1,14 +1,14 @@
 ---
 titulo: Equipamentos no entorno
 modulo: gestor
-status: ativo
+status: parcial
 audiencia: [gestor]
 relacionadas: [painel, painel-escola]
 ---
 
 # Equipamentos no entorno
 
-> Módulo: `gestor` · Status: 🟢 ativo · Público: gestor
+> Módulo: `gestor` · Status: 🟡 parcial · Público: gestor
 
 ## Resumo
 
@@ -47,6 +47,12 @@ território em volta.
 Apoia decisões de território — acessibilidade, segurança, parcerias e oferta de
 serviços no bairro — reunindo, no painel da escola, informação pública do
 OpenStreetMap que normalmente ficaria dispersa.
+
+## Limitações conhecidas
+
+- **A completude da malha viária ainda não aparece na tela.** O sistema a
+  calcula, mas o gestor não a vê nem pode pedir a extração das vias; por ora,
+  a confiabilidade dos equipamentos encontrados não é exibida.
 
 ## Relacionadas
 

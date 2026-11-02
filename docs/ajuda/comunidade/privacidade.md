@@ -40,4 +40,4 @@ O EduMaps busca equilibrar transparência com privacidade. Na área pública, pr
 ## Veja também
 - [Buscar escola](buscar-escola.md)
 - [Painel público da escola](painel-publico-da-escola.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

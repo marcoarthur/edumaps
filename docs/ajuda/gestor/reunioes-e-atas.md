@@ -46,4 +46,4 @@ O módulo de reuniões e atas ajuda a organizar pautas, participantes, delibera�
 
 ## Veja também
 - [Contatos e grupos](contatos-e-grupos.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

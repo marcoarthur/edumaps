@@ -1,13 +1,14 @@
 ---
-modulo: gestor
-nivel: basico
-publico:
-- gestor
-status: planejado
-titulo: desenvolvedor
-ultima_revisao: '2026-10-25'
+titulo: "Ajuda — desenvolvedor"
+publico: [desenvolvedor]
+modulo: desenvolvedor
+nivel: avancado
+status: ativo
+ultima_revisao: 2026-11-02
 ---
 
 # Ajuda — desenvolvedor
 
-> Escopo deste diretório. Status: em construção.
+Para quem contribui com o código. O ponto de partida é a
+[Visão geral para desenvolvedores](visao-geral.md); as convenções detalhadas
+ficam no `AGENTS.md` do repositório.

@@ -33,6 +33,14 @@ responde.
 Substitui a decisão baseada em suposição por escuta organizada e comparável,
 fortalecendo a participação da comunidade.
 
+## Limitações conhecidas
+
+- Não há como encerrar ou arquivar uma pesquisa: o link publicado segue
+  aceitando respostas.
+- Pesquisa publicada não pode ser editada.
+- O compartilhamento é só por link (sem QR) e os resultados não são
+  exportados.
+
 ## Relacionadas
 
 - [Resposta de pesquisa](../comunidade/resposta-pesquisa.md)

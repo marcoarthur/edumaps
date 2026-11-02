@@ -44,4 +44,4 @@ Gerencie contatos e grupos para facilitar a comunicação organizada da escola, 
 ## Veja também
 - [Reuniões e atas](reunioes-e-atas.md)
 - [Lista com QR](lista-com-qr.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

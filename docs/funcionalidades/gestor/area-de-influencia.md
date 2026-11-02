@@ -60,6 +60,14 @@ e a dialogar com a rede e o poder público usando um recorte comum. Ao ser
 somente leitura sobre uma camada única e versionada, garante que escola e
 plataforma falem do **mesmo** território.
 
+## Limitações conhecidas
+
+- **Só população e densidade por raio.** As leituras de uso do solo,
+  queimada, chuva e equipamentos por anel ainda não são calculadas; a tela
+  avisa isso na dica do mapa.
+- A isócrona aparece no mapa do painel público da escola, não no painel do
+  gestor.
+
 ## Relacionadas
 
 - [Painel do gestor](painel.md)

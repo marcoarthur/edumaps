@@ -2,6 +2,9 @@
 import os, sys, re, yaml
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from links import broken_links, links_in, resolve  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 HELP = ROOT / "docs" / "ajuda"
 FUNC = ROOT / "docs" / "funcionalidades"
@@ -47,6 +50,8 @@ def check_file(path):
         fpath = (path.parent / fm["funcionalidade"]).resolve()
         if not fpath.exists():
             errors.append(f"funcionalidade não encontrada: {fm['funcionalidade']}")
+    for target in broken_links(path):
+        errors.append(f"link quebrado: {target}")
     if fm.get("status") == "parcial":
         if "Limitações conhecidas" not in body and "Limitações" not in body:
             errors.append("status: parcial sem seção 'Limitações conhecidas'")
@@ -102,7 +107,7 @@ def main():
     errors_all = []
     count = 0
     for md in sorted(HELP.rglob("*.md")):
-        if md.name.startswith("_") and md.name not in {"_template.md", "_glossario.md"}:
+        if md.name.startswith("_") and md.name != "_glossario.md":
             continue
         count += 1
         errs = check_file(md)
@@ -114,7 +119,30 @@ def main():
         for e in errors_all:
             print(f"  - {e}")
         sys.exit(1)
-    print("\nOK: front-matter e regras básicas validados.")
+    # Fichas também vão para o site: link quebrado nelas também é erro
+    func_errors = [
+        f"{md.relative_to(ROOT)}: link quebrado: {t}"
+        for md in sorted(FUNC.rglob("*.md")) if md.name != "_template.md"
+        for t in broken_links(md)
+    ]
+    if func_errors:
+        print(f"\nERROS ({len(func_errors)}):")
+        for e in func_errors:
+            print(f"  - {e}")
+        sys.exit(1)
+    # Órfãs: página de um perfil que o README do perfil não lista
+    orphans = []
+    for readme in sorted(HELP.glob("*/README.md")):
+        listed = {resolve(readme, t) for t in links_in(readme.read_text(encoding="utf-8"))}
+        for md in sorted(readme.parent.glob("*.md")):
+            if md.name != "README.md" and md.resolve() not in listed:
+                orphans.append(f"{md.relative_to(ROOT)}: fora do índice {readme.relative_to(ROOT)}")
+    if orphans:
+        print(f"\nERROS ({len(orphans)}):")
+        for e in orphans:
+            print(f"  - {e}")
+        sys.exit(1)
+    print("\nOK: front-matter, regras básicas, links e índices validados.")
 
     # Cobertura funcionalidades -> ajuda
     funcs = collect_funcionalidades()

@@ -39,4 +39,4 @@ Somente dados públicos/agregados.
 
 ## Veja também
 - [Buscar escola](buscar-escola.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

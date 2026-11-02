@@ -48,8 +48,9 @@ responde pelo bom uso do remetente.
 - Sistema pode **fixar os destinatários no momento do envio**: quem se inscrever
   depois não recebe aquela mensagem.
 - Sistema pode entregar os e-mails **aos poucos, em fila**, no ritmo e na cota
-  diária definidos pela administração; quando a cota do dia acaba, o envio
-  **pausa e retoma no dia seguinte** sozinho.
+  diária definidos pela administração. Um envio que não cabe no saldo do dia
+  é recusado antes de começar; se a cota acabar com o envio já em andamento,
+  ele **pausa e retoma no dia seguinte** sozinho.
 - Gestor pode acompanhar cada envio **ao vivo** e ver o resultado: quantos
   destinatários, quantos enviados, quantas falhas, quantos ignorados e quantas
   pessoas saíram da lista a partir dele, com a situação de cada destinatário
