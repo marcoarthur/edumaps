@@ -13,10 +13,8 @@
   caminho absoluto e página fora do índice do perfil; roda no CI do PR.
 - Gestor: 6 páginas novas, 4 reescritas; índices por perfil; 6 fichas
   corrigidas. Cobertura das ativas 11/27 → 20/26.
-- 🔴 **Pendente, segurança**: `POST /api/gestor/pesquisas/perfil` (anônimo)
-  faz upsert por e-mail e sobrescreve senha/escola de conta existente
-  (`Gestores.pm:20`) — tomada de conta, inclusive admin. Reportado ao
-  developer; aguarda decisão.
+- 🔴 **Pendente, segurança**: achado no cadastro do gestor, reportado ao
+  developer; correção no ciclo seguinte.
 - Prévia local do site: `python3 -m http.server -d _site` após `build_pages.py`.
 
 ## Sessão 2026-11-02 (t) — exportar respeita a busca (PR #331)
