@@ -35,7 +35,9 @@ exporta tudo, algumas ou uma só em Markdown.
    digitar uma busca desliga o dia, e escolher um dia limpa a busca.
 5. **Exportar:** **Exportar todas (.md)** baixa o histórico inteiro. Com um
    dia escolhido, o botão vira **Exportar as do dia (.md)** e baixa só as
-   conversas daquele dia, num arquivo com a data do dia. Marque
+   conversas daquele dia, num arquivo com a data do dia. Com uma busca, vira
+   **Exportar as da busca (.md)** e baixa **todas** as conversas que casam com
+   ela, inclusive as que passam das 20 mostradas na tela. Marque
    algumas e use **Exportar selecionadas**; ou use o ícone de exportar de uma
    conversa.
 6. **Como saber que deu certo:** com um dia escolhido, todas as conversas da
@@ -55,9 +57,6 @@ exportado também saem no seu horário (por exemplo, “25/09/2026 23:03”).
 - A busca não ignora acentos (“matriculas” não encontra “Matrículas”).
 - A busca mostra as 20 conversas mais recentes que casam, sem páginas seguintes: se o que procura não
   aparecer, use um termo mais específico.
-- Com uma busca ativa, “Exportar todas” baixa o histórico inteiro, não só os
-  resultados da busca; para levar só alguns, marque-os e use **Exportar
-  selecionadas**.
 
 ## Privacidade
 

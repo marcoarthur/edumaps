@@ -228,6 +228,13 @@ SQL
   };
 }
 
+# Data de hoje (YYYY-MM-DD) no fuso `tz` (já validado).
+sub hoje ($self, $tz) {
+  my ($dia) = $self->schema->storage->dbh->selectrow_array(
+    q{SELECT to_char(now() AT TIME ZONE ?, 'YYYY-MM-DD')}, undef, $tz);
+  return $dia;
+}
+
 # Fuso conhecido pelo Postgres? (`tz` vem do navegador; um nome inválido
 # faria o AT TIME ZONE estourar em 500.)
 sub fuso_valido ($self, $tz) {
@@ -268,11 +275,19 @@ sub export_conversas ($self, $gestor_id, $opts = {}) {
   my @ids = $opts->{ids} ? @{$opts->{ids}} : ();
   my $all = $opts->{all} // 0;
 
-  # `from`/`to`/`tz` recortam por dia (o dia escolhido no calendário),
-  # inclusive no "todas": exportar "todas" com um dia escolhido é exportar
-  # as daquele dia.
-  my $where = { gestor_id => $gestor_id, _filtro_dia($opts) };
-  $where->{id} = { -in => \@ids } if @ids && !$all;
+  # `from`/`to`/`tz` recortam por dia (o dia escolhido no calendário) e `q`
+  # pela busca (mesmo critério da busca da tela, mas sem o limite de 20),
+  # inclusive no "todas": "todas" com um dia ou uma busca na tela são as
+  # daquele dia / as que casam com a busca.
+  my $q = $opts->{q};
+  my @cond = ({ gestor_id => $gestor_id });
+  push @cond, { _filtro_dia($opts) } if $opts->{from} || $opts->{to};
+  push @cond, { id => { -in => \@ids } } if @ids && !$all;
+  push @cond, { id => { -in => \[ <<'SQL', $q ] } } if defined $q && length $q;
+SELECT m.conversa_id FROM clean.chat_mensagens m
+ WHERE to_tsvector('portuguese', m.content) @@ plainto_tsquery('portuguese', ?)
+SQL
+  my $where = { -and => \@cond };
 
   # Sem `prefetch`: o loop abaixo já busca as mensagens com
   # `$c->mensagens->search(...)`, ou seja o prefetch trazia um JOIN que

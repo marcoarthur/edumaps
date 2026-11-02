@@ -130,6 +130,7 @@ export function getCalendar(params) {
  * @param {string} [params.from] - Recorte por dia (YYYY-MM-DD), como na lista
  * @param {string} [params.to]
  * @param {string} [params.tz] - Fuso IANA em que o dia é contado
+ * @param {string} [params.q] - Recorte pela busca (as que casam, sem limite)
  * @returns {Promise<{blob: Blob, filename: string}>}
  */
 export function exportConversas(params) {
@@ -146,7 +147,7 @@ export function exportConversas(params) {
   if (params.all) {
     qs.set("all", "1");
   }
-  for (const k of ["from", "to", "tz"]) {
+  for (const k of ["from", "to", "tz", "q"]) {
     if (params[k]) qs.set(k, params[k]);
   }
   // a query vai no path: `download` faz `searchParams.set`, que não

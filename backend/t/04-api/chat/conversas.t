@@ -201,6 +201,36 @@ subtest 'export: all=1 com from/to exporta só o dia escolhido' => sub {
   $t->delete_ok("/api/chat/conversas/$_", $auth)->status_is(204) for @ids;
 };
 
+subtest 'export: all=1 com q exporta só as que casam com a busca' => sub {
+  plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  my $auth = { Authorization => "Bearer $admin_token" };
+
+  my @ids = map {
+    $t->post_ok('/api/chat/conversas', $auth => json => {
+      titulo => $_->[0], messages => [ { role => 'user', content => $_->[1] } ],
+    })->status_is(201)->tx->res->json->{id}
+  } (['exp-busca-sim', 'Quantas jabuticabeiras há?'], ['exp-busca-nao', 'Quantas mangueiras há?']);
+
+  my $res = $t->get_ok('/api/chat/conversas/export?all=1&q=jabuticabeiras', $auth)->status_is(200)->tx->res;
+  like   $res->text, qr/# Conversa: exp-busca-sim\n/, 'exporta a que casa';
+  unlike $res->text, qr/exp-busca-nao/,               'e não a que não casa';
+  like   $res->headers->content_disposition, qr/conversas-busca-\d{4}-\d{2}-\d{2}\.md/, 'arquivo diz que é busca';
+
+  # "hoje" no fuso de quem exporta: em Kiritimati (UTC+14) costuma ser outro dia
+  my $kiri = $t->app->schema->storage->dbh->selectrow_array(
+    q{SELECT to_char(now() AT TIME ZONE 'Pacific/Kiritimati', 'YYYY-MM-DD')});
+  like $t->get_ok('/api/chat/conversas/export?all=1&q=jabuticabeiras&tz=Pacific/Kiritimati', $auth)
+    ->tx->res->headers->content_disposition, qr/conversas-busca-$kiri\.md/, 'a data do nome é a de hoje no fuso enviado';
+
+  like $t->get_ok('/api/chat/conversas/export?all=1', $auth)->tx->res->text, qr/exp-busca-nao/,
+    'sem q, all=1 segue exportando tudo';
+  is $t->get_ok('/api/chat/conversas/export?all=1&q=inexistentexyz', $auth)->status_is(200)->tx->res->text, '',
+    'busca sem resultado: arquivo vazio';
+  $t->get_ok('/api/chat/conversas/export?all=1&q=' . ('x' x 201), $auth)->status_is(400);
+
+  $t->delete_ok("/api/chat/conversas/$_", $auth)->status_is(204) for @ids;
+};
+
 subtest 'busca: uma linha por conversa, trecho sem marcação, contagem' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
   my $auth = { Authorization => "Bearer $admin_token" };

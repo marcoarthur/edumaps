@@ -2,7 +2,6 @@ package EduMaps::Controller::Chat;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 use Mojo::JSON ();
-use POSIX qw(strftime);
 
 has _default_poll_time => 1;
 
@@ -289,7 +288,8 @@ sub calendar_conversas ($self) {
 #
 # Exporta conversas selecionadas (ids[]) ou todas (all=1) para Markdown.
 # Query: ids[]=1,2,3 ou all=1; from/to (YYYY-MM-DD) e tz recortam por dia,
-# com o mesmo critério da lista (from = to = o dia escolhido no calendário).
+# com o mesmo critério da lista (from = to = o dia escolhido no calendário);
+# q recorta pela busca (mesmo critério de /conversas/search, sem limite).
 # Retorna text/markdown com header Content-Disposition.
 # ---------------------------------------------------------------------------
 
@@ -318,16 +318,21 @@ sub export_conversas ($self) {
   $v->optional('from', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
   $v->optional('to', 'trim')->like(qr/^\d{4}-\d{2}-\d{2}$/);
   $v->optional('tz', 'trim');
+  $v->optional('q', 'trim')->size(1, 200);
   return $self->bad_req if $v->has_error;
 
   my $model = $self->instantiate_model(model => 'Chat::Conversas');
-  my ($from, $to, $tz) = map { $v->param($_) } qw(from to tz);
+  my ($from, $to, $tz, $q) = map { $v->param($_) } qw(from to tz q);
   return $self->bad_req if defined $tz && !$model->fuso_valido($tz);
   my $md = $model->export_conversas($gestor->{id} + 0,
-    { ids => $ids, all => $all, from => $from, to => $to, tz => $tz });
+    { ids => $ids, all => $all, from => $from, to => $to, tz => $tz, q => $q });
 
-  # Um dia só: o arquivo leva o dia exportado, não a data de hoje.
-  my $date = (defined $from && defined $to && $from eq $to) ? $from : strftime('%Y-%m-%d', localtime);
+  # Um dia só: o arquivo leva o dia exportado, não a data de hoje. Uma busca:
+  # "conversas-busca-<data>.md", para não confundir com o histórico inteiro.
+  # "Hoje" é o dia de quem exporta (o relógio do servidor está em UTC: às 22h
+  # em São Paulo já era amanhã no nome do arquivo).
+  my $date = (defined $from && defined $to && $from eq $to) ? $from : $model->hoje($tz // 'UTC');
+  $date = "busca-$date" if defined $q;
   $self->res->headers->content_type('text/markdown; charset=utf-8');
   $self->res->headers->content_disposition("attachment; filename=\"conversas-$date.md\"");
   $self->render(text => $md);

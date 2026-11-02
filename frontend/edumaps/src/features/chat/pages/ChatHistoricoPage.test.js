@@ -224,6 +224,23 @@ describe("ChatHistoricoPage — exportar com dia escolhido", () => {
     expect(pedidosExport[0].get("tz")).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
+  it("com busca: o botão vira “Exportar as da busca” e manda o termo", async () => {
+    render(ChatHistoricoPage);
+    await screen.findByText("Matrículas");
+    await fireEvent.input(screen.getByRole("textbox", { name: "Buscar nas conversas salvas" }), {
+      target: { value: " ideb " },
+    });
+    await screen.findByText("IDEB");
+
+    expect(screen.queryByRole("button", { name: "Exportar todas (.md)" })).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Exportar as da busca (.md)" }));
+    await waitFor(() => expect(pedidosExport).toHaveLength(1));
+    const q = pedidosExport[0];
+    expect(q.get("all")).toBe("1");
+    expect(q.get("q")).toBe("ideb");
+    expect(q.get("from")).toBeNull();
+  });
+
   it("exportar uma conversa também manda o fuso", async () => {
     render(ChatHistoricoPage);
     await screen.findByText("IDEB");

@@ -13,7 +13,7 @@
    * @param {Function} onDelete
    * @param {Function} onOpen
    * @param {string} mensagemVazia - texto da lista vazia (ex.: dia sem conversa)
-   * @param {string} rotuloExportarTodas - "Exportar todas" ou "as do dia"
+   * @param {string} rotuloExportarTodas - "Exportar todas", "as do dia" ou "as da busca"
    */
   let {
     conversas = [],
