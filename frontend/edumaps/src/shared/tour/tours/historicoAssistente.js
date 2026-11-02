@@ -2,12 +2,12 @@
 //
 // Tour do histórico de conversas (/chat/historico). Exige sessão do
 // gestor: o `prontoQuando` só é marcado depois da 1ª lista carregada.
-// Textos conferidos com o código: o calendário marca os dias, mas não
-// filtra a lista; reabrir uma conversa ainda não existe.
+// Textos conferidos com o código: o calendário marca os dias e, clicado,
+// filtra a lista por aquele dia (v2); reabrir uma conversa ainda não existe.
 
 export default {
   id: "historico-assistente",
-  versao: 1,
+  versao: 2,
   titulo: "Histórico do Assistente",
   rotaInicial: "/chat/historico",
   automatico: true,
@@ -25,7 +25,9 @@ export default {
     {
       alvo: "historico-calendario",
       titulo: "Calendário",
-      texto: "Os dias marcados são os que têm conversas salvas, para você localizar um assunto pelo período.",
+      texto:
+        "Os números marcam os dias com conversas salvas. Clique num dia para ver só as conversas dele; " +
+        "clique de novo (ou em “Ver todas”) para voltar à lista completa.",
       lado: "right",
     },
     {

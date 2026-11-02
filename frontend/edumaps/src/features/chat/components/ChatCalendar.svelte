@@ -1,5 +1,6 @@
 <!-- src/features/chat/components/ChatCalendar.svelte -->
 <script>
+  import { diaLocal } from "../utils/dia.js";
   import { onMount } from "svelte";
 
   /**
@@ -35,14 +36,14 @@
     for (let i = startDay - 1; i >= 0; i--) {
       const day = prevMonthLastDay - i;
       const date = new Date(year, month - 1, day);
-      const key = date.toISOString().split("T")[0];
+      const key = diaLocal(date);
       week.push({ day, date, isCurrentMonth: false, hasConversa: !!diasComConversa[key], count: diasComConversa[key] || 0 });
     }
 
     // Dias do mês atual
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const key = date.toISOString().split("T")[0];
+      const key = diaLocal(date);
       week.push({ day, date, isCurrentMonth: true, hasConversa: !!diasComConversa[key], count: diasComConversa[key] || 0, isSelected: key === selectedDate });
       if (week.length === 7) {
         newWeeks.push(week);
@@ -54,7 +55,7 @@
     let nextDay = 1;
     while (week.length < 7) {
       const date = new Date(year, month + 1, nextDay);
-      const key = date.toISOString().split("T")[0];
+      const key = diaLocal(date);
       week.push({ day: nextDay, date, isCurrentMonth: false, hasConversa: !!diasComConversa[key], count: diasComConversa[key] || 0 });
       nextDay++;
     }
@@ -76,7 +77,7 @@
 
   function handleDayClick(dayInfo) {
     if (!dayInfo.isCurrentMonth) return;
-    const key = dayInfo.date.toISOString().split("T")[0];
+    const key = diaLocal(dayInfo.date);
     onSelect(key);
   }
 
@@ -121,6 +122,7 @@
             {dayInfo.isSelected ? 'bg-blue-600 text-white' : ''}"
           onclick={() => handleDayClick(dayInfo)}
           disabled={!dayInfo.isCurrentMonth}
+          aria-pressed={dayInfo.isCurrentMonth ? !!dayInfo.isSelected : undefined}
           aria-label={dayInfo.hasConversa ? `${dayInfo.day} - ${dayInfo.count} conversa(s)` : dayInfo.day}
         >
           {dayInfo.day}
@@ -133,6 +135,7 @@
   </div>
 
   <p class="mt-3 text-xs text-gray-500 text-center">
-    Dias com ponto azul indicam dias com conversas salvas.
+    Os números marcam os dias com conversas salvas. Clique num dia para ver só
+    as conversas dele; clique de novo para ver todas.
   </p>
 </div>

@@ -16,6 +16,7 @@
    * @param {Function} onExportOne
    * @param {Function} onDelete
    * @param {Function} onOpen
+   * @param {string} mensagemVazia - texto da lista vazia (ex.: dia sem conversa)
    */
   let {
     conversas = [],
@@ -28,6 +29,7 @@
     onExportOne = () => {},
     onDelete = () => {},
     onOpen = () => {},
+    mensagemVazia = "Nenhuma conversa encontrada.",
   } = $props();
 
   let selectedIds = $state([]);
@@ -107,7 +109,7 @@
       </div>
     {:else if conversas.length === 0}
       <div class="text-center py-12 text-gray-500 text-sm">
-        Nenhuma conversa encontrada.
+        {mensagemVazia}
       </div>
     {:else}
       <div class="space-y-3 p-4">
