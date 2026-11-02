@@ -40,12 +40,17 @@ sub list_conversas ($self, $gestor_id, $opts = {}) {
   my $from     = $opts->{from};
   my $to       = $opts->{to};
 
+  # Filtro por DIA, inclusivo nas duas pontas e com o mesmo critério do
+  # calendário: a data de created_at no fuso `tz` (o do navegador; sem ele,
+  # UTC, que é o fuso dos bancos). Comparar o timestamp
+  # com 'YYYY-MM-DD' cortava o próprio dia `to` (virava até 00:00 dele), e o
+  # dia marcado no calendário vinha vazio na lista.
+  my $tz    = $opts->{tz} // 'UTC';
   my $where = { gestor_id => $gestor_id };
-  if ($from || $to) {
-    $where->{created_at} = {};
-    $where->{created_at}{'>='} = $from if $from;
-    $where->{created_at}{'<='} = $to if $to;
-  }
+  my @dia;
+  push @dia, \[ '(created_at AT TIME ZONE ?)::date >= ?::date', $tz, $from ] if $from;
+  push @dia, \[ '(created_at AT TIME ZONE ?)::date <= ?::date', $tz, $to ]   if $to;
+  $where->{-and} = \@dia if @dia;
 
   my $rs = $self->schema->resultset('ChatConversa')->search(
     $where,
@@ -169,23 +174,32 @@ SQL
   };
 }
 
-# Calendário: dias com conversas no intervalo [from, to]
+# Fuso conhecido pelo Postgres? (`tz` vem do navegador; um nome inválido
+# faria o AT TIME ZONE estourar em 500.)
+sub fuso_valido ($self, $tz) {
+  return 0 unless defined $tz && length $tz <= 64;
+  my ($ok) = $self->schema->storage->dbh->selectrow_array(
+    'SELECT 1 FROM pg_timezone_names WHERE name = ?', undef, $tz);
+  return $ok ? 1 : 0;
+}
+
+# Calendário: dias com conversas no intervalo [from, to], com o dia contado
+# no fuso `tz` (default UTC) — o mesmo critério do filtro da lista.
 # Retorna { "YYYY-MM-DD" => count, ... }
-sub calendar_conversas ($self, $gestor_id, $from, $to) {
+sub calendar_conversas ($self, $gestor_id, $from, $to, $tz = 'UTC') {
   return {} unless $from && $to;
 
   my $sql = <<'SQL';
-    SELECT to_char(created_at, 'YYYY-MM-DD') AS dia, COUNT(*) AS total
+    SELECT to_char(created_at AT TIME ZONE ?, 'YYYY-MM-DD') AS dia, COUNT(*) AS total
     FROM clean.chat_conversas
     WHERE gestor_id = ?
-      AND to_char(created_at, 'YYYY-MM-DD') >= ?
-      AND to_char(created_at, 'YYYY-MM-DD') <= ?
+      AND (created_at AT TIME ZONE ?)::date BETWEEN ?::date AND ?::date
     GROUP BY dia
     ORDER BY dia
 SQL
 
   my $sth = $self->schema->storage->dbh->prepare($sql);
-  $sth->execute($gestor_id, $from, $to);
+  $sth->execute($tz, $gestor_id, $tz, $from, $to);
 
   my %map;
   while (my $row = $sth->fetchrow_hashref) {
