@@ -44,4 +44,4 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
 
 ## Veja também
 - [Painel da escola](painel-da-escola.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

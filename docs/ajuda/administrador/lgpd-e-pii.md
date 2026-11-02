@@ -37,4 +37,4 @@ Diretrizes para tratamento de dados pessoais e informações identificáveis (PI
 
 ## Veja também
 - [Privacidade (comunidade)](../comunidade/privacidade.md)
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)

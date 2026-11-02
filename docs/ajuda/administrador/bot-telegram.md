@@ -31,4 +31,4 @@ Configuração e operação do bot Telegram integrado ao EduMaps.
 Tokens e webhooks são sensíveis. Nunca commitar em repositório.
 
 ## Veja também
-- [Canais de comunicação](canais-de-comunicacao.md)
+- [Canais de comunicação](../../funcionalidades/plataforma/canais-de-comunicacao.md)

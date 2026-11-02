@@ -27,5 +27,5 @@ ultima_revisao: 2026-10-25
 Muitos casos são limitações de cobertura, não erros da plataforma.
 
 ## Veja também
-- [Glossário](_glossario.md)
+- [Glossário](../_glossario.md)
 - [Painel da escola](painel-da-escola.md)

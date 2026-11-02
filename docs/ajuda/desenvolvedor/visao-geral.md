@@ -15,8 +15,8 @@ ultima_revisao: 2026-10-25
 ## Onde buscar informações
 - **Convenções e fluxo:** [`AGENTS.md`](/home/itaipu/Code/Data/leaflet/AGENTS.md)
 - **Histórico de decisões:** [`memory.md`](/home/itaipu/Code/Data/leaflet/memory.md)
-- **Catálogo de funcionalidades:** [`docs/funcionalidades/`](../funcionalidades/)
-- **Ajuda ao usuário:** [`docs/ajuda/`](../ajuda/)
+- **Catálogo de funcionalidades:** [`docs/funcionalidades/`](../../funcionalidades/README.md)
+- **Ajuda ao usuário:** [`docs/ajuda/`](../README.md)
 
 ## Dica
 Mantenha `docs/ajuda/` orientado a **tarefas** e sem jargão interno. Use `tools/help-wiki/export.py` para validar.
