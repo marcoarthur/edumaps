@@ -1,9 +1,9 @@
 // src/shared/tour/tours/gestorPesquisas.js
 //
-// Tour das pesquisas com a comunidade (/gestor/pesquisas?inep=...). Esta
-// lista não exige login (a API é anônima; resultados exigem). O alvo
-// `pesq-conteudo` está no estado vazio E na lista — só um existe por vez —,
-// então o `prontoQuando` cobre os dois e exclui carregando/erro/sem INEP.
+// Tour das pesquisas com a comunidade (/gestor/pesquisas). A lista exige a
+// sessão do gestor (a escola vem dela). O alvo `pesq-conteudo` está no estado
+// vazio E na lista — só um existe por vez —, então o `prontoQuando` cobre os
+// dois e exclui carregando/erro/login.
 // Textos conferidos com docs/funcionalidades/gestor/pesquisas.md e o código.
 
 export default {

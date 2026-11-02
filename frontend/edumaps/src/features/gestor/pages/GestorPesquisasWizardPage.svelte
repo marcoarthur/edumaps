@@ -1,13 +1,15 @@
 <!-- src/features/gestor/pages/GestorPesquisasWizardPage.svelte -->
 <script>
   // Montagem de uma pesquisa (nova ou edição de rascunho/publicada).
-  // Query params: ?inep=&id= (id opcional). Carrega a sessão do gestor
-  // (localStorage) e o detalhe da pesquisa quando editando.
+  // Query params: ?id= (opcional). Exige a sessão do gestor: a escola e o
+  // autor vêm de /me, nunca da URL. Sem sessão, mostra o login.
   import { onMount } from "svelte";
-  import { getPesquisa } from "../api/gestorPesquisasApi.js";
-  import { getGestorSession } from "../utils/gestorSession.js";
+  import { getPesquisa, fetchMe } from "../api/gestorPesquisasApi.js";
+  import { restaurarSessao } from "../utils/gestorAuth.js";
+  import { setSessaoToken } from "../utils/gestorSession.js";
   import { ApiError } from "@/shared/api/client.js";
   import SurveyWizard from "../components/survey/SurveyWizard.svelte";
+  import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
 
   let inep = $state(null);
   let pesquisaId = $state(null);
@@ -15,25 +17,36 @@
   let initialSurvey = $state(null);
   let loading = $state(true);
   let error = $state(null);
+  let precisaLogin = $state(false);
 
-  onMount(async () => {
-    const params = new URLSearchParams(window.location.search);
-    inep = params.get("inep") ?? null;
-    pesquisaId = params.get("id");
-    gestor = inep ? getGestorSession(inep) : null;
-
+  async function carregar() {
+    loading = true;
+    error = null;
+    precisaLogin = false;
     try {
-      if (!inep) {
-        error = "Nenhum código INEP informado (?inep=XXXXXXXX).";
-      } else if (pesquisaId) {
-        initialSurvey = await getPesquisa(pesquisaId);
-      }
+      gestor = await fetchMe();
+      inep = gestor.cod_inep;
+      if (pesquisaId) initialSurvey = await getPesquisa(pesquisaId);
     } catch (err) {
-      error =
-        err instanceof ApiError ? err.message : "Não foi possível carregar a pesquisa.";
+      if (err instanceof ApiError && err.status === 401) precisaLogin = true;
+      else
+        error =
+          err instanceof ApiError ? err.message : "Não foi possível carregar a pesquisa.";
     } finally {
       loading = false;
     }
+  }
+
+  async function onLogin(sessao) {
+    setSessaoToken(sessao.token);
+    restaurarSessao();
+    await carregar();
+  }
+
+  onMount(() => {
+    pesquisaId = new URLSearchParams(window.location.search).get("id");
+    restaurarSessao();
+    carregar();
   });
 </script>
 
@@ -49,7 +62,7 @@
       </p>
     </div>
     <a
-      href={`/gestor/pesquisas?inep=${inep}`}
+      href={inep ? `/gestor/pesquisas?inep=${inep}` : "/gestor/pesquisas"}
       class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
     >
       ← Lista de pesquisas
@@ -64,6 +77,8 @@
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">
       {error}
     </div>
+  {:else if precisaLogin}
+    <GestorLoginCard onLogin={onLogin} mensagem="Entre para montar pesquisas da sua escola." />
   {:else}
     <SurveyWizard
       inep={inep}

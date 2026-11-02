@@ -1,31 +1,21 @@
 // src/features/gestor/utils/gestorSession.js
 //
-// Sessão do gestor no navegador (localStorage). Duas camadas:
-//   - "identidade" por escola (e-mail/upsert em /perfil, fase 1): chave por INEP.
-//   - "token de login" (fase 2): bearer temporário, não preso a uma escola —
-//     a chave é única e vale para /me, /logout e resultados de qualquer escola
-//     cujo gestor tenha aquele login.
-const key = (inep) => `edumaps_gestor_${inep}`;
+// Sessão do gestor no navegador (localStorage): o token bearer do login. A
+// escola e a identidade vêm sempre do servidor (/me), nunca do navegador.
 const TOKEN_KEY = "edumaps_gestor_token";
 
-/** @param {string|number} inep @returns {object|null} */
-export function getGestorSession(inep) {
+// Até 2026-11 o assistente de pesquisas guardava o perfil do gestor (nome,
+// e-mail, telefone) em `edumaps_gestor_<INEP>`. Não é mais usado: apaga as
+// sobras para não deixar dado pessoal no navegador.
+export function limparIdentidadeAntiga() {
   try {
-    const raw = localStorage.getItem(key(inep));
-    return raw ? JSON.parse(raw) : null;
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const k = localStorage.key(i);
+      if (k && /^edumaps_gestor_\d{8}$/.test(k)) localStorage.removeItem(k);
+    }
   } catch {
-    return null;
+    // armazenamento indisponível — nada a limpar
   }
-}
-
-/** Guarda o gestor autenticado na escola. @param {object} gestor */
-export function setGestorSession(inep, gestor) {
-  localStorage.setItem(key(inep), JSON.stringify(gestor));
-}
-
-/** Permite sair da sessão (trocar de gestor / nova conta). */
-export function clearGestorSession(inep) {
-  localStorage.removeItem(key(inep));
 }
 
 /** Token bearer da sessão do gestor (login de verdade). @returns {string|null} */

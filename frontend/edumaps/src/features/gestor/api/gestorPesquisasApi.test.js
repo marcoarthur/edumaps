@@ -4,7 +4,7 @@ import { apiClient, getApiToken } from "@/shared/api/client.js";
 import { eventBus } from "@/shared/events";
 import { GESTOR_EVENTS } from "../constants/events.js";
 import {
-  upsertGestor,
+  cadastrarGestor,
   listPesquisas,
   createPesquisa,
   getPesquisa,
@@ -39,10 +39,10 @@ describe("gestorPesquisasApi", () => {
     vi.clearAllMocks();
   });
 
-  it("upsertGestor: POST /perfil com os dados do gestor", async () => {
+  it("cadastrarGestor: POST /perfil com os dados do gestor", async () => {
     const perfil = { cod_inep: "11000040", nome: "Marina", email: "m@e.gov.br" };
     apiClient.post.mockResolvedValue({ id: 7 });
-    await upsertGestor(perfil);
+    await cadastrarGestor(perfil);
     expect(apiClient.post).toHaveBeenCalledWith(`${BASE}/perfil`, perfil);
   });
 
