@@ -46,8 +46,8 @@ O detalhe do achado foi escrito em `memory.md` e na nota 163 num repositório
 guarda). Achado de segurança aberto se registra sem rota nem mecanismo até a
 correção sair.
 
-## Pendências (issues a abrir)
+## Pendências
 
-- Hash de senha rápido (HMAC-SHA256) → Argon2/bcrypt, com re-hash no login.
-- Sem limite de tentativas de login.
-- Sem "esqueci minha senha".
+- #334 — hash de senha lento (Argon2id/bcrypt), com re-hash no login.
+- #335 — limite de tentativas de login (429 por e-mail e IP).
+- #336 — "esqueci minha senha" por link de uso único.

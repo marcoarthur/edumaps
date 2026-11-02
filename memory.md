@@ -15,8 +15,8 @@
   reduzi em `7966f8c`.
 - Imagem local do `sqitch` estava atrasada e aplicou junto
   `isocrona_escolar_indices_minimos` (de 22/10).
-- Pendências: issues de hash de senha (Argon2/bcrypt), limite de tentativas de
-  login, "esqueci minha senha".
+- Pendências abertas como issues: #334 (hash de senha lento), #335 (limite de
+  tentativas de login), #336 ("esqueci minha senha").
 
 ## Sessão 2026-11-02 (u) — site de ajuda + ajuda do gestor (PR #332, #304)
 
