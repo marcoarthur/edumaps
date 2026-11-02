@@ -112,7 +112,7 @@
   bind:this={artigo}
 >
   {#if temAcoes}
-    <div class="flex flex-wrap items-center gap-2 print:hidden" role="group" aria-label="Ações do relatório" data-testid="relatorio-acoes">
+    <div class="flex flex-wrap items-center gap-2 print:hidden" role="group" aria-label="Ações do relatório" data-testid="relatorio-acoes" data-tour="relatorio-acoes">
       {#if acoes}
         <button type="button" onclick={imprimir} class="{BOTAO} bg-gray-200 text-gray-800 hover:bg-gray-300">
           Imprimir / salvar PDF

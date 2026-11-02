@@ -158,6 +158,7 @@
       class="rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-sm p-3"
       role="note"
       data-testid="aviso-fotografia"
+      data-tour="salvo-fotografia"
     >
       Fotografia de {dataFoto}: os números são os daquela data.
     </div>
@@ -173,6 +174,7 @@
         href={urlGerarDeNovo(salvo)}
         class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
         data-testid="gerar-de-novo"
+        data-tour="salvo-gerar"
       >Gerar de novo com os dados atuais</a>
       <button
         type="button"

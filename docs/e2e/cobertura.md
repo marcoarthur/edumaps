@@ -8,6 +8,26 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (n) (telas secundárias — lote B)
+
+Branch `feat/frontend-tour-secundarias-b`, em `ubatexu.lan`, com a sessão de
+gestor já aberta (escola 35070212, sem perfil admin). Só leitura: tours abertos
+por `?tour=` e pelo “?”, nada salvo ou excluído.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Meus relatórios (`/gestor/relatorios/salvos`, 1 salvo): 2/2 alvos | Chrome | 🟢 |
+| Relatório salvo (`/salvos/12`, pelo “?”): fotografia, gerar de novo, imprimir/baixar — 3/3 | Chrome | 🟢 |
+| Histórico do Assistente (`/chat/historico`, 5 conversas): 3/3 alvos | Chrome | 🟢 |
+| Rodapé do calendário dizia “Clique para filtrar” (clicar só destaca o dia) | Chrome | 🔴→🟢 (texto corrigido) |
+| Versões do consentimento: admin com alvos; “restrita” e sem sessão não abrem | vitest `features/config/pages/tourAlvos.test.js` | 🟢 |
+| Lista vazia/com itens, detalhe, inexistente e sem sessão; histórico sem sessão e com 401 | vitest | 🟢 |
+| Suíte frontend | vitest | 🟢 123 arquivos / 1118 testes |
+
+> **Não coberto no Chrome:** versões do consentimento — a sessão não é admin.
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (m) (telas secundárias — lote A)
 
 Branch `feat/frontend-tour-secundarias`, em `ubatexu.lan`, com a sessão de

@@ -14,8 +14,7 @@ relacionadas: [escolas, rede-municipal, telemetria-de-sessao]
 
 A plataforma conduz a pessoa pela tela, passo a passo: escurece o resto da
 página, destaca o campo ou botão em questão e explica para que ele serve, em
-português. Um mesmo roteiro pode continuar em outra página. Hoje há quatro
-roteiros: o de primeiro acesso, na página inicial, que apresenta a plataforma e
+português. Um mesmo roteiro pode continuar em outra página. Há vários roteiros: o de primeiro acesso, na página inicial, que apresenta a plataforma e
 as entradas principais do menu; o da busca de escolas, que termina na
 comparação de redes do município; o do painel do gestor, que apresenta o
 raio-x da escola e os módulos de gestão; o das análises, que ensina a
@@ -23,7 +22,10 @@ agrupar escolas parecidas e a ler o resultado no mapa; e um por módulo do
 gestor — relatórios, contatos, listas com QR code, envios de e-mail, listas
 dinâmicas, pesquisas com a comunidade, reuniões e atas, inventário, relações
 institucionais e documentos e planos; o do Assistente do Censo; e os dos
-painéis de Administração e de Configuração.
+painéis de Administração e de Configuração. As telas secundárias também têm o
+seu: criar e editar pesquisa e reunião, resultados da pesquisa, detalhes de
+reunião e de relação, relatórios salvos, versões do consentimento e histórico
+do Assistente.
 
 ## Para quem
 
@@ -70,8 +72,9 @@ o aprendizado dentro da própria tela, no momento em que a dúvida aparece.
   dez módulos do gestor, o Assistente do Censo e os painéis de Administração e
   de Configuração — todas as páginas principais —, além das telas de criar e
   editar pesquisa e reunião, dos resultados da pesquisa e dos detalhes de
-  reunião e de relação. Ainda sem roteiro: relatórios salvos, versões do
-  consentimento e histórico do Assistente (previstos).
+  reunião e de relação, dos relatórios salvos (lista e relatório), das
+  versões do consentimento e do histórico do Assistente: todas as telas da
+  plataforma que alguém usa para trabalhar.
 - O registro de “já vi este roteiro” fica no navegador: em outro aparelho, ou
   após limpar os dados do navegador, o roteiro volta a aparecer.
 

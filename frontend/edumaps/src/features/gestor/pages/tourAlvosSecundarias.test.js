@@ -21,6 +21,12 @@ import GestorPesquisasResultadosPage from "./GestorPesquisasResultadosPage.svelt
 import ReunioesWizardPage from "./ReunioesWizardPage.svelte";
 import ReuniaoDetailPage from "./ReuniaoDetailPage.svelte";
 import RelacaoDetailPage from "./RelacaoDetailPage.svelte";
+import relatoriosSalvos from "@/shared/tour/tours/relatoriosSalvos.js";
+import relatorioSalvo from "@/shared/tour/tours/relatorioSalvo.js";
+import RelatoriosSalvosPage from "./RelatoriosSalvosPage.svelte";
+import RelatorioSalvoPage from "./RelatorioSalvoPage.svelte";
+import { RELATORIO_RESULT_FIXTURE } from "../mocks/relatoriosFixtures.js";
+import { resetRelatoriosMockState, semearSalvosMock } from "../mocks/relatoriosHandlers.js";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 vi.mock("@carbon/charts-svelte", () => {
@@ -64,5 +70,67 @@ describe("tours das telas secundárias × markup (com sessão)", () => {
       .map((p) => p.alvo)
       .filter((alvo) => document.querySelector(seletorDoAlvo(alvo)) === null);
     expect(faltando).toEqual([]);
+  });
+});
+
+// Lote B: relatórios salvos (lista e detalhe :id).
+describe("tours de relatórios salvos × markup", () => {
+  beforeEach(() => {
+    resetRelatoriosMockState();
+    window.localStorage.clear();
+    setSessaoToken(SESSION_TOKEN);
+    setApiToken(SESSION_TOKEN);
+  });
+  afterEach(() => {
+    setApiToken(null);
+    window.history.replaceState({}, "", "/");
+  });
+
+  const alvosFaltando = (tour) =>
+    tour.passos.map((p) => p.alvo).filter((alvo) => document.querySelector(seletorDoAlvo(alvo)) === null);
+
+  it("o catálogo distingue a lista do detalhe", () => {
+    expect(tourManager.tourDaRota("/gestor/relatorios/salvos")?.id).toBe(relatoriosSalvos.id);
+    expect(tourManager.tourDaRota("/gestor/relatorios/salvos/7")?.id).toBe(relatorioSalvo.id);
+    expect(tourManager.tourDaRota("/gestor/relatorios")?.id).toBe("gestor-relatorios");
+  });
+
+  it("lista vazia: prontoQuando e alvos existem", async () => {
+    const { container } = render(RelatoriosSalvosPage);
+    await waitFor(() => expect(container.querySelector(seletorDoAlvo("salvos-lista"))).not.toBeNull(), {
+      timeout: 5000,
+    });
+    expect(alvosFaltando(relatoriosSalvos)).toEqual([]);
+  });
+
+  it("lista com itens: prontoQuando e alvos existem", async () => {
+    semearSalvosMock([{ relatorio: RELATORIO_RESULT_FIXTURE }]);
+    const { container, findByTestId } = render(RelatoriosSalvosPage);
+    await findByTestId("salvos-tabela");
+    expect(container.querySelector(seletorDoAlvo("salvos-lista"))).not.toBeNull();
+    expect(alvosFaltando(relatoriosSalvos)).toEqual([]);
+  });
+
+  it("lista sem sessão: não abre", async () => {
+    setSessaoToken(null);
+    setApiToken(null);
+    const { container, findByText } = render(RelatoriosSalvosPage);
+    await findByText("Entre para ver os seus relatórios.");
+    expect(container.querySelector(seletorDoAlvo("salvos-lista"))).toBeNull();
+  });
+
+  it("detalhe: prontoQuando e alvos existem", async () => {
+    const [s] = semearSalvosMock([{ relatorio: RELATORIO_RESULT_FIXTURE }]);
+    const { container } = render(RelatorioSalvoPage, { props: { id: String(s.id) } });
+    await waitFor(() => expect(container.querySelector(seletorDoAlvo(relatorioSalvo.prontoQuando))).not.toBeNull(), {
+      timeout: 5000,
+    });
+    expect(alvosFaltando(relatorioSalvo)).toEqual([]);
+  });
+
+  it("detalhe inexistente: não abre", async () => {
+    const { container, findByTestId } = render(RelatorioSalvoPage, { props: { id: "999999" } });
+    await findByTestId("salvo-nao-encontrado");
+    expect(container.querySelector(seletorDoAlvo(relatorioSalvo.prontoQuando))).toBeNull();
   });
 });

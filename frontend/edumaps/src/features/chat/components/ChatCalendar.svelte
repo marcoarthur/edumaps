@@ -133,6 +133,6 @@
   </div>
 
   <p class="mt-3 text-xs text-gray-500 text-center">
-    Dias com ponto azul indicam dias com conversas salvas. Clique para filtrar.
+    Dias com ponto azul indicam dias com conversas salvas.
   </p>
 </div>

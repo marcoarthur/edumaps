@@ -23,6 +23,10 @@ import pesquisaResultados from "./tours/pesquisaResultados.js";
 import reuniaoAssistente from "./tours/reuniaoAssistente.js";
 import reuniaoDetalhe from "./tours/reuniaoDetalhe.js";
 import relacaoDetalhe from "./tours/relacaoDetalhe.js";
+import relatoriosSalvos from "./tours/relatoriosSalvos.js";
+import relatorioSalvo from "./tours/relatorioSalvo.js";
+import consentimentoVersoes from "./tours/consentimentoVersoes.js";
+import historicoAssistente from "./tours/historicoAssistente.js";
 
 // --- dublês ---------------------------------------------------------------
 
@@ -643,6 +647,10 @@ const CATALOGO = [
   reuniaoAssistente,
   reuniaoDetalhe,
   relacaoDetalhe,
+  relatoriosSalvos,
+  relatorioSalvo,
+  consentimentoVersoes,
+  historicoAssistente,
 ];
 
 describe("tours dos módulos do gestor (definição)", () => {
@@ -669,6 +677,11 @@ describe("tours dos módulos do gestor (definição)", () => {
     [reuniaoAssistente, ["/gestor/reunioes/nova", "/gestor/reunioes/:id/editar"], "reuniao-passos"],
     [reuniaoDetalhe, "/gestor/reunioes/:id", "reuniao-detalhe"],
     [relacaoDetalhe, "/gestor/relacoes/:id", "relacao-resumo"],
+    // lote B
+    [relatoriosSalvos, "/gestor/relatorios/salvos", "salvos-lista"],
+    [relatorioSalvo, "/gestor/relatorios/salvos/:id", "salvo-fotografia"],
+    [consentimentoVersoes, "/config/consentimento", "consentimento-versoes"],
+    [historicoAssistente, "/chat/historico", "historico-conversas"],
   ];
 
   it.each(MODULOS)("%#: rota, prontoQuando e passos completos", (tour, rota, pronto) => {

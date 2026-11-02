@@ -205,12 +205,13 @@
   {:else if error}
     <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-4">{error}</div>
   {:else}
-    <section class="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+    <section class="border border-gray-200 rounded-lg p-4 bg-white space-y-3" data-tour="consentimento-versoes">
       <div class="flex items-center justify-between gap-2">
         <h2 class="font-semibold text-gray-800">Versões ({versoes.length})</h2>
         <button
           type="button"
           onclick={novaVersao}
+          data-tour="consentimento-nova"
           disabled={editor?.modo === "novo"}
           class="px-3 h-9 rounded-md bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-40"
         >+ Nova versão</button>

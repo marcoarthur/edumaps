@@ -17,6 +17,9 @@
   let loading = $state(false);
   let error = $state(null);
   let sessaoExpirada = $state(false);
+  // Só depois da 1ª lista carregada com sessão: o tour (prontoQuando
+  // "historico-conversas") não abre na tela de "Sessão não encontrada".
+  let carregou = $state(false);
 
   // lista
   let conversas = $state([]);
@@ -72,6 +75,7 @@
       conversas = res.items;
       total = res.total;
       totalPages = res.total_pages;
+      carregou = true;
     } catch (err) {
       error = err instanceof ApiError ? err.message : "Falha ao carregar conversas";
       if (err instanceof ApiError && err.status === 401) sessaoExpirada = true;
@@ -191,7 +195,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Histórico de Conversas</h1>
         <p class="text-sm text-gray-600 mt-1">
           Gerencie suas conversas salvas com o Assistente do Censo. Busque por texto,
-          filtre por data no calendário e exporte em Markdown.
+          veja no calendário os dias com conversas e exporte em Markdown.
         </p>
       </div>
     </div>
@@ -212,7 +216,7 @@
   {/if}
 
   <div class="flex flex-col lg:flex-row gap-6 min-h-[500px] h-full">
-    <aside class="lg:w-72 flex-shrink-0 h-full">
+    <aside class="lg:w-72 flex-shrink-0 h-full" data-tour="historico-calendario">
       <ChatCalendar
         diasComConversa={calendarData}
         selectedDate={selectedDate}
@@ -222,7 +226,7 @@
       />
     </aside>
 
-    <div class="flex-1 flex flex-col min-h-0">
+    <div class="flex-1 flex flex-col min-h-0" data-tour={carregou ? "historico-conversas" : undefined}>
       <div class="mb-4">
         <label class="block">
           <span class="sr-only">Buscar por texto</span>

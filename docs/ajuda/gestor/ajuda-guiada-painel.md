@@ -66,6 +66,9 @@ reaberto pelo **?**:
 | **Agendar reunião** (nova/editar) | os quatro passos e que nada é salvo até o botão final |
 | **Detalhe da reunião** | situação, convite para copiar, anexos e ata |
 | **Detalhe da relação** | resumo, interações, tarefas e documentos |
+| **Meus relatórios** | que cada relatório salvo é a fotografia do dia em que foi gerado, abrir e excluir, e como salvar outro |
+| **Relatório salvo** | a data da fotografia, gerar de novo com os dados atuais (o salvo não muda), imprimir e baixar |
+| **Histórico do Assistente** | as conversas salvas e a busca, o calendário com os dias que têm conversa e a exportação em Markdown |
 | **Assistente do Censo** | o escopo da consulta, como perguntar, como conferir a resposta (SQL e resultado) e como salvar e reencontrar conversas |
 
 O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão
