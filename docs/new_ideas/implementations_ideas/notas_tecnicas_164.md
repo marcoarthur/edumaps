@@ -48,6 +48,6 @@ correção sair.
 
 ## Pendências
 
-- #334 — hash de senha lento (Argon2id/bcrypt), com re-hash no login.
+- ~~#334 — hash de senha lento~~ — PR #337 (nota 165).
 - #335 — limite de tentativas de login (429 por e-mail e IP).
 - #336 — "esqueci minha senha" por link de uso único.

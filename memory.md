@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-02 (w) — senha do gestor em Argon2id (PR #337, fecha #334)
+
+- **PR #337 MERGEADO** (`a0fdaaf`): Argon2id 64 MiB/t=3/p=1 (~128 ms no
+  `backend.edumaps`; o mínimo OWASP dava 22 ms lá e 13 ms no host). Hash
+  antigo HMAC aceito e regravado no próximo login certo. `Crypt::Argon2` e
+  `Crypt::URandom` no `cpanfile`. Change `gestores_senha_argon2id` (só
+  comentário). Nota **165**.
+- 32 contas no formato antigo no LXC no deploy.
+- Pendências: enumeração de e-mail por tempo no login (tratar na #335);
+  `edumaps-analytic.service` em `failed` desde 31/10; #335 e #336 abertas.
+- Os 5 arquivos de teste que falham (admin/envios, canais/envios,
+  admin/retencao, gestor/finance_siope, admin/telemetry) falham igual sem
+  as mudanças — telemetry depende de contagens de 24 h no banco compartilhado.
+
 ## Sessão 2026-11-02 (v) — cadastro do gestor só cria conta; pesquisas com sessão (PR #333)
 
 - **PR #333 MERGEADO** (`fa051d5`): cadastro anônimo não altera conta
