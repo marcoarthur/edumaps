@@ -8,6 +8,23 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (s) (exportar respeita a busca)
+
+Branch `feat/historico-exportar-busca`, backend e frontend em `ubatexu.lan`.
+Download suprimido na página (fetch interceptado, `<a download>` desligado):
+nenhum arquivo baixado.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Busca “escolas”: botão “Exportar as da busca (.md)”, `q=escolas`, arquivo com as 5 conversas mostradas | Chrome | 🟢 |
+| Busca “Tancredo”: tela mostra 3, arquivo traz exatamente as mesmas 3 | Chrome | 🟢 |
+| Nome `conversas-busca-2026-11-02.md` às 22:47 de 01/11 (data do relógio UTC do servidor) | Chrome | 🔴→🟢 `conversas-busca-2026-11-01.md` |
+| Export por `q` (falha sem o fix), sem `q` = tudo, busca vazia = arquivo vazio, `q` > 200 = 400, data do nome no `tz` | prove `t/04-api/chat/conversas.t` | 🟢 17/17 |
+| Rótulo e termo (aparado) no pedido | vitest `ChatHistoricoPage.test.js` | 🟢 |
+| Suíte frontend | vitest | 🟢 125 arquivos / 1134 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (r) (exportar respeita o dia escolhido)
 
 Branch `feat/historico-exportar-dia`, backend e frontend em `ubatexu.lan`. O
