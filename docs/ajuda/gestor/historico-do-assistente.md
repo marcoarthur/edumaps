@@ -47,7 +47,10 @@ salva às 23h aparece naquele dia, não no seguinte.
 ## Limitações conhecidas
 
 - Ainda não é possível reabrir uma conversa salva dentro do Assistente.
+- A busca procura no texto das mensagens, não no título da conversa.
 - A busca não ignora acentos (“matriculas” não encontra “Matrículas”).
+- No resultado da busca, o trecho encontrado aparece com marcações de
+  formatação visíveis (como `<b>…</b>` e `**…**`).
 - A busca mostra até 20 conversas, sem páginas seguintes: se o que procura não
   aparecer, use um termo mais específico.
 - “Exportar todas” baixa o histórico inteiro, mesmo com um dia escolhido.

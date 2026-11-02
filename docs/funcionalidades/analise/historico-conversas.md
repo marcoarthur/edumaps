@@ -55,6 +55,9 @@ documento de trabalho.
   se combina com a busca por texto.
 - **A busca mostra até 20 conversas** (as primeiras que casam), sem páginas
   seguintes; refine o termo se o que procura não aparecer.
+- **A busca não olha o título** da conversa, só o texto das mensagens.
+- **O trecho do resultado mostra marcações cruas** (`<b>…</b>` do destaque e
+  `**…**` do Markdown) e o número de mensagens fica em branco.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.
 - **A busca devolve a mesma conversa mais de uma vez** quando mais de uma
