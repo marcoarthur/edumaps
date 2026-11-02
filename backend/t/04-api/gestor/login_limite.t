@@ -113,6 +113,22 @@ subtest 'cadastro: limite por IP' => sub {
   })->status_is(429)->header_like('Retry-After', qr/^\d+$/);
 };
 
+subtest 'proxies_confiaveis do config restringe quem pode mandar X-Real-IP' => sub {
+  # Test::Mojo conecta de 127.0.0.1: fora da lista → o cabeçalho é ignorado e
+  # todos os pedidos contam no IP da conexão, não no forjado.
+  local $t->app->config->{auth_limite}{proxies_confiaveis} = ['10.9.9.9/32'];
+  my $k127 = chave(cadastro_ip => '127.0.0.1');
+  $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'cadastro_ip' AND chave = ?}, {}, $k127);
+  for my $n (50 .. 53) {
+    $t->post_ok('/api/gestor/pesquisas/perfil', hdr(ip($n)), json => {
+      cod_inep => $INEP, nome => 'Sonda', email => $EMAIL, senha => 'qualquer1',
+    })->status_is(409);
+  }
+  $t->post_ok('/api/gestor/pesquisas/perfil', hdr(ip(54)), json => {
+    cod_inep => $INEP, nome => 'Sonda', email => $EMAIL, senha => 'qualquer1',
+  })->status_is(429, 'IPs forjados diferentes não escapam do limite');
+};
+
 subtest 'tabela não guarda e-mail nem IP em claro' => sub {
   my $claro = $dbh->selectrow_array(
     'SELECT count(*) FROM clean.auth_falhas WHERE chave LIKE ? OR chave LIKE ?', {}, '%@%', '198.51.%');

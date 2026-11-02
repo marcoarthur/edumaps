@@ -21,6 +21,15 @@ my %LIMITE_PADRAO = (
   cadastro_ip => { max => 20, janela => 3600 },
 );
 
+# Redes de onde se aceita o X-Real-IP (o nginx). Config opcional
+# `auth_limite => { proxies_confiaveis => ['127.0.0.1/32'] }`; sem ela, o
+# padrão de EduMaps::Util::ClientIP (loopback + redes privadas). Onde a API
+# também escuta direto numa rede privada (LXC), restrinja ao IP do nginx.
+sub _ip($self) {
+  my $redes = ($self->app->config->{auth_limite} // {})->{proxies_confiaveis};
+  return client_ip($self, ref $redes eq 'ARRAY' ? $redes : undef) // '';
+}
+
 # EDUMAPS_AUTH_LIMITE_OFF=1 desliga os limites — SÓ para a suíte de testes
 # (t/lib/Imports.pm liga), onde dezenas de cadastros saem do mesmo 127.0.0.1.
 # t/04-api/gestor/login_limite.t a remove para testar os limites de verdade.
@@ -58,7 +67,7 @@ sub perfil($self) {
   # Limite por IP antes de tudo: cada tentativa de cadastro conta.
   my $model  = $self->instantiate_model(model => 'Pesquisa');
   my $secret = $self->app->secrets->[0];
-  my $ip     = client_ip($self) // '';
+  my $ip     = $self->_ip;
   my $ip_key = $model->auth_chave($secret, $ip);
   my $lim    = $self->_limite('cadastro_ip');
   if (my $espera = $self->_espera($model, ['cadastro_ip', $ip_key, $lim])) {
@@ -227,7 +236,7 @@ sub login($self) {
   my $secret = $self->app->secrets->[0];
   my @escopos = (
     ['email', $model->auth_chave($secret, $v->param('email')), $self->_limite('login_email')],
-    ['ip',    $model->auth_chave($secret, client_ip($self) // ''), $self->_limite('login_ip')],
+    ['ip',    $model->auth_chave($secret, $self->_ip), $self->_limite('login_ip')],
   );
 
   # Bloqueado responde 429 ANTES de olhar a senha — senão a senha certa
