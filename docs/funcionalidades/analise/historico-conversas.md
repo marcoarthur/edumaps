@@ -30,8 +30,9 @@ anterior, e o pesquisador que precisa citá-lo.
   um assunto pelo período em vez de rolar a lista.
 - Sistema pode filtrar a lista por um dia escolhido no calendário, contando o
   dia no fuso de quem usa (o mesmo da data exibida em cada conversa).
-- Sistema pode encontrar conversas pelo conteúdo das respostas, mostrando um
-  trecho do texto que casou com a busca.
+- Sistema pode encontrar conversas pelo conteúdo das mensagens, uma vez cada,
+  mostrando o trecho que casou com o termo destacado e quantas mensagens a
+  conversa tem.
 - Sistema pode exportar uma conversa, um conjunto selecionado ou todo o
   histórico em um arquivo Markdown, para leitura, citação ou arquivo.
 - Sistema pode permitir que o gestor exclua uma conversa que não queira mais
@@ -53,15 +54,11 @@ documento de trabalho.
   retomada.
 - **Um dia por vez.** O filtro do calendário não seleciona intervalos, e não
   se combina com a busca por texto.
-- **A busca mostra até 20 conversas** (as primeiras que casam), sem páginas
-  seguintes; refine o termo se o que procura não aparecer.
+- **A busca mostra até 20 conversas** (as mais recentes que casam), sem
+  páginas seguintes; refine o termo se o que procura não aparecer.
 - **A busca não olha o título** da conversa, só o texto das mensagens.
-- **O trecho do resultado mostra marcações cruas** (`<b>…</b>` do destaque e
-  `**…**` do Markdown) e o número de mensagens fica em branco.
 - **A busca não ignora acentos.** Procurar "matriculas" não encontra
   "Matrículas"; é preciso digitar com acento.
-- **A busca devolve a mesma conversa mais de uma vez** quando mais de uma
-  mensagem casa com o termo.
 
 ## Relacionadas
 

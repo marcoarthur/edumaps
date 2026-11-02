@@ -8,6 +8,21 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-01 (q) (trecho e contagem na busca do histórico)
+
+Branch `fix/historico-busca-trecho`, backend e frontend em `ubatexu.lan`. Só
+leitura (buscar não grava nada).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Busca “escolas”: 5 resultados, um por conversa; termo em `<mark>` (3, 2, 2, 1, 2 destaques); nenhum `<b>`/`**` cru | Chrome | 🟢 |
+| Contagem nos resultados (“6 mensagens”, “2 mensagens”…), antes vazia | Chrome | 🟢 |
+| Uma linha por conversa, `msg_count`, trecho sem marcação, partes com destaque (falha sem o fix) | prove `t/04-api/chat/conversas.t` | 🔴→🟢 15/15 |
+| Destaque com `<mark>`; `<b>` do conteúdo fica texto, nunca HTML | vitest `ChatHistoricoPage.test.js` | 🟢 |
+| Suíte frontend | vitest | 🟢 125 arquivos / 1130 testes |
+
+Profile da automação devolvido a `?tour=off`.
+
 ## Rodada 2026-11-01 (p) (busca única no histórico)
 
 Branch `fix/frontend-historico-busca-unica`, em `ubatexu.lan`. Só leitura.

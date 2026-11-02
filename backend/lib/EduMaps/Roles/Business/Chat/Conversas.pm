@@ -111,8 +111,47 @@ sub delete_conversa ($self, $gestor_id, $id) {
   return 1;
 }
 
-# Busca full-text no conteúdo das mensagens (plainto_tsquery)
-# Retorna conversas distintas que têm match
+# Busca full-text no conteúdo das mensagens (plainto_tsquery).
+# Uma linha por CONVERSA (a primeira mensagem que casa dá o trecho): antes
+# era uma por mensagem, e a mesma conversa voltava repetida.
+#
+# O trecho vem em dois formatos:
+#   snippet         texto puro, sem marcação (compatível);
+#   snippet_partes  [{ texto, destaque }] — o cliente monta o destaque sem
+#                   interpretar HTML. O ts_headline marcava com <b>…</b>, que
+#                   a tela mostrava cru.
+# Os delimitadores do destaque são caracteres de uso privado (U+E000/E001),
+# removidos do conteúdo antes, para não colidirem com o texto.
+my $INI = "\x{E000}";
+my $FIM = "\x{E001}";
+
+# Tira a marcação de Markdown que aparecia crua no trecho (**negrito**,
+# __itálico__, `código`, # títulos) e junta as linhas.
+sub _trecho_limpo ($texto) {
+  $texto //= '';
+  $texto =~ s/\*\*|__|`//g;
+  $texto =~ s/(^|\n)\s*#+\s*/$1/g;
+  $texto =~ s/\s+/ /g;
+  return $texto;
+}
+
+sub _partes_do_trecho ($headline) {
+  my @partes;
+  for my $peda (split /(\x{E000}.*?\x{E001})/s, $headline // '') {
+    next unless length $peda;
+    my $destaque = $peda =~ s/^\x{E000}(.*)\x{E001}$/$1/s ? 1 : 0;
+    my $texto = _trecho_limpo($peda);
+    next unless length $texto;
+    push @partes, { texto => $texto, destaque => $destaque ? \1 : \0 };
+  }
+  # aparas nas pontas (o ts_headline começa/termina no meio da frase)
+  if (@partes) {
+    $partes[0]{texto}  =~ s/^\s+//;
+    $partes[-1]{texto} =~ s/\s+$//;
+  }
+  return [ grep { length $_->{texto} } @partes ];
+}
+
 sub search_conversas ($self, $gestor_id, $q, $opts = {}) {
   return { items => [], total => 0 } unless $q && length($q);
 
@@ -120,33 +159,44 @@ sub search_conversas ($self, $gestor_id, $q, $opts = {}) {
   my $per_page = $opts->{per_page} // 20;
   my $offset   = ($page - 1) * $per_page;
 
-  # Usa CTE para preparar o tsquery de forma segura
   my $sql = <<"SQL";
     WITH tsq AS (
       SELECT plainto_tsquery('portuguese', ?) AS query
+    ),
+    casadas AS (
+      SELECT DISTINCT ON (c.id)
+             c.id, c.titulo, c.created_at, c.updated_at,
+             ts_headline('portuguese',
+                         translate(m.content, ?, ''),
+                         tsq.query, ?) AS headline
+      FROM clean.chat_conversas c
+      JOIN clean.chat_mensagens m ON m.conversa_id = c.id
+      CROSS JOIN tsq
+      WHERE c.gestor_id = ?
+        AND to_tsvector('portuguese', m.content) @@ tsq.query
+      ORDER BY c.id, m.created_at, m.id
     )
-    SELECT DISTINCT c.id, c.titulo, c.created_at, c.updated_at,
-           ts_headline('portuguese', m.content, tsq.query) AS snippet
-    FROM clean.chat_conversas c
-    JOIN clean.chat_mensagens m ON m.conversa_id = c.id
-    CROSS JOIN tsq
-    WHERE c.gestor_id = ?
-      AND to_tsvector('portuguese', m.content) @@ tsq.query
-    ORDER BY c.created_at DESC
+    SELECT k.*,
+           (SELECT COUNT(*) FROM clean.chat_mensagens mm WHERE mm.conversa_id = k.id) AS msg_count
+    FROM casadas k
+    ORDER BY k.created_at DESC, k.id DESC
     LIMIT ? OFFSET ?
 SQL
 
   my $sth = $self->schema->storage->dbh->prepare($sql);
-  $sth->execute($q, $gestor_id, $per_page, $offset);
+  $sth->execute($q, "$INI$FIM", "StartSel=$INI, StopSel=$FIM", $gestor_id, $per_page, $offset);
 
   my @items;
   while (my $row = $sth->fetchrow_hashref) {
+    my $partes = _partes_do_trecho($row->{headline});
     push @items, {
-      id         => $row->{id} + 0,
-      titulo     => $row->{titulo},
-      created_at => $row->{created_at},
-      updated_at => $row->{updated_at},
-      snippet    => $row->{snippet},
+      id             => $row->{id} + 0,
+      titulo         => $row->{titulo},
+      created_at     => $row->{created_at},
+      updated_at     => $row->{updated_at},
+      msg_count      => $row->{msg_count} + 0,
+      snippet        => join('', map { $_->{texto} } @$partes),
+      snippet_partes => $partes,
     };
   }
 

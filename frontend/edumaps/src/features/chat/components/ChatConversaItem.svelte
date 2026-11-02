@@ -7,7 +7,10 @@
    * @param {string} conversa.created_at
    * @param {string} conversa.updated_at
    * @param {number} conversa.msg_count
-   * @param {string} [conversa.snippet]
+   * @param {string} [conversa.snippet] - trecho em texto puro
+   * @param {Array<{texto: string, destaque: boolean}>} [conversa.snippet_partes]
+   *   - o mesmo trecho em partes; as `destaque` são o termo buscado. Montado
+   *   como texto + <mark>, sem {@html}: o trecho vem do conteúdo da conversa.
    * @param {boolean} selected
    * @param {Function} onToggleSelect
    * @param {Function} onClick
@@ -47,11 +50,19 @@
           class="h-4 w-4 text-blue-600 focus:ring-blue-500 shrink-0 relative z-10 cursor-pointer"
         />
         <h4 class="font-medium text-gray-900 truncate">{conversa.titulo || "Sem título"}</h4>
-        <span class="text-xs text-gray-500 whitespace-nowrap">{conversa.msg_count} msg</span>
+        {#if Number.isFinite(conversa.msg_count)}
+          <span class="text-xs text-gray-500 whitespace-nowrap">
+            {conversa.msg_count} {conversa.msg_count === 1 ? "mensagem" : "mensagens"}
+          </span>
+        {/if}
       </div>
       <p class="text-sm text-gray-600 mb-2">Criada em {formatDate(conversa.created_at)}</p>
-      {#if conversa.snippet}
-        <p class="text-sm text-gray-500 line-clamp-2 bg-gray-50 p-2 rounded">{conversa.snippet}</p>
+      {#if conversa.snippet_partes?.length}
+        <p class="text-sm text-gray-600 line-clamp-2 bg-gray-50 p-2 rounded" data-testid="conversa-trecho">
+          …{#each conversa.snippet_partes as parte, i (i)}{#if parte.destaque}<mark class="bg-yellow-100 text-gray-900 rounded px-0.5">{parte.texto}</mark>{:else}{parte.texto}{/if}{/each}…
+        </p>
+      {:else if conversa.snippet}
+        <p class="text-sm text-gray-600 line-clamp-2 bg-gray-50 p-2 rounded" data-testid="conversa-trecho">…{conversa.snippet}…</p>
       {/if}
     </div>
 
