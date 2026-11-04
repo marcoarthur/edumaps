@@ -13,6 +13,7 @@ use Role::Tiny::With;
 # SQL de Listas e a disponibilidade de canais do AppConfig.
 
 with 'EduMaps::Roles::Business::Canal::Listas';
+with 'EduMaps::Roles::Business::Pesquisa::AuthLimite';
 with 'EduMaps::Roles::Business::Config::AppConfig';
 with 'EduMaps::Roles::Business::Canal::Confirmacao';
 

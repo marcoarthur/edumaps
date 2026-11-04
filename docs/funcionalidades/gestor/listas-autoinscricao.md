@@ -30,6 +30,10 @@ pelo celular.
   limite de inscrições opcionais, e revogá-lo a qualquer momento.
 - Sistema pode receber inscrições feitas pela comunidade a partir do QR code,
   sem precisar criar conta.
+- Sistema pode frear envios em massa de um mesmo aparelho ou rede, por QR, sem
+  atrapalhar os demais: num evento com muita gente inscrevendo-se ao mesmo
+  tempo, cada pessoa tem o seu próprio limite, e quem passa dele espera alguns
+  segundos. O controle não guarda endereço de rede legível.
 - Sistema pode reconhecer quem já estava inscrito pelo telefone, evitando
   duplicatas sem descartar a submissão anterior.
 - Sistema pode listar os inscritos de cada lista para o gestor.

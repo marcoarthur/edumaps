@@ -8,6 +8,7 @@ use EduMaps::Channel::WhatsApp;
 use EduMaps::Channel::Email;
 use EduMaps::Channel::Confirmation;
 use EduMaps::Channel::Telegram::Updates;
+use EduMaps::Util::ClientIP qw(client_ip_app);
 
 # Face pública da autoinscrição por QR (issue #208 — Fase 0, canal telefone).
 # O token na URL é a capability: não há sessão. Duas rotas, mesma rota-base
@@ -105,8 +106,8 @@ sub inscricao_create($self) {
   }
 
   # Rate limit por token + IP (antiabuso, RNF-003). Nunca 500 por abuso.
-  my $ip = $self->tx->remote_address;
-  my $rl = $model->rate_limit_check(token => $token, ip => $ip);
+  my $ip = client_ip_app($self);
+  my $rl = $self->_rate_canais($model, token => $token);
   return $self->_render_too_many('Muitas inscrições por este link. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -148,9 +149,8 @@ sub confirmacao_show($self) {
   my $ref = $self->param('ref');
   return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
 
-  my $rl = $model->rate_limit_check(
+  my $rl = $self->_rate_canais($model,
     token => 'confirmacao:' . lc $ref,
-    ip    => $self->tx->remote_address,
     max   => $model->inscricao_config->{rate_max} * 6,
   );
   return $self->_render_too_many('Muitas consultas. Tente novamente em instantes.')
@@ -185,8 +185,7 @@ sub confirmacao_whatsapp($self) {
   return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
   $ref = lc $ref;
 
-  my $rl = $model->rate_limit_check(
-    token => "whatsapp:$ref", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "whatsapp:$ref");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -234,8 +233,7 @@ sub confirmacao_whatsapp_verificar($self) {
   return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
   $ref = lc $ref;
 
-  my $rl = $model->rate_limit_check(
-    token => "whatsapp_verificar:$ref", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "whatsapp_verificar:$ref");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -282,8 +280,7 @@ sub confirmacao_email($self) {
   return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
   $ref = lc $ref;
 
-  my $rl = $model->rate_limit_check(
-    token => "email:$ref", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "email:$ref");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -339,8 +336,7 @@ sub confirmacao_email_verificar($self) {
   return $self->_render_confirmacao_not_found unless $model->ref_valida($ref);
   $ref = lc $ref;
 
-  my $rl = $model->rate_limit_check(
-    token => "email_verificar:$ref", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "email_verificar:$ref");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -414,8 +410,7 @@ sub exclusao_confirmar($self) {
   return $self->_render_exclusao_not_found unless $model->exclusao_token_valido($token);
   $token = lc $token;
 
-  my $rl = $model->rate_limit_check(
-    token => "exclusao:$token", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "exclusao:$token");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -470,8 +465,7 @@ sub sair_confirmar($self) {
   return $self->_render_exclusao_not_found unless $model->saida_token_valido($token);
   $token = lc $token;
 
-  my $rl = $model->rate_limit_check(
-    token => "sair:$token", ip => $self->tx->remote_address);
+  my $rl = $self->_rate_canais($model, token => "sair:$token");
   return $self->_render_too_many('Muitas tentativas. Tente novamente em instantes.')
     unless $rl->{ok};
 
@@ -667,7 +661,21 @@ sub _render_gone($self) {
 }
 
 sub _render_too_many($self, $msg) {
+  # Retry-After quando o limitador informou a espera (_rate_canais)
+  if (my $s = $self->stash('retry_after')) { $self->res->headers->header('Retry-After' => $s) }
   $self->render(json => { error => $msg }, status => 429);
+}
+
+# Limitador das rotas públicas (token + IP real, no banco). O IP vem do
+# X-Real-IP só se a conexão é de proxy confiável (EduMaps::Util::ClientIP);
+# antes era tx->remote_address — o IP do nginx, igual para todo visitante.
+sub _rate_canais($self, $model, %p) {
+  my $rl = $model->rate_limit_check(%p,
+    ip     => client_ip_app($self),
+    secret => $self->app->secrets->[0],
+  );
+  $self->stash(retry_after => $rl->{retry_after}) unless $rl->{ok};
+  return $rl;
 }
 
 # Corpo JSON (ou params), como nos demais controllers. Nunca deixa explodir.
