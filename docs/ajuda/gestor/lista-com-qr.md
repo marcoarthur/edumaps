@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [envios-por-email, contatos-e-grupos, pesquisa-publica]
 funcionalidade: ../../funcionalidades/gestor/listas-autoinscricao.md
-ultima_revisao: 2026-11-02
+ultima_revisao: 2026-11-04
 ---
 
 # Listas com QR para a comunidade se inscrever
@@ -79,6 +79,11 @@ Para mandar e-mail à lista, use **Enviar e-mail** na linha dela — veja
 - O QR de uma lista é só para **inscrição**. Pesquisas têm o próprio link,
   gerado ao publicar (veja [Pesquisa com a comunidade](pesquisa-publica.md)).
 - Um QR **expirado** ou **esgotado** não aceita mais inscrições; gere um novo.
+- Muitas inscrições seguidas **do mesmo celular ou da mesma rede** no mesmo QR
+  são freadas por alguns segundos (“Muitas inscrições por este link. Tente
+  novamente em instantes.”). Pessoas diferentes, cada uma no seu celular, não
+  se atrapalham. Se a escola usa um único computador para inscrever várias
+  pessoas, espere alguns segundos entre uma e outra.
 - Você não pode desfazer o **Saiu dos envios** de alguém: só a pessoa, ao se
   inscrever de novo pelo QR.
 - Não há atalho direto do Painel do Gestor para **Listas e QR**: o caminho é

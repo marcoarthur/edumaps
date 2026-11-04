@@ -45,7 +45,6 @@ use EduMaps::Channel::Email;
 
 requires qw(schema);
 
-has _rate_buckets => sub { {} };   # rate limit em memória (por processo)
 
 # Fase 2 (#214): a versão gravada é a VIGENTE de clean.consentimento_versoes
 # (Canal::Consentimento). A constante fica só como FALLBACK, quando a tabela
@@ -914,10 +913,14 @@ sub registrar_inscricao ($self, %p) {
 # rate limit (antiabuso — RNF-003)
 # ---------------------------------------------------------------------------
 
-# Rate limit básico por token + IP, janela curta, EM MEMÓRIA (por processo).
-# Simples e sem dependência externa para o MVP; suficiente para um worker
-# único. Valores em `canais.inscricao.rate_max` / `rate_window_seconds`.
-# Degrada graciosamente: nunca 500 por abuso.
+# Rate limit por token + IP real, janela deslizante, NO BANCO
+# (clean.auth_falhas, escopo `canais`): vale para todos os workers e
+# sobrevive a reinícios. Antes era em memória e por `tx->remote_address`
+# — o IP do nginx —, então todos os visitantes dividiam a contagem.
+# Valores em `canais.inscricao.rate_max` / `rate_window_seconds`.
+# `secret` (segredo do app) vira a chave HMAC de "token|IP": a tabela não
+# guarda IP legível. Degrada graciosamente: sem token/IP, não bloqueia.
+# Devolve { ok => 1 } ou { ok => 0, reason => 'rate_limited', retry_after => s }.
 sub rate_limit_check ($self, %p) {
   my ($token, $ip) = @p{qw(token ip)};
   return { ok => 1 }
@@ -929,25 +932,12 @@ sub rate_limit_check ($self, %p) {
   # confirmação, consultado em polling — #212).
   my $max = $p{max} // $cfg->{rate_max} // 10;
   my $win = $cfg->{rate_window_seconds} // 60;
-  my $now = time;
-  my $tick = int($now / $win);
 
-  my $buckets = $self->_rate_buckets;
-  if (!defined $buckets->{_tick} || $buckets->{_tick} != $tick) {
-    # limpeza barata: derruba janelas passadas (a cada troca de tick)
-    for my $k (keys %$buckets) {
-      next if $k eq '_tick';
-      delete $buckets->{$k} if $buckets->{$k}{tick} < $tick;
-    }
-    $buckets->{_tick} = $tick;
-  }
+  my $chave  = $self->auth_chave($p{secret} // '', "$token|$ip");
+  my $espera = $self->auth_retry_after('canais', $chave, $max, $win);
+  return { ok => 0, reason => 'rate_limited', retry_after => $espera } if $espera;
 
-  my $key  = "$token|$ip";
-  my $b    = $buckets->{$key} //= { tick => $tick, n => 0 };
-  if ($b->{tick} != $tick) { $b->{tick} = $tick; $b->{n} = 0; }
-  return { ok => 0, reason => 'rate_limited' } if $b->{n} >= $max;
-
-  $b->{n}++;
+  $self->auth_registrar('canais', $chave);
   return { ok => 1 };
 }
 

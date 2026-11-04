@@ -177,7 +177,10 @@ subtest 'próximo disparo ignora quem saiu; outra lista não é afetada' => sub 
 
 subtest 'POST: rate limit por token+IP → 429' => sub {
   cfg('inscricao.rate_max', '1');
-  my $outro = 'f' x 32;
+  # token inexistente e único por execução: a contagem do limitador fica no
+  # banco (janela de 60 s) e um token fixo herdaria a da execução anterior
+  # (rand não serve: o Test2 fixa a semente pela data)
+  my $outro = substr(Digest::SHA::sha256_hex("$$:" . Time::HiRes::time()), 0, 32);
   $t->post_ok("/api/canais/sair/$outro", json => { confirmar => true })->status_is(404);
   $t->post_ok("/api/canais/sair/$outro", json => { confirmar => true })
     ->status_is(429)->json_has('/error');

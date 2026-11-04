@@ -9,6 +9,8 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use Digest::SHA ();
+use Time::HiRes ();
 use Mojo::JSON qw(true false);
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -103,7 +105,10 @@ subtest 'POST: exclui e é idempotente' => sub {
 
 subtest 'POST: rate limit por token+IP → 429' => sub {
   $model->config_put('canais.inscricao.rate_max', '1', 't');
-  my $outro = 'f' x 32;
+  # token inexistente e único por execução: a contagem do limitador fica no
+  # banco (janela de 60 s) e um token fixo herdaria a da execução anterior
+  # (rand não serve: o Test2 fixa a semente pela data)
+  my $outro = substr(Digest::SHA::sha256_hex("$$:" . Time::HiRes::time()), 0, 32);
   $t->post_ok("/api/canais/exclusao/$outro", json => { confirmar => true })->status_is(404);
   $t->post_ok("/api/canais/exclusao/$outro", json => { confirmar => true })
     ->status_is(429)->json_has('/error');

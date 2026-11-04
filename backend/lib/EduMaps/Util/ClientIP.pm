@@ -4,7 +4,7 @@ use warnings;
 use utf8;
 use Exporter 'import';
 
-our @EXPORT_OK = qw(client_ip ip_em_redes);
+our @EXPORT_OK = qw(client_ip client_ip_app ip_em_redes);
 
 # IP de quem fez a requisição, para limites por IP (#335).
 #
@@ -56,6 +56,15 @@ sub client_ip {
     return $hdr;
   }
   return $par;
+}
+
+# IP do cliente com a lista de proxies do config da aplicação
+# (`auth_limite => { proxies_confiaveis => [...] }`); sem ela, o padrão acima.
+# É o que os controllers usam (#335 login; inscrições por QR).
+sub client_ip_app {
+  my ($c) = @_;
+  my $redes = (($c->app->config // {})->{auth_limite} // {})->{proxies_confiaveis};
+  return client_ip($c, ref $redes eq 'ARRAY' ? $redes : undef) // '';
 }
 
 1;

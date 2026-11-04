@@ -6,7 +6,7 @@ use utf8;
 #   /perfil: cadastro anônimo — só CRIA conta, nunca altera uma existente.
 #   CRUD de pesquisas: exige a sessão do gestor; a escola vem da sessão.
 
-use EduMaps::Util::ClientIP qw(client_ip);
+use EduMaps::Util::ClientIP qw(client_ip_app);
 
 use constant EMAIL_RE => qr/^[\w.+\-]+@[\w.\-]+\.[A-Za-z]{2,}$/;
 
@@ -29,10 +29,7 @@ my %LIMITE_PADRAO = (
 # `auth_limite => { proxies_confiaveis => ['127.0.0.1/32'] }`; sem ela, o
 # padrão de EduMaps::Util::ClientIP (loopback + redes privadas). Onde a API
 # também escuta direto numa rede privada (LXC), restrinja ao IP do nginx.
-sub _ip($self) {
-  my $redes = ($self->app->config->{auth_limite} // {})->{proxies_confiaveis};
-  return client_ip($self, ref $redes eq 'ARRAY' ? $redes : undef) // '';
-}
+sub _ip($self) { client_ip_app($self) }
 
 # EDUMAPS_AUTH_LIMITE_OFF=1 desliga os limites — SÓ para a suíte de testes
 # (t/lib/Imports.pm liga), onde dezenas de cadastros saem do mesmo 127.0.0.1.

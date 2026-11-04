@@ -154,3 +154,4 @@ gestores_email_unico_sem_caixa [isocrona_escolar_indices_minimos gestor_pesquisa
 gestores_senha_argon2id [gestores_email_unico_sem_caixa gestor_respostas] 2026-11-02T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #334: senha do gestor em Argon2id (comentario da coluna)
 auth_falhas [gestores_senha_argon2id gestor_respostas] 2026-11-02T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #335: limite de tentativas de login/cadastro do gestor
 gestor_senha_redefinicao [auth_falhas] 2026-11-02T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # #336: esqueci minha senha do gestor (token de uso unico)
+auth_falhas_canais [gestor_senha_redefinicao] 2026-11-04T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # limitador das rotas publicas das listas com QR no banco (IP real)
