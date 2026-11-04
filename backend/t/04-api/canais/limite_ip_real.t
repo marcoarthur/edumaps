@@ -40,6 +40,11 @@ sub limpa {
   $dbh->do('DELETE FROM clean.escolas WHERE codigo_inep = ?', {}, $INEP);
 }
 
+# config canais.inscricao.* restaurada no fim exatamente como estava
+my $CFG = $dbh->selectall_arrayref(
+  q{SELECT key, value, secret, sensitive, secret_key_version, updated_by, updated_at
+      FROM app_config.items WHERE key LIKE 'canais.inscricao.%'});
+
 limpa();
 $dbh->do('INSERT INTO clean.escolas (codigo_inep, escola) VALUES (?, ?) ON CONFLICT (codigo_inep) DO NOTHING',
   {}, $INEP, 'Escola do limitador');
@@ -55,7 +60,9 @@ END {
   return unless $dbh;
   $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'canais' AND chave = ?}, {}, $_) for @chaves;
   limpa();
-  $model->config_put('canais.inscricao.rate_max', '1000', $EMAIL);
+  $dbh->do(q{DELETE FROM app_config.items WHERE key LIKE 'canais.inscricao.%'});
+  $dbh->do('INSERT INTO app_config.items (key, value, secret, sensitive, secret_key_version, updated_by, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)', {}, @$_) for @$CFG;
 }
 
 sub novo_token {
