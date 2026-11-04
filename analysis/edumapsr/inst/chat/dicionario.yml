@@ -377,7 +377,7 @@ conexoes:
   - "Escola nas avaliações: clean.ideb_notas_escolas, clean.inep, clean.inep_notas_desagregadas e clean.inse usam id_escola, que é o mesmo código INEP = co_entidade do censo."
   - "Município: filtrar/agregar por co_municipio (código IBGE 7 dígitos) presente em censo_escolas, ideb_notas_escolas, inse e school_indicators; no_municipio para rótulos."
   - "Consolidado municipal: analytics.mv_municipios_consolidado e analytics.mv_rede_escolas por co_municipio; use-os para comparar municípios/UF sem joins pesados."
-  - "Demografia/PIB: clean.populacao_municipal e clean.dados_ibge por codigo_ibge; clean.municipios_sp tem geometria e nomes regionais (SP)."
+  - "Demografia/PIB: clean.populacao_municipal e clean.dados_ibge por codigo_ibge."
   - "Remuneração: clean.remuneracao_municipal por cod_municipio (6 dígitos, formato antigo) e ano/mês; SEMPRE agregar por categoria/rede; nunca expor o profissional."
   - "Quando a pergunta pedir indicador já calculado (licenciatura, efetivos, nota média, IDEB, cluster), preferir clean.school_indicators."
   - "Perfil da escola (diagnóstico + posição relativa): analytics.school_profile_flat por co_entidade, uma linha por indicador, com municipio/rede/brasil/cluster, quartil_no_cluster e atencao. Use para 'como está a escola X?' e 'quais os sinais de atenção da escola X?'; para o perfil vigente, filtre o nu_ano_censo mais recente."

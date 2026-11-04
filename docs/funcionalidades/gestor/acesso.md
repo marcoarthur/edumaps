@@ -28,7 +28,9 @@ Diretores, coordenadores e demais gestores escolares.
 - Sistema pode autenticar o gestor e manter a sessão. A senha é guardada só
   como resumo calculado com um método propositalmente lento e resistente a
   adivinhação em massa (Argon2id); contas antigas passam a esse método no
-  próximo acesso, sem precisar trocar a senha.
+  próximo acesso, sem precisar trocar a senha. A chave da sessão também não
+  fica legível no servidor: ele guarda só um resumo dela, então quem visse o
+  banco não conseguiria usá-la para entrar no lugar do gestor.
 - Sistema pode deixar o gestor criar uma senha nova quando esquece a atual,
   por um link enviado ao e-mail da conta: o link vale por pouco tempo e uma
   vez só, a tela não revela se o e-mail tem conta, e a troca encerra o acesso

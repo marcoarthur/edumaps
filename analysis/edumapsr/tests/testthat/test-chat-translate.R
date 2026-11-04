@@ -37,6 +37,27 @@ test_that("chat_validate_sql bloqueia multi-statement, nao-SELECT e destrutivos"
   }
 })
 
+test_that("chat_validate_sql so aceita tabelas da whitelist do glossario", {
+  fora <- c(
+    "SELECT * FROM clean.sessoes",
+    "SELECT email FROM clean.gestores",
+    "SELECT * FROM clean.contatos",
+    "SELECT * FROM clean.canal_qrcodes",
+    "SELECT * FROM clean.chat_mensagens",
+    "SELECT * FROM clean.minion_jobs",
+    "SELECT a.no_entidade FROM clean.censo_escolas a JOIN clean.gestores g ON g.cod_inep = a.co_entidade",
+    "SELECT * FROM CLEAN.SESSOES"
+  )
+  for (sql in fora) {
+    expect_false(edumapsAnalytics:::chat_validate_sql(sql), info = sql)
+  }
+  # todas as tabelas do glossario continuam aceitas
+  for (t in edumapsAnalytics:::chat_tabelas_permitidas()) {
+    sql <- paste("SELECT * FROM", t, "LIMIT 1")
+    expect_true(edumapsAnalytics:::chat_validate_sql(sql), info = sql)
+  }
+})
+
 test_that("chat_origem extrai tabelas de FROM/JOIN", {
   sql <- paste(
     "SELECT a.no_entidade, b.total",

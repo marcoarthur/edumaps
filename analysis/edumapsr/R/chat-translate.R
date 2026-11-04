@@ -95,11 +95,16 @@ chat_llm <- function(cfg) {
 #'
 #' Bloqueia (cortesia de segurança): multi-statement (";"), comandos que não
 #' sejam SELECT top-level, keywords destrutivas/perigosas, funções de
-#' catálogo pg_* e referências a schemas fora da whitelist. Devolve TRUE/FALSE.
+#' catálogo pg_* e tabelas fora da whitelist do glossário (`tabelas` do
+#' `dicionario.yml`). Devolve TRUE/FALSE. A defesa de fato são os grants da
+#' role `edumaps_leitor` no banco; isto evita gastar uma consulta que o
+#' banco recusaria e mantém o modelo dentro do que foi curado.
 #'
 #' @param sql SQL como string.
+#' @param permitidas nomes `schema.tabela` aceitos; padrão: a whitelist do
+#'   glossário ([chat_tabelas_permitidas()]).
 #' @keywords internal
-chat_validate_sql <- function(sql) {
+chat_validate_sql <- function(sql, permitidas = chat_tabelas_permitidas()) {
   if (is.null(sql) || !nzchar(trimws(sql))) return(FALSE)
   if (grepl(";", sql, fixed = TRUE)) return(FALSE)
   if (!grepl("^[[:space:]]*select[[:space:]]", sql, ignore.case = TRUE)) {
@@ -121,8 +126,21 @@ chat_validate_sql <- function(sql) {
   if (!all(grepl(sprintf("^(%s)\\.[^.]+$", paste(CHAT_ALLOWED_SCHEMAS, collapse = "|")), refs))) {
     return(FALSE)
   }
+  if (!all(tolower(refs) %in% tolower(permitidas))) return(FALSE)
 
   TRUE
+}
+
+#' Tabelas que o SQL do chat pode consultar
+#'
+#' A whitelist do glossário (`tabelas` do `dicionario.yml`), como
+#' `schema.tabela`.
+#'
+#' @param glossario lista retornada por [chat_glossary()]; se NULL, lido.
+#' @keywords internal
+chat_tabelas_permitidas <- function(glossario = NULL) {
+  tabelas <- chat_tables(glossario %||% chat_glossary())
+  paste(tabelas$schema, tabelas$tabela, sep = ".")
 }
 
 #' Tabelas referenciadas num SQL
@@ -246,7 +264,7 @@ chat_tool_run_sql <- function(con, cfg, glossario, estado) {
       if (!chat_validate_sql(sql)) {
         return(paste0(
           "ERRO: consulta recusada pela política de segurança (apenas SELECT ",
-          "somente-leitura, de tabelas clean./analytics., sem multi-statement). ",
+          "somente-leitura, das tabelas do dicionário, sem multi-statement). ",
           "Escreva uma consulta SELECT válida."
         ))
       }

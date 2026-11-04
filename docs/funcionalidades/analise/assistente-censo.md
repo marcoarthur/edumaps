@@ -40,7 +40,10 @@ instalação; visitantes sem conta veem o convite para entrar.
   pizza, acompanhado de uma descrição em texto e da tabela com os dados.
 - Sistema pode mostrar, para conferência, a consulta usada e o resultado bruto.
 - Sistema pode restringir a consulta à leitura de dados públicos e remover
-  informações pessoais do retorno.
+  informações pessoais do retorno. O Assistente só consulta as bases públicas
+  curadas (Censo, avaliações, IBGE, indicadores); contas, contatos, conversas
+  e registros internos ficam fora do seu alcance, e o próprio banco recusa o
+  acesso.
 
 ## Valor
 
