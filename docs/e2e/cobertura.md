@@ -8,6 +8,25 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-04 (x) (limitador das inscrições por QR com IP real)
+
+Branch `fix/canais-limite-ip-real`. **LXC fora do ar** (SSH em timeout desde
+2026-11-03): validação no Docker local; deploy no LXC quando voltar. Lista e
+QR descartáveis criados no banco local, config `canais.inscricao.*` salva e
+restaurada no fim.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Pelo nginx local, `rate_max=2`: inscrições 1 e 2 → 201, a 3ª → 429 | API (curl) | 🟢 |
+| Pelo nginx com `X-Real-IP` forjado → 429 `Retry-After: 60` (o nginx sobrescreve o cabeçalho) | API (curl) | 🟢 |
+| `ip_anon` preenchido e igual para o mesmo visitante (antes: igual para todos) | psql | 🟢 |
+| Visitantes diferentes atrás do proxy têm contagens separadas; forjado de par não confiável ignorado; contagem vale para outro processo; `ip_anon` diferente por IP | prove `limite_ip_real.t` | 🟢 (falha sem o fix) |
+| Lote canais + modelos + gestor, duas rodadas seguidas | prove (38 arquivos) | 🟢 só as falhas antigas (`canais/envios.t`, `finance_siope.t`) |
+
+Achado: com a contagem no banco, testes com **token fixo** (`'f' x 32`) herdavam
+a contagem da execução anterior (janela de 60 s); e o `rand` do Test2 tem
+semente fixa pela data. Tokens agora de PID + relógio.
+
 ## Rodada 2026-11-02 (w) (esqueci minha senha do gestor, #336)
 
 Branch `feat/gestor-esqueci-senha`. LXC: banco, backend, minion e frontend
