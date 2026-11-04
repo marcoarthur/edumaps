@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-04 (z) — limitador das inscrições por QR com IP real (PR #340)
+
+- **PR #340 MERGEADO** (`738f2c8`): 8 rotas públicas das listas com QR contam
+  por token + IP real (`client_ip_app`), no banco (`auth_falhas`, escopo
+  `canais`, change `auth_falhas_canais`); 429 com Retry-After; `ip_anon` com o
+  IP real. Nota **168**.
+- ⚠️ **LXC fora do ar desde 2026-11-03** (SSH timeout): deploy de
+  `auth_falhas_canais` + backend + minion pendente. Validado só no local.
+- Testes: contagem no banco atravessa execuções — nada de token fixo; `rand`
+  do Test2 tem semente fixa pela data.
+- Incidente: `git stash pop` aplicou `stash@{0}` antigo (IBGE); limpo, entrada
+  preservada. Usar worktree para comparar com o estado anterior.
+- Host reiniciou em 2026-11-04; stack local e Mailpit subidos de novo.
+
 ## Sessão 2026-11-02 (y) — esqueci minha senha do gestor (PR #339, fecha #336)
 
 - **PR #339 MERGEADO** (`72f3101`): link por e-mail (job `gestor_senha_email`,

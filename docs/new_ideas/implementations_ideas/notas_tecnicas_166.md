@@ -46,8 +46,7 @@ autenticação (notas 164 e 165); falta a #336 (esqueci minha senha).
 
 ## Pendências
 
-- Limitador das inscrições por QR (`rate_limit_check`): passar a usar
-  `client_ip` e contagem fora da memória.
+- ~~Limitador das inscrições por QR~~ — PR #340 (nota 168).
 - Docker local: a porta 3010 publicada aceita `X-Real-IP` forjado vindo da
   rede do Docker (só ambiente de desenvolvimento).
 - ~~#336 — esqueci minha senha~~ — PR #339 (nota 167).

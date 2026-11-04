@@ -62,4 +62,4 @@ com `canais.email.smtp_host=edumaps-mailpit`, porta 1025, sem TLS, URL pública
 - LXC: preencher SMTP e URL pública no Painel de Configuração para ativar.
 - `canais_envio.t`: fila própria no teste, como aqui.
 - `config.t`: restaurar o que havia em vez de apagar `canais.%`.
-- Limitador das inscrições por QR (nota 166).
+- ~~Limitador das inscrições por QR~~ — PR #340 (nota 168).
