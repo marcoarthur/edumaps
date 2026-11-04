@@ -10,8 +10,12 @@
   por token + IP real (`client_ip_app`), no banco (`auth_falhas`, escopo
   `canais`, change `auth_falhas_canais`); 429 com Retry-After; `ip_anon` com o
   IP real. Nota **168**.
-- ⚠️ **LXC fora do ar desde 2026-11-03** (SSH timeout): deploy de
-  `auth_falhas_canais` + backend + minion pendente. Validado só no local.
+- ⚠️ **LXC fora do ar desde 2026-11-03** (SSH timeout); volta só no domingo
+  **2026-11-09**. Decisão do developer: seguir sem ele, testar e validar
+  sempre no **localhost**; o deploy Rex não bloqueia o ciclo.
+  **Fila de deploy LXC** (rodar quando voltar, `rex prepare` antes):
+  PR #340 → `deploy_db_dev` (`auth_falhas_canais`) + `deploy_backend_dev` +
+  `deploy_minion_dev`.
 - Testes: contagem no banco atravessa execuções — nada de token fixo; `rand`
   do Test2 tem semente fixa pela data.
 - Incidente: `git stash pop` aplicou `stash@{0}` antigo (IBGE); limpo, entrada
