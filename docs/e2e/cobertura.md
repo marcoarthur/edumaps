@@ -8,6 +8,23 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-04 (y) (sessão do gestor com hash; leitura do Assistente só no curado)
+
+Branch `fix/backend-sessao-hash`. LXC fora do ar até 2026-11-09: validação no
+Docker local (`localhost:8080`). Conta de gestor descartável criada pela API e
+apagada no fim; token injetado no `localStorage` (sem digitar credenciais).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Login pelo nginx devolve token de 64 hex; banco tem só o SHA-256 (busca pelo token em claro → 0) | API (curl) + psql | 🟢 |
+| Com o token: "Você já está logado", Painel do Gestor e Reuniões (rota com sessão) carregam | SPA | 🟢 |
+| "Sair" → `POST /api/gestor/logout` 204, sessão removida do banco, tela volta ao login | SPA + psql | 🟢 |
+| Sessão anterior à migration (uuid convertido em hash) segue válida na SPA | SPA | 🟢 |
+| `edumaps_leitor`: `permission denied` em `clean.sessoes`; segue lendo `clean.censo_escolas` | psql (`SET ROLE`) | 🟢 |
+| Validador do Assistente no container `analytic`: recusa `clean.sessoes`, aceita `clean.censo_escolas` (nenhuma pergunta enviada ao Assistente) | Rscript | 🟢 |
+| Banco de CI do zero: deploy, verify, revert `--to auth_falhas_canais` (devolve o grant) e redeploy convertendo uma sessão uuid | `ci_db.sh` + sqitch | 🟢 |
+| `sessao_hash.t` + gestor/pesquisa/admin/canais; suíte R (2113, 0 falhas) | prove / testthat | 🟢 só as falhas antigas |
+
 ## Rodada 2026-11-04 (x) (limitador das inscrições por QR com IP real)
 
 Branch `fix/canais-limite-ip-real`. **LXC fora do ar** (SSH em timeout desde
