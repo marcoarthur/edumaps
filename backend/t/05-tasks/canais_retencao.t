@@ -6,6 +6,7 @@
 # atrasado) e pelo helper. Minion no Postgres de teste (perform_jobs).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -13,6 +14,7 @@ use open ':std', ':encoding(UTF-8)';
 use EduMaps::Task::CanaisRetencao;
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;
@@ -23,10 +25,14 @@ plan skip_all => 'migrations nao aplicadas' unless $has;
 my $app    = $t->app;
 my $model  = $app->model('Canal');
 my $minion = $app->minion;
+# fila própria: o minion local consome a `default` do mesmo banco e pegava
+# os jobs do teste
+my $FILA = "teste_$$";
+$minion->app->config->{minion_filas}{canais_retencao} = $FILA;
 my $TASK   = 'canais_retencao';
 my ($ex_max) = $dbh->selectrow_array('SELECT COALESCE(max(id), 0) FROM clean.canal_exclusoes');
 
-sub limpa_jobs { $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = ?}, $TASK) }
+sub limpa_jobs { $minion->backend->pg->db->query(qq{DELETE FROM minion_jobs WHERE task = ? AND queue = '$FILA'}, $TASK) }
 sub limpa {
   limpa_jobs();
   $minion->unlock($TASK);
@@ -37,7 +43,7 @@ END { limpa() }
 
 sub jobs ($states) {
   my @out;
-  my $it = $minion->jobs({ tasks => [$TASK], states => $states });
+  my $it = $minion->jobs({ tasks => [$TASK], queues => [$FILA], states => $states });
   while (my $j = $it->next) { push @out, $j }
   return \@out;
 }
@@ -57,7 +63,7 @@ subtest 'diária: executa e reagenda para daqui a 24h' => sub {
   is $app->canais_retencao_start->{ja_ativo}, 1, 'segunda chamada: já ativa';
   ok $app->canais_retencao_agendado, 'agendado';
 
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   my $res = $minion->job($r->{job_id})->info->{result};
   ok $res->{resultado}{metadados} && $res->{resultado}{pendentes} && $res->{resultado}{lista_inativa},
     'três regras executadas';
@@ -72,15 +78,15 @@ subtest 'diária: executa e reagenda para daqui a 24h' => sub {
 
   # o próximo da cadeia remove o anterior (finished)
   $minion->job($res->{proximo})->retry({ delay => 0 });
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   ok !$minion->job($r->{job_id}), 'job anterior removido';
   is resumo_novo(), 6, 'segunda execução registrada (mesmo com zero)';
 };
 
 subtest 'desligada: o job diário para sem reagendar' => sub {
   limpa_jobs(); desliga();
-  my $id = $minion->enqueue($TASK => [{}]);
-  $minion->perform_jobs;
+  my $id = $minion->enqueue($TASK => [{}] => { queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($id)->info->{result}, { parado => 'desligado' }, 'parado';
   is scalar @{ jobs([qw(inactive active)]) }, 0, 'sem reagendamento';
   ok !$app->canais_retencao_agendado, 'não agendado';
@@ -91,7 +97,7 @@ subtest 'manual: uma vez, sem reagendar, mesmo desligada' => sub {
   my $antes = resumo_novo();
   my $id = $app->canais_retencao_executar;
   ok !$app->canais_retencao_agendado, 'job manual não conta como agendado';
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   my $res = $minion->job($id)->info->{result};
   is $res->{manual}, 1, 'manual';
   ok $res->{resultado}, 'executou';
@@ -104,8 +110,8 @@ subtest 'lock: manual para; diária adia' => sub {
   limpa_jobs(); liga();
   ok $minion->lock($TASK, 60), 'lock tomado por outra execução';
   my $m = $app->canais_retencao_executar;
-  my $d = $minion->enqueue($TASK => [{}]);
-  $minion->perform_jobs;
+  my $d = $minion->enqueue($TASK => [{}] => { queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($m)->info->{result}, { parado => 'lock' }, 'manual: parado';
   my $res = $minion->job($d)->info->{result};
   is $res->{adiado}, 'lock', 'diária: adiada';

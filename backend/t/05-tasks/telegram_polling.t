@@ -6,6 +6,7 @@
 # no Postgres de teste (perform_jobs in-process).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use FakeUA;
 use Mojo::JSON qw(true false);
@@ -16,6 +17,7 @@ use EduMaps::Task::TelegramPolling;
 use EduMaps::Channel::Telegram::Updates;
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 my $ua = FakeUA->new;
 $t->app->helper(canais_ua => sub { $ua });

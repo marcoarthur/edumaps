@@ -11,6 +11,7 @@
 # Auth 401/403.
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use Digest::SHA qw(sha256_hex);
 use Mojo::JSON qw(true false);
@@ -18,6 +19,7 @@ use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;
@@ -30,6 +32,10 @@ plan skip_all => 'migrations nao aplicadas' unless $has;
 my $app    = $t->app;
 my $model  = $app->model('Canal');
 my $minion = $app->minion;
+# fila própria: o minion local consome a `default` do mesmo banco e pegava
+# os jobs do teste
+my $FILA = "teste_$$";
+$minion->app->config->{minion_filas}{canais_envio} = $FILA;
 my $SECRET = $app->secrets->[0];
 my $INEP   = 99730000 + ($$ % 1000);
 my $OUTRA  = $INEP + 1000;
@@ -41,7 +47,7 @@ my @smtp;
 my $smtp = sub ($cfg, $to, $from, $env) { push @smtp, $to; return { ok => 1 } };
 
 sub limpa {
-  $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = 'canais_envio'});
+  $minion->backend->pg->db->query(qq{DELETE FROM minion_jobs WHERE task = 'canais_envio' AND queue = '$FILA'});
   for my $inep ($INEP, $OUTRA) {
     $dbh->do(q{DELETE FROM clean.canal_mensagens WHERE cod_inep = ? AND referente_tipo = 'envio'},
              {}, $inep);
@@ -71,7 +77,7 @@ sub escola ($painel, $inep) { my ($x) = grep { $_->{cod_inep} == $inep } @{ $pai
 sub lote ($id) { $model->envio_processar_lote($id, secret => $SECRET, smtp_transport => $smtp) }
 sub jobs_pendentes ($id) {
   return scalar $minion->backend->pg->db->query(
-    q{SELECT id FROM minion_jobs WHERE task = 'canais_envio' AND state = 'inactive'
+    qq{SELECT id FROM minion_jobs WHERE task = 'canais_envio' AND state = 'inactive' AND queue = '$FILA'
        AND (args->0->>'envio_id')::bigint = ?}, $id)->hashes->each;
 }
 sub novo ($agenda = undef) {

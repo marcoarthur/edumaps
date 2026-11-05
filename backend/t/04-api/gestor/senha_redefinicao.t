@@ -7,6 +7,7 @@
 # perform_jobs. Limites religados aqui (a suíte os desliga em Imports.pm).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -14,6 +15,7 @@ use open ':std', ':encoding(UTF-8)';
 delete $ENV{EDUMAPS_AUTH_LIMITE_OFF};
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;
@@ -54,11 +56,8 @@ sub ultimo_token {
   return $tok;
 }
 
-# config de e-mail ligada só durante o teste; restaura o que havia
+# config de e-mail ligada só durante o teste (o ConfigSnapshot devolve o que havia)
 my @CHAVES_CFG = qw(canais.email.enabled canais.email.smtp_host canais.email.from canais.email.public_base_url);
-my %antes = map { $_->[0] => $_ } @{ $dbh->selectall_arrayref(
-  'SELECT key, value, secret, sensitive, secret_key_version, updated_by, updated_at FROM app_config.items WHERE key = ANY(?)',
-  {}, \@CHAVES_CFG) };
 
 $dbh->do('INSERT INTO clean.escolas (codigo_inep, escola) VALUES (?, ?) ON CONFLICT (codigo_inep) DO NOTHING',
   {}, $INEP, 'Escola de teste da redefinição de senha');
@@ -71,9 +70,6 @@ END {
   $dbh->do('DELETE FROM clean.gestores WHERE email = ?', {}, $EMAIL);
   $dbh->do('DELETE FROM clean.escolas WHERE codigo_inep = ?', {}, $INEP);
   $dbh->do('DELETE FROM minion_jobs WHERE queue = ?', {}, $FILA);
-  $dbh->do('DELETE FROM app_config.items WHERE key = ANY(?)', {}, \@CHAVES_CFG);
-  $dbh->do('INSERT INTO app_config.items (key, value, secret, sensitive, secret_key_version, updated_by, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)', {}, @$_) for values %antes;
 }
 
 subtest 'sem e-mail configurado: indisponível' => sub {

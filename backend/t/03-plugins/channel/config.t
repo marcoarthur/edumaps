@@ -3,6 +3,7 @@
 # a partir dela. Só roda onde app_config foi aplicada.
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -10,6 +11,7 @@ use open ':std', ':encoding(UTF-8)';
 use ok 'EduMaps::Channel';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $has = $t->app->schema->storage->dbh->selectrow_array(
@@ -41,6 +43,9 @@ subtest 'validação das folhas novas' => sub {
 
 subtest 'defaults sem nada definido' => sub {
   plan skip_all => 'app_config.items ausente' unless $has;
+  # parte do zero: o banco é o da stack local, que pode ter canais configurados
+  # (o ConfigSnapshot devolve no fim)
+  $t->app->schema->storage->dbh->do("DELETE FROM app_config.items WHERE key LIKE 'canais.%'");
 
   my $email = $model->email_config;
   is $email->{enabled}, 0, 'e-mail desligado por omissão';

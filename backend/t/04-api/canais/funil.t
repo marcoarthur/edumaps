@@ -9,6 +9,7 @@
 #   GET /envios/:id → contadores.optouts (opt-outs gerados pelo envio)
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use Digest::SHA qw(sha256_hex);
 use Mojo::JSON qw(true false);
@@ -16,6 +17,7 @@ use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;

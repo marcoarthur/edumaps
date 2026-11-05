@@ -13,12 +13,14 @@
 # (helper canais_smtp); o job `canais_envio` roda por perform_jobs.
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use JSON::PP ();
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my @enviados;
@@ -36,6 +38,10 @@ plan skip_all => 'migration canal_envios nao aplicada' unless $has;
 
 my $model  = $t->app->model('Canal');
 my $minion = $t->app->minion;
+# fila própria: o minion local consome a `default` do mesmo banco e pegava
+# os jobs do teste
+my $FILA = "teste_$$";
+$minion->app->config->{minion_filas}{canais_envio} = $FILA;
 my $INEP   = 99680000 + ($$ % 1000);
 my $OUTRA  = $INEP + 1000;
 my $P      = sprintf '%04d', $$ % 10000;
@@ -67,7 +73,7 @@ sub limpa {
   }
   $dbh->do(q{DELETE FROM app_config.items WHERE key LIKE 'canais.envio.%'
              OR key LIKE 'canais.email.%' OR key = 'canais.inscricao.public_base_url'});
-  $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = 'canais_envio'});
+  $minion->backend->pg->db->query(qq{DELETE FROM minion_jobs WHERE task = 'canais_envio' AND queue = '$FILA'});
 }
 END { limpa() if $has }
 
@@ -244,7 +250,7 @@ subtest 'teste e disparo: 409 por motivo, 429, 202' => sub {
   $t->patch_ok("$B/envios/$env->{id}", $A->(), json => { assunto => 'x' })->status_is(409);
   $t->delete_ok("$B/envios/$env->{id}", $A->())->status_is(409);
 
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   # o job roda num processo filho (perform_jobs): confere pelo histórico
   is $dbh->selectrow_array(q{SELECT count(*) FROM clean.canal_mensagens
        WHERE referente_tipo = 'envio' AND referente_id = ? AND status = 'sent'}, {}, $env->{id}),

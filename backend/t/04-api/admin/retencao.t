@@ -8,12 +8,14 @@
 # Auth 401/403; folhas canais.retencao.* na árvore de config.
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use Mojo::JSON qw(true false);
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;
@@ -25,6 +27,10 @@ plan skip_all => 'migrations nao aplicadas' unless $has;
 
 my $app    = $t->app;
 my $minion = $app->minion;
+# fila própria: o minion local consome a `default` do mesmo banco e pegava
+# os jobs do teste
+my $FILA = "teste_$$";
+$minion->app->config->{minion_filas}{canais_retencao} = $FILA;
 my $INEP_ADMIN  = '77777773';
 my $INEP_USER   = '66666663';
 my $ADMIN_EMAIL = sprintf('admin.retencao.%d@edumaps.test', $$);
@@ -33,7 +39,7 @@ my $SENHA = 'senha123';
 my ($admin, $user);
 my ($ex_max) = $dbh->selectrow_array('SELECT COALESCE(max(id), 0) FROM clean.canal_exclusoes');
 
-sub limpa_jobs { $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = 'canais_retencao'}) }
+sub limpa_jobs { $minion->backend->pg->db->query(qq{DELETE FROM minion_jobs WHERE task = 'canais_retencao' AND queue = '$FILA'}) }
 END {
   return unless $has;
   limpa_jobs();
@@ -71,7 +77,7 @@ subtest 'auth: 401 sem token, 403 gestor comum' => sub {
   $t->post_ok("$BASE/executar")->status_is(401);
   $t->get_ok($BASE, $U)->status_is(403);
   $t->post_ok("$BASE/executar", $U)->status_is(403);
-  is $minion->jobs({ tasks => ['canais_retencao'] })->total, 0, 'nada enfileirado';
+  is $minion->jobs({ tasks => ['canais_retencao'], queues => [$FILA] })->total, 0, 'nada enfileirado';
 };
 
 subtest 'GET: defaults, sem execução, sem agendamento' => sub {
@@ -106,7 +112,7 @@ subtest 'POST executar: 202, avulsa, não reagenda' => sub {
   is $info->{args}, [{ manual => 1 }], 'manual';
   $t->get_ok($BASE, H())->status_is(200)->json_is('/agendado', false, 'manual não é agendamento');
 
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($r->{job_id})->info->{state}, 'finished', 'executado';
   my $j = $t->get_ok($BASE, H())->status_is(200)->tx->res->json;
   my $u = $j->{ultima_execucao};
@@ -114,7 +120,7 @@ subtest 'POST executar: 202, avulsa, não reagenda' => sub {
   is [ sort keys %$u ], [ sort qw(em metadados pendentes listas_inativas) ], 'campos';
   ok !grep({ $u->{$_} !~ /^\d+$/ } qw(metadados pendentes listas_inativas)), 'contagens numéricas';
   is $j->{agendado}, false, 'continua sem agendamento (não reagendou)';
-  is $minion->jobs({ tasks => ['canais_retencao'], states => [qw(inactive active)] })->total, 0,
+  is $minion->jobs({ tasks => ['canais_retencao'], queues => [$FILA], states => [qw(inactive active)] })->total, 0,
     'nada pendente';
 
   $app->canais_retencao_start;

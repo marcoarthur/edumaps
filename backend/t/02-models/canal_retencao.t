@@ -13,11 +13,13 @@
 # afetada; idempotência; última execução; config (defaults, prazos < 1).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh   = $t->app->schema->storage->dbh;
