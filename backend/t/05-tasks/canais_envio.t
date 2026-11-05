@@ -6,6 +6,7 @@
 # `canais_smtp`. Minion no Postgres de teste (perform_jobs).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -13,6 +14,7 @@ use open ':std', ':encoding(UTF-8)';
 use EduMaps::Task::CanaisEnvio;
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 $t->app->helper(canais_smtp => sub { sub { return { ok => 1 } } });
 
@@ -24,12 +26,16 @@ plan skip_all => 'migrations nao aplicadas' unless $has;
 my $app    = $t->app;
 my $model  = $app->model('Canal');
 my $minion = $app->minion;
+# fila própria: o minion local consome a `default` do mesmo banco e pegava
+# os jobs do teste
+my $FILA = "teste_$$";
+$minion->app->config->{minion_filas}{canais_envio} = $FILA;
 my $TASK   = 'canais_envio';
 my $INEP   = 99690000 + ($$ % 1000);
 my $P      = sprintf '%04d', $$ % 10000;
 my ($gid, $lista);
 
-sub limpa_jobs { $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = ?}, $TASK) }
+sub limpa_jobs { $minion->backend->pg->db->query(qq{DELETE FROM minion_jobs WHERE task = ? AND queue = '$FILA'}, $TASK) }
 sub limpa {
   limpa_jobs();
   $dbh->do(q{DELETE FROM clean.canal_mensagens WHERE cod_inep = ? AND referente_tipo = 'envio'},
@@ -87,7 +93,7 @@ subtest 'lotes: reagenda até concluir; cadeia limpa' => sub {
   ok $j1, 'disparo enfileirou';
   is $minion->job($j1)->info->{args}, [{ envio_id => $e->{id} }], 'args';
 
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   my $r1 = $minion->job($j1)->info->{result};
   is [ @$r1{qw(reagendar processados)} ], [60, 2], 'lote de 2, reagenda em 60 s';
   my $j2 = job_do($e->{id});
@@ -98,12 +104,12 @@ subtest 'lotes: reagenda até concluir; cadeia limpa' => sub {
   is status($e->{id}), 'enviando', 'enviando';
 
   $minion->job($j2)->retry({ delay => 0 });
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($j2)->info->{result}, { fim => 'concluido', processados => 1 }, 'concluído';
   ok !$minion->job($j1), 'job anterior removido';
   is status($e->{id}), 'concluido', 'status final';
   ok !$minion->is_locked("$TASK:$e->{id}"), 'lock solto';
-  is $minion->jobs({ tasks => [$TASK], states => ['inactive'] })->total, 0, 'nada pendente';
+  is $minion->jobs({ tasks => [$TASK], queues => [$FILA], states => ['inactive'] })->total, 0, 'nada pendente';
   cfg('envio.ritmo_por_minuto', '60');
 };
 
@@ -113,7 +119,7 @@ subtest 'lock: outro lote em curso → sai' => sub {
   my $e = novo_envio();
   ok $minion->lock("$TASK:$e->{id}", 60), 'lock tomado';
   my $j = job_do($e->{id});
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($j)->info->{result}, { parado => 'lock' }, 'parado';
   is status($e->{id}), 'enviando', 'nada processado';
   $minion->unlock("$TASK:$e->{id}");
@@ -125,7 +131,7 @@ subtest 'desligado: reagenda em 300 s sem mudar o estado; cancelado sai' => sub 
     q{SELECT id FROM clean.canal_envios WHERE cod_inep = ? AND status = 'enviando'}, {}, $INEP);
   cfg('envio.enabled', 'false');
   my $j = $app->canais_envio_enfileirar($e);
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   my $r = $minion->job($j)->info->{result};
   is [ @$r{qw(reagendar motivo)} ], [300, 'envio_desligado'], 'reagenda em 300 s';
   ok $minion->job($r->{proximo})->info->{delayed} > time + 250, 'atrasado';
@@ -134,12 +140,12 @@ subtest 'desligado: reagenda em 300 s sem mudar o estado; cancelado sai' => sub 
 
   $model->envio_cancelar($INEP, $e);
   $minion->job($r->{proximo})->retry({ delay => 0 });
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($r->{proximo})->info->{result}, { fim => 'cancelado' }, 'cancelado: sai';
-  is $minion->jobs({ tasks => [$TASK], states => ['inactive'] })->total, 0, 'sem reagendar';
+  is $minion->jobs({ tasks => [$TASK], queues => [$FILA], states => ['inactive'] })->total, 0, 'sem reagendar';
 
-  my $s = $minion->enqueue($TASK => [{}]);
-  $minion->perform_jobs;
+  my $s = $minion->enqueue($TASK => [{}] => { queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($s)->info->{result}, { parado => 'sem_envio' }, 'args inválidos';
 };
 

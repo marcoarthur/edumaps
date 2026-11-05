@@ -6,12 +6,14 @@
 # padrão), então o X-Real-IP simula visitantes diferentes atrás do nginx.
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use JSON::PP ();
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 
 my $dbh = $t->app->schema->storage->dbh;
@@ -40,11 +42,6 @@ sub limpa {
   $dbh->do('DELETE FROM clean.escolas WHERE codigo_inep = ?', {}, $INEP);
 }
 
-# config canais.inscricao.* restaurada no fim exatamente como estava
-my $CFG = $dbh->selectall_arrayref(
-  q{SELECT key, value, secret, sensitive, secret_key_version, updated_by, updated_at
-      FROM app_config.items WHERE key LIKE 'canais.inscricao.%'});
-
 limpa();
 $dbh->do('INSERT INTO clean.escolas (codigo_inep, escola) VALUES (?, ?) ON CONFLICT (codigo_inep) DO NOTHING',
   {}, $INEP, 'Escola do limitador');
@@ -60,9 +57,6 @@ END {
   return unless $dbh;
   $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'canais' AND chave = ?}, {}, $_) for @chaves;
   limpa();
-  $dbh->do(q{DELETE FROM app_config.items WHERE key LIKE 'canais.inscricao.%'});
-  $dbh->do('INSERT INTO app_config.items (key, value, secret, sensitive, secret_key_version, updated_by, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)', {}, @$_) for @$CFG;
 }
 
 sub novo_token {

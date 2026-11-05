@@ -5,6 +5,7 @@
 # WhatsApp Cloud mockado (helper canais_ua → FakeUA, sem rede).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use FakeUA;
 use JSON::PP ();
@@ -12,6 +13,7 @@ use utf8;
 use open ':std', ':encoding(UTF-8)';
 
 my $t = Test::Mojo->new('EduMaps');
+ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
 $t->app->log->level('fatal');
 my $ua = FakeUA->new(responder => sub { (200, { messages => [ { id => 'wamid.1' } ] }) });
 $t->app->helper(canais_ua => sub { $ua });

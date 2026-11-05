@@ -5,6 +5,7 @@
 # Sem rede (FakeUA).
 use lib qw(t/lib lib);
 use Imports;
+use ConfigSnapshot;
 use Test::Mojo;
 use FakeUA;
 use utf8;
@@ -73,6 +74,7 @@ subtest 'falha da Meta → ok 0' => sub {
 
 subtest 'disponibilidade: sem template o WhatsApp não é canal de confirmação' => sub {
   my $t = Test::Mojo->new('EduMaps');
+  ConfigSnapshot::guardar($t->app->schema->storage->dbh, q{%});   # config restaurada no fim
   $t->app->log->level('fatal');
   my $dbh = $t->app->schema->storage->dbh;
   plan skip_all => 'app_config ausente' unless $dbh->selectrow_array("SELECT to_regclass('app_config.items')");
