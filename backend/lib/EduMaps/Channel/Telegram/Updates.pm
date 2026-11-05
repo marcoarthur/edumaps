@@ -25,8 +25,9 @@ use EduMaps::Channel::Telegram;
 #       mensagem → resposta fixa curta.
 #
 # Só conversa privada (o request_contact só existe lá); updates de grupos,
-# canais, edições etc. são ignorados sem resposta. Rate limit simples por
-# chat_id (em memória, por processo). Toda resposta sai pelo bot PÚBLICO
+# canais, edições etc. são ignorados sem resposta. Rate limit por chat_id no
+# banco (clean.auth_falhas, escopo `telegram`), comum a todos os processos.
+# Toda resposta sai pelo bot PÚBLICO
 # (canais.telegram.token) via Channel::Telegram, que registra cada envio em
 # clean.canal_mensagens (operação `confirmacao`).
 
@@ -36,6 +37,9 @@ has model  => undef;
 has config => sub { {} };
 has log    => sub { Mojo::Log->new };
 has ua     => undef;   # UA injetável (teste); undef = o padrão do canal
+# Segredo do app: chave HMAC do chat_id no limitador (a tabela não guarda o
+# id legível). Sem segredo ou sem modelo, o limitador não bloqueia.
+has secret => undef;
 
 # Canal de envio: Channel::Telegram com o token do bot PÚBLICO.
 has channel => sub ($self) {
@@ -47,10 +51,10 @@ has channel => sub ($self) {
   );
 };
 
-# Rate limit por chat: no máximo RATE_MAX updates por RATE_WINDOW segundos.
+# Rate limit por chat: no máximo RATE_MAX updates por RATE_WINDOW segundos
+# (janela deslizante, no banco).
 our $RATE_MAX    = 20;
 our $RATE_WINDOW = 60;
-my %RATE;   # chat_id => { tick, n } (por processo)
 
 # --- textos provisórios (PT-BR) ---------------------------------------------
 
@@ -215,19 +219,28 @@ sub _responder ($self, $chat_id, $texto, %o) {
   return $res;
 }
 
-sub _rate_ok ($self, $chat_id) {
-  my $tick = int(time / $RATE_WINDOW);
-  if (keys %RATE > 10_000) {   # limpeza barata
-    delete $RATE{$_} for grep { $RATE{$_}{tick} < $tick } keys %RATE;
-  }
-  my $b = $RATE{$chat_id} //= { tick => $tick, n => 0 };
-  if ($b->{tick} != $tick) { $b->{tick} = $tick; $b->{n} = 0; }
-  return 0 if $b->{n} >= $RATE_MAX;
-  $b->{n}++;
-  return 1;
+# Chave do chat no limitador (HMAC do chat_id com o segredo do app).
+sub rate_chave ($self, $chat_id) {
+  return $self->model->auth_chave($self->secret, "$chat_id");
 }
 
-# Zera o rate limit (testes).
-sub reset_rate_limit { %RATE = (); return; }
+# Contagem no banco: vale para os workers do webhook e para o minion do
+# polling, e sobrevive a reinícios. Erro de banco não derruba o bot: libera.
+sub _rate_ok ($self, $chat_id) {
+  my $m = $self->model;
+  return 1 unless $m && $m->can('auth_retry_after')
+    && defined $self->secret && length $self->secret;
+  my $chave = $self->rate_chave($chat_id);
+  my $ok = eval {
+    return 0 if $m->auth_retry_after('telegram', $chave, $RATE_MAX, $RATE_WINDOW);
+    $m->auth_registrar('telegram', $chave);
+    1;
+  };
+  unless (defined $ok) {
+    $self->log->warn("Telegram público: limitador indisponível: $@");
+    return 1;
+  }
+  return $ok;
+}
 
 1;

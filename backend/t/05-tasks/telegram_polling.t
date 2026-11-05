@@ -33,13 +33,18 @@ my $minion = $app->minion;
 my $MASTER = 'chave-mestra-de-teste-12345';
 my $BOT    = "EduMapsPolling$$";
 my $CHAT   = 7600000000 + ($$ % 1000);
+# fila só deste teste: o minion local de pé não pega os jobs
+my $FILA   = "teste_$$";
+$app->config->{minion_filas}{telegram_polling} = $FILA;
 $ENV{EDUMAPS_CONFIG_MASTER_KEY} = $MASTER;
 
-sub limpa_jobs { $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = 'telegram_polling'}) }
+sub limpa_jobs { $minion->backend->pg->db->query(q{DELETE FROM minion_jobs WHERE task = 'telegram_polling' AND queue = ?}, $FILA) }
 sub limpa {
   $dbh->do(q{DELETE FROM app_config.items WHERE key LIKE 'canais.telegram.%'});
   $dbh->do('DELETE FROM clean.canal_telegram_estado WHERE bot_username = ?', {}, $BOT);
   $dbh->do(q{DELETE FROM clean.canal_mensagens WHERE canal = 'telegram' AND destinatario = ?}, {}, "$CHAT");
+  $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'telegram' AND chave = ?},
+    {}, $model->auth_chave($app->secrets->[0], "$CHAT"));
   limpa_jobs();
   $minion->unlock("telegram_polling:$BOT");
 }
@@ -66,10 +71,10 @@ sub upd ($id, $text) {
     chat => { id => $CHAT, type => 'private' }, from => { id => $CHAT } } };
 }
 sub jobs_ativos {
-  return $minion->jobs({ tasks => ['telegram_polling'], states => [qw(inactive active)] })->total;
+  return $minion->jobs({ tasks => ['telegram_polling'], states => [qw(inactive active)], queues => [$FILA] })->total;
 }
 sub proximo {
-  my $j = $minion->jobs({ tasks => ["telegram_polling"], states => ["inactive"] })->next;  # hashref (info)
+  my $j = $minion->jobs({ tasks => ["telegram_polling"], states => ["inactive"], queues => [$FILA] })->next;  # hashref (info)
   return $j;
 }
 
@@ -77,7 +82,6 @@ limpa();
 
 subtest 'ciclo: processa updates e persiste o offset' => sub {
   liga();
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   $ua->clear;
   @FILA = ([200, { ok => true, result => [ upd(101, 'oi'), upd(100, 'ola') ] }]);
   my $cfg = $model->telegram_publico_config;
@@ -99,8 +103,8 @@ subtest 'ciclo: processa updates e persiste o offset' => sub {
 subtest 'job: reagenda a si mesmo (delay) e remove o anterior' => sub {
   limpa_jobs(); liga();
   @FILA = ([200, { ok => true, result => [ upd(102, 'x') ] }]);
-  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1 });
-  $minion->perform_jobs;
+  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1, queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   my $info = $minion->job($id)->info;
   is $info->{state}, 'finished', 'finished';
   is $info->{result}{processados}, 1, 'processou';
@@ -114,7 +118,7 @@ subtest 'job: reagenda a si mesmo (delay) e remove o anterior' => sub {
 
   # executa o próximo: remove o anterior (finished)
   $minion->backend->pg->db->query(q{UPDATE minion_jobs SET delayed = NOW() WHERE id = ?}, $n->{id});
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
   ok !$minion->job($id), 'job anterior removido';
   is $minion->job($n->{id})->info->{state}, 'finished', 'segundo ciclo ok';
   is jobs_ativos(), 1, 'sempre um único job na cadeia';
@@ -123,8 +127,8 @@ subtest 'job: reagenda a si mesmo (delay) e remove o anterior' => sub {
 subtest 'lock: duplicata termina sem reagendar' => sub {
   limpa_jobs(); liga();
   ok $minion->lock("telegram_polling:$BOT", 60), 'lock tomado por "outro" job';
-  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1 });
-  $minion->perform_jobs;
+  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1, queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($id)->info->{result}, { parado => 'lock' }, 'parado por lock';
   is jobs_ativos(), 0, 'não reagendou';
   $minion->unlock("telegram_polling:$BOT");
@@ -133,12 +137,12 @@ subtest 'lock: duplicata termina sem reagendar' => sub {
 subtest 'parada: desligado ou modo webhook' => sub {
   limpa_jobs();
   liga(enabled => 'false');
-  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1 });
-  $minion->perform_jobs;
+  my $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1, queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($id)->info->{result}, { parado => 'desligado' }, 'desligado';
   liga(modo => 'webhook');
-  $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1 });
-  $minion->perform_jobs;
+  $id = $minion->enqueue(telegram_polling => [{}] => { attempts => 1, queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   is $minion->job($id)->info->{result}, { parado => 'recebimento' }, 'modo webhook';
   is jobs_ativos(), 0, 'não reagendou';
 };
@@ -146,8 +150,8 @@ subtest 'parada: desligado ou modo webhook' => sub {
 subtest 'erro: backoff; 409 de webhook ativo chama deleteWebhook' => sub {
   limpa_jobs(); liga();
   @FILA = ([undef]);   # falha de conexão
-  my $id = $minion->enqueue(telegram_polling => [{ erros => 1 }] => { attempts => 1 });
-  $minion->perform_jobs;
+  my $id = $minion->enqueue(telegram_polling => [{ erros => 1 }] => { attempts => 1, queue => $FILA });
+  $minion->perform_jobs({ queues => [$FILA] });
   my $res = $minion->job($id)->info->{result};
   like $res->{erro}, qr/getUpdates/, 'erro registrado';
   is $res->{erros}, 2, 'erros seguidos';

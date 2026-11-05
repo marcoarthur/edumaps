@@ -521,7 +521,7 @@ sub telegram_webhook($self) {
     my $ok = eval {
       EduMaps::Channel::Telegram::Updates->new(
         model => $model, config => $cfg, log => $self->app->log,
-        ua    => $self->canais_ua,
+        ua    => $self->canais_ua, secret => $self->app->secrets->[0],
       )->handle($update);
       1;
     };

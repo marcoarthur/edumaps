@@ -22,8 +22,12 @@ my $INEP  = 99770000 + ($$ % 1000);
 my $EMAIL = sprintf 'gestor.tg.updates.%d@edumaps.test', $$;
 my ($token, @chats);
 
+my $SEGREDO = $t->app->secrets->[0];
+
 sub limpa {
   return unless $has;
+  $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'telegram' AND chave = ANY(?)},
+    {}, [map { $model->auth_chave($SEGREDO, "$_") } @chats]) if @chats;
   $dbh->do(q{DELETE FROM clean.canal_mensagens WHERE canal = 'telegram'
              AND destinatario = ANY(?::text[])}, {}, [map {"$_"} @chats]) if @chats;
   $dbh->do(q{DELETE FROM clean.canal_inscricoes i USING clean.canal_listas l
@@ -41,7 +45,7 @@ END { limpa() }
 
 my $ua = FakeUA->new;
 my $up = EduMaps::Channel::Telegram::Updates->new(
-  model => $model, config => { token => '111:TOKEN-PUBLICO' }, ua => $ua,
+  model => $model, config => { token => '111:TOKEN-PUBLICO' }, ua => $ua, secret => $SEGREDO,
   log => Mojo::Log->new(level => 'fatal'));
 
 sub inscreve ($nome, $tel) {
@@ -89,7 +93,6 @@ subtest 'setup' => sub {
 
 subtest '/start válido → teclado request_contact; contato próprio igual → confirmado' => sub {
   plan skip_all => 'migration nao aplicada' unless $has;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   my $chat = 7000000000 + ($$ % 1000);
   my $r = inscreve('Ana', '(11) 94444-0001');
   my $ref = $r->{confirmacao}{ref};
@@ -135,7 +138,6 @@ subtest '/start válido → teclado request_contact; contato próprio igual → 
 
 subtest 'contato divergente → conflito, membro pendente' => sub {
   plan skip_all => 'migration nao aplicada' unless $has;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   my $chat = 7100000000 + ($$ % 1000);
   my $r = inscreve('Bia', '11944440002');
   $up->handle(msg($chat, text => "/start $r->{confirmacao}{ref}"));
@@ -151,7 +153,6 @@ subtest 'contato divergente → conflito, membro pendente' => sub {
 
 subtest 'contato de terceiro → recusa' => sub {
   plan skip_all => 'migration nao aplicada' unless $has;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   my $chat = 7200000000 + ($$ % 1000);
   my $r = inscreve('Caio', '11944440003');
   $up->handle(msg($chat, text => "/start $r->{confirmacao}{ref}"));
@@ -166,7 +167,6 @@ subtest 'contato de terceiro → recusa' => sub {
 
 subtest '/start inválido, contato sem ref, mensagem qualquer, grupo, rate limit' => sub {
   plan skip_all => 'migration nao aplicada' unless $has;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   my $chat = 7300000000 + ($$ % 1000);
   $ua->clear;
   is $up->handle(msg($chat, text => '/start'))->{acao}, 'start_invalido', 'sem ref';
@@ -185,18 +185,38 @@ subtest '/start inválido, contato sem ref, mensagem qualquer, grupo, rate limit
   is $up->handle({ update_id => 1, edited_message => {} })->{acao}, 'ignorado', 'sem message';
   is scalar(@{ $ua->calls }), 0, 'sem resposta';
 
+};
+
+subtest 'rate limit no banco: comum aos processos, chave sem o chat_id' => sub {
+  plan skip_all => 'migration nao aplicada' unless $has;
+  my $chat = 7350000000 + ($$ % 1000);
   local $EduMaps::Channel::Telegram::Updates::RATE_MAX = 3;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
-  my @a = map { $up->handle(msg($chat, text => 'x'))->{acao} } 1 .. 4;
-  is $a[3], 'rate_limited', 'quarta excede';
+  # dois tratadores = dois processos (worker do webhook e minion do polling)
+  my $outro = EduMaps::Channel::Telegram::Updates->new(model => $model, secret => $SEGREDO,
+    config => { token => '111:T' }, ua => FakeUA->new, log => Mojo::Log->new(level => 'fatal'));
+  my @a = map { ($_ % 2 ? $up : $outro)->handle(msg($chat, text => 'x'))->{acao} } 1 .. 3;
+  is \@a, [('padrao') x 3], 'três passam, somando os dois processos';
+  my $novo = EduMaps::Channel::Telegram::Updates->new(model => $model, secret => $SEGREDO,
+    config => { token => '111:T' }, ua => FakeUA->new, log => Mojo::Log->new(level => 'fatal'));
+  is $novo->handle(msg($chat, text => 'x'))->{acao}, 'rate_limited', 'quarta excede, mesmo em tratador novo (reinício)';
+  is $up->handle(msg($chat + 1, text => 'x'))->{acao}, 'padrao', 'outra conversa não é afetada';
+
+  my $chaves = $dbh->selectcol_arrayref(
+    q{SELECT chave FROM clean.auth_falhas WHERE escopo = 'telegram' AND chave = ?}, {}, $up->rate_chave($chat));
+  is scalar(@$chaves), 3, 'três registros da conversa';
+  unlike $chaves->[0], qr/\Q$chat\E/, 'chave não contém o chat_id';
+  like $chaves->[0], qr/^[0-9a-f]{64}\z/, 'chave é HMAC';
+
+  my $sem = EduMaps::Channel::Telegram::Updates->new(model => $model,
+    config => { token => '111:T' }, ua => FakeUA->new, log => Mojo::Log->new(level => 'fatal'));
+  is $sem->handle(msg($chat, text => 'x'))->{acao}, 'padrao', 'sem segredo, não bloqueia';
 };
 
 subtest 'falha do Telegram não propaga e fica registrada' => sub {
   plan skip_all => 'migration nao aplicada' unless $has;
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
   my $chat = 7400000000 + ($$ % 1000);
   my $bad = FakeUA->new(responder => sub { (403, { ok => 0, description => 'Forbidden: bot was blocked' }) });
-  my $u2 = EduMaps::Channel::Telegram::Updates->new(model => $model,
+  my $u2 = EduMaps::Channel::Telegram::Updates->new(model => $model, secret => $SEGREDO,
     config => { token => '111:T' }, ua => $bad, log => Mojo::Log->new(level => 'fatal'));
   is $u2->handle(msg($chat, text => 'oi'))->{acao}, 'padrao', 'trata mesmo assim';
   is $dbh->selectrow_array(q{SELECT status FROM clean.canal_mensagens

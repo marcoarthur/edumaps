@@ -33,6 +33,8 @@ my $tk;
 
 sub limpa {
   return unless $has;
+  $dbh->do(q{DELETE FROM clean.auth_falhas WHERE escopo = 'telegram' AND chave = ?},
+    {}, $model->auth_chave($t->app->secrets->[0], "$CHAT"));
   $dbh->do(q{DELETE FROM clean.canal_mensagens WHERE canal = 'telegram' AND destinatario = ?},
     {}, "$CHAT");
   $dbh->do(q{DELETE FROM clean.canal_inscricoes i USING clean.canal_listas l
@@ -114,7 +116,6 @@ subtest '200: fluxo /start → contato → confirmado (página vê confirmado)' 
   $model->config_put('canais.inscricao.enabled', 'true', $EMAIL);
   $model->config_put('canais.inscricao.rate_max', '1000', $EMAIL);
   liga_bot();
-  EduMaps::Channel::Telegram::Updates->reset_rate_limit;
 
   my $r = $t->post_ok("/api/canais/inscricao/$tk", json => {
     nome => 'Webhook', telefone => '11955550001', consentimento => JSON::PP::true,

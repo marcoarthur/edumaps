@@ -8,6 +8,27 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-05 (ab) (limitador do bot do Telegram no banco)
+
+Branch `fix/telegram-limite-banco`. Só backend e banco; LXC fora do ar,
+validação no Docker local.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Change `auth_falhas_telegram`: deploy + verify no banco local | sqitch | 🟢 |
+| Banco limpo (CI): deploy, verify, `revert --to leitor_sem_tabelas_sensiveis`, deploy de novo | `ci_db.sh` + sqitch | 🟢 |
+| Dois processos Perl separados, mesma conversa: 10 + 11 mensagens → só a 21ª recusada | script + banco local | 🟢 |
+| Registros do limitador: 20 linhas, chave HMAC, nenhuma com o chat_id legível; limpos depois | psql | 🟢 |
+| `telegram_updates.t` (contagem comum a dois tratadores, tratador novo segue bloqueado, sem segredo não bloqueia), `telegram_webhook.t`, `telegram_polling.t` | prove | 🟢 |
+| `telegram_polling.t` em fila própria: não falha mais com o minion local de pé | prove (suíte) | 🟢 (antes instável) |
+| Suíte completa com o minion de pé: config idêntica antes/depois, nenhum job `teste_*` nem registro `telegram` sobrando | prove + psql | 🟢 |
+| Imagens backend/minion reconstruídas, md5 de `Updates.pm` e `TelegramPolling.pm` bate, minion estável 7 min, 0 reinícios | docker | 🟢 |
+
+Restantes na suíte: as mesmas antigas da rodada (z). `school/profile.t`
+falhou uma vez na suíte e passou 3× isolado (intermitente, fora desta mudança).
+`admin/telemetry.t` falhou isolado por uma sessão anônima real da SPA local
+nas últimas 24h (depende dos dados).
+
 ## Rodada 2026-11-05 (z) (portas no loopback, config restaurada, fila própria nos testes)
 
 Branch `fix/infra-testes-isolados`. Só infraestrutura local e testes; LXC não
