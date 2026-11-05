@@ -1,9 +1,10 @@
 package EduMaps::Roles::Business::Pesquisa::Gestores;
 use Mojo::Base -role, -signatures;
 use utf8;
-use Digest::SHA qw(hmac_sha256_hex);
+use Digest::SHA qw(hmac_sha256_hex sha256_hex);
 use Crypt::Argon2 qw(argon2id_pass argon2_verify argon2_needs_rehash);
 use Crypt::URandom qw(urandom);
+use Encode ();
 
 # Argon2id (#334). 64 MiB, t=3, p=1 (2ª opção da RFC 9106, com p=1): medido
 # no backend.edumaps (4 núcleos) em ~128 ms por hash, dentro da meta de
@@ -22,7 +23,9 @@ use constant {
 # Senha: nunca em claro — Argon2id no formato padrão "$argon2id$v=19$m=…".
 #   Formato antigo (até 2026-11): "<salt_hex>:<hmac_sha256_hex>" — ainda aceito
 #   no login e regravado em Argon2id na hora (re-hash transparente).
-# Sessão: token bearer aleatório (uuid) em clean.sessoes, com expiração.
+# Sessão: token bearer aleatório (32 bytes, hex) com expiração. O banco guarda
+#   só o SHA-256 dele (clean.sessoes.token_hash); o token em claro vai uma
+#   única vez ao cliente, no login.
 # E-mail: gravado e comparado em minúsculas (índice único em lower(email)).
 
 requires qw(schema);
@@ -134,15 +137,16 @@ sub login_gestor ($self, $email, $senha) {
     $g->{id} + 0,
   );
 
+  my $token = unpack 'H*', urandom(32);
   my $row = $self->_row(
-    'INSERT INTO clean.sessoes (gestor_id, token, expires_at)
-     VALUES (?, gen_random_uuid()::text, NOW() + interval \'30 days\')
-     RETURNING token, expires_at',
-    $g->{id} + 0,
+    'INSERT INTO clean.sessoes (gestor_id, token_hash, expires_at)
+     VALUES (?, ?, NOW() + interval \'30 days\')
+     RETURNING expires_at',
+    $g->{id} + 0, _sessao_token_hash($token),
   ) or return;
 
   return {
-    token     => $row->{token},
+    token     => $token,
     expira_em => $row->{expires_at},
     gestor    => {
       id          => $g->{id} + 0,
@@ -202,15 +206,22 @@ sub sessao_valida ($self, $token) {
     'SELECT g.id, g.cod_inep, g.nome, g.email, g.access_role
      FROM   clean.sessoes s
      JOIN   clean.gestores g ON g.id = s.gestor_id
-     WHERE  s.token = ? AND s.expires_at > NOW()',
-    $token,
+     WHERE  s.token_hash = ? AND s.expires_at > NOW()',
+    _sessao_token_hash($token),
   );
 }
 
 sub logout_gestor ($self, $token) {
-  $self->_rows('DELETE FROM clean.sessoes WHERE token = ?', $token);
+  return 1 unless defined $token && length $token;
+  $self->_rows('DELETE FROM clean.sessoes WHERE token_hash = ?', _sessao_token_hash($token));
   return 1;
 }
+
+# SHA-256 do token bearer, como guardado em clean.sessoes.token_hash. Hash
+# simples basta: o token tem 256 bits aleatórios (não é senha, não há o que
+# adivinhar). Mesma fórmula da migration sessoes_token_hash para os tokens
+# antigos (uuid), que seguem válidos até expirar.
+sub _sessao_token_hash ($token) { sha256_hex(Encode::encode('UTF-8', $token)) }
 
 sub _hash_senha ($self, $senha) {
   return argon2id_pass($senha, urandom(ARGON2_SALT_LEN),
