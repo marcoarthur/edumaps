@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-05 (ac) — limitador do bot do Telegram no banco (PR #343)
+
+- **PR #343 MERGEADO** (`8f6fafa`): limite de 20 msgs/min por conversa do bot
+  público passa a contar em `clean.auth_falhas` (escopo `telegram`, change
+  `auth_falhas_telegram`, chave HMAC do chat_id), comum a webhook e polling.
+  Falha aberta sem banco/segredo. `telegram_polling` usa `minion_fila`; o
+  teste usa fila própria (era a causa da instabilidade). Nota **171**.
+- Testes: `school/profile.t` intermitente; `admin/telemetry.t` depende de
+  sessões reais das últimas 24h na SPA local.
+- **Fila de deploy LXC** (2026-11-09): itens das sessões (aa)/(ab) +
+  `auth_falhas_telegram` no `deploy_db_dev`; backend e minion já estão na
+  lista.
+
 ## Sessão 2026-11-05 (ab) — portas no loopback + testes isolados (PR #342)
 
 - **PR #342 MERGEADO** (`1e071f2`): compose publica 3010/8000 só em
