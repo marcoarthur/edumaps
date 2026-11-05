@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-05 (ad) — proxy do frontend e rede do Docker local (PR #344)
+
+- **PR #344 MERGEADO** (`228cba7`): nginx do frontend (Docker e template do
+  LXC) só com as rotas em uso (SPA e `/api/`). Rede do compose com faixa fixa
+  `172.30.0.0/24`, frontend em `172.30.0.10`; backend confia no X-Real-IP só
+  dele (`EDUMAPS_PROXIES_CONFIAVEIS` no entrypoint). Middleware de sessão usa
+  `client_ip_app`. Nota **172**.
+- ⚠️ Ao recriar a rede: religar o Mailpit
+  (`docker network connect leaflet_default edumaps-mailpit`).
+- Armadilha: vitest com `npm ci` em paralelo ao build do frontend quebra o
+  build (sem `.dockerignore`) e aborta o build de backend/minion junto.
+- `session.t` apaga a telemetria inteira do banco local.
+- **Fila de deploy LXC** (2026-11-09): itens das sessões (aa)–(ac) +
+  `deploy_frontend_dev`; checar como o motor R escuta na rede LXC.
+
 ## Sessão 2026-11-05 (ac) — limitador do bot do Telegram no banco (PR #343)
 
 - **PR #343 MERGEADO** (`8f6fafa`): limite de 20 msgs/min por conversa do bot
