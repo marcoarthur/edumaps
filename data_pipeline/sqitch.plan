@@ -157,3 +157,4 @@ gestor_senha_redefinicao [auth_falhas] 2026-11-02T18:00:00Z Marco Arthur <arthur
 auth_falhas_canais [gestor_senha_redefinicao] 2026-11-04T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # limitador das rotas publicas das listas com QR no banco (IP real)
 sessoes_token_hash [auth_falhas_canais] 2026-11-04T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # sessao do gestor guarda so o hash do token
 leitor_sem_tabelas_sensiveis [edumaps_leitor_role sessoes_token_hash] 2026-11-04T15:10:00Z Marco Arthur <arthurpbs@gmail.com> # papel de leitura sem tabelas internas e com dados pessoais
+auth_falhas_telegram [leitor_sem_tabelas_sensiveis] 2026-11-05T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # limitador do bot do Telegram no banco
