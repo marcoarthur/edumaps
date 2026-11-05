@@ -168,6 +168,12 @@ via plugin `opencode-chrome-devtools` (CDP), alvo `http://ubatexu.lan:8080`.
 - Alvo dev: `edumaps_dev` (user: `devel`, pass: `senhaboa123`)
 - Migrations em `data_pipeline/` (deploy/revert/verify)
 - MVs em `analytics.*`, views limpas em `clean.*`
+- Papel `edumaps_leitor` (Assistente do Censo e relatórios do motor R): **sem
+  SELECT automático em `clean`** (change `leitor_grants_explicitos`). Tabela
+  nova **pública** em `clean` → `GRANT SELECT ... TO edumaps_leitor` na própria
+  migração; com **dado pessoal** ou interna → sem GRANT e o nome na lista de
+  sensíveis de `backend/t/02-models/leitor_grants.t` (gate no CI). `analytics`
+  mantém o SELECT automático.
 
 ### ⚠️ `docker compose up` NÃO reconstrói as imagens — o serviço `sqitch` mente sobre a base de dados
 
