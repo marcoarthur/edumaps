@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-05 (aa) — sessão do gestor com hash + Assistente só no curado (PR #341)
+
+- **PR #341 MERGEADO** (`ca81319`): `clean.sessoes.token_hash` (SHA-256 do
+  bearer de 32 bytes; change `sessoes_token_hash` converte as sessões no
+  lugar, sem novo login). Change `leitor_sem_tabelas_sensiveis`: `edumaps_leitor`
+  sem 54 tabelas internas/pessoais (antes lia `sessoes`, `gestores` etc. —
+  alcançável pelo SQL do Assistente). Validador R restrito às tabelas do
+  `dicionario.yml`. Nota **169**.
+- ⚠️ Pendente: `ALTER DEFAULT PRIVILEGES` ainda dá SELECT ao leitor em toda
+  tabela nova de `clean` — tabela nova com dado pessoal entra na lista por
+  change nova (ou inverter para grants explícitos, ciclo próprio).
+- Armadilha: helpers privados de papéis compostos no mesmo modelo colidem em
+  silêncio no Role::Tiny (`_token_hash` quebrou o e-mail de redefinição);
+  prefixar com o nome do papel.
+- **Fila de deploy LXC** (volta 2026-11-09, `rex prepare` antes): PR #340 e
+  #341 → `deploy_db_dev` (`auth_falhas_canais`, `sessoes_token_hash`,
+  `leitor_sem_tabelas_sensiveis`) + `deploy_backend_dev` + `deploy_minion_dev`
+  + `deploy_analytics_dev`.
+
 ## Sessão 2026-11-04 (z) — limitador das inscrições por QR com IP real (PR #340)
 
 - **PR #340 MERGEADO** (`738f2c8`): 8 rotas públicas das listas com QR contam
@@ -13,9 +32,7 @@
 - ⚠️ **LXC fora do ar desde 2026-11-03** (SSH timeout); volta só no domingo
   **2026-11-09**. Decisão do developer: seguir sem ele, testar e validar
   sempre no **localhost**; o deploy Rex não bloqueia o ciclo.
-  **Fila de deploy LXC** (rodar quando voltar, `rex prepare` antes):
-  PR #340 → `deploy_db_dev` (`auth_falhas_canais`) + `deploy_backend_dev` +
-  `deploy_minion_dev`.
+  Fila de deploy LXC: ver sessão (aa).
 - Testes: contagem no banco atravessa execuções — nada de token fixo; `rand`
   do Test2 tem semente fixa pela data.
 - Incidente: `git stash pop` aplicou `stash@{0}` antigo (IBGE); limpo, entrada
