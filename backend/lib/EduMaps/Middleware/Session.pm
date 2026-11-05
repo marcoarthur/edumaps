@@ -2,6 +2,7 @@ package EduMaps::Middleware::Session;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use utf8;
 use Time::HiRes qw(time);
+use EduMaps::Util::ClientIP qw(client_ip_app);
 
 # ============================================================================
 # MIDDLEWARE DE SESSÃO (telemetria — etapa 1)
@@ -29,12 +30,10 @@ has cookie_name    => 'edumaps_sid';
 has cookie_max_age => 31536000;                 # 1 ano (identidade do visitante)
 has api_prefix     => '/api/';
 has skip_paths     => sub { ['/api/session/'] }; # endpoint de eventos não se loga a si mesmo
-has ip_header      => 'X-Real-IP';               # nginx já propaga (frontend/nginx.conf)
 
 sub register ($self, $app, $conf = {}) {
   $self->cookie_name($conf->{cookie_name})    if $conf->{cookie_name};
   $self->cookie_max_age($conf->{cookie_max_age}) if defined $conf->{cookie_max_age};
-  $self->ip_header($conf->{ip_header})        if $conf->{ip_header};
 
   $app->hook(
     around_dispatch => sub ($next, $c) {
@@ -95,8 +94,10 @@ sub _gen_id ($self) {
   return unpack('H*', $bytes);
 }
 
+# X-Real-IP só quando quem conecta é proxy confiável (o nginx); senão o IP
+# da conexão. Mesma regra dos limites por IP (EduMaps::Util::ClientIP).
 sub _client_ip ($self, $c) {
-  my $ip = $c->req->headers->header($self->ip_header) // $c->tx->remote_address;
+  my $ip = client_ip_app($c);
   return $ip if defined $ip && $ip =~ /^[A-Fa-f0-9:.]+$/;
   return;
 }
@@ -158,8 +159,6 @@ EduMaps::Middleware::Session - identifica o visitante e registra requests /api/*
 =item * cookie_name — nome do cookie de sessão (default edumaps_sid)
 
 =item * cookie_max_age — Max-Age em segundos (default 1 ano)
-
-=item * ip_header — header de IP confiável (default X-Real-IP, setado pelo nginx)
 
 =item * skip_paths — prefixos de path que não geram session.request
 
