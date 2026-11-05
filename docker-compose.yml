@@ -48,6 +48,10 @@ services:
       - ANALYTICS_URL=http://analytic:8000
       - EDUMAPS_SENTRY_DSN=${EDUMAPS_SENTRY_DSN:-}
       - EDUMAPS_SENTRY_RELEASE=${EDUMAPS_SENTRY_RELEASE:-}
+      # X-Real-IP só vale vindo do nginx do frontend (IP fixo abaixo). Sem
+      # isto, o padrão confia em toda rede privada — inclusive o gateway do
+      # Docker, por onde chega quem usa a 3010 no loopback.
+      - EDUMAPS_PROXIES_CONFIAVEIS=172.30.0.10/32
     # #231: os jobs de ingestão validam URLs contra o allowlist, e a imagem
     # (contexto ./backend) não contém data_pipeline/. O Allowlist.pm procura
     # ../data_pipeline/allowlist.yaml a partir de /opt/edumaps/backend.
@@ -114,6 +118,20 @@ services:
     container_name: edumaps-frontend
     ports:
       - "8080:80"
+    networks:
+      default:
+        # IP fixo: é o único proxy em quem o backend confia (X-Real-IP)
+        ipv4_address: 172.30.0.10
     depends_on:
       - backend
       - analytic
+
+# Faixa fixa da rede do compose, para o IP fixo do frontend. Quem muda isto
+# precisa recriar a rede (`docker compose down && up -d`) e religar os
+# contêineres de fora do compose (Mailpit: `docker network connect
+# leaflet_default edumaps-mailpit`).
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

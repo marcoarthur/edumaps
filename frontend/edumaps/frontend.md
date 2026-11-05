@@ -333,8 +333,8 @@ Registrado uma vez em `src/main.js`: `eventBus.use(logger)` —
 
 - **Sem interceptor HTTP**: `client.js` é wrapper fino; não há retry, auth
   hook ou tratamento global de 401.
-- **Proxy dev (Vite)**: `/api` → `http://localhost:3000`;
-  `/analytic-api` → `http://analytic:8000` (rewrite remove o prefixo).
+- **Proxy dev (Vite)**: `/api` → `http://localhost:3000`. O motor R não é
+  exposto ao navegador: só o backend fala com ele.
 - **Caching prod**: PWA `NetworkFirst` para `^/api/` com `cacheName:
   edumaps-api`, expiration 300s (evita dado stale); service worker em
   `public/mockServiceWorker.js`.

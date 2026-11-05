@@ -1,5 +1,18 @@
 #!/bin/bash
 set -e
+
+# Proxies confiáveis para o X-Real-IP (EduMaps::Util::ClientIP), separados por
+# espaço. Sem a variável, vale o padrão do código.
+PROXIES_CONF=""
+if [ -n "${EDUMAPS_PROXIES_CONFIAVEIS:-}" ]; then
+  lista=""
+  for p in $EDUMAPS_PROXIES_CONFIAVEIS; do
+    [[ "$p" =~ ^[0-9A-Fa-f:./]+$ ]] || { echo "EDUMAPS_PROXIES_CONFIAVEIS: valor inválido: $p" >&2; exit 1; }
+    lista+="'$p', "
+  done
+  PROXIES_CONF="auth_limite => { proxies_confiaveis => [ $lista] },"
+fi
+
 cat > /opt/edumaps/backend/edu_maps.conf <<EOF
 {
   db_params => [
@@ -25,6 +38,7 @@ cat > /opt/edumaps/backend/edu_maps.conf <<EOF
     dsn     => '${EDUMAPS_SENTRY_DSN:-}',
     release => '${EDUMAPS_SENTRY_RELEASE:-}',
   },
+  ${PROXIES_CONF}
 }
 EOF
 

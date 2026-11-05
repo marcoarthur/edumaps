@@ -36,6 +36,8 @@ precisa de evidências quantitativas de uso para priorizar melhorias.
 - Sistema pode registrar o IP e a data de cada sessão por um período curto de
   retenção, e anonimizar o IP (hash com chave diária) para análises de longo
   prazo — sem nunca gravar o texto digitado pelo visitante.
+- Sistema registra o IP real do visitante só quando a requisição chega pelo
+  servidor web da plataforma; um IP informado pelo próprio cliente é ignorado.
 - Sistema pode registrar eventos de interesse vindos do navegador
   (navegação entre telas, buscas — contagem, não o texto —, login/logout de
   gestor, erros de API e uso da ajuda guiada), com tipos e campos autorizados
