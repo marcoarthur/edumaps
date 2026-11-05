@@ -8,6 +8,23 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-05 (ad) (permissões explícitas do papel de leitura)
+
+Branch `fix/db-leitor-grants-explicitos`. Só banco e teste; sem mudança de
+tela. LXC fora do ar, validação no Docker local e no banco do CI.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Change `leitor_grants_explicitos`: deploy e verify no Docker local | sqitch | 🟢 |
+| Tabela nova em `clean` nasce sem leitura do papel; em `analytics`, com leitura | psql | 🟢 |
+| `leitor_grants.t` falha antes da change e com uma tabela esquecida; passa depois | prove | 🟢 |
+| Banco limpo do CI: deploy, verify, teste, revert `--to`, deploy e verify de novo | sqitch + prove | 🟢 |
+| Gate `ci_db.sh verify` | CI local | 🟢 |
+| Suíte backend completa: config idêntica; só as falhas antigas | prove + psql | 🟢 |
+
+`t/osm_query.t` falhou por depender dos dados locais (espera 0 feições OSM no
+município de teste; o banco local tem 618). Não usa o papel de leitura.
+
 ## Rodada 2026-11-05 (ac) (revisão do proxy do frontend no Docker local)
 
 Branch `fix/infra-proxy-local`. Stack recriada com a rede nova
