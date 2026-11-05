@@ -4,6 +4,7 @@ use utf8;
 
 use EduMaps::Bots::Telegram;
 use EduMaps::Channel::Telegram::Updates;
+use EduMaps::Util::MinionFila qw(minion_fila);
 
 # ============================================================================
 # RECEBIMENTO DO BOT PÚBLICO DO TELEGRAM — MODO POLLING (issue #212, Fase 1)
@@ -44,7 +45,7 @@ sub register ($self, $app, @args) {
   # Inicia o polling se não houver job ativo/pendente.
   # { ok => 1, job_id } | { ok => 1, ja_ativo => 1 }
   $app->helper(telegram_polling_start => sub ($c, %o) { iniciar($c->app, %o) });
-  $app->helper(telegram_polling_ativo => sub ($c) { ativo($c->app->minion) });
+  $app->helper(telegram_polling_ativo => sub ($c) { ativo($c->app) });
 
   # Boot do worker: só no laço real (`minion worker`), uma vez por processo.
   $app->minion->on(worker => sub ($minion, $worker) {
@@ -55,16 +56,18 @@ sub register ($self, $app, @args) {
   });
 }
 
-# Há job telegram_polling pendente (inactive) ou rodando (active)?
-sub ativo ($minion) {
-  my $jobs = $minion->jobs({ tasks => [$TASK], states => [qw(inactive active)] });
+# Há job telegram_polling pendente (inactive) ou rodando (active) na fila
+# da task?
+sub ativo ($app) {
+  my $jobs = $app->minion->jobs({ tasks => [$TASK], states => [qw(inactive active)],
+                                  queues => [minion_fila($app, $TASK)] });
   return $jobs->total ? 1 : 0;
 }
 
 # Enfileira o primeiro job, se não houver outro. `delete_webhook => 1` chama
 # deleteWebhook antes (o Telegram recusa getUpdates com webhook ativo).
 sub iniciar ($app, %o) {
-  return { ok => 1, ja_ativo => 1 } if ativo($app->minion);
+  return { ok => 1, ja_ativo => 1 } if ativo($app);
   if ($o{delete_webhook}) {
     my $cfg = $o{config} // $app->model('Canal')->telegram_publico_config;
     my $bot = EduMaps::Bots::Telegram->new(
@@ -75,7 +78,8 @@ sub iniciar ($app, %o) {
     $app->log->warn("telegram_polling: deleteWebhook falhou: " . ($r->{error} // '?'))
       unless $r->{ok};
   }
-  my $id = $app->minion->enqueue($TASK => [{}] => { attempts => 1 });
+  my $id = $app->minion->enqueue($TASK => [{}] =>
+    { attempts => 1, queue => minion_fila($app, $TASK) });
   return { ok => 1, job_id => $id };
 }
 
@@ -130,7 +134,7 @@ sub _run ($job, $estado = {}) {
   my $next  = $minion->enqueue($TASK => [{
     erros    => ($r->{erro} ? $r->{erros} : 0),
     anterior => $job->id,
-  }] => { attempts => 1, delay => $delay });
+  }] => { attempts => 1, delay => $delay, queue => $job->info->{queue} });
 
   $app->log->warn("telegram_polling: $r->{erro}") if $r->{erro};
   return $job->finish({ %$r, proximo => $next, delay => $delay });
@@ -166,7 +170,8 @@ sub ciclo ($app, %p) {
   }
 
   my $handler = EduMaps::Channel::Telegram::Updates->new(
-    model => $model, config => $cfg, log => $app->log, ua => $ua);
+    model => $model, config => $cfg, log => $app->log, ua => $ua,
+    secret => $app->secrets->[0]);
 
   my $n = 0;
   my @updates = sort { ($a->{update_id} // 0) <=> ($b->{update_id} // 0) }

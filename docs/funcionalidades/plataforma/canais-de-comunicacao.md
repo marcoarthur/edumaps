@@ -42,6 +42,10 @@ ferramentas externas, e quem responde pelo uso correto desses dados.
 - Administração pode configurar o **bot público do Telegram** (separado do bot
   de notificações internas), escolher como ele recebe mensagens e acompanhar
   seu estado no Painel de Configuração.
+- Sistema limita quantas mensagens cada conversa pode mandar ao bot público
+  por minuto. O limite vale para a plataforma inteira, qualquer que seja o modo
+  de recebimento, e continua valendo depois de reinícios; o registro não guarda
+  a identificação da conversa de forma legível.
 - Sistema pode fazer **envios em massa por e-mail** para as listas da escola:
   as mensagens saem **em fila**, aos poucos, num ritmo por minuto e dentro de
   uma **cota diária por escola**, sem repetir endereço, e uma falha de entrega
