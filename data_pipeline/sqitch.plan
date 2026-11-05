@@ -158,3 +158,4 @@ auth_falhas_canais [gestor_senha_redefinicao] 2026-11-04T12:00:00Z Marco Arthur 
 sessoes_token_hash [auth_falhas_canais] 2026-11-04T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # sessao do gestor guarda so o hash do token
 leitor_sem_tabelas_sensiveis [edumaps_leitor_role sessoes_token_hash] 2026-11-04T15:10:00Z Marco Arthur <arthurpbs@gmail.com> # papel de leitura sem tabelas internas e com dados pessoais
 auth_falhas_telegram [leitor_sem_tabelas_sensiveis] 2026-11-05T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # limitador do bot do Telegram no banco
+leitor_grants_explicitos [auth_falhas_telegram] 2026-11-05T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # papel de leitura sem SELECT automatico em clean
