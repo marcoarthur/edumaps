@@ -93,4 +93,22 @@ END {
   }
 }
 
+subtest 'X-Real-IP só vale vindo de proxy confiável' => sub {
+  local $app->config->{auth_limite} = { proxies_confiaveis => ['10.9.9.9/32'] };
+  $t->ua->cookie_jar->empty;   # sessão nova a cada request
+  $t->get_ok($BUSCA, { 'X-Real-IP' => '203.0.113.7' })->status_is(200);
+  my ($c) = grep { $_->name eq 'edumaps_sid' } @{ $t->tx->res->cookies };
+  flush_logger();
+  my $s = $db->select('session_tracking', '*', { session_id => $c->value })->hash;
+  is $s->{ip}, '127.0.0.1', 'conexão de fora da lista: cabeçalho ignorado';
+
+  $app->config->{auth_limite} = { proxies_confiaveis => ['127.0.0.1/32'] };
+  $t->ua->cookie_jar->empty;
+  $t->get_ok($BUSCA, { 'X-Real-IP' => '203.0.113.8' })->status_is(200);
+  ($c) = grep { $_->name eq 'edumaps_sid' } @{ $t->tx->res->cookies };
+  flush_logger();
+  $s = $db->select('session_tracking', '*', { session_id => $c->value })->hash;
+  is $s->{ip}, '203.0.113.8', 'conexão do proxy: IP do cabeçalho';
+};
+
 done_testing();
