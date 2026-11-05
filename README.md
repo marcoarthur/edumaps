@@ -31,7 +31,7 @@ Perl (Mojolicious) · R · PostgreSQL/PostGIS · Sqitch · Leaflet.js
 ## Correr em desenvolvimento
 
 ```bash
-docker compose up          # frontend :8080 · API :3000 · analytics :8000
+docker compose up          # frontend :8080 · API 127.0.0.1:3010 · analytics 127.0.0.1:8000
 ```
 
 Depois de mexer em código, **reconstruir a imagem afetada** — `docker compose up`
