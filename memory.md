@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-05 (ab) — portas no loopback + testes isolados (PR #342)
+
+- **PR #342 MERGEADO** (`1e071f2`): compose publica 3010/8000 só em
+  127.0.0.1. `t/lib/ConfigSnapshot.pm` restaura `app_config.items` no fim de
+  cada teste (27 arquivos) — a suíte não apaga mais o SMTP do Mailpit.
+  `EduMaps::Util::MinionFila` (`minion_filas.<task>`, padrão `default`);
+  5 testes de jobs em fila `teste_$$`, sem corrida com o minion local.
+  Nota **170**.
+- Testes novos que mexem na config: `use ConfigSnapshot;` +
+  `ConfigSnapshot::guardar($dbh, q{%})` logo após o `Test::Mojo`.
+- Pendente (ciclo próprio): revisar proxy do frontend e proxies confiáveis
+  no Docker local; `telegram_polling.t` instável.
+- **Fila de deploy LXC** (2026-11-09): itens da sessão (aa) (já incluem
+  `deploy_backend_dev` + `deploy_minion_dev`, que cobrem este PR); investigar
+  `edumaps-analytic.service` falho desde 31/10.
+
 ## Sessão 2026-11-05 (aa) — sessão do gestor com hash + Assistente só no curado (PR #341)
 
 - **PR #341 MERGEADO** (`ca81319`): `clean.sessoes.token_hash` (SHA-256 do
