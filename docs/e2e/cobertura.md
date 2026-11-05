@@ -8,6 +8,26 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-05 (ac) (revisão do proxy do frontend no Docker local)
+
+Branch `fix/infra-proxy-local`. Stack recriada com a rede nova
+(`172.30.0.0/24`, frontend em `172.30.0.10`); Mailpit religado à rede.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| nginx do frontend só com as rotas em uso (SPA e `/api/`) | curl | 🟢 |
+| Backend → motor R pela rede interna | docker exec | 🟢 |
+| Lista de proxies confiáveis do backend com o IP do frontend | docker exec | 🟢 |
+| IP registrado na sessão: 3010, 8080 e pela LAN, conforme esperado | curl + psql | 🟢 |
+| "Esqueci minha senha" → e-mail no Mailpit pela rede nova | curl + Mailpit | 🟢 |
+| Login, `/me`, logout pela 8080 (conta de teste local) | curl | 🟢 |
+| `session.t`: subteste novo passa com a correção e falha sem ela | prove | 🟢 |
+| vitest: 127 arquivos, 1147 testes | Docker | 🟢 |
+| Suíte backend completa: config idêntica, sem jobs `teste_*`; só as falhas antigas | prove + psql | 🟢 |
+| Imagens frontend/backend/minion reconstruídas, md5 de `Session.pm` bate, minion sem reinícios | docker | 🟢 |
+
+Sessões e token de redefinição criados na validação foram apagados.
+
 ## Rodada 2026-11-05 (ab) (limitador do bot do Telegram no banco)
 
 Branch `fix/telegram-limite-banco`. Só backend e banco; LXC fora do ar,
