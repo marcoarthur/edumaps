@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-05 (ae) — permissões explícitas do papel de leitura (PR #345)
+
+- Change `leitor_grants_explicitos`: `edumaps_leitor` sem SELECT automático
+  em `clean` (revoga o `pg_default_acl` de todo dono, com `FOR ROLE`). As 58
+  permissões atuais ficam; `analytics` continua automático. Nota **173**.
+- Gate `backend/t/02-models/leitor_grants.t`: toda relação de `clean` com
+  GRANT explícito ou na lista de sensíveis. Regra no `AGENTS.md` (Database).
+- Consumidores do papel: Assistente, relatórios via eduBR (leem tabelas fora
+  do dicionário) e o perfil escolar (views em `analytics`). Por isso não dá
+  para restringir ao `dicionario.yml`.
+- `t/osm_query.t` agora falha por dados locais (618 feições OSM no município
+  de teste). Entra na lista de falhas antigas dependentes de dados.
+- **Fila de deploy LXC** (2026-11-09): + `deploy_db_dev` desta change.
+
 ## Sessão 2026-11-05 (ad) — proxy do frontend e rede do Docker local (PR #344)
 
 - **PR #344 MERGEADO** (`228cba7`): nginx do frontend (Docker e template do

@@ -1,6 +1,6 @@
 # Nota técnica 173: permissões explícitas do papel de leitura
 
-PR #PR_NUM (2026-11-05). Continuação da change `leitor_sem_tabelas_sensiveis`
+PR #345 (2026-11-05). Continuação da change `leitor_sem_tabelas_sensiveis`
 (PR #341).
 
 ## Contexto
