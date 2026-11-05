@@ -8,6 +8,28 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-05 (z) (portas no loopback, config restaurada, fila própria nos testes)
+
+Branch `fix/infra-testes-isolados`. Só infraestrutura local e testes; LXC não
+envolvido. Banco local com a config do Mailpit recolocada (8 chaves).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `docker compose port`: backend `127.0.0.1:3010`, analytic `127.0.0.1:8000` | compose | 🟢 |
+| Pelo IP da LAN: 3010 e 8000 recusam; 8080 responde 200 | curl | 🟢 |
+| Pelo loopback: 3010 e 8000 respondem | curl | 🟢 |
+| SPA pelo nginx: `/api/gestor/senha/disponivel` → `disponivel: 1` | curl | 🟢 |
+| `ConfigSnapshot`: processo filho apaga/altera/cria; pai vê as linhas de volta, segredo bytea íntegro (falha com a restauração desligada) | prove `config_snapshot.t` | 🟢 |
+| Suíte completa 2× seguidas com o minion local de pé: `app_config.items` idêntica antes/depois (md5 de valor+segredo e metadados) | prove + psql | 🟢 |
+| Sem falhas de disputa: `canais/envios.t`, `admin/envios.t`, `admin/retencao.t`, `05-tasks/canais_envio.t`, `05-tasks/canais_retencao.t` | prove | 🟢 (antes falhavam na suíte) |
+| Nenhum job sobra em filas `teste_*` | psql | 🟢 |
+| Imagens backend/minion reconstruídas, md5 bate, minion estável > 40 s | docker | 🟢 |
+
+Restantes na suíte (antigas, dados/serviços externos): `City.t`, `quality` (3),
+`03-plugins/analytics.t`, `finance_siope.t`, `municipio.t`, `network/schools.t`,
+`05-tasks` de analytics/OSM/SIOPE, `analysis/rpipe.t`, `dbic/inject*`,
+`escola_influencia.t`. `telegram_polling.t` instável (falhou 1 de 2).
+
 ## Rodada 2026-11-04 (y) (sessão do gestor com hash; leitura do Assistente só no curado)
 
 Branch `fix/backend-sessao-hash`. LXC fora do ar até 2026-11-09: validação no
