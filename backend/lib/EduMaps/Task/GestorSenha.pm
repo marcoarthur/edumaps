@@ -2,6 +2,7 @@ package EduMaps::Task::GestorSenha;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use utf8;
 use EduMaps::Channel::Email;
+use EduMaps::Util::MinionFila qw(minion_fila);
 # carregado antes de citar VALIDADE_MINUTOS (senão o Role::Tiny acha o pacote
 # já criado e não o carrega como papel)
 use EduMaps::Roles::Business::Pesquisa::SenhaRedefinicao ();
@@ -23,11 +24,11 @@ our $TASK = 'gestor_senha_email';
 
 sub register ($self, $app, @args) {
   $app->minion->add_task($TASK => \&_run);
-  # Fila configurável (`gestor_senha_fila`, padrão `default`): os testes usam
-  # uma fila própria para o worker de verdade não pegar os jobs deles.
+  # Fila configurável (minion_fila, padrão `default`): os testes usam uma
+  # fila própria para o worker de verdade não pegar os jobs deles.
   $app->helper(gestor_senha_enfileirar => sub ($c, $gestor_id) {
     $c->app->minion->enqueue($TASK => [{ gestor_id => $gestor_id + 0 }] => {
-      attempts => 1, queue => ($c->app->config->{gestor_senha_fila} // 'default'),
+      attempts => 1, queue => minion_fila($c->app, $TASK),
     });
   });
 }

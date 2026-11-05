@@ -1,6 +1,7 @@
 package EduMaps::Task::CanaisRetencao;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use utf8;
+use EduMaps::Util::MinionFila qw(minion_fila);
 
 # ============================================================================
 # RETENÇÃO DOS DADOS DAS LISTAS COM QR (issue #214, Fase 2 — RF-207)
@@ -36,10 +37,11 @@ sub register ($self, $app, @args) {
 
   # { ok => 1, job_id } | { ok => 1, ja_ativo => 1 }
   $app->helper(canais_retencao_start    => sub ($c) { iniciar($c->app) });
-  $app->helper(canais_retencao_agendado => sub ($c) { agendado($c->app->minion) });
+  $app->helper(canais_retencao_agendado => sub ($c) { agendado($c->app) });
   # Execução avulsa: devolve o id do job.
   $app->helper(canais_retencao_executar => sub ($c) {
-    $c->app->minion->enqueue($TASK => [{ manual => 1 }] => { attempts => 1 });
+    $c->app->minion->enqueue($TASK => [{ manual => 1 }]
+      => { attempts => 1, queue => minion_fila($c->app, $TASK) });
   });
 
   $app->minion->on(worker => sub ($minion, $worker) {
@@ -54,9 +56,11 @@ sub _manual ($args) {
   return ref $args eq 'ARRAY' && ref $args->[0] eq 'HASH' && $args->[0]{manual} ? 1 : 0;
 }
 
-# Há job DIÁRIO (não manual) pendente (inactive) ou rodando (active)?
-sub agendado ($minion) {
-  my $jobs = $minion->jobs({ tasks => [$TASK], states => [qw(inactive active)] });
+# Há job DIÁRIO (não manual) pendente (inactive) ou rodando (active)? Olha só
+# a fila da task (minion_fila): em produção é a `default` de sempre.
+sub agendado ($app) {
+  my $jobs = $app->minion->jobs({ tasks => [$TASK], queues => [minion_fila($app, $TASK)],
+                                  states => [qw(inactive active)] });
   while (my $j = $jobs->next) {
     return 1 unless _manual($j->{args});
   }
@@ -65,9 +69,10 @@ sub agendado ($minion) {
 
 # Enfileira o primeiro job diário, se não houver outro. %o: delay (segundos).
 sub iniciar ($app, %o) {
-  return { ok => 1, ja_ativo => 1 } if agendado($app->minion);
+  return { ok => 1, ja_ativo => 1 } if agendado($app);
   my $id = $app->minion->enqueue($TASK => [{}] => {
-    attempts => 1, ($o{delay} ? (delay => $o{delay}) : ()) });
+    attempts => 1, queue => minion_fila($app, $TASK),
+    ($o{delay} ? (delay => $o{delay}) : ()) });
   return { ok => 1, job_id => $id };
 }
 
@@ -125,8 +130,9 @@ sub _run ($job, $estado = {}) {
 }
 
 sub _reagendar ($job, $delay) {
+  # mesma fila do job atual (a do teste, quando é teste)
   return $job->minion->enqueue($TASK => [{ anterior => $job->id }]
-                               => { attempts => 1, delay => $delay });
+    => { attempts => 1, delay => $delay, queue => $job->info->{queue} });
 }
 
 1;

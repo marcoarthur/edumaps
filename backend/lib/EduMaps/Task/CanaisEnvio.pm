@@ -1,6 +1,7 @@
 package EduMaps::Task::CanaisEnvio;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use utf8;
+use EduMaps::Util::MinionFila qw(minion_fila);
 
 # ============================================================================
 # ENVIO POR E-MAIL PARA LISTAS — JOB EM LOTES (issue #216, Fase 3)
@@ -41,11 +42,15 @@ sub register ($self, $app, @args) {
   });
 }
 
+# %o: anterior (id do job que reagenda), fila (padrão: minion_fila).
 sub enfileirar ($app, $envio_id, $delay = 0, %o) {
   my $id = $app->minion->enqueue($TASK => [{
     envio_id => $envio_id + 0,
     ($o{anterior} ? (anterior => $o{anterior}) : ()),
-  }] => { attempts => 1, ($delay && $delay > 0 ? (delay => $delay) : ()) });
+  }] => {
+    attempts => 1, queue => ($o{fila} // minion_fila($app, $TASK)),
+    ($delay && $delay > 0 ? (delay => $delay) : ()),
+  });
   return $id;
 }
 
@@ -83,7 +88,8 @@ sub _run ($job, $estado = {}) {
   undef $guard;   # solta o lock antes de reagendar
 
   if (defined $r->{reagendar}) {
-    my $next = enfileirar($app, $envio_id, $r->{reagendar}, anterior => $job->id);
+    my $next = enfileirar($app, $envio_id, $r->{reagendar},
+      anterior => $job->id, fila => $job->info->{queue});
     eval {
       $model->_rows('UPDATE clean.canal_envios SET minion_job_id = ? WHERE id = ?',
                     $next + 0, $envio_id + 0);
