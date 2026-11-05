@@ -17,7 +17,7 @@
 //   - navigate : network-first; offline → o index.html precacheado DESTE build
 //                (nunca o shell de outro build, que aponta para hashes que já
 //                não existem no servidor → tela em branco).
-//   - /api/, /analytic-api/ : só rede (nunca cache).
+//   - /api/ : só rede (nunca cache).
 //   - /sw.js, /registerSW.js, /manifest.webmanifest : só rede, senão o SW
 //                antigo se perpetua.
 //   - /assets/*-<hash>.* : cache-first (imutáveis); 404 nunca é cacheado.
@@ -121,7 +121,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // API: sempre rede (sem cache).
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/analytic-api/")) {
+  if (url.pathname.startsWith("/api/")) {
     return;
   }
 

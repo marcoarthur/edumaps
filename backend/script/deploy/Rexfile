@@ -473,7 +473,6 @@ task deploy_frontend_dev => 'backend.edumaps' => sub {
         web_root     => $web_root,
         server_name  => get('frontend_server_name') || '_',
         backend_api  => 'http://localhost:3000',
-        analytic_api => 'http://analytic:8000',
       }
     ),
     on_change => sub {
