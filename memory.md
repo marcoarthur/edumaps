@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-06 (aj) — ajuda: lote das análises (#304, PR #PR_NUM)
+## Sessão 2026-11-06 (aj) — ajuda: lote das análises (#304, PR #350)
 
 - 6 páginas novas em `docs/ajuda/`: gestor/perfil-da-escola,
   escolas-semelhantes, agrupamentos-de-escolas, rede-municipal,
