@@ -13,6 +13,12 @@ CI->skip_network ('features do OpenStreetMap vêm da Overpass');
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
 
+# Pedir os detalhes da cidade aciona o SiopeTask, que enfileiraria um job
+# SIOPE de verdade (o minion local o executaria). O teste é dos detalhes: o
+# helper vira um stub que só anota a chamada.
+my @SIOPE;
+$t->app->helper(get_siope => sub ($c, @args) { push @SIOPE, [@args]; return 0 });
+
 subtest 'código existente (Campos Sales - CE)' => sub {
   my $cod = 2302701;
 

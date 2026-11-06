@@ -8,6 +8,20 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (ag) (fila própria para os jobs SIOPE dos testes)
+
+Branch `fix/siope-fila-testes`. Backend (fila do job configurável) e testes;
+sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `finance_siope.t` três vezes com o minion local de pé, sem job novo | prove + psql | 🟢 |
+| `municipio.t` sem job SIOPE (só a falha antiga das feições OSM) | prove + psql | 🟢 |
+| `siope.t`: primeiro subteste passa com fila própria; segundo mantém a falha antiga do SSE | prove | 🟢 |
+| Banco limpo do CI: `finance_siope.t` passa | prove | 🟢 |
+| Imagens backend/minion reconstruídas, md5 do `Siope.pm` bate, minion estável | docker | 🟢 |
+| Suíte backend completa: `finance_siope.t` saiu da lista; 1 job SIOPE por suíte (antes ~5); config idêntica | prove + psql | 🟢 |
+
 ## Rodada 2026-11-06 (af) (profile.t e event_logger.t independentes)
 
 Branch `test/testes-independentes`. Só testes; sem mudança de tela e sem

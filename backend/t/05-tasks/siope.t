@@ -13,6 +13,16 @@ my $cod = 110001;
 my $ano = 2024;
 my $tag = '[task] siope:';
 
+# Jobs criados pelo teste: removidos no fim (os que não estiverem rodando).
+my @JOBS;
+my $FILA = "teste_$$";
+END {
+  for my $id (@JOBS) {
+    my $job = $minion->job($id) or next;
+    $job->remove unless $job->info->{state} eq 'active';
+  }
+}
+
 sub _delete_previous ($code, $year){
   $t->app->schema->resultset('RemuneracaoMunicipal')->search_rs(
     {ano => $year, cod_municipio => $code}
@@ -26,9 +36,13 @@ $tag <executando task diretamente query_siope>
   - salva no banco
 / => sub {
   _delete_previous($cod, $ano);
+  # Fila própria: só o perform_jobs deste teste executa o job (o minion local
+  # consome a `default`).
+  local $t->app->config->{minion_filas}{query_siope} = $FILA;
   my $job_id = $t->app->get_siope($cod, $ano);
+  push @JOBS, $job_id;
   my $job = $minion->job($job_id);
-  $minion->perform_jobs;
+  $minion->perform_jobs({ queues => [$FILA] });
 
   my $result = $job->info->{result};
   my $note = $job->note;
@@ -69,6 +83,7 @@ $tag <executando task via app>
   # Minion::Backend::Pg
   # Minion
   my $json = $tx->res->json;
+  push @JOBS, $json->{job_id};
   my $location = $tx->res->headers->location;
   $t->get_sse_ok("$location")
   ->status_is(200)
