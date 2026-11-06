@@ -1,6 +1,6 @@
 # Nota técnica 177: IGE limitado a 0..1 e o lote 1 das falhas antigas
 
-PR #PR_NUM (2026-11-06). Primeiro lote da limpeza das 18 falhas antigas da
+PR #352 (2026-11-06). Primeiro lote da limpeza das 18 falhas antigas da
 suíte local (no CI esses testes são pulados).
 
 ## Classificação das 18 falhas

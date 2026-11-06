@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-06 (al) — IGE em 0..1 e lote 1 das falhas antigas (PR #PR_NUM)
+## Sessão 2026-11-06 (al) — IGE em 0..1 e lote 1 das falhas antigas (PR #352)
 
 - IGE passava de 1 (até 1,29): o item da proposta pedagógica valia 0/1/2.
   Agora 1/0,5/0 com peso 2. `indicators.t` fixava o valor errado; `ige.t` novo.
