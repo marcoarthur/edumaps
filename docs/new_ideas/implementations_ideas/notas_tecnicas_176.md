@@ -1,6 +1,6 @@
 # Nota técnica 176: fila própria para os jobs SIOPE dos testes
 
-PR #PR_NUM (2026-11-06). Pendência da nota 175: cada suíte deixava ~5 jobs
+PR #348 (2026-11-06). Pendência da nota 175: cada suíte deixava ~5 jobs
 `query_siope` na fila `default` do banco local, e o minion local os executava
 contra a rede.
 

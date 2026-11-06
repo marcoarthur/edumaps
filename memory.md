@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (ah) — fila própria para os jobs SIOPE dos testes (PR #348)
+
+- `get_siope` enfileira em `minion_fila($app, 'query_siope')` (sem config,
+  `default`). `finance_siope.t` usa fila própria: falhava por corrida com o
+  minion local e saiu da lista de falhas. `municipio.t` com stub; `siope.t`
+  com fila própria no subteste in-process. Nota **176**.
+- A suíte agora deixa 1 job `query_siope` (o do subteste via API do
+  `siope.t`), contra ~5.
+- **Fila de deploy LXC** (2026-11-09): + `deploy_backend_dev` e
+  `deploy_minion_dev` (comportamento igual lá).
+
 ## Sessão 2026-11-06 (ag) — profile.t e event_logger.t independentes (PR #347)
 
 - `school/profile.t` falhava quando sobrava a escola 99999999 de uma suíte
