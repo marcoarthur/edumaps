@@ -49,6 +49,8 @@ requires "JSON" => "0";
 requires "JSON::PP" => "0";
 requires "JSON::XS" => "0";
 requires "List::Util" => "0";
+# SenhaRedefinicao.pm usa encode_base64url (#336). Core, declarado por convenção.
+requires "MIME::Base64" => "0";
 requires "Memoize" => "0";
 requires "Minion" => "0";
 requires "Mojo::Base" => "0";
@@ -119,6 +121,9 @@ on 'test' => sub {
   requires "Test2::Tools::Compare" => "0";
   requires "Test2::Tools::Explain" => "0";
   requires "Test2::V0" => "0";
+  # t/lib/Imports.pm usa Test2::V1 (Test-Simple recente); o Perl do runner
+  # ubuntu-26.04 traz um Test-Simple sem ele.
+  requires "Test2::V1" => "0";
   requires "Test::MockModule" => "0";
   requires "Test::Mojo" => "0";
   requires "Test::More" => "0";
