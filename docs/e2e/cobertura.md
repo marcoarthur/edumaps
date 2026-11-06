@@ -8,6 +8,22 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (af) (profile.t e event_logger.t independentes)
+
+Branch `test/testes-independentes`. Só testes; sem mudança de tela e sem
+deploy.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `profile.t` com a escola 99999999 no banco (sobra simulada): antiga falha, nova passa | prove + psql | 🟢 |
+| Coordenadas: latitude -100 reprovada (antes passava) | perl | 🟢 |
+| `event_logger.t` duas vezes: jobs `query_siope` iguais; stub chamado | prove + psql | 🟢 |
+| Banco limpo do CI: `profile.t` e `event_logger.t` | prove | 🟢 |
+| Suíte backend completa: só as falhas antigas; config idêntica | prove + psql | 🟢 |
+
+Sem a limpeza global, a suíte deixa ~5 jobs `query_siope` de outros testes
+no banco local (pendência na nota 175).
+
 ## Rodada 2026-11-06 (ae) (testes sem depender do banco local)
 
 Branch `test/higiene-testes-locais`. Só testes e o build local; sem mudança
