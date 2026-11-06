@@ -8,6 +8,16 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (ah) (CI do backend de volta)
+
+Branch `fix/ci-cpanfile-mime-base64`. Só `backend/cpanfile`.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Inventário de dependências: falhava desde o #339 (`MIME::Base64` não declarado) e pulava a suíte | GitHub Actions | 🟢 |
+| Suíte no runner `ubuntu-26.04`: `Test2::V1` (usado por `t/lib/Imports.pm`) ausente no Perl da imagem; declarado nas deps de teste | GitHub Actions | 🟢 |
+| `backend-tests` completo: 171 arquivos, 1241 testes, `Result: PASS` | GitHub Actions | 🟢 |
+
 ## Rodada 2026-11-06 (ag) (fila própria para os jobs SIOPE dos testes)
 
 Branch `fix/siope-fila-testes`. Backend (fila do job configurável) e testes;

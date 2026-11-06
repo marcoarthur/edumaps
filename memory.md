@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (ai) — CI do backend de volta (PR #349)
+
+- O passo "inventário de dependências" do `backend-tests` falhava desde o
+  #339 (`MIME::Base64` usado em `SenhaRedefinicao.pm`, não declarado) e
+  pulava a suíte: do #339 ao #348 a suíte não rodou no GitHub Actions.
+- Com o inventário corrigido, a suíte quebrou no carregamento: o
+  `ubuntu-latest` virou `ubuntu-26.04`, cujo Perl traz um Test-Simple sem
+  `Test2::V1` (usado por `t/lib/Imports.pm`). Declarado nas deps de teste.
+- O inventário só olha `lib/` e `script/`; deps de `t/` precisam de
+  atenção manual.
+- Regra: conferir `gh pr checks` antes de pedir merge.
+
 ## Sessão 2026-11-06 (ah) — fila própria para os jobs SIOPE dos testes (PR #348)
 
 - `get_siope` enfileira em `minion_fila($app, 'query_siope')` (sem config,
