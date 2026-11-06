@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (al) — IGE em 0..1 e lote 1 das falhas antigas (PR #PR_NUM)
+
+- IGE passava de 1 (até 1,29): o item da proposta pedagógica valia 0/1/2.
+  Agora 1/0,5/0 com peso 2. `indicators.t` fixava o valor errado; `ige.t` novo.
+- `City.t` (payroll devolve coleção) e `escola_influencia.t` (só raios 500 e
+  1000) corrigidos; `telemetry.t` lida com o ranking de rotas cheio (limite 10).
+- Falhas locais: 18 → 15. Restam os grupos C (`staging`), D (R local) e E
+  (rede/expectativas). Classificação na nota **177**.
+- **Fila de deploy LXC** (2026-11-09): backend e minion (já na fila).
+
 ## Sessão 2026-11-06 (ak) — caminho até o Perfil da Rede (PR #351)
 
 - Comparação de redes ganhou a linha **Ver perfil analítico** (uma rede por

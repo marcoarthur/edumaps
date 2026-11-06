@@ -8,6 +8,18 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (aj) (IGE em 0..1 e lote 1 das falhas antigas)
+
+Branch `fix/ige-e-testes-locais`. Backend e testes; sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `ige.t` novo: falha sem a correção, passa com ela | prove | 🟢 |
+| `domain/quality.t`, `City.t`, `escola_influencia.t`, `indicators.t`, `admin/telemetry.t` passam no local | prove | 🟢 |
+| Banco limpo do CI: `escola_influencia.t`, `ige.t`, `indicators.t`, `telemetry.t` (três rotas conferidas) | prove | 🟢 |
+| Imagens backend/minion reconstruídas, md5 do `IGE.pm` bate, minion estável | docker | 🟢 |
+| Suíte completa: 18 → 15 falhas (grupos C, D e E); config idêntica | prove + psql | 🟢 |
+
 ## Rodada 2026-11-06 (ai) (caminho até o Perfil da Rede)
 
 Branch `fix/frontend-perfil-da-rede`. Docker local (`localhost:8080`).
