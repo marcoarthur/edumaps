@@ -170,3 +170,22 @@ export function buildTableRows(networks) {
     rede: redeLabel(net.rede),
   }));
 }
+/**
+ * URL do Perfil da Rede (/municipio/perfil). Sem `codigoRede`, o perfil
+ * reúne todas as redes do município.
+ * @param {string|number} codigoIbge
+ * @param {number} [codigoRede] tp_dependencia (1 federal … 4 privada)
+ */
+export function networkProfileUrl(codigoIbge, codigoRede) {
+  const params = new URLSearchParams({ ibge: String(codigoIbge) });
+  if (codigoRede != null) params.set("dependencia", String(codigoRede));
+  return `/municipio/perfil?${params}`;
+}
+
+/**
+ * URL da comparação de redes de um município (lê `codigo_ibge`).
+ * @param {string|number} codigoIbge
+ */
+export function networkCompareUrl(codigoIbge) {
+  return `/municipio/compare?codigo_ibge=${encodeURIComponent(String(codigoIbge))}`;
+}

@@ -81,6 +81,28 @@ describe("NetworkComparePage", () => {
     expect(screen.getByText(/SP · Sudeste/)).toBeInTheDocument();
   });
 
+  it("liga cada rede ao seu perfil analítico", async () => {
+    getNetworkSummary.mockResolvedValue(NETWORK_SUMMARY_FIXTURE);
+    getNetworkPerformance.mockResolvedValue(NETWORK_PERFORMANCE_FIXTURE);
+    getNetworkMarkers.mockResolvedValue(NETWORK_MARKERS_FIXTURE);
+    window.location = new URL(
+      "http://localhost/municipio/compare?codigo_ibge=3551702",
+    );
+
+    render(NetworkComparePage);
+
+    const nav = await screen.findByRole("navigation", {
+      name: "Perfil analítico das redes",
+    });
+    const hrefs = [...nav.querySelectorAll("a")].map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual([
+      ...NETWORK_SUMMARY_FIXTURE.map(
+        (n) => `/municipio/perfil?ibge=3551702&dependencia=${n.codigo_rede}`,
+      ),
+      "/municipio/perfil?ibge=3551702",
+    ]);
+  });
+
   it("exibe mensagem de erro quando a API falha", async () => {
     getNetworkSummary.mockRejectedValue(new Error("Município sem dados"));
     getNetworkPerformance.mockResolvedValue([]);

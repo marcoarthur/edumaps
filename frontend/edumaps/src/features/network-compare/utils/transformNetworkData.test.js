@@ -5,6 +5,8 @@ import {
   NETWORK_SUMMARY_FIXTURE,
 } from "../mocks/fixtures.js";
 import {
+  networkCompareUrl,
+  networkProfileUrl,
   buildIdedTimeline,
   buildShareDonut,
   buildShareRadarData,
@@ -123,5 +125,22 @@ describe("transformNetworkData", () => {
     expect(formatInt(null)).toBe("0");
     expect(formatDecimal("1.4")).toBe("1,4");
     expect(formatDecimal(3, 2)).toBe("3,00");
+  });
+});
+describe("URLs do perfil e da comparação de redes", () => {
+  it("perfil de uma rede leva o município e o código da rede", () => {
+    expect(networkProfileUrl("3551702", 3)).toBe(
+      "/municipio/perfil?ibge=3551702&dependencia=3",
+    );
+  });
+
+  it("perfil de todas as redes não leva filtro de rede", () => {
+    expect(networkProfileUrl(3551702)).toBe("/municipio/perfil?ibge=3551702");
+  });
+
+  it("voltar para a comparação usa codigo_ibge (o que a página lê)", () => {
+    expect(networkCompareUrl("3551702")).toBe(
+      "/municipio/compare?codigo_ibge=3551702",
+    );
   });
 });
