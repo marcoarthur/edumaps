@@ -1,6 +1,6 @@
 # Nota técnica 175: profile.t e event_logger.t independentes
 
-PR #PR_NUM (2026-11-06). Os dois pendentes da nota 174, só testes, sem deploy.
+PR #347 (2026-11-06). Os dois pendentes da nota 174, só testes, sem deploy.
 
 ## `school/profile.t` intermitente
 

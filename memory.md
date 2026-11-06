@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (ag) — profile.t e event_logger.t independentes (PR #347)
+
+- `school/profile.t` falhava quando sobrava a escola 99999999 de uma suíte
+  interrompida (contatos/documentos/pesquisa a criam); agora usa 00000001.
+  As coordenadas usavam `a && b` entre checagens do Test2 (só valia a
+  segunda); agora `check_set`.
+- `event_logger.t`: `get_siope` vira stub; não apaga mais todos os jobs
+  `query_siope`. Nota **175**.
+- Pendente: ~5 jobs `query_siope` por suíte na fila `default` local
+  (siope.t, finance_siope.t, testes de cidade); usar fila própria.
+
 ## Sessão 2026-11-06 (af) — testes sem depender do banco local (PR #346)
 
 - `frontend/.dockerignore` (fora `node_modules`, `dist`, `map_app`): build
