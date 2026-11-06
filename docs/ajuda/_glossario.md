@@ -25,4 +25,7 @@ ultima_revisao: '2026-10-25'
 | **Área de influência** | Território ao redor da escola considerado na análise | Depende da resolução/grade utilizada. |
 | **LGPD** | Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018) | Dados sensíveis devem ser tratados com cuidado. |
 | **PII** | Informação Pessoal Identificável | Ex.: nomes, contatos, dados individuais. |
+| **Cluster** | Grupo de escolas de contexto parecido | Usado como referência justa de comparação no Perfil da escola; o número do grupo não indica melhor ou pior. |
+| **Quartil** | Posição em quartos de uma distribuição (Q1 a Q4) | Q1 = 25% mais baixos do grupo; Q1 gera sinal de atenção no Perfil da escola. |
+| **INSE** | Indicador de Nível Socioeconômico (INEP) | Contexto socioeconômico dos alunos; ausente é ignorado na comparação, nunca zero. |
 | **SIOPE** | Sistema de Informações sobre Orçamentos Públicos em Educação | Dados financeiros/orçamentários; agregado da Secretaria pode diferir da escola (#70/#91). |

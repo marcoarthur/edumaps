@@ -4,7 +4,7 @@ publico: [administrador]
 modulo: administrador
 nivel: intermediario
 status: ativo
-ultima_revisao: 2026-11-02
+ultima_revisao: 2026-11-06
 ---
 
 # Ajuda — administrador
@@ -15,6 +15,7 @@ cuida dos dados pessoais.
 | Quero… | Página |
 |---|---|
 | conhecer o painel de administração | [Painel de administração](painel-de-administracao.md) |
+| saber o que a telemetria de uso registra | [Telemetria de uso](telemetria-de-uso.md) |
 | ajustar as configurações da plataforma | [Configurações da plataforma](configuracoes-da-plataforma.md) |
 | configurar e acompanhar o bot do Telegram | [Bot Telegram](bot-telegram.md) |
 | ver de onde vêm os dados e quando foram atualizados | [Fontes de dados](fontes-de-dados.md) |
