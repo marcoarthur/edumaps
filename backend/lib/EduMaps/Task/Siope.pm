@@ -5,6 +5,7 @@ use Mojo::Collection qw(c);
 use Syntax::Keyword::Try;
 use Time::Piece;
 use Minion::Task::Generator qw/task/;
+use EduMaps::Util::MinionFila qw(minion_fila);
 
 use constant {
   CHUNK_SIZE => 2000,
@@ -67,9 +68,14 @@ sub _query_siope($job, $city_id, $year) {
   $job->finish($meta);
 }
 
+# Fila: `minion_filas.query_siope` no config (testes usam uma fila própria
+# para o minion local não pegar o job); sem entrada, `default`.
 sub _enqueue_siope_task($app, $cod_ibge, $year = DEFAULT_YEAR) {
   return $app->minion->enqueue(
-    query_siope => [$cod_ibge, $year] => { attempts => 3 }
+    query_siope => [$cod_ibge, $year] => {
+      attempts => 3,
+      queue    => minion_fila($app, 'query_siope'),
+    }
   );
 }
 
