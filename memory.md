@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (aj) — ajuda: lote das análises (#304, PR #350)
+
+- 6 páginas novas em `docs/ajuda/`: gestor/perfil-da-escola,
+  escolas-semelhantes, agrupamentos-de-escolas, rede-municipal,
+  folha-de-pagamento; administrador/telemetria-de-uso. Índices e glossário
+  (cluster, quartil, INSE). Cobertura da ajuda: 26/26 funcionalidades ativas.
+- Achados na tela (não corrigidos): `/municipio/perfil` não tem link na
+  navegação, e o "Voltar" dele usa `?ibge=` enquanto a comparação lê
+  `?codigo_ibge=`. A folha detalhada por escola (nomes e salários do SIOPE) é
+  pública, sem login: decisão de produto pendente com o usuário.
+- `build_pages.py` precisa de `markdown`/`pyyaml`; local, rodar num contêiner
+  `python:3.12-slim` (e apagar o `_site/` que ele cria como root).
+
 ## Sessão 2026-11-06 (ai) — CI do backend de volta (PR #349)
 
 - O passo "inventário de dependências" do `backend-tests` falhava desde o

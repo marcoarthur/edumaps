@@ -4,7 +4,7 @@ publico: [gestor]
 modulo: gestor
 nivel: basico
 status: ativo
-ultima_revisao: 2026-11-02
+ultima_revisao: 2026-11-06
 ---
 
 # Ajuda — gestor
@@ -25,10 +25,15 @@ Para diretores e coordenadores que acompanham a escola no EduMaps. Comece por
 | Quero… | Página |
 |---|---|
 | ver os indicadores da escola | [Painel da Escola](painel-da-escola.md) |
+| saber onde a escola precisa de atenção | [Perfil da escola](perfil-da-escola.md) |
+| achar escolas parecidas para comparar | [Escolas semelhantes](escolas-semelhantes.md) |
 | saber de onde vêm os alunos | [Área de influência](area-de-influencia.md) |
 | ver serviços e equipamentos perto da escola | [Equipamentos no entorno](equipamentos-no-entorno.md) |
 | entender o índice de vulnerabilidade | [IVET](ivet.md) |
 | ler o financeiro e a folha | [Financeiro e Folha](financeiro-e-folha.md) |
+| ver a folha detalhada da escola | [Folha de pagamento](folha-de-pagamento.md) |
+| comparar as redes do município | [Redes do município](rede-municipal.md) |
+| agrupar escolas parecidas no mapa | [Agrupamentos de escolas](agrupamentos-de-escolas.md) |
 | rever perguntas feitas ao Assistente do Censo | [Histórico do Assistente](historico-do-assistente.md) |
 
 ## Organizar a escola
