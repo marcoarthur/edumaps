@@ -38,6 +38,11 @@ IDEB médio.
    - um mapa em que você liga e desliga cada rede.
 4. **Como saber que deu certo:** os blocos aparecem preenchidos com o nome do
    município no título.
+5. **Perfil de uma rede:** acima da tabela, em **Ver perfil analítico**, clique
+   numa rede (ou em **Todas as redes**) para abrir o **Perfil da Rede**: a rede
+   comparada com o Brasil (**Rede vs. Brasil**) e a **Distribuição por
+   cluster** das escolas dela. O **← Voltar** traz de volta a comparação do
+   mesmo município.
 
 ## Entendendo os números
 
@@ -54,9 +59,6 @@ IDEB médio.
 
 - Os dados são do Censo Escolar e do IDEB mais recentes carregados; o ano não
   é o mesmo para todos os indicadores.
-- Existe também uma tela de **Perfil da Rede** (comparação de uma rede com o
-  Brasil e por grupos de escolas), mas por ora ela não tem atalho na
-  navegação.
 
 ## Perguntas frequentes
 

@@ -26,6 +26,9 @@ oferta educacional local.
 - Sistema pode comparar redes por matrículas, docentes e desempenho.
 - Sistema pode mostrar como cada rede contribui para a oferta do município.
 - Sistema pode apoiar leitura de políticas e de investimento por rede.
+- Sistema pode abrir, a partir da comparação, o perfil analítico de cada rede
+  (ou de todas juntas): a rede comparada com o Brasil e a distribuição das
+  suas escolas por grupos de contexto parecido.
 
 ## Valor
 
