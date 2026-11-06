@@ -49,6 +49,8 @@ requires "JSON" => "0";
 requires "JSON::PP" => "0";
 requires "JSON::XS" => "0";
 requires "List::Util" => "0";
+# SenhaRedefinicao.pm usa encode_base64url (#336). Core, declarado por convenção.
+requires "MIME::Base64" => "0";
 requires "Memoize" => "0";
 requires "Minion" => "0";
 requires "Mojo::Base" => "0";
