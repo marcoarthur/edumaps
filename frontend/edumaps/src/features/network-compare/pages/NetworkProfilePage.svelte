@@ -10,6 +10,7 @@
     transformNetworkProfileData,
     formatNetworkValue,
   } from "../utils/transformNetworkProfileData.js";
+  import { networkCompareUrl } from "../utils/transformNetworkData.js";
   import InfoHint from "@/shared/ui/components/InfoHint.svelte";
   import { ApiError } from "@/shared/api/client.js";
 
@@ -49,7 +50,7 @@
   });
 
   function goBack() {
-    window.location.href = ibge ? `/municipio/compare?ibge=${ibge}` : "/";
+    window.location.href = ibge ? networkCompareUrl(ibge) : "/";
   }
 </script>
 

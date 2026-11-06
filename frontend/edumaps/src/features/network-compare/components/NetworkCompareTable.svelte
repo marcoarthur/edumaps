@@ -1,10 +1,15 @@
 <script>
   // src/features/network-compare/components/NetworkCompareTable.svelte
   import { DataTable } from "@/shared/ui";
-  import { formatDecimal, formatInt } from "../utils/transformNetworkData.js";
+  import {
+    formatDecimal,
+    formatInt,
+    networkProfileUrl,
+    redeLabel,
+  } from "../utils/transformNetworkData.js";
 
   /** @type {Array<object>} */
-  let { networks = [] } = $props();
+  let { networks = [], codigoIbge = null } = $props();
 
   const columns = [
     { key: "rede", label: "Rede", sortable: true },
@@ -54,6 +59,26 @@
 </script>
 
 <section class="bg-white border border-gray-200 rounded-card shadow-card p-5">
+  {#if codigoIbge && networks.length > 0}
+    <nav
+      class="flex flex-wrap items-center gap-2 mb-4 text-sm"
+      aria-label="Perfil analítico das redes"
+    >
+      <span class="text-gray-600">Ver perfil analítico:</span>
+      {#each networks as net (net.codigo_rede ?? net.rede)}
+        {#if net.codigo_rede != null}
+          <a
+            class="px-3 py-1 rounded-full border border-brand-600 text-brand-700 hover:bg-brand-50"
+            href={networkProfileUrl(codigoIbge, net.codigo_rede)}
+          >{redeLabel(net.rede)}</a>
+        {/if}
+      {/each}
+      <a
+        class="px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50"
+        href={networkProfileUrl(codigoIbge)}
+      >Todas as redes →</a>
+    </nav>
+  {/if}
   <div class="overflow-x-auto">
     <DataTable
       columns={columns}

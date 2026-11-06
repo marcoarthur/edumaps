@@ -137,7 +137,7 @@
 
     <NetworkIdedTimeline {performance} />
 
-    <NetworkCompareTable {networks} />
+    <NetworkCompareTable {networks} {codigoIbge} />
 
     <NetworkSchoolMap {markers} />
   {:else}
