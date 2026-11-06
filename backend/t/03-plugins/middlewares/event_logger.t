@@ -35,6 +35,12 @@ my $UA      = "TestAgent/1.0 ($$)";
 my @SESSOES = ('abc123', 'sessao-teste-1');
 my @FONTES  = ('Test::EventLogger', 'T', 'Test::Ping');
 
+# O evento de cidade aciona o middleware SiopeTask, que enfileiraria um job
+# SIOPE de verdade (o minion local o executaria contra a rede). Este teste é do
+# EventLogger: o helper vira um stub que só anota a chamada.
+my @SIOPE;
+$app->helper(get_siope => sub { my ($c, @args) = @_; push @SIOPE, [@args]; return 0 });
+
 # --- SUBTESTES ---
 
 subtest 'Gravação de evento válido via flush em lote' => sub {
@@ -130,9 +136,6 @@ subtest 'Eventos ignorados não devem ser persistidos' => sub {
 END {
   if ($app->pg) {
     eval {
-      # Remove os jobs do Minion agendados pelo SiopeTask durante este teste
-      $app->pg->db->delete('minion_jobs', { task => 'query_siope' });
-
       # Só os registros deste teste
       $app->pg->db->delete('event_store', { source => { -in => \@FONTES } });
       $app->pg->db->delete('event_store', { session_id => { -in => \@SESSOES } });

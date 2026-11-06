@@ -26,8 +26,8 @@ subtest q{[school model] profile: informacão básica de uma escola} => sub {
       field endereco     => L();
       field telefone     => L();
       field whatsapp     => match(qr{^https://wa\.me/});
-      field latitude       => number_gt(-90) && number_lt(90);
-      field longitude      => number_gt(-180) && number_lt(180);
+      field latitude       => check_set(number_gt(-90), number_lt(90));
+      field longitude      => check_set(number_gt(-180), number_lt(180));
       field osm          => match(qr{^https://www\.openstreetmap\.org/});
       field tipo         => L();
       field porte_escola => L();
@@ -38,7 +38,9 @@ subtest q{[school model] profile: informacão básica de uma escola} => sub {
   );
 
   # --- 2. Código INEP inexistente ---
-  my $info_invalido = $model->info({ codigo_inep => 99999999 });
+  # 00000001: não há UF 00, e nenhum teste cria esta escola. (99999999 é
+  # criada por testes de API e sobra no banco se uma suíte for interrompida.)
+  my $info_invalido = $model->info({ codigo_inep => '00000001' });
   ok(!defined $info_invalido, 'Busca por código inexistente retorna undef');
 };
 
