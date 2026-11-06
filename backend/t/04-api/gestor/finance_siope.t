@@ -13,6 +13,11 @@ my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
 my $minion = $t->app->minion;
 
+# Fila própria: o minion local consome a `default` e pegava o job antes do
+# remove_job (o teste falhava e o job ficava, com um município fictício).
+my $FILA = "teste_$$";
+$t->app->config->{minion_filas}{query_siope} = $FILA;
+
 my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.remuneracao_municipal')"
 );
@@ -43,6 +48,7 @@ if ($has_tables) {
 END {
   return if !$has_tables;
   my $dbh = $t->app->schema->storage->dbh;
+  $dbh->do('DELETE FROM minion_jobs WHERE queue = ?', {}, $FILA);
   for my $email ($EMAIL, $OEMAIL) {
     $dbh->do('DELETE FROM clean.gestores WHERE email = ?', {}, $email);
   }
