@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-06 (ak) — caminho até o Perfil da Rede (PR #PR_NUM)
+## Sessão 2026-11-06 (ak) — caminho até o Perfil da Rede (PR #351)
 
 - Comparação de redes ganhou a linha **Ver perfil analítico** (uma rede por
   botão + Todas as redes) acima da tabela; o **Voltar** do perfil usa
