@@ -8,6 +8,18 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (ai) (caminho até o Perfil da Rede)
+
+Branch `fix/frontend-perfil-da-rede`. Docker local (`localhost:8080`).
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Comparação de redes: linha **Ver perfil analítico** com uma rede por botão e **Todas as redes** | navegador (validação do usuário) | 🟢 |
+| Link de cada rede abre o Perfil da Rede filtrado; **Todas as redes** sem filtro | navegador (validação do usuário) | 🟢 |
+| **← Voltar** do perfil volta à comparação com o município preenchido | navegador (validação do usuário) | 🟢 |
+| vitest: 127 arquivos, 1151 testes (4 novos) | Docker | 🟢 |
+| Imagem do frontend reconstruída; texto novo no bundle servido | docker | 🟢 |
+
 ## Rodada 2026-11-06 (ah) (CI do backend de volta)
 
 Branch `fix/ci-cpanfile-mime-base64`. Só `backend/cpanfile`.

@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (ak) — caminho até o Perfil da Rede (PR #PR_NUM)
+
+- Comparação de redes ganhou a linha **Ver perfil analítico** (uma rede por
+  botão + Todas as redes) acima da tabela; o **Voltar** do perfil usa
+  `codigo_ibge`. Validado visualmente pelo usuário.
+- `DataTable` distingue texto de snippet pelo **nome da função**
+  (`startsWith('snippet')`), o que não sobrevive à minificação: não usar
+  snippet em `render` de coluna sem antes corrigir o componente.
+- **Fila de deploy LXC** (2026-11-09): `deploy_frontend_dev` já estava na fila.
+
 ## Sessão 2026-11-06 (aj) — ajuda: lote das análises (#304, PR #350)
 
 - 6 páginas novas em `docs/ajuda/`: gestor/perfil-da-escola,
