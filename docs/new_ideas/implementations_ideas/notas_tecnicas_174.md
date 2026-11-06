@@ -1,6 +1,6 @@
 # Nota técnica 174: testes sem depender do banco local
 
-PR #PR_NUM (2026-11-06). Higiene de testes e do build local, sem mudança de
+PR #346 (2026-11-06). Higiene de testes e do build local, sem mudança de
 funcionalidade e sem deploy no LXC.
 
 ## Problemas
