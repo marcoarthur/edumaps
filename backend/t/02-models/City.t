@@ -132,24 +132,18 @@ subtest 'payroll() - Deve retornar dados de folha de pagamento' => sub {
     my $date = DateTime->new(year => 2024, month => 3);
     my $result = $city_model->payroll($TEST_IBGE_CODE, $date);
     
-    ok(defined $result, 'Retornou algum valor');
-    
-    my $decoded = try { decode_json($result) };
-    if ($decoded) {
-        is(ref $decoded, 'ARRAY', 'Retorna um array JSON');
-    }
+    # payroll() devolve uma Mojo::Collection (o controller faz ->to_array e o
+    # SiopeTask usa ->size), não mais o texto JSON.
+    isa_ok($result, 'Mojo::Collection');
+    ok(!grep({ ref $_ ne 'HASH' } @$result), 'cada item é um hashref');
 };
 
 subtest 'payroll() - Deve lidar com datas sem dados' => sub {
     my $date = DateTime->new(year => 1990, month => 1);
     my $result = $city_model->payroll($TEST_IBGE_CODE, $date);
     
-    ok(defined $result, 'Retorna algo mesmo para data sem dados');
-    
-    my $decoded = try { decode_json($result) };
-    if ($decoded && ref $decoded eq 'ARRAY') {
-        is(scalar @$decoded, 0, 'Retorna array vazio quando não há dados');
-    }
+    isa_ok($result, 'Mojo::Collection');
+    is($result->size, 0, 'coleção vazia quando não há dados');
 };
 
 subtest 'payroll() - Deve funcionar para diferentes meses' => sub {
@@ -300,8 +294,9 @@ subtest 'city_details() - Deve retornar array vazio para nome inexistente' => su
 subtest 'Validação de tipos de retorno' => sub {
     my $date = DateTime->new(year => 2024, month => 3);
     
+    isa_ok($city_model->payroll($TEST_IBGE_CODE, $date), 'Mojo::Collection');
+
     my @string_methods = (
-        sub { $city_model->payroll($TEST_IBGE_CODE, $date) },
         sub { $city_model->payroll_details($TEST_IBGE_CODE, $date) },
         sub { $city_model->overall_payroll({ codigo_ibge => $TEST_IBGE_CODE }) },
         sub { $city_model->search_by_name({ name => $TEST_CITY_NAME }) },
