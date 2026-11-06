@@ -8,6 +8,20 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-06 (ae) (testes sem depender do banco local)
+
+Branch `test/higiene-testes-locais`. Só testes e o build local; sem mudança
+de tela e sem deploy no LXC.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Build da imagem do frontend e vitest em paralelo (127 arquivos, 1147 testes) | Docker | 🟢 |
+| Contexto do build do frontend sem `node_modules` (~73 kB) | Docker | 🟢 |
+| Banco limpo do CI: `telemetry.t` sem bloco pulado, `osm_query.t`, `session.t`, `leitor_grants.t` | prove | 🟢 |
+| Cinco testes de telemetria duas vezes com tráfego real: telemetria igual antes e depois | prove + psql | 🟢 |
+| Suíte backend completa: sem `admin/telemetry.t` e `osm_query.t` na lista; telemetria preservada; config idêntica | prove + psql | 🟢 |
+| Frontend recriado com a imagem nova; minion estável | docker | 🟢 |
+
 ## Rodada 2026-11-05 (ad) (permissões explícitas do papel de leitura)
 
 Branch `fix/db-leitor-grants-explicitos`. Só banco e teste; sem mudança de
