@@ -4,6 +4,7 @@ use lib qw(./lib);
 use EduMaps::Task::OSM::Query;
 use Mojo::File;
 use Mojo::JSON qw(decode_json encode_json);
+use Digest::SHA qw(sha1_hex);
 use Test::Mojo;
 use DDP;
 
@@ -28,9 +29,13 @@ subtest data_base => sub {
     },
     'right geojson structure'
   );
-  is $db_data->{features}->@*, 
-  0,
-  sprintf ("right number of features for municipio %s", $q->municipio);
+  # O banco pode já ter os dados do município (t/05-tasks/osm.t com rede os
+  # grava): o retorno tem de bater com as feições salvas para a consulta.
+  my $salvas = $q->_sch->resultset('OsmQuery')
+    ->search_rs({ digest => sha1_hex($q->_service->query) })
+    ->search_related('osm_landuses', {})->count;
+  is scalar $db_data->{features}->@*, $salvas,
+    sprintf("features do banco para o municipio %s (%d salvas)", $q->municipio, $salvas);
 };
 
 subtest online => sub {

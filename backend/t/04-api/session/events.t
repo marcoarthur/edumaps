@@ -20,7 +20,9 @@ unless ($app->pg) {
 
 my $db = $app->pg->db;
 
-eval { $db->delete('event_store'); $db->delete('session_tracking') };
+# Sem apagar a telemetria do banco: as consultas filtram pela sessão do
+# teste ($sid), e só ela é removida no fim.
+eval { $db->query('SELECT 1 FROM event_store LIMIT 0'); $db->query('SELECT 1 FROM session_tracking LIMIT 0') };
 if ($@) {
   plan skip_all => 'Tabelas event_store/session_tracking ausentes. Execute as migrations do Sqitch.';
 }
@@ -49,21 +51,21 @@ subtest 'Lote válido -> 204 + persistência com allowlist' => sub {
 
   flush_logger();
 
-  my $nav = $db->select('event_store', '*', { event_type => 'session.navigate' })->hash;
+  my $nav = $db->select('event_store', '*', { event_type => 'session.navigate', session_id => $sid })->hash;
   ok $nav, 'evento navigate persistido';
   is $nav->{session_id}, $sid, 'session_id atribuído ao evento';
   my $pn = decode_json($nav->{payload});
   is $pn->{route}, '/escola/search', 'route gravada';
   is $pn->{ts}, 1720000000000, 'ts gravado';
 
-  my $sch = $db->select('event_store', '*', { event_type => 'session.search' })->hash;
+  my $sch = $db->select('event_store', '*', { event_type => 'session.search', session_id => $sid })->hash;
   ok $sch, 'evento search persistido';
   my $ps = decode_json($sch->{payload});
   is $ps->{q_len}, 5, 'q_len gravado';
   is $ps->{result_count}, 3, 'result_count gravado';
   ok !exists $ps->{texto_secreto}, 'texto digitado descartado (allowlist de chaves)';
 
-  my $evil = $db->select('event_store', '*', { event_type => 'evil:type' })->hash;
+  my $evil = $db->select('event_store', '*', { event_type => 'evil:type', session_id => $sid })->hash;
   ok !$evil, 'tipo fora da allowlist ignorado';
 
   my $sess = $db->select('session_tracking', '*', { session_id => $sid })->hash;
@@ -72,7 +74,7 @@ subtest 'Lote válido -> 204 + persistência com allowlist' => sub {
 };
 
 subtest 'tour: allowlist de chaves E de valores' => sub {
-  $db->delete('event_store', { event_type => 'session.tour' });
+  $db->delete('event_store', { event_type => 'session.tour', session_id => $sid });
 
   $t->post_ok(
     '/api/session/events',
@@ -92,7 +94,7 @@ subtest 'tour: allowlist de chaves E de valores' => sub {
   flush_logger();
 
   my @ev = map { decode_json($_->{payload}) }
-    @{ $db->select('event_store', ['payload'], { event_type => 'session.tour' }, { -asc => 'id' })->hashes };
+    @{ $db->select('event_store', ['payload'], { event_type => 'session.tour', session_id => $sid }, { -asc => 'id' })->hashes };
   is scalar @ev, 2, 'só os 2 eventos válidos persistidos';
 
   my ($dismiss) = grep { $_->{action} eq 'dismiss' } @ev;
@@ -114,10 +116,10 @@ subtest 'Lote malformado -> 400' => sub {
 };
 
 END {
-  if ($app->pg) {
+  if ($app->pg && defined $sid) {
     eval {
-      $app->pg->db->delete('event_store');
-      $app->pg->db->delete('session_tracking');
+      $app->pg->db->delete('event_store',      { session_id => $sid });
+      $app->pg->db->delete('session_tracking', { session_id => $sid });
     };
   }
 }

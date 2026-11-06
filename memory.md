@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-06 (af) — testes sem depender do banco local (PR #346)
+
+- `frontend/.dockerignore` (fora `node_modules`, `dist`, `map_app`): build
+  do frontend e vitest podem rodar em paralelo.
+- Testes de telemetria (`session.t`, `session/events.t`, `event_logger.t`,
+  `event_logger_buffer.t`) apagam só o que criam; a telemetria local
+  sobrevive à suíte. `admin/telemetry.t` confere diferenças (ordem e
+  percentuais só com janela vazia); `osm_query.t` compara com o salvo.
+  Saíram da lista de falhas antigas. Nota **174**.
+- Rodar contra o banco do CI exige `EDUMAPS_CONF=./t/ci/edu_maps.conf`
+  (sem ele o Mojo::Pg vai à porta 5432).
+- ⚠️ `docker compose` sempre pelo caminho real (`cd -P`): o link
+  `~/Projects/leaflet` muda o hash do `db`, o compose recria o banco e o
+  minion cai.
+- Pendentes: `school/profile.t` intermitente; `event_logger.t` apaga todos
+  os jobs `query_siope`.
+
 ## Sessão 2026-11-05 (ae) — permissões explícitas do papel de leitura (PR #345)
 
 - Change `leitor_grants_explicitos`: `edumaps_leitor` sem SELECT automático

@@ -16,8 +16,10 @@ unless ($app->pg) {
 
 my $db = $app->pg->db;
 
-# 2. Garante que as tabelas existem e limpa registros anteriores
-eval { $db->delete('event_store'); $db->delete('session_tracking') };
+# 2. Garante que as tabelas existem. Sem apagar a telemetria do banco: os
+#    eventos do teste levam marca própria (UA com o PID e sessões fixas), e só
+#    eles são removidos no fim.
+eval { $db->query('SELECT 1 FROM event_store LIMIT 0'); $db->query('SELECT 1 FROM session_tracking LIMIT 0') };
 if ($@) {
   plan skip_all => 'Tabelas event_store/session_tracking ausentes. Execute as migrations do Sqitch antes de rodar os testes.';
 }
@@ -28,6 +30,10 @@ sub flush_logger {
   my $res = $app->event_bus->request('event_logger.flush');
   return $res;
 }
+
+my $UA      = "TestAgent/1.0 ($$)";
+my @SESSOES = ('abc123', 'sessao-teste-1');
+my @FONTES  = ('Test::EventLogger', 'T', 'Test::Ping');
 
 # --- SUBTESTES ---
 
@@ -41,18 +47,19 @@ subtest 'Gravação de evento válido via flush em lote' => sub {
     {
       codigo_ibge    => $test_ibge,
       is_speculative => 0,
-      user_agent     => 'TestAgent/1.0',
+      user_agent     => $UA,
     },
     source => 'Test::EventLogger'
   );
 
   # Nada no banco ANTES do flush (buffer em memória)
-  my $pre = $db->select('event_store', 'COUNT(*)', { event_type => $event_type, codigo_ibge => $test_ibge })->array->[0];
+  my $doteste = \["payload->>'user_agent' = ?", $UA];
+  my $pre = $db->select('event_store', 'COUNT(*)', { event_type => $event_type, codigo_ibge => $test_ibge, -and => [$doteste] })->array->[0];
   is $pre, 0, 'Evento ainda não persistido antes do flush (bufferizado)';
 
   flush_logger();
 
-  my $row = $db->select('event_store', '*', { event_type => $event_type, codigo_ibge => $test_ibge })->hash;
+  my $row = $db->select('event_store', '*', { event_type => $event_type, codigo_ibge => $test_ibge, -and => [$doteste] })->hash;
   ok $row, 'Evento persistido após o flush';
   is $row->{event_type},     $event_type,          'event_type gravado corretamente';
   is $row->{codigo_ibge},    $test_ibge,           'codigo_ibge gravado corretamente';
@@ -61,7 +68,7 @@ subtest 'Gravação de evento válido via flush em lote' => sub {
 
   # Valida deserialização do Payload JSONB
   my $payload = decode_json($row->{payload});
-  is $payload->{user_agent}, 'TestAgent/1.0', 'Conteúdo do payload JSON retido com integridade';
+  is $payload->{user_agent}, $UA, 'Conteúdo do payload JSON retido com integridade';
 };
 
 subtest 'IP é removido do payload persistido (LGPD — fica só na sessão)' => sub {
@@ -126,9 +133,10 @@ END {
       # Remove os jobs do Minion agendados pelo SiopeTask durante este teste
       $app->pg->db->delete('minion_jobs', { task => 'query_siope' });
 
-      # Limpa os registros de teste do event_store e session_tracking
-      $app->pg->db->delete('event_store');
-      $app->pg->db->delete('session_tracking');
+      # Só os registros deste teste
+      $app->pg->db->delete('event_store', { source => { -in => \@FONTES } });
+      $app->pg->db->delete('event_store', { session_id => { -in => \@SESSOES } });
+      $app->pg->db->delete('session_tracking', { session_id => { -in => \@SESSOES } });
     };
   }
 }

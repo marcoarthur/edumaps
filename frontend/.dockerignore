@@ -1,0 +1,10 @@
+# Contexto do build da imagem do frontend (docker-compose: build ./frontend).
+# O Dockerfile instala as dependências e gera o dist/ dentro da imagem; os
+# artefatos locais não entram no contexto. Sem isto, um `npm ci` local em
+# paralelo (vitest no container) quebra o build lendo node_modules pela metade.
+edumaps/node_modules
+edumaps/dist
+edumaps/coverage
+edumaps/.vite
+map_app
+**/.DS_Store

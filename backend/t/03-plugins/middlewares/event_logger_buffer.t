@@ -16,7 +16,7 @@ unless ($app->pg) {
 
 my $db = $app->pg->db;
 
-eval { $db->delete('event_store'); $db->delete('session_tracking') };
+eval { $db->query('SELECT 1 FROM event_store LIMIT 0'); $db->query('SELECT 1 FROM session_tracking LIMIT 0') };
 if ($@) {
   plan skip_all => 'Tabelas event_store/session_tracking ausentes. Execute as migrations do Sqitch.';
 }
@@ -54,8 +54,6 @@ END {
   if ($app->pg) {
     eval {
       $app->pg->db->delete('event_store', { event_type => $bulk_type });
-      $app->pg->db->delete('event_store');
-      $app->pg->db->delete('session_tracking');
     };
   }
 }

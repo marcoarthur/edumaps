@@ -18,7 +18,10 @@ unless ($app->pg) {
 
 my $db = $app->pg->db;
 
-eval { $db->delete('event_store'); $db->delete('session_tracking') };
+# Sem apagar a telemetria do banco: cada verificação filtra pelo session_id
+# que o próprio teste gerou, e só essas linhas são removidas no fim.
+my @SIDS;
+eval { $db->query('SELECT 1 FROM event_store LIMIT 0'); $db->query('SELECT 1 FROM session_tracking LIMIT 0') };
 if ($@) {
   plan skip_all => 'Tabelas event_store/session_tracking ausentes. Execute as migrations do Sqitch.';
 }
@@ -45,6 +48,7 @@ subtest 'Primeiro request API cria cookie de sessão' => sub {
   is $sc->samesite, 'Lax',       'cookie SameSite=Lax';
 
   $sid = $sc->value;
+  push @SIDS, $sid if defined $sid;
   ok defined $sid && $sid =~ /^[0-9a-f]{32}$/, 'sid extraído do cookie';
 };
 
@@ -85,10 +89,10 @@ subtest 'Session.request não é emitido para o próprio endpoint de eventos' =>
 };
 
 END {
-  if ($app->pg) {
+  if ($app->pg && @SIDS) {
     eval {
-      $app->pg->db->delete('event_store');
-      $app->pg->db->delete('session_tracking');
+      $app->pg->db->delete('event_store',      { session_id => { -in => \@SIDS } });
+      $app->pg->db->delete('session_tracking', { session_id => { -in => \@SIDS } });
     };
   }
 }
@@ -98,6 +102,7 @@ subtest 'X-Real-IP só vale vindo de proxy confiável' => sub {
   $t->ua->cookie_jar->empty;   # sessão nova a cada request
   $t->get_ok($BUSCA, { 'X-Real-IP' => '203.0.113.7' })->status_is(200);
   my ($c) = grep { $_->name eq 'edumaps_sid' } @{ $t->tx->res->cookies };
+  push @SIDS, $c->value;
   flush_logger();
   my $s = $db->select('session_tracking', '*', { session_id => $c->value })->hash;
   is $s->{ip}, '127.0.0.1', 'conexão de fora da lista: cabeçalho ignorado';
@@ -106,6 +111,7 @@ subtest 'X-Real-IP só vale vindo de proxy confiável' => sub {
   $t->ua->cookie_jar->empty;
   $t->get_ok($BUSCA, { 'X-Real-IP' => '203.0.113.8' })->status_is(200);
   ($c) = grep { $_->name eq 'edumaps_sid' } @{ $t->tx->res->cookies };
+  push @SIDS, $c->value;
   flush_logger();
   $s = $db->select('session_tracking', '*', { session_id => $c->value })->hash;
   is $s->{ip}, '203.0.113.8', 'conexão do proxy: IP do cabeçalho';

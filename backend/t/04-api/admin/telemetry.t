@@ -5,6 +5,10 @@
 #   KPIs agregados (logins por janela, sessões logadas/anônimas, rotas, busca,
 #   série temporal) e ausência de dado pessoal na resposta. Só roda onde
 #   event_store/session_tracking e gestor_access_role foram aplicados.
+#
+# O banco pode ter tráfego real na janela (stack local em uso): as contagens
+# são conferidas como diferença sobre uma leitura feita antes de semear, e a
+# ordem e os percentuais só quando a janela estava vazia (como no CI).
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -29,6 +33,14 @@ my $SENHA = 'senha123';
 my ($admin_token, $user_token);
 
 my @SIDS = qw(tel-test-s1 tel-test-s2 tel-test-s3 tel-test-s4);
+
+sub overview ($w) {
+  $t->get_ok("/api/admin/telemetry/overview?window=$w", { Authorization => "Bearer $admin_token" })
+    ->status_is(200)->tx->res->json;
+}
+
+sub rotas ($d) { +{ map { $_->{route} => $_->{count} } @{ $d->{top_routes} // [] } } }
+sub soma_serie ($d) { my $n = 0; $n += $_->{events} for @{ $d->{series} // [] }; $n }
 
 END {
   return if !$has_tables;
@@ -134,44 +146,51 @@ subtest 'janela inválida -> 400' => sub {
 
 subtest 'overview: KPIs agregados por janela' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
+  my $b   = overview('24h');
+  my $b6  = overview('6h');
+  my $vazia = !$b->{events} && !@{ $b->{top_routes} // [] };
   seed_telemetry();
 
-  my $d = $t->get_ok('/api/admin/telemetry/overview?window=24h', { Authorization => "Bearer $admin_token" })
-    ->status_is(200)->tx->res->json;
+  my $d = overview('24h');
 
   is $d->{window}, '24h', 'janela ecoada';
   is $d->{granularity}, 'hour', 'granularidade por hora em 24h';
 
   # logins: 3 gestores distintos em 24h; 2 em 6h/12h (o de 20h fica de fora).
-  is $d->{logins}{'24h'}, 3, 'logins 24h = 3 gestores distintos';
-  is $d->{logins}{'12h'}, 2, 'logins 12h = 2';
-  is $d->{logins}{'6h'},  2, 'logins 6h = 2';
+  is $d->{logins}{'24h'} - $b->{logins}{'24h'}, 3, 'logins 24h = +3 gestores distintos';
+  is $d->{logins}{'12h'} - $b->{logins}{'12h'}, 2, 'logins 12h = +2';
+  is $d->{logins}{'6h'}  - $b->{logins}{'6h'},  2, 'logins 6h = +2';
 
   # sessões: 4 ativas em 24h (3 logadas + 1 anônima); 3 ativas em 6h.
-  is $d->{sessions}{active},    4, 'sessões ativas 24h = 4';
-  is $d->{sessions}{logged},    3, 'sessões logadas 24h = 3';
-  is $d->{sessions}{anonymous}, 1, 'sessões anônimas 24h = 1';
-  is $d->{searches}, 1, 'buscas 24h = 1';
-  is $d->{events},  10, 'eventos 24h = 10';
+  is $d->{sessions}{active}    - $b->{sessions}{active},    4, 'sessões ativas 24h = +4';
+  is $d->{sessions}{logged}    - $b->{sessions}{logged},    3, 'sessões logadas 24h = +3';
+  is $d->{sessions}{anonymous} - $b->{sessions}{anonymous}, 1, 'sessões anônimas 24h = +1';
+  is $d->{searches} - $b->{searches}, 1, 'buscas 24h = +1';
+  is $d->{events}   - $b->{events},  10, 'eventos 24h = +10';
 
-  my ($top) = @{ $d->{top_routes} };
-  is $top->{route}, '/escola/search', 'rota mais acessada';
-  is $top->{count}, 3, 'top rota com 3 acessos';
-  is $top->{share_pct}, 50, 'share 50% (3 de 6 navegações)';
-  my @rotas = map { $_->{route} } @{ $d->{top_routes} };
-  is join(',', @rotas), '/escola/search,/about,/p/:token', 'ranking completo de rotas';
+  my ($rb, $rd) = (rotas($b), rotas($d));
+  my %esperado = ('/escola/search' => 3, '/about' => 2, '/p/:token' => 1);
+  is +{ map { $_ => ($rd->{$_} // 0) - ($rb->{$_} // 0) } keys %esperado }, \%esperado,
+    'navegações semeadas por rota';
 
   ok ref $d->{series} eq 'ARRAY' && @{ $d->{series} }, 'série temporal não vazia';
-  my $serie_ev = 0;
-  $serie_ev += $_->{events} for @{ $d->{series} };
-  is $serie_ev, 10, 'soma da série = eventos da janela';
+  is soma_serie($d) - soma_serie($b), 10, 'soma da série = +10 eventos';
+
+  SKIP: {
+    skip 'janela de 24h com tráfego real: ordem e percentual dependem dele', 4 unless $vazia;
+    my ($top) = @{ $d->{top_routes} };
+    is $top->{route}, '/escola/search', 'rota mais acessada';
+    is $top->{count}, 3, 'top rota com 3 acessos';
+    is $top->{share_pct}, 50, 'share 50% (3 de 6 navegações)';
+    my @rotas = map { $_->{route} } @{ $d->{top_routes} };
+    is join(',', @rotas), '/escola/search,/about,/p/:token', 'ranking completo de rotas';
+  }
 
   # janela de 6h: corte descarta os eventos/sessões de 20h.
-  my $d6 = $t->get_ok('/api/admin/telemetry/overview?window=6h', { Authorization => "Bearer $admin_token" })
-    ->status_is(200)->tx->res->json;
-  is $d6->{events},        8, 'eventos 6h = 8';
-  is $d6->{sessions}{active}, 3, 'sessões ativas 6h = 3';
-  is $d6->{searches},      1, 'buscas 6h = 1';
+  my $d6 = overview('6h');
+  is $d6->{events} - $b6->{events},                     8, 'eventos 6h = +8';
+  is $d6->{sessions}{active} - $b6->{sessions}{active}, 3, 'sessões ativas 6h = +3';
+  is $d6->{searches} - $b6->{searches},                 1, 'buscas 6h = +1';
 
   # janelas longas respondem 200 e ecoam a chave.
   for my $w (qw(hoje 7d 30d)) {
@@ -199,6 +218,7 @@ subtest 'privacidade: resposta só tem agregados' => sub {
 subtest 'tours: aberturas por gatilho, conclusão e passo de abandono' => sub {
   plan skip_all => 'migrations nao aplicadas' unless $has_tables;
   seed_telemetry();
+  my %base = map { $_->{tour_id} => $_ } @{ overview('24h')->{tours} // [] };
 
   # busca-escola: 4 aberturas (2 auto, 1 botão, 1 link), 1 conclusão,
   # 3 fechamentos (2 no passo 3, 1 no passo 5). painel-gestor: só fechamento,
@@ -229,28 +249,35 @@ subtest 'tours: aberturas por gatilho, conclusão e passo de abandono' => sub {
     );
   }
 
-  my $d = $t->get_ok('/api/admin/telemetry/overview?window=24h', { Authorization => "Bearer $admin_token" })
-    ->status_is(200)->tx->res->json;
-
+  my $d = overview('24h');
   my %por = map { $_->{tour_id} => $_ } @{ $d->{tours} };
-  is join(',', map { $_->{tour_id} } @{ $d->{tours} }), 'busca-escola,painel-gestor',
-    'ordenado por aberturas; tour só fora da janela não aparece';
+  my $sem_base = !%base;
+  my $delta = sub ($id, $k) {
+    (($por{$id}  // {})->{$k} // 0) - (($base{$id} // {})->{$k} // 0);
+  };
 
-  my $b = $por{'busca-escola'};
-  is $b->{started},        4, 'aberturas';
-  is $b->{started_auto},   2, 'aberturas automáticas';
-  is $b->{started_button}, 1, 'aberturas pelo botão';
-  is $b->{started_link},   1, 'aberturas por link';
-  is $b->{completed},      1, 'conclusões';
-  is $b->{dismissed},      3, 'fechamentos';
-  is $b->{completion_pct}, 25, 'taxa de conclusão 25% (1 de 4)';
-  is $b->{top_dismiss_step}, 3, 'passo em que mais se fecha';
-  is $b->{total_steps},    7, 'total de passos';
+  is $delta->('busca-escola', 'started'),        4, 'aberturas';
+  is $delta->('busca-escola', 'started_auto'),   2, 'aberturas automáticas';
+  is $delta->('busca-escola', 'started_button'), 1, 'aberturas pelo botão';
+  is $delta->('busca-escola', 'started_link'),   1, 'aberturas por link';
+  is $delta->('busca-escola', 'completed'),      1, 'conclusões';
+  is $delta->('busca-escola', 'dismissed'),      3, 'fechamentos';
+  is $delta->('painel-gestor', 'started'),       0, 'painel-gestor sem abertura na janela';
+  is $delta->('painel-gestor', 'dismissed'),     1, 'fechamento do painel';
 
-  my $p = $por{'painel-gestor'};
-  is $p->{started}, 0, 'painel-gestor sem abertura na janela';
-  ok !defined $p->{completion_pct}, 'taxa sem abertura = null, não 0 (#154)';
-  is $p->{top_dismiss_step}, 2, 'passo de abandono do painel';
+  SKIP: {
+    skip 'tours reais na janela: ordem, taxas e passos dependem deles', 7 unless $sem_base;
+    is join(',', map { $_->{tour_id} } @{ $d->{tours} }), 'busca-escola,painel-gestor',
+      'ordenado por aberturas; tour só fora da janela não aparece';
+    my $b = $por{'busca-escola'};
+    is $b->{completion_pct}, 25, 'taxa de conclusão 25% (1 de 4)';
+    is $b->{top_dismiss_step}, 3, 'passo em que mais se fecha';
+    is $b->{total_steps},    7, 'total de passos';
+    my $p = $por{'painel-gestor'};
+    is $p->{started}, 0, 'painel-gestor sem abertura';
+    ok !defined $p->{completion_pct}, 'taxa sem abertura = null, não 0 (#154)';
+    is $p->{top_dismiss_step}, 2, 'passo de abandono do painel';
+  }
 };
 
 done_testing;
