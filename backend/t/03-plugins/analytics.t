@@ -8,9 +8,9 @@ use Mojo::JSON;
 use Mojo::Util;
 use IO::Socket::INET;
 
-# O client de analytics invoca o R e escreve o portfile; sem R ele nunca
-# levanta e o servidor de teste não fica pronto.
-CI->skip_r ('EduMaps::Analytics::Client precisa do R para escrever o portfile');
+# O serviço Plumber é emulado por um servidor-filho em Perl (abaixo): o teste
+# não precisa de R e roda também no CI. (O portfile antes ia para um caminho
+# fixo de outro ambiente e o servidor nunca ficava pronto.)
 use Time::HiRes qw(sleep);
 use utf8;
 use open ':std', ':encoding(UTF-8)';
@@ -18,7 +18,11 @@ use open ':std', ':encoding(UTF-8)';
 # ---------------------------------------------------------------------------
 # Servidor-filho que emula o serviço Plumber/edumapsr (loop dedicado).
 # ---------------------------------------------------------------------------
-my $portfile = "/tmp/user/1000/opencode/analytics-test-port.$$";
+# Pasta temporária própria (CLEANUP => 0: o filho do fork não pode apagá-la
+# ao sair; o pai remove no fim).
+use File::Temp ();
+my $TMPDIR   = File::Temp::tempdir('edumaps-analytics-XXXXXX', TMPDIR => 1, CLEANUP => 0);
+my $portfile = "$TMPDIR/port";
 my $pid;
 
 {
@@ -148,6 +152,7 @@ END {
     $? = 0;
   }
   unlink $portfile if $portfile;
+  rmdir $TMPDIR if $pid;    # só o pai (no filho do fork, $pid é 0)
 }
 
 my $deadline = time + 5;
@@ -228,7 +233,7 @@ subtest 'run_school_profile_reference/cluster/batch (Fase 2)' => sub {
 
   my $batch = $c->run_school_profile_batch({ scope => 'pending', limit => 10 });
   is $batch->{processed}, 2, 'lote processado';
-  is_deeply $batch->{failed}, [], 'sem falhas';
+  is $batch->{failed}, [], 'sem falhas';
 };
 
 subtest 'run_similarity_db chama POST /similarity/db' => sub {

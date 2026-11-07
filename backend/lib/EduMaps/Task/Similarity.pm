@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Syntax::Keyword::Try;
 use Minion::Task::Generator qw/task/;
 use EduMaps::Analysis::R::Pipe;
+use EduMaps::Util::MinionFila qw(minion_fila);
 use Time::Piece;
 
 use constant {
@@ -81,7 +82,10 @@ sub register ($self, $app, $config) {
       }
   );
   $app->helper(
-    apply_similarity => sub ($c, $args) { $app->minion->enqueue( similarity => [$args] ) }
+    # Fila: `minion_filas.similarity` no config (testes); sem entrada, `default`.
+    apply_similarity => sub ($c, $args) {
+      $app->minion->enqueue(similarity => [$args] => { queue => minion_fila($app, 'similarity') });
+    }
   );
 }
 

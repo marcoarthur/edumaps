@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Syntax::Keyword::Try;
 use EduMaps::Analysis::R::Pipe;
 use EduMaps::Presets;
+use EduMaps::Util::MinionFila qw(minion_fila);
 use Time::Piece;
 
 use constant {
@@ -67,7 +68,10 @@ sub register ($self, $app, $config) {
 
   # adiciona o helper
   $app->helper(
-    apply_clustering => sub ($c, $args) { $app->minion->enqueue( clusterization => [$args] ) }
+    # Fila: `minion_filas.clusterization` no config (testes); sem entrada, `default`.
+    apply_clustering => sub ($c, $args) {
+      $app->minion->enqueue(clusterization => [$args] => { queue => minion_fila($app, 'clusterization') });
+    }
   );
 }
 
