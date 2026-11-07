@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-07 (am) — schema staging e testes do R do host (PR #PR_NUM)
+## Sessão 2026-11-07 (am) — schema staging e testes do R do host (PR #353)
 
 - Change `staging_schema` (nenhuma migração criava o schema que os jobs de
   análise usam). `CI->skip_r_host` pula os testes que executam o R no host

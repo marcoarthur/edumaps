@@ -1,6 +1,6 @@
 # Nota técnica 178: schema staging e testes que dependem do R do host
 
-PR #PR_NUM (2026-11-07). Lote 2 da limpeza das falhas antigas (nota 177).
+PR #353 (2026-11-07). Lote 2 da limpeza das falhas antigas (nota 177).
 
 ## O que se descobriu
 
