@@ -72,7 +72,12 @@ Vivem em `tools/` (local, **não** vai ao deploy). Bypass pontual:
   ```bash
   docker compose up -d db            # sobe o Postgres do Docker
   export EDUMAPS_DB_HOST=127.0.0.1   # sem isto, a suíte vai ao ubatexu.lan
+  export ANALYTICS_URL=http://127.0.0.1:8000   # serviço analítico (R) do Docker
   ```
+
+  O `ANALYTICS_URL` vale para os testes que chamam o serviço analítico (ex.:
+  `t/05-tasks/city_analyticis.t`): o padrão do `edu_maps.conf` é a porta 8787,
+  mas o contêiner `analytic` do Docker local publica a 8000.
 
   O `env -u PERL5LIB` é **obrigatório**: o `PERL5LIB` do shell tem caminhos de
   uma máquina antiga e faz o `prove` abortar antes de rodar qualquer teste.
