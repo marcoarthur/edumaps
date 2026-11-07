@@ -204,24 +204,25 @@ subtest 'Indicador IGE' => sub {
     $record->{in_orgao_conselho_escolar}  = 1;
     $record->{in_orgao_ass_pais_mestres}  = 1;
     $record->{in_orgao_gremio_estudantil} = 1;
-    $record->{tp_proposta_pedagogica}     = 1;   # closure retorna 2
+    $record->{tp_proposta_pedagogica}     = 1;   # closure retorna 1 (própria)
     $record->{in_internet_administrativo} = 1;
 
-    # Soma = 1 + 1 + 1 + (2*2) + 1 + 0 = 1+1+1+4+1 = 8
-    # Score = 8/7 = 1.1429, mas como scale=1 e formato com 4 decimais, fica 1.1429 (mas será truncado para 1.0000? 
-    # Na verdade o cálculo é (sum/sum_w)*scale, e sum_w = 7, então 8/7 = 1.142857..., e scale=1, então sprintf com 4 decimais => "1.1429".
-    # Porém, o indicador foi projetado para retornar valores normalizados, então 1.1429 é aceitável, mas vamos ver se o método permite >1.
-    # O método de cálculo não limita a 1, então o valor pode ultrapassar 1.
-    # Ajusto o teste para o valor calculado.
-    is($ige->calculate($record), '1.1429', 'todos itens ativos, proposta própria');
+    # Cada item fica em 0..1 (a gradação da proposta vai no valor, não acima
+    # de 1), então o score nunca passa de 1.
+    # Soma = 1 + 1 + 1 + (1*2) + 1 + 0 = 6; Score = 6/7 = 0.8571
+    is($ige->calculate($record), '0.8571', 'todos itens ativos, proposta própria');
 
-    # Cenário 3: tp = 3 (adaptada) => closure retorna 1, e com profissionais de gestão
+    # Cenário 3: tp = 3 (adaptada) => closure retorna 0,5, e com profissionais de gestão
     $record->{tp_proposta_pedagogica}     = 3;
     $record->{qt_prof_gestao}             = 2;   # >0 => 1
     $record->{qt_prof_coordenador}        = 0;
-    # Agora: conselhos (3*1) + proposta (2*1) + internet (1) + profissionais (1) = 3 + 2 + 1 + 1 = 7
-    # Score = 7/7 = 1.0000
-    is($ige->calculate($record), '1.0000', 'proposta adaptada + profissionais de gestão');
+    # Soma = 3 (conselhos) + (0,5*2) + 1 (internet) + 1 (profissionais) = 6
+    # Score = 6/7 = 0.8571
+    is($ige->calculate($record), '0.8571', 'proposta adaptada + profissionais de gestão');
+
+    # Todos os itens no máximo (proposta própria + profissionais) => 7/7 = 1
+    $record->{tp_proposta_pedagogica}     = 1;
+    is($ige->calculate($record), '1.0000', 'máximo do índice é 1');
 
     # Cenário 4: tp = 0, sem profissionais, mas com coordenador presente
     $record->{tp_proposta_pedagogica}     = 0;

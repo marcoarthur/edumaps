@@ -43,7 +43,7 @@ subtest 'refresh materializa buffers (tier, raio, SRID, versão)' => sub {
   my $rows = $dbh->selectall_arrayref(q{
     SELECT tier, raio_m, versao, ST_SRID(geom) AS srid, geometrytype(geom) AS gtype
       FROM clean.escola_influencia
-     WHERE co_entidade = ? AND nu_ano_censo = ?
+     WHERE co_entidade = ? AND nu_ano_censo = ? AND raio_m IN (500, 1000)
      ORDER BY raio_m
   }, { Slice => {} }, $co, $ano);
 
@@ -95,7 +95,7 @@ subtest 'idempotente: o segundo refresh não duplica' => sub {
 
   my $count = $dbh->selectrow_array(q{
     SELECT count(*) FROM clean.escola_influencia
-     WHERE co_entidade = ? AND nu_ano_censo = ?
+     WHERE co_entidade = ? AND nu_ano_censo = ? AND raio_m IN (500, 1000)
   }, {}, $co, $ano);
   is $count, 2, 'continua com 2 linhas (UPSERT, sem duplicar)';
 };

@@ -34,6 +34,10 @@ my ($admin_token, $user_token);
 
 my @SIDS = qw(tel-test-s1 tel-test-s2 tel-test-s3 tel-test-s4);
 
+# Limite do ranking de rotas do painel.
+use EduMaps::Roles::Business::Admin::Telemetry ();
+my $TOP_ROTAS = $EduMaps::Roles::Business::Admin::Telemetry::TOP_ROUTES;
+
 sub overview ($w) {
   $t->get_ok("/api/admin/telemetry/overview?window=$w", { Authorization => "Bearer $admin_token" })
     ->status_is(200)->tx->res->json;
@@ -168,10 +172,19 @@ subtest 'overview: KPIs agregados por janela' => sub {
   is $d->{searches} - $b->{searches}, 1, 'buscas 24h = +1';
   is $d->{events}   - $b->{events},  10, 'eventos 24h = +10';
 
+  # O ranking tem limite de itens: com tráfego real, uma rota semeada com
+  # poucos acessos pode ficar fora da lista. Só se confere a rota que aparece
+  # (ou toda a lista, quando ela não chegou ao limite).
   my ($rb, $rd) = (rotas($b), rotas($d));
+  my $cheia = @{ $d->{top_routes} // [] } >= $TOP_ROTAS;
   my %esperado = ('/escola/search' => 3, '/about' => 2, '/p/:token' => 1);
-  is +{ map { $_ => ($rd->{$_} // 0) - ($rb->{$_} // 0) } keys %esperado }, \%esperado,
-    'navegações semeadas por rota';
+  for my $r (sort keys %esperado) {
+    if (!exists $rd->{$r} && $cheia) {
+      note "rota $r fora do ranking (lista no limite de $TOP_ROTAS)";
+      next;
+    }
+    is +($rd->{$r} // 0) - ($rb->{$r} // 0), $esperado{$r}, "navegações semeadas em $r";
+  }
 
   ok ref $d->{series} eq 'ARRAY' && @{ $d->{series} }, 'série temporal não vazia';
   is soma_serie($d) - soma_serie($b), 10, 'soma da série = +10 eventos';
