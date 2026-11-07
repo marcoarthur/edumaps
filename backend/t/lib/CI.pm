@@ -52,6 +52,28 @@ sub skip_r ($self, $motivo) {
   _skip("exige R/edumapsr e as tabelas do job de analise - $motivo");
 }
 
+# Executa o R NO HOST (R::Pipe/Rscript) e precisa do pacote edumapsr
+# instalado nele. Vale fora do CI também: sem o pacote, o job falha no R e o
+# teste cai com um erro que parece de código. Para rodar de verdade, instalar
+# o pacote no R do host (ver AGENTS.md, "Running tests (backend)").
+#
+#   CI->skip_r_host('clustering por kmeans executado no R');
+my $edumapsr_no_host;
+sub edumapsr_no_host {
+  $edumapsr_no_host //= do {
+    my $rc = system('Rscript', '-e',
+      'quit(status = if (requireNamespace("edumapsr", quietly = TRUE)) 0 else 1)');
+    $rc == 0 ? 1 : 0;
+  };
+}
+
+sub skip_r_host ($self, $motivo) {
+  $self->skip_r($motivo);    # no CI: mesma razão de sempre
+  return if edumapsr_no_host();
+  Test::More::plan(skip_all =>
+    "exige o pacote edumapsr instalado no R do host (R CMD INSTALL analysis/edumapsr) - $motivo");
+}
+
 # Precisa da rede (Overpass/OSM, SIOPE). Nenhum espelho em CI.
 sub skip_network ($self, $motivo) {
   return unless fixtures();

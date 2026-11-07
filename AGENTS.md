@@ -101,6 +101,19 @@ carregados) e `t/04-api/network/schools.t` (dois subtestes com expectativas
 contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem a
 mudança, em `git stash`.
 
+**Testes que executam o R no host** (clustering, similaridade e injeção de
+relações: `t/05-tasks/clustering*.t`, `t/05-tasks/similarity.t`,
+`t/dbic/inject*.t`) usam `CI->skip_r_host` e são **pulados** quando o R do
+host não carrega o pacote `edumapsr` — a mensagem do skip diz isso. Para
+rodá-los de verdade, instalar o pacote no R do host (as dependências do
+`DESCRIPTION` precisam estar instaladas; uma atualização de versão do R começa
+uma biblioteca nova, sem os pacotes da anterior):
+
+```bash
+R CMD INSTALL analysis/edumapsr
+Rscript -e 'library(edumapsr)'   # confere
+```
+
 ## Running tests (frontend)
 
 **Onde rodar depende da máquina:**

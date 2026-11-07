@@ -6,7 +6,7 @@ use CI;
 use Utils qw(run_similarity_job cleanup_job expected_similarity_contract);
 
 # A similaridade é calculada no R (edumapsr) e gravada pelo job.
-CI->skip_r ('matriz de similaridade calculada no R');
+CI->skip_r_host('matriz de similaridade calculada no R');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $sch = $t->app->schema;
