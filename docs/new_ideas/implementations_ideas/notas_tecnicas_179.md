@@ -1,6 +1,6 @@
 # Nota técnica 179: R::Pipe em UTF-8 e lote 3 das falhas antigas
 
-PR #PR_NUM (2026-11-07). Lote 3 (grupo D, "motor R local") da limpeza das
+PR #354 (2026-11-07). Lote 3 (grupo D, "motor R local") da limpeza das
 falhas antigas (notas 177 e 178).
 
 ## Bug de produto: R::Pipe gravava o script R fora de UTF-8

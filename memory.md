@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-07 (an) — R::Pipe em UTF-8 e lote 3 (PR #PR_NUM)
+## Sessão 2026-11-07 (an) — R::Pipe em UTF-8 e lote 3 (PR #354)
 
 - Bug: `R::Pipe` gravava o script R sem encode UTF-8 (acento quebrava o R).
 - Testes de analytics sem caminho fixo `/tmp/user/1000/opencode`; helpers
