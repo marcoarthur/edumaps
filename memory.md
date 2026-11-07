@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-07 (an) — R::Pipe em UTF-8 e lote 3 (PR #PR_NUM)
+
+- Bug: `R::Pipe` gravava o script R sem encode UTF-8 (acento quebrava o R).
+- Testes de analytics sem caminho fixo `/tmp/user/1000/opencode`; helpers
+  de clustering/similaridade com `minion_fila`; `analytics.t` roda no CI;
+  `city_analyticis.t` executa só o próprio job.
+- Relevância dos indicadores virou diagnóstico (opção b do usuário): só ISE
+  atinge; IFS/IPS/IGE/IAI têm rho ≈ −0,08 com o IDEB. Nota **179**.
+- No host: `ANALYTICS_URL=http://127.0.0.1:8000` (AGENTS.md).
+- Falhas locais: 10 → 5. Abertos: `city_analyticis.t` (análise de cidade lê
+  `staging.censo_escolas` e parece ignorar o `schema`) e o grupo E.
+- Crash da sessão durante a suíte: sem sobras no banco; suíte refeita.
+
 ## Sessão 2026-11-07 (am) — schema staging e testes do R do host (PR #353)
 
 - Change `staging_schema` (nenhuma migração criava o schema que os jobs de

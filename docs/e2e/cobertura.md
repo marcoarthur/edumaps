@@ -8,6 +8,20 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-07 (al) (R::Pipe em UTF-8 e lote 3 das falhas antigas)
+
+Branch `fix/rpipe-utf8`. Backend e testes; sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `rpipe.t`: script com acento chega ao R (falha sem a correção) | prove | 🟢 |
+| `analytics.t` e `analytics_engine.t` com pasta temporária própria, sem sobras | prove | 🟢 |
+| `indicators/quality.t` e `indicators_quality.t`: R roda; relevância como diagnóstico | prove | 🟢 |
+| `city_analyticis.t` executa só o próprio job e limpa o que criou | prove + psql | 🟢 |
+| Banco limpo do CI: `analytics.t` passa (antes pulado) | prove | 🟢 |
+| Imagens backend/minion reconstruídas, md5 bate, minion estável | docker | 🟢 |
+| Suíte completa: 10 → 5 falhas; config idêntica | prove + psql | 🟢 |
+
 ## Rodada 2026-11-07 (ak) (schema staging e testes do R do host)
 
 Branch `fix/staging-e-r-do-host`. Banco e testes; sem mudança de tela.
