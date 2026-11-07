@@ -128,7 +128,8 @@ subtest 'Conteúdo do script temporário' => sub {
         my (@args) = @_;
         # args[0] é a lista de comando (arrayref)
         my $cmd_args = $args[0];
-        my $script_tmp = $cmd_args->[2];  # objeto Mojo::File
+        # o script é o último argumento: Rscript, opções (default_opts), script
+        my $script_tmp = $cmd_args->[-1];  # objeto Mojo::File
         die "script_tmp não é um Mojo::File" unless ref($script_tmp) eq 'Mojo::File';
         my $content = $script_tmp->slurp;
         like( $content, qr/source\(.*$r_source.*\)/, 'contém source com nome do arquivo' );
@@ -146,6 +147,20 @@ subtest 'Conteúdo do script temporário' => sub {
   };
 
   ok( lives { $pipe->run($args) }, 'execução com verificação de conteúdo' );
+};
+
+# ----------------------------------------------------------------------
+# Teste 4b: script com acento chega ao R em UTF-8 (Rscript --encoding=UTF-8)
+# ----------------------------------------------------------------------
+subtest 'Script com acento (UTF-8)' => sub {
+  my $pipe = EduMaps::Analysis::R::Pipe->new;
+  my $out = $pipe->run({
+    paths  => [],
+    script => qq{# Regress\x{e3}o com acentua\x{e7}\x{e3}o\n}
+            . qq{cat(sprintf('{"texto":"%s","n":%d}', "a\x{e7}\x{e3}o", nchar("a\x{e7}\x{e3}o")))},
+  });
+  is $out->{texto}, "a\x{e7}\x{e3}o", 'texto com acento volta igual';
+  is $out->{n}, 4, 'o R leu 4 caracteres (não bytes soltos)';
 };
 
 # ----------------------------------------------------------------------

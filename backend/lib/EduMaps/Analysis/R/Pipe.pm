@@ -3,6 +3,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::File qw(path tempfile);
 use Mojo::Collection qw(c);
 use Mojo::JSON qw(decode_json);
+use Mojo::Util qw(encode);
 use Carp qw(croak);
 use IPC::Run;
 
@@ -49,17 +50,14 @@ sub _resolve_cmd ($self) {
 
 sub _mount_final_script ($self) {
 
-  if ( $self->source_file && -f $self->source_file->to_abs->to_string ) {
-    $self->script_tmp->spew(
-      sprintf qq{source("%s")\n%s},
-      $self->source_file->to_abs->to_string,
-      $self->script
-    );
-  } else {
-    $self->script_tmp->spew(
-      sprintf qq{%s}, $self->script
-    );
-  }
+  # O Rscript roda com --encoding=UTF-8: o arquivo tem de estar em UTF-8.
+  # Sem o encode, um texto com acento (ex.: "ação") ia para o disco em
+  # Latin-1 e o R falhava ao ler ("re-codificação falhou", ou o script nem
+  # era interpretado).
+  my $code = $self->source_file && -f $self->source_file->to_abs->to_string
+    ? sprintf(qq{source("%s")\n%s}, $self->source_file->to_abs->to_string, $self->script)
+    : $self->script;
+  $self->script_tmp->spew(encode('UTF-8', $code));
 
   $self->full_cmd(c($self->cmd_str, $self->cmd_args->@*, $self->script_tmp));
   $self;

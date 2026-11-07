@@ -46,14 +46,28 @@ my $expected_schools_count = $sch->resultset('CensoEscolas')->search({
 })->count;
 
 # Helpers
+# Jobs criados pelo teste: removidos no fim (inclusive os que falharem).
+my @JOBS;
+END {
+  for my $id (@JOBS) {
+    my $job = $t->app->minion->job($id) or next;
+    $job->remove unless $job->info->{state} eq 'active';
+  }
+}
+
 sub run_city_analytics_job {
   my ($t, $args) = @_;
   my $job_id = $t->app->apply_city_analytics($args);
   return undef unless $job_id;
+  push @JOBS, $job_id;
 
+  # Pelo id: sem ele, o worker pegava o primeiro job das filas, que podia ser
+  # um job inválido deixado por outra execução (a fila 'speculative' não é
+  # consumida pelo minion local).
   my $worker = $t->app->minion->worker->register;
-  my $job    = $worker->dequeue(0 => { queues => ['speculative', 'default'] });
+  my $job    = $worker->dequeue(0 => { id => $job_id, queues => ['speculative', 'default'] });
   $job->perform if $job;
+  $worker->unregister;
   return $job;
 }
 

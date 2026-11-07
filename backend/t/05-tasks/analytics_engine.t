@@ -7,6 +7,7 @@ use Mojo::IOLoop;
 use IO::Socket::INET;
 use Time::HiRes qw(sleep);
 use File::Temp qw(tempfile);
+use File::Path ();
 use Data::Dumper;
 use Test::Mojo;
 use utf8;
@@ -18,8 +19,12 @@ CI->skip_r ('engine de analytics sobre o R (R::Pipe)');
 # ---------------------------------------------------------------------------
 # Servidor-filho emulando o Plumber (respostas fixas sem DB/R)
 # ---------------------------------------------------------------------------
-my $portfile = "/tmp/user/1000/opencode/ae-test-port.$$";
-my $lastfile = "/tmp/user/1000/opencode/ae-test-last.$$";
+# Pasta temporária própria (CLEANUP => 0: o filho do fork não pode apagá-la
+# ao sair; o pai remove no fim).
+my $FILA     = "teste_$$";
+my $TMPDIR   = File::Temp::tempdir('edumaps-ae-XXXXXX', TMPDIR => 1, CLEANUP => 0);
+my $portfile = "$TMPDIR/port";
+my $lastfile = "$TMPDIR/last";
 my $pid;
 
 {
@@ -99,6 +104,8 @@ END {
   }
   unlink $portfile if $portfile;
   unlink $lastfile if $lastfile;
+  # remove_tree: o .conf temporário ainda está na pasta quando o END roda
+  File::Path::remove_tree($TMPDIR) if $pid;    # só o pai (no filho do fork, $pid é 0)
 }
 
 {
@@ -120,7 +127,7 @@ END {
   # ---------------------------------------------------------------------------
   my $base_conf = do './edu_maps.conf' or die "Nao foi possivel carregar edu_maps.conf: $@";
 
-  my ($conf_fh, $conf_path) = tempfile(SUFFIX => '.conf', UNLINK => 1, DIR => '/tmp/user/1000/opencode');
+  my ($conf_fh, $conf_path) = tempfile(SUFFIX => '.conf', UNLINK => 1, DIR => $TMPDIR);
   $Data::Dumper::Terse    = 1;
   $Data::Dumper::Sortkeys = 1;
   print {$conf_fh} Dumper({
@@ -135,6 +142,9 @@ END {
 
   local $ENV{EDUMAPS_CONF} = $conf_path;
   my $t = Test::Mojo->new('EduMaps');
+  # Fila própria: o minion local consome a `default` e pegava os jobs antes
+  # do perform_jobs do teste.
+  $t->app->config->{minion_filas}{$_} = $FILA for qw(clusterization similarity);
 
   subtest 'analytics_engine helper retorna http' => sub {
     is $t->app->analytics_engine, 'http', 'engine http por config';
@@ -150,7 +160,7 @@ END {
       clusters   => 3,
     });
     my $job = $t->app->minion->job($id);
-    $t->app->minion->perform_jobs;
+    $t->app->minion->perform_jobs({ queues => [$FILA] });
 
     is $job->info->{state}, 'finished', 'job clustering finalizado';
 
@@ -177,7 +187,7 @@ END {
       filter         => { co_regiao => 1, co_uf => 35, co_municipio => 3550308 },
     });
     my $job = $t->app->minion->job($id);
-    $t->app->minion->perform_jobs;
+    $t->app->minion->perform_jobs({ queues => [$FILA] });
 
     is $job->info->{state}, 'finished', 'job com filter finalizado';
 
@@ -201,7 +211,7 @@ END {
       metric     => 'gower',
     });
     my $job = $t->app->minion->job($id);
-    $t->app->minion->perform_jobs;
+    $t->app->minion->perform_jobs({ queues => [$FILA] });
 
     is $job->info->{state}, 'finished', 'job similarity gower finalizado';
     is $job->info->{result}{meta}{metric}, 'gower';
@@ -220,7 +230,7 @@ END {
       metric     => 'euclidean_zscore',
     });
     my $job = $t->app->minion->job($id);
-    $t->app->minion->perform_jobs;
+    $t->app->minion->perform_jobs({ queues => [$FILA] });
 
     is $job->info->{state}, 'failed', 'job rejeitado';
     like $job->info->{result}, qr/nao suportada.*pipe/, 'mensagem instrui usar pipe';
@@ -230,14 +240,15 @@ END {
 
 # --- CityAnalytics via POST /summary -------------------------------------
   # apply_city_analytics enfileira na fila 'speculative' (prioridade 0), que o
-  # Minion em processo não processa (perform_jobs só roda a fila 'default').
-  # Enfileira direto na fila padrão para exercitar o motor http da task.
+  # Minion em processo não processa. Enfileira direto na fila própria do teste
+  # para exercitar o motor http da task (fora do alcance do minion local).
   subtest 'city_analytics via http engine' => sub {
     my $id = $t->app->minion->enqueue(
       city_analytics => [{ codigo_ibge => '3550308', analysis => 'full_summary' }]
+      => { queue => $FILA }
     );
     my $job = $t->app->minion->job($id);
-    $t->app->minion->perform_jobs;
+    $t->app->minion->perform_jobs({ queues => [$FILA] });
 
     is $job->info->{state}, 'finished', 'job city_analytics finalizado';
     is $job->info->{result}{meta}{analysis}, 'full_summary';
