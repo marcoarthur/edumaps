@@ -175,12 +175,15 @@ subtest 'overview: KPIs agregados por janela' => sub {
   # O ranking tem limite de itens: com tráfego real, uma rota semeada com
   # poucos acessos pode ficar fora da lista. Só se confere a rota que aparece
   # (ou toda a lista, quando ela não chegou ao limite).
+  # Vale nas duas leituras: a rota pode estar fora da lista antes de semear
+  # (contaria 0) e entrar depois com os acessos reais somados.
   my ($rb, $rd) = (rotas($b), rotas($d));
-  my $cheia = @{ $d->{top_routes} // [] } >= $TOP_ROTAS;
+  my $cheia_b = @{ $b->{top_routes} // [] } >= $TOP_ROTAS;
+  my $cheia_d = @{ $d->{top_routes} // [] } >= $TOP_ROTAS;
   my %esperado = ('/escola/search' => 3, '/about' => 2, '/p/:token' => 1);
   for my $r (sort keys %esperado) {
-    if (!exists $rd->{$r} && $cheia) {
-      note "rota $r fora do ranking (lista no limite de $TOP_ROTAS)";
+    if ((!exists $rb->{$r} && $cheia_b) || (!exists $rd->{$r} && $cheia_d)) {
+      note "rota $r fora do ranking numa das leituras (lista no limite de $TOP_ROTAS)";
       next;
     }
     is +($rd->{$r} // 0) - ($rb->{$r} // 0), $esperado{$r}, "navegações semeadas em $r";

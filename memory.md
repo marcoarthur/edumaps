@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-07 (am) — schema staging e testes do R do host (PR #353)
+
+- Change `staging_schema` (nenhuma migração criava o schema que os jobs de
+  análise usam). `CI->skip_r_host` pula os testes que executam o R no host
+  quando ele não tem o `edumapsr` — **o R do host nunca teve o pacote**.
+  `AGENTS.md` explica como instalar. Nota **178**.
+- `cluster.t`: helper alinhado aos filtros da consulta (3.867/3.867
+  municípios ok); `telemetry.t`: ranking cheio nas duas leituras.
+- Falhas locais: 15 → 10 (grupo D: R local; grupo E: rede/expectativas).
+- **Fila de deploy LXC** (2026-11-09): + `deploy_db_dev` (`staging_schema`).
+
 ## Sessão 2026-11-06 (al) — IGE em 0..1 e lote 1 das falhas antigas (PR #352)
 
 - IGE passava de 1 (até 1,29): o item da proposta pedagógica valia 0/1/2.

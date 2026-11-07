@@ -7,7 +7,7 @@ use Utils qw(run_clustering_job cleanup_job expected_clustering_contract);
 use Mojo::JSON qw(decode_json);
 
 # kmeans roda dentro do R (edumapsr) e o job grava em clean.cluster_*.
-CI->skip_r ('clustering por kmeans executado no R');
+CI->skip_r_host('clustering por kmeans executado no R');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $tag = '[task] clustering (algoritmos pesados)';

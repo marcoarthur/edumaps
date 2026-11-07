@@ -49,7 +49,8 @@ sub city_id_with_grades ($size = 10) {
   # sorte: nem toda cidade do banco tem escola com nota, e o contrato abaixo
   # pressupõe uma resposta com grupos.
   #
-  # O predicado é clean.inep com vl_observado_2023 — é a tabela que
+  # O predicado é clean.inep com vl_observado_2023 e vl_nota_media_2023 (os
+  # filtros da consulta) — é a tabela que
   # EduMaps::Roles::Business::School::Clustering lê. Filtrar por
   # clean.ideb_notas_escolas não serve: no banco de fixtures devolve 2 cidades
   # (Ubatuba entre elas) cujo cluster sai vazio.
@@ -62,8 +63,16 @@ sub city_id_with_grades ($size = 10) {
     FROM clean.municipios_sp m
     JOIN clean.censo_escolas c ON CAST(c.co_municipio AS text) = m.codigo_ibge
     JOIN clean.inep i ON i.id_escola = c.co_entidade
+    -- o resultado final da consulta faz JOIN com clean.escolas
+    JOIN clean.escolas e ON e.codigo_inep = c.co_entidade
     WHERE i.vl_observado_2023 IS NOT NULL
+      AND i.vl_nota_media_2023 IS NOT NULL
     GROUP BY m.codigo_ibge
+    -- A normalização da consulta divide por (max - min): com uma escola só, ou
+    -- todas com o mesmo valor, o resultado sai vazio.
+    HAVING count(DISTINCT c.co_entidade) >= 2
+       AND max(i.vl_observado_2023) > min(i.vl_observado_2023)
+       AND max(i.vl_nota_media_2023) > min(i.vl_nota_media_2023)
   };
   my @cidades = @{ $sch->storage->dbh->selectcol_arrayref($sql) };
   # get_all já devolve um Mojo::Collection: embrulhar em c() faria uma coleção

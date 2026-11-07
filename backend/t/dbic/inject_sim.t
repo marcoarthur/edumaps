@@ -7,7 +7,7 @@ use Utils qw(run_similarity_job cleanup_job);
 
 # Injeta a relação de similaridade vinda do job R; precisa do R e do schema
 # `staging` que o job cria (o sqitch deploy não o produz).
-CI->skip_r ('injecao da relacao de similaridade vinda do job R');
+CI->skip_r_host('injecao da relacao de similaridade vinda do job R');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $sch = $t->app->schema;

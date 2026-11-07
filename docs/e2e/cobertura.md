@@ -8,6 +8,19 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-07 (ak) (schema staging e testes do R do host)
+
+Branch `fix/staging-e-r-do-host`. Banco e testes; sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Change `staging_schema`: deploy e verify no Docker local | sqitch | 🟢 |
+| Banco limpo do CI: deploy, verify, revert vazio (apaga), revert com tabela (mantém), redeploy, gate | sqitch | 🟢 |
+| 5 testes do grupo C pulados com "exige o pacote edumapsr instalado no R do host" | prove | 🟢 |
+| `cluster.t`: todos os 3.867 municípios candidatos produzem grupos | perl + psql | 🟢 |
+| Banco limpo do CI: `cluster.t` e `telemetry.t` | prove | 🟢 |
+| Suíte completa: 15 → 10 falhas (grupos D e E); config idêntica | prove + psql | 🟢 |
+
 ## Rodada 2026-11-06 (aj) (IGE em 0..1 e lote 1 das falhas antigas)
 
 Branch `fix/ige-e-testes-locais`. Backend e testes; sem mudança de tela.

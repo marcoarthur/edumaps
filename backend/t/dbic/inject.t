@@ -7,7 +7,7 @@ use Utils qw(run_clustering_job cleanup_job);
 
 # Injeta a relação de cluster vinda do job R; precisa do R e das tabelas
 # staging que o job cria.
-CI->skip_r ('injecao da relacao de clustering vinda do job R');
+CI->skip_r_host('injecao da relacao de clustering vinda do job R');
 
 my $t   = Test::Mojo->new('EduMaps');
 my $sch = $t->app->schema;
