@@ -8,6 +8,19 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-08 (am) (análise de cidade lê o censo em clean)
+
+Branch `fix/city-analytics-schema-clean`. Backend e testes; sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `city_analyticis.t` no contrato do motor HTTP, duas vezes seguidas | prove | 🟢 |
+| Sem schema, o resumo lê o censo em `clean` (falha com o código antigo) | prove | 🟢 |
+| Sub-análises recusadas com a mensagem da rota (falha com o código antigo) | prove | 🟢 |
+| Banco limpo do CI: `city_analyticis.t` pulado, `task.t` passa | prove | 🟢 |
+| Imagens backend/minion reconstruídas, md5 bate, minion estável | docker | 🟢 |
+| Suíte completa: 5 → 4 falhas (grupo E) | prove | 🟢 |
+
 ## Rodada 2026-11-07 (al) (R::Pipe em UTF-8 e lote 3 das falhas antigas)
 
 Branch `fix/rpipe-utf8`. Backend e testes; sem mudança de tela.
