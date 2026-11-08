@@ -7,7 +7,9 @@ use Time::Piece;
 use utf8;
 
 use constant {
-  STAGING_SCHEMA   => 'staging',
+  # Onde está o censo (clean.censo_escolas); é também o padrão do /summary do
+  # serviço analítico. O 'staging' é área de trabalho e não tem o censo.
+  SOURCE_SCHEMA    => 'clean',
   ANALYTICS_SCHEMA => 'analytics',
   DB_SERVICE       => 'edumaps_local',
   DEFAULT_ANALYSIS => 'full_summary',
@@ -105,7 +107,7 @@ sub _apply_city_analytics ($job, $args) {
 
   # Defaults gerais
   $args->{analysis}    = $analysis;
-  $args->{schema}    //= STAGING_SCHEMA;
+  $args->{schema}    //= SOURCE_SCHEMA;
   $args->{db_service}//= DB_SERVICE;
   $args->{source_file}//= 'city_analytics';
 
@@ -119,6 +121,11 @@ sub _apply_city_analytics ($job, $args) {
   # Motor HTTP: POST /summary (persiste em analytics.city_school_analytics)
   # ---------------------------------------------------------------
   if ($engine eq 'http') {
+    # O /summary só calcula o resumo completo: uma sub-análise devolveria o
+    # resumo no lugar dela. Mesma regra da rota POST /api/task/summary.
+    return $job->fail("Sub-análise '$analysis' não suportada: o motor R ainda não persiste esse recorte. Use 'full_summary'.")
+      unless $analysis eq DEFAULT_ANALYSIS;
+
     try {
       $r_out = $job->app->analytics->run_summary({
         codigo_ibge => $cod_ibge,
