@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-08 (ao) — análise de cidade lê o censo em clean (PR #355)
+
+- Bug: o job `city_analytics` usava `staging` como schema padrão; o censo está
+  em `clean`. `POST /api/task/summary` (sem schema) sempre falhava. Agora
+  `clean`.
+- No motor HTTP o job recusa `score_distribution`/`school_clusters` (antes
+  devolvia o resumo completo no lugar). `city_analyticis.t` no contrato HTTP,
+  com o cache do cliente desligado. Nota **180**.
+- Falhas locais: 5 → 4, todas do grupo E (rede e expectativas).
+- **Fila de deploy LXC** (2026-11-09): backend e minion (já na fila).
+
 ## Sessão 2026-11-07 (an) — R::Pipe em UTF-8 e lote 3 (PR #354)
 
 - Bug: `R::Pipe` gravava o script R sem encode UTF-8 (acento quebrava o R).
