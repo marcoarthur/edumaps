@@ -18,6 +18,18 @@ my $sch = $t->app->schema;
 my $dbh = $sch->storage->dbh;
 my $tag = '[task] city_analytics';
 
+# O teste segue o contrato do motor HTTP, o de todos os ambientes; o R::Pipe
+# legado devolve outro formato.
+plan skip_all => 'city_analytics testado só com analytics_engine = http'
+  unless $t->app->analytics_engine eq 'http';
+
+# Sem o cache compartilhado do cliente: com ele, um resumo já calculado volta
+# do cache sem chamar o R, e a linha apagada pelo teste não é regravada.
+my $client     = $t->app->analytics;
+my $orig_cache = $client->cache_enabled;
+$client->cache_enabled(0);
+END { $client->cache_enabled($orig_cache) if $client }
+
 # Fixture
 $dbh->do('CREATE SCHEMA IF NOT EXISTS analytics');
 $dbh->do('
@@ -85,7 +97,7 @@ $tag <computando sumario e visualizacoes de cidade>
   - aplicando full_summary sobre municipio IBGE $cod_ibge
   - teste do happy day
 / => sub {
-  plan tests => 17;   # número total de asserções
+  plan tests => 18;   # número total de asserções
 
   # Limpeza
   $sch->storage->dbh->do(
@@ -109,13 +121,12 @@ $tag <computando sumario e visualizacoes de cidade>
   is $result->{meta}{codigo_ibge}, $cod_ibge, 'codigo_ibge bate com a fixture';
   is $result->{meta}{analysis}, 'full_summary', 'modalidade de analise correta';
 
+  # Contrato do motor HTTP (POST /summary do serviço analítico).
   my $r_meta = $result->{analytics_info}{r_meta};
-  if ($r_meta->{status} ne 'SUCCESS') {
-      diag "R error: " . ($r_meta->{message} // 'unknown error');
-  }
-  is $r_meta->{status}, 'SUCCESS', 'script R reportou status SUCCESS';
-  is $r_meta->{records_processed}, $expected_schools_count,
-    "total de registros processados em R bate com CensoEscolas ($expected_schools_count)";
+  is $r_meta->{analysis}, 'city_summary', 'serviço analítico devolveu city_summary';
+  is $r_meta->{metrics}{total_escolas}, $expected_schools_count,
+    "total_escolas da resposta bate com CensoEscolas ($expected_schools_count)";
+  ok $r_meta->{persisted}{persisted}, 'serviço informou que gravou o resumo';
 
   # Consulta no banco
   my $row = $sch->storage->dbh->selectrow_hashref(
@@ -161,8 +172,9 @@ $tag <computando sumario e visualizacoes de cidade>
 subtest qq/
 $tag <defaults>
   - analysis omitido usa o default (full_summary)
+  - schema omitido usa clean, onde está o censo
 / => sub {
-  plan tests => 2;
+  plan tests => 3;
   $sch->storage->dbh->do(
     'DELETE FROM analytics.city_school_analytics WHERE codigo_ibge = ? AND analysis = ?',
     undef, $cod_ibge, 'full_summary'
@@ -173,30 +185,33 @@ $tag <defaults>
     codigo_ibge => $cod_ibge,
   });
 
-  is $job->info->{state}, 'finished', 'job finalizado usando analysis default';
+  is $job->info->{state}, 'finished', 'job finalizado usando analysis e schema default'
+    or diag "resultado: " . ($job->info->{result} // '');
   is $job->info->{result}{meta}{analysis}, 'full_summary', "default de analysis e 'full_summary'";
+  is $job->info->{result}{analytics_info}{r_meta}{metrics}{total_escolas},
+    $expected_schools_count, 'sem schema, o resumo lê o censo em clean';
   cleanup_job($t, $job);
 };
 
 # --------------------------------------------------------------------------
-# Modalidades stub
+# Sub-análises: o motor HTTP só calcula o resumo completo
 # --------------------------------------------------------------------------
 subtest qq/
-$tag <modalidades adicionais\/stubs>
-  - score_distribution e school_clusters sao dispatcadas corretamente para o R
+$tag <sub-analises nao suportadas>
+  - score_distribution e school_clusters falham com a mensagem da rota da API
 / => sub {
   plan tests => 4;
-  my @STUBS = qw(score_distribution school_clusters);
 
-  for my $analysis (@STUBS) {
+  for my $analysis (qw(score_distribution school_clusters)) {
+    $t->app->chi->remove("edumaps:analytics:city:${cod_ibge}:$analysis") if $t->app->chi;
     my $job = run_city_analytics_job($t, {
       codigo_ibge => $cod_ibge,
       analysis    => $analysis,
     });
 
-    is $job->info->{state}, 'finished', "job de $analysis executado com sucesso";
-    is $job->info->{result}{analytics_info}{r_meta}{status}, 'SKIPPED',
-      "script R retornou status SKIPPED esperado para $analysis";
+    is $job->info->{state}, 'failed', "job de $analysis recusado";
+    like $job->info->{result}, qr/Sub-análise '$analysis' não suportada/,
+      "mensagem de sub-análise não suportada para $analysis";
     cleanup_job($t, $job);
   }
 };
