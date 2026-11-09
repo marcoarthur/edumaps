@@ -4,6 +4,13 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-09 (aq) — DataTable sem adivinhar snippet (PR #357)
+
+- `DataTable`: `render` (texto) e `cell` (snippet) separados; antes o tipo era
+  adivinhado pelo nome da função (`snippet*`), frágil com minificação. Sem
+  uso de snippet em tela ainda. Nota **182**.
+- Fila de deploy LXC (2026-11-12): + `deploy_frontend_dev` (já na fila).
+
 ## Sessão 2026-11-09 (ap) — SSE de progresso, OSM e últimas falhas (PR #356)
 
 - Bugs: SSE de job encerrado/inexistente ficava sem resposta (agora fecha o
