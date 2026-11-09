@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-09 (ap) — SSE de progresso, OSM e últimas falhas (PR #356)
+
+- Bugs: SSE de job encerrado/inexistente ficava sem resposta (agora fecha o
+  fluxo / 404); `query_osm` chamava `log->err` (inexistente) e perdia o erro
+  da Overpass; `get_osm` usa `minion_fila`.
+- Testes: SSE precisa de `Accept: text/event-stream`; `osm.t`/`siope.t` com
+  fila própria; `municipio.t` escolhe município com dados OSM;
+  `network/schools.t` **apagava as colunas `cluster_*`** — agora fixture em
+  transação desfeita, roda no CI. Nota **181**.
+- **Suíte local: 0 falhas** (18 no início da limpeza, nota 177). `osm.t`
+  depende da Overpass, que deu timeout neste ciclo.
+- **Fila de deploy LXC**: backend e minion (já na fila).
+
 ## Sessão 2026-11-08 (ao) — análise de cidade lê o censo em clean (PR #355)
 
 - Bug: o job `city_analytics` usava `staging` como schema padrão; o censo está

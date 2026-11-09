@@ -99,12 +99,16 @@ yath -l t/02-models/SchoolNetwork.t     # runner moderno (preferido)
 Sem `-l`, o módulo `EduMaps` não é encontrado e os testes falham com
 "Can't find application class EduMaps in @INC".
 
-Muitos testes em `t/05-tasks` e `analysis/` dependem de serviços externos
-(R, schema staging, jobs agendados) e são **previamente falhos** — não são
-regressões. O mesmo vale para `t/04-api/municipio.t` (OSM features sem dados
-carregados) e `t/04-api/network/schools.t` (dois subtestes com expectativas
-contraditórias). Antes de atribuir uma falha a si mesmo, rodar o arquivo sem a
-mudança, em `git stash`.
+Alguns testes dependem de serviços externos e podem falhar por eles, não por
+regressão: `t/05-tasks/osm.t` (API Overpass do OpenStreetMap, às vezes lenta ou
+fora do ar) e `t/05-tasks/siope.t` (download do SIOPE). No CI eles são pulados
+(`CI->skip_network`). Os jobs desses testes vão para uma fila própria
+(`minion_filas`), para o minion local não os disputar. Antes de atribuir uma
+falha a si mesmo, rodar o arquivo sem a mudança, em `git stash`.
+
+Testes de SSE (`/api/task/progress`) precisam mandar
+`Accept: text/event-stream`, como o EventSource do navegador; sem o cabeçalho a
+rota devolve o estado do job em JSON.
 
 **Testes que executam o R no host** (clustering, similaridade e injeção de
 relações: `t/05-tasks/clustering*.t`, `t/05-tasks/similarity.t`,
