@@ -119,7 +119,13 @@ subtest 'verificação detalhada da estrutura da resposta' => sub {
 };
 
 subtest 'OSM features com dados existentes' => sub {
-  my $cod = 2302701;   # use um código que você sabe que tem dados OSM
+  # Um município que tenha polígonos carregados (o job query_osm os grava);
+  # antes era um código fixo que nem sempre tinha dados.
+  my ($cod) = $t->app->schema->storage->dbh->selectrow_array(
+    'SELECT municipio_id FROM clean.osm_landuse GROUP BY municipio_id ORDER BY count(*) DESC LIMIT 1'
+  );
+  plan skip_all => 'nenhum município com dados OSM em clean.osm_landuse (rode t/05-tasks/osm.t)'
+    unless $cod;
 
   my $tx = $t->get_ok("/api/city/$cod/osm_features")->status_is(200)->tx;
   my $json = $tx->res->json;

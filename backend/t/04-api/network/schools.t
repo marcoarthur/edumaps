@@ -7,14 +7,9 @@ use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
-# /api/cluster/schools lê cluster_id/label/rank de clean.school_indicators, que
-# nasce vazia e só é populada pelo job de análise (R). Sem isso a resposta
-# volta sem `features` e o teste quebra em @{ $json->{features} }.
-#
-# O arquivo também faz DDL destrutivo (UPDATE + DROP COLUMN nas colunas de
-# cluster), então rodá-lo no CI contra o banco de fixtures derrubaria as
-# colunas para os testes seguintes.
-CI->skip_r ('/api/cluster/schools depende de clean.school_indicators (job R)');
+# /api/cluster/schools lê clean.school_indicators, que só o job de
+# clusterização preenche: os subtestes de cluster montam a própria fixture numa
+# transação desfeita no fim (ver com_fixture_de_cluster).
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
@@ -50,52 +45,77 @@ subtest '[API Network] schools - contrato' => sub {
 
 # ------------------------------------------------------------
 # GET /api/cluster/schools
+#
+# clean.school_indicators nasce vazia e é preenchida pelo job de
+# clusterização, que também cria as colunas cluster_*. O teste monta a própria
+# fixture numa transação desfeita no fim: a requisição usa a mesma conexão, e
+# nada do banco (linhas, colunas, clusters já calculados) é alterado.
 # ------------------------------------------------------------
+my $dbh = $t->app->schema->storage->dbh;
+
+sub com_fixture_de_cluster ($cb) {
+  $dbh->begin_work;
+  my $ok = eval {
+    $dbh->do("ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS $_")
+      for 'cluster_id INTEGER', 'cluster_label TEXT', 'cluster_rank INTEGER';
+    $cb->();
+    1;
+  };
+  my $err = $@;
+  $dbh->rollback;
+  die $err unless $ok;
+}
+
 subtest 'GET /api/cluster/schools: retorna FeatureCollection com cluster_id' => sub {
-  # Garante as colunas (job de clusterização pode não ter rodado no dev).
-  # A leitura vem de clean.school_indicators (tabela denormalizada).
-  my $dbh = $t->app->schema->storage->dbh;
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_label TEXT');
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_rank INTEGER');
-  $dbh->do(q{
-    UPDATE clean.school_indicators
-       SET cluster_id = 1, cluster_label = 'Alta qualidade de infraestrutura', cluster_rank = 3
-     WHERE co_municipio = 3550308
+  com_fixture_de_cluster(sub {
+    # Duas escolas de São Paulo copiadas do censo (as colunas do censo são as
+    # primeiras da tabela), com cluster atribuído.
+    my %si = map { $_ => 1 } @{ $dbh->selectcol_arrayref(q{
+      SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'clean' AND table_name = 'school_indicators'
+    }) };
+    my $cols = join ', ', grep { $si{$_} } @{ $dbh->selectcol_arrayref(q{
+      SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'clean' AND table_name = 'censo_escolas'
+       ORDER BY ordinal_position
+    }) };
+    $dbh->do("DELETE FROM clean.school_indicators WHERE co_municipio = 3550308");
+    my $n = $dbh->do(qq{
+      INSERT INTO clean.school_indicators ($cols)
+      SELECT $cols FROM clean.censo_escolas
+       WHERE co_municipio = 3550308 AND latitude IS NOT NULL AND longitude IS NOT NULL
+       ORDER BY co_entidade LIMIT 2
+    });
+    $dbh->do(q{
+      UPDATE clean.school_indicators
+         SET cluster_id = 1, cluster_label = 'Alta qualidade de infraestrutura', cluster_rank = 3
+       WHERE co_municipio = 3550308
+    });
+    cmp_ok $n, '>=', 1, "fixture com escolas de São Paulo (n=$n)";
+
+    my $json = $t->get_ok('/api/cluster/schools' => form => {
+      codigo_uf   => 35,
+      codigo_ibge => 3550308,
+    })->status_is(200)->tx->res->json;
+
+    is $json->{type}, 'FeatureCollection', 'É um FeatureCollection';
+    is ref $json->{features}, 'ARRAY', 'Possui array de features';
+    is scalar @{ $json->{features} // [] }, $n, 'uma feature por escola da fixture';
+    my $p = $json->{features}[0]{properties};
+    like $p->{cluster_id}, qr/^\d+$/, 'cluster_id numérico';
+    is $p->{cluster_label}, 'Alta qualidade de infraestrutura', 'cluster_label semântico';
+    like $p->{cluster_rank}, qr/^\d+$/, 'cluster_rank numérico';
   });
-
-  my $tx = $t->get_ok('/api/cluster/schools' => form => {
-    codigo_uf     => 35,
-    codigo_ibge   => 3550308,
-  })->status_is(200)->tx;
-  my $json = $tx->res->json;
-
-  is $json->{type}, 'FeatureCollection', 'É um FeatureCollection';
-  ok(ref($json->{features}) eq 'ARRAY', 'Possui array de features');
-
-  my $n = @{ $json->{features} };
-  ok($n >= 1, 'Possui ao menos 1 feature (n=' . $n . ')');
-  like $json->{features}[0]->{properties}{cluster_id} => qr/^\d+$/, 'cluster_id numérico';
-  is $json->{features}[0]->{properties}{cluster_label}, 'Alta qualidade de infraestrutura', 'cluster_label semântico';
-  like $json->{features}[0]->{properties}{cluster_rank} => qr/^\d+$/, 'cluster_rank numérico';
-
-  $dbh->do('UPDATE clean.school_indicators SET cluster_id = NULL, cluster_label = NULL, cluster_rank = NULL WHERE co_municipio = 3550308');
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_id');
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_label');
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_rank');
 };
 
 subtest 'GET /api/cluster/schools: sem cluster_id -> 404 + erro' => sub {
-  my $dbh = $t->app->schema->storage->dbh;
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_id INTEGER');
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_label TEXT');
-  $dbh->do('ALTER TABLE clean.school_indicators ADD COLUMN IF NOT EXISTS cluster_rank INTEGER');
-
-  $t->get_ok('/api/cluster/schools' => form => {codigo_regiao => 1})->status_is(404);
-
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_id');
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_label');
-  $dbh->do('ALTER TABLE clean.school_indicators DROP COLUMN IF EXISTS cluster_rank');
+  com_fixture_de_cluster(sub {
+    # Na transação, nenhuma escola da região 1 tem cluster.
+    $dbh->do('UPDATE clean.school_indicators SET cluster_id = NULL WHERE co_regiao = 1');
+    $t->get_ok('/api/cluster/schools' => form => {codigo_regiao => 1})
+      ->status_is(404)
+      ->json_like('/error' => qr/Nenhuma escola com cluster/);
+  });
 };
 
 done_testing;
