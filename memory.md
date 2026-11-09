@@ -15,7 +15,9 @@
   transação desfeita, roda no CI. Nota **181**.
 - **Suíte local: 0 falhas** (18 no início da limpeza, nota 177). `osm.t`
   depende da Overpass, que deu timeout neste ciclo.
-- **Fila de deploy LXC**: backend e minion (já na fila).
+- **LXC adiado para quinta, 2026-11-12** (aviso do usuário em 2026-11-09). A fila
+  de deploy LXC (db, backend, minion, analytics, frontend; ver sessões
+  anteriores) e o fechamento da exposição do nginx passam para essa data.
 
 ## Sessão 2026-11-08 (ao) — análise de cidade lê o censo em clean (PR #355)
 
