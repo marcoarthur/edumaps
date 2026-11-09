@@ -8,6 +8,19 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-09 (ao) (DataTable sem adivinhar snippet pelo nome)
+
+Branch `refactor/datatable-cell-snippet`. Componente compartilhado; telas
+afetadas: folha de pagamento da escola e comparação de redes.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Snippet via `cell`, `render` como texto, `cell` com prioridade (falham com o código antigo) | vitest | 🟢 |
+| Suíte do frontend (127 arquivos, 1.154 testes) e build | vitest + vite | 🟢 |
+| Imagem do frontend reconstruída | docker | 🟢 |
+| Comparar redes: tabela com números formatados e ordenação | localhost:8080 (usuário) | 🟢 |
+| Folha de pagamento da escola: salários formatados e ordenação | localhost:8080 (usuário) | 🟢 |
+
 ## Rodada 2026-11-09 (an) (SSE de progresso, OSM e as últimas falhas antigas)
 
 Branch `fix/sse-progresso-e-lote5`. Backend e testes; sem mudança de tela.
