@@ -8,6 +8,21 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-09 (an) (SSE de progresso, OSM e as últimas falhas antigas)
+
+Branch `fix/sse-progresso-e-lote5`. Backend e testes; sem mudança de tela.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| SSE de job pendente, encerrado e inexistente (`task.t`; falha com o código antigo) | prove | 🟢 |
+| Falha da Overpass chega ao job com a mensagem original (sem rede) | prove | 🟢 |
+| `osm.t` e `siope.t`: SSE com `Accept`, fila própria, sem jobs nem dados apagados | prove + psql | 🟢 |
+| `municipio.t`: município com dados OSM; caminho positivo com polígono temporário | prove + psql | 🟢 |
+| `network/schools.t`: fixture em transação; clusters já existentes preservados | prove + psql | 🟢 |
+| Banco limpo do CI: `network/schools.t` passa (antes pulado) | prove | 🟢 |
+| Imagens backend/minion reconstruídas, md5 bate, minion estável | docker | 🟢 |
+| Suíte completa: 4 → 0 falhas | prove | 🟢 |
+
 ## Rodada 2026-11-08 (am) (análise de cidade lê o censo em clean)
 
 Branch `fix/city-analytics-schema-clean`. Backend e testes; sem mudança de tela.
