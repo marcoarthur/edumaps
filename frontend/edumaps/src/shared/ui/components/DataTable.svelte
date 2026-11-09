@@ -3,7 +3,9 @@
    * Generic data table with sortable columns, caption and footer.
    *
    * @template T
-   * @property {Array<{ key: keyof T, label: string, sortable?: boolean, render?: (row: T) => string | Snippet }>} columns
+   * @property {Array<{ key: keyof T, label: string, sortable?: boolean, render?: (row: T) => string, cell?: Snippet<[T]> }>} columns
+   *   `render` devolve texto; `cell` é um snippet (`{#snippet celula(row)}`)
+   *   para conteúdo com marcação. Se os dois vierem, vale o `cell`.
    * @property {T[]} data
    * @property {string} [caption]
    * @property {string} [footer]
@@ -92,13 +94,12 @@
       <tr class="border-b border-gray-200 hover:bg-gray-50">
         {#each columns as col}
           <td class="px-4 py-2">
-            {#if col.render}
-              <!-- Suporta tanto função que retorna string quanto snippet -->
-              {#if typeof col.render === 'function' && !col.render.name?.startsWith('snippet')}
-                {col.render(row)}
-              {:else}
-                {@render col.render(row)}
-              {/if}
+            <!-- Snippet e texto vêm em propriedades separadas: adivinhar pelo
+                 nome da função (snippet*) falha com o código minificado. -->
+            {#if col.cell}
+              {@render col.cell(row)}
+            {:else if col.render}
+              {col.render(row)}
             {:else}
               {row[col.key]}
             {/if}
