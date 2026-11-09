@@ -67,11 +67,12 @@ $tag <executando task diretamente query_siope>
 
 subtest qq/
 $tag <executando task via app>
-  - deleta dados anteriore
-  - enfileira e executa a task
+  - enfileira a task e acompanha o progresso por SSE
 / => sub {
-  _delete_previous($cod, $ano);
 
+  # Fila própria: o job fica parado (o SSE emite o progresso inicial) e pode
+  # ser removido no fim; na `default` o minion local o executaria.
+  local $t->app->config->{minion_filas}{query_siope} = $FILA;
   my $tx = $t->post_ok("/api/task/siope?codigo_ibge=$cod&ano=$ano")
   ->status_is(202)
   ->header_like( Location => qr/progress\?job_id=\d+/ )
@@ -85,7 +86,8 @@ $tag <executando task via app>
   my $json = $tx->res->json;
   push @JOBS, $json->{job_id};
   my $location = $tx->res->headers->location;
-  $t->get_sse_ok("$location")
+  # O EventSource manda o Accept; sem ele a rota devolve o snapshot em JSON.
+  $t->get_sse_ok($location => {Accept => 'text/event-stream'})
   ->status_is(200)
   ->sse_ok
   ->sse_type_is('progress')

@@ -4,6 +4,7 @@ use EduMaps::Task::OSM::Query;
 use EduMaps::Services::OSM::Query;
 use Minion::Task::Generator qw/task/;
 use Syntax::Keyword::Try;
+use EduMaps::Util::MinionFila qw(minion_fila);
 require EduMaps::Model::OSM;
 
 sub register ($self, $app, $config){
@@ -31,7 +32,7 @@ sub _query_osm($job, $city_id) {
   try {
     $geojson = $query->from_osm;
   } catch($err) {
-    $job->app->log->err("Error querying OSM for $city_id");
+    $job->app->log->error("Error querying OSM for $city_id: $err");
     return $job->fail($err);
   }
 
@@ -116,8 +117,12 @@ sub _query_osm_school($job, $args) {
   });
 }
 
+# Fila: `minion_filas.query_osm` no config (testes usam uma fila própria para
+# o minion local não pegar o job); sem entrada, `default`.
 sub _enqueue_osm_task($app, $cod_ibge) {
-  return $app->minion->enqueue(query_osm => [$cod_ibge] => { attempts => 3 });
+  return $app->minion->enqueue(
+    query_osm => [$cod_ibge] => { attempts => 3, queue => minion_fila($app, 'query_osm') }
+  );
 }
 
 sub _enqueue_osm_school_task($app, $args = {}) {
