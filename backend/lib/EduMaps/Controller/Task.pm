@@ -50,6 +50,16 @@ sub job_progress($self) {
     return $self->render(json => \%resp);
   }
 
+  # SSE: job inexistente é 404; job já encerrado recebe o fluxo aberto e
+  # fechado em seguida (o cliente lê o estado final no snapshot). Sem isso o
+  # monitor retornava sem responder e a conexão ficava sem resposta.
+  my $job = $self->minion->job($job_id);
+  return $self->render(json => {error => 'job_not_found'}, status => 404) unless $job;
+  if ($job->info->{state} =~ /^(?:finished|failed)$/) {
+    $self->write_sse;
+    return $self->finish;
+  }
+
   $self->render_later;
   $self->monitor_job(
     {

@@ -225,6 +225,35 @@ subtest 'job_progress: job inexistente -> 404' => sub {
   $t->get_ok('/api/task/progress?job_id=99999999')->status_is(404);
 };
 
+# SSE (EventSource manda `Accept: text/event-stream`; o Test::Mojo não manda).
+subtest 'job_progress: SSE em job pendente, encerrado e inexistente' => sub {
+  my %SSE = (Accept => 'text/event-stream');
+  my $fila = "zzz_sse_$$";
+  my $job_id = $t->app->minion->enqueue(
+    clusterization => [{algorithm => 'kmeans'}] => {queue => $fila}
+  );
+
+  $t->get_sse_ok("/api/task/progress?job_id=$job_id" => \%SSE)
+    ->status_is(200)
+    ->sse_ok
+    ->sse_type_is('progress')
+    ->sse_text_like(qr/percent/);
+
+  my $worker = $t->app->minion->worker->register;
+  my $claimed = $worker->dequeue(0, {queues => [$fila]});
+  $claimed->finish('ok');
+  $worker->unregister;
+
+  # Encerrado: responde e fecha o fluxo (antes ficava sem resposta).
+  $t->get_sse_ok("/api/task/progress?job_id=$job_id" => \%SSE)
+    ->status_is(200)
+    ->header_like('Content-Type' => qr{text/event-stream});
+
+  $t->get_ok('/api/task/progress?job_id=99999999' => \%SSE)->status_is(404);
+
+  $t->app->minion->backend->remove_job($job_id);
+};
+
 # ------------------------------------------------------------
 # POST /api/task/summary
 # ------------------------------------------------------------
