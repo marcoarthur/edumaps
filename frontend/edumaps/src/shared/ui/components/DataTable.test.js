@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import { describe, it, expect } from "vitest";
+import { createRawSnippet } from "svelte";
 import DataTable from "./DataTable.svelte";
 
 describe("DataTable", () => {
@@ -78,5 +79,43 @@ describe("DataTable", () => {
     ];
     render(DataTable, { columns: columnsWithRender, data });
     expect(screen.getByText("30 years")).toBeInTheDocument();
+  });
+
+  it("renders a snippet passed via cell", () => {
+    const badge = createRawSnippet((row) => ({
+      render: () => `<strong data-testid="badge">${row().name}!</strong>`,
+    }));
+    render(DataTable, {
+      columns: [{ key: "name", label: "Name", cell: badge }],
+      data,
+    });
+    const badges = screen.getAllByTestId("badge");
+    expect(badges).toHaveLength(3);
+    expect(badges[0].textContent).toBe("Alice!");
+  });
+
+  it("treats render as text regardless of the function name", () => {
+    // Antes, uma função chamada snippet* era tratada como snippet; o nome
+    // não define o tipo (e muda com a minificação).
+    const snippetIdade = (row) => `${row.age} anos`;
+    render(DataTable, {
+      columns: [{ key: "age", label: "Age", render: snippetIdade }],
+      data,
+    });
+    expect(screen.getByText("30 anos")).toBeInTheDocument();
+  });
+
+  it("prefers cell over render when both are given", () => {
+    const cell = createRawSnippet((row) => ({
+      render: () => `<em>${row().name} (cell)</em>`,
+    }));
+    render(DataTable, {
+      columns: [
+        { key: "name", label: "Name", cell, render: (row) => `${row.name} (render)` },
+      ],
+      data,
+    });
+    expect(screen.getByText("Alice (cell)")).toBeInTheDocument();
+    expect(screen.queryByText("Alice (render)")).not.toBeInTheDocument();
   });
 });
