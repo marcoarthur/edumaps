@@ -1,205 +1,169 @@
 use strict;
 use warnings;
+use utf8;
 use lib qw(t/lib lib);
 use Imports;
 use CI;
-use Utils qw(build_r_dataframe);
-# Validação estatística via R::Pipe sobre clean.school_indicators (vazia até o
-# job de análise rodar).
-# BEGIN porque os `use ok` rodam em tempo de compilacao e emitem testes: o
-# skip_all precisa vir antes deles, senao o prove reclama "You planned 0 tests
-# but ran N".
-BEGIN { CI->skip_r('qualidade escolar comparada com o R') }
+# Qualidade dos indicadores de condição da escola (IFS, IPS, IGE, IAI).
+#
+# Eles medem condições e direitos (infraestrutura, recursos pedagógicos,
+# gestão democrática, acessibilidade), não resultado. Por isso o teste NÃO
+# exige que prevejam o IDEB: exige que sirvam para descrever escolas, ou seja,
+# que tenham variação, não fiquem colados no teto ou no zero e não dependam de
+# campos ausentes (que o `clean_value` conta como 0). A relação com o IDEB sai
+# como diagnóstico, por etapa e descontando o nível socioeconômico (nota
+# técnica 183 e docs/analises/ivet.md, §2.3.1).
+#
+# BEGIN porque os `use ok` rodam em tempo de compilação e emitem testes.
+BEGIN { CI->skip_r('qualidade dos indicadores comparada no R') }
 use ok 'EduMaps::Schema';
-use ok 'EduMaps::Model::Domain::SchoolQuality';
 use ok 'EduMaps::Analysis::R::Pipe';
 use ok 'EduMaps::Model::Indicator::School::IFS';
 use ok 'EduMaps::Model::Indicator::School::IPS';
 use ok 'EduMaps::Model::Indicator::School::IGE';
 use ok 'EduMaps::Model::Indicator::School::IAI';
 
+use Mojo::File qw(tempfile);
 use Text::Table;
 
-my $schema = EduMaps::Schema->go;
-my $tag = '[indicator quality] qualidade dos índices:';
-my $municipio = 'Brasília';
-
-# Adicionada a métrica de evolução mínima sobre o modelo nulo
-my %thresholds = (
-    rho_min      => 0.15,
-    p_max        => 0.10,
-    rmse_gain_min => 0.05, # Modelo precisa ser no mínimo 5% melhor que a média
-    n_min        => 5,   
+# UFs de regiões diferentes: um município só (o teste antigo usava Brasília)
+# tem condições parecidas entre escolas e achata qualquer associação.
+my @UFS    = qw(DF SP BA PA RS);
+my $ANO    = 2023;
+my %limite = (
+  n_min_etapa   => 200,    # linhas escola×etapa por etapa
+  dp_min        => 0.05,   # desvio-padrão mínimo do indicador
+  teto_max      => 0.50,   # fração máxima de escolas no valor 1
+  zero_max      => 0.50,   # fração máxima de escolas no valor 0
+  ausente_max   => 0.10,   # fração máxima de escolas com campo ausente
 );
 
-subtest ' - Validação estatística dos indicadores com IDEB usando R::Pipe ' => sub {
+my @indicators = map { "EduMaps::Model::Indicator::School::$_"->new } qw(IFS IPS IGE IAI);
+my @codes      = map { $_->code } @indicators;
 
-  my $schools_rs = $schema->resultset('CensoEscolas')
-  ->search(
-    {no_municipio => $municipio, tp_situacao_funcionamento => 1}
-  );
+# Colunas do Censo que cada indicador lê (as closures leem colunas próprias,
+# declaradas em extra_cols).
+my %colunas;
+for my $ind (@indicators) {
+  for my $par ($ind->weights->@*) { $colunas{ $par->[0] } = 1 unless ref $par->[0] }
+  $colunas{$_} = 1 for $ind->extra_cols->@*;
+}
+my @colunas = sort keys %colunas;
 
-  my @indicators = (
-    EduMaps::Model::Indicator::School::IFS->new,
-    EduMaps::Model::Indicator::School::IPS->new,
-    EduMaps::Model::Indicator::School::IGE->new,
-    EduMaps::Model::Indicator::School::IAI->new,
-  );
+my $dbh = EduMaps::Schema->go->storage->dbh;
+my $sql = sprintf <<~'SQL', join ',', map {"e.$_"} @colunas;
+  SELECT e.co_entidade, e.sg_uf, e.tp_dependencia, i.etapa, i.nota_media,
+         inse.media_inse, %s
+    FROM clean.censo_escolas e
+    JOIN clean.ideb_notas_escolas i
+      ON i.id_escola = e.co_entidade AND i.ano = ? AND i.nota_media > 0
+    LEFT JOIN clean.inse inse ON inse.id_escola = e.co_entidade
+   WHERE e.tp_situacao_funcionamento = 1 AND e.sg_uf = ANY(?)
+  SQL
 
-  # 2. Extrair scores e notas do IDEB
-  my @dataset;
-  while (my $school = $schools_rs->next) {
-    my $ultimo_ideb = $school->nota_ideb->search(
-      { nota_media => { '!=' => undef } },
-      { order_by => { -desc => 'ano' }, rows => 1 }
-    )->first;
+my $sth = $dbh->prepare($sql);
+$sth->execute($ANO, \@UFS);
 
-    next unless $ultimo_ideb;
-    my $nota = $ultimo_ideb->nota_media;
-    next if $nota <= 0;
+# Uma linha por escola×etapa: o IDEB tem escala diferente em cada etapa
+# (fundamental I, II e médio), então nunca se misturam etapas numa correlação.
+my $csv = tempfile(SUFFIX => '.csv');
+my $fh  = $csv->open('>:encoding(UTF-8)');
+print $fh join(',', qw(co_entidade sg_uf dependencia etapa nota media_inse n_ausente), @codes), "\n";
+my %linhas_por_etapa;
+while (my $r = $sth->fetchrow_hashref) {
+  my $ausentes = grep { !defined $r->{$_} } @colunas;
+  print $fh join(',',
+    @$r{qw(co_entidade sg_uf tp_dependencia etapa nota_media)},
+    $r->{media_inse} // 'NA', $ausentes,
+    map { $_->calculate($r) } @indicators), "\n";
+  $linhas_por_etapa{ $r->{etapa} }++;
+}
+close $fh;
 
-    my %scores;
-    for my $ind (@indicators) {
-      my %data = $school->get_columns;
-      $scores{$ind->code} = $ind->calculate(\%data);
-    }
+ok(scalar(keys %linhas_por_etapa), "há IDEB $ANO nas UFs @UFS")
+  or do { done_testing; exit };
+for my $etapa (sort keys %linhas_por_etapa) {
+  cmp_ok($linhas_por_etapa{$etapa}, '>=', $limite{n_min_etapa},
+    "amostra suficiente em $etapa ($linhas_por_etapa{$etapa} linhas)");
+}
 
-    push @dataset, {
-      co_entidade => $school->co_entidade,
-      nota        => $nota,
-      scores      => \%scores,
-    };
-  }
-
-  my $n = scalar @dataset;
-  diag "Número de escolas em $municipio para validação: $n";
-  if ($n < $thresholds{n_min}) {
-    fail("Amostra insuficiente ($n < $thresholds{n_min}) - pulando análise estatística.");
-    return;
-  }
-
-  # 3. Preparar dados e construir o dataframe R de forma dinâmica usando o Helper
-  my %column_data = (
-    nota => [ map { $_->{nota} } @dataset ]
-  );
-
-  for my $ind (@indicators) {
-    my $code = $ind->code;
-    $column_data{$code} = [ map { $_->{scores}{$code} } @dataset ];
-  }
-
-  my $r_df_definition = build_r_dataframe('df', \%column_data);
-
-  # 4. Construir script R dinâmico injetando as estatísticas e gerando JSON no final
-  my @codes = map { $_->code } @indicators;
-  my $r_codes_array = "c(" . join(',', map { "'$_'" } @codes) . ")";
-
-  my $script_conteudo = <<~"EOS";
+my $r_codes = 'c(' . join(',', map {"'$_'"} @codes) . ')';
+my $arquivo = $csv->to_string;
+my $script  = <<~"EOS";
   library(jsonlite)
+  d <- read.csv('$arquivo', stringsAsFactors = FALSE)
+  codes <- $r_codes
+  z <- function(x) (x - mean(x)) / sd(x)
 
-  $r_df_definition
+  # Distribuição: uma linha por escola.
+  u <- d[!duplicated(d\$co_entidade), ]
+  dist <- lapply(setNames(codes, codes), function(k) list(
+    media   = mean(u[[k]]),
+    dp      = sd(u[[k]]),
+    teto    = mean(u[[k]] >= 0.9999),
+    zero    = mean(u[[k]] == 0),
+    rho_ise = cor(u[[k]], u\$media_inse, method = 'spearman', use = 'complete.obs')
+  ))
 
-  codes <- $r_codes_array
-  results <- list()
+  # Associação com o IDEB, por etapa: bruta (Spearman) e ajustada (coeficiente
+  # padronizado descontando INSE, UF e rede).
+  etapas <- sort(unique(d\$etapa))
+  assoc <- lapply(setNames(etapas, etapas), function(e) {
+    x <- d[d\$etapa == e, ]
+    xa <- x[!is.na(x\$media_inse), ]
+    lapply(setNames(codes, codes), function(k) {
+      bruto <- cor(x[[k]], x\$nota, method = 'spearman')
+      ajust <- if (nrow(xa) > 30 && sd(xa[[k]]) > 0) {
+        f <- lm(z(nota) ~ z(xa[[k]]) + media_inse + factor(sg_uf) + factor(dependencia), data = xa)
+        unname(coef(f)[2])
+      } else NA
+      list(n = nrow(x), rho_bruto = bruto, beta_ajustado = ajust)
+    })
+  })
 
-  # Baseline: RMSE do modelo nulo (prever apenas a média) equivale ao desvio padrão amostral
-  # Usamos n-1 para consistência com os resíduos do modelo linear
-  n_df <- nrow(df)
-  rmse_null <- sqrt(sum((df\$nota - mean(df\$nota))^2) / n_df)
-
-  for (code in codes) {
-    # Correlação de Spearman
-    sp <- cor.test(df[[code]], df\$nota, method='spearman', exact=FALSE)
-    rho <- as.numeric(sp\$estimate)
-    p_val <- as.numeric(sp\$p.value)
-
-    # Regressão linear
-    lm_fit <- lm(nota ~ df[[code]], data=df)
-    r2 <- as.numeric(summary(lm_fit)\$r.squared)
-    rmse <- as.numeric(sqrt(mean(lm_fit\$residuals^2)))
-    coef_val <- as.numeric(coef(lm_fit)[2])
-
-    # Ganho percentual de redução do RMSE em relação ao modelo nulo
-    rmse_gain <- if (rmse_null > 0) (rmse_null - rmse) / rmse_null else 0
-
-    # SEM TRATAMENTO SILENCIOSO DE NA: Deixamos estourar se houver inconsistência nos vetores
-    results[[code]] <- list(
-      rho = rho,
-      p_val = p_val,
-      r2 = r2,
-      rmse = rmse,
-      rmse_null = rmse_null,
-      rmse_gain = rmse_gain,
-      coef = coef_val
-    )
-  }
-
-  cat(jsonlite::toJSON(results, auto_unbox=TRUE))
-  quit(status = 0)
+  cat(toJSON(list(
+    n_escolas = nrow(u),
+    ausente   = mean(u\$n_ausente > 0),
+    dist      = dist,
+    assoc     = assoc
+  ), auto_unbox = TRUE, na = 'null', digits = 6))
   EOS
 
-  # 5. Executar via Pipe nativo do EduMaps
-  my $rpipe = EduMaps::Analysis::R::Pipe->new;
-  my $r_params = {
-    script => $script_conteudo,
-    paths => [], 
+my $r = eval { EduMaps::Analysis::R::Pipe->new->run({script => $script, paths => []}) };
+ok($r, 'R devolveu as estatísticas') or do { diag $@; done_testing; exit };
+
+diag sprintf "%d escolas de %s, IDEB %d", $r->{n_escolas}, join('/', @UFS), $ANO;
+
+# Construto: variação e cobertura (critérios de aprovação).
+cmp_ok($r->{ausente}, '<=', $limite{ausente_max},
+  sprintf 'campos ausentes em %.1f%% das escolas', 100 * $r->{ausente});
+
+my $tab_dist = Text::Table->new('Indicador', 'média', 'dp', 'no teto', 'no zero', 'ρ com INSE');
+for my $code (@codes) {
+  my $d = $r->{dist}{$code};
+  $tab_dist->add($code, map({ sprintf '%.2f', $_ } @$d{qw(media dp)}),
+    map({ sprintf '%.0f%%', 100 * $_ } @$d{qw(teto zero)}), sprintf '%.2f', $d->{rho_ise} // 'NaN');
+  subtest "$code: discrimina escolas" => sub {
+    cmp_ok($d->{dp},   '>=', $limite{dp_min},   sprintf 'dp %.3f', $d->{dp});
+    cmp_ok($d->{teto}, '<=', $limite{teto_max}, sprintf '%.1f%% no teto', 100 * $d->{teto});
+    cmp_ok($d->{zero}, '<=', $limite{zero_max}, sprintf '%.1f%% no zero', 100 * $d->{zero});
   };
-  my $r_out;
+}
+diag "\nDistribuição (uma linha por escola)\n" . $tab_dist;
 
-  eval {
-    $r_out = $rpipe->run($r_params);
-  };
-  if ($@) {
-    fail("Falha catastrófica ao rodar o Pipe do R: $@");
-    return;
+# Relação com o IDEB: diagnóstico, não critério. Com os dados de 2023 a
+# correlação bruta é moderada, mas quase toda vem do nível socioeconômico;
+# descontado ele, o efeito próprio fica perto de zero (nota técnica 183).
+my $tab_assoc = Text::Table->new('Etapa', 'N', map { ("$_ bruto", "$_ ajust.") } @codes);
+for my $etapa (sort keys $r->{assoc}->%*) {
+  my $a = $r->{assoc}{$etapa};
+  $tab_assoc->add($etapa, $a->{ $codes[0] }{n},
+    map { my $s = $a->{$_}; (sprintf('%.2f', $s->{rho_bruto}),
+      defined $s->{beta_ajustado} ? sprintf('%.2f', $s->{beta_ajustado}) : '-') } @codes);
+  for my $code (@codes) {
+    ok(defined $a->{$code}{rho_bruto}, "$etapa/$code: correlação calculada (sem NA)");
   }
-
-  # 6. Exibir a tabela de resultados com dados da baseline incluídos
-  my $table = Text::Table->new(
-    'Indicador', 'ρ (Spearman)', 'p-valor', 'R²', 'RMSE', 'RMSE Nulo', 'Ganho %'
-  );
-  for my $ind (@indicators) {
-    my $code = $ind->code;
-    my $res  = $r_out->{$code};
-    
-    # Tratamento seguro para exibição caso o R retorne campos nulos/indefinidos
-    my $rho       = defined $res->{rho}       ? sprintf("%.3f", $res->{rho})       : 'NaN';
-    my $p_val     = defined $res->{p_val}     ? sprintf("%.4f", $res->{p_val})     : 'NaN';
-    my $r2        = defined $res->{r2}        ? sprintf("%.3f", $res->{r2})        : 'NaN';
-    my $rmse      = defined $res->{rmse}      ? sprintf("%.3f", $res->{rmse})      : 'NaN';
-    my $rmse_null = defined $res->{rmse_null} ? sprintf("%.3f", $res->{rmse_null}) : 'NaN';
-    my $gain      = defined $res->{rmse_gain} ? sprintf("%.1f%%", $res->{rmse_gain} * 100) : '0.0%';
-
-    $table->add($code, $rho, $p_val, $r2, $rmse, $rmse_null, $gain);
-  }
-  diag("\n" . $table);
-
-  # 7. O teste exige que o R rode e devolva estatísticas válidas (sem NA). Os
-  #    thresholds de relevância são um DIAGNÓSTICO de pesquisa, não critério de
-  #    aprovação: com os dados reais os indicadores não os atingem (nota técnica
-  #    179) — questão metodológica, não regressão de código.
-  for my $ind (@indicators) {
-    my $code = $ind->code;
-    my $res  = $r_out->{$code};
-
-    ok(defined $res->{rho} && defined $res->{p_val} && defined $res->{rmse_gain},
-      "$code: R devolveu estatísticas válidas (sem NA)") or next;
-
-    my $rho_ok       = $res->{rho} >= $thresholds{rho_min};
-    my $p_ok         = $res->{p_val} < $thresholds{p_max};
-    my $rmse_gain_ok = $res->{rmse_gain} >= $thresholds{rmse_gain_min};
-
-    my $msg = sprintf("%s: rho=%.2f (p=%.3f), R²=%.2f, Ganho RMSE=%.1f%%", 
-      $code, $res->{rho}, $res->{p_val}, $res->{r2}, $res->{rmse_gain} * 100
-    );
-
-    note(sprintf("Relevância (diagnóstico) %s: %s",
-      ($rho_ok && $p_ok && $rmse_gain_ok) ? 'ATINGE' : 'NÃO ATINGE', $msg));
-    ($rho_ok && $p_ok && $rmse_gain_ok)
-      or note(sprintf("  -> Falhou nos critérios: esperado rho >= %.2f, p < %.2f, ganho RMSE >= %.1f%%",
-        $thresholds{rho_min}, $thresholds{p_max}, $thresholds{rmse_gain_min} * 100
-      ));
-  }
-};
+}
+diag "\nAssociação com o IDEB (ρ de Spearman bruto; β padronizado descontando INSE, UF e rede)\n" . $tab_assoc;
 
 done_testing;

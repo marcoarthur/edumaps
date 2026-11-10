@@ -1,6 +1,7 @@
 # Nota técnica 183: motor analítico no Docker local e testes no contrato http
 
-PR #358 (2026-11-10). Corrige o diagnóstico da nota 178.
+PRs #358 e #359 (2026-11-10). Corrige o diagnóstico da nota 178 e revisa
+a metodologia dos indicadores de condição da escola.
 
 ## O que se descobriu
 
@@ -56,3 +57,30 @@ mas não basta) e um serviço `edumaps_local` com senha no
 
 `deploy_backend_dev` + `deploy_minion_dev` na fila do LXC (2026-11-12). Docker
 local: imagens `backend` e `minion` reconstruídas.
+
+## Metodologia dos indicadores IFS, IPS, IGE e IAI (PR #359)
+
+O `indicators_quality.t` exigia que os quatro previssem o IDEB numa só cidade
+(Brasília), pegando "o último IDEB" de cada escola. Os ρ ficavam entre −0,11
+e −0,02, o que parecia dizer que os indicadores não medem nada.
+
+Medidos em 22.698 escolas de DF, SP, BA, PA e RS, com o IDEB 2023 por etapa:
+
+- a correlação bruta é moderada (até 0,41 no fundamental I);
+- quase toda ela vem do nível socioeconômico (ρ dos indicadores com o INSE
+  entre 0,19 e 0,48);
+- descontados INSE, UF e rede, o efeito próprio fica entre −0,02 e 0,05
+  desvio-padrão em todas as etapas.
+
+O resultado de Brasília era artefato: um município só achata a variação, e as
+etapas do IDEB têm escalas diferentes (médias 5,8, 5,0 e 4,5).
+
+**Decisão:** os indicadores medem condições e direitos, não resultado, e o
+uso real deles é descrever escolas para a similaridade. O teste passa a exigir
+variação e cobertura (dp ≥ 0,05, no máximo metade das escolas no teto ou no
+zero, no máximo 10% com campo ausente). A relação com o IDEB vira diagnóstico,
+por etapa, bruta e ajustada. Detalhe e limites de uso em
+`docs/analises/ivet.md` §2.3.1. Nada muda no produto.
+
+**Pendente:** o `t/02-models/indicators/quality.t` (IQD, São José dos Campos)
+usa a mesma lógica de prever o IDEB numa cidade só; só reprova se o R falhar.

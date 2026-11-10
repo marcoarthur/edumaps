@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (as) — indicadores avaliados por construto (PR #359)
+
+- IFS/IPS/IGE/IAI: correlação bruta com o IDEB até 0,41, mas quase toda
+  nível socioeconômico; descontado o INSE, efeito próprio ≈ 0 (−0,02 a 0,05
+  dp). O "−0,08" de Brasília era artefato (cidade única, etapas misturadas).
+- `indicators_quality.t` passa a cobrar variação e cobertura; IDEB vira
+  diagnóstico. `ivet.md` §2.3.1. Nota **183** (seção de metodologia).
+- #358 mergeado (`bd52d77`).
+- Pendente: `indicators/quality.t` (IQD) com a mesma lógica de cidade única.
+
 ## Sessão 2026-11-10 (ar) — motor analítico no Docker e testes no contrato http (PR #358)
 
 - Pacote R do projeto instalado no R 4.6 do host (`R CMD INSTALL
