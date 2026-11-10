@@ -3,13 +3,12 @@ modulo: gestor
 nivel: basico
 publico:
 - gestor
-- professor
 - comunidade
 - administrador
 - desenvolvedor
 status: ativo
 titulo: Glossário
-ultima_revisao: '2026-10-25'
+ultima_revisao: '2026-11-10'
 ---
 
 # Glossário

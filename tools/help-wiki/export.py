@@ -10,9 +10,11 @@ HELP = ROOT / "docs" / "ajuda"
 FUNC = ROOT / "docs" / "funcionalidades"
 
 REQUIRED = {"titulo", "publico", "modulo", "nivel", "status", "ultima_revisao"}
+# Perfis da ajuda. Não há "professor": não existe conta docente (só gestor e
+# admin); o professor usa a parte pública, coberta por "comunidade" (#304).
 ENUMS = {
-    "publico": {"gestor", "professor", "comunidade", "administrador", "desenvolvedor"},
-    "modulo": {"gestor", "professor", "comunidade", "administrador", "desenvolvedor"},
+    "publico": {"gestor", "comunidade", "administrador", "desenvolvedor"},
+    "modulo": {"gestor", "comunidade", "administrador", "desenvolvedor"},
     "nivel": {"basico", "intermediario", "avancado"},
     "status": {"ativo", "parcial", "planejado", "descontinuado"},
 }

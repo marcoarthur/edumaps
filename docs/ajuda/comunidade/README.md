@@ -4,13 +4,18 @@ publico: [comunidade]
 modulo: comunidade
 nivel: basico
 status: ativo
-ultima_revisao: 2026-11-02
+ultima_revisao: 2026-11-10
 ---
 
 # Ajuda — comunidade
 
-Para famílias, responsáveis e qualquer cidadão que queira conhecer as escolas
-públicas. Tudo aqui funciona **sem login**.
+Para quem quer conhecer as escolas públicas sem login: famílias,
+responsáveis, cidadãos, professores, pesquisadores e investidores. Tudo aqui
+funciona **sem login**.
+
+Professores não têm conta própria. Quando o gestor os cadastra como contato,
+recebem convites, pesquisas e listas com QR como qualquer membro da
+comunidade escolar.
 
 | Quero… | Página |
 |---|---|
