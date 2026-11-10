@@ -38,6 +38,11 @@ cat > /opt/edumaps/backend/edu_maps.conf <<EOF
     dsn     => '${EDUMAPS_SENTRY_DSN:-}',
     release => '${EDUMAPS_SENTRY_RELEASE:-}',
   },
+  # Motor das análises (clustering, similaridade, cidade): o serviço R do
+  # compose. Sem isto vale o padrão 'pipe', que chama o Rscript dentro deste
+  # contêiner, onde não há R — os jobs falhavam com "Rscript not found".
+  analytics_engine => '${ANALYTICS_ENGINE:-http}',
+  analytics_url    => '${ANALYTICS_URL:-http://analytic:8000}',
   ${PROXIES_CONF}
 }
 EOF

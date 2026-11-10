@@ -52,26 +52,22 @@ sub skip_r ($self, $motivo) {
   _skip("exige R/edumapsr e as tabelas do job de analise - $motivo");
 }
 
-# Executa o R NO HOST (R::Pipe/Rscript) e precisa do pacote edumapsr
-# instalado nele. Vale fora do CI também: sem o pacote, o job falha no R e o
-# teste cai com um erro que parece de código. Para rodar de verdade, instalar
-# o pacote no R do host (ver AGENTS.md, "Running tests (backend)").
+# Precisa do serviço analítico (R/Plumber) de pé: clustering, similaridade e
+# injeção das relações vindas desses jobs. Os testes seguem o contrato do
+# motor http, o de todos os ambientes (LXC e Docker); o R::Pipe legado devolve
+# outro formato. Chamar depois de criar a app:
 #
-#   CI->skip_r_host('clustering por kmeans executado no R');
-my $edumapsr_no_host;
-sub edumapsr_no_host {
-  $edumapsr_no_host //= do {
-    my $rc = system('Rscript', '-e',
-      'quit(status = if (requireNamespace("edumapsr", quietly = TRUE)) 0 else 1)');
-    $rc == 0 ? 1 : 0;
-  };
-}
-
-sub skip_r_host ($self, $motivo) {
+#   my $t = Test::Mojo->new('EduMaps');
+#   CI->skip_analytics($t->app, 'clustering executado no R');
+sub skip_analytics ($self, $app, $motivo) {
   $self->skip_r($motivo);    # no CI: mesma razão de sempre
-  return if edumapsr_no_host();
   Test::More::plan(skip_all =>
-    "exige o pacote edumapsr instalado no R do host (R CMD INSTALL analysis/edumapsr) - $motivo");
+    "exige analytics_engine 'http' (motor legado pipe tem outro contrato) - $motivo")
+    unless $app->analytics_engine eq 'http';
+  my $ok = eval { $app->analytics->health; 1 };
+  Test::More::plan(skip_all =>
+    "serviço analítico fora do ar em @{[ $app->analytics->url ]} - $motivo")
+    unless $ok;
 }
 
 # Precisa da rede (Overpass/OSM, SIOPE). Nenhum espelho em CI.

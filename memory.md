@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (ar) — motor analítico no Docker e testes no contrato http (PR #358)
+
+- Pacote R do projeto instalado no R 4.6 do host (`R CMD INSTALL
+  analysis/edumapsr`; nome real `edumapsAnalytics`). `tidyverse` também.
+- Docker local nunca rodou análises pelo minion: entrypoint sem
+  `analytics_engine` (padrão `pipe`, sem R no contêiner). Agora `http`.
+- `skip_r_host` (nota 178) estava errado: o host já usa o motor `http`.
+  Virou `skip_analytics`; cinco testes reescritos para o contrato http.
+  Consumidores de `r_meta` aceitam os dois formatos. Nota **183**.
+- **Decisão do usuário:** a folha de pagamento por escola continua pública,
+  sem login (fecha a pendência da página de ajuda `folha-de-pagamento`).
+- Revisão da metodologia dos indicadores IFS/IPS/IGE/IAI: PR seguinte.
+- Fila de deploy LXC (2026-11-12): + `deploy_backend_dev`, `deploy_minion_dev`.
+
 ## Sessão 2026-11-09 (aq) — DataTable sem adivinhar snippet (PR #357)
 
 - `DataTable`: `render` (texto) e `cell` (snippet) separados; antes o tipo era

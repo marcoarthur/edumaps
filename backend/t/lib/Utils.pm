@@ -3,7 +3,7 @@ use Mojo::Base -signatures;
 use Mojo::Collection qw(c);
 use EduMaps::Schema;
 use Test2::Tools::Basic qw(ok);
-use Test2::Tools::Compare qw(D);
+use Test2::Tools::Compare qw(D T F);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(
@@ -97,9 +97,19 @@ sub city_id_with_grades ($size = 10) {
 # @param $t    Test::Mojo instance
 # @param $args hashref de argumentos para apply_clustering
 sub run_clustering_job ($t, $args) {
+  # Fila própria: sem ela o minion do Docker local pega o job antes do
+  # perform_jobs e o roda no ambiente dele, não no R do host.
+  my $fila = "teste_clusterization_$$";
+  local $t->app->config->{minion_filas}{clusterization} = $fila;
+  # Sem o cache do cliente: um resultado em cache volta sem o R regravar a
+  # tabela de destino (cluster_id, pares), que o teste confere depois.
+  my $client = $t->app->analytics;
+  my $cache  = $client->cache_enabled;
+  $client->cache_enabled(0);
   my $id  = $t->app->apply_clustering($args);
   my $job = $t->app->minion->job($id);
-  $t->app->minion->perform_jobs;
+  $t->app->minion->perform_jobs({queues => [$fila]});
+  $client->cache_enabled($cache);
   return $job;
 }
 
@@ -115,18 +125,18 @@ sub cleanup_job ($t, $job) {
 }
 
 # Monta a estrutura de contrato esperada para um job de clusterização bem
-# sucedido, parametrizada pelo algoritmo, tabela alvo e parametros extras
-# de entrada (ex: {k => 3} ou {eps => 1.2, min_pts => 3}).
+# sucedido no motor HTTP (serviço R/Plumber, o de todos os ambientes; o
+# R::Pipe legado devolve outro formato), parametrizada pelo algoritmo, tabela
+# alvo e parâmetros pedidos (ex: {clusters => 3} ou {eps => 1.2, min_pts => 3}).
 #
-# Usa D() (definido) para campos cujo valor exato varia entre execucoes
-# (n_clusters, clusters) e valores literais/regex para tudo que deve ser
-# fixo e previsivel - incluindo r_meta.algorithm, que precisa bater
-# exatamente com o algoritmo pedido (nao apenas "existir").
+# Usa D() para campos cujo valor varia entre execuções (n_clusters, linhas) e
+# valores literais/regex para o resto — incluindo metrics.algorithm e
+# persisted.algorithm, que precisam bater exatamente com o algoritmo pedido.
 #
 # @param $algorithm nome do algoritmo ('kmeans', 'dbscan', 'gmm', 'spectral')
 # @param $job_id    id do job no Minion
 # @param $table_name nome da tabela de staging usada no teste
-# @param %extra_params parametros especificos do algoritmo esperados em r_meta.params
+# @param %extra_params parâmetros do algoritmo esperados em r_meta.parameters
 sub expected_clustering_contract ($algorithm, $job_id, $table_name, %extra_params) {
   return {
     meta => {
@@ -143,17 +153,28 @@ sub expected_clustering_contract ($algorithm, $job_id, $table_name, %extra_param
         table_name     => $table_name,
       },
       r_meta => {
-        status         => 'success',
-        algorithm      => $algorithm,
-        run_id         => qr/^run_\d+$/,
-        schema         => 'staging',
-        table_name     => $table_name,
-        id_column      => 'co_entidade',
-        metadata_table => 'staging.clustering_metadata',
-        timestamp      => qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-        n_clusters     => D(),
-        clusters       => D(),
-        params         => { %extra_params },
+        analysis  => "cluster_$algorithm",
+        cache_hit => F(),
+        metadata  => {
+          entity_id   => 'co_entidade',
+          data_source => { schema => ['staging'], table_name => [$table_name] },
+          features    => D(),
+        },
+        metrics => {
+          algorithm  => $algorithm,
+          n_clusters => D(),
+          n_entities => D(),
+        },
+        parameters => { algorithm => $algorithm, %extra_params },
+        persisted  => {
+          algorithm      => [$algorithm],
+          metadata_table => ['analytics.clustering_metadata'],
+          run_id         => [qr/^run_\d+$/],
+          target_table   => ["staging.$table_name"],
+          rows_updated   => D(),
+        },
+        data   => D(),
+        tables => { clusters => D() },
       }
     }
   };
@@ -173,9 +194,19 @@ sub expected_clustering_contract ($algorithm, $job_id, $table_name, %extra_param
 # @param $t    Test::Mojo instance
 # @param $args hashref de argumentos para apply_similarity
 sub run_similarity_job ($t, $args) {
+  # Fila própria: sem ela o minion do Docker local pega o job antes do
+  # perform_jobs e o roda no ambiente dele, não no R do host.
+  my $fila = "teste_similarity_$$";
+  local $t->app->config->{minion_filas}{similarity} = $fila;
+  # Sem o cache do cliente: um resultado em cache volta sem o R regravar a
+  # tabela de destino (cluster_id, pares), que o teste confere depois.
+  my $client = $t->app->analytics;
+  my $cache  = $client->cache_enabled;
+  $client->cache_enabled(0);
   my $id  = $t->app->apply_similarity($args);
   my $job = $t->app->minion->job($id);
-  $t->app->minion->perform_jobs;
+  $t->app->minion->perform_jobs({queues => [$fila]});
+  $client->cache_enabled($cache);
   return $job;
 }
 
@@ -208,19 +239,23 @@ sub expected_similarity_contract ($metric, $job_id, $table_name, %extra_params) 
         metric       => $metric,
       },
       r_meta => {
-        status         => 'success',
-        metric         => $metric,
-        run_id         => qr/^run_\d+$/,
-        schema         => 'staging',
-        table_name     => $table_name,
-        id_column      => 'co_entidade',
-        output_table   => 'analytics.similarity_pairs',
-        timestamp      => qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-        n_entities     => D(),
-        n_pairs        => D(),
-        avg_similarity => D(),
-        sample_top_pairs => D(),
-        params         => { %extra_params },
+        analysis  => "${metric}_similarity",
+        cache_hit => F(),
+        metadata  => { entity_id => 'co_entidade', features => D() },
+        metrics   => {
+          n_entities      => D(),
+          n_pairs         => D(),
+          mean_similarity => D(),
+        },
+        parameters => { %extra_params },
+        persisted  => {
+          persisted    => [T()],
+          run_id       => [qr/^run_\d+$/],
+          table        => ['analytics.similarity_pairs'],
+          target_table => ["staging.$table_name"],
+          pairs        => D(),
+        },
+        data => D(),
       }
     }
   };
