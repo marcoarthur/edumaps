@@ -175,6 +175,23 @@ PGHOST=127.0.0.1 PGPORT=55432 PGDATABASE=edumaps_ci \
 Sem banco, só `test-censo-dictionary.R` se auto-pula (`skip_if_no_db`); o resto
 é puro (fontes em memória) e roda sempre.
 
+**Toda dependência do `DESCRIPTION` fica instalada em todo ambiente** (#363):
+Depends, Imports **e Suggests** (testthat, pkgload, plumber, devtools, eduBR),
+no host, na imagem `analytic`, no LXC (`deploy_analytics_dev`) e no CI. A lista
+sai do próprio `DESCRIPTION` pelo `inst/scripts/dependencias.R`, nunca de uma
+lista à mão (as três que existiam divergiram). Dependência nova entra no
+`DESCRIPTION` e pronto: o build da imagem, o deploy e o CI **falham** se ela
+faltar.
+
+```bash
+cd analysis/edumapsr
+Rscript inst/scripts/dependencias.R verificar DESCRIPTION    # rc=1 e a lista do que falta
+Rscript inst/scripts/dependencias.R instalar DESCRIPTION https://cloud.r-project.org
+```
+
+No host, o `plumber` exige a biblioteca de sistema `libsodium-dev`
+(`sudo apt-get install libsodium-dev`).
+
 ## Running tests (frontend e2e — browser real via CDP)
 
 Testes de integração/e2e da SPA rodam num **Chrome visível** (sem headless)

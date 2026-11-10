@@ -315,8 +315,12 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
     libsodium-dev
     libx11-dev
     libpq-dev libssl-dev
+    libgit2-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev
+    libfontconfig1-dev libpng-dev libjpeg-dev libtiff-dev libuv1-dev
     /
   );
+  # (a segunda linha de -dev é do devtools e dependências — gert, textshaping,
+  #  ragg, systemfonts, fs —, que o DESCRIPTION declara em Suggests, #363)
 
   file "$path/.Renviron",
   content => template(
@@ -349,28 +353,24 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
     )
   ;
 
-  # install R dependencies required by the package — SÓ quando faltar algum pacote
-  # (devtools NÃO entra: é fallback de desenvolvimento do run.R; no servidor o
-  #  pacote é instalado via R CMD INSTALL, então devtools nunca é necessário)
+  # Dependências R: TODAS as do DESCRIPTION (Depends, Imports e Suggests,
+  # #363), lidas pelo inst/scripts/dependencias.R — sem lista à mão, que
+  # divergia (faltavam testthat, pkgload e devtools). Só instala o que falta.
+  # dbplyr/parsnip/broom/remotes não estão no DESCRIPTION: são do eduBR
+  # (Assistente de Relatório, #219) — dbplyr é Import dele, parsnip/broom são
+  # Suggests exigidos pela tendência do IDEB, remotes instala o eduBR fixado.
   my $env = { R_LIBS => "/usr/local/lib/R/site-library"};
-  # ellmer: agente LLM do assistente NL/SQL (chartml opcional, não usado).
-  # dbplyr/parsnip/broom/remotes: eduBR (Assistente de Relatório, #219) —
-  # dbplyr é Import dele; parsnip/broom são Suggests exigidos pela tendência
-  # do IDEB; remotes instala o eduBR fixado no GitHub (abaixo).
-  my $deps = q{'plumber','ggplot2','plotly','jsonlite',
-      'DBI','RPostgres','cluster','dbscan','mclust','kernlab',
-      'ellmer','yaml','dbplyr','parsnip','broom','remotes'};
+  my $deps_edubr = q{'dbplyr','parsnip','broom','remotes'};
 
   run qq{
     set -e
-    MISSING=\$(Rscript -e "p <- c($deps); cat(paste(p[!sapply(p, requireNamespace, quietly=TRUE)], collapse=','))")
+    Rscript inst/scripts/dependencias.R instalar DESCRIPTION https://cloud.r-project.org
+    MISSING=\$(Rscript -e "p <- c($deps_edubr); cat(paste(p[!sapply(p, requireNamespace, quietly=TRUE)], collapse=','))")
     if [ -n "\$MISSING" ]; then
-      echo "Instalando dependências R faltantes: \$MISSING"
-      Rscript -e "install.packages(c($deps), repos='https://cloud.r-project.org', Ncpus=4)"
-    else
-      echo "Dependências R já instaladas — pulando install.packages"
+      echo "Instalando dependências do eduBR: \$MISSING"
+      Rscript -e "install.packages(c($deps_edubr), repos='https://cloud.r-project.org', Ncpus=4)"
     fi
-  };
+  }, cwd => $path, env => $env;
 
   # eduBR (#219): pacote de outro repositório, instalado do GitHub público em
   # COMMIT FIXO — reprodutível e independente do clone local. Para atualizar,
@@ -402,6 +402,12 @@ task deploy_analytics_dev => 'analytic.edumaps' => sub {
       echo "edumapsr inalterado — pulando R CMD INSTALL"
     fi
   }, cwd => $path, env => $env;
+
+  # Deploy falha se faltar qualquer dependência do DESCRIPTION (inclui o eduBR).
+  run q{Rscript inst/scripts/dependencias.R verificar DESCRIPTION},
+    cwd => $path, env => $env;
+  die "deploy_analytics_dev: faltam dependências R do DESCRIPTION (ver acima)\n"
+    if $? != 0;
 
   # create the service file
   file "/etc/systemd/system/edumaps-analytic.service",
