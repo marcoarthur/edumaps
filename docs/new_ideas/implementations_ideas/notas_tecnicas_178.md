@@ -54,3 +54,12 @@ PR #353 (2026-11-07). Lote 2 da limpeza das falhas antigas (nota 177).
 ## Deploy
 
 `deploy_db_dev` (change `staging_schema`) na fila do LXC de 2026-11-09.
+
+## Correção (2026-11-10, nota 183)
+
+O diagnóstico do R do host acima estava errado. O `edu_maps.conf` do host usa
+o motor `http`: esses cinco testes chamam o serviço R do Docker, não o
+`Rscript` do host. O pacote que o `skip_r_host` procurava (`edumapsr`) nem
+existe com esse nome — o pacote do projeto se chama `edumapsAnalytics`. Com o
+skip removido, os testes falhavam porque esperavam o contrato do motor legado
+`pipe`. A nota 183 troca o skip por `skip_analytics` e reescreve os contratos.

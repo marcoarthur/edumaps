@@ -23,7 +23,9 @@ has _search_policy => sub ($self) {
 
       my $last;
       while(my $info = $jobs->next) {
-        my $signature = $info->{similarity_info}{r_meta}{params}{features};
+        # params.features no motor pipe; metadata.features no http.
+        my $r_meta    = $info->{result}{similarity_info}{r_meta} // {};
+        my $signature = $r_meta->{params}{features} // $r_meta->{metadata}{features};
         next unless $signature;
         if ($self->_equal_signature($feat, $signature)) {
           $last = $info unless $last;

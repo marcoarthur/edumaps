@@ -6,10 +6,12 @@ use CI;
 use Utils qw(run_clustering_job cleanup_job expected_clustering_contract);
 use Mojo::JSON qw(decode_json);
 
-# kmeans roda dentro do R (edumapsr) e o job grava em clean.cluster_*.
-CI->skip_r_host('clustering por kmeans executado no R');
+# O clustering roda no serviço R (motor http), que grava cluster_id na
+# tabela de staging e os metadados em analytics.clustering_metadata.
+CI->skip_r('clustering executado no R');
 
 my $t   = Test::Mojo->new('EduMaps');
+CI->skip_analytics($t->app, 'clustering executado no R');
 my $tag = '[task] clustering (algoritmos pesados)';
 
 # --------------------------------------------------------------------------
@@ -52,12 +54,12 @@ my @HAPPY_CASES = (
   {
     algorithm    => 'gmm',
     input_extra  => { clusters => 3 },
-    expect_extra => { k => 3 },
+    expect_extra => { clusters => 3 },
   },
   {
     algorithm    => 'spectral',
     input_extra  => { clusters => 3 },
-    expect_extra => { k => 3 },
+    expect_extra => { clusters => 3 },
   },
 );
 
@@ -142,8 +144,8 @@ $tag <regressao: algorithm precisa ser respeitado de ponta a ponta>
     clusters   => 3,
   });
 
-  my $gmm_algo      = $gmm_job->info->{result}{cluster_info}{r_meta}{algorithm};
-  my $spectral_algo = $spectral_job->info->{result}{cluster_info}{r_meta}{algorithm};
+  my $gmm_algo      = $gmm_job->info->{result}{cluster_info}{r_meta}{metrics}{algorithm};
+  my $spectral_algo = $spectral_job->info->{result}{cluster_info}{r_meta}{metrics}{algorithm};
 
   is $gmm_algo, 'gmm', 'job de gmm reporta algorithm=gmm no r_meta';
   is $spectral_algo, 'spectral', 'job de spectral reporta algorithm=spectral no r_meta';

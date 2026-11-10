@@ -5,10 +5,11 @@ use Imports;
 use CI;
 use Utils qw(run_similarity_job cleanup_job expected_similarity_contract);
 
-# A similaridade é calculada no R (edumapsr) e gravada pelo job.
-CI->skip_r_host('matriz de similaridade calculada no R');
+# A similaridade é calculada pelo serviço R (motor http) e gravada pelo job.
+CI->skip_r('matriz de similaridade calculada no R');
 
 my $t   = Test::Mojo->new('EduMaps');
+CI->skip_analytics($t->app, 'matriz de similaridade calculada no R');
 my $sch = $t->app->schema;
 my $tag = '[task] similarity';
 
@@ -70,28 +71,29 @@ $tag <construindo uma similaridade com gower>
 
   like
     $job->info->{result},
-    expected_similarity_contract('gower', $job->id, $table_name, features => D()),
+    expected_similarity_contract('gower', $job->id, $table_name),
     "Estrutura do contrato correta (gower)";
 
-  my $r_meta = $job->info->{result}{similarity_info}{r_meta};
+  my $r_meta  = $job->info->{result}{similarity_info}{r_meta};
+  my $metrics = $r_meta->{metrics};
 
-  # n_pairs deve ser exatamente C(n,2) = n*(n-1)/2, ja que gower.R usa
-  # apenas o triangulo superior da matriz de distancia (entity_1 < entity_2)
+  # n_pairs deve ser exatamente C(n,2) = n*(n-1)/2: o motor grava apenas o
+  # triangulo superior da matriz de distancia (entity_1 < entity_2)
   my $expected_pairs = $expected_schools_count * ($expected_schools_count - 1) / 2;
-  is $r_meta->{n_pairs}, $expected_pairs,
+  is $metrics->{n_pairs}, $expected_pairs,
     "numero de pares bate com C($expected_schools_count, 2) = $expected_pairs";
 
-  is $r_meta->{n_entities}, $expected_schools_count,
+  is $metrics->{n_entities}, $expected_schools_count,
     'numero de entidades bate com o total de escolas da fixture';
 
-  ok $r_meta->{avg_similarity} > 0 && $r_meta->{avg_similarity} <= 1,
-    'avg_similarity esta no intervalo (0, 1]';
+  ok $metrics->{mean_similarity} > 0 && $metrics->{mean_similarity} <= 1,
+    'mean_similarity esta no intervalo (0, 1]';
 
   # ------------------------------------------------------------------
   # Confere diretamente na tabela compartilhada analytics.similarity_pairs
   # que os pares foram de fato persistidos, batendo com o resumo do job
   # ------------------------------------------------------------------
-  my $run_id = $r_meta->{run_id};
+  my $run_id = $r_meta->{persisted}{run_id}[0];
   my ($count) = $sch->storage->dbh->selectrow_array(
     'SELECT COUNT(*) FROM analytics.similarity_pairs WHERE target_table = ? AND metric = ? AND run_id = ?',
     undef, "staging.$table_name", 'gower', $run_id
@@ -128,17 +130,15 @@ $tag <defaults>
 };
 
 # --------------------------------------------------------------------------
-# Metricas ainda sem script R implementado: devem falhar de forma limpa
-# (nao travar o worker), assim como em clustering.t para gmm/spectral.
-# Passamos argumentos VALIDOS de cada metrica para garantir que a falha
-# aconteca no estagio de execucao do R, nao antes na validacao do Perl -
-# ou seja, para confirmar que o dispatch (metric -> source_file/funcao R)
-# esta correto mesmo quando o script ainda nao existe.
+# Metricas sem implementacao no motor HTTP (so gower foi portada): devem
+# falhar de forma limpa (nao travar o worker). Passamos argumentos VALIDOS de
+# cada metrica para garantir que a falha venha do dispatch por motor, nao da
+# validacao do Perl.
 # --------------------------------------------------------------------------
 subtest qq/
 $tag <metricas ainda nao implementadas>
   - euclidean_zscore, mahalanobis, aitchison e dtw sao aceitas pela
-    validacao, mas falham de forma controlada por falta do script .R
+    validacao, mas falham de forma controlada no motor http
 / => sub {
   my @CASES = (
     { metric => 'euclidean_zscore', extra => {} },
@@ -157,10 +157,10 @@ $tag <metricas ainda nao implementadas>
       %{ $case->{extra} },
     });
 
-    is $job->info->{state}, 'failed', "job de $metric falha (script nao implementado)";
+    is $job->info->{state}, 'failed', "job de $metric falha (nao portada ao motor http)";
     like $job->info->{result},
-      qr/\Q$metric.R\E|Error running R \($metric\)/,
-      "mensagem de erro menciona o script/metrica ausente ($metric)";
+      qr/Metric '\Q$metric\E' nao suportada no motor http/,
+      "mensagem de erro nomeia a metrica nao suportada ($metric)";
 
     cleanup_job($t, $job);
   }

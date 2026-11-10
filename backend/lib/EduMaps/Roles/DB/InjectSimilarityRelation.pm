@@ -250,14 +250,17 @@ sub inject_similarity_relation ($self, $args) {
 # @param $self          EduMaps::Schema
 # @param $job_result    hashref: job->info->{result} de um job 'similarity'
 # @param $target_source nome do Source DBIC que recebera as relacoes
-# @param %opts          id_column (default: le de r_meta.id_column),
+# @param %opts          id_column (default: le de r_meta.id_column ou
+#                        r_meta.metadata.entity_id),
 #                        relation_name (opcional)
 sub inject_similarity_relation_from_job ($self, $job_result, $target_source, %opts) {
   my $query_args = $job_result->{similarity_info}{query_args}
     // croak "inject_similarity_relation_from_job: job_result sem similarity_info.query_args";
   my $r_meta = $job_result->{similarity_info}{r_meta} // {};
 
+  # r_meta.id_column é do motor pipe; o http devolve metadata.entity_id.
   my $id_column = $opts{id_column} // $r_meta->{id_column}
+    // $r_meta->{metadata}{entity_id}
     // croak "inject_similarity_relation_from_job: id_column nao informado e ausente em r_meta";
 
   return $self->inject_similarity_relation({

@@ -110,18 +110,21 @@ Testes de SSE (`/api/task/progress`) precisam mandar
 `Accept: text/event-stream`, como o EventSource do navegador; sem o cabeçalho a
 rota devolve o estado do job em JSON.
 
-**Testes que executam o R no host** (clustering, similaridade e injeção de
-relações: `t/05-tasks/clustering*.t`, `t/05-tasks/similarity.t`,
-`t/dbic/inject*.t`) usam `CI->skip_r_host` e são **pulados** quando o R do
-host não carrega o pacote `edumapsr` — a mensagem do skip diz isso. Para
-rodá-los de verdade, instalar o pacote no R do host (as dependências do
-`DESCRIPTION` precisam estar instaladas; uma atualização de versão do R começa
-uma biblioteca nova, sem os pacotes da anterior):
+**Testes do serviço analítico** (clustering, similaridade e injeção das
+relações vindas desses jobs: `t/05-tasks/clustering*.t`,
+`t/05-tasks/similarity.t`, `t/dbic/inject*.t`) chamam o serviço R pelo motor
+`http`, o de todos os ambientes, e seguem o contrato dele. Usam
+`CI->skip_analytics($t->app, ...)`: são **pulados** com
+`analytics_engine` diferente de `http` ou com o serviço fora do ar (a mensagem
+diz qual). No host, o `edu_maps.conf` já usa `http`; basta o contêiner
+`analytic` de pé e o `ANALYTICS_URL` acima. O motor legado `pipe` (Rscript
+local) não é testado: exigiria os pacotes dos scripts de `templates/rscripts`
+no R do host e um serviço `edumaps_local` no `~/.pg_service.conf`.
 
-```bash
-R CMD INSTALL analysis/edumapsr
-Rscript -e 'library(edumapsr)'   # confere
-```
+Os jobs desses testes vão para uma fila própria e sem o cache do cliente
+(helpers de `t/lib/Utils.pm`): sem a fila, o minion do Docker local pega o job
+antes do `perform_jobs`; com o cache, o R não regrava a tabela que o teste
+confere.
 
 ## Running tests (frontend)
 

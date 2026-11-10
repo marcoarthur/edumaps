@@ -6,10 +6,12 @@ use CI;
 use Utils qw(run_clustering_job cleanup_job expected_clustering_contract);
 use Mojo::JSON qw(decode_json);
 
-# kmeans roda dentro do R (edumapsr) e o job grava em clean.cluster_*.
-CI->skip_r_host('clustering por kmeans executado no R');
+# O clustering roda no serviço R (motor http), que grava cluster_id na
+# tabela de staging e os metadados em analytics.clustering_metadata.
+CI->skip_r('clustering executado no R');
 
 my $t   = Test::Mojo->new('EduMaps');
+CI->skip_analytics($t->app, 'clustering executado no R');
 my $tag = '[task] clustering';
 
 # --------------------------------------------------------------------------
@@ -46,7 +48,7 @@ my @HAPPY_CASES = (
   {
     algorithm    => 'kmeans',
     input_extra  => { clusters => 3 },
-    expect_extra => { k => 3 },
+    expect_extra => { clusters => 3 },
   },
   {
     algorithm    => 'dbscan',
@@ -94,7 +96,7 @@ $tag <defaults por algoritmo>
   - dbscan sem 'eps'\/'min_pts' explicitos usa os defaults (0.5 \/ 5)
 / => sub {
   for my $case (
-    { algorithm => 'kmeans', expect_extra => { k => 5 } },
+    { algorithm => 'kmeans', expect_extra => { clusters => 5 } },
     { algorithm => 'dbscan', expect_extra => { eps => 0.5, min_pts => 5 } },
   ) {
     my $algorithm = $case->{algorithm};
@@ -108,8 +110,8 @@ $tag <defaults por algoritmo>
     my $job = run_clustering_job($t, $args);
 
     is $job->info->{state}, 'finished', "job de $algorithm finalizado com defaults";
-    is $job->info->{result}{cluster_info}{r_meta}{params},
-      $case->{expect_extra},
+    is $job->info->{result}{cluster_info}{r_meta}{parameters},
+      { algorithm => $algorithm, %{ $case->{expect_extra} } },
       "defaults de $algorithm aplicados corretamente";
 
     cleanup_job($t, $job);
@@ -192,8 +194,8 @@ $tag <regressao: algorithm precisa ser respeitado de ponta a ponta>
     algorithm  => 'dbscan',
   });
 
-  my $kmeans_algo = $kmeans_job->info->{result}{cluster_info}{r_meta}{algorithm};
-  my $dbscan_algo = $dbscan_job->info->{result}{cluster_info}{r_meta}{algorithm};
+  my $kmeans_algo = $kmeans_job->info->{result}{cluster_info}{r_meta}{metrics}{algorithm};
+  my $dbscan_algo = $dbscan_job->info->{result}{cluster_info}{r_meta}{metrics}{algorithm};
 
   is $kmeans_algo, 'kmeans', 'job de kmeans reporta algorithm=kmeans no r_meta';
   is $dbscan_algo, 'dbscan', 'job de dbscan reporta algorithm=dbscan no r_meta';
