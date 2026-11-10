@@ -138,16 +138,14 @@ Saída com 4 decimais.
 | `ige` | Qualidade da Gestão | conselho 1, ass_pais_mestres 1, grêmio 1, proposta_pedagógica(própria/adaptada) 2, internet_adm 1, (gestão ou coordenador) 1 |
 | `iai` | Acessibilidade e Inclusão | rampas 2, corrimão 2, pisos_táteis 2, sinal_visual 2, vão_livre 2, AEE 3, trad_libras 3, revisor_braille 3 |
 | `ioc` | Integralidade e Oferta | creche..médio 6×1, EJA 1, profissionalizante 1, indígena/quilombola 1, atividade_complementar 1 |
-| `iqd` | Qualificação Docente | `sup_grad/qt_doc 3`, `pós/qt_doc 2`, `qt_mat_bas/qt_doc 3` ⚠️ razão **>1**, fora de `[0,1]` |
+| `iqd` | Qualificação Docente | `sup_grad/qt_doc 3`, `(sup_grad − sem_pós)/qt_doc 2` (corrigido em 2026-11, §2.3.2) |
 | `ise` | Nível Socioeconômico | `(nível_ise − 1)/6`, peso 1 |
 | `ran` | *dummy* randômico | gerador aleatório — **não é indicador** |
 
 Usados por `SchoolQuality` (`build_feature_vector` = `[ifs,itd,ips,ige,iai,ioc]`)
 → `Profile.pm` (escolas semelhantes) e `CensoEscolas::with_all_scores`.
-`IQD`/`ISE` só aparecem em teste. Validade de `ifs`/`ips`/`ige`/`iai`: §2.3.1.
-
-⚠️ `iqd` viola a premissa `[0,1]` (razão aluno/docente) — sinal de normalização
-incompleta, a corrigir junto da promoção.
+`IQD`/`ISE` só aparecem em teste. Validade de `ifs`/`ips`/`ige`/`iai`: §2.3.1;
+do `iqd`: §2.3.2.
 
 #### 2.3.1 Validade: indicadores de condição, não de resultado
 
@@ -191,6 +189,37 @@ Leitura:
 - **Não usar estes indicadores como explicação do desempenho** (ex.: "a escola
   tem IDEB baixo por causa da infraestrutura") sem controlar o nível
   socioeconômico.
+
+#### 2.3.2 `iqd`: fórmula corrigida e validade
+
+Medido em 2026-11-10 (nota técnica 184) no mesmo universo do §2.3.1.
+
+**Defeito da fórmula antiga.** O terceiro componente, a razão alunos/docentes
+(peso 3), não ficava em `[0,1]` (média 18, máximo 149) e dominava a nota: o
+`iqd` valia em média 7,2 (máximo 56) e tinha ρ = 0,999 com essa razão. Media
+tamanho de turma, não qualificação. A fração com pós-graduação também passava
+de 1 em 2,4% das escolas, porque somava títulos (especialização, mestrado,
+doutorado), e um docente pode ter mais de um.
+
+**Fórmula atual.** Dois componentes, frações do quadro da educação básica:
+superior completo (peso 3) e alguma pós-graduação, contada como graduados
+menos os sem pós (peso 2). A razão alunos/docentes saiu: capacidade de
+atendimento já está em `score_capacidade_atendimento` (sistema B).
+
+| | `iqd` |
+|---|---|
+| Média (dp) | 0,76 (0,14) |
+| Escolas no teto / no zero | 1% / 0% |
+| ρ com o INSE | 0,09 |
+| ρ com o IDEB, bruto (médio / fund. I / fund. II) | −0,19 / 0,28 / 0,08 |
+| β padronizado descontando INSE, UF e rede | 0,10 / 0,06 / 0,01 |
+
+Leitura: quase independente do nível socioeconômico (ρ 0,09), ao contrário
+dos indicadores de infraestrutura. O efeito próprio no IDEB é pequeno, maior
+no ensino médio, onde o bruto é negativo por composição de rede (redes com
+mais pós-graduados atendem alunos de IDEB mais baixo). Mesmo critério do
+§2.3.1: o teste `t/02-models/indicators/quality.t` exige escala, variação e
+cobertura, e deixa a relação com o IDEB como diagnóstico.
 
 ### 2.4 Sistema D — `CensoEscolas::_compute_score` (SQL-in-Perl) · **morto**
 
@@ -260,7 +289,7 @@ Ordem fixada (de baixo para cima):
 Normalização por componente (regra única, herdada do sistema C):
 `undef`/não-numérico → `0`; binário `in_*` → `{0,1}`; proporção → `clamp(0,1)`;
 contagem → `clamp(0,1)` pela razão contra um teto documentado (nunca crua — o
-bug do `iqd` é justamente uma contagem crua).
+`iqd` tinha justamente uma razão crua até 2026-11, §2.3.2).
 
 ### 4.2 Dimensões (blocos) e status
 
@@ -341,7 +370,7 @@ infraestrutura, pedagógico, acessibilidade e tecnologia):
 | acessibilidade_c | `iai` | C | opcional |
 | tecnologia_c | `itd` | C | opcional |
 | oferta_c | `ioc` | C | opcional |
-| qualificacao_docente_c | `iqd` | C | opcional (clampado) |
+| qualificacao_docente_c | `iqd` | C | opcional |
 
 Mapeamento para as dimensões nomeadas no §4.2: *infraestrutura* → `score_infraestrutura`
 (+ `score_sustentabilidade`); *docentes* → `score_capacitacao_docente`; *gestão* →
@@ -352,9 +381,9 @@ Mapeamento para as dimensões nomeadas no §4.2: *infraestrutura* → `score_inf
 
 - **Consumidores de B não mudam**: ranking, similaridade e cluster continuam
   lendo `clean.mv_escolas_scores` **intacto**; a reconciliação vive só no IVET.
-- **`iqd`** viola `[0,1]` no sistema C (razão aluno/docente crua, §2.3); o
-  componente `qualificacao_docente_c` o **clampa** — a correção mora na camada
-  que o consome, sem tocar no indicador de origem.
+- **`iqd`** está em `[0,1]` desde 2026-11 (§2.3.2). Antes, com a razão
+  aluno/docente crua, valia em média 7,2 e o clamp de `qualificacao_docente_c`
+  zerava o componente para quase toda escola; o clamp continua como proteção.
 - **Vazio ≠ zero (#154)**: score `NA` (escola inativa/sem dado) vira componente
   `NA` e fica fora do denominador; sem nenhum componente a dimensão A é `NA`.
 - **Código**: `analysis/edumapsr/R/ivet-escola.R` (`ivet_bloco_escola()`,

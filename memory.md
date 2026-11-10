@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (at) — IQD corrigido (PR #360)
+
+- #359 mergeado (`59f1c32`).
+- IQD media tamanho de turma: a razão alunos/docentes (peso 3, sem
+  normalizar) dominava (média 7,2; ρ 0,999 com a razão). Fórmula nova: superior
+  (3) + pós contada como graduados − sem pós (2), em [0,1]. Decisão do usuário
+  (corrigir, não só o teste). Nota **184**, `ivet.md` §2.3.2.
+- `indicators/quality.t` no molde de construto (escala, variação, cobertura;
+  IDEB como diagnóstico).
+
 ## Sessão 2026-11-10 (as) — indicadores avaliados por construto (PR #359)
 
 - IFS/IPS/IGE/IAI: correlação bruta com o IDEB até 0,41, mas quase toda

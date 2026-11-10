@@ -22,8 +22,8 @@
 #   - binário `in_*`        → {0,1};
 #   - proporção             → clamp(0,1);
 #   - contagem              → clamp(0,1) pela razão contra um teto documentado
-#                             (nunca crua — o defeito do `iqd` é uma contagem
-#                             crua, §2.3);
+#                             (nunca crua — o `iqd` tinha uma razão crua até
+#                             2026-11, §2.3.2);
 #   - peso IGUAL entre dimensões disponíveis (W=1) — default reprodutível;
 #   - dimensão ausente NÃO é 0: entra como `NA` e fica FORA do denominador
 #     (não penaliza o território por falta de dado — §4.3 / #154);

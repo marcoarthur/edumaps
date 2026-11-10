@@ -34,8 +34,8 @@
 #   oferta_c                ioc (sistema C)              0–1   1 − clamp(x)
 #   qualificacao_docente_c  iqd (sistema C)              0–1   1 − clamp(x)†
 #
-#   † o `iqd` do sistema C viola `[0,1]` (razão aluno/docente crua, §2.3); aqui
-#     é clampado — a correção fica registrada na camada que o consome.
+#   † o `iqd` está em `[0,1]` desde 2026-11 (ivet.md §2.3.2); até então trazia
+#     uma razão aluno/docente crua. O clamp segue como proteção.
 #
 # Vazio ≠ zero (#154): um score `NA` (escola inativa / sem dado) vira componente
 # `NA` e fica **fora** do denominador (não penaliza a escola por falta de dado);
@@ -85,8 +85,8 @@ ivet_componente_score <- function(score, teto = IVET_ESCOLA_TETO_SCORE) {
 #' Componente opcional do bloco A a partir de um indicador 0–1 do sistema C.
 #'
 #' O sistema C já é `[0,1]` e "quanto melhor, maior"; o componente é invertido
-#' para a direção do IVET e **clampado** — o que corrige o `iqd`, que devolve uma
-#' razão aluno/docente crua `> 1` (§2.3). `NA` devolve `NA` (nunca 0 — #154).
+#' para a direção do IVET e **clampado**, por proteção contra um indicador fora
+#' da escala (o `iqd` foi um até 2026-11, §2.3.2). `NA` devolve `NA` (nunca 0 — #154).
 #'
 #' @param x indicador do sistema C (`iai`, `itd`, `ioc`, `iqd`), em `[0,1]`.
 #' @return numérico em `[0,1]` (maior = mais vulnerável), ou `NA` se `x` for
@@ -115,8 +115,8 @@ ivet_componente_indicador <- function(x) {
 #' @param score_capacidade_atendimento,score_infraestrutura,score_capacitacao_docente,score_diversidade_discente,score_capacidade_gestora,score_sustentabilidade
 #'   scores 0–10 do sistema B (`clean.mv_escolas_scores`).
 #' @param iai,itd,ioc,iqd indicadores 0–1 do sistema C (acessibilidade,
-#'   tecnologia, oferta, qualificação docente, na ordem do §2.3). O `iqd` é
-#'   clampado (viola `[0,1]` no sistema C).
+#'   tecnologia, oferta, qualificação docente, na ordem do §2.3). Todos são
+#'   clampados, por proteção.
 #' @param teto_score teto da escala do sistema B (default 10).
 #' @return vetor nomeado com os 10 componentes (6 de B + 4 de C).
 #' @export

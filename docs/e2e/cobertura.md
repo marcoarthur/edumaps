@@ -8,6 +8,19 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-10 (ar) (IQD corrigido e avaliado por construto)
+
+Branch `fix/iqd-qualificacao-docente`. Indicador da camada de análise, só usado
+em teste e num componente opcional do IVET; nenhuma tela mudou.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `indicators/quality.t`: IQD em [0,1], variação, teto/zero e cobertura em 5 UFs | host | 🟢 |
+| IQD antigo: média 7,2, ρ 0,999 com a razão aluno/docente (medição avulsa) | host | 🔴 → corrigido |
+| Testes de modelos (`t/02-models`, 34 arquivos) | host | 🟢 |
+| Testes do IVET no pacote R | host | 🟢 |
+| Imagens `backend` e `minion` reconstruídas | docker | 🟢 |
+
 ## Rodada 2026-11-10 (aq) (indicadores avaliados por construto)
 
 Branch `test/indicadores-validade-construto`. Só teste e documentação; nenhuma

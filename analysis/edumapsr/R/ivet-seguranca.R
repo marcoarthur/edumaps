@@ -9,7 +9,7 @@
 #
 # Direção: o IVET mede **vulnerabilidade** (quanto maior, pior). O componente é a
 # **taxa por 100 mil habitantes** do evento, normalizada por um teto documentado
-# (§4.1: contagem nunca entra crua — o defeito do `iqd` é uma contagem crua):
+# (§4.1: contagem nunca entra crua — o `iqd` tinha uma razão crua até 2026-11):
 #
 #   componente                      bruto (tabela)                normalização
 #   ------------------------------  ----------------------------  ----------------

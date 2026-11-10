@@ -1,361 +1,174 @@
 use strict;
 use warnings;
+use utf8;
 use lib qw(t/lib lib);
 use Imports;
 use CI;
-use Utils qw(build_r_dataframe);
-# Valida os indicadores contra uma planilha gerada por R::Pipe e contra
-# clean.school_indicators — as duas coisas vêm do job de análise.
-# BEGIN porque os `use ok` rodam em tempo de compilacao e emitem testes: o
-# skip_all precisa vir antes deles, senao o prove reclama "You planned 0 tests
-# but ran N".
-BEGIN { CI->skip_r('IQD/IDEB comparados com o R e com school_indicators') }
+# Qualidade do indicador de qualificação docente (IQD), com o nível
+# socioeconômico (ISE) como referência.
+#
+# O IQD mede a formação do quadro docente (superior e pós-graduação), uma
+# condição da escola, não um resultado. Por isso o teste NÃO exige que ele
+# preveja o IDEB: exige que esteja em [0,1], tenha variação, não fique colado
+# no teto ou no zero e não dependa de campos ausentes. A relação com o IDEB
+# sai como diagnóstico, por etapa e descontando o nível socioeconômico (nota
+# técnica 184 e docs/analises/ivet.md, §2.3.2). Mesmo molde de
+# t/02-models/indicators_quality.t.
+#
+# BEGIN porque os `use ok` rodam em tempo de compilação e emitem testes.
+BEGIN { CI->skip_r('qualificação docente comparada no R') }
 use ok 'EduMaps::Schema';
 use ok 'EduMaps::Analysis::R::Pipe';
 use ok 'EduMaps::Model::Indicator::School::IQD';
 use ok 'EduMaps::Model::Indicator::School::ISE';
+
+use Mojo::File qw(tempfile);
 use Text::Table;
 
-my $schema = EduMaps::Schema->go;
-my $tag = '[indicator quality] qualidade dos índices:';
-my $municipio = 'São José dos Campos';
-
-# --------------------------------------------------------------------
-# Critérios de relevância estatística de um indicador
-#
-# Cada critério mede uma coisa DIFERENTE e não-redundante entre si:
-#
-#   - significância (p_max): distingue sinal de ruído amostral. Não diz
-#     nada sobre o TAMANHO do efeito - com n grande, ate uma correlação
-#     minúscula fica "estatisticamente significativa". Continua sendo a
-#     correlação de Spearman UNIVARIADA (indicador vs nota), independente
-#     de qualquer fórmula/confundidor usado na regressão - rho mede
-#     associação monotônica bruta, não é afetado por controles.
-#
-#   - força de associação monotônica (rho_min): idem, correlação de
-#     Spearman, robusta a outliers e a relações não-lineares (desde que
-#     monotônicas). Limiares clássicos de Cohen (1988): |rho| ~ 0.10
-#     efeito pequeno, ~0.30 médio, ~0.50 grande. rho_min=0.15 fica entre
-#     pequeno e médio.
-#
-#   - poder explicativo INCREMENTAL (r2_min): quanto de variância do IDEB
-#     o indicador acrescenta a um modelo linear, ALÉM do que os
-#     confundidores da fórmula (se houver) já explicam sozinhos. Ou seja,
-#     r2_gain = R²(modelo completo) - R²(modelo só com os confundidores).
-#
-#     Isso generaliza o r2 simples do teste anterior: para um indicador
-#     sem confundidores na fórmula, o "modelo nulo" é só o intercepto,
-#     cujo R² é 0 por definição - logo r2_gain = R²(modelo completo),
-#     exatamente como antes. Os limiares de Cohen para r² continuam
-#     valendo (~0.01 pequeno, ~0.09 médio, ~0.25 grande) porque r2_gain
-#     está na mesma escala/semântica de r² - só que agora "descontando"
-#     o que já era explicado por variáveis de controle.
-#
-#     Sem essa correção, comparar R² bruto entre um indicador com fórmula
-#     simples e outro com confundidores seria injusto: adicionar QUALQUER
-#     termo a uma regressão aumenta R² mecanicamente, então um indicador
-#     fraco com uma fórmula "carregada" de confundidores pareceria melhor
-#     só por causa do controle, não por mérito próprio.
-#
-# NÃO usamos "ganho de RMSE sobre o modelo nulo" como critério de
-# aprovação separado (só como diagnóstico na tabela): numa regressão
-# linear, RMSE_ganho é uma função determinística de r2_gain do MESMO
-# ajuste, então gatear nos dois seria o mesmo critério contado duas
-# vezes em escalas diferentes - foi exatamente isso que causou a
-# confusão original com 'iqd' (rho passava, "ganho RMSE" não, sem que
-# a relação matemática entre os dois estivesse documentada em lugar
-# nenhum).
-# --------------------------------------------------------------------
-my %thresholds = (
-  p_max   => 0.10, # significância a 90% de confiança
-  rho_min => 0.15, # entre efeito pequeno (0.10) e médio (0.30) - Cohen 1988
-  r2_min  => 0.09, # piso do efeito médio para r² (ou r²_gain) - Cohen 1988
-  n_min   => 5,
+# UFs de regiões diferentes: um município só (o teste antigo usava São José
+# dos Campos) tem condições parecidas entre escolas e achata a associação.
+my @UFS    = qw(DF SP BA PA RS);
+my $ANO    = 2023;
+my %limite = (
+  n_min_etapa => 200,    # linhas escola×etapa por etapa
+  dp_min      => 0.05,   # desvio-padrão mínimo do indicador
+  teto_max    => 0.50,   # fração máxima de escolas no valor 1
+  zero_max    => 0.50,   # fração máxima de escolas no valor 0
+  ausente_max => 0.10,   # fração máxima de escolas com campo ausente
 );
 
-# --------------------------------------------------------------------
-# Fórmulas por indicador
-#
-# Cada entrada define o lado direito (RHS) da fórmula usada no lm() para
-# medir o efeito do indicador, e o RHS do modelo "nulo" correspondente -
-# ou seja, o modelo de comparação para calcular r2_gain/rmse_gain (ver
-# nota acima). 'covariates' lista as colunas extras (além do próprio
-# indicador e de 'nota') que a fórmula usa e que precisam ser
-# carregadas/injetadas no dataframe R.
-#
-# Indicadores que não aparecem aqui usam o default:
-#   rhs => "<code>", null_rhs => "1", covariates => []
-# (equivalente ao comportamento original: regressão simples indicador ~ nota,
-# comparado contra o modelo de intercepto/média global.)
-#
-# 'iqd' entra aqui porque a análise anterior mostrou correlação
-# INSTÁVEL entre municípios (positiva em Brasília, negativa em São Paulo,
-# ambas com p<0.0001 e n grande o suficiente para não ser ruído) - um
-# padrão clássico de confundimento por composição de rede de ensino
-# (paradoxo de Simpson). Controlar por 'tp_dependencia' testa se o
-# efeito do indicador se mantém DENTRO de cada rede, em vez de misturado
-# entre redes com perfis de alunado muito diferentes.
-# --------------------------------------------------------------------
-my %formulas = (
-  iqd => {
-    rhs        => 'iqd + factor(tp_dependencia)',
-    null_rhs   => 'factor(tp_dependencia)',
-    covariates => [qw/tp_dependencia/],
-  },
-);
+my $iqd = EduMaps::Model::Indicator::School::IQD->new;
+my $ise = EduMaps::Model::Indicator::School::ISE->new;
+my @indicators = ($iqd, $ise);
+my @codes      = map { $_->code } @indicators;
+# O ISE é o próprio nível socioeconômico: entra na distribuição e na
+# correlação bruta como referência, nunca no ajuste por INSE.
+my @ajustaveis = ($iqd->code);
 
-sub formula_for {
-  my $code = shift;
-  my $cfg  = $formulas{$code} // {};
-  return {
-    rhs        => $cfg->{rhs}        // $code,
-    null_rhs   => $cfg->{null_rhs}   // '1',
-    covariates => $cfg->{covariates} // [],
-  };
+my @col_docentes = $iqd->extra_cols->@*;
+
+my $dbh = EduMaps::Schema->go->storage->dbh;
+my $sql = sprintf <<~'SQL', join ',', map {"d.$_"} @col_docentes;
+  SELECT e.co_entidade, e.sg_uf, e.tp_dependencia, i.etapa, i.nota_media,
+         inse.media_inse, inse.inse_classificacao, %s
+    FROM clean.censo_escolas e
+    JOIN clean.ideb_notas_escolas i
+      ON i.id_escola = e.co_entidade AND i.ano = ? AND i.nota_media > 0
+    LEFT JOIN clean.inse inse ON inse.id_escola = e.co_entidade
+    LEFT JOIN clean.censo_docentes d ON d.co_entidade = e.co_entidade
+   WHERE e.tp_situacao_funcionamento = 1 AND e.sg_uf = ANY(?)
+  SQL
+
+my $sth = $dbh->prepare($sql);
+$sth->execute($ANO, \@UFS);
+
+# Uma linha por escola×etapa: o IDEB tem escala diferente em cada etapa.
+my $csv = tempfile(SUFFIX => '.csv');
+my $fh  = $csv->open('>:encoding(UTF-8)');
+print $fh join(',', qw(co_entidade sg_uf dependencia etapa nota media_inse n_ausente), @codes), "\n";
+my %linhas_por_etapa;
+while (my $r = $sth->fetchrow_hashref) {
+  my $ausentes = grep { !defined $r->{$_} } @col_docentes;
+  print $fh join(',',
+    @$r{qw(co_entidade sg_uf tp_dependencia etapa nota_media)},
+    $r->{media_inse} // 'NA', $ausentes,
+    map { $_->calculate($r) } @indicators), "\n";
+  $linhas_por_etapa{ $r->{etapa} }++;
+}
+close $fh;
+
+ok(scalar(keys %linhas_por_etapa), "há IDEB $ANO nas UFs @UFS")
+  or do { done_testing; exit };
+for my $etapa (sort keys %linhas_por_etapa) {
+  cmp_ok($linhas_por_etapa{$etapa}, '>=', $limite{n_min_etapa},
+    "amostra suficiente em $etapa ($linhas_por_etapa{$etapa} linhas)");
 }
 
-sub is_significant {
-  my $res = shift;
-  return defined $res->{p_val} && $res->{p_val} < $thresholds{p_max};
-}
-
-sub has_monotonic_association {
-  my $res = shift;
-  return defined $res->{rho} && $res->{rho} >= $thresholds{rho_min};
-}
-
-sub has_explanatory_power {
-  my $res = shift;
-  return defined $res->{r2_gain} && $res->{r2_gain} >= $thresholds{r2_min};
-}
-
-# Um indicador é considerado relevante apenas se passar nos TRÊS
-# critérios simultaneamente - cada um cobre uma lacuna que os outros
-# dois não cobrem.
-sub indicator_is_relevant {
-  my $res = shift;
-  return 0 unless defined $res->{rho} && defined $res->{p_val} && defined $res->{r2_gain};
-  return is_significant($res) && has_monotonic_association($res) && has_explanatory_power($res);
-}
-
-# Colunas extras trazidas via join (docente, inse), alem das nativas de
-# CensoEscolas ja cobertas por get_columns(). Ver nota sobre get_columns()
-# vs +select/+as no merge explicito abaixo.
-my @EXTRA_DOCENTE_COLS = qw(
-  qt_doc_bas
-  qt_doc_bas_esco_sup_grad
-  qt_doc_bas_esco_sup_pos_espec
-  qt_doc_bas_esco_sup_pos_mestra
-  qt_doc_bas_esco_sup_pos_douto
-);
-my @EXTRA_INSE_COLS = qw(media_inse inse_classificacao);
-my @EXTRA_MAT_COLS = qw(qt_mat_bas);
-
-subtest ' - Validação estatística dos indicadores com IDEB usando R::Pipe ' => sub {
-  # 'docente' e has_many + INNER JOIN (escolas sem nenhum docente
-  # registrado, ex: paralisadas, saem do resultset - o que e desejavel
-  # aqui). 'inse' e has_one, portanto LEFT JOIN por padrao (escolas sem
-  # INSE continuam no resultset, so com inse_classificacao undef).
-  my $schools_rs = $schema->resultset('CensoEscolas')
-    ->search({ 'me.no_municipio' => $municipio })
-    ->join([qw/docente inse matricula/])
-    ->search(undef, {
-      '+select' => [
-        (map { "docente.$_" } @EXTRA_DOCENTE_COLS),
-        (map { "inse.$_" } @EXTRA_INSE_COLS),
-        (map { "matricula.$_" } @EXTRA_MAT_COLS),
-      ],
-      '+as' => [ @EXTRA_DOCENTE_COLS, @EXTRA_INSE_COLS, @EXTRA_MAT_COLS ],
-    });
-
-  my @indicators = (
-    EduMaps::Model::Indicator::School::IQD->new,
-    EduMaps::Model::Indicator::School::ISE->new,
-  );
-  my @codes = map { $_->code } @indicators;
-
-  # Colunas de covariáveis (confundidores) exigidas pelas fórmulas dos
-  # indicadores efetivamente em uso - união de todas, sem duplicar.
-  my %covariate_cols;
-  for my $code (@codes) {
-    $covariate_cols{$_} = 1 for @{ formula_for($code)->{covariates} };
-  }
-  my @EXTRA_COVARIATE_COLS = sort keys %covariate_cols;
-
-  # 2. Extrair scores, covariáveis e notas do IDEB
-  my @dataset;
-  while (my $school = $schools_rs->next) {
-    my $ultimo_ideb = $school->nota_ideb->search(
-      { nota_media => { '!=' => undef } },
-      { order_by => { -desc => 'ano' }, rows => 1 }
-    )->first;
-    next unless $ultimo_ideb;
-    my $nota = $ultimo_ideb->nota_media;
-    next if $nota <= 0;
-
-    my %data = $school->get_columns;
-
-    # merge explicito das colunas extras trazidas via +select/+as - nao
-    # confiamos em get_columns() trazer isso sozinho (comportamento
-    # inconsistente entre versoes do DBIx::Class)
-    for my $extra (@EXTRA_DOCENTE_COLS, @EXTRA_INSE_COLS) {
-      my $val = eval { $school->get_column($extra) };
-      $data{$extra} = $val unless $@;
-    }
-
-    my %scores;
-    for my $ind (@indicators) {
-      $scores{$ind->code} = $ind->calculate(\%data);
-    }
-
-    my %covariates = map { $_ => $data{$_} } @EXTRA_COVARIATE_COLS;
-
-    push @dataset, {
-      co_entidade => $school->co_entidade,
-      nota        => $nota,
-      scores      => \%scores,
-      covariates  => \%covariates,
-    };
-  }
-
-  my $n = scalar @dataset;
-  diag "Número de escolas em $municipio para validação: $n";
-  if ($n < $thresholds{n_min}) {
-    fail("Amostra insuficiente ($n < $thresholds{n_min}) - pulando análise estatística.");
-    return;
-  }
-
-  # 3. Preparar dados e construir o dataframe R de forma dinâmica usando o Helper
-  my %column_data = (
-    nota => [ map { $_->{nota} } @dataset ]
-  );
-  for my $code (@codes) {
-    $column_data{$code} = [ map { $_->{scores}{$code} } @dataset ];
-  }
-  for my $cov (@EXTRA_COVARIATE_COLS) {
-    $column_data{$cov} = [ map { $_->{covariates}{$cov} } @dataset ];
-  }
-  my $r_df_definition = build_r_dataframe('df', \%column_data);
-
-  # 4. Construir o literal R com as fórmulas por indicador
-  my $formulas_r_literal = "list(\n" . join(",\n", map {
-    my $code = $_;
-    my $f = formula_for($code);
-    qq{    $code = list(rhs = "$f->{rhs}", null_rhs = "$f->{null_rhs}")};
-  } @codes) . "\n  )";
-
-  # 5. Construir script R dinâmico injetando as estatísticas e gerando JSON no final
-  my $r_codes_array = "c(" . join(',', map { "'$_'" } @codes) . ")";
-  my $script_conteudo = <<~"EOS";
+my $r_codes = 'c(' . join(',', map {"'$_'"} @codes) . ')';
+my $r_ajust = 'c(' . join(',', map {"'$_'"} @ajustaveis) . ')';
+my $arquivo = $csv->to_string;
+my $script  = <<~"EOS";
   library(jsonlite)
-  $r_df_definition
-  codes <- $r_codes_array
-  formulas <- $formulas_r_literal
-  results <- list()
-  for (code in codes) {
-    f <- formulas[[code]]
+  d <- read.csv('$arquivo', stringsAsFactors = FALSE)
+  codes <- $r_codes
+  ajustaveis <- $r_ajust
+  z <- function(x) (x - mean(x)) / sd(x)
 
-    # Correlação de Spearman - univariada (indicador vs nota), não é
-    # afetada por confundidores/fórmula
-    sp <- cor.test(df[[code]], df\$nota, method='spearman', exact=FALSE)
-    rho <- as.numeric(sp\$estimate)
-    p_val <- as.numeric(sp\$p.value)
+  u <- d[!duplicated(d\$co_entidade), ]
+  dist <- lapply(setNames(codes, codes), function(k) list(
+    media   = mean(u[[k]]),
+    dp      = sd(u[[k]]),
+    min     = min(u[[k]]),
+    max     = max(u[[k]]),
+    teto    = mean(u[[k]] >= 0.9999),
+    zero    = mean(u[[k]] == 0),
+    rho_ise = cor(u[[k]], u\$media_inse, method = 'spearman', use = 'complete.obs')
+  ))
 
-    # Modelo completo (indicador + confundidores da fórmula) vs modelo
-    # nulo (só os confundidores, ou só o intercepto quando não há)
-    fit_full <- lm(as.formula(paste("nota ~", f\$rhs)), data = df)
-    fit_null <- lm(as.formula(paste("nota ~", f\$null_rhs)), data = df)
+  etapas <- sort(unique(d\$etapa))
+  assoc <- lapply(setNames(etapas, etapas), function(e) {
+    x <- d[d\$etapa == e, ]
+    xa <- x[!is.na(x\$media_inse), ]
+    lapply(setNames(codes, codes), function(k) {
+      bruto <- cor(x[[k]], x\$nota, method = 'spearman')
+      ajust <- if (k %in% ajustaveis && nrow(xa) > 30 && sd(xa[[k]]) > 0) {
+        f <- lm(z(nota) ~ z(xa[[k]]) + media_inse + factor(sg_uf) + factor(dependencia), data = xa)
+        unname(coef(f)[2])
+      } else NA
+      list(n = nrow(x), rho_bruto = bruto, beta_ajustado = ajust)
+    })
+  })
 
-    r2_full <- as.numeric(summary(fit_full)\$r.squared)
-    r2_null <- as.numeric(summary(fit_null)\$r.squared)
-    r2_gain <- r2_full - r2_null
-
-    rmse_full <- as.numeric(sqrt(mean(fit_full\$residuals^2)))
-    rmse_null <- as.numeric(sqrt(mean(fit_null\$residuals^2)))
-    rmse_gain <- if (rmse_null > 0) (rmse_null - rmse_full) / rmse_null else 0
-
-    # Coeficiente e p-valor PRÓPRIOS do termo do indicador dentro do
-    # modelo completo (controlando pelos confundidores, quando houver) -
-    # diagnóstico complementar ao rho univariado
-    coefs <- summary(fit_full)\$coefficients
-    coef_val <- if (code %in% rownames(coefs)) as.numeric(coefs[code, "Estimate"]) else NA
-    coef_p   <- if (code %in% rownames(coefs)) as.numeric(coefs[code, "Pr(>|t|)"]) else NA
-
-    # SEM TRATAMENTO SILENCIOSO DE NA: Deixamos estourar se houver inconsistência nos vetores
-    results[[code]] <- list(
-      rho = rho,
-      p_val = p_val,
-      r2 = r2_full,
-      r2_null = r2_null,
-      r2_gain = r2_gain,
-      rmse = rmse_full,
-      rmse_null = rmse_null,
-      rmse_gain = rmse_gain,
-      coef = coef_val,
-      coef_p = coef_p,
-      formula = f\$rhs
-    )
-  }
-  cat(jsonlite::toJSON(results, auto_unbox=TRUE))
-  quit(status = 0)
+  cat(toJSON(list(
+    n_escolas = nrow(u),
+    ausente   = mean(u\$n_ausente > 0),
+    dist      = dist,
+    assoc     = assoc
+  ), auto_unbox = TRUE, na = 'null', digits = 6))
   EOS
 
-  # 6. Executar via Pipe nativo do EduMaps
-  my $rpipe = EduMaps::Analysis::R::Pipe->new;
-  my $r_params = {
-    script => $script_conteudo,
-    paths => [],
+my $r = eval { EduMaps::Analysis::R::Pipe->new->run({script => $script, paths => []}) };
+ok($r, 'R devolveu as estatísticas') or do { diag $@; done_testing; exit };
+
+diag sprintf "%d escolas de %s, IDEB %d", $r->{n_escolas}, join('/', @UFS), $ANO;
+
+# Construto: escala, variação e cobertura (critérios de aprovação).
+cmp_ok($r->{ausente}, '<=', $limite{ausente_max},
+  sprintf 'campos de docentes ausentes em %.1f%% das escolas', 100 * $r->{ausente});
+
+my $tab_dist = Text::Table->new('Indicador', 'média', 'dp', 'mín', 'máx', 'no teto', 'no zero', 'ρ com INSE');
+for my $code (@codes) {
+  my $d = $r->{dist}{$code};
+  $tab_dist->add($code, map({ sprintf '%.2f', $_ } @$d{qw(media dp min max)}),
+    map({ sprintf '%.0f%%', 100 * $_ } @$d{qw(teto zero)}), sprintf '%.2f', $d->{rho_ise} // 'NaN');
+  subtest "$code: em [0,1] e discrimina escolas" => sub {
+    cmp_ok($d->{min},  '>=', 0, sprintf 'mínimo %.3f', $d->{min});
+    cmp_ok($d->{max},  '<=', 1, sprintf 'máximo %.3f', $d->{max});
+    cmp_ok($d->{dp},   '>=', $limite{dp_min},   sprintf 'dp %.3f', $d->{dp});
+    cmp_ok($d->{teto}, '<=', $limite{teto_max}, sprintf '%.1f%% no teto', 100 * $d->{teto});
+    cmp_ok($d->{zero}, '<=', $limite{zero_max}, sprintf '%.1f%% no zero', 100 * $d->{zero});
   };
-  my $r_out;
-  eval {
-    $r_out = $rpipe->run($r_params);
-  };
-  if ($@) {
-    fail("Falha catastrófica ao rodar o Pipe do R: $@");
-    return;
-  }
+}
+diag "\nDistribuição (uma linha por escola)\n" . $tab_dist;
 
-  # 7. Exibir a tabela de resultados com dados da baseline incluídos
-  my $table = Text::Table->new(
-    'Indicador', 'Fórmula', 'ρ (Spearman)', 'p-valor', 'R² (modelo)', 'R² ganho', 'Ganho RMSE %'
-  );
+# Relação com o IDEB: diagnóstico, não critério (nota técnica 184).
+my %ajusta = map { $_ => 1 } @ajustaveis;
+my $tab_assoc = Text::Table->new('Etapa', 'N',
+  map { ("$_ bruto", $ajusta{$_} ? ("$_ ajust.") : ()) } @codes);
+for my $etapa (sort keys $r->{assoc}->%*) {
+  my $a = $r->{assoc}{$etapa};
+  my @celulas;
   for my $code (@codes) {
-    my $res  = $r_out->{$code};
-
-    my $rho      = defined $res->{rho}      ? sprintf("%.3f", $res->{rho})      : 'NaN';
-    my $p_val    = defined $res->{p_val}    ? sprintf("%.4f", $res->{p_val})    : 'NaN';
-    my $r2       = defined $res->{r2}       ? sprintf("%.3f", $res->{r2})       : 'NaN';
-    my $r2_gain  = defined $res->{r2_gain}  ? sprintf("%.3f", $res->{r2_gain})  : 'NaN';
-    my $gain     = defined $res->{rmse_gain} ? sprintf("%.1f%%", $res->{rmse_gain} * 100) : '0.0%';
-    $table->add($code, $res->{formula} // $code, $rho, $p_val, $r2, $r2_gain, $gain);
+    my $s = $a->{$code};
+    push @celulas, sprintf('%.2f', $s->{rho_bruto});
+    push @celulas, defined $s->{beta_ajustado} ? sprintf('%.2f', $s->{beta_ajustado}) : '-'
+      if $ajusta{$code};
   }
-  diag("\n" . $table);
-
-  # 8. O teste exige que o R rode e devolva estatísticas válidas. Os critérios
-  #    de relevância (significância, associação, poder explicativo) são um
-  #    DIAGNÓSTICO de pesquisa, não critério de aprovação: com os dados reais,
-  #    os indicadores não os atingem (nota técnica 179), e isso é questão
-  #    metodológica, não regressão de código.
+  $tab_assoc->add($etapa, $a->{ $codes[0] }{n}, @celulas);
   for my $code (@codes) {
-    my $res  = $r_out->{$code};
-    ok(defined $res->{rho} && defined $res->{p_val} && defined $res->{r2_gain},
-      "$code: R devolveu estatísticas válidas (sem NA)") or next;
-    my $msg = sprintf(
-      "%s [%s]: rho=%.2f (p=%.3f), R²ganho=%.3f, Ganho RMSE=%.1f%%",
-      $code, $res->{formula} // $code, $res->{rho}, $res->{p_val}, $res->{r2_gain}, ($res->{rmse_gain} // 0) * 100
-    );
-    note(sprintf("Relevância (diagnóstico) %s: %s", indicator_is_relevant($res) ? 'ATINGE' : 'NÃO ATINGE', $msg));
-    indicator_is_relevant($res)
-      or note(join("\n",
-        sprintf("  -> significância (p < %.2f): %s (p=%.4f)",
-          $thresholds{p_max}, is_significant($res) ? 'OK' : 'FALHOU', $res->{p_val}),
-        sprintf("  -> associação monotônica (rho >= %.2f): %s (rho=%.3f)",
-          $thresholds{rho_min}, has_monotonic_association($res) ? 'OK' : 'FALHOU', $res->{rho}),
-        sprintf("  -> poder explicativo incremental (r2_gain >= %.2f): %s (r2_gain=%.3f, r2_modelo=%.3f, r2_nulo=%.3f)",
-          $thresholds{r2_min}, has_explanatory_power($res) ? 'OK' : 'FALHOU',
-          $res->{r2_gain}, $res->{r2} // 0, $res->{r2_null} // 0),
-      ));
+    ok(defined $a->{$code}{rho_bruto}, "$etapa/$code: correlação calculada (sem NA)");
   }
-};
+}
+diag "\nAssociação com o IDEB (ρ de Spearman bruto; β padronizado descontando INSE, UF e rede)\n" . $tab_assoc;
 
 done_testing;
