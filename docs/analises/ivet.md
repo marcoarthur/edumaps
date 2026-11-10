@@ -144,10 +144,53 @@ Saída com 4 decimais.
 
 Usados por `SchoolQuality` (`build_feature_vector` = `[ifs,itd,ips,ige,iai,ioc]`)
 → `Profile.pm` (escolas semelhantes) e `CensoEscolas::with_all_scores`.
-`IQD`/`ISE` só aparecem em teste (`t/02-models/indicators/quality.t`).
+`IQD`/`ISE` só aparecem em teste. Validade de `ifs`/`ips`/`ige`/`iai`: §2.3.1.
 
 ⚠️ `iqd` viola a premissa `[0,1]` (razão aluno/docente) — sinal de normalização
 incompleta, a corrigir junto da promoção.
+
+#### 2.3.1 Validade: indicadores de condição, não de resultado
+
+Medido em 2026-11-10 (nota técnica 183), em 22.698 escolas em funcionamento
+de DF, SP, BA, PA e RS, cruzadas com o IDEB 2023 de cada etapa (30.672 linhas
+escola×etapa). O teste `t/02-models/indicators_quality.t` refaz a medição.
+
+| | `ifs` | `ips` | `ige` | `iai` |
+|---|---|---|---|---|
+| Média (dp) | 0,80 (0,12) | 0,48 (0,20) | 0,74 (0,20) | 0,29 (0,17) |
+| Escolas no teto / no zero | 1% / 0% | 1% / 1% | 21% / 0% | 0% / 8% |
+| ρ com o INSE | 0,48 | 0,36 | 0,47 | 0,19 |
+| ρ com o IDEB, fundamental I (bruto) | 0,41 | 0,33 | 0,38 | 0,21 |
+| β padronizado, fundamental I, descontando INSE, UF e rede | 0,02 | 0,05 | 0,02 | 0,03 |
+
+(Fundamental II e ensino médio seguem o mesmo padrão: brutos de 0,05 a 0,37,
+ajustados entre −0,02 e 0,04.)
+
+Leitura:
+
+- **A correlação bruta com o IDEB é quase toda nível socioeconômico.** Escolas
+  com mais infraestrutura, recursos e gestão atendem alunos de renda mais alta.
+  Descontado o INSE, o efeito próprio dos quatro indicadores fica entre −0,02
+  e 0,05 desvio-padrão: **na prática, não há relação independente com o
+  IDEB.** É o resultado esperado pela literatura: recursos escolares explicam
+  pouco do desempenho depois do nível socioeconômico.
+- **O teste antigo media um artefato.** Ele usava um município só (Brasília),
+  onde as escolas têm condições parecidas, e pegava "o último IDEB" de cada
+  escola, misturando etapas de escalas diferentes (médias 2023: 5,8 no
+  fundamental I, 5,0 no II e 4,5 no médio). Daí os ρ entre −0,11 e −0,02.
+- **Prever o IDEB não é o critério certo.** Os indicadores descrevem condições
+  e direitos: acessibilidade e gestão democrática valem por si, não pelo que
+  somam à nota. O uso real deles é descrever escolas e achar semelhantes
+  (`SchoolQuality` → `Profile`). Por isso o teste exige **variação e
+  cobertura** (dp ≥ 0,05, no máximo metade das escolas no teto ou no zero,
+  no máximo 10% com campo ausente) e deixa a relação com o IDEB como
+  diagnóstico.
+- **Pontos de atenção:** o `ige` tem 21% das escolas no máximo (discrimina
+  pouco entre as bem geridas) e o `ifs` tem pouca variação (média 0,80).
+  Nenhum campo ausente foi contado como zero nesse universo.
+- **Não usar estes indicadores como explicação do desempenho** (ex.: "a escola
+  tem IDEB baixo por causa da infraestrutura") sem controlar o nível
+  socioeconômico.
 
 ### 2.4 Sistema D — `CensoEscolas::_compute_score` (SQL-in-Perl) · **morto**
 
