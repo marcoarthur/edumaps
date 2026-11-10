@@ -3,13 +3,12 @@ modulo: gestor
 nivel: basico
 publico:
 - gestor
-- professor
 - comunidade
 - administrador
 - desenvolvedor
 status: ativo
 titulo: Ajuda do EduMaps
-ultima_revisao: '2026-10-25'
+ultima_revisao: '2026-11-10'
 ---
 
 # Ajuda do EduMaps
@@ -20,10 +19,21 @@ ultima_revisao: '2026-10-25'
 | Diretório | Público | Foco |
 |---|---|---|
 | [`gestor/`](gestor/README.md) | Diretor/coordenador de escola | Painel da escola, IVET, área de influência, financeiro/folha, comunicação |
-| [`professor/`](professor/README.md) | Professor/docente | *(em definição)* |
-| [`comunidade/`](comunidade/README.md) | Família/responsável/cidadão | Busca pública, painel público, privacidade |
+| [`comunidade/`](comunidade/README.md) | Quem usa sem login: famílias, responsáveis, cidadãos, professores, pesquisadores e investidores | Busca pública, painel público, privacidade |
 | [`administrador/`](administrador/README.md) | Administrador da plataforma | Configurações, bot, fontes, jobs, LGPD |
 | [`desenvolvedor/`](desenvolvedor/README.md) | Contribuidores | Visão geral e apontamentos para `AGENTS.md`/`memory.md` |
+
+### Quem fica de fora dos perfis
+
+- **Professor não tem perfil próprio.** A plataforma não tem conta docente:
+  só gestor e administrador entram com login. O professor aparece como
+  contato que o gestor cadastra (grupos, reuniões, listas com QR, pesquisas)
+  e usa a parte pública como qualquer pessoa, pela ajuda de
+  [`comunidade/`](comunidade/README.md). Um acesso docente, se vier, será uma
+  funcionalidade nova, com issue própria.
+- **Pesquisador e investidor estão em `comunidade/`.** As fichas de
+  `docs/funcionalidades/` citam esses públicos em `audiencia`; na ajuda eles
+  correspondem a `comunidade`, porque usam as mesmas telas públicas.
 
 ## Regras editoriais
 1. **Sem jargão interno.** Nada de "view materializada", "Sqitch", "Minion", "matview", "JSONB".

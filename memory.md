@@ -4,6 +4,15 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (au) — escopo de perfis da ajuda (PR #361, fecha #304)
+
+- #360 mergeado (`86c13d4`); CI do main verde.
+- #304: não há conta docente (`access_role` só `gestor`/`admin`). Decisões do
+  usuário: perfil `professor` encerrado (pasta removida, validador recusa) e
+  `comunidade` = quem usa sem login, incluindo pesquisador e investidor (as
+  fichas mantêm esses públicos em `audiencia`). Nota **185**.
+- Sem deploy/rebuild (só `docs/` e `tools/`). Fila do LXC (12/11) inalterada.
+
 ## Sessão 2026-11-10 (at) — IQD corrigido (PR #360)
 
 - #359 mergeado (`59f1c32`).
