@@ -8,6 +8,20 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-10 (ap) (motor analítico no Docker local e testes no contrato http)
+
+Branch `fix/docker-motor-analitico-http`. Só backend e config do contêiner;
+nenhuma tela mudou.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| Config gerada no contêiner com `analytics_engine => 'http'` | docker | 🟢 |
+| kmeans na fila `default` pego pelo minion do contêiner e concluído (3.555 escolas) | docker | 🟢 |
+| `clustering*.t`, `similarity.t`, `dbic/inject*.t` no contrato http (antes pulados) | host + serviço R do Docker | 🟢 |
+| Skip com o serviço fora do ar (porta errada) | host | 🟢 |
+| Suíte do backend (172 arquivos, 1.373 testes); só `osm.t` falhou, por Overpass fora do ar | host | 🟡 |
+| Imagens `backend` e `minion` reconstruídas | docker | 🟢 |
+
 ## Rodada 2026-11-09 (ao) (DataTable sem adivinhar snippet pelo nome)
 
 Branch `refactor/datatable-cell-snippet`. Componente compartilhado; telas
