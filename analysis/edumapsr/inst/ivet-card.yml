@@ -2,7 +2,7 @@
 # Legível por máquina; testado contra a implementação em
 # tests/testthat/test-ivet-card.R (o card não pode divergir do código).
 card: ivet
-formula: ivet-v1.2
+formula: ivet-v1.3
 leitura: territorial
 unidade: escola como ponto de observacao em contexto territorial
 direcao: maior = mais vulneravel
@@ -142,11 +142,13 @@ bloco_b:
 
 bloco_c:
   # Acesso/mobilidade. A dimensao central de C e o acesso (isocrona); ele entrou
-  # por fases (#278): o piloto do ES carregou clean.isocrona_escolar (Valhalla
-  # auto-hospedado) e os componentes acesso_isocrona (15 min a pe) e
-  # acesso_auto_45min (45 min de carro) entraram no default. Fora do piloto os
+  # por fases (#278, #295): clean.isocrona_escolar (Valhalla auto-hospedado)
+  # cobre Sudeste e Nordeste, e os componentes acesso_isocrona (15 min a pe) e
+  # acesso_auto_45min (45 min de carro) estao no default. Fora da cobertura os
   # componentes sao NA (#154) e C segue lido como EXPOSICAO VIARIA — o que a
   # fonte municipal entrega: sinistros RENAEST + frota RENAVAM.
+  # Desde ivet-v1.3 os acessos usam escala LOGARITMICA entre piso e teto fixos:
+  # a linear saturava (63% das escolas >= 0,95 no acesso de carro).
   fonte: analytics.mobilidade_escola + clean.isocrona_escolar
   denominador: clean.populacao_municipal
   default: [risco_sinistros, exposicao_frota, acesso_isocrona, acesso_auto_45min]
@@ -171,21 +173,25 @@ bloco_c:
       teto_nota: "veiculos por habitante (RENAVAM); p90=0,89; proxy de densidade de trafego, nao de acesso"
     acesso_isocrona:
       fonte: clean.isocrona_escolar.populacao_grade
-      normalizacao: "1 - clamp((soma 15min a pe)/teto)"
+      normalizacao: "1 - clamp((log10(pop+1) - log10(piso+1)) / (log10(teto+1) - log10(piso+1))), pop = soma 15min a pe"
+      escala: log
       direcao: "-"
       no_default: false
-      teto: 65000
-      teto_nota: "populacao alcancavel a pe em 15 min (H3 r9); recalibrado na rodada 2 SP+RJ+NE (#295, 81.925 escolas, 2026-10-23: p50=7201, p90=35229, p99=61349)"
-      cobertura: "expansao nacional SP+RJ+NE (81.926 escolas); fora dela NA (#154), nao zera"
+      piso: 0
+      teto: 60000
+      teto_nota: "populacao alcancavel a pe em 15 min (H3 r9); 98.722 escolas do Sudeste e Nordeste (#295, 2026-11-10): p10=57, p50=6829, p90=32819, p99=59732; teto ~p99, piso 0 (sem populacao = pior acesso). Na escala linear (ivet-v1.2, teto 65000) 36% das escolas ficavam >= 0,95; no log, 1,7%"
+      cobertura: "Sudeste e Nordeste (#295); fora dela NA (#154), nao zera"
     acesso_auto_45min:
       fonte: clean.isocrona_escolar.populacao_grade
-      normalizacao: "1 - clamp((soma 45min de carro)/teto)"
+      normalizacao: "1 - clamp((log10(pop+1) - log10(piso+1)) / (log10(teto+1) - log10(piso+1))), pop = soma 45min de carro"
+      escala: log
       direcao: "-"
       no_default: false
+      piso: 500
       teto: 20000000
-      teto_nota: "populacao regional alcancavel em 45 min de carro (H3 r7, costing auto do Valhalla); recalibrado na rodada 2 SP+RJ+NE (#295, 81.925 escolas, 2026-10-23: p50=520572, p90=12400728, p99=19486927; era 5.000.000 na expansao ES+MG)"
-      cobertura: "expansao nacional SP+RJ+NE (81.926 escolas); fora dela NA (#154), nao zera"
-      vies_nota: "viés de fronteira residual na borda MG<->BA, minimizado pela cobertura ampliada"
+      teto_nota: "populacao regional alcancavel em 45 min de carro (H3 r7, costing auto do Valhalla); 98.722 escolas do Sudeste e Nordeste (#295, 2026-11-10): p1=365, p10=23337, p50=389528, p90=10835432, p99=19327527; piso ~p1, teto ~p99. Na escala linear (ivet-v1.2) 63% das escolas ficavam >= 0,95 e a mediana marcava 0,98; no log, 1,7% e mediana 0,36"
+      cobertura: "expansao Sudeste e Nordeste (#295); fora dela NA (#154), nao zera"
+      vies_nota: "viés de fronteira residual nas bordas com regioes ainda nao carregadas (ex.: MG<->GO, BA<->TO); o MG<->BA foi resolvido com o Nordeste"
 
 bloco_d:
   # Atencao basica de saude (CNES + SISAB/PMMB). Distancia da escola a UBS

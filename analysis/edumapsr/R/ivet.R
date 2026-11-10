@@ -45,7 +45,7 @@
 
 #' Versão da fórmula do IVET implementada neste arquivo.
 #' @export
-ivet_versao <- function() "ivet-v1.2"
+ivet_versao <- function() "ivet-v1.3"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export

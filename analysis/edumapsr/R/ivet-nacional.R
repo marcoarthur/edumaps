@@ -123,7 +123,7 @@ ivet_blocos_linha <- function(x, i) {
   )
 }
 
-#' Painel do IVET por escola (fórmula `ivet-v1.2`) a partir das entradas brutas
+#' Painel do IVET por escola (fórmula `ivet-v1.3`) a partir das entradas brutas
 #'
 #' Função **pura** (não toca no banco): recebe um `data.frame` com uma linha por
 #' escola e as colunas brutas dos blocos (ver `IVET_ENTRADAS_COLUNAS`) e devolve
@@ -374,7 +374,7 @@ LEFT JOIN g   ON g.codigo_ibge = ce.codigo_ibge
 ', anos_sql)
 }
 
-#' Mede o IVET `ivet-v1.2` nacional (painel por escola)
+#' Mede o IVET `ivet-v1.3` nacional (painel por escola)
 #'
 #' Abre a conexão analítica (`analytics_db_connection()`), roda a extração
 #' (`ivet_sql_escolas()`) e calcula o painel com `ivet_painel()`. **Não

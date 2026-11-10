@@ -9,7 +9,7 @@ relacionadas:
 - painel-da-escola
 status: parcial
 titulo: IVET — Índice de Vulnerabilidade Educacional Territorial
-ultima_revisao: '2026-10-25'
+ultima_revisao: '2026-11-10'
 ---
 
 # IVET — Índice de Vulnerabilidade de Acesso
@@ -229,11 +229,15 @@ Sim. O IVET mede **vulnerabilidade** de acesso: **maior = mais barreira**.
   `docs/funcionalidades/gestor/area-de-influencia.md`.
 
 > Esta ajuda é **derivada** da formulação técnica do índice
-> (`docs/analises/ivet.md`, fórmula `ivet-v1.2`) e da ficha de coeficientes
+> (`docs/analises/ivet.md`, fórmula `ivet-v1.3`) e da ficha de coeficientes
 > (`docs/analises/ivet-coeficientes.md`). Mudou a fórmula → revise este arquivo.
 
 ## Limitações conhecidas
 
 - Cobertura parcial por fonte/UF.
 - Ausência de dado aparece como **n/d** (nunca é zero, #154).
-- Os tetos dos componentes de acesso foram recalibrados com a cobertura ampliada (SP+RJ+NE).
+- O acesso a pé e de carro só existe para escolas do Sudeste e do Nordeste; nas
+  demais aparece **n/d**.
+- Desde novembro de 2026 o acesso usa uma escala que diferencia melhor as
+  escolas fora das grandes cidades. Por isso o valor de mobilidade (e o IVET)
+  ficou mais baixo para quase todas: não compare com valores anteriores.

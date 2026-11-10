@@ -3,7 +3,8 @@
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
-> **Versão da fórmula**: `ivet-v1.2` (histórico: `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-10-17.
+> **Versão da fórmula**: `ivet-v1.3` (histórico: `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-10
+> (`ivet-v1.3`: escala logarítmica nos dois acessos do bloco C, §4.5.5).
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
 > das dimensões territoriais** dependem de dado (#125–#127) e do versionamento
@@ -275,7 +276,7 @@ chamado por ninguém**:
 
 ---
 
-## 4. Fórmula-alvo do IVET `ivet-v1.2` (territorial)
+## 4. Fórmula-alvo do IVET `ivet-v1.3` (territorial)
 
 ### 4.1 Estrutura e ordem de agregação
 
@@ -328,7 +329,7 @@ Regra de peso (v1.2, explícita e auditável):
 - **peso igual entre dimensões disponíveis** (`W_j = 1`) — default reprodutível;
 - qualquer ponderação diferente **exige justificativa registrada** (literatura
   IDEB/DEA, Zotero 10453/10454/10673/10456) e sobe a versão da fórmula
-  (`ivet-v1.3`, …).
+  (`ivet-v1.4`, …).
 - **dimensão ausente não é 0**: entra como `NULL` e fica fora do denominador
   (não penaliza o território por falta de dado — mesma lógica do §4.3 e do #154).
 
@@ -338,7 +339,7 @@ Regra de peso (v1.2, explícita e auditável):
   reproduzível, em vez de quatro (§2).
 - A leitura **territorial** (§1) torna o agregado um índice de *território com
   escola observada*, e não uma média de atributos do prédio.
-- O número publicado fica **rastreável ponta a ponta**: carimba `ivet-v1.2`, o
+- O número publicado fica **rastreável ponta a ponta**: carimba `ivet-v1.3`, o
   `dataset_version` (pin da entrada `raw`) **e** o `transform_version` (pin do
   código `raw`→`clean`→`analytics`), ambos do lockfile de datasets
   ([#135](versionamento_datasets.md)) — ver §4.6.
@@ -679,8 +680,11 @@ censitário).
 |---|---|---|---|
 | risco de sinistros | `sinistros_12m` (RENAEST) | `clamp(taxa100k / 500)` | mais sinistros = + |
 | exposição da frota | `renavam_total_frota` (RENAVAM) | `clamp((frota / pop) / 1)` | mais frota = + |
-| acesso a pé | `Σ populacao_grade` a 15 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 40.000)` | mais acesso = − |
-| acesso de carro | `Σ populacao_grade` a 45 min (`clean.isocrona_escolar`) | `1 − clamp(pop / 5.000.000)` | mais acesso = − |
+| acesso a pé | `Σ populacao_grade` a 15 min (`clean.isocrona_escolar`) | `1 − log_escala(pop; 0, 60.000)` | mais acesso = − |
+| acesso de carro | `Σ populacao_grade` a 45 min (`clean.isocrona_escolar`) | `1 − log_escala(pop; 500, 20.000.000)` | mais acesso = − |
+
+`log_escala(pop; piso, teto) = clamp((log10(pop+1) − log10(piso+1)) /
+(log10(teto+1) − log10(piso+1)))` (`ivet_escala_log`).
 
 - Default `componentes = c("risco_sinistros", "exposicao_frota",
   "acesso_isocrona", "acesso_auto_45min")` — dois de exposição e dois de
@@ -691,13 +695,25 @@ censitário).
   nova fórmula.
 - **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-18, por
   município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
-  `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89); `IVET_TETO_ACESSO_15MIN` = 40.000
-  (**provisório**, recalibrado na expansão ES+MG a 2026-10-20 — 16.782 escolas,
-  p50 ≈ 5.390, p90 ≈ 20.996, p99 ≈ 39.339; valor mantido, o p99 do piloto do ES
-  era 40.590); `IVET_TETO_ACESSO_45MIN`
-  = 5.000.000 (**provisório**, = p99 da mesma expansão — p50 ≈ 169.471,
-  p90 ≈ 4.567.800, p99 ≈ 4.889.715; era 1.750.000 medindo só o ES). Todos
-  recalibrados na expansão nacional.
+  `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89).
+- **Escala dos acessos (`ivet-v1.3`, 2026-11-10, #295)**: logarítmica entre
+  piso e teto fixos — a pé `IVET_PISO_ACESSO_15MIN` = 0 e
+  `IVET_TETO_ACESSO_15MIN` = 60.000; de carro `IVET_PISO_ACESSO_45MIN` = 500 e
+  `IVET_TETO_ACESSO_45MIN` = 20.000.000. Medidos em **98.722 escolas** do
+  Sudeste e do Nordeste: a pé p10 ≈ 57, p50 ≈ 6.829, p90 ≈ 32.819,
+  p99 ≈ 59.732; de carro p1 ≈ 365, p10 ≈ 23.337, p50 ≈ 389.528,
+  p90 ≈ 10,8 mi, p99 ≈ 19,3 mi. Até a `ivet-v1.2` a escala era linear
+  (`1 − clamp(pop/teto)`, tetos 65.000 e 20.000.000) e **saturava**: 36% das
+  escolas ficavam ≥ 0,95 no acesso a pé e 63% no de carro, onde a escola
+  mediana marcava 0,98, quase o mesmo que uma isolada (0,999). Só as
+  metropolitanas se diferenciavam. No log, ≥ 0,95 cai para 1,7% nos dois, o
+  dp fica em 0,22–0,23 e a mediana marca 0,20 (a pé) e 0,37 (carro): sair de
+  mil para 10 mil habitantes alcançáveis pesa o mesmo que de 1 para 10
+  milhões. A **ordem** entre escolas não muda (ρ com o INSE igual nas duas
+  escalas: −0,39 e −0,50); muda o espaçamento, e por isso o **nível** do bloco
+  C cai (média dos dois acessos 0,84 → 0,32) e os valores da `v1.3` não se
+  comparam com os da `v1.2`. Percentil nacional foi descartado: o valor de
+  cada escola mudaria a cada região carregada. Nota técnica 186.
 - **#154**: sem o dado, o componente é `NA` e fica **fora** do denominador da
   dimensão; `0` real (sem sinistros / sem frota) é `0`, e população acessível
   `0` (escola sem população no entorno) é `1` (pior acesso), não `NA`.
@@ -826,7 +842,7 @@ bloco A enquanto C–E forem `NULL`.
 
 **Núcleo da fórmula como código (entregável 3, parte pronta).** A estrutura
 `componente → dimensão → IVET` de §4.1/§4.3 vive como código R **puro** em
-`analysis/edumapsr/R/ivet.R` (fórmula `ivet-v1.2`):
+`analysis/edumapsr/R/ivet.R` (fórmula `ivet-v1.3`):
 
 - `ivet_normalizar()` — binário/proporção/contagem (contagem sempre contra teto);
 - `ivet_dimensao()` — média ponderada dos componentes (`undef`→0);
@@ -903,7 +919,7 @@ Ações de código da reconciliação (executadas no ciclo do entregável 1+2):
   similaridade, cluster) **não** foram alterados.
 - **Follow-ups** (não neste ciclo): remoção definitiva do código morto A/D;
   alinhar o *fallback* em memória de `Profile` (sistema C) ao espaço canônico de
-  B; ponderação registrada (sobe para `ivet-v1.3`).
+  B; ponderação registrada (sobe para `ivet-v1.4`).
 
 
 ---

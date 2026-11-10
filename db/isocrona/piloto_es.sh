@@ -103,3 +103,8 @@ psql_remoto "
          ' | 15min: ' || count(*) FILTER (WHERE tempo_minutos = 15) ||
          ' | 45min: ' || count(*) FILTER (WHERE tempo_minutos = 45)
     FROM clean.isocrona_escolar"
+
+# Cobertura por UF: avisa se alguma UF ficou fora do snapshot vigente (#295).
+echo "[cobertura por UF]"
+EDUMAPS_DB_SSH="$SSH_DB" EDUMAPS_DB_NAME="$DB" \
+  bash "$(dirname "$0")/cobertura_snapshot.sh" || true

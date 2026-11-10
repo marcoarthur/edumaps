@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (av) — acesso do IVET em log e ES/MG fora do snapshot (PR #362, #295)
+
+- #361 mergeado (`14f1a4c`); #304 fechada.
+- #295: a rodada 2 apagou o snapshot `2026-10-20` (ES/MG) sem recarregá-los no
+  `2026-10-21` → 16.796 escolas com acesso `n/d` (a sessão de 23/10 chamou de
+  "superado"; não era). CSVs intactos em `~/Code/Data/osm/piloto_{es_s2,mg}`.
+- Escala linear dos acessos saturava (63% ≥0,95 no carro). Decisão do usuário:
+  **log** com piso/teto fixos → fórmula **`ivet-v1.3`** (pé 0–60.000; carro
+  500–20.000.000). Média dos acessos 0,84 → 0,32. Nota **186**.
+- `db/isocrona/cobertura_snapshot.sh` (acusa UF fora do vigente) e
+  `recarregar_csv.sh` (recarga sem rotear).
+- Imagem `analytic` não tem `testthat`: a suíte em R 4.4.1 fica com o CI.
+- **Quinta 12/11**: cobertura → recarga ES e MG → `deploy_analytics_dev` →
+  reprocessar IVET → fechar #295 e abrir issue Sul/CO/Norte (disco).
+
 ## Sessão 2026-11-10 (au) — escopo de perfis da ajuda (PR #361, fecha #304)
 
 - #360 mergeado (`86c13d4`); CI do main verde.
