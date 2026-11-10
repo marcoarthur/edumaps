@@ -6,10 +6,11 @@ alimenta os componentes `acesso_isocrona` (15 min a pé) e
 (`docs/analises/ivet.md` §4.5.5). Tabela de destino:
 `clean.isocrona_escolar` (grão: escola × tempo × célula H3).
 
-**Status**: piloto no **Espírito Santo** (2.897 escolas, 2026-10-19) e
-expansão **ES re-run + MG** (16.797 escolas, 2026-10-20) com tiles do
-Sudeste e setores da região. Fora do Sudeste o componente é `NA` no IVET
-(#154: ausência nunca vira 0).
+**Status**: Sudeste (ES, MG, RJ, SP) e Nordeste (9 UFs) extraídos, ~98,7 mil
+escolas. SP, RJ e Nordeste estão no snapshot `2026-10-21`; ES e MG precisam
+ser recarregados nele (ver "Snapshot novo precisa levar TODAS as UFs").
+Sul, Centro-Oeste e Norte ainda não foram roteados: lá o componente é `NA` no
+IVET (#154: ausência nunca vira 0).
 
 ## Arquivos
 
@@ -20,6 +21,8 @@ Sudeste e setores da região. Fora do Sudeste o componente é `NA` no IVET
 | `piloto_es.sh` | driver de ponta a ponta: exporta → extrai → carrega → resume |
 | `piloto_rj.sh` | variante da rodada 2 que **reaproveita** o `setores.csv` do Sudeste (já exportado na rodada de SP) e re-exporta só as escolas do RJ |
 | `piloto_nordeste.sh` | rodada 2 do Nordeste inteiro (BA, MA, PE, CE, PB, PI, RN, AL, SE) numa **única** passada de extração, sob tiles do Nordeste (:8004) |
+| `cobertura_snapshot.sh` | escolas por UF em cada snapshot; marca **FORA DO PAINEL** a UF que só existe num snapshot anterior ao vigente (sai com 1). Os três drivers o rodam no fim |
+| `recarregar_csv.sh` | recarrega um CSV já extraído no snapshot vigente, **sem rotear de novo** (recusa snapshot diferente do vigente) |
 
 O driver roda do repo, mas **exporta/carrega via `ssh root@database.edumaps`**
 (o host local não alcança o Postgres do LXC). Os artefatos do piloto (CSVs,
@@ -124,6 +127,38 @@ VALHALLA=http://localhost:8004 \
 
 Todas as UFs da rodada 2 usam o **mesmo** `SNAPSHOT` (a view nacional filtra
 por `max(dt_snapshot)`).
+
+### ⚠️ Snapshot novo precisa levar TODAS as UFs
+
+A view do IVET lê **só o snapshot mais recente** (`max(dt_snapshot)`) de
+`clean.isocrona_escolar`. Uma UF que não foi recarregada no snapshot novo
+**some do painel sem erro**: o acesso dela vira `n/d` (#154) e nada avisa.
+Foi o que aconteceu na rodada 2: SP, RJ e Nordeste foram gravados em
+`2026-10-21`, o snapshot `2026-10-20` (ES e MG) foi apagado para liberar
+disco e as 16.796 escolas de ES e MG saíram do IVET.
+
+Regras:
+
+1. Uma rodada que grava um `SNAPSHOT` novo **recarrega também as UFs já
+   cobertas**. O roteamento não precisa rodar de novo: basta recarregar os
+   CSVs delas (`~/Code/Data/osm/piloto_*/isocrona_escolar.csv`) com o mesmo
+   `SNAPSHOT`.
+2. **Só apagar um snapshot antigo** depois que `cobertura_snapshot.sh` não
+   mostrar nenhuma UF **FORA DO PAINEL**.
+3. Os CSVs são a única cópia fora do banco: não apagá-los enquanto o snapshot
+   que eles alimentam for o vigente.
+
+```bash
+bash db/isocrona/cobertura_snapshot.sh   # rc=1 se alguma UF está fora do vigente
+
+# ES e MG de volta ao snapshot vigente (CSVs da rodada 1, tiles do Sudeste),
+# uma depois da outra: as duas usam o mesmo /tmp/isocrona_escolar.csv no banco
+setsid nohup bash -c '
+  export SNAPSHOT=2026-10-21 TILESET_BUILD_DATE=2026-10-20
+  UF=ES CSV=$HOME/Code/Data/osm/piloto_es_s2/isocrona_escolar.csv bash db/isocrona/recarregar_csv.sh &&
+  UF=MG CSV=$HOME/Code/Data/osm/piloto_mg/isocrona_escolar.csv bash db/isocrona/recarregar_csv.sh
+' >/tmp/recarga_es_mg.log 2>&1 </dev/null &
+```
 
 ### Operação longa: watchdog de memória e desacoplamento da sessão
 

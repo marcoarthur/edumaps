@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # inst/scripts/medir-ivet-nacional.R
 #
-# Mede o IVET `ivet-v1.2` nacional e imprime um resumo. NÃO materializa nada no
+# Mede o IVET `ivet-v1.3` nacional e imprime um resumo. NÃO materializa nada no
 # banco — o IVET não é materializado (decisão de projeto; ver
 # docs/analises/ivet.md §3): o painel é calculado em memória a partir das
 # entradas dos blocos.

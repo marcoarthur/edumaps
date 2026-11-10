@@ -75,12 +75,19 @@ test_that("card: componentes do bloco C batem com o código (acesso + exposiçã
                IVET_TETO_ACESSO_15MIN)
   expect_equal(card$bloco_c$componentes$acesso_auto_45min$teto,
                IVET_TETO_ACESSO_45MIN)
+  # escala logarítmica (ivet-v1.3): piso e escala do card batem com o código
+  expect_equal(card$bloco_c$componentes$acesso_isocrona$piso,
+               IVET_PISO_ACESSO_15MIN)
+  expect_equal(card$bloco_c$componentes$acesso_auto_45min$piso,
+               IVET_PISO_ACESSO_45MIN)
+  expect_equal(card$bloco_c$componentes$acesso_isocrona$escala, "log")
+  expect_equal(card$bloco_c$componentes$acesso_auto_45min$escala, "log")
   # os dois acessos entram invertidos (mais população = menos vulnerável)
   expect_equal(card$bloco_c$componentes$acesso_isocrona$direcao, "-")
   expect_equal(card$bloco_c$componentes$acesso_auto_45min$direcao, "-")
   expect_false(isTRUE(card$bloco_c$componentes$acesso_isocrona$no_default))
   expect_false(isTRUE(card$bloco_c$componentes$acesso_auto_45min$no_default))
-  # a cobertura (expansão nacional SP+RJ+NE) e o residual da borda ficam no card
+  # a cobertura (Sudeste e Nordeste) e o residual da borda ficam no card
   expect_match(card$bloco_c$componentes$acesso_auto_45min$cobertura, "expansao")
   expect_match(card$bloco_c$componentes$acesso_auto_45min$vies_nota, "MG<->BA")
 })

@@ -55,8 +55,8 @@ implementação do projeto.
 
 | campo | valor |
 |---|---|
-| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)`; `acesso_isocrona` = `1 − clamp(pop_acessível_15min/40.000)`; `acesso_auto_45min` = `1 − clamp(pop_acessível_45min/5.000.000)` |
-| Normalização | **clamp** (saturação linear) — ver §4 (divergência) |
+| Fórmula | `risco_sinistros` = `clamp(sinistros_12m/pop × 1e5 / 500)`; `exposicao_frota` = `clamp((frota/pop) / 1)`; `acesso_isocrona` = `1 − log_escala(pop_acessível_15min; 0, 60.000)`; `acesso_auto_45min` = `1 − log_escala(pop_acessível_45min; 500, 20.000.000)`, com `log_escala(p; piso, teto) = clamp((log10(p+1) − log10(piso+1)) / (log10(teto+1) − log10(piso+1)))` (`ivet-v1.3`) |
+| Normalização | exposição: **clamp** (saturação linear) — ver §4 (divergência); acessos: **logarítmica** entre piso e teto (`ivet-v1.3`; a linear saturava, ver `ivet.md` §4.5.5) |
 | Peso | igual entre os componentes disponíveis |
 | Fonte | RENAEST + RENAVAM (`analytics.mobilidade_escola`) + isócrona H3 (`clean.isocrona_escolar`, piloto ES) |
 | **Referência** | **construto padrão de segurança viária** (lastro externo). A **OMS** trata *registered vehicles* como indicador de *road safety* (**WHO GHO, IMRID 194**) e a **GSRRS 2023** dá a taxa de mortes **por 100 mil habitantes e por 100 mil veículos**; o **ITF/IRTAD** (*Road Safety Annual Report 2024*) lista **frota de veículos** e **população** explicitamente como *exposure data* e publica as mortes **por 10.000 veículos registados**. Logo `risco_sinistros` usa a forma-padrão da taxa e `exposicao_frota` (veíc/hab) é medida de **exposição**. ⚠️ A literatura mede **mortes**; a RENAEST dá **sinistros** (superset/morbidade) — decisão de produto. O **acesso** (`acesso_isocrona` e `acesso_auto_45min`) é o construto original de C: 15 min a pé é o limiar canônico de "bairro de 15 minutos" e 45 min de carro é o **acesso regional** (isolamento = menos alcance) — ponte para população alcançável (`influencia.md` §Tier 2) — em **piloto no ES** desde 2026-10-19 (`ivet.md` §4.5.5) |
@@ -185,8 +185,8 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
 | B | renda do responsável (R$) | 2.424 | — | — | — | **produto** — 2 salários mínimos de jul/2022 |
 | C | `risco_sinistros` (/100 mil) | 500 | 60 | 429 | 988 | **produto** (≈ p90) — a *taxa por 100 mil hab* é a forma-padrão OMS/WHO e ITF/IRTAD; teto empírico (ver §5.1) |
 | C | `exposicao_frota` (frota/hab) | 1 | — | 0,89 | 1,05 | **produto** (≈ p90) — *frota* é **exposição** explícita no IRTAD (veíc/hab ≈ motorization rate) |
-| C | `acesso_isocrona` (hab a pé/15 min) | 40.000 | 5.390 | 20.996 | 39.339 | **produto** (≈ p99) — **provisório**, recalibrado na **expansão ES+MG** (#295, 16.782 escolas, 2026-10-20; p99 do piloto do ES era 40.590, teto mantido); recalibrar na expansão nacional. Direção **invertida**: mais população alcançável = menos vulnerável |
-| C | `acesso_auto_45min` (hab carro/45 min) | 5.000.000 | 169.471 | 4.567.800 | 4.889.715 | **produto** (≈ p99) — **provisório**, recalibrado na mesma expansão (era 1.750.000 = p99 só do ES; p99 do MG triplicou); direção **invertida**. ✅ Viés de fronteira **corrigido nesta expansão** (setores da região + tiles do Sudeste): escolas >20% `NULL` caíram de 125 para 5 — restam as da borda MG↔BA (extract Nordeste, #295) |
+| C | `acesso_isocrona` (hab a pé/15 min) | 60.000 (piso 0) | 6.829 | 32.819 | 59.732 | **produto** (teto ≈ p99), escala **log** (`ivet-v1.3`) — 98.722 escolas do Sudeste e Nordeste (#295, 2026-11-10). Na linear (`v1.2`, teto 65.000) 36% das escolas ficavam ≥ 0,95. Direção **invertida**: mais população alcançável = menos vulnerável |
+| C | `acesso_auto_45min` (hab carro/45 min) | 20.000.000 (piso 500 ≈ p1) | 389.528 | 10.835.432 | 19.327.527 | **produto** (teto ≈ p99), escala **log** (`ivet-v1.3`) — mesma medição. Na linear 63% ficavam ≥ 0,95 e a mediana marcava 0,98; no log, 1,7% e 0,37. Direção **invertida**. Viés de fronteira: o da borda MG↔BA saiu com o Nordeste; resta nas bordas com Sul, Centro-Oeste e Norte, ainda não carregados |
 | D | `distancia_ubs` (km) | 5,0 | 0,54 | 7,25 | 38,75 | **produto** — 5 km é o limiar "acesso difícil" da própria view; 13,4% das escolas acima |
 | D | `cobertura_aps` (equipes/10 mil) | 8 | **3,30** | 8,39 | 12,39 | **PNAB**: 2.000–3.500 pessoas/equipe (média 3.000, máx. 4.000) = **2,86–5,0** equipes/10 mil. O teto 8 = p90 é **acima** da faixa normativa → decisão de produto |
 | D | `presenca_ubs` (UBS/10 mil), `efetividade_vagas_aps` (%) | 8 / 100 | — | — | — | **produto** — fora do default |
@@ -245,11 +245,12 @@ amostras **disjuntas** (`ivet.md` §4.5.4).
   vulnerabilidade). Ambos entram **invertidos** (mais alcance = menos
   vulnerabilidade), como a renda no bloco B. O acervo **não** tem literatura de
   trânsito; o limiar de 15 min a pé é o "bairro de 15 minutos" adotado como
-  decisão de arquitetura (`influencia.md` §Tier 2) e os **tetos 40.000**
-  (15 min) e **5.000.000** (45 min) são **empírico-provisórios** (p99 da
-  expansão ES+MG, #295) — recalibrar com a expansão nacional. O viés de
-  fronteira do anel de 45 min (setores da região + tiles do Sudeste) já foi
-  **corrigido** nesta expansão; resta a borda com BA (extract Nordeste).
+  decisão de arquitetura (`influencia.md` §Tier 2). Os **tetos** 60.000 (15 min)
+  e 20.000.000 (45 min) são o p99 de 98.722 escolas do Sudeste e Nordeste
+  (#295), e a escala é **logarítmica** (`ivet-v1.3`): a população alcançável
+  cresce em ordens de grandeza e a linear deixava a maioria das escolas no
+  pior valor. O viés de fronteira da borda MG↔BA saiu com o Nordeste; resta
+  nas bordas com as regiões ainda não carregadas.
 - **F (meio ambiente).** O **construto** tem lastro externo em **duas frentes**.
   (1) *Fogo*: a **fumaça de incêndio** é risco respiratório documentado para
   **crianças e escolas** — o CDC (2021) revisa os efeitos e trata do ambiente
