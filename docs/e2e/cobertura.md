@@ -8,6 +8,17 @@ Fluxos e2e da SPA EduMaps. Para **cada feature**:
 
 **Legend**: · ainda não executado · 🟢 PASS · 🔴 FAIL · ⚪ planejado (pré-requisito ausente)
 
+## Rodada 2026-11-10 (aq) (indicadores avaliados por construto)
+
+Branch `test/indicadores-validade-construto`. Só teste e documentação; nenhuma
+tela nem código de produção mudou.
+
+| Verificação | Onde | Resultado |
+|---|---|---|
+| `indicators_quality.t`: variação e cobertura de IFS/IPS/IGE/IAI em 5 UFs | host | 🟢 |
+| Diagnóstico por etapa (bruto e ajustado pelo INSE) reproduz a análise | host | 🟢 |
+| CI (teste pulado por `skip_r`, como antes) | GitHub Actions | 🟢 |
+
 ## Rodada 2026-11-10 (ap) (motor analítico no Docker local e testes no contrato http)
 
 Branch `fix/docker-motor-analitico-http`. Só backend e config do contêiner;
