@@ -36,7 +36,7 @@ my %SENSIVEIS = map { $_ => 1 } qw(
   escola_documentos escola_documentos_auditoria escola_documentos_versoes
   pastas_escolares relatorios_salvos consentimento_versoes
   planos_gestao planos_objetivos planos_metas planos_acoes planos_auditoria
-  planos_metas_medicoes
+  planos_metas_medicoes planos_alertas_envio
   event_store session_tracking
   minion_jobs minion_locks minion_schedules minion_workers mojo_migrations
 );
