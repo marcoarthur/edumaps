@@ -9,9 +9,23 @@
    * @property {T[]} data
    * @property {string} [caption]
    * @property {string} [footer]
-   * @property {string} [rowKey] - unique key for each row (default: 'id')
+   * @property {string} [rowKey] - campo que identifica a linha (padrão: 'id').
+   *   Só vale se for único e preenchido em TODAS as linhas; senão a tabela usa
+   *   a posição da linha em `data` (uma chave repetida derrubava a página
+   *   inteira com `each_key_duplicate`).
    */
   let { columns = [], data = [], caption = '', footer = '', rowKey = 'id' } = $props();
+
+  // Chave do {#each}: o rowKey quando é único e preenchido em todas as linhas;
+  // senão, a posição da linha em `data` (estável ao ordenar).
+  let chaveUnica = $derived.by(() => {
+    const chaves = data.map((linha) => linha?.[rowKey]);
+    return (
+      chaves.every((c) => c !== undefined && c !== null && c !== '') &&
+      new Set(chaves).size === chaves.length
+    );
+  });
+  let posicao = $derived(new Map(data.map((linha, i) => [linha, i])));
 
   // Sorting state
   let sortField = $state(null);
@@ -90,7 +104,7 @@
   </thead>
 
   <tbody>
-    {#each sortedData as row (row[rowKey] || row.id)}
+    {#each sortedData as row (chaveUnica ? row[rowKey] : posicao.get(row))}
       <tr class="border-b border-gray-200 hover:bg-gray-50">
         {#each columns as col}
           <td class="px-4 py-2">
