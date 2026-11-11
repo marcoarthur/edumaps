@@ -81,6 +81,8 @@ sub planos_listar ($self, $cod_inep, $opt = {}) {
 sub plano_detalhe ($self, $cod_inep, $id) {
   my $p = $self->_plano_ou_404($cod_inep, $id);
   my $hoje = HOJE_SQL;
+  # Plano encerrado fica congelado: não recebe medições oficiais novas.
+  $self->_sincronizar_oficiais($id) unless $p->{situacao} eq 'encerrado';
 
   my $objetivos = $self->_pl_rows(
     'SELECT id, titulo, descricao, ordem FROM clean.planos_objetivos
@@ -97,8 +99,10 @@ sub plano_detalhe ($self, $cod_inep, $id) {
        FROM   clean.planos_acoes a JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
        WHERE  o.plano_id = ? ORDER BY a.prazo NULLS LAST, a.id}, $id + 0);
 
+  my $metas_out = $self->_metas_enriquecidas($cod_inep, $metas);
+
   my %por_obj;
-  push @{ $por_obj{ $_->{objetivo_id} }{metas} }, $self->_meta_out($_) for @$metas;
+  push @{ $por_obj{ $_->{objetivo_id} }{metas} }, $_ for @$metas_out;
   push @{ $por_obj{ $_->{objetivo_id} }{acoes} }, $self->_acao_out($_) for @$acoes;
 
   my $out = $self->_plano_out($p);
@@ -106,6 +110,7 @@ sub plano_detalhe ($self, $cod_inep, $id) {
     my $o = $self->_objetivo_out($_);
     $o->{metas} = $por_obj{ $_->{id} }{metas} // [];
     $o->{acoes} = $por_obj{ $_->{id} }{acoes} // [];
+    $o->{progresso} = _pl_agregar($o->{metas});
     $o;
   } @$objetivos ];
   $out->{resumo} = {
@@ -114,6 +119,7 @@ sub plano_detalhe ($self, $cod_inep, $id) {
     n_acoes            => scalar @$acoes,
     n_acoes_concluidas => scalar(grep { $_->{situacao} eq 'concluida' } @$acoes),
     n_acoes_atrasadas  => scalar(grep { $_->{atrasada} } @$acoes),
+    progresso          => _pl_agregar($metas_out),
   };
   return $out;
 }
@@ -259,28 +265,53 @@ sub objetivo_excluir ($self, $cod_inep, $gestor_id, $plano_id, $oid) {
 sub meta_criar ($self, $cod_inep, $gestor_id, $plano_id, $p) {
   $self->_plano_editavel($cod_inep, $plano_id);
   $self->_objetivo_ou_404($plano_id, $p->{objetivo_id}, 400);
+  my %m = (sentido => 'aumentar', %$p);
+  if (defined $m{indicador_codigo}) {
+    my $ind = $self->_indicador_ou_400($m{indicador_codigo});
+    # Meta oficial: unidade do catálogo; linha de base sugerida pelo último
+    # valor da escola (se o gestor não informou).
+    $m{unidade} //= $ind->{unidade};
+    if (!exists $p->{linha_base}) {
+      my $ult = $self->_ultimo_oficial($cod_inep, $m{indicador_codigo});
+      $m{linha_base} = $ult ? $ult->{valor} : undef;
+    }
+  }
+  $self->_sentido_coerente(\%m);
   my $row;
   $self->_pl_txn(sub {
     $row = $self->_pl_row(
-      'INSERT INTO clean.planos_metas (objetivo_id, descricao, unidade, sentido, linha_base, alvo, prazo)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      'INSERT INTO clean.planos_metas
+         (objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo',
-      $p->{objetivo_id} + 0, $p->{descricao}, $p->{unidade}, $p->{sentido} // 'aumentar',
-      $p->{linha_base}, $p->{alvo}, $p->{prazo});
+      $m{objetivo_id} + 0, @m{qw(descricao unidade sentido indicador_codigo linha_base alvo prazo)});
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $row->{id}, 'criado',
-      { descricao => $p->{descricao} });
+      { descricao => $m{descricao}, indicador => $m{indicador_codigo} });
   });
-  return $self->_meta_out($row);
+  $self->_sincronizar_oficiais($plano_id, $row->{id});
+  return $self->_metas_enriquecidas($cod_inep, [$row])->[0];
 }
 
 sub meta_atualizar ($self, $cod_inep, $gestor_id, $plano_id, $mid, $p) {
   $self->_plano_editavel($cod_inep, $plano_id);
   my $atual = $self->_meta_ou_404($plano_id, $mid);
   $self->_objetivo_ou_404($plano_id, $p->{objetivo_id}, 400) if exists $p->{objetivo_id};
+  $self->_indicador_ou_400($p->{indicador_codigo}) if defined $p->{indicador_codigo};
   my %novo = (%$atual, %$p);
+  $self->_sentido_coerente(\%novo);
+  my $troca_indicador = exists $p->{indicador_codigo}
+    && ($p->{indicador_codigo} // '') ne ($atual->{indicador_codigo} // '');
   my $row;
   $self->_pl_txn(sub {
+    # Trocou (ou tirou) o indicador: as medições oficiais eram do indicador
+    # antigo. As manuais de uma meta que passa a ser oficial também saem —
+    # a meta tem uma origem só.
+    if ($troca_indicador) {
+      $self->_pl_rows(
+        q{DELETE FROM clean.planos_metas_medicoes WHERE meta_id = ? AND (origem = 'oficial' OR ?)},
+        $mid + 0, defined $novo{indicador_codigo} ? 1 : 0);
+    }
     # Meta que muda de objetivo solta as ações do objetivo antigo (a ação só
     # pode apontar para meta do próprio objetivo — trigger).
     if ($novo{objetivo_id} != $atual->{objetivo_id}) {
@@ -288,15 +319,198 @@ sub meta_atualizar ($self, $cod_inep, $gestor_id, $plano_id, $mid, $p) {
     }
     $row = $self->_pl_row(
       'UPDATE clean.planos_metas
-          SET objetivo_id = ?, descricao = ?, unidade = ?, sentido = ?, linha_base = ?, alvo = ?,
-              prazo = ?, updated_at = NOW()
+          SET objetivo_id = ?, descricao = ?, unidade = ?, sentido = ?, indicador_codigo = ?,
+              linha_base = ?, alvo = ?, prazo = ?, updated_at = NOW()
         WHERE id = ?
         RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo',
-      @novo{qw(objetivo_id descricao unidade sentido linha_base alvo prazo)}, $mid + 0);
+      @novo{qw(objetivo_id descricao unidade sentido indicador_codigo linha_base alvo prazo)}, $mid + 0);
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $mid, 'alterado', _pl_mudancas($atual, $p));
   });
-  return $self->_meta_out($row);
+  $self->_sincronizar_oficiais($plano_id, $mid);
+  return $self->_metas_enriquecidas($cod_inep, [$row])->[0];
+}
+
+# ---------------------------------------------------------------------------
+# medições (manuais) e catálogo de indicadores oficiais
+# ---------------------------------------------------------------------------
+
+sub medicao_criar ($self, $cod_inep, $gestor_id, $plano_id, $mid, $p) {
+  $self->_plano_editavel($cod_inep, $plano_id);
+  my $meta = $self->_meta_ou_404($plano_id, $mid);
+  $self->_falha(400, 'Meta ligada a indicador oficial: o valor vem da fonte, não é informado à mão.')
+    if defined $meta->{indicador_codigo};
+  my $row;
+  $self->_pl_txn(sub {
+    $row = $self->_pl_row(
+      q{INSERT INTO clean.planos_metas_medicoes (meta_id, origem, data_ref, valor, nota, created_by)
+        VALUES (?, 'manual', ?, ?, ?, ?) RETURNING id},
+      $mid + 0, $p->{data_ref}, $p->{valor}, $p->{nota}, $self->_pl_gestor($gestor_id));
+    $self->_pl_tocar($plano_id);
+    $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $mid, 'alterado',
+      { medicao => { data_ref => $p->{data_ref}, valor => $p->{valor} } });
+  });
+  return $self->_metas_enriquecidas($cod_inep, [$meta])->[0];
+}
+
+sub medicao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $mid, $medicao_id) {
+  $self->_plano_editavel($cod_inep, $plano_id);
+  $self->_meta_ou_404($plano_id, $mid);
+  my $med = $self->_pl_row(
+    'SELECT id, origem, data_ref, valor FROM clean.planos_metas_medicoes WHERE id = ? AND meta_id = ?',
+    $medicao_id + 0, $mid + 0);
+  $self->_falha(404, 'Medição não encontrada nesta meta.') unless $med;
+  $self->_falha(409, 'Medição oficial não se exclui: ela é o histórico da fonte.') if $med->{origem} eq 'oficial';
+  $self->_pl_txn(sub {
+    $self->_pl_rows('DELETE FROM clean.planos_metas_medicoes WHERE id = ?', $medicao_id + 0);
+    $self->_pl_tocar($plano_id);
+    $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $mid, 'alterado',
+      { medicao_excluida => { data_ref => $med->{data_ref}, valor => _pl_num($med->{valor}) } });
+  });
+  return 1;
+}
+
+# Catálogo com o último valor da escola. Indicador sem valor para a escola
+# vem com `ultimo => undef` ("sem dado"), nunca 0 (#154).
+sub indicadores_catalogo ($self, $cod_inep) {
+  my $rows = $self->_pl_rows(
+    'SELECT c.codigo, c.grupo, c.rotulo, c.unidade, c.fonte, c.sentido_sugerido,
+            u.ano, u.valor
+       FROM analytics.indicadores_meta_catalogo c
+       LEFT JOIN LATERAL (
+         SELECT v.ano, v.valor FROM analytics.escola_indicadores_meta v
+          WHERE v.cod_inep = ? AND v.codigo = c.codigo
+          ORDER BY v.ano DESC LIMIT 1) u ON TRUE
+      ORDER BY c.ordem', $cod_inep + 0);
+  return [ map { {
+    codigo           => $_->{codigo},
+    grupo            => $_->{grupo},
+    rotulo           => $_->{rotulo},
+    unidade          => $_->{unidade},
+    fonte            => $_->{fonte},
+    sentido_sugerido => $_->{sentido_sugerido},
+    ultimo           => defined $_->{ano} ? { ano => $_->{ano} + 0, valor => _pl_num($_->{valor}) } : undef,
+  } } @$rows ];
+}
+
+# ---------------------------------------------------------------------------
+# progresso
+# ---------------------------------------------------------------------------
+
+# progresso_meta(sentido, base, alvo, atual) -> (fração 0..1 | undef, estado)
+#   aumentar: (atual − base) / (alvo − base), com alvo > base
+#   reduzir : (base − atual) / (base − alvo), com alvo < base
+#   manter  : não cair abaixo do alvo — 1 se atual ≥ alvo, senão 0
+# Estados: medida | sem_medicao (falta valor atual) | rascunho (falta base ou
+# alvo) | incoerente (alvo do lado errado da base para o sentido).
+sub progresso_meta ($class_or_self, $sentido, $base, $alvo, $atual) {
+  return (undef, 'rascunho') if !defined $alvo || ($sentido ne 'manter' && !defined $base);
+  return (undef, 'sem_medicao') unless defined $atual;
+  my $p;
+  if ($sentido eq 'manter') {
+    $p = $atual >= $alvo ? 1 : 0;
+  }
+  elsif ($sentido eq 'aumentar') {
+    return (undef, 'incoerente') unless $alvo > $base;
+    $p = ($atual - $base) / ($alvo - $base);
+  }
+  else {
+    return (undef, 'incoerente') unless $alvo < $base;
+    $p = ($base - $atual) / ($base - $alvo);
+  }
+  $p = 0 if $p < 0;
+  $p = 1 if $p > 1;
+  return (0 + sprintf('%.4f', $p), 'medida');
+}
+
+# Média das metas medidas, sempre com "N de M" (a média de 1 meta em 5 não
+# pode parecer o plano inteiro).
+sub _pl_agregar ($metas) {
+  my @med = grep { defined $_->{progresso} } @$metas;
+  my $soma = 0;
+  $soma += $_->{progresso} for @med;
+  return {
+    valor        => @med ? 0 + sprintf('%.4f', $soma / @med) : undef,
+    n_medidas    => scalar @med,
+    n_metas      => scalar @$metas,
+  };
+}
+
+sub _metas_enriquecidas ($self, $cod_inep, $metas) {
+  return [] unless @$metas;
+  my @ids = map { $_->{id} + 0 } @$metas;
+  my $meds = $self->_pl_rows(
+    'SELECT id, meta_id, origem, data_ref, ano_ref, valor, nota
+       FROM clean.planos_metas_medicoes WHERE meta_id = ANY(?::bigint[])
+      ORDER BY data_ref, id', \@ids);
+  my %por_meta;
+  push @{ $por_meta{ $_->{meta_id} } }, $_ for @$meds;
+
+  my %catalogo = map { $_->{codigo} => $_ } @{ $self->_pl_rows(
+    'SELECT codigo, rotulo, unidade, fonte FROM analytics.indicadores_meta_catalogo') };
+
+  return [ map {
+    my $m = $self->_meta_out($_);
+    my $hist = $por_meta{ $_->{id} } // [];
+    my $ult = @$hist ? $hist->[-1] : undef;
+    $m->{medicoes} = [ map { {
+      id       => $_->{id} + 0,
+      origem   => $_->{origem},
+      data_ref => $_->{data_ref},
+      ano_ref  => defined $_->{ano_ref} ? $_->{ano_ref} + 0 : undef,
+      valor    => _pl_num($_->{valor}),
+      nota     => $_->{nota},
+    } } @$hist ];
+    $m->{atual} = $ult ? $m->{medicoes}[-1] : undef;
+    if (my $c = defined $m->{indicador_codigo} ? $catalogo{ $m->{indicador_codigo} } : undef) {
+      $m->{indicador} = { codigo => $c->{codigo}, rotulo => $c->{rotulo}, unidade => $c->{unidade}, fonte => $c->{fonte} };
+    }
+    my ($p, $estado) = $self->progresso_meta($m->{sentido}, $m->{linha_base}, $m->{alvo},
+      $m->{atual} ? $m->{atual}{valor} : undef);
+    # Meta oficial sem nenhum valor da escola na fonte: "sem dado", não "sem medição".
+    $estado = 'sem_dado' if $estado eq 'sem_medicao' && $m->{indicador};
+    $m->{progresso} = $p;
+    $m->{estado}    = $estado;
+    $m;
+  } @$metas ];
+}
+
+# Grava como medição oficial cada (ano, valor) da fonte ainda não gravado para
+# as metas oficiais do plano (ou de uma meta). Idempotente: uma por ano.
+sub _sincronizar_oficiais ($self, $plano_id, $meta_id = undef) {
+  $self->_pl_rows(
+    q{INSERT INTO clean.planos_metas_medicoes (meta_id, origem, data_ref, ano_ref, valor)
+      SELECT m.id, 'oficial', make_date(v.ano, 12, 31), v.ano, v.valor
+        FROM clean.planos_metas m
+        JOIN clean.planos_objetivos o ON o.id = m.objetivo_id
+        JOIN clean.planos_gestao p ON p.id = o.plano_id
+        JOIN analytics.escola_indicadores_meta v
+          ON v.cod_inep = p.cod_inep AND v.codigo = m.indicador_codigo
+       WHERE o.plano_id = ? AND (?::bigint IS NULL OR m.id = ?::bigint)
+      ON CONFLICT (meta_id, ano_ref) WHERE origem = 'oficial' DO NOTHING
+      RETURNING id},
+    $plano_id + 0, $meta_id, $meta_id);
+}
+
+sub _indicador_ou_400 ($self, $codigo) {
+  my $c = $self->_pl_row('SELECT codigo, unidade FROM analytics.indicadores_meta_catalogo WHERE codigo = ?', $codigo);
+  $self->_falha(400, "Indicador '$codigo' não está no catálogo.") unless $c;
+  return $c;
+}
+
+sub _ultimo_oficial ($self, $cod_inep, $codigo) {
+  return $self->_pl_row(
+    'SELECT ano, valor FROM analytics.escola_indicadores_meta
+      WHERE cod_inep = ? AND codigo = ? ORDER BY ano DESC LIMIT 1', $cod_inep + 0, $codigo);
+}
+
+sub _sentido_coerente ($self, $m) {
+  my ($s, $b, $a) = @$m{qw(sentido linha_base alvo)};
+  return unless defined $b && defined $a && defined $s;
+  $self->_falha(400, 'Para aumentar, o alvo tem de ser maior que a linha de base.')
+    if $s eq 'aumentar' && $a <= $b;
+  $self->_falha(400, 'Para reduzir, o alvo tem de ser menor que a linha de base.')
+    if $s eq 'reduzir' && $a >= $b;
 }
 
 sub meta_excluir ($self, $cod_inep, $gestor_id, $plano_id, $mid) {
