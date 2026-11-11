@@ -118,4 +118,27 @@ describe("DataTable", () => {
     expect(screen.getByText("Alice (cell)")).toBeInTheDocument();
     expect(screen.queryByText("Alice (render)")).not.toBeInTheDocument();
   });
+  // Regressão: a folha de pagamento (INEP 51036851, 02/2026) tem a mesma
+  // pessoa com dois pagamentos e CPF mascarado igual; com rowKey="cpf" o
+  // {#each} lançava each_key_duplicate e a página inteira caía.
+  it("renders and sorts rows whose rowKey repeats", async () => {
+    const repetidos = [
+      { cpf: "xxx.730.981-xx", name: "Arlete", age: 40 },
+      { cpf: "xxx.730.981-xx", name: "Arlete (2º pagamento)", age: 20 },
+      { cpf: "xxx.111.222-xx", name: "Bruno", age: 30 },
+    ];
+    render(DataTable, { columns, data: repetidos, rowKey: "cpf" });
+    expect(screen.getByText("Arlete")).toBeInTheDocument();
+    expect(screen.getByText("Arlete (2º pagamento)")).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByText("Age"));
+    const ordem = screen.getAllByText(/Arlete|Bruno/).map((c) => c.textContent);
+    expect(ordem).toEqual(["Arlete (2º pagamento)", "Bruno", "Arlete"]);
+  });
+
+  it("renders rows without the rowKey field", () => {
+    render(DataTable, { columns, data: [{ name: "Sem id A", age: 1 }, { name: "Sem id B", age: 2 }] });
+    expect(screen.getByText("Sem id A")).toBeInTheDocument();
+    expect(screen.getByText("Sem id B")).toBeInTheDocument();
+  });
 });

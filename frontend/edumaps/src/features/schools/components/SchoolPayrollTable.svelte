@@ -89,10 +89,12 @@
   ];
 </script>
 
+<!-- Sem rowKey: a folha não tem identificador de linha. O CPF vem mascarado
+     (xxx.730.981-xx) e a mesma pessoa pode ter mais de um pagamento no mês
+     (medido: INEP 51036851, 02/2026), então o DataTable usa a posição. -->
 <DataTable
   columns={columns}
   data={payrollData}
   {caption}
   {footer}
-  rowKey="cpf"
 />
