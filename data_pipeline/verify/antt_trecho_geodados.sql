@@ -1,70 +1,27 @@
 -- Verify edumaps:antt_trecho_geodados on pg
+--
+-- A tabela foi removida pela change posterior antt_sem_fonte (#168: a ANTT
+-- não publica o dado para o qual ela foi desenhada). Num banco em que a
+-- remoção já foi aplicada, não há o que verificar aqui — quem garante a
+-- ausência é verify/antt_sem_fonte.sql. Antes dela, confere a tabela.
+-- (DO + RAISE: o sqitch só falha a verificação com erro.)
 
 BEGIN;
 
--- 1) Tabela existe
-SELECT 1
-FROM information_schema.tables
-WHERE table_schema = 'clean'
-  AND table_name = 'antt_trecho_geodados';
-
--- 2) Colunas obrigatórias
-SELECT 1
-FROM information_schema.columns
-WHERE table_schema = 'clean'
-  AND table_name = 'antt_trecho_geodados'
-  AND column_name IN ('concessionaria', 'trecho', 'codigo_ibge', 'geometry')
-  AND is_nullable = 'NO';
-
--- 2) PK composta
-SELECT 1
-FROM information_schema.table_constraints
-WHERE table_schema = 'clean'
-  AND table_name = 'antt_trecho_geodados'
-  AND constraint_type = 'PRIMARY KEY'
-  AND constraint_name = 'pk_antt_trecho_geodados';
-
--- 3) FK para malha_municipio
-SELECT 1
-FROM information_schema.table_constraints
-WHERE table_schema = 'clean'
-  AND table_name = 'antt_trecho_geodados'
-  AND constraint_type = 'FOREIGN KEY'
-  AND constraint_name = 'fk_antt_trecho_municipio';
-
--- 3) Unique constraint on trecho
-SELECT 1
-FROM information_schema.table_constraints
-WHERE table_schema = 'clean'
-  AND table_name = 'antt_trecho_geodados'
-  AND constraint_type = 'UNIQUE'
-  AND constraint_name = 'uq_antt_trecho_geodados_trecho';
-
--- 4) FK válida (codigo_ibge nulo ou existe em malha_municipio)
-SELECT 1
-FROM clean.antt_trecho_geodados t
-LEFT JOIN clean.malha_municipio m ON m.codigo_ibge = t.codigo_ibge
-WHERE t.codigo_ibge IS NOT NULL AND m.codigo_ibge IS NULL
-LIMIT 1;
-
--- 5) Geometria válida
-SELECT 1
-FROM clean.antt_trecho_geodados
-WHERE NOT ST_IsValid(geometry)
-LIMIT 1;
-
--- 6) SRID correto (4674)
-SELECT 1
-FROM clean.antt_trecho_geodados
-WHERE ST_SRID(geometry) != 4674
-LIMIT 1;
-
--- 7) Metadados
-SELECT 1
-FROM clean.import_metadata
-WHERE table_name = 'clean.antt_trecho_geodados'
-  AND source_url IS NOT NULL
-  AND source_license IS NOT NULL
-  AND retrieved_at IS NOT NULL;
+DO $$
+DECLARE
+  n integer;
+BEGIN
+  IF to_regclass('clean.antt_trecho_geodados') IS NULL THEN
+    RETURN;
+  END IF;
+  SELECT count(*) INTO n FROM pg_attribute
+   WHERE attrelid = 'clean.antt_trecho_geodados'::regclass AND NOT attisdropped
+     AND attname IN ('concessionaria','trecho','codigo_ibge','geometry');
+  IF n <> 4 THEN
+    RAISE EXCEPTION 'antt_trecho_geodados: esperava 4 colunas, encontrei %', n;
+  END IF;
+END
+$$;
 
 ROLLBACK;

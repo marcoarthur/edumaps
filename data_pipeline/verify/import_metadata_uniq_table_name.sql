@@ -48,14 +48,17 @@ END $$;
 --    fonte acrescenta uma linha legítima (medido: mapbiomas_escola e
 --    mapbiomas_escola_risco levaram 31 -> 33 e partiram o gate por meses,
 --    porque um `<> N` fixo obriga a reabrir este verify a cada fonte nova).
+--    A change antt_sem_fonte (#168) remove 3 tabelas da ANTT e as suas 3
+--    linhas daqui; aplicada ela, o piso desce para 28.
 DO $$
 DECLARE
   n INT;
+  piso INT := CASE WHEN to_regclass('clean.antt_od_municipio') IS NULL THEN 28 ELSE 31 END;
 BEGIN
   SELECT count(*) INTO n FROM clean.import_metadata;
-  IF n < 31 THEN
+  IF n < piso THEN
     RAISE EXCEPTION
-      'REGRESSAO: clean.import_metadata tem % linhas (piso 31 -- 32 antes do dedup, menos 1 duplicado; abaixo disso a dedup comeu fontes)', n;
+      'REGRESSAO: clean.import_metadata tem % linhas (piso % -- 32 antes do dedup, menos 1 duplicado, menos as 3 da ANTT removidas pela antt_sem_fonte; abaixo disso a dedup comeu fontes)', n, piso;
   END IF;
 END $$;
 

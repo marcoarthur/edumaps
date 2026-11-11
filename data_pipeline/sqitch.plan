@@ -160,3 +160,5 @@ leitor_sem_tabelas_sensiveis [edumaps_leitor_role sessoes_token_hash] 2026-11-04
 auth_falhas_telegram [leitor_sem_tabelas_sensiveis] 2026-11-05T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # limitador do bot do Telegram no banco
 leitor_grants_explicitos [auth_falhas_telegram] 2026-11-05T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # papel de leitura sem SELECT automatico em clean
 staging_schema [leitor_grants_explicitos] 2026-11-07T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # schema de trabalho dos jobs de analise
+antt_acidente_geolocalizacao [staging_schema antt_acidente_trecho_grao malha_municipio] 2026-11-11T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #168: acidente da ANTT localizado pelos marcos de km (ponto + municipio)
+antt_sem_fonte [antt_acidente_geolocalizacao analytics_views_materializadas analytics_ausencia_visivel] 2026-11-11T12:30:00Z Marco Arthur <arthurpbs@gmail.com> # #168: remove as 3 tabelas ANTT sem fonte; acidentes chegam a escola pelo municipio

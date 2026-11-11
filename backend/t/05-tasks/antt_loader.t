@@ -223,4 +223,94 @@ is(EduMaps::Ingestion::Job::ANTT::_csv_campo("a\x00b"), '"ab"', 'NUL removido (P
     'aspas soltas não truncam o arquivo (allow_loose_quotes; sem isso 3 linhas viravam 1)');
 }
 
+# ---------------------------------------------------------------- marcos de km (#168)
+# Normalização da rodovia: mesma regra de clean.antt_rodovia_normalizada().
+{
+  my $j = job();
+  is($j->rodovia_normalizada('BR-393/RJ'), 'BR-393', 'trecho com UF');
+  is($j->rodovia_normalizada('BR 40'), 'BR-040', 'número curto ganha zeros');
+  is($j->rodovia_normalizada('116'), 'BR-116', 'campo só com o número da BR');
+  is($j->rodovia_normalizada('116.0'), 'BR-116', 'número vindo de campo real (shapefile)');
+  is($j->rodovia_normalizada('SP-330'), undef, 'rodovia estadual não vira BR');
+  is($j->rodovia_normalizada('BR-3931'), undef, 'mais de 3 dígitos não é BR');
+  is($j->_uf_do_trecho('BR-393/rj'), 'RJ', 'UF sai do trecho');
+}
+
+# Contrato da camada: sem campo de rodovia ou km, aborta listando os campos.
+{
+  my $j = job();
+  my %c = $j->_resolver_campos_marco([qw(BR UF KM OBJECTID)]);
+  is_deeply(\%c, { rodovia => 'BR', uf => 'UF', km => 'KM' }, 'campos resolvidos sem diferenciar caixa');
+  eval { $j->_resolver_campos_marco([qw(BR OBJECTID)]) };
+  like($@, qr/sem campo de km.*campos encontrados: BR, OBJECTID/s, 'camada sem km aborta e diz o que havia');
+}
+
+# Leitura: o "ogr2ogr" (mock) devolve GeoJSON; feições sem ponto ou sem
+# rodovia/km são descartadas e contadas; repetidos na chave saem no dedupe.
+{
+  my @cmds;
+  no warnings 'redefine';
+  local *EduMaps::Ingestion::Job::ANTT::executar = sub {
+    my ($self, $argv) = @_;
+    push @cmds, $argv;
+    my $f = sub { { type => 'Feature', properties => $_[0], geometry => $_[1] } };
+    path($argv->[7])->spew(Mojo::JSON::encode_json({ type => 'FeatureCollection', features => [
+      $f->({ BR => 393, UF => 'RJ', KM => 112 }, { type => 'Point', coordinates => [-43.1, -22.5] }),
+      $f->({ BR => 393, UF => 'RJ', KM => 113 }, { type => 'MultiPoint', coordinates => [[-43.2, -22.6]] }),
+      $f->({ BR => 393, UF => 'RJ', KM => 113 }, { type => 'Point', coordinates => [-43.3, -22.7] }),
+      $f->({ BR => 393, UF => 'RJ', KM => 114 }, undef),
+      $f->({ BR => 'SP-330', UF => 'SP', KM => 1 }, { type => 'Point', coordinates => [-47, -23] }),
+    ] }));
+    return 1;
+  };
+  my $j = job();
+  my $rows = $j->ler_marcos('/tmp/marcos.zip');
+  is_deeply($cmds[0], ['ogr2ogr', '-f', 'GeoJSON', '-lco', 'RFC7946=NO', '-t_srs', 'EPSG:4674',
+    $cmds[0][7], '/vsizip//tmp/marcos.zip'], 'zip lido sem descompactar, em SIRGAS 2000 (RFC7946=NO)');
+  is(scalar @$rows, 3, 'descarta feição sem ponto e rodovia estadual');
+  is_deeply([ @{ $rows->[0] }{qw(rodovia uf km x y)} ], [ 'BR-393', 'RJ', 112, -43.1, -22.5 ], 'marco lido');
+  is_deeply([ @{ $rows->[1] }{qw(x y)} ], [ -43.2, -22.6 ], 'MultiPoint usa o primeiro ponto');
+  my ($unicos, $dups) = $j->_dedupe_marcos($rows);
+  is_deeply([ scalar @$unicos, $dups ], [ 2, 1 ], 'marco repetido na chave (rodovia, UF, km) sai, mantendo o primeiro');
+}
+
+# Carga dos marcos: substitui a tabela inteira, ponto em EWKT 4674.
+{
+  my $dbh = ADBH->new;
+  my $j = job(app => mock_app($dbh));
+  is($j->carregar_marcos([{ rodovia => 'BR-393', uf => 'RJ', km => 112, x => -43.1, y => -22.5 }]), 1, 'um marco');
+  is($dbh->{dos}[0][0], 'DELETE FROM clean.antt_marco_km', 'tabela de marcos substituída inteira');
+  like($dbh->{copy}[0], qr/^"BR-393","RJ","112",,"SRID=4674;POINT\(-43\.1000000000 -22\.5000000000\)"\n$/,
+    'COPY com concessionária NULL e ponto EWKT');
+}
+
+# Sem origem de marcos (MARCOS_PKG vazio e sem --arg marcos): mantém os já carregados.
+{
+  my $dbh = ADBH->new;
+  no warnings 'redefine';
+  local *ADBH::selectrow_array = sub { return 42 };
+  my $j = job(app => mock_app($dbh));
+  is($j->atualizar_marcos({}), undef, 'sem origem não recarrega');
+  is(scalar @{ $dbh->{dos} }, 0, 'e não apaga os marcos existentes');
+}
+
+# Integração com o GDAL de verdade: shapefile gerado pelo ogr2ogr, campo de BR
+# numérico como nas camadas do governo, lido de volta pelo job.
+SKIP: {
+  skip 'sem ogr2ogr', 3 unless `ogr2ogr --version 2>/dev/null`;
+  my $dir = tempdir(CLEANUP => 1);
+  path("$dir/m.geojson")->spew(Mojo::JSON::encode_json({ type => 'FeatureCollection', features => [
+    { type => 'Feature', properties => { br => 101, uf => 'ES', km => 10.5 },
+      geometry => { type => 'Point', coordinates => [ -40.3, -20.3 ] } },
+    { type => 'Feature', properties => { br => 101, uf => 'ES', km => 11 },
+      geometry => { type => 'Point', coordinates => [ -40.31, -20.31 ] } },
+  ] }));
+  system('ogr2ogr', '-f', 'ESRI Shapefile', "$dir/marcos.shp", "$dir/m.geojson", '-a_srs', 'EPSG:4674') == 0
+    or skip 'ogr2ogr não gerou o shapefile de teste', 3;
+  my $rows = job()->ler_marcos("$dir/marcos.shp");
+  is(scalar @$rows, 2, 'shapefile real: 2 marcos');
+  is_deeply([ @{ $rows->[0] }{qw(rodovia uf km)} ], [ 'BR-101', 'ES', 10.5 ], 'campo numérico de BR normalizado');
+  ok(abs($rows->[1]{x} + 40.31) < 1e-9, 'coordenada preservada');
+}
+
 done_testing;

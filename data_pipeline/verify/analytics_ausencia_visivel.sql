@@ -28,6 +28,12 @@ BEGIN;
 DO $$
 DECLARE
     n integer;
+    -- A change posterior antt_sem_fonte (#168) remove a OD da ANTT e as
+    -- colunas antt_od_* / status_conexao_antt da view. Num banco em que ela
+    -- já foi aplicada, as asserções sobre essas colunas e o contrato de
+    -- colunas abaixo não se aplicam: o contrato novo é conferido em
+    -- verify/antt_sem_fonte.sql.
+    contrato_original boolean := to_regclass('clean.antt_od_municipio') IS NOT NULL;
 BEGIN
     -- 1) mobilidade: acidentes_12m
     SELECT COUNT(*) INTO n
@@ -137,23 +143,33 @@ BEGIN
     END IF;
 
     -- 11) mobilidade: fonte ANTT vazia TEM de dar 'fonte_vazia'
-    SELECT COUNT(*) INTO n
-    FROM analytics.mobilidade_escola v
-    WHERE NOT EXISTS (SELECT 1 FROM clean.antt_od_municipio)
-      AND v.status_conexao_antt <> 'fonte_vazia';
-    IF n > 0 THEN
-        RAISE EXCEPTION
-            'REGRESSÃO #154: % escola(s) com status_conexao_antt em vez de ''fonte_vazia'' (fonte ANTT OD vazia).', n;
+    IF contrato_original THEN
+        SELECT COUNT(*) INTO n
+        FROM analytics.mobilidade_escola v
+        WHERE NOT EXISTS (SELECT 1 FROM clean.antt_od_municipio)
+          AND v.status_conexao_antt <> 'fonte_vazia';
+        IF n > 0 THEN
+            RAISE EXCEPTION
+                'REGRESSÃO #154: % escola(s) com status_conexao_antt em vez de ''fonte_vazia'' (fonte ANTT OD vazia).', n;
+        END IF;
     END IF;
 
-    -- 12) vocabulário dos dois status é o esperado
+    -- 12) vocabulário dos status é o esperado
     SELECT COUNT(*) INTO n
     FROM analytics.mobilidade_escola v
-    WHERE v.status_isocrona     NOT IN ('fonte_vazia', 'coberto', 'sem_isocrona')
-       OR v.status_conexao_antt NOT IN ('fonte_vazia', 'conectado_antt', 'sem_conexao_antt');
+    WHERE v.status_isocrona NOT IN ('fonte_vazia', 'coberto', 'sem_isocrona');
     IF n > 0 THEN
         RAISE EXCEPTION
-            'Contrato: % escola(s) com status_isocrona/status_conexao_antt fora do vocabulário definido.', n;
+            'Contrato: % escola(s) com status_isocrona fora do vocabulário definido.', n;
+    END IF;
+    IF contrato_original THEN
+        SELECT COUNT(*) INTO n
+        FROM analytics.mobilidade_escola v
+        WHERE v.status_conexao_antt NOT IN ('fonte_vazia', 'conectado_antt', 'sem_conexao_antt');
+        IF n > 0 THEN
+            RAISE EXCEPTION
+                'Contrato: % escola(s) com status_conexao_antt fora do vocabulário definido.', n;
+        END IF;
     END IF;
 
     -- 13) acessibilidade: vocabulário da classificação
@@ -235,8 +251,12 @@ BEGIN
         END IF;
     END IF;
 
-    -- 18) mobilidade: com ANTT carregada, município sem acidente => 0
-    IF EXISTS (SELECT 1 FROM clean.antt_acidente_trecho) THEN
+    -- 18) mobilidade: com ANTT carregada, município sem acidente => 0.
+    --     Desde antt_sem_fonte, "carregada" = há acidente localizado num
+    --     município (a fonte da view passou a ser essa).
+    IF (contrato_original AND EXISTS (SELECT 1 FROM clean.antt_acidente_trecho))
+       OR (NOT contrato_original AND EXISTS (
+             SELECT 1 FROM clean.antt_acidente_trecho WHERE codigo_ibge IS NOT NULL)) THEN
         SELECT COUNT(*) INTO n
         FROM analytics.mobilidade_escola v
         WHERE v.acidentes_12m IS NULL;
@@ -253,6 +273,10 @@ BEGIN
     -- só quando a change é aplicada. Isto apanha uma view regenerada
     -- à mão, e documenta o contrato para quem for consumir.
     -- =================================================================
+
+    IF NOT contrato_original THEN
+        RETURN;
+    END IF;
 
     -- 19) total de colunas: 31 (mobilidade) + 16 (acessibilidade) = 47
     SELECT COUNT(*) INTO n
