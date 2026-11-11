@@ -25,6 +25,7 @@ Imports:
     yaml
 Suggests:
     testthat (>= 3.0.0),
+    pkgload,
     plumber,
     devtools,
     eduBR

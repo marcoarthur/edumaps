@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-10 (aw) — todas as dependências R instaladas (PR #364, #363)
+
+- #362 mergeado (`759b351`): `ivet-v1.3` (acesso em log).
+- Regra do usuário: **toda dependência deve ser instalada**. Issue #363.
+  `inst/scripts/dependencias.R` deriva a lista do `DESCRIPTION` (instalar /
+  verificar, cada pacote num processo novo) e é usado pela imagem `analytic`,
+  pelo Rexfile e pelo CI; build/deploy/CI falham se faltar. `pkgload` em
+  Suggests. O `fs` do devtools exige `libuv1`. Nota **187**.
+- Imagem `analytic` reconstruída: suíte 341/0 falhas/**0 skips** em R 4.4.1;
+  contêiner com `ivet-v1.3`.
+- Pendente: `sudo apt-get install libsodium-dev` no host (plumber); LXC na
+  quinta (12/11) junto da fila.
+
 ## Sessão 2026-11-10 (av) — acesso do IVET em log e ES/MG fora do snapshot (PR #362, #295)
 
 - #361 mergeado (`14f1a4c`); #304 fechada.

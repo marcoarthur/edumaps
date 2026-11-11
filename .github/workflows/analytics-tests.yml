@@ -110,6 +110,7 @@ jobs:
             any::testthat
             any::pkgload
             any::plumber
+            any::devtools
             any::dplyr
             any::dbplyr
             any::tibble
@@ -119,6 +120,10 @@ jobs:
             any::broom
             github::marcoarthur/eduBR@2dc9af929742896d575e2e147e7e2c253a346ba8
           cache-version: 1
+
+      - name: todas as dependências do DESCRIPTION instaladas (#363)
+        working-directory: analysis/edumapsr
+        run: Rscript inst/scripts/dependencias.R verificar DESCRIPTION
 
       - name: inventário do que será usado (diagnóstico)
         working-directory: analysis/edumapsr
