@@ -299,6 +299,28 @@ sub register($self, $app, @args) {
     ->to('gestor#documentos_historico_index')->name('gestor_documentos_historico');
   $auth->get('/:cod_inep/documentos/:id/download' => $doc_id_check)
     ->to('gestor#documentos_download')->name('gestor_documentos_download');
+
+  # --- planos de gestão (#369): plano -> objetivos -> metas e ações ----------
+  my $pl_check  = [ @$check, id => qr/\d{1,18}/ ];
+  my $pl_filho  = sub ($nome) { [ @$pl_check, $nome => qr/\d{1,18}/ ] };
+
+  $auth->get('/:cod_inep/planos' => $check)->to('gestor_planos#index')->name('gestor_planos');
+  $auth->post('/:cod_inep/planos' => $check)->to('gestor_planos#create')->name('gestor_planos_create');
+  $auth->get('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#show')->name('gestor_planos_show');
+  $auth->put('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#update')->name('gestor_planos_update');
+  $auth->delete('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#destroy')->name('gestor_planos_destroy');
+  $auth->get('/:cod_inep/planos/:id/auditoria' => $pl_check)
+    ->to('gestor_planos#auditoria')->name('gestor_planos_auditoria');
+
+  for my $f ([ objetivos => 'objetivo', 'oid' ], [ metas => 'meta', 'mid' ], [ acoes => 'acao', 'aid' ]) {
+    my ($rota, $acao, $param) = @$f;
+    $auth->post("/:cod_inep/planos/:id/$rota" => $pl_check)
+      ->to("gestor_planos#${acao}_create")->name("gestor_planos_${acao}_create");
+    $auth->put("/:cod_inep/planos/:id/$rota/:$param" => $pl_filho->($param))
+      ->to("gestor_planos#${acao}_update")->name("gestor_planos_${acao}_update");
+    $auth->delete("/:cod_inep/planos/:id/$rota/:$param" => $pl_filho->($param))
+      ->to("gestor_planos#${acao}_destroy")->name("gestor_planos_${acao}_destroy");
+  }
 }
 
 1;
