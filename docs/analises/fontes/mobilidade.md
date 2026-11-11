@@ -180,6 +180,24 @@ fonte; `antt_od_municipio` (MONITRIIP) é grão de viagem individual
 (CNPJ/placa/IMEI), negado por LGPD, e a agregação a município é decisão de
 produto. Detalhe em `docs/new_ideas/implementations_ideas/notas_tecnicas_145.md`.
 
+**Decisão de 2026-11-11 (#168) — acidente localizado pelos marcos de km; as
+três tabelas sem fonte saem.** Os 958 mil acidentes não chegavam a nenhuma
+escola: a view os ligava ao município por `antt_trecho_geodados`, sempre vazia.
+O acidente passa a ser **localizado pela camada de pontos de km da ANTT**
+(`clean.antt_marco_km`):
+- quando há marco exatamente no km do acidente, o ponto é o do marco;
+- quando o km cai entre dois marcos vizinhos da mesma rodovia e UF, a até 2 km
+  um do outro, o ponto é interpolado entre eles.
+
+O município é o polígono da malha que contém o ponto
+(`clean.antt_geolocalizar_acidentes()`). O que não se localiza fica contado
+por motivo, e **nunca é atribuído a um município por aproximação**: sem marco,
+trecho fora do padrão, sem km ou ponto fora da malha. A change `antt_sem_fonte`
+remove `antt_trecho_geodados`, `antt_contagem_equipamento` e
+`antt_od_municipio`, e tira da `analytics.mobilidade_escola` as colunas da OD.
+O dataset CKAN da camada de km ainda está **a confirmar**: o portal estava em
+timeout a 2026-11-11.
+
 ---
 
 ### DNIT — Sistema Nacional de Viação (SNV) e modelagem de VMDA por trecho

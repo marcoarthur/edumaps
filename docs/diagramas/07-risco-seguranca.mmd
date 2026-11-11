@@ -6,15 +6,18 @@ erDiagram
 %%       renaest_localidade_municipio a fornecer localidade/UF; o que nao
 %%       resolve fica em renaest_localidade_nao_resolvida. Depois alimentam a
 %%       view de mobilidade do diagrama 05;
-%%   (b) a ligacao acidente->trecho e feita NA VIEW, sem FOREIGN KEY.
+%%   (b) o acidente da ANTT so traz trecho e km: o ponto sai dos marcos de km
+%%       (antt_marco_km, interpolando entre marcos vizinhos) e o municipio do
+%%       poligono da malha que contem o ponto (#168). Sem FOREIGN KEY: a
+%%       ligacao e feita por clean.antt_geolocalizar_acidentes().
 %% NAO existe view de risco consolidada no banco: brazilcrime e consumido
 %% diretamente pelo IVET no relatorio R (analysis/reports/new_data_sources.Rmd).
 
     clean.malha_municipio ||--o{ clean.brazilcrime_municipio : "[FK] codigo_ibge"
-    clean.malha_municipio ||--o{ clean.antt_trecho_geodados : "[FK] codigo_ibge"
     clean.malha_municipio ||--o{ clean.renaest_sinistro : "[chave] codigo_ibge resolvido na ingestao"
 
-    clean.antt_trecho_geodados ||..o{ clean.antt_acidente_trecho : "[view] ON t.trecho = a.trecho - sem FK"
+    clean.antt_marco_km ||..o{ clean.antt_acidente_trecho : "[chave] rodovia + uf + km - funcao de localizacao"
+    clean.malha_municipio ||..o{ clean.antt_acidente_trecho : "[chave] codigo_ibge - poligono que contem o ponto"
     clean.renaest_localidade_municipio ||--o{ clean.renaest_sinistro : "[doc] localidade/uf vem do mesmo ficheiro Localidade"
 
     clean.antt_acidente_trecho ||..o| analytics.mobilidade_escola : "[view] mortos e feridos por municipio"
@@ -33,19 +36,23 @@ erDiagram
         bool supressao_celula_pequena "crime igual ou menor que 5"
         date dt_snapshot
     }
-    clean.antt_trecho_geodados {
-        text trecho PK "id do trecho"
-        text concessionaria PK
-        text codigo_ibge FK "municipio do km inicial"
-        numeric km_inicial
-        numeric km_final
-        geometry geometry
+    clean.antt_marco_km {
+        bigint id_marco PK
+        text rodovia "BR-NNN"
+        char uf
+        numeric km
+        geometry geom "ponto do marco"
     }
     clean.antt_acidente_trecho {
         bigint id_acidente PK
         text concessionaria
         text trecho
         numeric km
+        text rodovia "lida do trecho"
+        char uf
+        geometry geom "marco ou interpolado"
+        text codigo_ibge "municipio do ponto"
+        text geo_metodo "marco, interpolado ou vazio"
         date data_acidente
         int mortos
         int feridos_leves

@@ -110,6 +110,13 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   o cadastro não reconhece saem num relatório com o número de registos
   afectados, e localidades de acidentes que não resolvem ficam registadas com o
   motivo — nada desaparece em silêncio.
+- Sistema pode **situar cada acidente das rodovias federais concedidas no
+  município onde ocorreu**, a partir da rodovia e do quilômetro que a fonte
+  publica, usando os marcos quilométricos oficiais. Com isso, os acidentes
+  passam a contar no painel de mobilidade de cada escola, pelo município dela.
+  Acidente que não se consegue situar fica **contado à parte**, com o motivo
+  (sem marco no trecho, trecho fora do padrão, ponto fora do mapa municipal), e
+  **nunca é atribuído a um município por aproximação**.
 
 ### Carga e proveniência
 
