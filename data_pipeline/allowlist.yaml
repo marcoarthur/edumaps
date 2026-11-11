@@ -434,7 +434,9 @@ sources:
     # Os paths antigos /dataset/acidentes e /dataset/trechos davam 404 (o dataset
     # real é /dataset/acidentes-rodovias). NÃO há geometria de trecho (LineString)
     # no CKAN: os únicos geo-recursos são KMZ de equipamentos (radar/SAT/PMV) e um
-    # SHP de pontos de km — por isso antt_trecho_geodados segue sem fonte.
+    # SHP de pontos de km. Desde a #168 (2026-11-11) esse SHP localiza o
+    # acidente (clean.antt_marco_km); antt_trecho_geodados foi removida. O
+    # dataset da camada de km entra aqui quando o portal voltar e for medido.
 
   - id: transportes_renatest
     name: "Transportes - RENAEST sinistro (agregado por localidade)"

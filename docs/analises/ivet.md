@@ -690,9 +690,13 @@ censitário).
   "acesso_isocrona", "acesso_auto_45min")` — dois de exposição e dois de
   acesso (decisão de produto, 2026-10-20).
 - **Fora do default**: `sinistros_fatais_12m` (RENAEST) — está **0 em todas as
-  escolas-município do dev**, é constante e não entra; `antt_od` e `vmda` estão
-  **vazios** (fontes ausentes) e entram quando existirem, no mesmo bloco, sem
-  nova fórmula.
+  escolas-município do dev**, é constante e não entra; `vmda` está **vazio**
+  (fonte ausente) e entra quando existir, no mesmo bloco, sem nova fórmula.
+  `acidentes_12m` da ANTT (acidentes localizados pelos marcos de km, #168)
+  cobre **só as rodovias federais concedidas** e fica fora do default até
+  decisão de produto. A OD da ANTT (`antt_od`) **saiu do plano**: a única
+  fonte é grão de viagem individual (MONITRIIP), negada por LGPD, e a tabela
+  foi removida (change `antt_sem_fonte`).
 - **Tetos** (parâmetros de produto, calibrados no dev a 2026-10-18, por
   município): `IVET_TETO_SINISTROS_100K` = 500 (p50 ≈ 60, p90 ≈ 429, p99 ≈ 988);
   `IVET_TETO_FROTA_POR_HAB` = 1 (p90 ≈ 0,89).

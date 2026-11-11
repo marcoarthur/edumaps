@@ -149,9 +149,10 @@ Registradas aqui porque afetam quem for ler o modelo — nenhuma delas foi
 - **`isocrona_escolar` e `recife_transporte_escolar` não têm FK para
   `escolas`** — só a chave comum `co_entidade = codigo_inep`. Não há sequer
   classe `Result` para elas.
-- **`analytics.mobilidade_escola` junta acidentes a trechos só na view**
-  (`t.trecho = a.trecho`), sem FK entre `antt_acidente_trecho` e
-  `antt_trecho_geodados`.
+- **O acidente da ANTT chega ao município sem FK**: o ponto sai dos marcos de
+  km (`antt_marco_km`) e o município do polígono da malha, pela função
+  `clean.antt_geolocalizar_acidentes()` (#168). As tabelas de trechos, contagem
+  e OD da ANTT foram removidas (change `antt_sem_fonte`).
 - **`renaest_sinistro.codigo_ibge` vem da própria fonte** (ficheiro
   `Acidentes` da RENAEST); o de-para `renaest_localidade_municipio` (mesmo
   ficheiro `Localidade`) é que fornece `localidade`/`uf` e decide se a linha

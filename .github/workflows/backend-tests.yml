@@ -63,10 +63,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: dependências de sistema (cabeçalhos do libpq, cpanminus)
+      # gdal-bin: os testes de integração que leem camadas reais pelo ogr2ogr
+      # (marcos de km da ANTT, xlsx do MapBiomas) rodam em vez de se pularem.
+      - name: dependências de sistema (cabeçalhos do libpq, cpanminus, GDAL)
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libpq-dev cpanminus
+          sudo apt-get install -y build-essential libpq-dev cpanminus gdal-bin
 
       - name: cache da imagem do banco (edumaps-db:ci)
         uses: actions/cache@v5

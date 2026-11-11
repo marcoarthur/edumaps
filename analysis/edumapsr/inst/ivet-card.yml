@@ -153,7 +153,7 @@ bloco_c:
   denominador: clean.populacao_municipal
   default: [risco_sinistros, exposicao_frota, acesso_isocrona, acesso_auto_45min]
   nao_usados:
-    antt_od: "clean.antt_od_municipio VAZIA (MONITRIIP, grao de viagem individual/LGPD)"
+    acidentes_antt: "analytics.mobilidade_escola.acidentes_12m: so rodovias federais CONCEDIDAS e localizadas pelos marcos de km (#168); fora do default ate decisao de produto"
     vmda: "clean.snv_trecho_vmda VAZIA (DNIT, nao ingerido)"
     sinistros_fatais_12m: "0 em todas as escolas-municipio do dev (constante; nao entra)"
   componentes:
