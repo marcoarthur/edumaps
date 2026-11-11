@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-11 (ay) — camada de km real da ANTT, #168 fechada (PR #367)
+
+- Host: `libsodium-dev` instalado pelo usuário → `plumber` instalado; 16/16
+  dependências R; suíte R no host sem skips.
+- Portal da ANTT voltou. Camada = dataset `quilometro-principal` (SHP
+  "Ponto", 299.759 pts, 24 concessionárias, WGS 84; SHP numa PASTA do zip;
+  `km_m`, `concession`, UF dentro de `rodovia`). Repetidos na chave → média
+  (≤1 km) ou descarte (214 km).
+- **PR #367 mergeado** (`2f5f37d`). Nota **189**. Carga real local:
+  **772.252/963.199 (80,2%)** com município; `sem_marco` 177.505 (BR-040 sem
+  camada). 31.726 escolas com acidente em 12 m.
+- **#168 FECHADA à mão**: "Fecha #N" em PT no corpo do PR NÃO fecha a issue
+  (o GitHub só entende Closes/Fixes/Resolves).
+- Memória: job completo 1,67 GB de pico (carga dos acidentes, desde o #275);
+  só marcos + localização 415 MB. Conferir o minion do LXC antes de rodar lá.
+- **Quinta 12/11 (LXC)**: deploy completo (db: 2 changes ANTT; minion: GDAL
+  já no Rexfile; frontend: #366) → `--job=ANTT` → #295.
+
 ## Sessão 2026-11-11 (ax) — acidentes da ANTT por município (PR #365, #168)
 
 - #168 reescopada (decisões do usuário): **localizar o acidente pelos marcos
