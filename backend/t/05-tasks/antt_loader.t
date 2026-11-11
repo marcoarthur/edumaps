@@ -245,33 +245,50 @@ is(EduMaps::Ingestion::Job::ANTT::_csv_campo("a\x00b"), '"ab"', 'NUL removido (P
   like($@, qr/sem campo de km.*campos encontrados: BR, OBJECTID/s, 'camada sem km aborta e diz o que havia');
 }
 
-# Leitura: o "ogr2ogr" (mock) devolve GeoJSON; feições sem ponto ou sem
-# rodovia/km são descartadas e contadas; repetidos na chave saem no dedupe.
+# Leitura: o "ogr2ogr" (mock) devolve CSV com X/Y, como na camada real
+# (rodovia 'BR-381/SP' traz a UF; km em km_m; concessionária truncada pelo
+# DBF em 'concession'). Linha sem ponto ou sem rodovia/km é descartada e contada.
 {
   my @cmds;
   no warnings 'redefine';
   local *EduMaps::Ingestion::Job::ANTT::executar = sub {
     my ($self, $argv) = @_;
     push @cmds, $argv;
-    my $f = sub { { type => 'Feature', properties => $_[0], geometry => $_[1] } };
-    path($argv->[7])->spew(Mojo::JSON::encode_json({ type => 'FeatureCollection', features => [
-      $f->({ BR => 393, UF => 'RJ', KM => 112 }, { type => 'Point', coordinates => [-43.1, -22.5] }),
-      $f->({ BR => 393, UF => 'RJ', KM => 113 }, { type => 'MultiPoint', coordinates => [[-43.2, -22.6]] }),
-      $f->({ BR => 393, UF => 'RJ', KM => 113 }, { type => 'Point', coordinates => [-43.3, -22.7] }),
-      $f->({ BR => 393, UF => 'RJ', KM => 114 }, undef),
-      $f->({ BR => 'SP-330', UF => 'SP', KM => 1 }, { type => 'Point', coordinates => [-47, -23] }),
-    ] }));
+    path($argv->[7])->spew(join("\n",
+      'X,Y,concession,ano_do_pnv,rodovia,km_m,sentido,latitude,longitude',
+      '-46.518,-22.999,AUTOPISTA FERNÃO DIAS,2007,BR-381/SP,22.6,Decrescente,-22.999,-46.518',
+      '-46.517,-22.997,AUTOPISTA FERNÃO DIAS,2007,BR-381/SP,22.4,Decrescente,-22.997,-46.517',
+      ',,AUTOPISTA FERNÃO DIAS,2007,BR-381/SP,22.2,Decrescente,,',
+      '-47,-23,X,2007,SP-330/SP,1,Crescente,-23,-47',
+    ) . "\n", 'UTF-8');
     return 1;
   };
   my $j = job();
-  my $rows = $j->ler_marcos('/tmp/marcos.zip');
-  is_deeply($cmds[0], ['ogr2ogr', '-f', 'GeoJSON', '-lco', 'RFC7946=NO', '-t_srs', 'EPSG:4674',
-    $cmds[0][7], '/vsizip//tmp/marcos.zip'], 'zip lido sem descompactar, em SIRGAS 2000 (RFC7946=NO)');
-  is(scalar @$rows, 3, 'descarta feição sem ponto e rodovia estadual');
-  is_deeply([ @{ $rows->[0] }{qw(rodovia uf km x y)} ], [ 'BR-393', 'RJ', 112, -43.1, -22.5 ], 'marco lido');
-  is_deeply([ @{ $rows->[1] }{qw(x y)} ], [ -43.2, -22.6 ], 'MultiPoint usa o primeiro ponto');
-  my ($unicos, $dups) = $j->_dedupe_marcos($rows);
-  is_deeply([ scalar @$unicos, $dups ], [ 2, 1 ], 'marco repetido na chave (rodovia, UF, km) sai, mantendo o primeiro');
+  my $rows = $j->ler_marcos('/tmp/marcos.shp');
+  is_deeply($cmds[0], ['ogr2ogr', '-f', 'CSV', '-t_srs', 'EPSG:4674', '-lco', 'GEOMETRY=AS_XY',
+    $cmds[0][7], '/tmp/marcos.shp'], 'CSV com X/Y em SIRGAS 2000');
+  is(scalar @$rows, 2, 'descarta linha sem ponto e rodovia estadual');
+  is_deeply([ @{ $rows->[0] }{qw(rodovia uf km concessionaria x y)} ],
+    [ 'BR-381', 'SP', 22.6, 'AUTOPISTA FERNÃO DIAS', -46.518, -22.999 ],
+    'UF tirada da rodovia, km de km_m, concessionária de concession');
+}
+
+# Repetidos na chave (rodovia, UF, km): perto uns dos outros viram a média;
+# a mais de 1 km (a camada se contradiz) o km é descartado.
+{
+  my $j = job();
+  my @r = (
+    { rodovia => 'BR-381', uf => 'SP', km => 22.6, x => -46.5180, y => -23.0000, concessionaria => undef },
+    { rodovia => 'BR-381', uf => 'SP', km => 22.6, x => -46.5182, y => -23.0002, concessionaria => 'AFD' },
+    { rodovia => 'BR-392', uf => 'RS', km => 123.4, x => -52.0, y => -31.0 },
+    { rodovia => 'BR-392', uf => 'RS', km => 123.4, x => -52.09, y => -31.0 },    # ~8,6 km
+    { rodovia => 'BR-101', uf => 'ES', km => 1, x => -40.3, y => -20.3 },
+  );
+  my ($unicos, $fundidos, $ambiguos) = $j->_dedupe_marcos(\@r);
+  is_deeply([ scalar @$unicos, $fundidos, $ambiguos ], [ 2, 1, 1 ], 'funde 1 repetido e descarta 1 km ambíguo');
+  ok(abs($unicos->[0]{x} - -46.5181) < 1e-9 && abs($unicos->[0]{y} - -23.0001) < 1e-9, 'ponto fundido é a média');
+  is($unicos->[0]{concessionaria}, 'AFD', 'concessionária: a primeira preenchida do grupo');
+  is($unicos->[1]{rodovia}, 'BR-101', 'o km ambíguo não entra');
 }
 
 # Carga dos marcos: substitui a tabela inteira, ponto em EWKT 4674.
@@ -284,11 +301,29 @@ is(EduMaps::Ingestion::Job::ANTT::_csv_campo("a\x00b"), '"ab"', 'NUL removido (P
     'COPY com concessionária NULL e ponto EWKT');
 }
 
-# Sem origem de marcos (MARCOS_PKG vazio e sem --arg marcos): mantém os já carregados.
+# Descoberta: do dataset quilometro-principal, só o SHP (o KMZ é de LINHA e o
+# CSV vem vazio, 74 bytes).
+{
+  my $json = Mojo::JSON::encode_json({ success => Mojo::JSON::true, result => { resources => [
+    { format => 'KMZ', url => 'https://dados.antt.gov.br/dataset/9c0951da-0ca9-43b8-b158-f8bd591209c1/resource/a/download/dados_quilometo_principal.kmz' },
+    { format => 'SHP', url => 'https://dados.antt.gov.br/dataset/9c0951da-0ca9-43b8-b158-f8bd591209c1/resource/49bcce5a-b183-4c25-8908-c8debb6fabc3/download/shp-km-principal.zip' },
+    { format => 'PDF', url => 'https://dados.antt.gov.br/x.pdf' },
+    { format => 'CSV', url => 'https://dados.antt.gov.br/x.csv' },
+  ] } });
+  my $r = job(app => mock_app(ADBH->new), ua => AUA->new($json))->recurso_marcos;
+  like($r->{url}, qr{/shp-km-principal\.zip$}, 'descoberta escolhe o SHP');
+  my $al = EduMaps::Data::Allowlist->new;
+  ok($al->validate_url('https://dados.antt.gov.br/api/3/action/package_show?id=quilometro-principal'),
+    'API do dataset de km no allowlist') or diag $al->last_error;
+  ok($al->validate_url($r->{url}), 'recurso SHP no allowlist') or diag $al->last_error;
+}
+
+# Sem origem de marcos (descoberta sem recurso e sem --arg marcos): mantém os já carregados.
 {
   my $dbh = ADBH->new;
   no warnings 'redefine';
   local *ADBH::selectrow_array = sub { return 42 };
+  local *EduMaps::Ingestion::Job::ANTT::recurso_marcos = sub { undef };
   my $j = job(app => mock_app($dbh));
   is($j->atualizar_marcos({}), undef, 'sem origem não recarrega');
   is(scalar @{ $dbh->{dos} }, 0, 'e não apaga os marcos existentes');
@@ -297,7 +332,7 @@ is(EduMaps::Ingestion::Job::ANTT::_csv_campo("a\x00b"), '"ab"', 'NUL removido (P
 # Integração com o GDAL de verdade: shapefile gerado pelo ogr2ogr, campo de BR
 # numérico como nas camadas do governo, lido de volta pelo job.
 SKIP: {
-  skip 'sem ogr2ogr', 3 unless `ogr2ogr --version 2>/dev/null`;
+  skip 'sem ogr2ogr', 5 unless `ogr2ogr --version 2>/dev/null`;
   my $dir = tempdir(CLEANUP => 1);
   path("$dir/m.geojson")->spew(Mojo::JSON::encode_json({ type => 'FeatureCollection', features => [
     { type => 'Feature', properties => { br => 101, uf => 'ES', km => 10.5 },
@@ -306,11 +341,20 @@ SKIP: {
       geometry => { type => 'Point', coordinates => [ -40.31, -20.31 ] } },
   ] }));
   system('ogr2ogr', '-f', 'ESRI Shapefile', "$dir/marcos.shp", "$dir/m.geojson", '-a_srs', 'EPSG:4674') == 0
-    or skip 'ogr2ogr não gerou o shapefile de teste', 3;
+    or skip 'ogr2ogr não gerou o shapefile de teste', 5;
   my $rows = job()->ler_marcos("$dir/marcos.shp");
   is(scalar @$rows, 2, 'shapefile real: 2 marcos');
   is_deeply([ @{ $rows->[0] }{qw(rodovia uf km)} ], [ 'BR-101', 'ES', 10.5 ], 'campo numérico de BR normalizado');
   ok(abs($rows->[1]{x} + 40.31) < 1e-9, 'coordenada preservada');
+
+  # Como o zip da ANTT: o .shp numa PASTA dentro do zip.
+  require IO::Compress::Zip;
+  my $zip = "$dir/shp-km.zip";
+  IO::Compress::Zip::zip([ map { "$dir/marcos.$_" } qw(shp shx dbf prj) ] => $zip,
+    FilterName => sub { s{^.*/}{shp-km-principal/} })
+    or die "zip de teste: $IO::Compress::Zip::ZipError";
+  is(job()->fonte_gdal($zip), "/vsizip/$zip/shp-km-principal/marcos.shp", 'acha o .shp dentro da pasta do zip');
+  is(scalar @{ job()->ler_marcos($zip) }, 2, 'lê a camada direto do zip com pasta');
 }
 
 done_testing;

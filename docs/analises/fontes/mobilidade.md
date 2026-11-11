@@ -195,8 +195,25 @@ por motivo, e **nunca é atribuído a um município por aproximação**: sem mar
 trecho fora do padrão, sem km ou ponto fora da malha. A change `antt_sem_fonte`
 remove `antt_trecho_geodados`, `antt_contagem_equipamento` e
 `antt_od_municipio`, e tira da `analytics.mobilidade_escola` as colunas da OD.
-O dataset CKAN da camada de km ainda está **a confirmar**: o portal estava em
-timeout a 2026-11-11.
+**Camada de km medida (2026-11-11, mesmo dia, portal de volta).**
+- **Dataset e camada:** dataset `quilometro-principal`, recurso SHP "Ponto".
+  São 299.759 pontos a cada 200 m (20 m na BR-163/MS), de 24
+  concessionárias, em WGS 84. O SHP fica numa pasta dentro do zip. A UF vem
+  junto da rodovia (`BR-381/SP`) e o km vem em `km_m`.
+- **Pontos repetidos:** quando a mesma rodovia/km se repete (um ponto por
+  sentido), os pontos são o mesmo lugar (p50 0 m, p99 238 m) e viram a média.
+  Em 214 km a camada se contradiz em mais de 1 km (até 10 km), e esses km
+  ficam de fora. Resultado: **164.618 marcos**.
+- **Acidentes localizados:** **772.252 de 963.199 (80,2%)**, sendo 450.632 pelo
+  marco e 321.620 interpolados. Ficaram de fora:
+  - `sem_marco` = 177.505: rodovias sem camada de km, como a BR-040 em
+    RJ/MG/GO/DF (~113 mil), ou km fora da faixa coberta (BR-116/PR);
+  - `trecho_ilegivel` = 11.226: rodovias estaduais do PR (`151/PR`) e
+    trechos como `PT` ou `Contorno`;
+  - `fora_da_malha` = 1.804;
+  - `sem_km` = 412.
+- **Na escola:** 31.726 escolas estão em municípios com acidente nos últimos
+  12 meses, e a view continua com uma linha por escola.
 
 ---
 

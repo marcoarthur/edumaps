@@ -430,13 +430,17 @@ sources:
         method: GET
         description: "Recursos do dataset acidentes-rodovias (44 CSVs por concessionária; separador ';' e ISO-8859-1) — verificados 2026-10-18"
         license: "CC-BY-4.0 (ANTT)"
+      - path: "/dataset/9c0951da-0ca9-43b8-b158-f8bd591209c1"
+        method: GET
+        description: "Recursos do dataset quilometro-principal (camada de pontos de km, SHP zip ~8,9 MB, 299.759 pontos) — verificado 2026-11-11"
+        license: "CC-BY-4.0 (ANTT)"
     # Medido 2026-10-18: o portal CKAN responde (106 datasets, API package_show ok).
     # Os paths antigos /dataset/acidentes e /dataset/trechos davam 404 (o dataset
     # real é /dataset/acidentes-rodovias). NÃO há geometria de trecho (LineString)
     # no CKAN: os únicos geo-recursos são KMZ de equipamentos (radar/SAT/PMV) e um
     # SHP de pontos de km. Desde a #168 (2026-11-11) esse SHP localiza o
-    # acidente (clean.antt_marco_km); antt_trecho_geodados foi removida. O
-    # dataset da camada de km entra aqui quando o portal voltar e for medido.
+    # acidente (clean.antt_marco_km); antt_trecho_geodados foi removida. A
+    # camada é o dataset quilometro-principal (descoberto pelo package_show).
 
   - id: transportes_renatest
     name: "Transportes - RENAEST sinistro (agregado por localidade)"
