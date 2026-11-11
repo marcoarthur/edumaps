@@ -20,6 +20,12 @@
   camada de km (`MARCOS_PKG` + allowlist), conferir campos, `--arg
   apenas_marcos` no LXC, medir o balanço, fechar #168. LXC na quinta (12/11)
   leva também `deploy_db_dev` + `deploy_minion_dev` desta mudança.
+- **PR #366 mergeado** (`1e2c695`): a folha de pagamento caía com
+  `each_key_duplicate` (INEP 51036851, 02/2026) — a mesma pessoa com dois
+  pagamentos no mês e CPF mascarado igual. `DataTable` usa o `rowKey` só se
+  único e preenchido; senão, a posição da linha. A folha deixa de usar o CPF
+  como chave. Validado pelo usuário no frontend local. LXC: entra no
+  `deploy_frontend_dev` de quinta.
 
 ## Sessão 2026-11-10 (aw) — todas as dependências R instaladas (PR #364, #363)
 
