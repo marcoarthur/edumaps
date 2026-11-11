@@ -3,10 +3,29 @@
 **Data:** 2026-11-11
 **Autor:** engenharia de requisitos (agente) com o developer
 **Versão:** 1.0
-**Issue relacionado:** épico a criar (este documento é o corpo dele)
+**Issue relacionado:** #368 (épico)
 **Base:** plano de negócios e parecer de sprint de 10/10/2026
 (`~/Documents/EduMaps/Business-Plan/`) + inventário de capacidades
 (`docs/funcionalidades/`)
+
+---
+
+## 0. Sprint
+
+| Ordem | Issue | Cobre |
+|---|---|---|
+| 1 | #369 — modelo de dados e API | RF-001, RF-002, RF-005 |
+| 2 | #370 — indicadores oficiais, medições e progresso | RF-003, RF-004, RF-007 |
+| 3 | #371 — interface do gestor | telas de RF-001/002/005, RF-007 |
+| 4 (paralelo) | #372 — evidências (atas, documentos, notas) | RF-006 |
+| 4 (paralelo) | #373 — alertas de prazo por e-mail | RF-008 |
+| 4 (paralelo) | #374 — relatório de acompanhamento | RF-009 |
+
+**Backlog (fora do sprint):** #375 (visão da rede, secretaria) e #376
+(ingestão das taxas de rendimento e da distorção idade-série do INEP).
+
+**Validação:** mostrar o editor (#371) a 2 ou 3 gestores antes de fechar o
+sprint (§6).
 
 ---
 
