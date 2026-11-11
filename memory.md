@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-11 (ax) — acidentes da ANTT por município (PR #365, #168)
+
+- #168 reescopada (decisões do usuário): **localizar o acidente pelos marcos
+  de km da ANTT** (pontos; interpolação até 2 km; município pela malha) e
+  **remover** `antt_trecho_geodados`, `antt_contagem_equipamento` e
+  `antt_od_municipio` (change `antt_sem_fonte`, sem as colunas OD na view).
+- PR #365 mergeado (`c70e4bd`). Nota **188**. Cinco verifies antigos editados
+  para aceitar a remoção (não muda `change_id`).
+- `gdal-bin` na imagem do backend/minion e no CI (o minion local não tinha
+  `ogr2ogr`). GeoJSON do GDAL exige `RFC7946=NO` para respeitar EPSG:4674.
+- SVG 05/07 regenerados com **mermaid-cli 12.0.0** (11.x recusa `clean.x`),
+  versão fixada no README (`bf7df78`).
+- **Pendente**: portal `dados.antt.gov.br` em timeout → achar o dataset da
+  camada de km (`MARCOS_PKG` + allowlist), conferir campos, `--arg
+  apenas_marcos` no LXC, medir o balanço, fechar #168. LXC na quinta (12/11)
+  leva também `deploy_db_dev` + `deploy_minion_dev` desta mudança.
+
 ## Sessão 2026-11-10 (aw) — todas as dependências R instaladas (PR #364, #363)
 
 - #362 mergeado (`759b351`): `ivet-v1.3` (acesso em log).
