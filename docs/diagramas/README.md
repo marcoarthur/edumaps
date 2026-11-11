@@ -168,9 +168,18 @@ Registradas aqui porque afetam quem for ler o modelo — nenhuma delas foi
 ```bash
 cd docs/diagramas
 for f in *.mmd; do
-  npx -y @mermaid-js/mermaid-cli -i "$f" -o "${f%.mmd}.svg"
+  npx -y @mermaid-js/mermaid-cli@12.0.0 -i "$f" -o "${f%.mmd}.svg"
+done
+# sem node no host (ubaxala): a mesma versão em Docker
+for f in *.mmd; do
+  docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/data" minlag/mermaid-cli:12.0.0 \
+    -i "/data/$f" -o "/data/${f%.mmd}.svg"
 done
 ```
+
+**Versão fixada em 12.0.0.** As 11.x (medido: 11.4.2 e 11.12.0) recusam o
+ponto nos nomes das entidades (`clean.malha_municipio`) com *Parse error*; a
+12.0.0 aceita e gera o mesmo estilo dos SVG existentes.
 
 O `mermaid-cli` renderiza localmente via Puppeteer, sem depender de serviço
 externo — o passo é reproduzível offline. Uma falha de gramática é isolada por
