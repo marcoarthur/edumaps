@@ -31,6 +31,8 @@ import pesquisaResultados from "./tours/pesquisaResultados.js";
 import reuniaoAssistente from "./tours/reuniaoAssistente.js";
 import reuniaoDetalhe from "./tours/reuniaoDetalhe.js";
 import relacaoDetalhe from "./tours/relacaoDetalhe.js";
+import gestorPlanos from "./tours/gestorPlanos.js";
+import planoDetalhe from "./tours/planoDetalhe.js";
 import relatoriosSalvos from "./tours/relatoriosSalvos.js";
 import relatorioSalvo from "./tours/relatorioSalvo.js";
 import consentimentoVersoes from "./tours/consentimentoVersoes.js";
@@ -59,6 +61,7 @@ export const tourManager = new TourManager({
   gestorInventario,
   gestorRelacoes,
   gestorDocumentos,
+  gestorPlanos,
   assistenteCenso,
   adminPainel,
   configPainel,
@@ -68,6 +71,7 @@ export const tourManager = new TourManager({
   reuniaoAssistente,
   reuniaoDetalhe,
   relacaoDetalhe,
+  planoDetalhe,
   relatoriosSalvos,
   relatorioSalvo,
   consentimentoVersoes,

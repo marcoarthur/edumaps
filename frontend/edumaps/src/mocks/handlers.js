@@ -13,6 +13,7 @@ import { gestorEnviosHandlers } from "@/features/gestor/mocks/enviosHandlers.js"
 import { gestorOsmHandlers } from "@/features/gestor/mocks/osmHandlers.js";
 import { gestorInfluenciaHandlers } from "@/features/gestor/mocks/influenciaHandlers.js";
 import { gestorRelatoriosHandlers } from "@/features/gestor/mocks/relatoriosHandlers.js";
+import { gestorPlanosHandlers } from "@/features/gestor/mocks/planosHandlers.js";
 import { configHandlers } from "@/features/config/mocks/configHandlers.js";
 import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
 import { chatHandlers } from "@/features/chat/mocks/chatHandlers.js";
@@ -31,6 +32,7 @@ export const handlers = [
   ...gestorOsmHandlers,
   ...gestorInfluenciaHandlers,
   ...gestorRelatoriosHandlers,
+  ...gestorPlanosHandlers,
   ...configHandlers,
   ...telemetryHandlers,
   ...chatHandlers,

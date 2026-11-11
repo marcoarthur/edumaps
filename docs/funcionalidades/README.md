@@ -66,6 +66,7 @@
 | [Inventário escolar](gestor/inventario.md) | Inventariar recursos e serviços, partindo do Censo. | 🟢 |
 | [Relações institucionais](gestor/relacoes-institucionais.md) | Gerir as relações com entidades externas e suas demandas. | 🟢 |
 | [Documentos e planos escolares](gestor/documentos-planos.md) | Guardar os documentos e planos da escola em pastas, com versões, tags e histórico. | 🟢 |
+| [Planos de gestão acompanháveis](gestor/planos-gestao.md) | Acompanhar o plano da escola em objetivos, metas (indicador oficial ou manual) e ações com responsável e prazo, com o andamento calculado (sempre com quantas metas foram medidas) e alertas de prazo por e-mail. | 🟡 |
 | [Equipamentos no entorno](gestor/equipamentos-entorno.md) | Ver no mapa (e atualizar) os equipamentos públicos ao redor da escola. A completude da malha viária é calculada, mas ainda não aparece na tela. | 🟡 |
 | [Área de influência](gestor/area-de-influencia.md) | Ver no mapa o entorno considerado nas leituras territoriais da escola, em três raios documentados (500 m, 1 km, 2 km), e a isócrona (15 min a pé, 45 min de carro), com a leitura do entorno (população e densidade, Censo 2022), cartelas, legenda, área, proveniência e aviso de "ainda não calculada". | 🟢 |
 
