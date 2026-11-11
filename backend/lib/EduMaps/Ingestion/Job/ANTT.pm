@@ -5,6 +5,7 @@ use utf8;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON qw(decode_json);
 use Text::CSV;
+use IO::Uncompress::Unzip qw($UnzipError);
 
 # =============================================================================
 # ANTT — acidentes em rodovias federais concedidas (issue #168)
@@ -53,10 +54,15 @@ has stall_timeout => 1800;
 use constant {
   TAB        => 'clean.antt_acidente_trecho',
   TAB_MARCOS => 'clean.antt_marco_km',
-  # Dataset CKAN da camada de pontos de km. A confirmar quando o portal voltar
-  # (medido 2026-11-11: dados.antt.gov.br em timeout). Vazio = sem descoberta
-  # automática: o job usa `--arg marcos=<arquivo>` ou os marcos já carregados.
-  MARCOS_PKG => '',
+  # Dataset CKAN da camada de pontos de km (medido 2026-11-11): "Quilômetro
+  # Pista Principal", recurso SHP "Ponto" (zip de ~8,9 MB, 299.759 pontos a
+  # cada 200 m — ou 20 m na BR-163/MS —, WGS 84, 24 concessionárias).
+  MARCOS_PKG => 'quilometro-principal',
+  # Pontos repetidos na chave (rodovia, UF, km) — um por sentido, às vezes
+  # mais — são o MESMO lugar (medido: p50 0 m, p90 27 m, p99 238 m) e viram a
+  # média. Acima deste limite (220 chaves, até 10 km) a camada se contradiz e
+  # o km fica sem marco: um marco ambíguo não localiza acidente.
+  MARCOS_DIVERGENCIA_MAX_M => 1000,
   CKAN_PKG => 'https://dados.antt.gov.br/api/3/action/package_show?id=acidentes-rodovias',
   DATASET  => 'acidentes-rodovias',
   LICENCA  => 'CC-BY-4.0 (ANTT)',
@@ -83,10 +89,12 @@ sub tabelas ($self, $args = {}) { return (TAB, TAB_MARCOS) }
 # vence). A camada real ainda não foi medida; um nome fora desta lista faz o
 # job abortar listando os campos que encontrou — nunca carrega às cegas.
 our %CAMPOS_MARCO = (
+  # Camada real (2026-11-11): concession, ano_do_pnv, rodovia ('BR-381/SP',
+  # com a UF), km_m, sentido, latitude, longitude. O nome do DBF trunca em 10.
   rodovia        => [qw(rodovia br nm_rodovia sg_rodovia cod_rodovia vl_br)],
   uf             => [qw(uf sg_uf estado)],
-  km             => [qw(km nu_km vl_km km_marco)],
-  concessionaria => [qw(concessionaria concessao nm_concessionaria)],
+  km             => [qw(km_m km nu_km vl_km km_marco)],
+  concessionaria => [qw(concessionaria concession concessao nm_concessionaria)],
 );
 
 sub run ($self, $args = {}) {
@@ -162,13 +170,16 @@ sub atualizar_marcos ($self, $args = {}) {
   }
 
   my $marcos = $self->ler_marcos($arquivo);
-  my ($unicos, $dups) = $self->_dedupe_marcos($marcos);
+  my ($unicos, $fundidos, $ambiguos) = $self->_dedupe_marcos($marcos);
   my $n = $self->carregar_marcos($unicos);
-  $self->log_info(sprintf('ANTT: %d marcos de km em %s (%d repetidos descartados)', $n, TAB_MARCOS, $dups));
+  $self->log_info(sprintf('ANTT: %d marcos de km em %s (%d pontos repetidos fundidos; %d km ambíguos descartados)',
+    $n, TAB_MARCOS, $fundidos, $ambiguos));
   $self->upsert_metadata(TAB_MARCOS, path($arquivo)->basename, $origem, LICENCA, $n,
     sprintf('Marcos quilométricos (pontos de km) das rodovias federais concedidas, camada de geodados da ANTT, '
-      . 'lida com ogr2ogr e reprojetada para SIRGAS 2000 (EPSG:4674). Um ponto por (rodovia, UF, km); '
-      . '%d repetidos na chave descartados. Usados para localizar os acidentes (#168).', $dups));
+      . 'lida com ogr2ogr e reprojetada para SIRGAS 2000 (EPSG:4674). Um ponto por (rodovia, UF, km): '
+      . '%d pontos repetidos na chave (um por sentido) fundidos pela média; %d km descartados por trazerem '
+      . 'pontos a mais de %d m uns dos outros. Usados para localizar os acidentes (#168).',
+      $fundidos, $ambiguos, MARCOS_DIVERGENCIA_MAX_M));
   return $n;
 }
 
@@ -181,53 +192,79 @@ sub recurso_marcos ($self) {
   die 'ANTT: CKAN (marcos) falhou: ' . ($tx->error->{message} // 'erro') . "\n" if $tx->error;
   my $d = eval { decode_json($tx->res->body) };
   die "ANTT: CKAN (marcos) não devolveu JSON válido\n" unless $d && $d->{success};
-  my @shp = grep { ($_->{format} // '') =~ /^(?:shp|zip|shapefile|gpkg)$/i } @{ $d->{result}{resources} // [] };
+  # Só o SHP: o mesmo dataset traz um KMZ de LINHA e um CSV vazio (74 bytes).
+  my @shp = grep { ($_->{format} // '') =~ /^(?:shp|shapefile)$/i } @{ $d->{result}{resources} // [] };
   die sprintf("ANTT: dataset %s devolveu %d recursos de geometria (esperava 1)\n", MARCOS_PKG, scalar @shp)
     unless @shp == 1;
   return { url => $shp[0]{url} };
 }
 
-# Comando GDAL: qualquer formato vetorial -> GeoJSON em EPSG:4674. RFC7946=NO
-# é o que faz o -t_srs valer: no modo RFC 7946 (e no GeoJSONSeq) o GDAL grava
-# sempre em WGS 84 e ignora o SIRGAS 2000 pedido (medido: avisa e reprojeta).
-# Um .zip é lido sem descompactar (/vsizip/).
-sub comando_marcos ($self, $arquivo, $saida) {
-  my $fonte = $arquivo =~ /\.zip$/i ? "/vsizip/$arquivo" : $arquivo;
-  return ['ogr2ogr', '-f', 'GeoJSON', '-lco', 'RFC7946=NO', '-t_srs', 'EPSG:4674', $saida, $fonte];
+# Comando GDAL: qualquer formato vetorial -> CSV com X/Y em EPSG:4674. CSV, e
+# não GeoJSON: são ~300 mil pontos, lidos linha a linha (um GeoJSON desse
+# tamanho inteiro na memória do minion custaria ~1 GB), e o driver CSV respeita
+# o -t_srs (o GeoJSON RFC 7946 e o GeoJSONSeq gravam sempre em WGS 84).
+sub comando_marcos ($self, $fonte, $saida) {
+  return ['ogr2ogr', '-f', 'CSV', '-t_srs', 'EPSG:4674', '-lco', 'GEOMETRY=AS_XY', $saida, $fonte];
+}
+
+# Caminho que o GDAL abre. Um .zip vira /vsizip/; o SHP da ANTT está numa
+# PASTA dentro do zip, e o GDAL 3.6 não abre o zip pela raiz nesse caso
+# (medido: "not recognized as being in a supported file format").
+sub fonte_gdal ($self, $arquivo) {
+  return $arquivo unless $arquivo =~ /\.zip$/i;
+  my $z = IO::Uncompress::Unzip->new($arquivo)
+    or die "ANTT: não abriu o zip $arquivo: $UnzipError\n";
+  my @shp;
+  my $status = 1;
+  while ($status > 0) {
+    my $nome = $z->getHeaderInfo->{Name} // '';
+    push @shp, $nome if $nome =~ /\.shp$/i;
+    $status = $z->nextStream;
+  }
+  $z->close;
+  die sprintf("ANTT: o zip %s tem %d shapefiles (esperava 1)\n", $arquivo, scalar @shp) unless @shp == 1;
+  return "/vsizip/$arquivo/$shp[0]";
 }
 
 # Lê a camada e devolve [{rodovia, uf, km, concessionaria, x, y}]. Campos
 # resolvidos por %CAMPOS_MARCO; a falta de rodovia ou km aborta a carga.
 sub ler_marcos ($self, $arquivo) {
   my $dir = tempdir;    # apagado quando sai de escopo
-  my $saida = "$dir/marcos.geojson";
-  $self->log_info("ogr2ogr: $arquivo -> GeoJSON (EPSG:4674)");
-  $self->executar($self->comando_marcos($arquivo, $saida));
+  my $saida = "$dir/marcos.csv";
+  my $fonte = $self->fonte_gdal($arquivo);
+  $self->log_info("ogr2ogr: $fonte -> CSV (EPSG:4674)");
+  $self->executar($self->comando_marcos($fonte, $saida));
   die "ANTT: ogr2ogr não gerou $saida\n" unless -s $saida;
 
-  my $fc = decode_json(path($saida)->slurp);
-  my (%campo, @rows);
+  my $csv = Text::CSV->new({ binary => 1, auto_diag => 1 });
+  open my $fh, '<:encoding(UTF-8)', $saida or die "ANTT: não abriu $saida: $!\n";
+  my $header = $csv->getline($fh) or die "ANTT: CSV de marcos vazio\n";
+  my %idx = map { $header->[$_] => $_ } 0 .. $#$header;
+  die "ANTT: CSV de marcos sem X/Y (camada sem geometria de ponto?)\n"
+    unless exists $idx{X} && exists $idx{Y};
+  my %campo = $self->_resolver_campos_marco([ grep { $_ ne 'X' && $_ ne 'Y' } @$header ]);
+
+  my @rows;
   my ($lidas, $sem_ponto, $ilegiveis) = (0, 0, 0);
-  for my $f (@{ $fc->{features} // [] }) {
+  while (my $l = $csv->getline($fh)) {
     $lidas++;
-    my $p = $f->{properties} // {};
-    %campo = $self->_resolver_campos_marco([keys %$p]) unless %campo;
-
-    my $xy = _ponto($f->{geometry});
-    if (!$xy) { $sem_ponto++; next }
-
-    my $rod = $p->{ $campo{rodovia} };
-    my $uf  = defined $campo{uf} ? $p->{ $campo{uf} } : undef;
+    my ($x, $y) = map { $self->_num($l->[ $idx{$_} ]) } qw(X Y);
+    if (!defined $x || !defined $y) { $sem_ponto++; next }
+    my $rod = $l->[ $idx{ $campo{rodovia} } ];
+    my $uf  = defined $campo{uf} ? $l->[ $idx{ $campo{uf} } ] : undef;
     my $r = {
       rodovia        => $self->rodovia_normalizada($rod),
       uf             => $self->_uf($uf) // $self->_uf_do_trecho($rod),
-      km             => $self->_num($p->{ $campo{km} }),
-      concessionaria => defined $campo{concessionaria} ? $self->_txt($p->{ $campo{concessionaria} }) : undef,
-      x => $xy->[0], y => $xy->[1],
+      km             => $self->_num($l->[ $idx{ $campo{km} } ]),
+      concessionaria => defined $campo{concessionaria} ? $self->_txt($l->[ $idx{ $campo{concessionaria} } ]) : undef,
+      x => $x, y => $y,
     };
     if (!defined $r->{rodovia} || !defined $r->{uf} || !defined $r->{km}) { $ilegiveis++; next }
     push @rows, $r;
   }
+  my $truncou = !eof($fh);
+  close $fh;
+  die "ANTT: leitura do CSV de marcos parou antes do fim ($lidas linhas)\n" if $truncou;
   die "ANTT: camada de marcos sem nenhum ponto legível ($lidas feições)\n" unless @rows;
   $self->log_info(sprintf('ANTT marcos: %d feições, %d válidas (descartadas: %d sem ponto, %d sem rodovia/UF/km)',
     $lidas, scalar @rows, $sem_ponto, $ilegiveis));
@@ -245,15 +282,6 @@ sub _resolver_campos_marco ($self, $nomes) {
   die sprintf("ANTT: camada de marcos fora do contrato (sem campo de %s); campos encontrados: %s\n",
     join(' e ', @falta), join(', ', sort @$nomes)) if @falta;
   return %campo;
-}
-
-# Point ou MultiPoint (primeiro ponto). Outras geometrias: não é marco.
-sub _ponto ($g) {
-  return undef unless ref $g eq 'HASH';
-  my $c = $g->{coordinates};
-  return [ @{$c}[0, 1] ] if ($g->{type} // '') eq 'Point' && ref $c eq 'ARRAY';
-  return [ @{ $c->[0] }[0, 1] ] if ($g->{type} // '') eq 'MultiPoint' && ref $c eq 'ARRAY' && ref $c->[0] eq 'ARRAY';
-  return undef;
 }
 
 # Mesma regra de clean.antt_rodovia_normalizada(): 'BR-393/RJ', 'BR 40', '393' -> 'BR-393'/'BR-040'.
@@ -279,15 +307,52 @@ sub _uf_do_trecho ($self, $v) {
   return undef;
 }
 
+# Agrupa pela chave (rodovia, UF, km): pontos a até MARCOS_DIVERGENCIA_MAX_M
+# uns dos outros viram a média; acima disso, a chave é descartada (ambígua).
+# Devolve (marcos, repetidos fundidos, chaves ambíguas descartadas).
 sub _dedupe_marcos ($self, $rows) {
-  my (%visto, @out);
-  my $dups = 0;
+  my (%grupo, @ordem);
   for my $r (@$rows) {
     my $k = join "\x1f", $r->{rodovia}, $r->{uf}, 0 + $r->{km};
-    if ($visto{$k}++) { $dups++; next }
-    push @out, $r;
+    push @ordem, $k unless $grupo{$k};
+    push @{ $grupo{$k} }, $r;
   }
-  return (\@out, $dups);
+  my @out;
+  my ($fundidos, $ambiguos) = (0, 0);
+  for my $k (@ordem) {
+    my $g = $grupo{$k};
+    if (@$g == 1) { push @out, $g->[0]; next }
+    if (_dispersao_m($g) > MARCOS_DIVERGENCIA_MAX_M) { $ambiguos++; next }
+    $fundidos += @$g - 1;
+    my %m = %{ $g->[0] };
+    $m{x} = _media(map { $_->{x} } @$g);
+    $m{y} = _media(map { $_->{y} } @$g);
+    ($m{concessionaria}) = grep { defined } map { $_->{concessionaria} } @$g;
+    push @out, \%m;
+  }
+  if ($ambiguos) {
+    $self->log->warn(sprintf('[ANTT] %d km descartado(s): a camada traz pontos a mais de %d m uns dos outros '
+      . 'para a mesma rodovia/UF/km', $ambiguos, MARCOS_DIVERGENCIA_MAX_M));
+  }
+  return (\@out, $fundidos, $ambiguos);
+}
+
+sub _media (@v) { my $s = 0; $s += $_ for @v; return $s / @v }
+
+# Maior distância (m) entre dois pontos do grupo; equiretangular basta (< 10 km).
+sub _dispersao_m ($g) {
+  my $max = 0;
+  for my $i (0 .. $#$g) {
+    for my $j ($i + 1 .. $#$g) {
+      my ($a, $b) = ($g->[$i], $g->[$j]);
+      my $lat = ($a->{y} + $b->{y}) / 2 * 3.141592653589793 / 180;
+      my $dx = ($a->{x} - $b->{x}) * 111320 * cos($lat);
+      my $dy = ($a->{y} - $b->{y}) * 110540;
+      my $d = sqrt($dx * $dx + $dy * $dy);
+      $max = $d if $d > $max;
+    }
+  }
+  return $max;
 }
 
 sub carregar_marcos ($self, $rows) {
