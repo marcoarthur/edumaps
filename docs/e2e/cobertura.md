@@ -870,7 +870,7 @@ Descoberta de infraestrutura, **pré-existente**:
 | # | Rota | Feature | Status | Obs. |
 |---|------|---------|--------|------|
 | 1 | `/` | home | 🟢 2026-09-28 | Renderiza os pilares; 0 exceções (ver nota sobre o erro transitício acima) |
-| 2 | `/about` | about | 🟢 2026-09-28 | Página institucional |
+| 2 | `/about` | — | 🔴 removida 2026-11-12 (#392) | "Sobre o Refactor" saiu do menu e do app; `/about` redireciona para `/`. Rodadas antigas abaixo citam a rota como histórico; nas próximas, usar outra rota (ex.: `/privacidade`) para casos genéricos. |
 | 3 | `/municipio/compare` | network-compare | 🔴 2026-09-28 | 500 do nginx (query string) |
 | 4 | `/escola/search` | schools | 🟢 2026-09-28 | Formulário e hints renderizam |
 | 5 | `/escola/panel?inep=35245239` | schools | 🟢 2026-09-28 | Carrega com 1 chamada `/api` |

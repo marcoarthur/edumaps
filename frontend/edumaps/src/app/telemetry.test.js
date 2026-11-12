@@ -65,12 +65,12 @@ describe("createBusTelemetry", () => {
     const recorded = [];
     createBusTelemetry({ bus, tracker: { record: (e) => recorded.push(e) } });
 
-    bus.emit(EVENTS.NAVIGATE, { route: "/about" });
+    bus.emit(EVENTS.NAVIGATE, { route: "/privacidade" });
     bus.emit(EVENTS.TOAST_ADD, { message: "oi" });
     bus.emit(SCHOOL_EVENTS.SEARCH_DONE, { q_len: 4, result_count: 2 });
 
     expect(recorded).toEqual([
-      { type: "navigate", payload: { route: "/about" } },
+      { type: "navigate", payload: { route: "/privacidade" } },
       { type: "schools:search", payload: { q_len: 4, result_count: 2 } },
     ]);
   });

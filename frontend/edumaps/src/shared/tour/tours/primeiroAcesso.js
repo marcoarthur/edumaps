@@ -1,8 +1,8 @@
 // src/shared/tour/tours/primeiroAcesso.js
 //
 // Tour de primeiro acesso: apresenta a plataforma na página inicial e as
-// entradas principais do menu. Configurações, Administração e "Sobre o
-// Refactor" ficam de fora: são áreas internas, não ponto de partida.
+// entradas principais do menu. Configurações e Administração ficam de fora:
+// são áreas internas, não ponto de partida.
 //
 // Alvos: `data-tour` na HomePage e nos itens do menu (NAV_LINKS em App.svelte).
 

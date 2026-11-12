@@ -1,7 +1,7 @@
 <script>
   // src/app/App.svelte
   import { router, link } from "./router.svelte.js";
-  import { matchRoute } from "./routes.js";
+  import { matchRoute, redirecionamento } from "./routes.js";
   import { eventBus, EVENTS } from "@/shared/events";
   import Toast from '@/shared/ui/components/Toast.svelte';
   import Logo from '@/shared/ui/components/Logo.svelte';
@@ -17,7 +17,6 @@
     { to: "/config", label: "Configurações" },
     { to: "/admin", label: "Administração" },
     { to: "/gestor", label: "Gestor", tour: "menu-gestor" },
-    { to: "/about", label: "Sobre o Refactor" },
   ];
 
   // Páginas públicas abertas por link pessoal (token na URL): sem o menu da
@@ -30,6 +29,13 @@
   ]);
 
   let match = $derived(matchRoute(router.path.split("?")[0]));
+
+  // Endereços antigos (ex.: /about, a página "Sobre o Refactor" removida na
+  // #392) trocam de URL sem entrar no histórico.
+  $effect(() => {
+    const destino = redirecionamento(router.path.split("?")[0]);
+    if (destino) untrack(() => router.replace(destino));
+  });
 
   // Navegação -> telemetria. Emite o PADRÃO da rota (ex.: /p/:token), nunca o
   // pathname cru — o link público de resposta carrega um token na URL, que não

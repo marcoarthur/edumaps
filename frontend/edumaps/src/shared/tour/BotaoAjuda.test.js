@@ -25,7 +25,7 @@ describe("BotaoAjuda", () => {
   });
 
   it("não aparece em página sem tour", () => {
-    render(BotaoAjuda, { path: "/about", manager: managerFalso(TOUR) });
+    render(BotaoAjuda, { path: "/privacidade", manager: managerFalso(TOUR) });
     expect(screen.queryByRole("button")).toBeNull();
   });
 
