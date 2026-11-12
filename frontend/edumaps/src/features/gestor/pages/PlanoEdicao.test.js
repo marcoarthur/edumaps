@@ -7,6 +7,9 @@ import { setSessaoToken } from "../utils/gestorSession.js";
 import { addToast } from "@/shared/stores/toastStore.js";
 import { SESSION_TOKEN } from "../mocks/fixtures.js";
 import { resetPlanosMock } from "../mocks/planosHandlers.js";
+import PlanoRelatorioPage from "./PlanoRelatorioPage.svelte";
+import { metas as metaApi } from "../api/gestorPlanosApi.js";
+import { INEP_PLANOS } from "../mocks/planosFixtures.js";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -104,5 +107,25 @@ describe("Edição do plano", () => {
     expect(t).toContain("alvo (6)");
     // legível sem aproximar (P1-PG-07): a legenda não usa letra menor que 12 px
     expect(fig.querySelector("figcaption").className).toContain("text-xs");
+  });
+  it("base da meta oficial ajustada pela escola fica marcada (P2-PG-05)", async () => {
+    await abrir();
+    expect(texto()).not.toContain("ajustada pela escola");
+    await fireEvent.click(screen.getByRole("button", { name: "Editar meta Subir o IDEB dos anos iniciais" }));
+    expect(screen.getByText(/Valor oficial da fonte quando a meta foi criada:/).textContent.replace(/\s+/g, " "))
+      .toContain("Valor oficial da fonte quando a meta foi criada: 5.");
+    await fireEvent.input(screen.getByDisplayValue("5"), { target: { value: "4.5" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith("Meta atualizada.", "success"));
+    await waitFor(() => expect(texto()).toContain("base 4,5 (ajustada pela escola; oficial: 5) → alvo 6"));
+  });
+
+  it("o relatório marca a base ajustada e explica no rodapé", async () => {
+    await metaApi.update(INEP_PLANOS, 1, 100, { linha_base: 4.5 });
+    window.history.pushState({}, "", "/gestor/planos/1/relatorio");
+    render(PlanoRelatorioPage);
+    const celula = (await screen.findByText(/ajustada pela escola; oficial: 5/)).closest("td");
+    expect(celula.textContent).toMatch(/^4,5\s*ajustada pela escola; oficial: 5$/);
+    expect(screen.getByText(/a escola mudou a linha de base de uma meta oficial/)).toBeInTheDocument();
   });
 });

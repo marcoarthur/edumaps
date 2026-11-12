@@ -38,7 +38,9 @@ conselho escolar o que avançou.
 - **Metas com indicador oficial:** a meta pode seguir um indicador oficial da
   escola (IDEB, matrículas, infraestrutura do Censo, vulnerabilidade
   territorial), que se atualiza sozinho e mostra a fonte e o ano. O histórico
-  fica guardado mesmo que a fonte mude depois.
+  fica guardado mesmo que a fonte mude depois. Se a escola ajustar a linha de
+  base de uma meta oficial, o ajuste aparece marcado ("ajustada pela escola",
+  com o valor oficial) na tela e no relatório.
 - **Metas manuais:** o gestor registra as medições, com data e nota.
 - **Andamento:** é calculado por meta, por objetivo e para o plano inteiro,
   sempre indicando **quantas metas foram medidas**. Uma meta sem medição ou

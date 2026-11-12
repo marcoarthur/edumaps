@@ -65,6 +65,11 @@ guiada. Ele abre sozinho na primeira visita e volta pelo botão **?** do menu.
   medição não conta como 0%. Ela aparece como **Sem medição**, ou como **Sem
   dado da escola na fonte** quando o indicador oficial não tem valor para a
   escola.
+- **Linha de base de uma meta oficial:** ela nasce com o último valor da
+  escola na fonte. Você pode ajustá-la (por exemplo, para partir do ano em que
+  o plano começou), mas o ajuste fica à vista: a meta mostra **ajustada pela
+  escola**, com o valor oficial ao lado, na tela e no relatório. Assim quem
+  lê o relatório sabe de onde o andamento está sendo medido.
 - **Indicadores oficiais são anuais**, e o IDEB sai a cada dois anos. No dia a
   dia, quem mostra o avanço são as **ações** e as **metas manuais**.
 
