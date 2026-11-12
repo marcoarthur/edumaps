@@ -24,7 +24,15 @@
   banco de dev para validar (reverter: access_role = 'gestor').
 - LXC (próximo deploy): + change `rede_acesso` (6 changes no total desde o
   último deploy, mais as do ANTT).
-- Próximo: #395 (custo executado + cargo), depois #396 (painel da rede).
+- **PR #400 mergeado** (`6102d97`, fecha #395): change
+  `planos_custo_executado` (custo_executado ≥ 0, executado_em); relatório com
+  previsto × executado por fonte (null quando a fonte não tem valor de um
+  lado) e `emitido_por_cargo` (cargo da sessão, sem nome). O 1º `gh pr merge`
+  falhou com erro interno do GitHub (GraphQL); a nova tentativa entrou.
+- Lição (memória persistente): scripts em fundo fixam o SHA e commitam por
+  worktree do main — o fechamento do #399 notificou sem conferir o CI porque
+  leu o HEAD da branch da #395.
+- Próximo: #396 (painel da rede e relatório da escola pela rede).
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 
