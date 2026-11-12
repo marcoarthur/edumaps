@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#380)
+## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#381)
 
 - Sprint dos planos de gestão (épico #368, spec
   `docs/specs/2026-11-11-planos-de-gestao.md`): #369–#374 no sprint; #375
@@ -24,7 +24,16 @@
   PR, a página de ajuda foi ligada às vizinhas (painel do gestor, documentos
   e planos, ajuda guiada). CI do `main` verde; imagens locais já batiam com o
   `main` (sem rebuild).
-- Em andamento: **#372** (evidências) na branch `feat/planos-evidencias`. #371 (interface) na branch
+- **PR #381 mergeado** (`19286ef`, fecha #372): evidências das ações e metas
+  (ata de reunião, versão de documento, nota; change `planos_evidencias`,
+  origem apagada vira "origem removida"). Validado pelo usuário no local.
+  Imagens locais já com o código do `main`; banco local com a change.
+- Demonstração local (conta de teste): reunião "Conselho escolar
+  (demonstração)" inserida direto no banco e "Projeto de leitura.txt"
+  enviado pela API, ligados ao plano 1.
+- `prove -j4` derruba 4 testes de canais/envios (estado compartilhado); em
+  série passam.
+- Nota técnica **191** (interface #371 e evidências #372). Falta #374. #371 (interface) na branch
   `feat/frontend-planos-gestao`, sem PR — aguarda validação visual.
 - **Armadilha**: `gh pr merge --delete-branch` do PR-base FECHOU o #378 (o
   GitHub não refaz a base quando a branch é apagada pela API). Recuperado
