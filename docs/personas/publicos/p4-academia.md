@@ -28,6 +28,12 @@
 - **Fonte de leitura:** a pesquisadora educacional do repositório `eduBR` (só
   leitura) é a mesma figura do lado do pacote de dados.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p4--academia-pesquisadora): sem impacto direto.
+
 ## Pendências
 
 - Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na

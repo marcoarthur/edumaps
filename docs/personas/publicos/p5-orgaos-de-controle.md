@@ -25,6 +25,12 @@
   dois é uma **decisão de posicionamento ainda não tomada**. Esta persona não
   orienta produto até essa decisão.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
+
 ## Pendências
 
 - Planos de gestão: **não se aplica** por ora (motivo na matriz do

@@ -22,6 +22,12 @@
 - **O que o faz desistir:** número sem fonte, dado que não se baixa, painel
   bonito que não se cita.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
+
 ## Pendências
 
 - Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na

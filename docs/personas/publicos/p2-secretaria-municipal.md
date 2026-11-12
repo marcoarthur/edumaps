@@ -28,6 +28,12 @@
   dado que não fecha entre escolas; ferramenta que expõe a rede sem o controle
   dele.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p2--secretaria-municipal-secretário-de-educação): adotaria com ressalvas (aguarda #375), **mantido**.
+
 ## Pendências
 
 - Avaliar a visão da rede quando a #375 existir: consolidação dos planos das

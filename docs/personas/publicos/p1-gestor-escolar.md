@@ -29,6 +29,12 @@
 - **Fonte de leitura:** a gestora escolar do repositório `eduBR` (só leitura)
   é a mesma figura, vista pelo pacote de dados. Aqui a avaliação é do produto.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria com ressalvas → **adotaria**.
+
 ## Pendências
 
 - Conferir com 2 ou 3 diretoras reais o veredito da reavaliação (adotaria).

@@ -439,6 +439,11 @@ P4 academia, P5 órgãos de controle, P6 terceiro setor.
   ajuda, spec e as telas com os dados de demonstração). Cada persona guarda a
   avaliação em "Entradas"; a consolidação vai para `avaliacoes/`.
 - **Achados viram issue só com a aprovação do developer.**
+- **Fechamento do ciclo (obrigatório):** ao fim de cada ciclo, junto da nota
+  técnica (passo 8 do Workflow), registrar em
+  `docs/personas/publicos/ciclos/AAAA-MM-DD-<tema>.md` o progresso e o
+  impacto para **cada** público (P1 a P6), inclusive "sem impacto" com o
+  motivo, e a linha do ciclo em "Progresso por ciclo" de cada persona.
 - São **simulações**: não substituem a conversa com usuários reais.
 
 ### Loop do Tech Lead (acervo do projeto)
@@ -620,7 +625,9 @@ plano → execução → aprovação
    PRs, ao longo de 1–2 dias), gerar uma nota técnica em
    `docs/new_ideas/implementations_ideas/notas_tecnicas_N.md` (próximo número
    sequencial), documentando o que foi construído e as decisões de design
-   relevantes.
+   relevantes. **Junto dela**, o fechamento do ciclo por público em
+   `docs/personas/publicos/ciclos/` (ver "Personas de público"): o mesmo
+   ciclo contado do lado do usuário.
 9. **Notificar (push)**: avisar o developer sobre o andamento via
    `tools/notify/notify.sh` (Telegram; em bloqueios também comenta no
    PR/issue via `gh` → GitHub mobile). Disparar **sempre**:

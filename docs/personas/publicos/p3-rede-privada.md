@@ -25,6 +25,12 @@
 - **O que o faz desistir:** ferramenta pensada só para a escola pública;
   dado que ele não consegue transformar em decisão.
 
+## Progresso por ciclo
+
+Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
+
+- [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p3--rede-privada-mantenedor): sem impacto direto.
+
 ## Pendências
 
 - Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na

@@ -49,6 +49,11 @@ de gestão (§6) recomenda mostrar a funcionalidade a 2 ou 3 gestores reais.
    encaminhamento. **Issues só são abertas com a aprovação do developer.**
 5. **Memória.** Cada persona mantém "Pendências" (o que voltar a checar
    quando algo mudar). Uma avaliação nova começa lendo as pendências.
+6. **Fechamento do ciclo.** Ao fim de cada ciclo de desenvolvimento, junto da
+   nota técnica, um arquivo em [`ciclos/`](ciclos/README.md) registra, para
+   **cada** público (P1 a P6), o que mudou, o impacto para o usuário e a
+   evolução do veredito. Público sem mudança também aparece, com o motivo.
+   Cada persona ganha a linha do ciclo em "Progresso por ciclo".
 
 ## Matriz de aplicabilidade
 

@@ -61,7 +61,8 @@
 - 🟢 `docs/personas/publicos/` — **ativas neste repo**: as seis personas de
   público do plano de negócios (P1 a P6), que avaliam as funcionalidades.
   Protocolo e matriz de aplicabilidade no `README.md`; avaliações em
-  `avaliacoes/` (a primeira: planos de gestão, 2026-11-12).
+  `avaliacoes/` (a primeira: planos de gestão, 2026-11-12). Fechamento de
+  cada ciclo por público (progresso e impacto para o usuário) em `ciclos/`.
 - ⚪ **Curadoria do `eduBR` foi movida para o repo dele** (`~/Projects/eduBR`),
   que guarda o perfil **e** a memória correntes das três personas de pacote —
   **leitura apenas**, nunca escrever lá. As cópias em `docs/personas/` aqui
