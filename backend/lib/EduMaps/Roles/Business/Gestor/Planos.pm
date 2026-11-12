@@ -1,6 +1,7 @@
 package EduMaps::Roles::Business::Gestor::Planos;
 use Mojo::Base -role, -signatures;
 use Mojo::JSON ();
+use Digest::SHA ();
 use utf8;
 
 # Planos de gestão da escola acompanháveis (#369, épico #368).
@@ -588,6 +589,89 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
       { descricao => $atual->{descricao} });
   });
   return 1;
+}
+
+# ---------------------------------------------------------------------------
+# alertas de prazo (#373)
+# ---------------------------------------------------------------------------
+
+# Um resumo por gestor (conta da escola dona do plano), com os planos VIGENTES
+# de alertas ligados que têm ação atrasada ou vencendo em até $janela dias.
+# Devolve [{ gestor_id, nome, email, cod_inep, n_acoes, assinatura,
+#            planos => [{ id, titulo, atrasadas => [..], vencendo => [..] }] }]
+# $hoje: 'AAAA-MM-DD' (padrão: hoje em America/Sao_Paulo).
+sub planos_alertas_resumos ($self, %o) {
+  my $janela = $o{janela} // 7;
+  my $hoje   = $o{hoje};
+  my $rows = $self->_pl_rows(
+    q{WITH hoje AS (SELECT COALESCE(?::date, (NOW() AT TIME ZONE 'America/Sao_Paulo')::date) AS d)
+      SELECT g.id AS gestor_id, g.nome, g.email, p.cod_inep, p.id AS plano_id, p.titulo AS plano_titulo,
+             a.id AS acao_id, a.descricao, a.responsavel, a.prazo, a.situacao,
+             (a.prazo < h.d) AS atrasada
+        FROM clean.planos_gestao p
+        CROSS JOIN hoje h
+        JOIN clean.planos_objetivos o ON o.plano_id = p.id
+        JOIN clean.planos_acoes a     ON a.objetivo_id = o.id
+        JOIN clean.gestores g         ON g.cod_inep::bigint = p.cod_inep
+       WHERE p.situacao = 'vigente' AND p.arquivado_em IS NULL AND p.alertas_ativos
+         AND a.situacao IN ('nao_iniciada', 'em_andamento')
+         AND a.prazo IS NOT NULL AND a.prazo <= h.d + ?::integer
+         AND g.email IS NOT NULL
+       ORDER BY g.id, p.id, a.prazo, a.id},
+    $hoje, $janela + 0);
+
+  my (@out, %idx);
+  for my $r (@$rows) {
+    my $g = $idx{ $r->{gestor_id} } //= do {
+      push @out, { gestor_id => $r->{gestor_id} + 0, nome => $r->{nome}, email => $r->{email},
+                   cod_inep => $r->{cod_inep} + 0, planos => [], _p => {} };
+      $out[-1];
+    };
+    my $pl = $g->{_p}{ $r->{plano_id} } //= do {
+      push @{ $g->{planos} }, { id => $r->{plano_id} + 0, titulo => $r->{plano_titulo},
+                                atrasadas => [], vencendo => [] };
+      $g->{planos}[-1];
+    };
+    push @{ $pl->{ $r->{atrasada} ? 'atrasadas' : 'vencendo' } }, {
+      id => $r->{acao_id} + 0, descricao => $r->{descricao}, responsavel => $r->{responsavel},
+      prazo => $r->{prazo}, situacao => $r->{situacao},
+    };
+  }
+  for my $g (@out) {
+    delete $g->{_p};
+    my @chave;
+    for my $pl (@{ $g->{planos} }) {
+      for my $lado (qw(atrasadas vencendo)) {
+        push @chave, map { join ':', $pl->{id}, $lado, $_->{id}, $_->{prazo}, $_->{situacao} } @{ $pl->{$lado} };
+      }
+    }
+    $g->{n_acoes}    = scalar @chave;
+    # Sem novidade = mesmas ações, no mesmo lado (atrasada/vencendo), com o
+    # mesmo prazo e situação que no último resumo enviado.
+    $g->{assinatura} = Digest::SHA::sha256_hex(join "\n", sort @chave);
+  }
+  return \@out;
+}
+
+# Já houve resumo hoje, ou o último enviado tem a mesma assinatura?
+sub planos_alerta_pular ($self, $gestor_id, $data, $assinatura) {
+  my $r = $self->_pl_row(
+    q{SELECT (SELECT 1 FROM clean.planos_alertas_envio WHERE gestor_id = ? AND data = ?::date) AS hoje,
+             (SELECT assinatura FROM clean.planos_alertas_envio
+               WHERE gestor_id = ? AND ok ORDER BY data DESC LIMIT 1) AS ultima},
+    $gestor_id + 0, $data, $gestor_id + 0);
+  return 'ja_enviado_hoje' if $r->{hoje};
+  return 'sem_novidade' if defined $r->{ultima} && $r->{ultima} eq $assinatura;
+  return undef;
+}
+
+sub planos_alerta_registrar ($self, $g, $data, $ok, $erro = undef) {
+  $self->_pl_rows(
+    q{INSERT INTO clean.planos_alertas_envio (gestor_id, cod_inep, data, assinatura, n_acoes, ok, erro)
+      VALUES (?, ?, ?::date, ?, ?, ?, ?)
+      ON CONFLICT (gestor_id, data) DO NOTHING RETURNING id},
+    $g->{gestor_id} + 0, $g->{cod_inep} + 0, $data, $g->{assinatura}, $g->{n_acoes} + 0,
+    $ok ? 1 : 0, $erro);
 }
 
 # ---------------------------------------------------------------------------

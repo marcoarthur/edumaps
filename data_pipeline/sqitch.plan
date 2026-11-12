@@ -164,3 +164,4 @@ antt_acidente_geolocalizacao [staging_schema antt_acidente_trecho_grao malha_mun
 antt_sem_fonte [antt_acidente_geolocalizacao analytics_views_materializadas analytics_ausencia_visivel] 2026-11-11T12:30:00Z Marco Arthur <arthurpbs@gmail.com> # #168: remove as 3 tabelas ANTT sem fonte; acidentes chegam a escola pelo municipio
 planos_gestao [antt_sem_fonte gestor_documentos] 2026-11-11T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # #369: planos de gestao da escola (objetivos, metas, acoes, auditoria)
 planos_indicadores [planos_gestao] 2026-11-11T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #370: indicadores oficiais por escola e medicoes das metas dos planos
+planos_alertas [planos_indicadores] 2026-11-11T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # #373: resumo diario de prazos dos planos (idempotencia por gestor/dia)
