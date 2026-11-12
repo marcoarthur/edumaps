@@ -20,7 +20,7 @@
     createEvidencia,
     deleteEvidencia,
   } from "../api/gestorPlanosApi.js";
-  import { downloadDocumento } from "../api/gestorDocumentosApi.js";
+  import { downloadDocumento, getDocumentos } from "../api/gestorDocumentosApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
@@ -59,6 +59,10 @@
   // edição (#383): { id, titulo } do objetivo em edição; metaForm/acaoForm com
   // `id` editam o item existente (sem `id`, criam um novo).
   let objetivoEdit = $state(null);
+  // arquivo do plano em Documentos e planos (#385): lista carregada ao escolher
+  let documentosEscola = $state(null);
+  let escolhendoDoc = $state(false);
+  let docEscolhido = $state("");
   let metaForm = $state(null);
   let acaoForm = $state(null);
   let medicaoForm = $state(null);
@@ -353,9 +357,40 @@
     await mudar(() => deleteEvidencia(inep, planoId, ev.id), "Evidência retirada.", "Não foi possível retirar a evidência.");
   }
 
-  async function baixarEvidencia(ev) {
+  // --- arquivo do plano (#385) ------------------------------------------------------
+  async function escolherArquivo() {
+    docEscolhido = plano.documento ? String(plano.documento.id) : "";
+    escolhendoDoc = true;
+    if (documentosEscola) return;
     try {
-      const { blob, filename } = await downloadDocumento(inep, ev.documento_id, ev.versao);
+      documentosEscola = (await getDocumentos(inep)).documentos ?? [];
+    } catch (err) {
+      escolhendoDoc = false;
+      const msg = onApiError(err, "Não foi possível carregar os documentos da escola.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
+  async function salvarArquivo(id) {
+    const ok = await mudar(
+      () => updatePlano(inep, planoId, { documento_id: id }),
+      id ? "Arquivo do plano ligado." : "Arquivo do plano desligado.",
+      "Não foi possível mudar o arquivo do plano.",
+    );
+    if (ok) escolhendoDoc = false;
+  }
+
+  async function desligarArquivo() {
+    if (!window.confirm("Desligar o arquivo do plano? O documento continua em Documentos e planos.")) return;
+    await salvarArquivo(null);
+  }
+
+  const baixarArquivo = () => baixar(plano.documento.id, null);
+  const baixarEvidencia = (ev) => baixar(ev.documento_id, ev.versao);
+
+  async function baixar(documentoId, versao) {
+    try {
+      const { blob, filename } = await downloadDocumento(inep, documentoId, versao);
       const url = window.URL.createObjectURL(blob);
       const a = window.document.createElement("a");
       a.href = url;
@@ -579,6 +614,34 @@
             <p class="text-red-700 font-semibold">{plano.resumo.n_acoes_atrasadas} ação(ões) atrasada(s)</p>
           {/if}
         </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="Arquivo do plano" data-tour="plano-arquivo">
+        <span class="text-xs font-semibold uppercase text-gray-500">Arquivo do plano</span>
+        {#if escolhendoDoc}
+          {#if documentosEscola === null}
+            <span class="text-xs text-gray-500">Carregando documentos…</span>
+          {:else if documentosEscola.length}
+            <select bind:value={docEscolhido} aria-label="Documento do plano" class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white max-w-xs">
+              <option value="">Escolha o documento…</option>
+              {#each documentosEscola as d (d.id)}<option value={String(d.id)}>{d.nome} (v{d.versao_atual})</option>{/each}
+            </select>
+            <button type="button" onclick={() => salvarArquivo(Number(docEscolhido))} disabled={!docEscolhido} class="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">Ligar</button>
+          {:else}
+            <span class="text-xs text-gray-500">Nenhum documento guardado. Envie o arquivo em Documentos e planos.</span>
+          {/if}
+          <button type="button" onclick={() => (escolhendoDoc = false)} class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 text-xs hover:bg-gray-300">Cancelar</button>
+        {:else if plano.documento}
+          <button type="button" onclick={baixarArquivo} class="text-blue-700 hover:underline" title="Baixar a versão atual">📄 {plano.documento.nome} (v{plano.documento.versao_atual})</button>
+          {#if editavel}
+            <button type="button" onclick={escolherArquivo} class="text-xs text-blue-700 hover:underline">Trocar</button>
+            <button type="button" onclick={desligarArquivo} class="text-xs text-red-700 hover:underline">Desligar</button>
+          {/if}
+        {:else}
+          <span class="text-xs text-gray-500">Nenhum arquivo ligado.</span>
+          {#if editavel}
+            <button type="button" onclick={escolherArquivo} class="text-xs text-blue-700 hover:underline">Ligar arquivo de Documentos e planos</button>
+          {/if}
+        {/if}
       </div>
       <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
         {#if plano.situacao === "rascunho"}
