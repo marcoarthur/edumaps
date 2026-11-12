@@ -12,7 +12,7 @@ ultima_revisao: 2026-11-12
 # Acompanhar os planos da escola
 
 > **Para quem:** gestor que conduz o plano de gestão, o plano de ação ou o PPP.
-> **Tempo de leitura:** ~6 min
+> **Tempo de leitura:** ~7 min
 
 ## Em 30 segundos
 
@@ -39,6 +39,15 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
    aparecem no topo.
 5. **Como saber que deu certo:** a barra de andamento de cada objetivo e do
    plano anda conforme as metas são medidas.
+
+**Para corrigir** um objetivo, uma meta ou uma ação, use o **✎** ao lado dele.
+O formulário abre no lugar do item; ajuste e clique em **Salvar alterações**.
+As medições e as evidências continuam ligadas. Uma meta com indicador oficial
+não vira manual na edição (nem o contrário): para trocar, crie outra meta.
+
+O gráfico de cada meta mostra o ano de cada medição embaixo do ponto, e a
+legenda diz qual linha tracejada é a **linha de base** (cinza) e qual é o
+**alvo** (verde).
 
 As duas telas, a lista de planos e a página do plano, têm um roteiro de ajuda
 guiada. Ele abre sozinho na primeira visita e volta pelo botão **?** do menu.
@@ -132,6 +141,9 @@ e não o nome completo. Não há dado de aluno.
   o link leva a ela, com a ata em texto e os anexos.
 - **O relatório mostra o nome de alguém?** Só o **responsável** de cada ação,
   como você escreveu. Por isso a dica de usar o cargo ou a equipe.
+- **Errei o prazo de uma ação. Preciso apagar e criar de novo?** Não. Use o
+  **✎** da ação: o prazo muda e as evidências continuam ligadas. A mudança
+  fica no histórico do plano.
 - **Posso corrigir um valor do IDEB?** Não. Os valores oficiais vêm da fonte.
   Se a meta precisa de outro número, faça uma meta manual.
 

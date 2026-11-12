@@ -56,6 +56,9 @@
   let indicadores = $state([]);
 
   let objetivoForm = $state(null);
+  // edição (#383): { id, titulo } do objetivo em edição; metaForm/acaoForm com
+  // `id` editam o item existente (sem `id`, criam um novo).
+  let objetivoEdit = $state(null);
   let metaForm = $state(null);
   let acaoForm = $state(null);
   let medicaoForm = $state(null);
@@ -164,6 +167,19 @@
     if (ok) objetivoForm = null;
   }
 
+  async function salvarObjetivoEdit() {
+    if (!objetivoEdit.titulo.trim()) {
+      addToast("Dê um título ao objetivo.", "warning");
+      return;
+    }
+    const ok = await mudar(
+      () => objApi.update(inep, planoId, objetivoEdit.id, { titulo: objetivoEdit.titulo.trim() }),
+      "Objetivo atualizado.",
+      "Não foi possível atualizar o objetivo.",
+    );
+    if (ok) objetivoEdit = null;
+  }
+
   async function excluirObjetivo(o) {
     if (!window.confirm(`Excluir o objetivo "${o.titulo}" com as metas e ações dele?`)) return;
     await mudar(() => objApi.remove(inep, planoId, o.id), "Objetivo excluído.", "Não foi possível excluir o objetivo.");
@@ -173,6 +189,15 @@
   function novaMeta(o) {
     metaForm = { objetivo_id: o.id, descricao: "", indicador_codigo: "", sentido: "aumentar",
                  unidade: "", linha_base: "", alvo: "", prazo: "" };
+  }
+
+  const txt = (v) => (v === null || v === undefined ? "" : String(v));
+
+  function editarMeta(m) {
+    acaoForm = null;
+    metaForm = { id: m.id, objetivo_id: m.objetivo_id, descricao: m.descricao, indicador_codigo: m.indicador_codigo ?? "",
+                 sentido: m.sentido, unidade: txt(m.unidade), linha_base: txt(m.linha_base), alvo: txt(m.alvo),
+                 prazo: m.prazo ?? "" };
   }
 
   function escolherIndicador() {
@@ -189,6 +214,21 @@
       return;
     }
     const oficial = !!metaForm.indicador_codigo;
+    if (metaForm.id) {
+      // edição: o indicador não muda (para trocar, crie outra meta)
+      const campos = {
+        descricao: metaForm.descricao.trim(),
+        sentido: metaForm.sentido,
+        linha_base: metaForm.linha_base === "" ? null : metaForm.linha_base,
+        alvo: metaForm.alvo === "" ? null : metaForm.alvo,
+        prazo: metaForm.prazo || null,
+      };
+      if (!oficial) campos.unidade = metaForm.unidade.trim() || null;
+      const ok = await mudar(() => metaApi.update(inep, planoId, metaForm.id, campos), "Meta atualizada.",
+        "Não foi possível atualizar a meta.");
+      if (ok) metaForm = null;
+      return;
+    }
     const dados = {
       objetivo_id: metaForm.objetivo_id,
       descricao: metaForm.descricao.trim(),
@@ -241,6 +281,13 @@
                  custo_previsto: "", fonte_recurso: "" };
   }
 
+  function editarAcao(a) {
+    metaForm = null;
+    acaoForm = { id: a.id, objetivo_id: a.objetivo_id, meta_id: a.meta_id ? String(a.meta_id) : "", descricao: a.descricao,
+                 responsavel: txt(a.responsavel), inicio: a.inicio ?? "", prazo: a.prazo ?? "",
+                 custo_previsto: txt(a.custo_previsto), fonte_recurso: a.fonte_recurso ?? "" };
+  }
+
   async function salvarAcao() {
     if (!acaoForm.descricao.trim()) {
       addToast("Descreva a ação.", "warning");
@@ -250,20 +297,20 @@
       addToast("O prazo da ação não pode ser antes do início.", "warning");
       return;
     }
-    const ok = await mudar(
-      () => acaoApi.create(inep, planoId, {
-        objetivo_id: acaoForm.objetivo_id,
-        meta_id: acaoForm.meta_id === "" ? null : Number(acaoForm.meta_id),
-        descricao: acaoForm.descricao.trim(),
-        responsavel: acaoForm.responsavel.trim() || null,
-        inicio: acaoForm.inicio || null,
-        prazo: acaoForm.prazo || null,
-        custo_previsto: acaoForm.custo_previsto === "" ? null : acaoForm.custo_previsto,
-        fonte_recurso: acaoForm.fonte_recurso || null,
-      }),
-      "Ação adicionada.",
-      "Não foi possível adicionar a ação.",
-    );
+    const campos = {
+      meta_id: acaoForm.meta_id === "" ? null : Number(acaoForm.meta_id),
+      descricao: acaoForm.descricao.trim(),
+      responsavel: acaoForm.responsavel.trim() || null,
+      inicio: acaoForm.inicio || null,
+      prazo: acaoForm.prazo || null,
+      custo_previsto: acaoForm.custo_previsto === "" ? null : acaoForm.custo_previsto,
+      fonte_recurso: acaoForm.fonte_recurso || null,
+    };
+    const ok = acaoForm.id
+      ? await mudar(() => acaoApi.update(inep, planoId, acaoForm.id, campos), "Ação atualizada.",
+          "Não foi possível atualizar a ação.")
+      : await mudar(() => acaoApi.create(inep, planoId, { objetivo_id: acaoForm.objetivo_id, ...campos }),
+          "Ação adicionada.", "Não foi possível adicionar a ação.");
     if (ok) acaoForm = null;
   }
 
@@ -361,6 +408,90 @@
     <p class="text-xs text-gray-500">Sem metas medidas ainda.</p>
   {/if}
   {#if p}<p class="text-[11px] text-gray-500">{p.n_medidas} de {p.n_metas} meta(s) medida(s)</p>{/if}
+{/snippet}
+
+{#snippet formMeta(o)}
+  <div class="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
+    {#if metaForm.id}
+      <p class="text-xs text-gray-600">
+        {metaForm.indicador_codigo ? `Indicador oficial: ${indicadorDe(metaForm.indicador_codigo)?.rotulo ?? metaForm.indicador_codigo}.` : "Meta manual."}
+        O tipo da meta não muda na edição; para trocar, crie outra meta.
+      </p>
+    {:else}
+    <label class="block text-xs text-gray-600"><span class="block">Indicador oficial (opcional)</span>
+      <select bind:value={metaForm.indicador_codigo} onchange={escolherIndicador} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
+        <option value="">Meta manual (o valor é informado pela escola)</option>
+        {#each indicadores as i (i.codigo)}
+          <option value={i.codigo}>{i.rotulo} — {i.ultimo ? `${fmtNum(i.ultimo.valor)} (${i.ultimo.ano})` : "sem dado"}</option>
+        {/each}
+      </select></label>
+    {/if}
+    {#if metaForm.indicador_codigo && !metaForm.id}
+      {@const ind = indicadorDe(metaForm.indicador_codigo)}
+      <p class="text-xs text-gray-600">
+        Fonte: {ind?.fonte}. {#if ind?.ultimo}Último valor da escola: {fmtNum(ind.ultimo.valor)} ({ind.ultimo.ano}) — vira a linha de base se você não informar outra.{:else}A fonte não tem valor desta escola: a meta fica "sem dado" até a fonte trazer.{/if}
+      </p>
+    {/if}
+    <label class="block text-xs text-gray-600"><span class="block">Meta *</span>
+      <input bind:value={metaForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reduzir as faltas para 12%" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    <div class="grid gap-2 sm:grid-cols-4">
+      <label class="text-xs text-gray-600"><span class="block">Sentido</span>
+        <select bind:value={metaForm.sentido} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
+          {#each SENTIDOS as s (s.valor)}<option value={s.valor}>{s.rotulo}</option>{/each}
+        </select></label>
+      <label class="text-xs text-gray-600"><span class="block">Linha de base</span>
+        <input bind:value={metaForm.linha_base} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Alvo</span>
+        <input bind:value={metaForm.alvo} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Prazo</span>
+        <input type="date" bind:value={metaForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    </div>
+    <p class="text-[11px] text-gray-500">
+      <strong>Sentido:</strong> se o valor deve aumentar, diminuir ou não cair abaixo do alvo.
+      <strong>Linha de base:</strong> o valor de partida, de onde o andamento é medido até o alvo.
+    </p>
+    {#if !metaForm.indicador_codigo}
+      <label class="block text-xs text-gray-600"><span class="block">Unidade</span>
+        <input bind:value={metaForm.unidade} maxlength="40" placeholder="Ex.: %, alunos, professores" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    {/if}
+    <div class="flex justify-end gap-2">
+      <button type="button" onclick={() => (metaForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
+      <button type="button" onclick={salvarMeta} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{metaForm.id ? "Salvar alterações" : "Salvar meta"}</button>
+    </div>
+  </div>
+{/snippet}
+
+{#snippet formAcao(o)}
+  <div class="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
+    <label class="block text-xs text-gray-600"><span class="block">Ação *</span>
+      <input bind:value={acaoForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reforço de leitura no contraturno" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    <div class="grid gap-2 sm:grid-cols-3">
+      <label class="text-xs text-gray-600"><span class="block">Responsável</span>
+        <input bind:value={acaoForm.responsavel} maxlength={L.RESPONSAVEL_MAX} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Início</span>
+        <input type="date" bind:value={acaoForm.inicio} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Prazo</span>
+        <input type="date" bind:value={acaoForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    </div>
+    <div class="grid gap-2 sm:grid-cols-3">
+      <label class="text-xs text-gray-600"><span class="block">Contribui para a meta</span>
+        <select bind:value={acaoForm.meta_id} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
+          <option value="">Nenhuma em especial</option>
+          {#each o.metas as m (m.id)}<option value={String(m.id)}>{m.descricao}</option>{/each}
+        </select></label>
+      <label class="text-xs text-gray-600"><span class="block">Custo previsto (R$)</span>
+        <input bind:value={acaoForm.custo_previsto} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Fonte do recurso</span>
+        <select bind:value={acaoForm.fonte_recurso} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
+          <option value="">—</option>
+          {#each FONTES_RECURSO as f (f.valor)}<option value={f.valor}>{f.rotulo}</option>{/each}
+        </select></label>
+    </div>
+    <div class="flex justify-end gap-2">
+      <button type="button" onclick={() => (acaoForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
+      <button type="button" onclick={salvarAcao} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{acaoForm.id ? "Salvar alterações" : "Salvar ação"}</button>
+    </div>
+  </div>
 {/snippet}
 
 {#snippet linhaAcao(a)}
@@ -504,12 +635,24 @@
 
       {#each plano.objetivos as o (o.id)}
         <article class="rounded-card bg-white border border-gray-200 shadow-card p-4 space-y-4">
+          {#if objetivoEdit?.id === o.id}
+            <div class="flex flex-wrap items-end gap-2">
+              <label class="text-xs text-gray-600 flex-1 min-w-[16rem]"><span class="block">Objetivo *</span>
+                <input bind:value={objetivoEdit.titulo} maxlength={L.OBJETIVO_MAX} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+              <button type="button" onclick={() => (objetivoEdit = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
+              <button type="button" onclick={salvarObjetivoEdit} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar alterações</button>
+            </div>
+          {:else}
           <div class="flex items-start justify-between gap-2">
             <h3 class="text-base font-semibold text-gray-900">{o.titulo}</h3>
             {#if editavel}
+              <div class="flex gap-1 shrink-0">
+              <button type="button" onclick={() => (objetivoEdit = { id: o.id, titulo: o.titulo })} aria-label={`Editar objetivo ${o.titulo}`} class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">✎</button>
               <button type="button" onclick={() => excluirObjetivo(o)} aria-label={`Excluir objetivo ${o.titulo}`} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">✕</button>
+              </div>
             {/if}
           </div>
+          {/if}
           {@render progresso(o.progresso, `Andamento de ${o.titulo}`)}
 
           <!-- metas -->
@@ -521,49 +664,14 @@
               {/if}
             </div>
 
-            {#if metaForm && metaForm.objetivo_id === o.id}
-              <div class="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
-                <label class="block text-xs text-gray-600"><span class="block">Indicador oficial (opcional)</span>
-                  <select bind:value={metaForm.indicador_codigo} onchange={escolherIndicador} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
-                    <option value="">Meta manual (o valor é informado pela escola)</option>
-                    {#each indicadores as i (i.codigo)}
-                      <option value={i.codigo}>{i.rotulo} — {i.ultimo ? `${fmtNum(i.ultimo.valor)} (${i.ultimo.ano})` : "sem dado"}</option>
-                    {/each}
-                  </select></label>
-                {#if metaForm.indicador_codigo}
-                  {@const ind = indicadorDe(metaForm.indicador_codigo)}
-                  <p class="text-xs text-gray-600">
-                    Fonte: {ind?.fonte}. {#if ind?.ultimo}Último valor da escola: {fmtNum(ind.ultimo.valor)} ({ind.ultimo.ano}) — vira a linha de base se você não informar outra.{:else}A fonte não tem valor desta escola: a meta fica "sem dado" até a fonte trazer.{/if}
-                  </p>
-                {/if}
-                <label class="block text-xs text-gray-600"><span class="block">Meta *</span>
-                  <input bind:value={metaForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reduzir as faltas para 12%" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                <div class="grid gap-2 sm:grid-cols-4">
-                  <label class="text-xs text-gray-600"><span class="block">Sentido</span>
-                    <select bind:value={metaForm.sentido} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
-                      {#each SENTIDOS as s (s.valor)}<option value={s.valor}>{s.rotulo}</option>{/each}
-                    </select></label>
-                  <label class="text-xs text-gray-600"><span class="block">Linha de base</span>
-                    <input bind:value={metaForm.linha_base} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                  <label class="text-xs text-gray-600"><span class="block">Alvo</span>
-                    <input bind:value={metaForm.alvo} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                  <label class="text-xs text-gray-600"><span class="block">Prazo</span>
-                    <input type="date" bind:value={metaForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                </div>
-                {#if !metaForm.indicador_codigo}
-                  <label class="block text-xs text-gray-600"><span class="block">Unidade</span>
-                    <input bind:value={metaForm.unidade} maxlength="40" placeholder="Ex.: %, alunos, professores" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                {/if}
-                <div class="flex justify-end gap-2">
-                  <button type="button" onclick={() => (metaForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-                  <button type="button" onclick={salvarMeta} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar meta</button>
-                </div>
-              </div>
-            {/if}
+            {#if metaForm && !metaForm.id && metaForm.objetivo_id === o.id}{@render formMeta(o)}{/if}
 
             <ul class="divide-y divide-gray-100 rounded-md border border-gray-100">
               {#each o.metas as m (m.id)}
                 <li class="p-3 space-y-1">
+                  {#if metaForm?.id === m.id}
+                    {@render formMeta(o)}
+                  {:else}
                   <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
                       <p class="text-sm font-medium text-gray-800">{m.descricao}</p>
@@ -574,9 +682,13 @@
                       </p>
                     </div>
                     {#if editavel}
-                      <button type="button" onclick={() => excluirMeta(m)} aria-label={`Excluir meta ${m.descricao}`} class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100 shrink-0">✕</button>
+                      <div class="flex gap-1 shrink-0">
+                        <button type="button" onclick={() => editarMeta(m)} aria-label={`Editar meta ${m.descricao}`} class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs hover:bg-gray-200">✎</button>
+                        <button type="button" onclick={() => excluirMeta(m)} aria-label={`Excluir meta ${m.descricao}`} class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
+                      </div>
                     {/if}
                   </div>
+                  {/if}
                   {#if m.progresso !== null && m.progresso !== undefined}
                     <div class="flex items-center gap-2" aria-label={`Progresso da meta ${m.descricao}: ${pct(m.progresso)}`}>
                       <div class="h-1.5 flex-1 max-w-xs rounded-full bg-gray-200 overflow-hidden"><div class="h-1.5 bg-blue-600" style={barra(m.progresso)}></div></div>
@@ -628,42 +740,14 @@
               {/if}
             </div>
 
-            {#if acaoForm && acaoForm.objetivo_id === o.id}
-              <div class="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
-                <label class="block text-xs text-gray-600"><span class="block">Ação *</span>
-                  <input bind:value={acaoForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reforço de leitura no contraturno" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                <div class="grid gap-2 sm:grid-cols-3">
-                  <label class="text-xs text-gray-600"><span class="block">Responsável</span>
-                    <input bind:value={acaoForm.responsavel} maxlength={L.RESPONSAVEL_MAX} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                  <label class="text-xs text-gray-600"><span class="block">Início</span>
-                    <input type="date" bind:value={acaoForm.inicio} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                  <label class="text-xs text-gray-600"><span class="block">Prazo</span>
-                    <input type="date" bind:value={acaoForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                </div>
-                <div class="grid gap-2 sm:grid-cols-3">
-                  <label class="text-xs text-gray-600"><span class="block">Contribui para a meta</span>
-                    <select bind:value={acaoForm.meta_id} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
-                      <option value="">Nenhuma em especial</option>
-                      {#each o.metas as m (m.id)}<option value={String(m.id)}>{m.descricao}</option>{/each}
-                    </select></label>
-                  <label class="text-xs text-gray-600"><span class="block">Custo previsto (R$)</span>
-                    <input bind:value={acaoForm.custo_previsto} inputmode="decimal" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
-                  <label class="text-xs text-gray-600"><span class="block">Fonte do recurso</span>
-                    <select bind:value={acaoForm.fonte_recurso} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
-                      <option value="">—</option>
-                      {#each FONTES_RECURSO as f (f.valor)}<option value={f.valor}>{f.rotulo}</option>{/each}
-                    </select></label>
-                </div>
-                <div class="flex justify-end gap-2">
-                  <button type="button" onclick={() => (acaoForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-                  <button type="button" onclick={salvarAcao} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar ação</button>
-                </div>
-              </div>
-            {/if}
+            {#if acaoForm && !acaoForm.id && acaoForm.objetivo_id === o.id}{@render formAcao(o)}{/if}
 
             <ul class="divide-y divide-gray-100 rounded-md border border-gray-100">
               {#each o.acoes as a (a.id)}
                 <li class="p-3 flex flex-wrap items-center gap-2">
+                  {#if acaoForm?.id === a.id}
+                  <div class="w-full">{@render formAcao(o)}</div>
+                  {:else}
                   <div class="min-w-0 flex-1">
                     <p class={`text-sm ${a.situacao === "concluida" || a.situacao === "cancelada" ? "line-through text-gray-400" : "text-gray-800"}`}>
                       {a.descricao}
@@ -680,9 +764,11 @@
                     <select value={a.situacao} onchange={(e) => mudarSituacaoAcao(a, e.target.value)} aria-label={`Situação de ${a.descricao}`} class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white">
                       {#each ACAO_SITUACOES as s (s.valor)}<option value={s.valor}>{s.rotulo}</option>{/each}
                     </select>
+                    <button type="button" onclick={() => editarAcao(a)} aria-label={`Editar ação ${a.descricao}`} class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs hover:bg-gray-200">✎</button>
                     <button type="button" onclick={() => excluirAcao(a)} aria-label={`Excluir ação ${a.descricao}`} class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
                   {:else}
                     <span class="text-xs text-gray-600">{ACAO_SITUACAO_LABEL[a.situacao]}</span>
+                  {/if}
                   {/if}
                   <div class="w-full">{@render evidencias(a.evidencias ?? [], "acao", a.id, a.descricao)}</div>
                 </li>
