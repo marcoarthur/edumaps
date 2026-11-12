@@ -106,6 +106,25 @@ const objetivoDe = (p, id) => p.objetivos.find((o) => o.id === Number(id));
 const metaDe = (p, id) => p.objetivos.flatMap((o) => o.metas).find((m) => m.id === Number(id));
 const acaoDe = (p, id) => p.objetivos.flatMap((o) => o.acoes).find((a) => a.id === Number(id));
 
+// Custo previsto por fonte (#384): ações não canceladas com custo informado.
+function custosPorFonte(grupos) {
+  const ordem = ["pdde", "fundeb", "proprio", "parceria", "outro", "nao_informada"];
+  const soma = {};
+  let semCusto = 0;
+  for (const [g, lista] of Object.entries(grupos)) {
+    if (g === "canceladas") continue;
+    for (const a of lista) {
+      if (a.custo_previsto === null || a.custo_previsto === undefined) { semCusto += 1; continue; }
+      const f = a.fonte_recurso ?? "nao_informada";
+      soma[f] ??= { fonte: f, total: 0, n_acoes: 0 };
+      soma[f].total += Number(a.custo_previsto);
+      soma[f].n_acoes += 1;
+    }
+  }
+  const por_fonte = ordem.filter((f) => soma[f]).map((f) => soma[f]);
+  return { por_fonte, total: por_fonte.reduce((s, c) => s + c.total, 0), n_acoes_sem_custo: semCusto };
+}
+
 export const gestorPlanosHandlers = [
   http.get(`${BASE}/indicadores`, ({ request, params }) => {
     const denied = okAuth(request);
@@ -170,6 +189,7 @@ export const gestorPlanosHandlers = [
       plano,
       escola: { cod_inep: Number(INEP_PLANOS), nome: "Escola Estadual Teste", municipio: "Porto Velho", uf: "RO" },
       acoes_por_situacao: grupos,
+      custos: custosPorFonte(grupos),
       n_evidencias: n,
       emitido_em: `${HOJE_PLANOS}T14:30:00`,
     });
