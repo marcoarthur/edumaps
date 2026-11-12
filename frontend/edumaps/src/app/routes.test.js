@@ -1,6 +1,6 @@
 // src/app/routes.test.js
 import { describe, it, expect } from "vitest";
-import { matchRoute } from "./routes.js";
+import { matchRoute, redirecionamento } from "./routes.js";
 
 describe("matchRoute", () => {
   it("encontra a rota da landpage /", () => {
@@ -8,9 +8,11 @@ describe("matchRoute", () => {
     expect(match?.path).toBe("/");
   });
 
-  it("encontra a rota /about", () => {
-    const match = matchRoute("/about");
-    expect(match?.path).toBe("/about");
+  it("/about (\"Sobre o Refactor\", removida na #392) não é mais rota e redireciona para a home", () => {
+    expect(matchRoute("/about")).toBeNull();
+    expect(redirecionamento("/about")).toBe("/");
+    expect(redirecionamento("/about/")).toBe("/");
+    expect(redirecionamento("/privacidade")).toBeNull();
   });
 
   it("encontra a rota de política de privacidade /privacidade", () => {

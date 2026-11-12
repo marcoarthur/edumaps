@@ -21,12 +21,18 @@ class Router {
     window.history.pushState({}, "", to);
     this.path = to;
   }
+
+  /** Troca a URL atual sem criar entrada no histórico (redirecionamento). */
+  replace(to) {
+    window.history.replaceState({}, "", to);
+    this.path = to;
+  }
 }
 
 export const router = new Router();
 
 /**
- * Svelte action: <a href="/about" use:link>
+ * Svelte action: <a href="/privacidade" use:link>
  * Intercepta o clique para navegar via history API em vez de recarregar
  * a página inteira. Links externos e cliques com modificador (ctrl/cmd/etc)
  * continuam funcionando normalmente.

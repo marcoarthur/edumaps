@@ -1,5 +1,4 @@
 // src/app/routes.js
-import AboutPage from "@/features/about";
 import PrivacidadePage, { ExclusaoPage, SairPage } from "@/features/privacidade";
 import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
@@ -47,7 +46,6 @@ import {
 
 export const routes = [
   { path: "/", component: HomePage },
-  { path: "/about", component: AboutPage },
   { path: "/privacidade", component: PrivacidadePage },
   { path: "/privacidade/exclusao/:token", component: ExclusaoPage },
   { path: "/privacidade/sair/:token", component: SairPage },
@@ -95,6 +93,18 @@ export const routes = [
   { path: "/inscricao/:token", component: InscricaoPublicaPage },
   { path: "/escola/search", component: SchoolSearchPageRx },
 ];
+
+/**
+ * Endereços antigos que mudaram de lugar ou deixaram de existir → destino.
+ * `/about` era a página "Sobre o Refactor" (removida na #392): vai para a home.
+ */
+export const REDIRECIONAMENTOS = { "/about": "/" };
+
+/** @param {string} pathname @returns {string|null} destino, ou null */
+export function redirecionamento(pathname) {
+  const clean = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  return REDIRECIONAMENTOS[clean] ?? null;
+}
 
 /**
  * Encontra a rota correspondente ao pathname.

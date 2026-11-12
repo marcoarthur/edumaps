@@ -12,7 +12,7 @@ export const TELEMETRY_OVERVIEW = {
   top_routes: [
     { route: "/escola/search", count: 145, share_pct: 40.5 },
     { route: "/", count: 88, share_pct: 27.0 },
-    { route: "/about", count: 44, share_pct: 13.5 },
+    { route: "/privacidade", count: 44, share_pct: 13.5 },
   ],
   tours: [
     {
