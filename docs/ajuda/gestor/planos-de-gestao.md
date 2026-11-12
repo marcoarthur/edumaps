@@ -4,7 +4,7 @@ publico: [gestor]
 modulo: gestor
 nivel: basico
 status: parcial
-relacionadas: [painel-do-gestor, documentos-e-planos, ajuda-guiada-painel]
+relacionadas: [painel-do-gestor, documentos-e-planos, reunioes-e-atas, ajuda-guiada-painel]
 funcionalidade: ../../funcionalidades/gestor/planos-gestao.md
 ultima_revisao: 2026-11-12
 ---
@@ -12,7 +12,7 @@ ultima_revisao: 2026-11-12
 # Acompanhar os planos da escola
 
 > **Para quem:** gestor que conduz o plano de gestão, o plano de ação ou o PPP.
-> **Tempo de leitura:** ~4 min
+> **Tempo de leitura:** ~5 min
 
 ## Em 30 segundos
 
@@ -57,6 +57,26 @@ guiada. Ele abre sozinho na primeira visita e volta pelo botão **?** do menu.
 - **Indicadores oficiais são anuais**, e o IDEB sai a cada dois anos. No dia a
   dia, quem mostra o avanço são as **ações** e as **metas manuais**.
 
+## Evidências
+
+Cada ação e cada meta pode guardar a prova do que foi feito. Em **+ Evidência**,
+escolha:
+
+- **Reunião / ata:** uma reunião já registrada em Reuniões da escola. O título
+  vira um link para a reunião, com a ata.
+- **Documento:** uma versão de um documento já guardado em Documentos e
+  planos. O título baixa **aquela versão**: se depois você enviar uma versão
+  nova do documento, a evidência continua apontando para a que foi ligada.
+- **Nota:** um texto curto (ex.: "lista de presença afixada no mural em
+  10/03").
+
+Nada é reenviado: a evidência aponta para o que já está na plataforma. Só
+aparecem as reuniões e os documentos da sua escola. O **✕** tira a evidência
+do plano, mas não apaga a reunião nem o documento.
+
+Se a reunião ou o documento for apagado depois, a evidência **não some**: ela
+fica com o título que tinha e a marca **origem removida**, sem link.
+
 ## Alertas de prazo
 
 Todo dia, às 7h, a plataforma manda ao e-mail da sua conta um resumo das ações
@@ -71,9 +91,9 @@ por e-mail** na página dele.
   **Reabrir plano**.
 - **Arquivar** tira o plano da lista, mas ele não é apagado. Para vê-lo, marque
   **Mostrar arquivados**.
-- Ainda não é possível ligar uma ação a uma ata ou documento como evidência,
-  nem gerar o relatório de acompanhamento para imprimir. Os dois estão a
-  caminho.
+- Ainda não é possível gerar o relatório de acompanhamento para imprimir. Ele
+  está a caminho.
+- Reuniões canceladas não aparecem na lista de evidências.
 
 ## Privacidade
 
@@ -85,6 +105,8 @@ e não o nome completo. Não há dado de aluno.
 
 - **O PDF do meu PPP some?** Não. Ele continua em Documentos e planos. O plano
   acompanhável organiza as metas e as ações.
+- **Posso ligar o arquivo de uma reunião (a ata em PDF)?** Ligue a reunião:
+  o link leva a ela, com a ata em texto e os anexos.
 - **Posso corrigir um valor do IDEB?** Não. Os valores oficiais vêm da fonte.
   Se a meta precisa de outro número, faça uma meta manual.
 
@@ -92,5 +114,6 @@ e não o nome completo. Não há dado de aluno.
 
 - [Painel do gestor](painel-do-gestor.md)
 - [Guardar documentos e planos da escola](documentos-e-planos.md)
+- [Reuniões e atas](reunioes-e-atas.md)
 - [Ajuda guiada nas telas do gestor](ajuda-guiada-painel.md)
 - Ficha da funcionalidade: [Planos de gestão acompanháveis](../../funcionalidades/gestor/planos-gestao.md)

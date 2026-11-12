@@ -4,7 +4,7 @@ publico: [gestor]
 modulo: gestor
 nivel: basico
 status: ativo
-relacionadas: [contatos-e-grupos]
+relacionadas: [contatos-e-grupos, planos-de-gestao]
 funcionalidade: ../../funcionalidades/gestor/reunioes-atas.md
 ultima_revisao: 2026-10-25
 ---
@@ -46,4 +46,6 @@ O módulo de reuniões e atas ajuda a organizar pautas, participantes, delibera�
 
 ## Veja também
 - [Contatos e grupos](contatos-e-grupos.md)
+- [Acompanhar os planos da escola](planos-de-gestao.md): a reunião pode virar
+  evidência de uma ação ou meta do plano
 - [Glossário](../_glossario.md)

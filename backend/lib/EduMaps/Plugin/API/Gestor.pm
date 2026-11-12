@@ -308,6 +308,8 @@ sub register($self, $app, @args) {
   # literal antes de /:id (o :id só casa dígitos, mas a ordem deixa explícito).
   $auth->get('/:cod_inep/planos/indicadores' => $check)
     ->to('gestor_planos#indicadores')->name('gestor_planos_indicadores');
+  $auth->get('/:cod_inep/planos/evidencias/origens' => $check)
+    ->to('gestor_planos#evidencia_origens')->name('gestor_planos_evidencia_origens');
   $auth->post('/:cod_inep/planos' => $check)->to('gestor_planos#create')->name('gestor_planos_create');
   $auth->get('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#show')->name('gestor_planos_show');
   $auth->put('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#update')->name('gestor_planos_update');
@@ -319,6 +321,12 @@ sub register($self, $app, @args) {
     ->to('gestor_planos#medicao_create')->name('gestor_planos_medicao_create');
   $auth->delete('/:cod_inep/planos/:id/metas/:mid/medicoes/:medid' => [ @{ $pl_filho->('mid') }, medid => qr/\d{1,18}/ ])
     ->to('gestor_planos#medicao_destroy')->name('gestor_planos_medicao_destroy');
+
+  # evidências (#372): só criar e excluir (não há o que editar num vínculo).
+  $auth->post('/:cod_inep/planos/:id/evidencias' => $pl_check)
+    ->to('gestor_planos#evidencia_create')->name('gestor_planos_evidencia_create');
+  $auth->delete('/:cod_inep/planos/:id/evidencias/:eid' => $pl_filho->('eid'))
+    ->to('gestor_planos#evidencia_destroy')->name('gestor_planos_evidencia_destroy');
 
   for my $f ([ objetivos => 'objetivo', 'oid' ], [ metas => 'meta', 'mid' ], [ acoes => 'acao', 'aid' ]) {
     my ($rota, $acao, $param) = @$f;

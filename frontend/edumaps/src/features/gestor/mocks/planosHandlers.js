@@ -2,9 +2,10 @@
 // MSW dos planos de gestão (base /api/gestor/:cod_inep/planos). Exigem a
 // sessão do gestor (Bearer SESSION_TOKEN) e reproduzem as regras do backend
 // que a tela precisa ver: plano encerrado → 409; "atrasada" derivada;
-// progresso da meta (aumentar/reduzir/manter) e agregado com N de M.
+// progresso da meta (aumentar/reduzir/manter) e agregado com N de M;
+// evidências (#372): origem de outra escola → 403, duplicata → 409.
 import { http, HttpResponse } from "msw";
-import { PLANOS_PLANOS, INDICADORES_PLANOS, INEP_PLANOS, HOJE_PLANOS } from "./planosFixtures.js";
+import { PLANOS_PLANOS, INDICADORES_PLANOS, INEP_PLANOS, HOJE_PLANOS, ORIGENS_PLANOS } from "./planosFixtures.js";
 import { SESSION_TOKEN } from "./fixtures.js";
 
 const BASE = "/api/gestor/:cod_inep/planos";
@@ -110,6 +111,13 @@ export const gestorPlanosHandlers = [
     const denied = okAuth(request);
     if (denied) return denied;
     return HttpResponse.json({ indicadores: params.cod_inep === INEP_PLANOS ? clone(INDICADORES_PLANOS) : [] });
+  }),
+
+  http.get(`${BASE}/evidencias/origens`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    if (params.cod_inep !== INEP_PLANOS) return HttpResponse.json({ error: "Acesso negado" }, { status: 403 });
+    return HttpResponse.json(clone(ORIGENS_PLANOS));
   }),
 
   http.get(BASE, ({ request, params }) => {
@@ -238,6 +246,43 @@ export const gestorPlanosHandlers = [
   })),
   http.delete(`${BASE}/:id/acoes/:aid`, editavel((p, _b, params) => {
     for (const o of p.objetivos) o.acoes = o.acoes.filter((a) => a.id !== Number(params.aid));
+    return HttpResponse.json({ excluido: true });
+  })),
+
+  http.post(`${BASE}/:id/evidencias`, editavel((p, b) => {
+    const dono = b.acao_id != null ? acaoDe(p, b.acao_id) : b.meta_id != null ? metaDe(p, b.meta_id) : null;
+    if (!dono || (b.acao_id != null && b.meta_id != null)) {
+      return HttpResponse.json({ error: "A evidência é de uma ação ou de uma meta (informe só uma)." }, { status: 400 });
+    }
+    let ev = { id: proximo++, tipo: b.tipo, titulo: null, texto: null, reuniao_id: null, quando: null,
+               documento_id: null, documento_versao_id: null, versao: null, origem_removida: false,
+               criado_em: `${HOJE_PLANOS}T10:00:00` };
+    if (b.tipo === "ata") {
+      const r = ORIGENS_PLANOS.reunioes.find((x) => x.id === b.reuniao_id);
+      if (!r) return HttpResponse.json({ error: "A reunião é de outra escola." }, { status: 403 });
+      ev = { ...ev, titulo: r.titulo, reuniao_id: r.id, quando: r.quando };
+    } else if (b.tipo === "documento") {
+      const d = ORIGENS_PLANOS.documentos.find((x) => x.versao_id === b.documento_versao_id);
+      if (!d) return HttpResponse.json({ error: "O documento é de outra escola." }, { status: 403 });
+      ev = { ...ev, titulo: `${d.nome} (v${d.versao})`, documento_id: d.documento_id,
+             documento_versao_id: d.versao_id, versao: d.versao };
+    } else {
+      ev.texto = b.texto;
+    }
+    dono.evidencias ??= [];
+    const dup = b.tipo !== "nota" && dono.evidencias.some((e) =>
+      (b.tipo === "ata" && e.reuniao_id === ev.reuniao_id) ||
+      (b.tipo === "documento" && e.documento_versao_id === ev.documento_versao_id));
+    if (dup) return HttpResponse.json({ error: "Esta evidência já está ligada." }, { status: 409 });
+    dono.evidencias.push(ev);
+    return HttpResponse.json(ev, { status: 201 });
+  })),
+  http.delete(`${BASE}/:id/evidencias/:eid`, editavel((p, _b, params) => {
+    const id = Number(params.eid);
+    const donos = p.objetivos.flatMap((o) => [...o.metas, ...o.acoes]);
+    const dono = donos.find((d) => (d.evidencias ?? []).some((e) => e.id === id));
+    if (!dono) return NAO_ACHOU("Evidência");
+    dono.evidencias = dono.evidencias.filter((e) => e.id !== id);
     return HttpResponse.json({ excluido: true });
   })),
 ];

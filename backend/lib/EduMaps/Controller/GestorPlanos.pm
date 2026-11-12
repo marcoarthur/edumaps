@@ -22,6 +22,9 @@ use EduMaps::Roles::Business::Gestor::Planos ();
 #                                             com o último valor da escola (#370)
 #   POST   .../planos/:id/metas/:mid/medicoes            medição manual (#370)
 #   DELETE .../planos/:id/metas/:mid/medicoes/:medid     só manual
+#   GET    .../planos/evidencias/origens       reuniões e versões de documento
+#                                             da escola que podem virar evidência (#372)
+#   POST   .../planos/:id/evidencias          | DELETE .../evidencias/:eid
 #
 # PUT é PARCIAL: só os campos enviados mudam; um campo enviado como null (ou
 # texto vazio) limpa o valor.
@@ -58,6 +61,14 @@ my %CAMPOS = (
     data_ref => [ 'data', obrigatorio => 1 ],
     valor    => [ 'numero', obrigatorio => 1 ],
     nota     => [ texto => 500 ],
+  },
+  evidencia => {
+    acao_id             => [ 'inteiro' ],
+    meta_id             => [ 'inteiro' ],
+    tipo                => [ enum => \@EduMaps::Roles::Business::Gestor::Planos::TIPOS_EVIDENCIA, obrigatorio => 1 ],
+    reuniao_id          => [ 'inteiro' ],
+    documento_versao_id => [ 'inteiro' ],
+    texto               => [ texto => 2000 ],
   },
   acao => {
     objetivo_id    => [ 'inteiro', obrigatorio => 1 ],
@@ -132,6 +143,14 @@ sub medicao_destroy($self) {
     { excluido => Mojo::JSON::true };
   });
 }
+
+sub evidencia_origens($self) {
+  return unless $self->_gestor_inep_ok;
+  $self->_executar(sub ($m) { $m->evidencia_origens($self->param('cod_inep')) });
+}
+
+sub evidencia_create($self) { $self->_filho_create('evidencia') }
+sub evidencia_destroy($self) { $self->_filho_destroy('evidencia', 'eid') }
 
 sub auditoria($self) {
   return unless $self->_gestor_inep_ok;

@@ -46,11 +46,15 @@ conselho escolar o que avançou.
   as que vencem nos próximos 7 dias ficam destacadas.
 - **Alertas por e-mail:** o gestor recebe por e-mail um resumo diário dos
   prazos, só quando há novidade, e pode desligar os alertas por plano.
+- **Evidências:** cada ação e cada meta pode ter a prova do que foi feito: a
+  ata de uma reunião já registrada, uma versão de um documento já guardado ou
+  uma nota. Nada é reenviado, e só entra o que é da própria escola. Se a
+  reunião ou o documento for apagado depois, a evidência continua, marcada
+  como "origem removida".
 - **Histórico:** toda mudança no plano fica registrada, com autor e data.
 
 ## Ainda não disponível
 
-- Evidências ligadas a atas de reunião e a documentos (#372).
 - Relatório de acompanhamento para imprimir e prestar contas (#374).
 - Visão da secretaria sobre os planos das escolas da rede (#375).
 

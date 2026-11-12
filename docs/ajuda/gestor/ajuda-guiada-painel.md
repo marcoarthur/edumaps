@@ -62,7 +62,7 @@ reaberto pelo **?**:
 | **Relações** | as quatro seções, filtros, nova relação e o detalhe de cada uma |
 | **Documentos** | pastas e versões, envio de arquivo, tags e atividade recente |
 | **Planos de gestão** | como criar um plano e o que a lista mostra (situação, ações concluídas e atrasadas) |
-| **Detalhe do plano** | o andamento (média das metas já medidas), pôr em vigor, encerrar ou reabrir, os alertas de prazo e como montar objetivos, metas e ações |
+| **Detalhe do plano** | o andamento (média das metas já medidas), pôr em vigor, encerrar ou reabrir, os alertas de prazo, como montar objetivos, metas e ações e como ligar evidências |
 | **Montar pesquisa** (nova/editar) | as etapas, quando o rascunho é salvo sozinho e o que vai em cada etapa |
 | **Resultados da pesquisa** | total de respostas e o resultado por pergunta |
 | **Agendar reunião** (nova/editar) | os quatro passos e que nada é salvo até o botão final |
