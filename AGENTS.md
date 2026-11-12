@@ -424,6 +424,23 @@ Uma persona atua sobre **todo o projeto** (não sobre o `eduBR`):
 |---------|---------|------|
 | Tech Lead | `docs/personas/tech-lead.md` | Organiza o acervo (`docs/` + Zotero) e propõe direções/oportunidades técnicas |
 
+### Personas de público (plano de negócios)
+
+As seis personas dos públicos do plano de negócios
+(`~/Documents/EduMaps/Business-Plan/publicos-alvo.md`) ficam em
+`docs/personas/publicos/` e **avaliam funcionalidades** do ponto de vista de
+quem usa ou paga: P1 gestor escolar, P2 secretaria municipal, P3 rede privada,
+P4 academia, P5 órgãos de controle, P6 terceiro setor.
+
+- **Quando:** ao fechar uma funcionalidade (ou um épico) que muda o que um
+  público vê. Só avaliam as personas a que a funcionalidade se aplica; as
+  outras registram "não se aplica" com o motivo, na matriz do `README.md`.
+- **Como:** protocolo no `docs/personas/publicos/README.md` (material: ficha,
+  ajuda, spec e as telas com os dados de demonstração). Cada persona guarda a
+  avaliação em "Entradas"; a consolidação vai para `avaliacoes/`.
+- **Achados viram issue só com a aprovação do developer.**
+- São **simulações**: não substituem a conversa com usuários reais.
+
 ### Loop do Tech Lead (acervo do projeto)
 
 1. **Ativar**: ler `docs/personas/tech-lead.md` + o mapa `docs/indice.md`.
