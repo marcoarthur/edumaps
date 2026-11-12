@@ -14,6 +14,8 @@ export { default as GestorReuniaoDetailPage } from "./pages/ReuniaoDetailPage.sv
 export { default as GestorInventarioPage } from "./pages/InventarioPage.svelte";
 export { default as GestorRelacoesPage } from "./pages/RelacoesPage.svelte";
 export { default as GestorRelacaoDetailPage } from "./pages/RelacaoDetailPage.svelte";
+export { default as GestorPlanosPage } from "./pages/PlanosPage.svelte";
+export { default as GestorPlanoDetailPage } from "./pages/PlanoDetailPage.svelte";
 export { default as GestorDocumentosPage } from "./pages/DocumentosPage.svelte";
 export { default as GestorEnviosPage } from "./pages/EnviosPage.svelte";
 export { default as GestorSegmentosPage } from "./pages/SegmentosPage.svelte";

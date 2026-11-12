@@ -4,7 +4,7 @@ publico: [gestor]
 modulo: gestor
 nivel: basico
 status: ativo
-relacionadas: [inventario, ajuda-guiada-painel]
+relacionadas: [inventario, planos-de-gestao, ajuda-guiada-painel]
 funcionalidade: ../../funcionalidades/gestor/documentos-planos.md
 ultima_revisao: 2026-11-02
 ---
@@ -95,6 +95,10 @@ famílias que não precisem estar no acervo da escola.
 - **Como recupero uma versão antiga?** 📚 **Versões** → **Baixar** na versão
   desejada. Para torná-la a atual, envie esse arquivo de novo com o mesmo nome
   na mesma pasta: ele vira a versão seguinte.
+- **Como acompanho as metas e as ações do plano que guardei aqui?** Em
+  **Planos de gestão**: lá o plano vira objetivos, metas e ações com prazo e
+  andamento. O arquivo continua aqui. Veja
+  [Acompanhar os planos da escola](planos-de-gestao.md).
 - **Meu arquivo foi recusado?** Verifique o tamanho (até 10 MB) e o tipo (PDF,
   DOCX, XLSX, PNG, JPG ou TXT). Arquivos .doc e .xls antigos não são aceitos:
   salve-os como .docx/.xlsx ou PDF.
@@ -102,5 +106,6 @@ famílias que não precisem estar no acervo da escola.
 ## Veja também
 
 - [Inventário da escola](inventario.md)
+- [Acompanhar os planos da escola](planos-de-gestao.md)
 - [Ajuda guiada nas telas do gestor](ajuda-guiada-painel.md)
 - Ficha da funcionalidade: [Documentos e planos escolares](../../funcionalidades/gestor/documentos-planos.md)

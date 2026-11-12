@@ -41,6 +41,7 @@ Para diretores e coordenadores que acompanham a escola no EduMaps. Comece por
 | Quero… | Página |
 |---|---|
 | guardar documentos e planos | [Documentos e planos](documentos-e-planos.md) |
+| acompanhar o plano da escola (metas, ações, prazos) | [Planos de gestão](planos-de-gestao.md) |
 | montar o inventário | [Inventário](inventario.md) |
 | registrar parcerias com outras instituições | [Relações institucionais](relacoes-institucionais.md) |
 | marcar reuniões e registrar atas | [Reuniões e atas](reunioes-e-atas.md) |
