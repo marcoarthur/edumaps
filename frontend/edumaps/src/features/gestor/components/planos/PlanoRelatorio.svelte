@@ -70,7 +70,7 @@
     <h1 id="plano-relatorio-titulo" class="text-xl font-bold">{plano.titulo}</h1>
     <p>
       {escola.nome ?? "Escola"} · INEP {escola.cod_inep}
-      {#if escola.municipio} · {escola.municipio}{#if escola.uf}/{escola.uf}{/if}{/if}
+      {#if escola.municipio}{" · "}{escola.municipio}{#if escola.uf}/{escola.uf}{/if}{/if}
     </p>
     <p class="text-gray-700">
       {PLANO_TIPO_LABEL[plano.tipo] ?? plano.tipo} · período {fmtData(plano.inicio)} a {fmtData(plano.fim)} ·
@@ -127,7 +127,7 @@
             <tbody>
               {#each o.metas as m (m.id)}
                 <tr>
-                  <td class={TD}>{m.descricao}<span class="text-gray-500"> ({SENTIDO[m.sentido] ?? m.sentido}{#if m.unidade}, {m.unidade}{/if})</span></td>
+                  <td class={TD}>{m.descricao}<span class="text-gray-500">{" ("}{SENTIDO[m.sentido] ?? m.sentido}{#if m.unidade}{", "}{m.unidade}{/if})</span></td>
                   <td class={TD}>{fonteAno(m)}</td>
                   <td class={TD}>{fmtNum(m.linha_base)}</td>
                   <td class={TD}>{fmtNum(m.alvo)}</td>
@@ -168,7 +168,7 @@
                   <td class={TD}>{a.descricao}</td>
                   <td class={TD}>{a.objetivo}</td>
                   <td class={TD}>{a.responsavel ?? "—"}</td>
-                  <td class={TD}>{fmtData(a.prazo)}{#if a.situacao === "concluida" && a.concluida_em} (concluída em {fmtData(a.concluida_em)}){/if}</td>
+                  <td class={TD}>{fmtData(a.prazo)}{#if a.situacao === "concluida" && a.concluida_em}{" (concluída em "}{fmtData(a.concluida_em)}){/if}</td>
                   <td class={TD}>{a.evidencias?.length ?? 0}</td>
                 </tr>
               {/each}
@@ -195,7 +195,7 @@
           {#each evidencias as e (e.id)}
             <tr>
               <td class={TD}>{e.de}</td>
-              <td class={TD}>{TIPO_EVIDENCIA[e.tipo] ?? e.tipo}{#if e.tipo === "ata" && e.quando} ({fmtData(e.quando)}){/if}</td>
+              <td class={TD}>{TIPO_EVIDENCIA[e.tipo] ?? e.tipo}{#if e.tipo === "ata" && e.quando}{" ("}{fmtData(e.quando)}){/if}</td>
               <td class={TD}>{evidenciaTexto(e)}</td>
             </tr>
           {/each}

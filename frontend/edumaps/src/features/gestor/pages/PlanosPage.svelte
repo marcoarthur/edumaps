@@ -178,7 +178,7 @@
               <a href={`/gestor/planos/${p.id}`} class="text-base font-semibold text-blue-700 hover:underline">{p.titulo}</a>
               <p class="text-xs text-gray-500 mt-0.5">
                 {PLANO_TIPO_LABEL[p.tipo] ?? p.tipo}
-                {#if p.inicio || p.fim} · {fmtData(p.inicio)} a {fmtData(p.fim)}{/if}
+                {#if p.inicio || p.fim}{" · "}{fmtData(p.inicio)} a {fmtData(p.fim)}{/if}
               </p>
             </div>
             <div class="flex items-center gap-2">

@@ -62,6 +62,17 @@ describe("PlanoRelatorioPage", () => {
     expect(screen.getByText("3 evidência(s) registrada(s)")).toBeInTheDocument();
   });
 
+  it("textos com os espaços certos", async () => {
+    await abrir();
+    await screen.findByRole("heading", { level: 1 });
+    expect(linhaDe("Medição da escola").cells[0].textContent).toBe("Reduzir faltas (reduzir, %)");
+    expect(screen.getByText("Subir o IDEB dos anos iniciais", { exact: false }).closest("td").textContent)
+      .toBe("Subir o IDEB dos anos iniciais (aumentar, pontos (0 a 10))");
+    expect(screen.getByText(/INEP 11000040/).textContent.replace(/\s+/g, " ").trim())
+      .toBe("Escola Estadual Teste · INEP 11000040 · Porto Velho/RO");
+    expect(screen.getByText("Ata de reunião", { exact: false }).textContent).toBe("Ata de reunião (20/02/2026)");
+  });
+
   it("imprime pelo navegador", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     await abrir();
