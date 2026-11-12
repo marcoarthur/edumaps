@@ -16,6 +16,7 @@ with 'EduMaps::Roles::Business::Gestor::Relacoes';
 with 'EduMaps::Roles::Business::Gestor::DocumentosEscolares';
 with 'EduMaps::Roles::Business::Gestor::Relatorios';
 with 'EduMaps::Roles::Business::Gestor::Planos';
+with 'EduMaps::Roles::Business::Gestor::RedePlanos';
 
 sub panel($self, $params = {}) {
   return $self->overview($params);

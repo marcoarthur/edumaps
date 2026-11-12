@@ -2,7 +2,8 @@
 // MSW da conta de rede (#394): convite (anônimo), /api/rede (sessão REDE_TOKEN;
 // a sessão de admin recebe 403) e /api/admin/rede/contas (sessão de admin).
 import { http, HttpResponse } from "msw";
-import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS } from "./redeFixtures.js";
+import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS, REDE_PAINEL } from "./redeFixtures.js";
+import { relatorioMock, planoMockPorId } from "@/features/gestor/mocks/planosHandlers.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
@@ -57,6 +58,20 @@ export const redeHandlers = [
   http.get("/api/rede/escolas", ({ request }) => {
     if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
     return HttpResponse.json({ escolas: clone(REDE_ESCOLAS) });
+  }),
+
+  http.get("/api/rede/painel", ({ request }) => {
+    if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
+    return HttpResponse.json(clone(REDE_PAINEL));
+  }),
+  http.get("/api/rede/escolas/:inep/planos/:id/relatorio", ({ request, params }) => {
+    if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
+    if (!REDE_PAINEL.escolas.some((e) => e.cod_inep === Number(params.inep))) {
+      return HttpResponse.json({ error: "Esta escola não é de uma rede da sua conta." }, { status: 403 });
+    }
+    const p = Number(params.inep) === 11000040 ? planoMockPorId(params.id) : null;
+    if (!p) return HttpResponse.json({ error: "Plano não encontrado." }, { status: 404 });
+    return HttpResponse.json(relatorioMock(p, "Técnica pedagógica"));
   }),
 
   // --- admin ---

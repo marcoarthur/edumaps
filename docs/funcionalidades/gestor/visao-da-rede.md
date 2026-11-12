@@ -34,11 +34,16 @@ só lê: não altera nada do que a escola cadastra.
   nas da rede.
 - **Histórico:** criar a conta, gerar convite, definir a senha, conceder e
   revogar redes ficam registrados, com quem fez e quando.
+- **Painel da rede:** cada escola com o plano de gestão vigente, o andamento
+  das metas ("N de M medidas"; sem medida não é 0%), as ações atrasadas e as
+  que vencem em 7 dias, e as evidências; totais da rede, filtros (sem plano,
+  com atrasadas, sem andamento) e ordenação para achar quem precisa de apoio.
+- **Relatório de cada escola:** o mesmo relatório de acompanhamento que a
+  escola imprime, aberto pela rede só para leitura, com o cargo de quem o
+  emitiu.
 
 ## Ainda não disponível
 
-- Painel de acompanhamento dos planos de gestão das escolas da rede e o
-  relatório de cada escola (#396).
 - Metas comparáveis por indicador oficial (#397).
 - Custo previsto e executado por fonte de recurso na rede (#398).
 

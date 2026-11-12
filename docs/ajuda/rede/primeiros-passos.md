@@ -4,7 +4,7 @@ publico: [rede]
 modulo: gestor
 nivel: basico
 status: parcial
-relacionadas: []
+relacionadas: [acompanhar-planos-da-rede]
 funcionalidade: ../../funcionalidades/gestor/visao-da-rede.md
 ultima_revisao: 2026-11-12
 ---
@@ -31,8 +31,8 @@ seu e-mail e a senha e cai na página **Rede**, com as escolas das redes ligadas
 3. **Entre:** menu **Gestor** → e-mail e senha. A conta de rede vai direto
    para a página **Rede** (o item **Rede** também aparece no menu).
 4. **O que ver:** as redes da sua conta (por exemplo, "Rede municipal ·
-   Cuiabá/MT") e a tabela das **escolas em atividade** dessas redes, com o
-   código INEP e o município.
+   Cuiabá/MT") e o **painel das escolas** dessas redes, com o plano de gestão
+   de cada uma. Veja [Acompanhar os planos da rede](acompanhar-planos-da-rede.md).
 5. **Como saber que deu certo:** a página mostra o seu nome, o seu cargo e as
    redes. Sem rede nenhuma, ela avisa para falar com o administrador.
 
@@ -46,8 +46,6 @@ seu e-mail e a senha e cai na página **Rede**, com as escolas das redes ligadas
 
 ## Limitações conhecidas
 
-- O acompanhamento dos **planos de gestão** das escolas ainda não aparece aqui:
-  chega numa próxima versão.
 - A conta de rede **só lê**. Ela não entra nas telas da escola (planos,
   reuniões, documentos) e não altera nada.
 - Para incluir ou tirar uma rede da sua conta, fale com o administrador da
@@ -70,4 +68,5 @@ pode revogar uma rede, e o acesso acaba na hora.
 
 ## Veja também
 
+- [Acompanhar os planos da rede](acompanhar-planos-da-rede.md)
 - Ficha da funcionalidade: [Visão da rede (secretaria)](../../funcionalidades/gestor/visao-da-rede.md)

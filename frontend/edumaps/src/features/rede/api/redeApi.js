@@ -24,3 +24,18 @@ export function getRedeMe() {
 export function getRedeEscolas() {
   return apiClient.get(`${BASE}/escolas`);
 }
+
+/** Painel da rede (#396): por escola, o plano vigente e o andamento; e os totais. */
+export function getRedePainel() {
+  return apiClient.get(`${BASE}/painel`);
+}
+
+/** Planos não arquivados de uma escola da rede. */
+export function getRedeEscolaPlanos(inep) {
+  return apiClient.get(`${BASE}/escolas/${inep}/planos`);
+}
+
+/** Relatório de acompanhamento do plano, só leitura (o mesmo que a escola imprime). */
+export function getRedeRelatorio(inep, planoId) {
+  return apiClient.get(`${BASE}/escolas/${inep}/planos/${planoId}/relatorio`);
+}
