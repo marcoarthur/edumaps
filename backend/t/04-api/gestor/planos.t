@@ -127,7 +127,8 @@ subtest 'detalhe: árvore e resumo' => sub {
   is scalar @{ $j->{objetivos}[0]{metas} }, 1, 'meta no objetivo 1';
   is scalar @{ $j->{objetivos}[1]{acoes} }, 1, 'ação no objetivo 2';
   is($j->{resumo}, { n_objetivos => 2, n_metas => 1, n_acoes => 2,
-    n_acoes_concluidas => 0, n_acoes_atrasadas => 1 }, 'resumo');
+    n_acoes_concluidas => 0, n_acoes_atrasadas => 1,
+    progresso => { valor => undef, n_medidas => 0, n_metas => 1 } }, 'resumo (meta sem medição: progresso vazio, não 0)');
 
   my $lista = $t->get_ok($base, $auth->())->status_is(200)->tx->res->json->{planos};
   is scalar @$lista, 1, 'lista com o plano';

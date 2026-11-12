@@ -18,6 +18,10 @@ use EduMaps::Roles::Business::Gestor::Planos ();
 #   POST   .../planos/:id/objetivos           | PUT/DELETE .../objetivos/:oid
 #   POST   .../planos/:id/metas               | PUT/DELETE .../metas/:mid
 #   POST   .../planos/:id/acoes               | PUT/DELETE .../acoes/:aid
+#   GET    .../planos/indicadores             catálogo de indicadores oficiais
+#                                             com o último valor da escola (#370)
+#   POST   .../planos/:id/metas/:mid/medicoes            medição manual (#370)
+#   DELETE .../planos/:id/metas/:mid/medicoes/:medid     só manual
 #
 # PUT é PARCIAL: só os campos enviados mudam; um campo enviado como null (ou
 # texto vazio) limpa o valor.
@@ -45,9 +49,15 @@ my %CAMPOS = (
     descricao   => [ texto => 500, obrigatorio => 1 ],
     unidade     => [ texto => 40 ],
     sentido     => [ enum => \@EduMaps::Roles::Business::Gestor::Planos::SENTIDOS ],
+    indicador_codigo => [ texto => 40 ],
     linha_base  => [ 'numero' ],
     alvo        => [ 'numero' ],
     prazo       => [ 'data' ],
+  },
+  medicao => {
+    data_ref => [ 'data', obrigatorio => 1 ],
+    valor    => [ 'numero', obrigatorio => 1 ],
+    nota     => [ texto => 500 ],
   },
   acao => {
     objetivo_id    => [ 'inteiro', obrigatorio => 1 ],
@@ -98,6 +108,28 @@ sub destroy($self) {
   $self->_executar(sub ($m) {
     $m->plano_arquivar($self->param('cod_inep'), $self->_gid, $self->param('id'));
     { arquivado => Mojo::JSON::true };
+  });
+}
+
+sub indicadores($self) {
+  return unless $self->_gestor_inep_ok;
+  $self->_executar(sub ($m) { { indicadores => $m->indicadores_catalogo($self->param('cod_inep')) } });
+}
+
+sub medicao_create($self) {
+  return unless $self->_gestor_inep_ok;
+  my $p = $self->_campos('medicao', 1) // return;
+  $self->_executar(sub ($m) {
+    $m->medicao_criar($self->param('cod_inep'), $self->_gid, $self->param('id'), $self->param('mid'), $p);
+  }, 201);
+}
+
+sub medicao_destroy($self) {
+  return unless $self->_gestor_inep_ok;
+  $self->_executar(sub ($m) {
+    $m->medicao_excluir($self->param('cod_inep'), $self->_gid, $self->param('id'),
+      $self->param('mid'), $self->param('medid'));
+    { excluido => Mojo::JSON::true };
   });
 }
 

@@ -305,12 +305,20 @@ sub register($self, $app, @args) {
   my $pl_filho  = sub ($nome) { [ @$pl_check, $nome => qr/\d{1,18}/ ] };
 
   $auth->get('/:cod_inep/planos' => $check)->to('gestor_planos#index')->name('gestor_planos');
+  # literal antes de /:id (o :id só casa dígitos, mas a ordem deixa explícito).
+  $auth->get('/:cod_inep/planos/indicadores' => $check)
+    ->to('gestor_planos#indicadores')->name('gestor_planos_indicadores');
   $auth->post('/:cod_inep/planos' => $check)->to('gestor_planos#create')->name('gestor_planos_create');
   $auth->get('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#show')->name('gestor_planos_show');
   $auth->put('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#update')->name('gestor_planos_update');
   $auth->delete('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#destroy')->name('gestor_planos_destroy');
   $auth->get('/:cod_inep/planos/:id/auditoria' => $pl_check)
     ->to('gestor_planos#auditoria')->name('gestor_planos_auditoria');
+
+  $auth->post('/:cod_inep/planos/:id/metas/:mid/medicoes' => $pl_filho->('mid'))
+    ->to('gestor_planos#medicao_create')->name('gestor_planos_medicao_create');
+  $auth->delete('/:cod_inep/planos/:id/metas/:mid/medicoes/:medid' => [ @{ $pl_filho->('mid') }, medid => qr/\d{1,18}/ ])
+    ->to('gestor_planos#medicao_destroy')->name('gestor_planos_medicao_destroy');
 
   for my $f ([ objetivos => 'objetivo', 'oid' ], [ metas => 'meta', 'mid' ], [ acoes => 'acao', 'aid' ]) {
     my ($rota, $acao, $param) = @$f;
