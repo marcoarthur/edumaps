@@ -15,12 +15,11 @@ acompanha as escolas da rede com uma conta de rede.
 | Quero… | Página |
 |---|---|
 | entrar pela primeira vez e ver as escolas da minha rede | [Primeiros passos na conta de rede](primeiros-passos.md) |
+| acompanhar os planos de gestão das escolas e abrir o relatório de cada uma | [Acompanhar os planos da rede](acompanhar-planos-da-rede.md) |
 
-O acompanhamento dos planos de gestão das escolas chega nesta conta em
-breve. Termos usados nas páginas: [glossário](../_glossario.md).
+Termos usados nas páginas: [glossário](../_glossario.md).
 
 ## Limitações conhecidas
 
-- Por enquanto a conta de rede mostra as redes e as escolas em atividade. O
-  painel dos planos de gestão, as metas comparáveis e os custos por fonte vêm
-  nas próximas versões.
+- As metas comparáveis entre escolas e os custos por fonte na rede vêm nas
+  próximas versões.

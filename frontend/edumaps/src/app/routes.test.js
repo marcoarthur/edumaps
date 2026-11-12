@@ -158,6 +158,9 @@ describe("matchRoute", () => {
     const convite = matchRoute(`/rede/convite/${"A".repeat(43)}`);
     expect(convite?.path).toBe("/rede/convite/:token");
     expect(convite?.params.token).toBe("A".repeat(43));
+    const rel = matchRoute("/rede/escolas/11000040/planos/1/relatorio");
+    expect(rel?.path).toBe("/rede/escolas/:inep/planos/:id/relatorio");
+    expect(rel?.params).toEqual({ inep: "11000040", id: "1" });
   });
 
   it("retorna null para rota inexistente", () => {

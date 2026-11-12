@@ -1,6 +1,6 @@
-// src/features/rede/pages/RedePage.test.js — página da conta de rede (#394).
+// src/features/rede/pages/RedePage.test.js — painel da rede (#394, #396).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/svelte";
+import { render, screen, within, fireEvent } from "@testing-library/svelte";
 import RedePage from "./RedePage.svelte";
 import { setApiToken } from "@/shared/api/client.js";
 import { setSessaoToken, clearSessaoToken } from "@/features/gestor/utils/gestorSession.js";
@@ -11,23 +11,56 @@ const entrarCom = (token) => {
   setSessaoToken(token);
   setApiToken(token);
 };
+const linha = (nome) => screen.getByText(nome).closest("tr");
+const ordemDasEscolas = () =>
+  within(screen.getByRole("table")).getAllByRole("row").slice(1).map((r) => r.querySelector("td p")?.textContent);
 
-describe("RedePage", () => {
+describe("RedePage (painel da rede)", () => {
   beforeEach(() => window.localStorage.clear());
   afterEach(() => {
     clearSessaoToken();
     setApiToken(null);
   });
 
-  it("mostra as redes da conta e as escolas", async () => {
+  it("mostra a conta, os totais e os planos por escola", async () => {
     entrarCom(REDE_TOKEN);
     render(RedePage);
     expect(await screen.findByText("Técnica da Rede")).toBeInTheDocument();
     expect(screen.getByText("Rede municipal · Alta Floresta D'Oeste/RO")).toBeInTheDocument();
-    const tabela = within(screen.getByRole("table"));
-    expect(tabela.getByText("EMEF Pioneiros")).toBeInTheDocument();
-    expect(tabela.getByText("EMEI Pequeno Príncipe")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Escolas em atividade (2)" })).toBeInTheDocument();
+    const totais = within(screen.getByLabelText("Totais da rede"));
+    expect(totais.getByText("Sem plano vigente").nextElementSibling).toHaveTextContent("1");
+    expect(totais.getByText("Ações atrasadas").nextElementSibling).toHaveTextContent("1");
+
+    const p = within(linha("EMEF Pioneiros"));
+    expect(p.getByText("Plano de ação 2026")).toBeInTheDocument();
+    expect(p.getByText("40%")).toBeInTheDocument();
+    expect(p.getByText("1 de 2 meta(s) medida(s)")).toBeInTheDocument();
+    expect(p.getByRole("link", { name: "Relatório de EMEF Pioneiros" }))
+      .toHaveAttribute("href", "/rede/escolas/11000040/planos/1/relatorio");
+
+    expect(within(linha("EMEI Pequeno Príncipe")).getByText(/Sem plano vigente \(1 plano\(s\) em rascunho ou encerrado\)/)).toBeInTheDocument();
+    const r = within(linha("EMEF Rio Novo"));
+    expect(r.getByText("Sem metas medidas")).toBeInTheDocument();
+    expect(r.getByText(/2 planos vigentes; mostra o mais recente/)).toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+  });
+
+  it("filtra e ordena para achar quem precisa de apoio", async () => {
+    entrarCom(REDE_TOKEN);
+    render(RedePage);
+    await screen.findByText("EMEF Pioneiros");
+    await fireEvent.change(screen.getByLabelText("Mostrar"), { target: { value: "sem_plano" } });
+    expect(ordemDasEscolas()).toEqual(["EMEI Pequeno Príncipe"]);
+    await fireEvent.change(screen.getByLabelText("Mostrar"), { target: { value: "atrasadas" } });
+    expect(ordemDasEscolas()).toEqual(["EMEF Pioneiros"]);
+    await fireEvent.change(screen.getByLabelText("Mostrar"), { target: { value: "sem_andamento" } });
+    expect(ordemDasEscolas()).toEqual(["EMEF Rio Novo"]);
+    await fireEvent.change(screen.getByLabelText("Mostrar"), { target: { value: "todas" } });
+    await fireEvent.change(screen.getByLabelText("Ordenar por"), { target: { value: "andamento" } });
+    expect(ordemDasEscolas()).toEqual(["EMEI Pequeno Príncipe", "EMEF Rio Novo", "EMEF Pioneiros"]);
+    await fireEvent.change(screen.getByLabelText("Ordenar por"), { target: { value: "atrasadas" } });
+    expect(ordemDasEscolas()[0]).toBe("EMEF Pioneiros");
+    expect(screen.getByText("3 de 3 escola(s)")).toBeInTheDocument();
   });
 
   it("conta de escola ou admin vê o aviso, sem dado da rede", async () => {

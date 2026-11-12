@@ -5,7 +5,7 @@ import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compa
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage, ConsentimentoVersoesPage, RedeContasPage } from "@/features/config";
-import { RedePage, RedeConvitePage } from "@/features/rede";
+import { RedePage, RedeConvitePage, RedeRelatorioPage } from "@/features/rede";
 import { AdminTelemetryPage } from "@/features/admin";
 import { PublicaRespostaPage } from "@/features/resposta";
 import { InscricaoPublicaPage } from "@/features/inscricao";
@@ -73,6 +73,7 @@ export const routes = [
   { path: "/config/rede", component: RedeContasPage },
   { path: "/rede", component: RedePage },
   { path: "/rede/convite/:token", component: RedeConvitePage },
+  { path: "/rede/escolas/:inep/planos/:id/relatorio", component: RedeRelatorioPage },
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/listas", component: GestorListasPage },

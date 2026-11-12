@@ -80,11 +80,13 @@ sub planos_listar ($self, $cod_inep, $opt = {}) {
   return [ map { $self->_plano_out($_) } @$rows ];
 }
 
-sub plano_detalhe ($self, $cod_inep, $id) {
+# $opt->{somente_leitura}: quem lê é a rede (#396) — nada é gravado, nem a
+# sincronização das medições oficiais (que entram quando a escola abre o plano).
+sub plano_detalhe ($self, $cod_inep, $id, $opt = {}) {
   my $p = $self->_plano_ou_404($cod_inep, $id);
   my $hoje = HOJE_SQL;
   # Plano encerrado fica congelado: não recebe medições oficiais novas.
-  $self->_sincronizar_oficiais($id) unless $p->{situacao} eq 'encerrado';
+  $self->_sincronizar_oficiais($id) unless $p->{situacao} eq 'encerrado' || $opt->{somente_leitura};
 
   my $objetivos = $self->_pl_rows(
     'SELECT id, titulo, descricao, ordem FROM clean.planos_objetivos
@@ -629,8 +631,8 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
 # agrupadas por situação e o custo previsto por fonte de recurso (#384). Não
 # acrescenta dado pessoal: o único nome possível é o responsável da ação,
 # texto livre digitado pelo gestor.
-sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef) {
-  my $plano = $self->plano_detalhe($cod_inep, $id);
+sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef, $opt = {}) {
+  my $plano = $self->plano_detalhe($cod_inep, $id, $opt);
   # Cargo de quem emite (#395, P2-PG-04): do cadastro da conta da sessão, sem
   # o nome. Sem cargo cadastrado, nada.
   my $emissor = defined $emissor_id

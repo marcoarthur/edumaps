@@ -137,6 +137,35 @@ function custosPorFonte(grupos) {
            n_acoes_sem_custo: semCusto, n_acoes_sem_executado: semExec };
 }
 
+// Relatório de acompanhamento montado do estado do mock (#374); a rede (#396)
+// usa o mesmo, com o cargo da conta de rede.
+export function relatorioMock(p, cargo) {
+  const plano = planoOut(p);
+  const grupos = { atrasadas: [], em_andamento: [], nao_iniciadas: [], concluidas: [], canceladas: [] };
+  for (const o of plano.objetivos) {
+    for (const a of o.acoes) {
+      const g = a.atrasada ? "atrasadas"
+        : a.situacao === "em_andamento" ? "em_andamento"
+        : a.situacao === "nao_iniciada" ? "nao_iniciadas"
+        : a.situacao === "concluida" ? "concluidas" : "canceladas";
+      grupos[g].push({ ...a, evidencias: a.evidencias ?? [], objetivo: o.titulo });
+    }
+  }
+  const n = plano.objetivos.flatMap((o) => [...o.metas, ...o.acoes]).reduce((s, x) => s + (x.evidencias?.length ?? 0), 0);
+  return {
+    plano,
+    escola: { cod_inep: Number(INEP_PLANOS), nome: "Escola Estadual Teste", municipio: "Porto Velho", uf: "RO" },
+    acoes_por_situacao: grupos,
+    custos: custosPorFonte(grupos),
+    emitido_por_cargo: cargo,
+    n_evidencias: n,
+    emitido_em: `${HOJE_PLANOS}T14:30:00`,
+  };
+}
+
+/** Plano do mock por id (para a rede ler sem a sessão do gestor). */
+export const planoMockPorId = (id) => estado.find((p) => p.id === Number(id) && !p.arquivado) ?? null;
+
 export const gestorPlanosHandlers = [
   http.get(`${BASE}/indicadores`, ({ request, params }) => {
     const denied = okAuth(request);
@@ -185,27 +214,7 @@ export const gestorPlanosHandlers = [
     if (params.cod_inep !== INEP_PLANOS) return HttpResponse.json({ error: "Acesso negado" }, { status: 403 });
     const p = achar(params);
     if (!p) return NAO_ACHOU("Plano");
-    const plano = planoOut(p);
-    const grupos = { atrasadas: [], em_andamento: [], nao_iniciadas: [], concluidas: [], canceladas: [] };
-    for (const o of plano.objetivos) {
-      for (const a of o.acoes) {
-        const g = a.atrasada ? "atrasadas"
-          : a.situacao === "em_andamento" ? "em_andamento"
-          : a.situacao === "nao_iniciada" ? "nao_iniciadas"
-          : a.situacao === "concluida" ? "concluidas" : "canceladas";
-        grupos[g].push({ ...a, evidencias: a.evidencias ?? [], objetivo: o.titulo });
-      }
-    }
-    const n = plano.objetivos.flatMap((o) => [...o.metas, ...o.acoes]).reduce((s, x) => s + (x.evidencias?.length ?? 0), 0);
-    return HttpResponse.json({
-      plano,
-      escola: { cod_inep: Number(INEP_PLANOS), nome: "Escola Estadual Teste", municipio: "Porto Velho", uf: "RO" },
-      acoes_por_situacao: grupos,
-      custos: custosPorFonte(grupos),
-      emitido_por_cargo: "Diretora",
-      n_evidencias: n,
-      emitido_em: `${HOJE_PLANOS}T14:30:00`,
-    });
+    return HttpResponse.json(relatorioMock(p, "Diretora"));
   }),
 
   http.put(`${BASE}/:id`, async ({ request, params }) => {

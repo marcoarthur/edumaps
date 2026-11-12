@@ -138,9 +138,12 @@ por e-mail** na página dele.
 
 ## Privacidade
 
-O plano é interno da escola: só o gestor da escola vê. O campo
-**responsável** é texto livre; prefira o cargo ou a equipe ("Coordenação"),
-e não o nome completo. Não há dado de aluno.
+Só o gestor da escola edita o plano. A **secretaria da sua rede** (conta de
+rede, criada pelo administrador da plataforma) **vê** o andamento do plano no
+painel dela e abre o **relatório de acompanhamento**, o mesmo que você
+imprime, só para leitura. O campo **responsável** é texto livre e aparece
+nesse relatório; prefira o cargo ou a equipe ("Coordenação"), e não o nome
+completo. Não há dado de aluno.
 
 ## Perguntas frequentes
 
