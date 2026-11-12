@@ -365,7 +365,7 @@
 
 {#snippet linhaAcao(a)}
   <span class="text-gray-800">{a.descricao}</span>
-  <span class="text-xs text-gray-500"> · prazo {fmtData(a.prazo)}{#if a.responsavel} · {a.responsavel}{/if}</span>
+  <span class="text-xs text-gray-500">{" · prazo "}{fmtData(a.prazo)}{#if a.responsavel}{" · "}{a.responsavel}{/if}</span>
 {/snippet}
 
 {#snippet evidencias(lista, dono, id, rotulo)}
@@ -383,7 +383,7 @@
                 <span class="ml-1 text-[10px] uppercase text-gray-500 font-semibold">origem removida</span>
               {:else if ev.tipo === "ata"}
                 <a href={`/gestor/reunioes/${ev.reuniao_id}`} class="text-blue-700 hover:underline">{ev.titulo}</a>
-                {#if ev.quando}<span class="text-gray-500"> · {fmtData(ev.quando)}</span>{/if}
+                {#if ev.quando}<span class="text-gray-500">{" · "}{fmtData(ev.quando)}</span>{/if}
               {:else}
                 <button type="button" onclick={() => baixarEvidencia(ev)} class="text-blue-700 hover:underline text-left" title="Baixar esta versão">{ev.titulo}</button>
               {/if}
@@ -412,7 +412,7 @@
       {#if plano}
         <p class="text-sm text-gray-600 mt-1">
           {PLANO_TIPO_LABEL[plano.tipo] ?? plano.tipo}
-          {#if plano.inicio || plano.fim} · {fmtData(plano.inicio)} a {fmtData(plano.fim)}{/if}
+          {#if plano.inicio || plano.fim}{" · "}{fmtData(plano.inicio)} a {fmtData(plano.fim)}{/if}
           <span class={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-medium ${PLANO_SITUACAO_BADGE[plano.situacao] ?? ""}`}>{PLANO_SITUACAO_LABEL[plano.situacao] ?? plano.situacao}</span>
         </p>
       {/if}
@@ -569,8 +569,8 @@
                       <p class="text-sm font-medium text-gray-800">{m.descricao}</p>
                       <p class="text-xs text-gray-500">
                         {m.indicador ? m.indicador.fonte : "Meta manual"}
-                        · base {fmtNum(m.linha_base)} → alvo {fmtNum(m.alvo)}{#if m.unidade} {m.unidade}{/if}
-                        {#if m.atual} · atual {fmtNum(m.atual.valor)} ({m.atual.ano_ref ?? fmtData(m.atual.data_ref)}){/if}
+                        · base {fmtNum(m.linha_base)} → alvo {fmtNum(m.alvo)}{#if m.unidade}{" "}{m.unidade}{/if}
+                        {#if m.atual}{" · atual "}{fmtNum(m.atual.valor)} ({m.atual.ano_ref ?? fmtData(m.atual.data_ref)}){/if}
                       </p>
                     </div>
                     {#if editavel}
@@ -670,10 +670,10 @@
                       {#if a.atrasada}<span class="ml-1 text-[10px] uppercase text-red-600 font-semibold">atrasada</span>{/if}
                     </p>
                     <p class="text-xs text-gray-500">
-                      prazo {fmtData(a.prazo)}{#if a.responsavel} · {a.responsavel}{/if}
-                      {#if a.custo_previsto !== null} · R$ {fmtNum(a.custo_previsto)}{/if}
-                      {#if a.fonte_recurso} ({FONTE_RECURSO_LABEL[a.fonte_recurso]}){/if}
-                      {#if a.meta_id} · meta: {metaDescricao(o.id, a.meta_id)}{/if}
+                      prazo {fmtData(a.prazo)}{#if a.responsavel}{" · "}{a.responsavel}{/if}
+                      {#if a.custo_previsto !== null}{" · R$ "}{fmtNum(a.custo_previsto)}{/if}
+                      {#if a.fonte_recurso}{" ("}{FONTE_RECURSO_LABEL[a.fonte_recurso]}){/if}
+                      {#if a.meta_id}{" · meta: "}{metaDescricao(o.id, a.meta_id)}{/if}
                     </p>
                   </div>
                   {#if editavel}

@@ -46,6 +46,17 @@ describe("PlanoDetailPage", () => {
     expect(screen.getByRole("link", { name: "🖨️ Relatório" })).toHaveAttribute("href", "/gestor/planos/1/relatorio");
   });
 
+  it("textos com os espaços certos (separadores e unidade)", async () => {
+    abrir(1);
+    await screen.findByRole("heading", { name: "Plano de ação 2026" });
+    const txt = document.body.textContent.replace(/\s+/g, " ");
+    expect(txt).toContain("alvo 6 pontos (0 a 10) · atual 5,4 (2023)");
+    expect(txt).toContain("prazo 05/03/2026 · Coordenação · R$ 1.500 (PDDE) · meta: Subir o IDEB dos anos iniciais");
+    expect(txt).toContain("Reforço de leitura · prazo 05/03/2026 · Coordenação");
+    expect(txt).toContain("Conselho escolar de fevereiro · 20/02/2026");
+    expect(txt).not.toMatch(/\S·|\d[a-z]/);
+  });
+
   it("destaca a ação atrasada", async () => {
     abrir(1);
     await screen.findByRole("heading", { name: "Plano de ação 2026" });
