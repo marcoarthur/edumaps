@@ -32,7 +32,7 @@
 ## Pendências
 
 - Conferir com 2 ou 3 diretoras reais o veredito da reavaliação (adotaria).
-- Detalhes de leitura P1-PG-06 e -07 (abertos na reavaliação).
+- P1-PG-06 e -07 corrigidos no PR #390.
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
 

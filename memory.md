@@ -35,6 +35,14 @@
   relatório). Validado com o rebuild conferido.
 - As 3 issues da avaliação (#383–#385) entregues. Nota técnica **192**
   (personas e ajuste fino dos planos). Épico #368: restam #375 e #376.
+- **Reavaliação** P1/P2 (`avaliacoes/...-reavaliacao.md`): P1 passou a
+  "adotaria". **PR #390** (`3f7560e`): "%" colado e letra 12 px (P1-PG-06/07).
+  **PR #391** (`8d2d06a`): base ajustada pela escola visível (P2-PG-05, opção
+  b; change `planos_base_oficial`, backfill sem marca). P2-PG-06 (custo
+  executado) virou critério da #375.
+- **PR #393** (`20ca165`, fecha #392): sai a página/link "Sobre o Refactor";
+  `/about` redireciona para `/` (`REDIRECIONAMENTOS` + `router.replace`).
+- LXC (próximo deploy): agora **5** changes dos planos (+ `planos_base_oficial`).
 
 ## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 

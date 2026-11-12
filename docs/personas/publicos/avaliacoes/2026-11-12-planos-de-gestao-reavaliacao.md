@@ -50,7 +50,14 @@ P1-PG-01 a -05 e P2-PG-02 (PRs #386 a #389).
 
 P2-PG-01, -03 e -04, todos na #375.
 
-## Próximos passos (dependem do developer)
+## Encaminhamento (2026-11-12, aprovado pelo developer)
+
+- P1-PG-06 e -07: corrigidos no PR #390.
+- P2-PG-05: opção **(b)** entregue no PR #391 (marca "ajustada pela escola",
+  com o valor oficial, na tela e no relatório).
+- P2-PG-06: critério da #375.
+
+## Próximos passos (proposta original)
 
 1. Corrigir P1-PG-06 e -07 (PR pequeno).
 2. Decidir a P2-PG-05: recomendação **(b)**. Ela não tira do gestor a

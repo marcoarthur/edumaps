@@ -32,8 +32,8 @@
 
 - Avaliar a visão da rede quando a #375 existir: consolidação dos planos das
   escolas, metas oficiais comparáveis e custo por fonte de recurso.
-- P2-PG-05 (base da meta oficial alterável sem marca no relatório) e P2-PG-06
-  (previsto sem executado): abertos na reavaliação, pedem decisão.
+- P2-PG-05 entregue no PR #391 (opção b). P2-PG-06 (previsto sem executado)
+  é critério da #375.
 
 ## Entradas
 
