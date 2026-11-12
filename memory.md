@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
+
+- **Personas de público** (`docs/personas/publicos/`, `7e36ed7`): as 6 do
+  plano de negócios (P1 gestor escolar … P6 terceiro setor), perfil + memória,
+  protocolo e matriz de aplicabilidade no README; seção no `AGENTS.md`.
+  São simulações (não substituem gestores reais). Achado vira issue só com
+  aprovação do developer.
+- **Avaliação dos planos** (P1 e P2; P3–P6 não se aplicam):
+  `avaliacoes/2026-11-12-planos-de-gestao.md`. Método: ficha, ajuda, spec e
+  telas com os mocks do MSW (cópia do frontend no scratchpad com
+  `enableMocking()` ligado, Vite na 5199, sessão = token de fixture).
+- Issues abertas (aprovadas): **#383** edição na tela (bloqueia P1),
+  **#384** custo/fonte no relatório, **#385** plano ligado ao arquivo.
+  Critérios P2-PG-03/04 comentados na #375.
+- **PR #386 mergeado** (`15803d7`): espaços nos textos (Svelte descarta o
+  espaço do início de `{#if}`/`<span>` colado a expressão → usar `{" · "}`).
+- O check "build"/"deploy" dos PRs é do workflow `docs-pages` (só roda com
+  mudança em `docs/`), não build do frontend.
+- Em andamento: **#383** na branch `feat/planos-edicao` (`9147d4b`),
+  aguardando validação visual.
+
 ## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 
 - Sprint dos planos de gestão (épico #368, spec
