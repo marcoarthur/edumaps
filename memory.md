@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#379)
+## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#380)
 
 - Sprint dos planos de gestão (épico #368, spec
   `docs/specs/2026-11-11-planos-de-gestao.md`): #369–#374 no sprint; #375
@@ -18,7 +18,13 @@
   7h (Minion), só com novidade. Backend do sprint completo no `main`.
 - Contêineres locais conferidos por md5: já rodavam o código do `main` (a
   branch da #371 só difere no frontend e na documentação) — sem rebuild.
-- Nota técnica **190** (backend dos planos, #369/#370/#373). #371 (interface) na branch
+- Nota técnica **190** (backend dos planos, #369/#370/#373).
+- **PR #380 mergeado** (`e37452c`, fecha #371): interface dos planos (lista,
+  detalhe, atalho no painel, dois roteiros), validada pelo usuário. Antes do
+  PR, a página de ajuda foi ligada às vizinhas (painel do gestor, documentos
+  e planos, ajuda guiada). CI do `main` verde; imagens locais já batiam com o
+  `main` (sem rebuild).
+- Em andamento: **#372** (evidências) na branch `feat/planos-evidencias`. #371 (interface) na branch
   `feat/frontend-planos-gestao`, sem PR — aguarda validação visual.
 - **Armadilha**: `gh pr merge --delete-branch` do PR-base FECHOU o #378 (o
   GitHub não refaz a base quando a branch é apagada pela API). Recuperado
