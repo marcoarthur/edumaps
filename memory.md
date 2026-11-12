@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#381)
+## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 
 - Sprint dos planos de gestão (épico #368, spec
   `docs/specs/2026-11-11-planos-de-gestao.md`): #369–#374 no sprint; #375
@@ -33,7 +33,16 @@
   enviado pela API, ligados ao plano 1.
 - `prove -j4` derruba 4 testes de canais/envios (estado compartilhado); em
   série passam.
-- Nota técnica **191** (interface #371 e evidências #372). Falta #374. #371 (interface) na branch
+- **PR #382 mergeado** (`f428d36`, fecha #374): relatório de acompanhamento
+  (`/gestor/planos/:id/relatorio`, `window.print` em A4), validado pelo
+  usuário com a prévia de impressão. **Sprint dos planos concluído**
+  (#369–#374); épico #368 aberto pelo backlog (#375, #376).
+- Nota técnica **191** (interface #371, evidências #372, relatório #374).
+- Banco de fixtures do CI ficou com config gravada após `prove -j4`
+  (`canal_listas.t` falhando em série): recriar com `ci_db.sh down && up`.
+- **LXC (próximo deploy completo):** `deploy_db_dev` (planos_gestao,
+  planos_indicadores, planos_alertas, planos_evidencias), `deploy_backend_dev`
+  + `deploy_minion_dev` (tarefa de alertas) e `deploy_frontend_dev`. #371 (interface) na branch
   `feat/frontend-planos-gestao`, sem PR — aguarda validação visual.
 - **Armadilha**: `gh pr merge --delete-branch` do PR-base FECHOU o #378 (o
   GitHub não refaz a base quando a branch é apagada pela API). Recuperado

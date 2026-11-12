@@ -1,6 +1,7 @@
-# Nota técnica 191: interface e evidências dos planos de gestão
+# Nota técnica 191: interface, evidências e relatório dos planos de gestão
 
-PRs #380 e #381 (2026-11-12). Fecham a #371 e a #372, do épico #368. O
+PRs #380, #381 e #382 (2026-11-12). Fecham a #371, a #372 e a #374, do
+épico #368, e completam o sprint. O
 backend da estrutura, dos indicadores e dos alertas está na nota 190.
 
 ## Interface (#371)
@@ -47,19 +48,41 @@ backend da estrutura, dos indicadores e dos alertas está na nota 190.
   CHECK da tabela de auditoria, e o revert apaga essas linhas antes de
   restaurar o CHECK antigo.
 
+## Relatório de acompanhamento (#374)
+
+- **Uma rota de dados, sem gerar PDF no servidor.** `GET
+  .../planos/:id/relatorio` reaproveita o `plano_detalhe` (mesma árvore e
+  mesmo progresso) e acrescenta a escola, as ações agrupadas por situação e a
+  data de emissão. O PDF sai pelo `window.print` do navegador, no mesmo layout
+  `relatorio-imprimivel` (A4) do Assistente de Relatório. Não há biblioteca
+  de PDF no backend, e a impressão foi conferida pelo usuário.
+- **A atrasada tem precedência:** uma ação em andamento com prazo vencido vai
+  para "Atrasadas", não para "Em andamento". Cada ação aparece num grupo só.
+- **A emissão usa o horário de Brasília** (`NOW() AT TIME ZONE
+  'America/Sao_Paulo'`), o mesmo critério do "hoje" dos planos.
+- **Privacidade por construção:** o relatório só tem o que o plano tem. O
+  único nome possível é o responsável da ação, texto livre. Um teste confere
+  que o e-mail e o nome do gestor não aparecem na resposta.
+- O 0% só aparece em meta **medida**: uma meta oficial cuja linha de base é o
+  próprio último valor da escola começa em 0% legitimamente. Meta sem
+  medição aparece como "Sem medição".
+
 ## Observações
 
 - A suíte do backend rodada com `prove -j4` falha em quatro arquivos de canais
   e envios, que dividem estado no banco. Em série, eles passam. O CI roda em
-  série.
+  série. Depois de uma rodada em paralelo, o `canal_listas.t` falhou também
+  em série, porque a configuração ficou gravada no banco de fixtures. O
+  remédio foi recriar o banco (`ci_db.sh down` e `up`).
 - A conta de teste local não tinha reuniões nem documentos. Para a validação,
   foram criados uma reunião (direto no banco, porque o cadastro pela API exige
   participantes) e um documento (pela API).
 
 ## Pendências
 
-- #374 (relatório de acompanhamento) fecha o sprint. #375 (papel da rede) e
-  #376 (rendimento INEP) ficam no backlog.
+- Sprint concluído (#369–#374). O épico #368 segue aberto pelo backlog: #375
+  (papel da rede) e #376 (rendimento INEP). A spec recomenda mostrar o editor
+  a 2 ou 3 gestores antes de seguir.
 - O LXC recebe as changes dos planos (`planos_gestao`, `planos_indicadores`,
   `planos_alertas`, `planos_evidencias`), o minion com a tarefa de alertas e
   o frontend no próximo deploy completo.
