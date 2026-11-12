@@ -58,6 +58,8 @@ conselho escolar o que avançou.
   medição aparece escrita assim, nunca como 0%), as ações por situação, as
   evidências e a data de emissão. O único nome que pode aparecer é o
   responsável de cada ação, como o gestor escreveu.
+- **Correção sem retrabalho:** objetivos, metas e ações podem ser corrigidos
+  depois de cadastrados, sem perder as medições nem as evidências.
 - **Histórico:** toda mudança no plano fica registrada, com autor e data.
 
 ## Ainda não disponível
