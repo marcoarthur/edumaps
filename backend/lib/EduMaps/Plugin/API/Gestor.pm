@@ -314,6 +314,8 @@ sub register($self, $app, @args) {
   $auth->get('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#show')->name('gestor_planos_show');
   $auth->put('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#update')->name('gestor_planos_update');
   $auth->delete('/:cod_inep/planos/:id' => $pl_check)->to('gestor_planos#destroy')->name('gestor_planos_destroy');
+  $auth->get('/:cod_inep/planos/:id/relatorio' => $pl_check)
+    ->to('gestor_planos#relatorio')->name('gestor_planos_relatorio');
   $auth->get('/:cod_inep/planos/:id/auditoria' => $pl_check)
     ->to('gestor_planos#auditoria')->name('gestor_planos_auditoria');
 

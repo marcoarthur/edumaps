@@ -12,7 +12,7 @@ ultima_revisao: 2026-11-12
 # Acompanhar os planos da escola
 
 > **Para quem:** gestor que conduz o plano de gestão, o plano de ação ou o PPP.
-> **Tempo de leitura:** ~5 min
+> **Tempo de leitura:** ~6 min
 
 ## Em 30 segundos
 
@@ -77,6 +77,28 @@ do plano, mas não apaga a reunião nem o documento.
 Se a reunião ou o documento for apagado depois, a evidência **não some**: ela
 fica com o título que tinha e a marca **origem removida**, sem link.
 
+## Relatório de acompanhamento
+
+Para prestar contas à secretaria ou ao conselho escolar, abra o plano e clique
+em **🖨️ Relatório**. A página mostra:
+
+- a escola, o plano, o período, a situação e a **data de emissão**;
+- o resumo: andamento das metas ("N de M metas medidas"), quantas ações estão
+  concluídas, em andamento, atrasadas, não iniciadas e canceladas, e quantas
+  evidências há;
+- cada objetivo com a tabela das metas: **fonte e ano** de cada indicador
+  oficial, linha de base, alvo, valor atual e andamento. Meta sem medição
+  aparece como **Sem medição**, nunca como 0%;
+- as ações agrupadas por situação, com objetivo, responsável, prazo e o número
+  de evidências;
+- a lista das evidências.
+
+Clique em **Imprimir / salvar PDF** e, na janela do navegador, escolha a
+impressora ou **Salvar como PDF**. A página sai em A4, sem o menu e os botões.
+
+O relatório é a fotografia do momento: gere de novo para ter os números
+atualizados.
+
 ## Alertas de prazo
 
 Todo dia, às 7h, a plataforma manda ao e-mail da sua conta um resumo das ações
@@ -91,8 +113,6 @@ por e-mail** na página dele.
   **Reabrir plano**.
 - **Arquivar** tira o plano da lista, mas ele não é apagado. Para vê-lo, marque
   **Mostrar arquivados**.
-- Ainda não é possível gerar o relatório de acompanhamento para imprimir. Ele
-  está a caminho.
 - Reuniões canceladas não aparecem na lista de evidências.
 
 ## Privacidade
@@ -107,6 +127,8 @@ e não o nome completo. Não há dado de aluno.
   acompanhável organiza as metas e as ações.
 - **Posso ligar o arquivo de uma reunião (a ata em PDF)?** Ligue a reunião:
   o link leva a ela, com a ata em texto e os anexos.
+- **O relatório mostra o nome de alguém?** Só o **responsável** de cada ação,
+  como você escreveu. Por isso a dica de usar o cargo ou a equipe.
 - **Posso corrigir um valor do IDEB?** Não. Os valores oficiais vêm da fonte.
   Se a meta precisa de outro número, faça uma meta manual.
 

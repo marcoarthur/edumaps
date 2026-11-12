@@ -17,6 +17,7 @@ export default {
       texto:
         "O andamento é a média das metas que já têm medição — sempre com quantas foram medidas. " +
         "Aqui você põe o plano em vigor, encerra (ou reabre) e liga os alertas de prazo por e-mail. " +
+        "O botão Relatório, no topo, gera a versão para imprimir ou salvar em PDF. " +
         "Use as setas do teclado ou os botões; Esc fecha.",
       lado: "bottom",
     },

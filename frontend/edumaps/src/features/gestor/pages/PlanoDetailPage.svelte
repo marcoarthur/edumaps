@@ -421,6 +421,9 @@
       {#if gestor}
         <button type="button" onclick={sair} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors">Sair</button>
       {/if}
+      {#if plano}
+        <a href={`/gestor/planos/${planoId}/relatorio`} data-tour="plano-relatorio" class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">🖨️ Relatório</a>
+      {/if}
       <a href="/gestor/planos" class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors">← Planos</a>
     </div>
   </header>

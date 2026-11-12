@@ -601,6 +601,50 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
 }
 
 # ---------------------------------------------------------------------------
+# relatório de acompanhamento (#374, RF-009)
+# ---------------------------------------------------------------------------
+
+# O plano inteiro (mesma árvore e o mesmo progresso do detalhe) mais o que a
+# prestação de contas pede: a escola, a data de emissão (Brasília) e as ações
+# agrupadas por situação. Não acrescenta dado pessoal: o único nome possível é
+# o responsável da ação, texto livre digitado pelo gestor.
+sub plano_relatorio ($self, $cod_inep, $id) {
+  my $plano = $self->plano_detalhe($cod_inep, $id);
+  my $escola = $self->_pl_row(
+    'SELECT no_entidade, no_municipio, sg_uf, nu_ano_censo FROM clean.censo_escolas
+      WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', $cod_inep + 0);
+  my $emitido = $self->_pl_row(
+    q{SELECT to_char(NOW() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI:SS') AS em});
+
+  my %grupo = map { $_ => [] } qw(atrasadas em_andamento nao_iniciadas concluidas canceladas);
+  for my $o (@{ $plano->{objetivos} }) {
+    for my $a (@{ $o->{acoes} }) {
+      my $g = $a->{atrasada}                    ? 'atrasadas'
+            : $a->{situacao} eq 'em_andamento'  ? 'em_andamento'
+            : $a->{situacao} eq 'nao_iniciada'  ? 'nao_iniciadas'
+            : $a->{situacao} eq 'concluida'     ? 'concluidas'
+            :                                     'canceladas';
+      push @{ $grupo{$g} }, { %$a, objetivo => $o->{titulo} };
+    }
+  }
+
+  my @evid = map { @{ $_->{evidencias} // [] } }
+             map { (@{ $_->{metas} }, @{ $_->{acoes} }) } @{ $plano->{objetivos} };
+  return {
+    plano  => $plano,
+    escola => {
+      cod_inep  => $cod_inep + 0,
+      nome      => $escola ? $escola->{no_entidade}  : undef,
+      municipio => $escola ? $escola->{no_municipio} : undef,
+      uf        => $escola ? $escola->{sg_uf}        : undef,
+    },
+    acoes_por_situacao => \%grupo,
+    n_evidencias       => scalar @evid,
+    emitido_em         => $emitido->{em},
+  };
+}
+
+# ---------------------------------------------------------------------------
 # evidências (#372): ata de reunião, versão de documento ou nota
 # ---------------------------------------------------------------------------
 

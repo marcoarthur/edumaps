@@ -148,6 +148,33 @@ export const gestorPlanosHandlers = [
     return p ? HttpResponse.json(planoOut(p)) : NAO_ACHOU("Plano");
   }),
 
+  http.get(`${BASE}/:id/relatorio`, ({ request, params }) => {
+    const denied = okAuth(request);
+    if (denied) return denied;
+    if (params.cod_inep !== INEP_PLANOS) return HttpResponse.json({ error: "Acesso negado" }, { status: 403 });
+    const p = achar(params);
+    if (!p) return NAO_ACHOU("Plano");
+    const plano = planoOut(p);
+    const grupos = { atrasadas: [], em_andamento: [], nao_iniciadas: [], concluidas: [], canceladas: [] };
+    for (const o of plano.objetivos) {
+      for (const a of o.acoes) {
+        const g = a.atrasada ? "atrasadas"
+          : a.situacao === "em_andamento" ? "em_andamento"
+          : a.situacao === "nao_iniciada" ? "nao_iniciadas"
+          : a.situacao === "concluida" ? "concluidas" : "canceladas";
+        grupos[g].push({ ...a, evidencias: a.evidencias ?? [], objetivo: o.titulo });
+      }
+    }
+    const n = plano.objetivos.flatMap((o) => [...o.metas, ...o.acoes]).reduce((s, x) => s + (x.evidencias?.length ?? 0), 0);
+    return HttpResponse.json({
+      plano,
+      escola: { cod_inep: Number(INEP_PLANOS), nome: "Escola Estadual Teste", municipio: "Porto Velho", uf: "RO" },
+      acoes_por_situacao: grupos,
+      n_evidencias: n,
+      emitido_em: `${HOJE_PLANOS}T14:30:00`,
+    });
+  }),
+
   http.put(`${BASE}/:id`, async ({ request, params }) => {
     const denied = okAuth(request);
     if (denied) return denied;
