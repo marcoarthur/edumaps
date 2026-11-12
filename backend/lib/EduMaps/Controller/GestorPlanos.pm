@@ -80,6 +80,8 @@ my %CAMPOS = (
     prazo          => [ 'data' ],
     situacao       => [ enum => \@EduMaps::Roles::Business::Gestor::Planos::SITUACOES_ACAO ],
     custo_previsto => [ 'numero_nao_negativo' ],
+    custo_executado => [ 'numero_nao_negativo' ],
+    executado_em   => [ 'data' ],
     fonte_recurso  => [ enum => \@EduMaps::Roles::Business::Gestor::Planos::FONTES_RECURSO ],
   },
 );
@@ -155,7 +157,7 @@ sub evidencia_destroy($self) { $self->_filho_destroy('evidencia', 'eid') }
 
 sub relatorio($self) {
   return unless $self->_gestor_inep_ok;
-  $self->_executar(sub ($m) { $m->plano_relatorio($self->param('cod_inep'), $self->param('id')) });
+  $self->_executar(sub ($m) { $m->plano_relatorio($self->param('cod_inep'), $self->param('id'), $self->_gid) });
 }
 
 sub auditoria($self) {

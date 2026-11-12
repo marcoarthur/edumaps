@@ -283,14 +283,15 @@
   // --- ações ---------------------------------------------------------------------
   function novaAcao(o) {
     acaoForm = { objetivo_id: o.id, meta_id: "", descricao: "", responsavel: "", inicio: "", prazo: "",
-                 custo_previsto: "", fonte_recurso: "" };
+                 custo_previsto: "", fonte_recurso: "", custo_executado: "", executado_em: "" };
   }
 
   function editarAcao(a) {
     metaForm = null;
     acaoForm = { id: a.id, objetivo_id: a.objetivo_id, meta_id: a.meta_id ? String(a.meta_id) : "", descricao: a.descricao,
                  responsavel: txt(a.responsavel), inicio: a.inicio ?? "", prazo: a.prazo ?? "",
-                 custo_previsto: txt(a.custo_previsto), fonte_recurso: a.fonte_recurso ?? "" };
+                 custo_previsto: txt(a.custo_previsto), fonte_recurso: a.fonte_recurso ?? "",
+                 custo_executado: txt(a.custo_executado), executado_em: a.executado_em ?? "" };
   }
 
   async function salvarAcao() {
@@ -309,6 +310,8 @@
       inicio: acaoForm.inicio || null,
       prazo: acaoForm.prazo || null,
       custo_previsto: acaoForm.custo_previsto === "" ? null : acaoForm.custo_previsto,
+      custo_executado: acaoForm.custo_executado === "" ? null : acaoForm.custo_executado,
+      executado_em: acaoForm.executado_em || null,
       fonte_recurso: acaoForm.fonte_recurso || null,
     };
     const ok = acaoForm.id
@@ -528,6 +531,13 @@
           <option value="">—</option>
           {#each FONTES_RECURSO as f (f.valor)}<option value={f.valor}>{f.rotulo}</option>{/each}
         </select></label>
+    </div>
+    <div class="grid gap-2 sm:grid-cols-3">
+      <label class="text-xs text-gray-600"><span class="block">Custo executado (R$)</span>
+        <input bind:value={acaoForm.custo_executado} inputmode="decimal" placeholder="Quanto já foi gasto" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <label class="text-xs text-gray-600"><span class="block">Executado em</span>
+        <input type="date" bind:value={acaoForm.executado_em} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+      <p class="text-xs text-gray-500 self-end">Deixe em branco o que ainda não foi gasto: vazio não conta como R$ 0.</p>
     </div>
     <div class="flex justify-end gap-2">
       <button type="button" onclick={() => (acaoForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
@@ -827,6 +837,7 @@
                       prazo {fmtData(a.prazo)}{#if a.responsavel}{" · "}{a.responsavel}{/if}
                       {#if a.custo_previsto !== null}{" · R$ "}{fmtNum(a.custo_previsto)}{/if}
                       {#if a.fonte_recurso}{" ("}{FONTE_RECURSO_LABEL[a.fonte_recurso]}){/if}
+                      {#if a.custo_executado !== null && a.custo_executado !== undefined}{" · executado R$ "}{fmtNum(a.custo_executado)}{#if a.executado_em}{" em "}{fmtData(a.executado_em)}{/if}{/if}
                       {#if a.meta_id}{" · meta: "}{metaDescricao(o.id, a.meta_id)}{/if}
                     </p>
                   </div>

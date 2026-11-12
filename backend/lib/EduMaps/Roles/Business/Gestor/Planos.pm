@@ -97,6 +97,7 @@ sub plano_detalhe ($self, $cod_inep, $id) {
   my $acoes = $self->_pl_rows(
     qq{SELECT a.id, a.objetivo_id, a.meta_id, a.descricao, a.responsavel, a.inicio, a.prazo,
               a.situacao, a.concluida_em, a.custo_previsto, a.fonte_recurso,
+              a.custo_executado, a.executado_em,
               (a.situacao IN ('nao_iniciada', 'em_andamento') AND a.prazo < $hoje) AS atrasada
        FROM   clean.planos_acoes a JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
        WHERE  o.plano_id = ? ORDER BY a.prazo NULLS LAST, a.id}, $id + 0);
@@ -567,11 +568,12 @@ sub acao_criar ($self, $cod_inep, $gestor_id, $plano_id, $p) {
     $row = $self->_pl_row(
       'INSERT INTO clean.planos_acoes
          (objetivo_id, meta_id, descricao, responsavel, inicio, prazo, situacao, concluida_em,
-          custo_previsto, fonte_recurso)
-       VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = \'concluida\' THEN NOW() END, ?, ?)
+          custo_previsto, fonte_recurso, custo_executado, executado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = \'concluida\' THEN NOW() END, ?, ?, ?, ?)
        RETURNING id',
       $p->{objetivo_id} + 0, $p->{meta_id}, $p->{descricao}, $p->{responsavel}, $p->{inicio},
-      $p->{prazo}, $situacao, $situacao, $p->{custo_previsto}, $p->{fonte_recurso});
+      $p->{prazo}, $situacao, $situacao, $p->{custo_previsto}, $p->{fonte_recurso},
+      $p->{custo_executado}, $p->{executado_em});
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'acao', $row->{id}, 'criado',
       { descricao => $p->{descricao} });
@@ -595,10 +597,11 @@ sub acao_atualizar ($self, $cod_inep, $gestor_id, $plano_id, $aid, $p) {
           SET objetivo_id = ?, meta_id = ?, descricao = ?, responsavel = ?, inicio = ?, prazo = ?,
               situacao = ?,
               concluida_em = CASE WHEN ? = \'concluida\' THEN COALESCE(concluida_em, NOW()) END,
-              custo_previsto = ?, fonte_recurso = ?, updated_at = NOW()
+              custo_previsto = ?, fonte_recurso = ?, custo_executado = ?, executado_em = ?,
+              updated_at = NOW()
         WHERE id = ?',
       @novo{qw(objetivo_id meta_id descricao responsavel inicio prazo situacao situacao
-               custo_previsto fonte_recurso)}, $aid + 0);
+               custo_previsto fonte_recurso custo_executado executado_em)}, $aid + 0);
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'acao', $aid, 'alterado', _pl_mudancas($atual, $p));
   });
@@ -626,8 +629,13 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
 # agrupadas por situação e o custo previsto por fonte de recurso (#384). Não
 # acrescenta dado pessoal: o único nome possível é o responsável da ação,
 # texto livre digitado pelo gestor.
-sub plano_relatorio ($self, $cod_inep, $id) {
+sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef) {
   my $plano = $self->plano_detalhe($cod_inep, $id);
+  # Cargo de quem emite (#395, P2-PG-04): do cadastro da conta da sessão, sem
+  # o nome. Sem cargo cadastrado, nada.
+  my $emissor = defined $emissor_id
+    ? $self->_pl_row('SELECT cargo FROM clean.gestores WHERE id = ?', $emissor_id + 0) : undef;
+  my $cargo = $emissor && defined $emissor->{cargo} && $emissor->{cargo} =~ /\S/ ? $emissor->{cargo} : undef;
   my $escola = $self->_pl_row(
     'SELECT no_entidade, no_municipio, sg_uf, nu_ano_censo FROM clean.censo_escolas
       WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', $cod_inep + 0);
@@ -646,22 +654,31 @@ sub plano_relatorio ($self, $cod_inep, $id) {
     }
   }
 
-  # Custo previsto por fonte de recurso (#384): soma das ações não canceladas
-  # com custo informado; as sem custo são contadas à parte (sem custo != R$ 0).
-  my (%custo, %n_fonte, $sem_custo);
+  # Custo por fonte de recurso (#384), previsto × executado (#395): soma das
+  # ações não canceladas com valor informado. Sem valor não é R$ 0: a ação é
+  # contada à parte, e a fonte sem nenhum valor de um lado fica null.
+  my (%prev, %n_prev, %exec, %n_exec, $sem_custo, $sem_exec);
   for my $g (grep { $_ ne 'canceladas' } keys %grupo) {
     for my $a (@{ $grupo{$g} }) {
-      if (!defined $a->{custo_previsto}) { $sem_custo++; next }
       my $f = $a->{fonte_recurso} // 'nao_informada';
-      $custo{$f}   += $a->{custo_previsto};
-      $n_fonte{$f} += 1;
+      if (defined $a->{custo_previsto}) { $prev{$f} += $a->{custo_previsto}; $n_prev{$f}++ } else { $sem_custo++ }
+      if (defined $a->{custo_executado}) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ } else { $sem_exec++ }
     }
   }
+  my $din = sub ($v) { defined $v ? 0 + sprintf('%.2f', $v) : undef };
   my @ordem = (@FONTES_RECURSO, 'nao_informada');
-  my @custos = map { { fonte => $_, total => 0 + sprintf('%.2f', $custo{$_}), n_acoes => $n_fonte{$_} } }
-               grep { exists $custo{$_} } @ordem;
-  my $total = 0;
-  $total += $_->{total} for @custos;
+  my @custos = map { {
+    fonte        => $_,
+    total        => $din->($prev{$_}),
+    n_acoes      => $n_prev{$_} // 0,
+    executado    => $din->($exec{$_}),
+    n_executadas => $n_exec{$_} // 0,
+  } } grep { exists $prev{$_} || exists $exec{$_} } @ordem;
+  my ($total, $total_exec);
+  for (@custos) {
+    $total      += $_->{total}     if defined $_->{total};
+    $total_exec += $_->{executado} if defined $_->{executado};
+  }
 
   my @evid = map { @{ $_->{evidencias} // [] } }
              map { (@{ $_->{metas} }, @{ $_->{acoes} }) } @{ $plano->{objetivos} };
@@ -675,10 +692,13 @@ sub plano_relatorio ($self, $cod_inep, $id) {
     },
     acoes_por_situacao => \%grupo,
     custos             => {
-      por_fonte          => \@custos,
-      total              => 0 + sprintf('%.2f', $total),
-      n_acoes_sem_custo  => $sem_custo // 0,
+      por_fonte             => \@custos,
+      total                 => $din->($total) // 0,
+      total_executado       => $din->($total_exec),
+      n_acoes_sem_custo     => $sem_custo // 0,
+      n_acoes_sem_executado => $sem_exec // 0,
     },
+    emitido_por_cargo  => $cargo,
     n_evidencias       => scalar @evid,
     emitido_em         => $emitido->{em},
   };
@@ -972,7 +992,7 @@ sub _meta_ou_404 ($self, $plano_id, $mid) {
 sub _acao_ou_404 ($self, $plano_id, $aid) {
   my $a = $self->_pl_row(
     'SELECT a.id, a.objetivo_id, a.meta_id, a.descricao, a.responsavel, a.inicio, a.prazo,
-            a.situacao, a.custo_previsto, a.fonte_recurso
+            a.situacao, a.custo_previsto, a.fonte_recurso, a.custo_executado, a.executado_em
        FROM clean.planos_acoes a JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
       WHERE a.id = ? AND o.plano_id = ?', $aid + 0, $plano_id + 0);
   $self->_falha(404, 'Ação não encontrada neste plano.') unless $a;
@@ -984,6 +1004,7 @@ sub _acao_por_id ($self, $plano_id, $aid) {
   my $a = $self->_pl_row(
     qq{SELECT a.id, a.objetivo_id, a.meta_id, a.descricao, a.responsavel, a.inicio, a.prazo,
               a.situacao, a.concluida_em, a.custo_previsto, a.fonte_recurso,
+              a.custo_executado, a.executado_em,
               (a.situacao IN ('nao_iniciada', 'em_andamento') AND a.prazo < $hoje) AS atrasada
        FROM   clean.planos_acoes a JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
        WHERE  a.id = ? AND o.plano_id = ?}, $aid + 0, $plano_id + 0);
@@ -1086,6 +1107,8 @@ sub _acao_out ($self, $r) {
     situacao       => $r->{situacao},
     concluida_em   => $r->{concluida_em},
     custo_previsto => _pl_num($r->{custo_previsto}),
+    custo_executado => _pl_num($r->{custo_executado}),
+    executado_em   => $r->{executado_em},
     fonte_recurso  => $r->{fonte_recurso},
     atrasada       => $r->{atrasada} ? Mojo::JSON::true : Mojo::JSON::false,
   };

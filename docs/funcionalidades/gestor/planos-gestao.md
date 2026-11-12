@@ -45,8 +45,9 @@ conselho escolar o que avançou.
 - **Andamento:** é calculado por meta, por objetivo e para o plano inteiro,
   sempre indicando **quantas metas foram medidas**. Uma meta sem medição ou
   sem dado da escola na fonte aparece assim, **nunca como 0%**.
-- **Ações:** cada ação tem responsável, prazo, situação, custo previsto e
-  fonte do recurso (PDDE, Fundeb, recurso próprio, parceria). As atrasadas e
+- **Ações:** cada ação tem responsável, prazo, situação, custo previsto, custo
+  executado (com a data) e fonte do recurso (PDDE, Fundeb, recurso próprio,
+  parceria). As atrasadas e
   as que vencem nos próximos 7 dias ficam destacadas.
 - **Alertas por e-mail:** o gestor recebe por e-mail um resumo diário dos
   prazos, só quando há novidade, e pode desligar os alertas por plano.
@@ -59,8 +60,9 @@ conselho escolar o que avançou.
   do plano para imprimir ou salvar em PDF (A4) e prestar contas à secretaria e
   ao conselho escolar. Ele traz a escola, o plano e o período, o andamento por
   objetivo e por meta (cada indicador oficial com a fonte e o ano; meta sem
-  medição aparece escrita assim, nunca como 0%), o custo previsto por fonte de
-  recurso (PDDE, Fundeb, recurso próprio, parceria), as ações por situação,
+  medição aparece escrita assim, nunca como 0%), o custo previsto e o executado
+  por fonte de recurso (PDDE, Fundeb, recurso próprio, parceria), o cargo de
+  quem emitiu, as ações por situação,
   as evidências e a data de emissão. O único nome que pode aparecer é o
   responsável de cada ação, como o gestor escreveu.
 - **Correção sem retrabalho:** objetivos, metas e ações podem ser corrigidos

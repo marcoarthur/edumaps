@@ -98,18 +98,20 @@ fica com o título que tinha e a marca **origem removida**, sem link.
 Para prestar contas à secretaria ou ao conselho escolar, abra o plano e clique
 em **🖨️ Relatório**. A página mostra:
 
-- a escola, o plano, o período, a situação e a **data de emissão**;
+- a escola, o plano, o período, a situação, a **data de emissão** e o
+  **cargo** de quem emitiu (o do seu cadastro; o nome não aparece);
 - o resumo: andamento das metas ("N de M metas medidas"), quantas ações estão
   concluídas, em andamento, atrasadas, não iniciadas e canceladas, e quantas
   evidências há;
-- o **custo previsto por fonte de recurso** (PDDE, Fundeb, recurso próprio,
-  parceria, outro), com o total. Entram só as ações não canceladas com custo
-  informado; as sem custo são contadas à parte, e não como R$ 0;
+- o **custo por fonte de recurso** (PDDE, Fundeb, recurso próprio, parceria,
+  outro): **previsto** e **executado**, com os totais. Entram só as ações não
+  canceladas com valor informado; as sem valor são contadas à parte, e não como
+  R$ 0;
 - cada objetivo com a tabela das metas: **fonte e ano** de cada indicador
   oficial, linha de base, alvo, valor atual e andamento. Meta sem medição
   aparece como **Sem medição**, nunca como 0%;
 - as ações agrupadas por situação, com objetivo, responsável, prazo, custo
-  previsto, fonte do recurso e o número de evidências;
+  previsto e executado, fonte do recurso e o número de evidências;
 - a lista das evidências.
 
 Clique em **Imprimir / salvar PDF** e, na janela do navegador, escolha a
@@ -152,6 +154,9 @@ e não o nome completo. Não há dado de aluno.
   o link leva a ela, com a ata em texto e os anexos.
 - **O relatório mostra o nome de alguém?** Só o **responsável** de cada ação,
   como você escreveu. Por isso a dica de usar o cargo ou a equipe.
+- **Onde registro quanto foi gasto?** No **✎** da ação, em **Custo executado
+  (R$)** e **Executado em**. Deixe em branco o que ainda não foi gasto: o
+  relatório conta essas ações à parte, sem somar R$ 0.
 - **Errei o prazo de uma ação. Preciso apagar e criar de novo?** Não. Use o
   **✎** da ação: o prazo muda e as evidências continuam ligadas. A mudança
   fica no histórico do plano.

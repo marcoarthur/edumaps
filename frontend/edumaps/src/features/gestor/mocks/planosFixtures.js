@@ -43,7 +43,7 @@ export const PLANOS_PLANOS = [
         acoes: [
           { id: 200, objetivo_id: 10, meta_id: 100, descricao: "Reforço de leitura", responsavel: "Coordenação",
             inicio: "2026-02-10", prazo: "2026-03-05", situacao: "em_andamento", concluida_em: null,
-            custo_previsto: 1500, fonte_recurso: "pdde",
+            custo_previsto: 1500, fonte_recurso: "pdde", custo_executado: 900, executado_em: "2026-03-01",
             evidencias: [
               { id: 3000, tipo: "ata", titulo: "Conselho escolar de fevereiro", texto: null,
                 reuniao_id: 70, quando: "2026-02-20T19:00:00", documento_id: null, documento_versao_id: null,
