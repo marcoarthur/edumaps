@@ -66,6 +66,8 @@ describe("PlanoRelatorioPage", () => {
     await abrir();
     await screen.findByRole("heading", { level: 1 });
     expect(linhaDe("Medição da escola").cells[0].textContent).toBe("Reduzir faltas (reduzir, %)");
+    const faltas = linhaDe("Medição da escola").cells;
+    expect([faltas[2].textContent, faltas[3].textContent]).toEqual(["20%", "12%"]);
     expect(screen.getByText("Subir o IDEB dos anos iniciais", { exact: false }).closest("td").textContent)
       .toBe("Subir o IDEB dos anos iniciais (aumentar, pontos (0 a 10))");
     expect(screen.getByText(/INEP 11000040/).textContent.replace(/\s+/g, " ").trim())

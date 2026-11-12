@@ -65,7 +65,7 @@ describe("Edição do plano", () => {
     await fireEvent.input(screen.getByDisplayValue("12"), { target: { value: "10" } });
     await fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Meta atualizada.", "success"));
-    await waitFor(() => expect(texto()).toContain("base 20 → alvo 10 %"));
+    await waitFor(() => expect(texto()).toContain("base 20% → alvo 10%"));
   });
 
   it("meta oficial: o indicador não muda na edição", async () => {
@@ -102,5 +102,7 @@ describe("Edição do plano", () => {
     expect(t).toContain("2023");
     expect(t).toContain("linha de base (5)");
     expect(t).toContain("alvo (6)");
+    // legível sem aproximar (P1-PG-07): a legenda não usa letra menor que 12 px
+    expect(fig.querySelector("figcaption").className).toContain("text-xs");
   });
 });

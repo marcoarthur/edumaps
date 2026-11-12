@@ -53,7 +53,7 @@
         {/if}
       {/each}
     </svg>
-    <figcaption class="flex flex-wrap gap-x-3 text-[10px] text-gray-500">
+    <figcaption class="flex flex-wrap gap-x-3 text-xs text-gray-600">
       <span><span aria-hidden="true" class="text-blue-600">●</span> medições</span>
       {#if temValor(linhaBase)}<span><span aria-hidden="true" class="text-gray-400">┅</span> linha de base ({fmtNum(linhaBase)})</span>{/if}
       {#if temValor(alvo)}<span><span aria-hidden="true" class="text-green-600">┅</span> alvo ({fmtNum(alvo)})</span>{/if}

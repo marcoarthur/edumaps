@@ -48,6 +48,17 @@ export const META_ESTADO_LABEL = {
   incoerente: "Alvo incoerente com o sentido",
 };
 
+/**
+ * Valor com a unidade da meta (P1-PG-06): "%" cola no número ("12%"); as
+ * demais unidades vêm depois, com espaço ("320 alunos"). Sem valor → "—".
+ */
+export function fmtComUnidade(v, unidade) {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = fmtNum(v);
+  if (!unidade) return n;
+  return unidade === "%" ? `${n}%` : `${n} ${unidade}`;
+}
+
 /** Valor em reais (pt-BR, 2 casas); null → "—" (sem custo não é R$ 0). */
 export function fmtMoeda(v) {
   if (v === null || v === undefined || v === "") return "—";

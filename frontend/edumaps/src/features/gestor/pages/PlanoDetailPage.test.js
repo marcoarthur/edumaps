@@ -55,6 +55,9 @@ describe("PlanoDetailPage", () => {
     expect(txt).toContain("Reforço de leitura · prazo 05/03/2026 · Coordenação");
     expect(txt).toContain("Conselho escolar de fevereiro · 20/02/2026");
     expect(txt).not.toMatch(/\S·|\d[a-z]/);
+    // "%" cola no número (P1-PG-06)
+    expect(txt).toContain("Meta manual · base 20% → alvo 12%");
+    expect(txt).not.toMatch(/\d %/);
   });
 
   it("destaca a ação atrasada", async () => {
