@@ -16,6 +16,7 @@
     fmtMoeda,
     fmtData,
     fmtNum,
+    fmtComUnidade,
   } from "../../constants/planos.js";
 
   /** @type {{ relatorio: object }} */
@@ -51,8 +52,12 @@
     return `${m.indicador.fonte}${ano ? `, ${ano}` : ", sem valor da escola"}`;
   };
 
+  // "%" cola no número nas colunas de base, alvo e atual (P1-PG-06); as outras
+  // unidades já aparecem ao lado da descrição da meta.
+  const pctOuNum = (v, m) => (m.unidade === "%" ? fmtComUnidade(v, "%") : fmtNum(v));
+
   const atualTexto = (m) =>
-    m.atual ? `${fmtNum(m.atual.valor)} (${m.atual.ano_ref ?? fmtData(m.atual.data_ref)})` : "—";
+    m.atual ? `${pctOuNum(m.atual.valor, m)} (${m.atual.ano_ref ?? fmtData(m.atual.data_ref)})` : "—";
 
   const evidencias = $derived(
     plano.objetivos.flatMap((o) => [
@@ -171,8 +176,8 @@
                 <tr>
                   <td class={TD}>{m.descricao}<span class="text-gray-500">{" ("}{SENTIDO[m.sentido] ?? m.sentido}{#if m.unidade}{", "}{m.unidade}{/if})</span></td>
                   <td class={TD}>{fonteAno(m)}</td>
-                  <td class={TD}>{fmtNum(m.linha_base)}</td>
-                  <td class={TD}>{fmtNum(m.alvo)}</td>
+                  <td class={TD}>{pctOuNum(m.linha_base, m)}</td>
+                  <td class={TD}>{pctOuNum(m.alvo, m)}</td>
                   <td class={TD}>{atualTexto(m)}</td>
                   <td class={TD}>{andamento(m)}</td>
                 </tr>

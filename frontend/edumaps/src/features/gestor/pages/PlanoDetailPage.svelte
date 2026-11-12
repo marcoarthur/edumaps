@@ -40,6 +40,7 @@
     pct,
     fmtData,
     fmtNum,
+    fmtComUnidade,
   } from "../constants/planos.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import MetaHistorico from "../components/planos/MetaHistorico.svelte";
@@ -481,7 +482,7 @@
       <label class="text-xs text-gray-600"><span class="block">Prazo</span>
         <input type="date" bind:value={metaForm.prazo} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
     </div>
-    <p class="text-[11px] text-gray-500">
+    <p class="text-xs text-gray-600">
       <strong>Sentido:</strong> se o valor deve aumentar, diminuir ou não cair abaixo do alvo.
       <strong>Linha de base:</strong> o valor de partida, de onde o andamento é medido até o alvo.
     </p>
@@ -740,8 +741,8 @@
                       <p class="text-sm font-medium text-gray-800">{m.descricao}</p>
                       <p class="text-xs text-gray-500">
                         {m.indicador ? m.indicador.fonte : "Meta manual"}
-                        · base {fmtNum(m.linha_base)} → alvo {fmtNum(m.alvo)}{#if m.unidade}{" "}{m.unidade}{/if}
-                        {#if m.atual}{" · atual "}{fmtNum(m.atual.valor)} ({m.atual.ano_ref ?? fmtData(m.atual.data_ref)}){/if}
+                        · base {m.unidade === "%" ? fmtComUnidade(m.linha_base, "%") : fmtNum(m.linha_base)} → alvo {fmtComUnidade(m.alvo, m.unidade)}
+                        {#if m.atual}{" · atual "}{m.unidade === "%" ? fmtComUnidade(m.atual.valor, "%") : fmtNum(m.atual.valor)} ({m.atual.ano_ref ?? fmtData(m.atual.data_ref)}){/if}
                       </p>
                     </div>
                     {#if editavel}
