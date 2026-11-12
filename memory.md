@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377, #378)
+## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#379)
 
 - Sprint dos planos de gestão (épico #368, spec
   `docs/specs/2026-11-11-planos-de-gestao.md`): #369–#374 no sprint; #375
@@ -14,7 +14,11 @@
 - **PR #378 mergeado** (`e1307e1`, fecha #370): indicadores oficiais,
   medições e progresso das metas; CI do `main` verde. O #379 foi apontado
   para o `main` antes do merge e seguiu aberto.
-- Aberto: **#379** (#373, alertas de prazo às 7h; base `main`, CI verde). #371 (interface) na branch
+- **PR #379 mergeado** (`8ab9dd8`, fecha #373): alertas de prazo diários às
+  7h (Minion), só com novidade. Backend do sprint completo no `main`.
+- Contêineres locais conferidos por md5: já rodavam o código do `main` (a
+  branch da #371 só difere no frontend e na documentação) — sem rebuild.
+- Nota técnica **190** (backend dos planos, #369/#370/#373). #371 (interface) na branch
   `feat/frontend-planos-gestao`, sem PR — aguarda validação visual.
 - **Armadilha**: `gh pr merge --delete-branch` do PR-base FECHOU o #378 (o
   GitHub não refaz a base quando a branch é apagada pela API). Recuperado
@@ -23,7 +27,6 @@
 - Docker local roda a branch da #371 (superconjunto); banco local com as 3
   changes (`planos_gestao`, `planos_indicadores`, `planos_alertas`) —
   desfazer com `sqitch revert --to antt_sem_fonte` se preciso.
-- Nota técnica fica para o fim do ciclo (consolida #369–#373).
 
 ## Sessão 2026-11-11 (ay) — camada de km real da ANTT, #168 fechada (PR #367)
 
