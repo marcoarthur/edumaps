@@ -32,7 +32,8 @@
 
 - Avaliar a visão da rede quando a #375 existir: consolidação dos planos das
   escolas, metas oficiais comparáveis e custo por fonte de recurso.
-- Rever a barreira P2-PG-02 (custo e fonte de recurso no relatório).
+- Rever a barreira P2-PG-02 quando a #384 (custo e fonte de recurso no
+  relatório) for entregue.
 
 ## Entradas
 
