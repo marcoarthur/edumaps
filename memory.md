@@ -22,8 +22,11 @@
   espaço do início de `{#if}`/`<span>` colado a expressão → usar `{" · "}`).
 - O check "build"/"deploy" dos PRs é do workflow `docs-pages` (só roda com
   mudança em `docs/`), não build do frontend.
-- Em andamento: **#383** na branch `feat/planos-edicao` (`9147d4b`),
-  aguardando validação visual.
+- **PR #387 mergeado** (`cae0bae`, fecha #383): ✎ em objetivo, meta e ação
+  (formulários de criação viram snippets; evidências mantidas), gráfico da
+  meta com anos e legenda, explicação de sentido/linha de base. Validado.
+- Em andamento: **#384** (custo e fonte no relatório) na branch
+  `feat/planos-relatorio-custos`, com o `main` já mesclado.
 
 ## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 

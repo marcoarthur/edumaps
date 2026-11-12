@@ -31,8 +31,8 @@
 
 ## Pendências
 
-- Voltar a avaliar o plano quando a #383 (edição de ação, meta e objetivo,
-  barreira P1-PG-01) e a #385 (plano ligado ao arquivo) forem entregues.
+- Reavaliar o plano: a #383 (edição de ação, meta e objetivo, barreira
+  P1-PG-01) foi entregue no PR #387; falta a #385 (plano ligado ao arquivo).
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
 

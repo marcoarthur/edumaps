@@ -30,11 +30,11 @@
 
 | Id | Gravidade | O quê | Encaminhamento proposto |
 |---|---|---|---|
-| P1-PG-01 | **bloqueia** | Editar ação (descrição, responsável, prazo, custo, fonte), meta (descrição, base, alvo, prazo) e objetivo (título) na tela. Hoje só há a situação da ação e o ✕, e excluir perde as evidências. A API já aceita a edição parcial. | **#383** (prioridade alta) |
+| P1-PG-01 | **bloqueia** | Editar ação (descrição, responsável, prazo, custo, fonte), meta (descrição, base, alvo, prazo) e objetivo (título) na tela. Hoje só há a situação da ação e o ✕, e excluir perde as evidências. A API já aceita a edição parcial. | **#383**: entregue no PR #387 |
 | P2-PG-02 | atrapalha | Custo previsto e fonte de recurso no relatório (por ação e o total por fonte) | **#384** |
 | P1-PG-02 | atrapalha | Ligar o plano ao arquivo dele em Documentos e planos (o campo existe na API) | **#385** |
-| P1-PG-03 | atrapalha | Legenda e anos no gráfico da meta | na **#383** |
-| P1-PG-05 | detalhe | Explicar "sentido" e "linha de base" no próprio formulário | na **#383** |
+| P1-PG-03 | atrapalha | Legenda e anos no gráfico da meta | entregue no PR #387 |
+| P1-PG-05 | detalhe | Explicar "sentido" e "linha de base" no próprio formulário | entregue no PR #387 |
 | P2-PG-04 | detalhe | Cargo de quem emitiu o relatório | critério registrado na **#375** |
 
 ### Já no backlog
