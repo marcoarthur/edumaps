@@ -169,4 +169,43 @@ subtest 'trocar o indicador refaz o histórico; plano encerrado congela' => sub 
   is [ map { $_->{ano_ref} } @{ $of->{medicoes} } ], [ 2025, 2026 ], 'reaberto: a fonte volta a entrar';
 };
 
+subtest 'base ajustada pela escola fica visível (P2-PG-05)' => sub {
+  # o valor oficial atual do IDEB da escola (subtestes anteriores acrescentam anos)
+  my ($ideb) = grep { $_->{codigo} eq 'ideb_ai' }
+    @{ $t->get_ok("$base/indicadores", $auth)->status_is(200)->tx->res->json->{indicadores} };
+  my $oficial = $ideb->{ultimo}{valor};
+  ok defined $oficial, "IDEB oficial da escola: $oficial";
+
+  # sugerida pela fonte: sem marca
+  my $m = $t->post_ok("$base/$plano/metas", $auth, json => {
+    objetivo_id => $obj, descricao => 'IDEB (base sugerida)', indicador_codigo => 'ideb_ai', alvo => 9.5 })
+    ->status_is(201)->json_is('/linha_base' => $oficial)->json_is('/linha_base_oficial' => $oficial)
+    ->json_is('/base_ajustada' => Mojo::JSON::false)->tx->res->json->{id};
+
+  # a escola baixa a base: marca, e o valor oficial continua guardado
+  $t->put_ok("$base/$plano/metas/$m", $auth, json => { linha_base => $oficial - 1 })->status_is(200)
+    ->json_is('/linha_base_oficial' => $oficial)->json_is('/base_ajustada' => Mojo::JSON::true);
+  # volta ao valor oficial: sem marca
+  $t->put_ok("$base/$plano/metas/$m", $auth, json => { linha_base => $oficial })->status_is(200)
+    ->json_is('/base_ajustada' => Mojo::JSON::false);
+
+  # informada na criação, diferente da fonte: já nasce marcada
+  $t->post_ok("$base/$plano/metas", $auth, json => {
+    objetivo_id => $obj, descricao => 'IDEB (base informada)', indicador_codigo => 'ideb_ai',
+    linha_base => $oficial - 0.5, alvo => 9.5 })
+    ->status_is(201)->json_is('/linha_base_oficial' => $oficial)->json_is('/base_ajustada' => Mojo::JSON::true);
+
+  # meta manual: não há valor oficial nem marca
+  $t->post_ok("$base/$plano/metas", $auth, json => {
+    objetivo_id => $obj, descricao => 'Frequência', linha_base => 80, alvo => 90 })
+    ->status_is(201)->json_is('/linha_base_oficial' => undef)->json_is('/base_ajustada' => Mojo::JSON::false);
+
+  # o relatório traz a marca e o valor oficial
+  my $r = $t->get_ok("$base/$plano/relatorio", $auth)->status_is(200)->tx->res->json;
+  my %metas = map { $_->{descricao} => $_ } map { @{ $_->{metas} } } @{ $r->{plano}{objetivos} };
+  is $metas{'IDEB (base informada)'}{base_ajustada}, Mojo::JSON::true, 'relatório: base ajustada';
+  is $metas{'IDEB (base informada)'}{linha_base_oficial}, $oficial, 'relatório: valor oficial';
+  is $metas{'IDEB (base sugerida)'}{base_ajustada}, Mojo::JSON::false, 'relatório: base oficial sem marca';
+};
+
 done_testing;

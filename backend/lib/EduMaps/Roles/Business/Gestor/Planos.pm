@@ -91,7 +91,7 @@ sub plano_detalhe ($self, $cod_inep, $id) {
       WHERE plano_id = ? ORDER BY ordem, id', $id + 0);
   my $metas = $self->_pl_rows(
     'SELECT m.id, m.objetivo_id, m.descricao, m.unidade, m.sentido, m.indicador_codigo,
-            m.linha_base, m.alvo, m.prazo
+            m.linha_base, m.alvo, m.prazo, m.linha_base_oficial
        FROM clean.planos_metas m JOIN clean.planos_objetivos o ON o.id = m.objetivo_id
       WHERE o.plano_id = ? ORDER BY m.id', $id + 0);
   my $acoes = $self->_pl_rows(
@@ -288,20 +288,22 @@ sub meta_criar ($self, $cod_inep, $gestor_id, $plano_id, $p) {
     # Meta oficial: unidade do catálogo; linha de base sugerida pelo último
     # valor da escola (se o gestor não informou).
     $m{unidade} //= $ind->{unidade};
-    if (!exists $p->{linha_base}) {
-      my $ult = $self->_ultimo_oficial($cod_inep, $m{indicador_codigo});
-      $m{linha_base} = $ult ? $ult->{valor} : undef;
-    }
+    # O valor oficial de origem fica guardado (P2-PG-05): uma linha de base
+    # diferente dele aparece como "ajustada pela escola".
+    my $ult = $self->_ultimo_oficial($cod_inep, $m{indicador_codigo});
+    $m{linha_base_oficial} = $ult ? $ult->{valor} : undef;
+    $m{linha_base} = $m{linha_base_oficial} unless exists $p->{linha_base};
   }
   $self->_sentido_coerente(\%m);
   my $row;
   $self->_pl_txn(sub {
     $row = $self->_pl_row(
       'INSERT INTO clean.planos_metas
-         (objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo',
-      $m{objetivo_id} + 0, @m{qw(descricao unidade sentido indicador_codigo linha_base alvo prazo)});
+         (objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo, linha_base_oficial)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo,
+                 linha_base_oficial',
+      $m{objetivo_id} + 0, @m{qw(descricao unidade sentido indicador_codigo linha_base alvo prazo linha_base_oficial)});
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $row->{id}, 'criado',
       { descricao => $m{descricao}, indicador => $m{indicador_codigo} });
@@ -319,6 +321,10 @@ sub meta_atualizar ($self, $cod_inep, $gestor_id, $plano_id, $mid, $p) {
   $self->_sentido_coerente(\%novo);
   my $troca_indicador = exists $p->{indicador_codigo}
     && ($p->{indicador_codigo} // '') ne ($atual->{indicador_codigo} // '');
+  if ($troca_indicador) {
+    my $ult = defined $novo{indicador_codigo} ? $self->_ultimo_oficial($cod_inep, $novo{indicador_codigo}) : undef;
+    $novo{linha_base_oficial} = $ult ? $ult->{valor} : undef;
+  }
   my $row;
   $self->_pl_txn(sub {
     # Trocou (ou tirou) o indicador: as medições oficiais eram do indicador
@@ -337,10 +343,11 @@ sub meta_atualizar ($self, $cod_inep, $gestor_id, $plano_id, $mid, $p) {
     $row = $self->_pl_row(
       'UPDATE clean.planos_metas
           SET objetivo_id = ?, descricao = ?, unidade = ?, sentido = ?, indicador_codigo = ?,
-              linha_base = ?, alvo = ?, prazo = ?, updated_at = NOW()
+              linha_base = ?, alvo = ?, prazo = ?, linha_base_oficial = ?, updated_at = NOW()
         WHERE id = ?
-        RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo',
-      @novo{qw(objetivo_id descricao unidade sentido indicador_codigo linha_base alvo prazo)}, $mid + 0);
+        RETURNING id, objetivo_id, descricao, unidade, sentido, indicador_codigo, linha_base, alvo, prazo,
+                  linha_base_oficial',
+      @novo{qw(objetivo_id descricao unidade sentido indicador_codigo linha_base alvo prazo linha_base_oficial)}, $mid + 0);
     $self->_pl_tocar($plano_id);
     $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'meta', $mid, 'alterado', _pl_mudancas($atual, $p));
   });
@@ -955,7 +962,7 @@ sub _objetivo_ou_404 ($self, $plano_id, $oid, $status_falha = 404) {
 sub _meta_ou_404 ($self, $plano_id, $mid) {
   my $m = $self->_pl_row(
     'SELECT m.id, m.objetivo_id, m.descricao, m.unidade, m.sentido, m.indicador_codigo,
-            m.linha_base, m.alvo, m.prazo
+            m.linha_base, m.alvo, m.prazo, m.linha_base_oficial
        FROM clean.planos_metas m JOIN clean.planos_objetivos o ON o.id = m.objetivo_id
       WHERE m.id = ? AND o.plano_id = ?', $mid + 0, $plano_id + 0);
   $self->_falha(404, 'Meta não encontrada neste plano.') unless $m;
@@ -1058,6 +1065,12 @@ sub _meta_out ($self, $r) {
     linha_base       => _pl_num($r->{linha_base}),
     alvo             => _pl_num($r->{alvo}),
     prazo            => $r->{prazo},
+    # P2-PG-05: meta oficial com linha de base diferente do valor oficial de
+    # origem (ou sem valor oficial e com base informada) = ajustada pela escola.
+    linha_base_oficial => defined $r->{indicador_codigo} ? _pl_num($r->{linha_base_oficial}) : undef,
+    base_ajustada      => (defined $r->{indicador_codigo} && defined $r->{linha_base}
+                           && (!defined $r->{linha_base_oficial} || $r->{linha_base} != $r->{linha_base_oficial}))
+                          ? Mojo::JSON::true : Mojo::JSON::false,
   };
 }
 

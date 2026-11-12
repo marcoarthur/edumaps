@@ -166,3 +166,4 @@ planos_gestao [antt_sem_fonte gestor_documentos] 2026-11-11T18:00:00Z Marco Arth
 planos_indicadores [planos_gestao] 2026-11-11T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #370: indicadores oficiais por escola e medicoes das metas dos planos
 planos_alertas [planos_indicadores] 2026-11-11T21:00:00Z Marco Arthur <arthurpbs@gmail.com> # #373: resumo diario de prazos dos planos (idempotencia por gestor/dia)
 planos_evidencias [planos_alertas gestor_reunioes gestor_documentos] 2026-11-12T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #372: evidencias das acoes e metas dos planos (ata, versao de documento, nota)
+planos_base_oficial [planos_evidencias] 2026-11-12T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # P2-PG-05: valor oficial de origem da linha de base (base ajustada pela escola fica visivel)
