@@ -23,6 +23,8 @@ my %LIMITE_PADRAO = (
   # tokens inválidos em /senha/redefinir.
   reset_email => { max => 3,  janela => 3600 },
   reset_ip    => { max => 10, janela => 3600 },
+  # convite da conta de rede (#394): tokens inválidos por IP
+  convite_ip  => { max => 10, janela => 3600 },
 );
 
 # Redes de onde se aceita o X-Real-IP (o nginx). Config opcional
@@ -389,6 +391,64 @@ sub _require_gestor($self) {
 
   $self->stash(gestor => $gestor, gestor_token => $token);
   return 1;
+}
+
+# Pesquisas são da escola: a conta de rede (#394) tem sessão (me, logout), mas
+# não cria nem lê pesquisa.
+sub _require_gestor_escola($self) {
+  return 0 unless $self->_require_gestor;
+  if (($self->stash('gestor')->{access_role} // '') eq 'rede') {
+    $self->render(json => { error => 'Conta de rede: use o painel da rede.' }, status => 403);
+    return 0;
+  }
+  return 1;
+}
+
+# ---------------------------------------------------------------
+# convite da conta de rede (#394) — anônimo
+# ---------------------------------------------------------------
+
+sub _convite_limite($self, $model) {
+  my $secret = $self->app->secrets->[0];
+  return ['convite_ip', $model->auth_chave($secret, $self->_ip), $self->_limite('convite_ip')];
+}
+
+# GET /api/rede/convite/:token — situação do convite e de quem é.
+sub rede_convite_show($self) {
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $ip_e  = $self->_convite_limite($model);
+  if (my $espera = $self->_espera($model, $ip_e)) {
+    return $self->_render_muitas_tentativas($espera, 'convite_ip');
+  }
+  my $c = $model->rede_convite_info($self->param('token'));
+  unless ($c) {
+    $model->auth_registrar($ip_e->[0], $ip_e->[1]) unless _limites_off();
+    return $self->render(json => { error => 'Convite não encontrado.' }, status => 404);
+  }
+  $self->render(json => { situacao => $c->{situacao}, nome => $c->{nome}, email => $c->{email} });
+}
+
+# POST /api/rede/convite/:token { senha } — define a senha e encerra o convite.
+sub rede_convite_aceitar($self) {
+  my $input = $self->_input or return $self->render(json => {error => 'Corpo JSON inválido'}, status => 400);
+  my $v = $self->app->validator->validation;
+  $v->input($input);
+  $v->required('senha')->size(6, 64);
+  my $model = $self->instantiate_model(model => 'Pesquisa');
+  my $ip_e  = $self->_convite_limite($model);
+  if (my $espera = $self->_espera($model, $ip_e)) {
+    return $self->_render_muitas_tentativas($espera, 'convite_ip');
+  }
+  return $self->_render_validation($v) if $v->has_error;
+  my $g = $model->rede_convite_aceitar($self->param('token'), $v->param('senha'));
+  unless ($g) {
+    $model->auth_registrar($ip_e->[0], $ip_e->[1]) unless _limites_off();
+    return $self->render(
+      json   => { error => 'Este convite não vale mais (vencido, já usado ou substituído). Peça um novo ao administrador.' },
+      status => 400);
+  }
+  $model->auth_limpar('email', $model->auth_chave($self->app->secrets->[0], $g->{email}));
+  $self->render(json => { ok => 1, email => $g->{email} });
 }
 
 # ---------------------------------------------------------------

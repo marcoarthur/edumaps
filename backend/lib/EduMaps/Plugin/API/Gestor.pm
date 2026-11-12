@@ -23,7 +23,7 @@ sub register($self, $app, @args) {
 
   # Autenticação (mesma sessão de /api/gestor/login — registrado no
   # Plugin::API::Pesquisa): /me e /logout também ficam aqui.
-  my $sessao = $app->routes->under($self->gestor_path)->to('gestor#_require_gestor');
+  my $sessao = $app->routes->under($self->gestor_path)->to('gestor#_require_sessao');
   $sessao->get('/me')->to('gestor#me')->name('gestor_me');
   $sessao->post('/logout')->to('gestor#logout')->name('gestor_logout');
 

@@ -15,6 +15,7 @@ import { gestorInfluenciaHandlers } from "@/features/gestor/mocks/influenciaHand
 import { gestorRelatoriosHandlers } from "@/features/gestor/mocks/relatoriosHandlers.js";
 import { gestorPlanosHandlers } from "@/features/gestor/mocks/planosHandlers.js";
 import { configHandlers } from "@/features/config/mocks/configHandlers.js";
+import { redeHandlers } from "@/features/rede/mocks/redeHandlers.js";
 import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
 import { chatHandlers } from "@/features/chat/mocks/chatHandlers.js";
 
@@ -33,6 +34,7 @@ export const handlers = [
   ...gestorInfluenciaHandlers,
   ...gestorRelatoriosHandlers,
   ...gestorPlanosHandlers,
+  ...redeHandlers,
   ...configHandlers,
   ...telemetryHandlers,
   ...chatHandlers,

@@ -157,3 +157,46 @@ export function atualizarConsentimentoVersao(id, mudancas = {}) {
 export function publicarConsentimentoVersao(id) {
   return apiClient.post(`${CONSENTIMENTO_BASE}/${id}/publicar`);
 }
+
+// ---------------------------------------------------------------------------
+// contas de rede (#394) — /api/admin/rede/contas
+// ---------------------------------------------------------------------------
+
+const REDE = "/api/admin/rede/contas";
+
+/** @returns {Promise<{contas: Array}>} contas de rede com vínculos ativos */
+export function listRedeContas() {
+  return apiClient.get(REDE);
+}
+
+/**
+ * Cria a conta e o primeiro convite. O token só vem nesta resposta.
+ * @returns {Promise<{conta: object, convite: {token: string, expira_em: string}}>}
+ */
+export function criarRedeConta({ nome, email, cargo }) {
+  return apiClient.post(REDE, { nome, email, cargo });
+}
+
+/** Novo convite (o anterior deixa de valer). @returns {Promise<{token, expira_em}>} */
+export function gerarRedeConvite(contaId) {
+  return apiClient.post(`${REDE}/${contaId}/convite`, {});
+}
+
+/** @param {{tp_dependencia: 2|3, co_municipio: number}} vinculo */
+export function concederRedeVinculo(contaId, { tp_dependencia, co_municipio }) {
+  return apiClient.post(`${REDE}/${contaId}/vinculos`, { tp_dependencia, co_municipio });
+}
+
+export function revogarRedeVinculo(contaId, vinculoId) {
+  return apiClient.delete(`${REDE}/${contaId}/vinculos/${vinculoId}`);
+}
+
+/** @returns {Promise<{auditoria: Array}>} */
+export function getRedeAuditoria(contaId) {
+  return apiClient.get(`${REDE}/${contaId}/auditoria`);
+}
+
+/** Link do convite para o admin copiar e enviar. */
+export function linkConviteRede(token) {
+  return `${window.location.origin}/rede/convite/${token}`;
+}

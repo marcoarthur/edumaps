@@ -13,7 +13,7 @@ REQUIRED = {"titulo", "publico", "modulo", "nivel", "status", "ultima_revisao"}
 # Perfis da ajuda. Não há "professor": não existe conta docente (só gestor e
 # admin); o professor usa a parte pública, coberta por "comunidade" (#304).
 ENUMS = {
-    "publico": {"gestor", "comunidade", "administrador", "desenvolvedor"},
+    "publico": {"gestor", "comunidade", "administrador", "desenvolvedor", "rede"},
     "modulo": {"gestor", "comunidade", "administrador", "desenvolvedor"},
     "nivel": {"basico", "intermediario", "avancado"},
     "status": {"ativo", "parcial", "planejado", "descontinuado"},

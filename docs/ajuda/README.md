@@ -5,6 +5,7 @@ publico:
 - gestor
 - comunidade
 - administrador
+- rede
 - desenvolvedor
 status: ativo
 titulo: Ajuda do EduMaps
@@ -19,6 +20,7 @@ ultima_revisao: '2026-11-10'
 | Diretório | Público | Foco |
 |---|---|---|
 | [`gestor/`](gestor/README.md) | Diretor/coordenador de escola | Painel da escola, IVET, área de influência, financeiro/folha, comunicação |
+| [`rede/`](rede/README.md) | Secretaria de educação (municipal ou estadual) | Conta de rede por convite, escolas da rede |
 | [`comunidade/`](comunidade/README.md) | Quem usa sem login: famílias, responsáveis, cidadãos, professores, pesquisadores e investidores | Busca pública, painel público, privacidade |
 | [`administrador/`](administrador/README.md) | Administrador da plataforma | Configurações, bot, fontes, jobs, LGPD |
 | [`desenvolvedor/`](desenvolvedor/README.md) | Contribuidores | Visão geral e apontamentos para `AGENTS.md`/`memory.md` |
@@ -26,7 +28,7 @@ ultima_revisao: '2026-11-10'
 ### Quem fica de fora dos perfis
 
 - **Professor não tem perfil próprio.** A plataforma não tem conta docente:
-  só gestor e administrador entram com login. O professor aparece como
+  só gestor, conta de rede e administrador entram com login. O professor aparece como
   contato que o gestor cadastra (grupos, reuniões, listas com QR, pesquisas)
   e usa a parte pública como qualquer pessoa, pela ajuda de
   [`comunidade/`](comunidade/README.md). Um acesso docente, se vier, será uma

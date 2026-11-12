@@ -177,6 +177,13 @@
       >
         Versões do consentimento
       </a>
+      <a
+        href="/config/rede"
+        use:link
+        class="px-4 py-2 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-md hover:bg-indigo-50"
+      >
+        Contas de rede
+      </a>
       <button
         type="button"
         onclick={sair}

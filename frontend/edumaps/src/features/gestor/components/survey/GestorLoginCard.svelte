@@ -6,6 +6,7 @@
   import { loginGestor, senhaDisponivel } from "../../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { LIMITS } from "../../constants/pesquisas.js";
+  import { setSessaoPapel } from "../../utils/gestorSession.js";
 
   /** @type {{onLogin: (sessao:object) => void, mensagem?: string|null, titulo?: string, descricao?: string}} */
   let {
@@ -44,6 +45,7 @@
     try {
       const sessao = await loginGestor({ email: email.trim(), senha });
       senha = "";
+      setSessaoPapel(sessao.gestor?.access_role ?? null);
       onLogin(sessao);
     } catch (err) {
       erro =

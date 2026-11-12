@@ -60,6 +60,16 @@ sub register ($self, $app, @args) {
   $auth->post('/consentimento/versoes/:id/publicar' => $versao_id)
     ->to('admin#consentimento_versoes_publicar')->name('admin_consentimento_versoes_publicar');
 
+  # Contas de rede (#394): criar com convite, novo convite, vínculos, auditoria.
+  my $conta = [ id => qr/\d+/ ];
+  $auth->get('/rede/contas')->to('admin#rede_contas_index')->name('admin_rede_contas');
+  $auth->post('/rede/contas')->to('admin#rede_conta_create')->name('admin_rede_conta_create');
+  $auth->post('/rede/contas/:id/convite' => $conta)->to('admin#rede_convite_create')->name('admin_rede_convite');
+  $auth->post('/rede/contas/:id/vinculos' => $conta)->to('admin#rede_vinculo_create')->name('admin_rede_vinculo_create');
+  $auth->delete('/rede/contas/:id/vinculos/:vid' => [ @$conta, vid => qr/\d+/ ])
+    ->to('admin#rede_vinculo_destroy')->name('admin_rede_vinculo_destroy');
+  $auth->get('/rede/contas/:id/auditoria' => $conta)->to('admin#rede_auditoria')->name('admin_rede_auditoria');
+
   # Telemetria de sessão: KPIs do fluxo de acesso (só agregados).
   $auth->get('/telemetry/overview')->to('admin#telemetry_overview')->name('admin_telemetry_overview');
 }
