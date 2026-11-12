@@ -25,8 +25,13 @@
 - **PR #387 mergeado** (`cae0bae`, fecha #383): ✎ em objetivo, meta e ação
   (formulários de criação viram snippets; evidências mantidas), gráfico da
   meta com anos e legenda, explicação de sentido/linha de base. Validado.
-- Em andamento: **#384** (custo e fonte no relatório) na branch
-  `feat/planos-relatorio-custos`, com o `main` já mesclado.
+- **PR #388 mergeado** (`6d9931d`, fecha #384): custo previsto por fonte de
+  recurso no relatório (não canceladas com custo; sem custo contado à parte,
+  nunca R$ 0) e colunas de custo/fonte nas ações. Validado.
+- Lição: confirmar o rebuild (md5 e bundle) **antes** de pedir validação; o
+  usuário chegou a validar a #384 com a imagem anterior (build ainda rodando).
+- Em andamento: **#385** (plano ligado ao arquivo) na branch
+  `feat/planos-documento` (`749901b`).
 
 ## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 
