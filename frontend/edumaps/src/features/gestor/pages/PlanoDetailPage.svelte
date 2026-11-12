@@ -202,7 +202,7 @@
     acaoForm = null;
     metaForm = { id: m.id, objetivo_id: m.objetivo_id, descricao: m.descricao, indicador_codigo: m.indicador_codigo ?? "",
                  sentido: m.sentido, unidade: txt(m.unidade), linha_base: txt(m.linha_base), alvo: txt(m.alvo),
-                 prazo: m.prazo ?? "" };
+                 prazo: m.prazo ?? "", linha_base_oficial: txt(m.linha_base_oficial) };
   }
 
   function escolherIndicador() {
@@ -486,6 +486,12 @@
       <strong>Sentido:</strong> se o valor deve aumentar, diminuir ou não cair abaixo do alvo.
       <strong>Linha de base:</strong> o valor de partida, de onde o andamento é medido até o alvo.
     </p>
+    {#if metaForm.id && metaForm.indicador_codigo && metaForm.linha_base_oficial !== ""}
+      <p class="text-xs text-amber-800">
+        Valor oficial da fonte quando a meta foi criada: <strong>{fmtNum(Number(metaForm.linha_base_oficial))}</strong>.
+        Uma linha de base diferente aparece como <strong>ajustada pela escola</strong>, na tela e no relatório.
+      </p>
+    {/if}
     {#if !metaForm.indicador_codigo}
       <label class="block text-xs text-gray-600"><span class="block">Unidade</span>
         <input bind:value={metaForm.unidade} maxlength="40" placeholder="Ex.: %, alunos, professores" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
@@ -741,7 +747,7 @@
                       <p class="text-sm font-medium text-gray-800">{m.descricao}</p>
                       <p class="text-xs text-gray-500">
                         {m.indicador ? m.indicador.fonte : "Meta manual"}
-                        · base {m.unidade === "%" ? fmtComUnidade(m.linha_base, "%") : fmtNum(m.linha_base)} → alvo {fmtComUnidade(m.alvo, m.unidade)}
+                        · base {m.unidade === "%" ? fmtComUnidade(m.linha_base, "%") : fmtNum(m.linha_base)}{#if m.base_ajustada}{" "}<span class="text-amber-700 font-medium" title="A escola mudou a linha de base desta meta oficial. O ajuste aparece também no relatório.">(ajustada pela escola; oficial: {fmtNum(m.linha_base_oficial)})</span>{/if} → alvo {fmtComUnidade(m.alvo, m.unidade)}
                         {#if m.atual}{" · atual "}{m.unidade === "%" ? fmtComUnidade(m.atual.valor, "%") : fmtNum(m.atual.valor)} ({m.atual.ano_ref ?? fmtData(m.atual.data_ref)}){/if}
                       </p>
                     </div>

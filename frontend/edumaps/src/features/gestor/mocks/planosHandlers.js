@@ -55,7 +55,11 @@ function metaOut(m) {
   const atual = meds.at(-1) ?? null;
   let [progresso, estadoMeta] = progressoMeta(m.sentido, m.linha_base, m.alvo, atual?.valor ?? null);
   if (estadoMeta === "sem_medicao" && ind) estadoMeta = "sem_dado";
+  // P2-PG-05: base diferente do valor oficial de origem = ajustada pela escola
+  const oficial = ind ? (m.linha_base_oficial ?? null) : null;
+  const baseAjustada = !!ind && m.linha_base != null && (oficial == null || Number(m.linha_base) !== Number(oficial));
   return { ...m, medicoes: meds, atual, progresso, estado: estadoMeta,
+           linha_base_oficial: oficial, base_ajustada: baseAjustada,
            indicador: ind ? { codigo: ind.codigo, rotulo: ind.rotulo, unidade: ind.unidade, fonte: ind.fonte } : undefined };
 }
 
@@ -244,7 +248,8 @@ export const gestorPlanosHandlers = [
     if (!o) return HttpResponse.json({ error: "Objetivo não encontrado neste plano." }, { status: 400 });
     const ind = INDICADORES_PLANOS.find((i) => i.codigo === b.indicador_codigo);
     const m = { id: proximo++, unidade: ind?.unidade ?? null, sentido: "aumentar", indicador_codigo: null,
-                linha_base: ind?.ultimo?.valor ?? null, alvo: null, prazo: null, medicoes: [], ...b };
+                linha_base: ind?.ultimo?.valor ?? null, alvo: null, prazo: null, medicoes: [],
+                linha_base_oficial: ind?.ultimo?.valor ?? null, ...b };
     if (ind?.ultimo) {
       m.medicoes = [{ id: proximo++, origem: "oficial", data_ref: `${ind.ultimo.ano}-12-31`,
                       ano_ref: ind.ultimo.ano, valor: ind.ultimo.valor, nota: null }];

@@ -27,6 +27,7 @@ export const PLANOS_PLANOS = [
         metas: [
           { id: 100, objetivo_id: 10, descricao: "Subir o IDEB dos anos iniciais", unidade: "pontos (0 a 10)",
             sentido: "aumentar", indicador_codigo: "ideb_ai", linha_base: 5.0, alvo: 6.0, prazo: "2027-12-31",
+            linha_base_oficial: 5.0,
             medicoes: [
               { id: 1000, origem: "oficial", data_ref: "2021-12-31", ano_ref: 2021, valor: 5.0, nota: null },
               { id: 1001, origem: "oficial", data_ref: "2023-12-31", ano_ref: 2023, valor: 5.4, nota: null },

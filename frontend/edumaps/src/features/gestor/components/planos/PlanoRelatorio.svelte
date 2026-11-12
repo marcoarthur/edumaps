@@ -56,6 +56,8 @@
   // unidades já aparecem ao lado da descrição da meta.
   const pctOuNum = (v, m) => (m.unidade === "%" ? fmtComUnidade(v, "%") : fmtNum(v));
 
+  let temBaseAjustada = $derived(plano.objetivos.some((o) => o.metas.some((m) => m.base_ajustada)));
+
   const atualTexto = (m) =>
     m.atual ? `${pctOuNum(m.atual.valor, m)} (${m.atual.ano_ref ?? fmtData(m.atual.data_ref)})` : "—";
 
@@ -176,7 +178,7 @@
                 <tr>
                   <td class={TD}>{m.descricao}<span class="text-gray-500">{" ("}{SENTIDO[m.sentido] ?? m.sentido}{#if m.unidade}{", "}{m.unidade}{/if})</span></td>
                   <td class={TD}>{fonteAno(m)}</td>
-                  <td class={TD}>{pctOuNum(m.linha_base, m)}</td>
+                  <td class={TD}>{pctOuNum(m.linha_base, m)}{#if m.base_ajustada}<span class="block text-[10px] text-amber-800 print:text-black">ajustada pela escola; oficial: {pctOuNum(m.linha_base_oficial, m)}</span>{/if}</td>
                   <td class={TD}>{pctOuNum(m.alvo, m)}</td>
                   <td class={TD}>{atualTexto(m)}</td>
                   <td class={TD}>{andamento(m)}</td>
@@ -259,6 +261,9 @@
 
   <footer class="border-t border-gray-300 pt-2 text-[11px] text-gray-500 space-y-0.5">
     <p>Valores oficiais com a fonte e o ano de cada indicador. Valores das metas manuais informados pela escola.</p>
+    {#if temBaseAjustada}
+      <p>“Ajustada pela escola”: a escola mudou a linha de base de uma meta oficial; o valor oficial da fonte aparece ao lado.</p>
+    {/if}
     <p>Gerado pelo EduMaps em {emitidoEm}.</p>
   </footer>
 </article>
