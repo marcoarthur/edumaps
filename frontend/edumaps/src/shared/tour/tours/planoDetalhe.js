@@ -26,7 +26,8 @@ export default {
       texto:
         "Cada objetivo tem metas e ações. A meta pode seguir um indicador oficial da escola (IDEB, matrículas, " +
         "infraestrutura), que se atualiza sozinho, ou ser manual: você registra as medições. As ações têm " +
-        "responsável, prazo e situação; as vencidas aparecem como atrasadas.",
+        "responsável, prazo e situação; as vencidas aparecem como atrasadas. Em + Evidência você liga a ata " +
+        "de uma reunião, um documento já guardado ou uma nota como prova do que foi feito.",
       lado: "top",
     },
   ],

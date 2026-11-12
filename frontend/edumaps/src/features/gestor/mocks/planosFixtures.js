@@ -1,4 +1,4 @@
-// src/features/gestor/mocks/planosFixtures.js — planos de gestão (#371).
+// src/features/gestor/mocks/planosFixtures.js — planos de gestão (#371, #372).
 // Mesmo INEP da sessão de teste (SESSION_GESTOR.cod_inep).
 
 export const INEP_PLANOS = "11000040";
@@ -32,12 +32,25 @@ export const PLANOS_PLANOS = [
               { id: 1001, origem: "oficial", data_ref: "2023-12-31", ano_ref: 2023, valor: 5.4, nota: null },
             ] },
           { id: 101, objetivo_id: 10, descricao: "Reduzir faltas", unidade: "%", sentido: "reduzir",
-            indicador_codigo: null, linha_base: 20, alvo: 12, prazo: "2026-12-15", medicoes: [] },
+            indicador_codigo: null, linha_base: 20, alvo: 12, prazo: "2026-12-15", medicoes: [],
+            evidencias: [
+              { id: 3001, tipo: "nota", titulo: null, texto: "Chamada conferida pela secretaria.",
+                reuniao_id: null, quando: null, documento_id: null, documento_versao_id: null, versao: null,
+                origem_removida: false, criado_em: "2026-03-02T10:00:00" },
+            ] },
         ],
         acoes: [
           { id: 200, objetivo_id: 10, meta_id: 100, descricao: "Reforço de leitura", responsavel: "Coordenação",
             inicio: "2026-02-10", prazo: "2026-03-05", situacao: "em_andamento", concluida_em: null,
-            custo_previsto: 1500, fonte_recurso: "pdde" },
+            custo_previsto: 1500, fonte_recurso: "pdde",
+            evidencias: [
+              { id: 3000, tipo: "ata", titulo: "Conselho escolar de fevereiro", texto: null,
+                reuniao_id: 70, quando: "2026-02-20T19:00:00", documento_id: null, documento_versao_id: null,
+                versao: null, origem_removida: false, criado_em: "2026-02-21T10:00:00" },
+              { id: 3002, tipo: "documento", titulo: "Projeto de leitura (v1)", texto: null,
+                reuniao_id: null, quando: null, documento_id: null, documento_versao_id: null, versao: null,
+                origem_removida: true, criado_em: "2026-02-22T10:00:00" },
+            ] },
           { id: 201, objetivo_id: 10, meta_id: null, descricao: "Busca ativa", responsavel: null,
             inicio: null, prazo: "2026-03-14", situacao: "nao_iniciada", concluida_em: null,
             custo_previsto: null, fonte_recurso: null },
@@ -50,3 +63,15 @@ export const PLANOS_PLANOS = [
     situacao: "encerrado", documento_id: null, alertas_ativos: false, arquivado: false, objetivos: [],
   },
 ];
+
+// Reuniões e versões de documento da escola que podem virar evidência (#372).
+export const ORIGENS_PLANOS = {
+  reunioes: [
+    { id: 70, titulo: "Conselho escolar de fevereiro", quando: "2026-02-20T19:00:00", status: "realizada", tem_ata: true },
+    { id: 71, titulo: "Reunião de pais do 5º ano", quando: "2026-03-03T18:00:00", status: "realizada", tem_ata: false },
+  ],
+  documentos: [
+    { versao_id: 81, documento_id: 8, nome: "PPP 2026", versao: 2, nome_original: "ppp-2026-v2.pdf", criado_em: "2026-03-01T09:00:00" },
+    { versao_id: 80, documento_id: 8, nome: "PPP 2026", versao: 1, nome_original: "ppp-2026.pdf", criado_em: "2026-02-01T09:00:00" },
+  ],
+};

@@ -3,7 +3,8 @@
   // Plano de gestão (#371, épico #368): acompanhamento e edição na mesma
   // página. Objetivos → metas (indicador oficial ou manual, progresso,
   // medições) e ações (responsável, prazo, situação, recurso). Encerrado é só
-  // leitura (pode ser reaberto). Exige sessão do gestor.
+  // leitura (pode ser reaberto). Exige sessão do gestor. Ações e metas têm
+  // evidências (#372): ata de reunião, versão de documento ou nota.
   import { onMount } from "svelte";
   import {
     getPlano,
@@ -15,7 +16,11 @@
     acoes as acaoApi,
     createMedicao,
     deleteMedicao,
+    getEvidenciaOrigens,
+    createEvidencia,
+    deleteEvidencia,
   } from "../api/gestorPlanosApi.js";
+  import { downloadDocumento } from "../api/gestorDocumentosApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
@@ -38,6 +43,7 @@
   } from "../constants/planos.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
   import MetaHistorico from "../components/planos/MetaHistorico.svelte";
+  import EvidenciaPicker from "../components/planos/EvidenciaPicker.svelte";
 
   const planoId = Number(new URL(location.href).pathname.match(/\/(\d+)$/)?.[1]);
 
@@ -53,6 +59,10 @@
   let metaForm = $state(null);
   let acaoForm = $state(null);
   let medicaoForm = $state(null);
+  // { dono: "acao"|"meta", id } — onde o seletor de evidência está aberto
+  let evidenciaPara = $state(null);
+  let origens = $state(null);
+  let salvandoEvidencia = $state(false);
 
   let editavel = $derived(plano && plano.situacao !== "encerrado");
 
@@ -265,6 +275,56 @@
     await mudar(() => acaoApi.remove(inep, planoId, a.id), "Ação excluída.", "Não foi possível excluir a ação.");
   }
 
+  // --- evidências (#372) -------------------------------------------------------------
+  async function abrirEvidencia(dono, id) {
+    evidenciaPara = { dono, id };
+    if (origens) return;
+    try {
+      origens = await getEvidenciaOrigens(inep);
+    } catch (err) {
+      evidenciaPara = null;
+      const msg = onApiError(err, "Não foi possível carregar as reuniões e os documentos.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
+  async function ligarEvidencia(dados) {
+    salvandoEvidencia = true;
+    const campo = evidenciaPara.dono === "acao" ? "acao_id" : "meta_id";
+    const ok = await mudar(
+      () => createEvidencia(inep, planoId, { ...dados, [campo]: evidenciaPara.id }),
+      "Evidência ligada.",
+      "Não foi possível ligar a evidência.",
+    );
+    salvandoEvidencia = false;
+    if (ok) evidenciaPara = null;
+  }
+
+  async function desligarEvidencia(ev) {
+    const nome = ev.tipo === "nota" ? "esta nota" : `"${ev.titulo}"`;
+    if (!window.confirm(`Tirar ${nome} das evidências? A reunião ou o documento não são apagados.`)) return;
+    await mudar(() => deleteEvidencia(inep, planoId, ev.id), "Evidência retirada.", "Não foi possível retirar a evidência.");
+  }
+
+  async function baixarEvidencia(ev) {
+    try {
+      const { blob, filename } = await downloadDocumento(inep, ev.documento_id, ev.versao);
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      window.document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = onApiError(err, "Não foi possível baixar o documento.");
+      if (msg) addToast(msg, "error");
+    }
+  }
+
+  const abertoPara = (dono, id) => evidenciaPara?.dono === dono && evidenciaPara?.id === id;
+
   // --- sessão ----------------------------------------------------------------------
   async function sair() {
     try {
@@ -306,6 +366,43 @@
 {#snippet linhaAcao(a)}
   <span class="text-gray-800">{a.descricao}</span>
   <span class="text-xs text-gray-500"> · prazo {fmtData(a.prazo)}{#if a.responsavel} · {a.responsavel}{/if}</span>
+{/snippet}
+
+{#snippet evidencias(lista, dono, id, rotulo)}
+  <div class="space-y-1" aria-label={`Evidências de ${rotulo}`}>
+    {#if lista.length}
+      <ul class="space-y-0.5 text-xs">
+        {#each lista as ev (ev.id)}
+          <li class="flex items-start gap-1.5">
+            <span aria-hidden="true">{ev.tipo === "ata" ? "🗓️" : ev.tipo === "documento" ? "📄" : "📝"}</span>
+            <span class="min-w-0 flex-1">
+              {#if ev.tipo === "nota"}
+                <span class="text-gray-700 whitespace-pre-line">{ev.texto}</span>
+              {:else if ev.origem_removida}
+                <span class="text-gray-500">{ev.titulo ?? "Sem título"}</span>
+                <span class="ml-1 text-[10px] uppercase text-gray-500 font-semibold">origem removida</span>
+              {:else if ev.tipo === "ata"}
+                <a href={`/gestor/reunioes/${ev.reuniao_id}`} class="text-blue-700 hover:underline">{ev.titulo}</a>
+                {#if ev.quando}<span class="text-gray-500"> · {fmtData(ev.quando)}</span>{/if}
+              {:else}
+                <button type="button" onclick={() => baixarEvidencia(ev)} class="text-blue-700 hover:underline text-left" title="Baixar esta versão">{ev.titulo}</button>
+              {/if}
+            </span>
+            {#if editavel}
+              <button type="button" onclick={() => desligarEvidencia(ev)} aria-label={`Retirar evidência ${ev.titulo ?? ev.texto}`} class="text-red-600 hover:underline shrink-0">✕</button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if editavel}
+      {#if abertoPara(dono, id)}
+        <EvidenciaPicker {origens} salvando={salvandoEvidencia} onSalvar={ligarEvidencia} onCancelar={() => (evidenciaPara = null)} />
+      {:else}
+        <button type="button" onclick={() => abrirEvidencia(dono, id)} class="text-xs text-blue-700 hover:underline">+ Evidência</button>
+      {/if}
+    {/if}
+  </div>
 {/snippet}
 
 <div class="space-y-6 max-w-4xl mx-auto">
@@ -511,6 +608,7 @@
                       {/if}
                     {/if}
                   {/if}
+                  {@render evidencias(m.evidencias ?? [], "meta", m.id, m.descricao)}
                 </li>
               {:else}
                 <li class="p-3 text-xs text-gray-400">Nenhuma meta neste objetivo.</li>
@@ -583,6 +681,7 @@
                   {:else}
                     <span class="text-xs text-gray-600">{ACAO_SITUACAO_LABEL[a.situacao]}</span>
                   {/if}
+                  <div class="w-full">{@render evidencias(a.evidencias ?? [], "acao", a.id, a.descricao)}</div>
                 </li>
               {:else}
                 <li class="p-3 text-xs text-gray-400">Nenhuma ação neste objetivo.</li>

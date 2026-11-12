@@ -1,6 +1,6 @@
 // src/features/gestor/api/gestorPlanosApi.js
 //
-// Espelha EduMaps::Controller::GestorPlanos (#369, #370 — épico #368).
+// Espelha EduMaps::Controller::GestorPlanos (#369, #370, #372 — épico #368).
 // Base /api/gestor/:cod_inep/planos — exige sessão do gestor (Bearer).
 // PUT é PARCIAL: só os campos enviados mudam; null limpa o campo.
 
@@ -56,4 +56,23 @@ export function createMedicao(inep, planoId, metaId, { data_ref, valor, nota = n
 
 export function deleteMedicao(inep, planoId, metaId, medicaoId) {
   return apiClient.delete(`${BASE(inep)}/${planoId}/metas/${metaId}/medicoes/${medicaoId}`);
+}
+
+// --- evidências (#372) --------------------------------------------------------
+
+/** Reuniões e versões de documento da escola que podem virar evidência. */
+export function getEvidenciaOrigens(inep) {
+  return apiClient.get(`${BASE(inep)}/evidencias/origens`);
+}
+
+/**
+ * Liga uma evidência a uma ação ou meta (informe só uma):
+ * { acao_id | meta_id, tipo: "ata"|"documento"|"nota", reuniao_id | documento_versao_id | texto }
+ */
+export function createEvidencia(inep, planoId, dados) {
+  return apiClient.post(`${BASE(inep)}/${planoId}/evidencias`, dados);
+}
+
+export function deleteEvidencia(inep, planoId, evidenciaId) {
+  return apiClient.delete(`${BASE(inep)}/${planoId}/evidencias/${evidenciaId}`);
 }

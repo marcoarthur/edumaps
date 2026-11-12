@@ -32,6 +32,7 @@ our @SITUACOES      = qw(rascunho vigente encerrado);
 our @SENTIDOS       = qw(aumentar reduzir manter);
 our @SITUACOES_ACAO = qw(nao_iniciada em_andamento concluida cancelada);
 our @FONTES_RECURSO = qw(pdde fundeb proprio parceria outro);
+our @TIPOS_EVIDENCIA = qw(ata documento nota);
 
 use constant HOJE_SQL => q{(NOW() AT TIME ZONE 'America/Sao_Paulo')::date};
 
@@ -104,7 +105,12 @@ sub plano_detalhe ($self, $cod_inep, $id) {
 
   my %por_obj;
   push @{ $por_obj{ $_->{objetivo_id} }{metas} }, $_ for @$metas_out;
-  push @{ $por_obj{ $_->{objetivo_id} }{acoes} }, $self->_acao_out($_) for @$acoes;
+  my $ev_acoes = $self->_evidencias_de('acao_id', [ map { $_->{id} } @$acoes ]);
+  for my $a (@$acoes) {
+    my $o = $self->_acao_out($a);
+    $o->{evidencias} = $ev_acoes->{ $a->{id} } // [];
+    push @{ $por_obj{ $a->{objetivo_id} }{acoes} }, $o;
+  }
 
   my $out = $self->_plano_out($p);
   $out->{objetivos} = [ map {
@@ -447,6 +453,8 @@ sub _metas_enriquecidas ($self, $cod_inep, $metas) {
   my %por_meta;
   push @{ $por_meta{ $_->{meta_id} } }, $_ for @$meds;
 
+  my $ev_metas = $self->_evidencias_de('meta_id', \@ids);
+
   my %catalogo = map { $_->{codigo} => $_ } @{ $self->_pl_rows(
     'SELECT codigo, rotulo, unidade, fonte FROM analytics.indicadores_meta_catalogo') };
 
@@ -470,8 +478,9 @@ sub _metas_enriquecidas ($self, $cod_inep, $metas) {
       $m->{atual} ? $m->{atual}{valor} : undef);
     # Meta oficial sem nenhum valor da escola na fonte: "sem dado", não "sem medição".
     $estado = 'sem_dado' if $estado eq 'sem_medicao' && $m->{indicador};
-    $m->{progresso} = $p;
-    $m->{estado}    = $estado;
+    $m->{progresso}  = $p;
+    $m->{estado}     = $estado;
+    $m->{evidencias} = $ev_metas->{ $_->{id} } // [];
     $m;
   } @$metas ];
 }
@@ -589,6 +598,168 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
       { descricao => $atual->{descricao} });
   });
   return 1;
+}
+
+# ---------------------------------------------------------------------------
+# evidências (#372): ata de reunião, versão de documento ou nota
+# ---------------------------------------------------------------------------
+
+# O que o gestor pode ligar como evidência: as reuniões e as versões de
+# documento DA ESCOLA, das mais recentes para as mais antigas.
+sub evidencia_origens ($self, $cod_inep) {
+  my $reunioes = $self->_pl_rows(
+    q{SELECT r.id, r.titulo, r.quando, r.status,
+             (r.ata_texto IS NOT NULL AND btrim(r.ata_texto) <> ''
+              OR EXISTS (SELECT 1 FROM clean.reuniao_anexos x
+                          WHERE x.reuniao_id = r.id AND x.tipo = 'ata')) AS tem_ata
+        FROM clean.reunioes r
+       WHERE r.cod_inep = ? AND r.status <> 'cancelada'
+       ORDER BY r.quando DESC, r.id DESC LIMIT 300}, $cod_inep + 0);
+  my $versoes = $self->_pl_rows(
+    'SELECT v.id, v.documento_id, d.nome, v.versao, v.nome_original, v.criado_em
+       FROM clean.escola_documentos_versoes v
+       JOIN clean.escola_documentos d ON d.id = v.documento_id
+      WHERE d.cod_inep = ?
+      ORDER BY v.criado_em DESC, v.id DESC LIMIT 300', $cod_inep + 0);
+  return {
+    reunioes => [ map { {
+      id      => $_->{id} + 0,
+      titulo  => $_->{titulo},
+      quando  => $_->{quando},
+      status  => $_->{status},
+      tem_ata => $_->{tem_ata} ? Mojo::JSON::true : Mojo::JSON::false,
+    } } @$reunioes ],
+    documentos => [ map { {
+      versao_id     => $_->{id} + 0,
+      documento_id  => $_->{documento_id} + 0,
+      nome          => $_->{nome},
+      versao        => $_->{versao} + 0,
+      nome_original => $_->{nome_original},
+      criado_em     => $_->{criado_em},
+    } } @$versoes ],
+  };
+}
+
+sub evidencia_criar ($self, $cod_inep, $gestor_id, $plano_id, $p) {
+  $self->_plano_editavel($cod_inep, $plano_id);
+  $self->_falha(400, 'A evidência é de uma ação ou de uma meta (informe só uma).')
+    unless defined($p->{acao_id}) xor defined($p->{meta_id});
+  my $dono = defined $p->{acao_id}
+    ? $self->_pl_row('SELECT a.id, a.descricao FROM clean.planos_acoes a
+                        JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
+                       WHERE a.id = ? AND o.plano_id = ?', $p->{acao_id} + 0, $plano_id + 0)
+    : $self->_pl_row('SELECT m.id, m.descricao FROM clean.planos_metas m
+                        JOIN clean.planos_objetivos o ON o.id = m.objetivo_id
+                       WHERE m.id = ? AND o.plano_id = ?', $p->{meta_id} + 0, $plano_id + 0);
+  $self->_falha(400, defined $p->{acao_id} ? 'Ação não encontrada neste plano.' : 'Meta não encontrada neste plano.')
+    unless $dono;
+
+  my $tipo = $p->{tipo};
+  my %usa = (ata => 'reuniao_id', documento => 'documento_versao_id', nota => 'texto');
+  for my $campo (qw(reuniao_id documento_versao_id texto)) {
+    my $deve = $usa{$tipo} eq $campo;
+    $self->_falha(400, "Evidência do tipo $tipo " . ($deve ? "precisa de $campo." : "não usa $campo."))
+      if $deve xor defined $p->{$campo};
+  }
+
+  my $titulo;
+  if ($tipo eq 'ata') {
+    my $r = $self->_pl_row('SELECT cod_inep, titulo FROM clean.reunioes WHERE id = ?', $p->{reuniao_id} + 0);
+    $self->_falha(400, 'Reunião não encontrada.') unless $r;
+    $self->_falha(403, 'A reunião é de outra escola.') unless $r->{cod_inep} == $cod_inep;
+    $titulo = $r->{titulo};
+  }
+  elsif ($tipo eq 'documento') {
+    my $v = $self->_pl_row(
+      'SELECT d.cod_inep, d.nome, v.versao FROM clean.escola_documentos_versoes v
+         JOIN clean.escola_documentos d ON d.id = v.documento_id WHERE v.id = ?',
+      $p->{documento_versao_id} + 0);
+    $self->_falha(400, 'Versão de documento não encontrada.') unless $v;
+    $self->_falha(403, 'O documento é de outra escola.') unless $v->{cod_inep} == $cod_inep;
+    $titulo = "$v->{nome} (v$v->{versao})";
+  }
+
+  my $dono_col = defined $p->{acao_id} ? 'acao_id' : 'meta_id';
+  if ($tipo ne 'nota') {
+    my $ref_col = $usa{$tipo};
+    $self->_falha(409, 'Esta evidência já está ligada.')
+      if $self->_pl_row("SELECT 1 FROM clean.planos_evidencias WHERE $dono_col = ? AND $ref_col = ?",
+                        $dono->{id} + 0, $p->{$ref_col} + 0);
+  }
+
+  my $row;
+  $self->_pl_txn(sub {
+    $row = $self->_pl_row(
+      'INSERT INTO clean.planos_evidencias
+         (acao_id, meta_id, tipo, reuniao_id, documento_versao_id, texto, origem_titulo, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+      $p->{acao_id}, $p->{meta_id}, $tipo, $p->{reuniao_id}, $p->{documento_versao_id},
+      $p->{texto}, $titulo, $self->_pl_gestor($gestor_id));
+    $self->_pl_tocar($plano_id);
+    $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'evidencia', $row->{id}, 'criado',
+      { tipo => $tipo, $dono_col => $dono->{id} + 0, origem => $titulo // $p->{texto} });
+  });
+  return $self->_evidencias_de($dono_col, [ $dono->{id} ], $row->{id})->{ $dono->{id} }[0];
+}
+
+sub evidencia_excluir ($self, $cod_inep, $gestor_id, $plano_id, $eid) {
+  $self->_plano_editavel($cod_inep, $plano_id);
+  my $e = $self->_pl_row(
+    'SELECT e.id, e.tipo, e.acao_id, e.meta_id, e.origem_titulo, e.texto
+       FROM clean.planos_evidencias e
+       LEFT JOIN clean.planos_acoes a ON a.id = e.acao_id
+       LEFT JOIN clean.planos_metas m ON m.id = e.meta_id
+       JOIN clean.planos_objetivos o ON o.id = COALESCE(a.objetivo_id, m.objetivo_id)
+      WHERE e.id = ? AND o.plano_id = ?', $eid + 0, $plano_id + 0);
+  $self->_falha(404, 'Evidência não encontrada neste plano.') unless $e;
+  $self->_pl_txn(sub {
+    $self->_pl_rows('DELETE FROM clean.planos_evidencias WHERE id = ?', $eid + 0);
+    $self->_pl_tocar($plano_id);
+    $self->_pl_auditar($plano_id, $cod_inep, $gestor_id, 'evidencia', $eid, 'excluido',
+      { tipo => $e->{tipo}, origem => $e->{origem_titulo} // $e->{texto} });
+  });
+  return 1;
+}
+
+# { dono_id => [evidência, ...] } das ações ou metas ($col = acao_id|meta_id).
+# Origem apagada (referência NULL): mostra o título guardado e origem_removida.
+sub _evidencias_de ($self, $col, $ids, $so_id = undef) {
+  return {} unless @$ids;
+  die "coluna inválida: $col" unless $col eq 'acao_id' || $col eq 'meta_id';
+  my $rows = $self->_pl_rows(
+    "SELECT e.id, e.$col AS dono_id, e.tipo, e.reuniao_id, e.documento_versao_id, e.texto,
+            e.origem_titulo, e.created_at, r.titulo AS reuniao_titulo, r.quando,
+            v.documento_id, v.versao, d.nome AS documento_nome
+       FROM clean.planos_evidencias e
+       LEFT JOIN clean.reunioes r ON r.id = e.reuniao_id
+       LEFT JOIN clean.escola_documentos_versoes v ON v.id = e.documento_versao_id
+       LEFT JOIN clean.escola_documentos d ON d.id = v.documento_id
+      WHERE e.$col = ANY(?::bigint[]) AND (?::bigint IS NULL OR e.id = ?)
+      ORDER BY e.created_at, e.id", [ map { $_ + 0 } @$ids ], $so_id, $so_id);
+  my %out;
+  for my $r (@$rows) {
+    my $removida = $r->{tipo} eq 'ata'       ? !defined $r->{reuniao_id}
+                 : $r->{tipo} eq 'documento' ? !defined $r->{documento_versao_id}
+                 :                             0;
+    my $titulo = $r->{tipo} eq 'ata'       ? ($r->{reuniao_titulo} // $r->{origem_titulo})
+               : $r->{tipo} eq 'documento' ? (defined $r->{documento_nome}
+                                                ? "$r->{documento_nome} (v$r->{versao})" : $r->{origem_titulo})
+               :                             undef;
+    push @{ $out{ $r->{dono_id} } }, {
+      id                  => $r->{id} + 0,
+      tipo                => $r->{tipo},
+      titulo              => $titulo,
+      texto               => $r->{texto},
+      reuniao_id          => _pl_num($r->{reuniao_id}),
+      quando              => $r->{quando},
+      documento_id        => _pl_num($r->{documento_id}),
+      documento_versao_id => _pl_num($r->{documento_versao_id}),
+      versao              => _pl_num($r->{versao}),
+      origem_removida     => $removida ? Mojo::JSON::true : Mojo::JSON::false,
+      criado_em           => $r->{created_at},
+    };
+  }
+  return \%out;
 }
 
 # ---------------------------------------------------------------------------
@@ -732,7 +903,9 @@ sub _acao_por_id ($self, $plano_id, $aid) {
               (a.situacao IN ('nao_iniciada', 'em_andamento') AND a.prazo < $hoje) AS atrasada
        FROM   clean.planos_acoes a JOIN clean.planos_objetivos o ON o.id = a.objetivo_id
        WHERE  a.id = ? AND o.plano_id = ?}, $aid + 0, $plano_id + 0);
-  return $self->_acao_out($a);
+  my $out = $self->_acao_out($a);
+  $out->{evidencias} = $self->_evidencias_de('acao_id', [$aid])->{$aid} // [];
+  return $out;
 }
 
 sub _meta_do_objetivo ($self, $meta_id, $objetivo_id) {
