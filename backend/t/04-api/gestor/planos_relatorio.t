@@ -58,10 +58,11 @@ my $acao = sub ($descricao, %o) {
   $t->post_ok("$base/$plano/acoes", $auth, json => { objetivo_id => $obj, descricao => $descricao, %o })
     ->status_is(201)->tx->res->json->{id};
 };
-my $a_atrasada  = $acao->('Busca ativa', prazo => '2020-01-10', situacao => 'em_andamento', responsavel => 'Coordenação');
-my $a_andamento = $acao->('Reforço', situacao => 'em_andamento');
-$acao->('Mutirão', situacao => 'concluida');
-$acao->('Feira', situacao => 'cancelada');
+my $a_atrasada  = $acao->('Busca ativa', prazo => '2020-01-10', situacao => 'em_andamento', responsavel => 'Coordenação',
+                          custo_previsto => 1500, fonte_recurso => 'pdde');
+my $a_andamento = $acao->('Reforço', situacao => 'em_andamento', custo_previsto => 300.5);
+$acao->('Mutirão', situacao => 'concluida', custo_previsto => 200, fonte_recurso => 'fundeb');
+$acao->('Feira', situacao => 'cancelada', custo_previsto => 999, fonte_recurso => 'pdde');
 $acao->('Visitas');
 $t->post_ok("$base/$plano/evidencias", $auth, json => { acao_id => $a_atrasada, tipo => 'nota', texto => 'Visitas feitas em 12 casas.' })
   ->status_is(201);
@@ -92,6 +93,19 @@ is $g->{atrasadas}[0]{objetivo}, 'Ampliar o atendimento', 'ação traz o objetiv
 is $g->{atrasadas}[0]{responsavel}, 'Coordenação', 'responsável em texto livre';
 is $r->{n_evidencias}, 1, 'evidências contadas';
 is $g->{atrasadas}[0]{evidencias}[0]{texto}, 'Visitas feitas em 12 casas.', 'evidência na ação';
+
+# custo previsto por fonte (#384): canceladas fora; sem custo contado à parte
+is $r->{custos}, {
+  por_fonte => [
+    { fonte => 'pdde',          total => 1500,  n_acoes => 1 },
+    { fonte => 'fundeb',        total => 200,   n_acoes => 1 },
+    { fonte => 'nao_informada', total => 300.5, n_acoes => 1 },
+  ],
+  total             => 2000.5,
+  n_acoes_sem_custo => 1,
+}, 'custos por fonte (ordem das fontes; cancelada fora; Visitas sem custo)';
+is $g->{atrasadas}[0]{custo_previsto}, 1500, 'ação traz o custo';
+is $g->{atrasadas}[0]{fonte_recurso}, 'pdde', 'ação traz a fonte';
 
 my $json = Mojo::JSON::encode_json($r);
 unlike $json, qr/\Q$EMAIL\E|Gestora Relatório/, 'sem e-mail nem nome do gestor';

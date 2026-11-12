@@ -86,11 +86,14 @@ em **🖨️ Relatório**. A página mostra:
 - o resumo: andamento das metas ("N de M metas medidas"), quantas ações estão
   concluídas, em andamento, atrasadas, não iniciadas e canceladas, e quantas
   evidências há;
+- o **custo previsto por fonte de recurso** (PDDE, Fundeb, recurso próprio,
+  parceria, outro), com o total. Entram só as ações não canceladas com custo
+  informado; as sem custo são contadas à parte, e não como R$ 0;
 - cada objetivo com a tabela das metas: **fonte e ano** de cada indicador
   oficial, linha de base, alvo, valor atual e andamento. Meta sem medição
   aparece como **Sem medição**, nunca como 0%;
-- as ações agrupadas por situação, com objetivo, responsável, prazo e o número
-  de evidências;
+- as ações agrupadas por situação, com objetivo, responsável, prazo, custo
+  previsto, fonte do recurso e o número de evidências;
 - a lista das evidências.
 
 Clique em **Imprimir / salvar PDF** e, na janela do navegador, escolha a

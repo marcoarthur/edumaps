@@ -605,9 +605,10 @@ sub acao_excluir ($self, $cod_inep, $gestor_id, $plano_id, $aid) {
 # ---------------------------------------------------------------------------
 
 # O plano inteiro (mesma árvore e o mesmo progresso do detalhe) mais o que a
-# prestação de contas pede: a escola, a data de emissão (Brasília) e as ações
-# agrupadas por situação. Não acrescenta dado pessoal: o único nome possível é
-# o responsável da ação, texto livre digitado pelo gestor.
+# prestação de contas pede: a escola, a data de emissão (Brasília), as ações
+# agrupadas por situação e o custo previsto por fonte de recurso (#384). Não
+# acrescenta dado pessoal: o único nome possível é o responsável da ação,
+# texto livre digitado pelo gestor.
 sub plano_relatorio ($self, $cod_inep, $id) {
   my $plano = $self->plano_detalhe($cod_inep, $id);
   my $escola = $self->_pl_row(
@@ -628,6 +629,23 @@ sub plano_relatorio ($self, $cod_inep, $id) {
     }
   }
 
+  # Custo previsto por fonte de recurso (#384): soma das ações não canceladas
+  # com custo informado; as sem custo são contadas à parte (sem custo != R$ 0).
+  my (%custo, %n_fonte, $sem_custo);
+  for my $g (grep { $_ ne 'canceladas' } keys %grupo) {
+    for my $a (@{ $grupo{$g} }) {
+      if (!defined $a->{custo_previsto}) { $sem_custo++; next }
+      my $f = $a->{fonte_recurso} // 'nao_informada';
+      $custo{$f}   += $a->{custo_previsto};
+      $n_fonte{$f} += 1;
+    }
+  }
+  my @ordem = (@FONTES_RECURSO, 'nao_informada');
+  my @custos = map { { fonte => $_, total => 0 + sprintf('%.2f', $custo{$_}), n_acoes => $n_fonte{$_} } }
+               grep { exists $custo{$_} } @ordem;
+  my $total = 0;
+  $total += $_->{total} for @custos;
+
   my @evid = map { @{ $_->{evidencias} // [] } }
              map { (@{ $_->{metas} }, @{ $_->{acoes} }) } @{ $plano->{objetivos} };
   return {
@@ -639,6 +657,11 @@ sub plano_relatorio ($self, $cod_inep, $id) {
       uf        => $escola ? $escola->{sg_uf}        : undef,
     },
     acoes_por_situacao => \%grupo,
+    custos             => {
+      por_fonte          => \@custos,
+      total              => 0 + sprintf('%.2f', $total),
+      n_acoes_sem_custo  => $sem_custo // 0,
+    },
     n_evidencias       => scalar @evid,
     emitido_em         => $emitido->{em},
   };

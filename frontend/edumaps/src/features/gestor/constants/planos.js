@@ -48,6 +48,12 @@ export const META_ESTADO_LABEL = {
   incoerente: "Alvo incoerente com o sentido",
 };
 
+/** Valor em reais (pt-BR, 2 casas); null → "—" (sem custo não é R$ 0). */
+export function fmtMoeda(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 /** 0..1 → "42%"; null → null (quem chama decide o texto). */
 export function pct(fracao) {
   if (fracao === null || fracao === undefined) return null;

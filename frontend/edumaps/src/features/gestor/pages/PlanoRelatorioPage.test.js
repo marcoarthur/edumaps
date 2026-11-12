@@ -73,6 +73,22 @@ describe("PlanoRelatorioPage", () => {
     expect(screen.getByText("Ata de reunião", { exact: false }).textContent).toBe("Ata de reunião (20/02/2026)");
   });
 
+  it("custo previsto por fonte e nas ações; sem custo não é R$ 0 (#384)", async () => {
+    await abrir();
+    await screen.findByRole("heading", { level: 1 });
+    const sec = within(screen.getByRole("heading", { name: "Custo previsto por fonte de recurso" }).parentElement);
+    const pdde = sec.getByText("PDDE").closest("tr");
+    expect(pdde.textContent.replace(/\s+/g, " ")).toMatch(/PDDE\s*1\s*R\$\s*1\.500,00/);
+    expect(sec.getByText("Total").closest("tr").textContent).toMatch(/R\$\s*1\.500,00/);
+    expect(sec.getByText(/1 ação\(ões\) sem custo informado/)).toBeInTheDocument();
+    const reforco = linhaDe("Reforço de leitura");
+    expect(reforco.textContent).toMatch(/R\$\s*1\.500,00/);
+    expect(within(reforco).getByText("PDDE")).toBeInTheDocument();
+    const busca = within(linhaDe("Busca ativa"));
+    expect(busca.getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    expect(linhaDe("Busca ativa").textContent).not.toMatch(/R\$\s*0/);
+  });
+
   it("imprime pelo navegador", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     await abrir();

@@ -4,14 +4,16 @@
   // ou salvar em PDF (A4, mesmo padrão `relatorio-imprimivel` do Assistente de
   // Relatório). Só mostra o que veio do backend: escola, plano, período,
   // andamento por objetivo e por meta (fonte e ano de cada indicador oficial;
-  // "Sem medição" em texto, nunca 0%), ações por situação, evidências e a data
-  // de emissão. O único nome possível é o responsável da ação (texto livre).
+  // "Sem medição" em texto, nunca 0%), custo previsto por fonte de recurso
+  // (#384), ações por situação, evidências e a data de emissão. O único nome possível é o responsável da ação (texto livre).
   import {
     PLANO_TIPO_LABEL,
     PLANO_SITUACAO_LABEL,
     META_ESTADO_LABEL,
     SENTIDOS,
+    FONTE_RECURSO_LABEL,
     pct,
+    fmtMoeda,
     fmtData,
     fmtNum,
   } from "../../constants/planos.js";
@@ -32,6 +34,8 @@
   ];
   const SENTIDO = Object.fromEntries(SENTIDOS.map((s) => [s.valor, s.rotulo.split(" ")[0].toLowerCase()]));
   const TIPO_EVIDENCIA = { ata: "Ata de reunião", documento: "Documento", nota: "Nota" };
+  const fonteRotulo = (f) => (f === "nao_informada" ? "Fonte não informada" : (FONTE_RECURSO_LABEL[f] ?? f));
+  let custos = $derived(relatorio.custos ?? { por_fonte: [], total: 0, n_acoes_sem_custo: 0 });
 
   const emitidoEm = $derived.by(() => {
     const [d, h] = String(relatorio.emitido_em ?? "").split("T");
@@ -101,6 +105,41 @@
     </p>
   </section>
 
+  <section aria-labelledby="rel-custos" class="space-y-1 print:break-inside-avoid">
+    <h2 id="rel-custos" class="text-base font-semibold">Custo previsto por fonte de recurso</h2>
+    {#if custos.por_fonte.length}
+      <table class="w-full max-w-md border-collapse text-xs">
+        <thead>
+          <tr>
+            <th class={TH} scope="col">Fonte</th>
+            <th class={`${TH} text-right`} scope="col">Ações</th>
+            <th class={`${TH} text-right`} scope="col">Custo previsto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each custos.por_fonte as c (c.fonte)}
+            <tr>
+              <td class={TD}>{fonteRotulo(c.fonte)}</td>
+              <td class={`${TD} text-right`}>{c.n_acoes}</td>
+              <td class={`${TD} text-right`}>{fmtMoeda(c.total)}</td>
+            </tr>
+          {/each}
+          <tr class="font-semibold">
+            <td class={TD}>Total</td>
+            <td class={`${TD} text-right`}>{custos.por_fonte.reduce((s, c) => s + c.n_acoes, 0)}</td>
+            <td class={`${TD} text-right`}>{fmtMoeda(custos.total)}</td>
+          </tr>
+        </tbody>
+      </table>
+    {:else}
+      <p class="text-gray-500">Nenhuma ação com custo previsto informado.</p>
+    {/if}
+    <p class="text-xs text-gray-500">
+      Soma das ações não canceladas com custo informado.
+      {#if custos.n_acoes_sem_custo}{custos.n_acoes_sem_custo} ação(ões) sem custo informado (não entram como R$ 0).{/if}
+    </p>
+  </section>
+
   <section aria-labelledby="rel-metas" class="space-y-4">
     <h2 id="rel-metas" class="text-base font-semibold">Objetivos e metas</h2>
     {#each plano.objetivos as o (o.id)}
@@ -159,6 +198,8 @@
                 <th class={TH} scope="col">Objetivo</th>
                 <th class={TH} scope="col">Responsável</th>
                 <th class={TH} scope="col">Prazo</th>
+                <th class={`${TH} text-right`} scope="col">Custo previsto</th>
+                <th class={TH} scope="col">Fonte</th>
                 <th class={TH} scope="col">Evidências</th>
               </tr>
             </thead>
@@ -169,6 +210,8 @@
                   <td class={TD}>{a.objetivo}</td>
                   <td class={TD}>{a.responsavel ?? "—"}</td>
                   <td class={TD}>{fmtData(a.prazo)}{#if a.situacao === "concluida" && a.concluida_em}{" (concluída em "}{fmtData(a.concluida_em)}){/if}</td>
+                  <td class={`${TD} text-right`}>{fmtMoeda(a.custo_previsto)}</td>
+                  <td class={TD}>{a.fonte_recurso ? FONTE_RECURSO_LABEL[a.fonte_recurso] : "—"}</td>
                   <td class={TD}>{a.evidencias?.length ?? 0}</td>
                 </tr>
               {/each}

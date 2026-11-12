@@ -55,8 +55,9 @@ conselho escolar o que avançou.
   do plano para imprimir ou salvar em PDF (A4) e prestar contas à secretaria e
   ao conselho escolar. Ele traz a escola, o plano e o período, o andamento por
   objetivo e por meta (cada indicador oficial com a fonte e o ano; meta sem
-  medição aparece escrita assim, nunca como 0%), as ações por situação, as
-  evidências e a data de emissão. O único nome que pode aparecer é o
+  medição aparece escrita assim, nunca como 0%), o custo previsto por fonte de
+  recurso (PDDE, Fundeb, recurso próprio, parceria), as ações por situação,
+  as evidências e a data de emissão. O único nome que pode aparecer é o
   responsável de cada ação, como o gestor escreveu.
 - **Histórico:** toda mudança no plano fica registrada, com autor e data.
 
