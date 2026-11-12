@@ -29,7 +29,7 @@ reabri-lo quando quiser pelo botão **?** no menu do topo.
    - o cabeçalho da escola e os atalhos para o perfil analítico, o painel
      público e o financeiro;
    - os módulos de gestão (pesquisas, reuniões e atas, inventário, relações,
-     documentos e planos, relatórios);
+     planos de gestão, documentos e planos, relatórios);
    - o resumo em números, os atalhos para cada seção, matrículas e
      infraestrutura;
    - escolas similares e a área de influência.
@@ -61,6 +61,8 @@ reaberto pelo **?**:
 | **Inventário** | as quatro seções e como começar importando do Censo |
 | **Relações** | as quatro seções, filtros, nova relação e o detalhe de cada uma |
 | **Documentos** | pastas e versões, envio de arquivo, tags e atividade recente |
+| **Planos de gestão** | como criar um plano e o que a lista mostra (situação, ações concluídas e atrasadas) |
+| **Detalhe do plano** | o andamento (média das metas já medidas), pôr em vigor, encerrar ou reabrir, os alertas de prazo e como montar objetivos, metas e ações |
 | **Montar pesquisa** (nova/editar) | as etapas, quando o rascunho é salvo sozinho e o que vai em cada etapa |
 | **Resultados da pesquisa** | total de respostas e o resultado por pergunta |
 | **Agendar reunião** (nova/editar) | os quatro passos e que nada é salvo até o botão final |
@@ -106,4 +108,5 @@ O roteiro de **Envios** só abre na lista de envios: se você chegou pelo botão
 - [Primeiros passos](primeiros-passos.md)
 - [Painel da escola](painel-da-escola.md)
 - [Área de influência](area-de-influencia.md)
+- [Acompanhar os planos da escola](planos-de-gestao.md)
 - Ficha da funcionalidade: [Ajuda guiada interativa](../../funcionalidades/plataforma/ajuda-guiada.md)

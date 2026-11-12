@@ -4,9 +4,9 @@ publico: [gestor]
 modulo: gestor
 nivel: basico
 status: parcial
-relacionadas: [documentos-e-planos]
+relacionadas: [painel-do-gestor, documentos-e-planos, ajuda-guiada-painel]
 funcionalidade: ../../funcionalidades/gestor/planos-gestao.md
-ultima_revisao: 2026-11-11
+ultima_revisao: 2026-11-12
 ---
 
 # Acompanhar os planos da escola
@@ -39,6 +39,9 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
    aparecem no topo.
 5. **Como saber que deu certo:** a barra de andamento de cada objetivo e do
    plano anda conforme as metas são medidas.
+
+As duas telas, a lista de planos e a página do plano, têm um roteiro de ajuda
+guiada. Ele abre sozinho na primeira visita e volta pelo botão **?** do menu.
 
 ## Entendendo os números
 
@@ -87,5 +90,7 @@ e não o nome completo. Não há dado de aluno.
 
 ## Veja também
 
+- [Painel do gestor](painel-do-gestor.md)
 - [Guardar documentos e planos da escola](documentos-e-planos.md)
+- [Ajuda guiada nas telas do gestor](ajuda-guiada-painel.md)
 - Ficha da funcionalidade: [Planos de gestão acompanháveis](../../funcionalidades/gestor/planos-gestao.md)

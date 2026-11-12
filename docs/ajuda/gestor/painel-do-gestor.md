@@ -28,8 +28,8 @@ módulo, o botão **← Painel** traz você de volta.
 2. **O que ver, de cima para baixo:**
    - **Módulos de gestão**, no topo, à direita do título **Painel do Gestor**:
      **Pesquisas da comunidade**, **Reuniões da escola**, **Inventário**,
-     **Relações**, **Documentos e planos**, **Relatórios** e **Meus
-     relatórios**. O botão **← Voltar** leva ao painel público da escola.
+     **Relações**, **Planos de gestão**, **Documentos e planos**,
+     **Relatórios** e **Meus relatórios**. O botão **← Voltar** leva ao painel público da escola.
    - **Cabeçalho da escola:** nome, município, UF, rede, ano do Censo usado e
      código INEP, com os botões **Perfil analítico**, **Painel da escola** e
      **Painel financeiro**.
@@ -77,7 +77,8 @@ Na primeira visita, uma ajuda guiada percorre o painel; reabra-a pelo botão
 
 - **Os módulos abrem sempre a escola da sua conta.** Se você abrir o painel de
   outra escola (trocando o código INEP), os botões de **Reuniões da escola**,
-  **Inventário**, **Relações**, **Documentos e planos** e **Relatórios** levam
+  **Inventário**, **Relações**, **Planos de gestão**, **Documentos e planos** e
+  **Relatórios** levam
   aos dados da **sua** escola, não da que está na tela.
 - **Equipamentos no entorno** e **Área de influência** só aparecem para o
   gestor da própria escola. Sem entrar com a conta, o painel mostra “Entre como
@@ -113,6 +114,7 @@ Na primeira visita, uma ajuda guiada percorre o painel; reabra-a pelo botão
 - [Painel da escola](painel-da-escola.md)
 - [Área de influência](area-de-influencia.md)
 - [Reuniões e atas](reunioes-e-atas.md)
+- [Acompanhar os planos da escola](planos-de-gestao.md)
 - [Contatos e grupos](contatos-e-grupos.md)
 - [Financeiro e Folha](financeiro-e-folha.md)
 - Ficha da funcionalidade: [Painel do gestor](../../funcionalidades/gestor/painel.md)
