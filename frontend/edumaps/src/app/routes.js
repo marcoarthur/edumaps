@@ -4,7 +4,8 @@ import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
-import { ConfigPage, ConsentimentoVersoesPage } from "@/features/config";
+import { ConfigPage, ConsentimentoVersoesPage, RedeContasPage } from "@/features/config";
+import { RedePage, RedeConvitePage } from "@/features/rede";
 import { AdminTelemetryPage } from "@/features/admin";
 import { PublicaRespostaPage } from "@/features/resposta";
 import { InscricaoPublicaPage } from "@/features/inscricao";
@@ -69,6 +70,9 @@ export const routes = [
   { path: "/chat/historico", component: ChatHistoricoPage },
   { path: "/config", component: ConfigPage },
   { path: "/config/consentimento", component: ConsentimentoVersoesPage },
+  { path: "/config/rede", component: RedeContasPage },
+  { path: "/rede", component: RedePage },
+  { path: "/rede/convite/:token", component: RedeConvitePage },
   { path: "/admin", component: AdminTelemetryPage },
   { path: "/gestor/contatos", component: GestorContatosPage },
   { path: "/gestor/listas", component: GestorListasPage },

@@ -47,6 +47,11 @@
 
   async function onLogin(sessao) {
     setSessaoToken(sessao.token);
+    // conta de rede (#394) não tem escola: vai para o painel da rede
+    if (sessao.gestor?.access_role === "rede") {
+      window.location.href = "/rede";
+      return;
+    }
     irParaPainel(sessao.gestor?.cod_inep);
   }
 
@@ -123,11 +128,11 @@
     <div class="rounded-card bg-white border border-gray-200 shadow-card p-6 text-center space-y-3">
       <p class="text-sm text-gray-600">Você já está logado como</p>
       <p class="text-lg font-semibold text-gray-900">{gestorLogado.nome}</p>
-      <p class="text-xs text-gray-500">Escola {gestorLogado.cod_inep} · {gestorLogado.email}</p>
+      <p class="text-xs text-gray-500">{gestorLogado.access_role === "rede" ? "Conta de rede" : `Escola ${gestorLogado.cod_inep}`} · {gestorLogado.email}</p>
       <div class="flex justify-center gap-2 pt-1">
         <button
           type="button"
-          onclick={() => irParaPainel(gestorLogado.cod_inep)}
+          onclick={() => (gestorLogado.access_role === "rede" ? (window.location.href = "/rede") : irParaPainel(gestorLogado.cod_inep))}
           class="px-5 py-2 rounded-md bg-brand-700 text-white text-sm font-semibold hover:bg-brand-600 transition-colors"
         >Ir para o painel</button>
         <button

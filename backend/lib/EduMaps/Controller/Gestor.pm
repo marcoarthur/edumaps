@@ -72,7 +72,8 @@ sub logout($self) {
 }
 
 # Gatilho dos under() autenticados: valida o Bearer token e injeta o gestor.
-sub _require_gestor($self) {
+# Qualquer sessão válida (gestor, admin ou rede): /me e /logout.
+sub _require_sessao($self) {
   my $auth  = $self->req->headers->authorization // '';
   my ($token) = $auth =~ /^Bearer\s+(\S+)$/;
 
@@ -86,6 +87,39 @@ sub _require_gestor($self) {
   }
 
   $self->stash(gestor => $gestor, gestor_token => $token);
+  return 1;
+}
+
+sub _require_gestor($self) {
+  return 0 unless $self->_require_sessao;
+  my $gestor = $self->stash('gestor');
+
+  # Conta de rede (#394) não administra escola: as rotas dela ficam em /api/rede.
+  if (($gestor->{access_role} // '') eq 'rede') {
+    $self->render(json => { error => 'Conta de rede: use o painel da rede.' }, status => 403);
+    return 0;
+  }
+  return 1;
+}
+
+# Gatilho das rotas da secretaria (#394): sessão válida + papel rede. A escola
+# de cada pedido é conferida contra os vínculos ativos no próprio controller
+# (rede#_escola_ok), a cada pedido.
+sub _require_rede($self) {
+  my $auth  = $self->req->headers->authorization // '';
+  my ($token) = $auth =~ /^Bearer\s+(\S+)$/;
+  my $conta = $token
+    ? $self->instantiate_model(model => 'Pesquisa')->sessao_valida($token)
+    : undef;
+  if (!$conta) {
+    $self->render(json => { error => 'Faça login com a conta da rede.' }, status => 401);
+    return 0;
+  }
+  if (($conta->{access_role} // '') ne 'rede') {
+    $self->render(json => { error => 'Acesso restrito às contas de rede.' }, status => 403);
+    return 0;
+  }
+  $self->stash(gestor => $conta, gestor_token => $token);
   return 1;
 }
 

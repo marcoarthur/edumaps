@@ -3,6 +3,9 @@
 // Sessão do gestor no navegador (localStorage): o token bearer do login. A
 // escola e a identidade vêm sempre do servidor (/me), nunca do navegador.
 const TOKEN_KEY = "edumaps_gestor_token";
+// Papel da sessão (gestor | admin | rede), só para o menu escolher o que
+// mostrar. A autorização é sempre do servidor; o papel aqui é uma dica de UI.
+const PAPEL_KEY = "edumaps_sessao_papel";
 
 // Até 2026-11 o assistente de pesquisas guardava o perfil do gestor (nome,
 // e-mail, telefone) em `edumaps_gestor_<INEP>`. Não é mais usado: apaga as
@@ -38,4 +41,23 @@ export function setSessaoToken(token) {
 
 export function clearSessaoToken() {
   setSessaoToken(null);
+  setSessaoPapel(null);
+}
+
+/** Papel da sessão para a UI (#394). @returns {string|null} */
+export function getSessaoPapel() {
+  try {
+    return localStorage.getItem(PAPEL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setSessaoPapel(papel) {
+  try {
+    if (papel) localStorage.setItem(PAPEL_KEY, papel);
+    else localStorage.removeItem(PAPEL_KEY);
+  } catch {
+    // armazenamento indisponível — o menu só não mostra o item da rede
+  }
 }

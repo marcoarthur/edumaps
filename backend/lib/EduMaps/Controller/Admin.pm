@@ -1,6 +1,7 @@
 package EduMaps::Controller::Admin;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
+use Mojo::JSON ();
 
 # API administrativa da plataforma (/api/admin/...) — Painel de Configuração.
 # Exige sessão de gestor com access_role = 'admin' (under admin#_require_admin,
@@ -418,6 +419,78 @@ sub _guard_config ($self, $code) {
     return;
   }
   return $out[0];
+}
+
+
+# ---------------------------------------------------------------------------
+# contas de rede (#394): criar, convidar, conceder e revogar vínculos
+# ---------------------------------------------------------------------------
+
+sub _rede_executar ($self, $code, $status = 200) {
+  my $out = eval { $code->($self->instantiate_model(model => 'Pesquisa')) };
+  if (my $err = $@) {
+    if (ref $err && eval { $err->isa('EduMaps::Roles::Business::Pesquisa::Rede::Erro') }) {
+      return $self->render(json => { error => $err->mensagem }, status => $err->status);
+    }
+    $self->app->log->error("Admin rede: $err");
+    return $self->render(json => { error => 'Não foi possível concluir a operação.' }, status => 500);
+  }
+  $self->render(json => $out, status => $status);
+}
+
+sub _rede_json ($self) {
+  my $in = eval { $self->req->json };
+  return ref $in eq 'HASH' ? $in : undef;
+}
+
+sub rede_contas_index ($self) {
+  $self->_rede_executar(sub ($m) { { contas => $m->rede_contas } });
+}
+
+# POST { nome, email, cargo } -> 201 { conta, convite: { token, expira_em } }
+# O token só aparece nesta resposta (o banco guarda o hash): o admin copia o
+# link e envia à pessoa.
+sub rede_conta_create ($self) {
+  my $in = $self->_rede_json or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my %erros;
+  my $nome  = ($in->{nome}  // '') =~ s/^\s+|\s+$//gr;
+  my $email = ($in->{email} // '') =~ s/^\s+|\s+$//gr;
+  my $cargo = ($in->{cargo} // '') =~ s/^\s+|\s+$//gr;
+  $erros{nome}  = 'obrigatório (até 120 caracteres)' unless length $nome && length $nome <= 120;
+  $erros{email} = 'e-mail inválido' unless $email =~ /^[\w.+\-]+@[\w.\-]+\.[A-Za-z]{2,}$/ && length $email <= 254;
+  $erros{cargo} = 'até 80 caracteres' if length $cargo > 80;
+  return $self->render(json => { error => 'Dados inválidos', campos => \%erros }, status => 400) if %erros;
+  my $ator = $self->stash('gestor')->{id};
+  $self->_rede_executar(sub ($m) {
+    $m->rede_conta_criar($ator, { nome => $nome, email => $email, cargo => (length $cargo ? $cargo : undef) });
+  }, 201);
+}
+
+sub rede_convite_create ($self) {
+  my $ator = $self->stash('gestor')->{id};
+  $self->_rede_executar(sub ($m) { $m->rede_convite_gerar($ator, $self->param('id')) }, 201);
+}
+
+# POST { tp_dependencia: 2|3, co_municipio: 7 dígitos }
+sub rede_vinculo_create ($self) {
+  my $in = $self->_rede_json or return $self->render(json => { error => 'Corpo JSON inválido' }, status => 400);
+  my ($tp, $mun) = @{$in}{qw(tp_dependencia co_municipio)};
+  return $self->render(json => { error => 'Informe a dependência (2 ou 3) e o código IBGE do município (7 dígitos).' }, status => 400)
+    unless defined $tp && "$tp" =~ /^\d$/ && defined $mun && "$mun" =~ /^\d{7}$/;
+  my $ator = $self->stash('gestor')->{id};
+  $self->_rede_executar(sub ($m) { $m->rede_vinculo_conceder($ator, $self->param('id'), $tp, $mun) }, 201);
+}
+
+sub rede_vinculo_destroy ($self) {
+  my $ator = $self->stash('gestor')->{id};
+  $self->_rede_executar(sub ($m) {
+    $m->rede_vinculo_revogar($ator, $self->param('vid'));
+    { revogado => Mojo::JSON::true };
+  });
+}
+
+sub rede_auditoria ($self) {
+  $self->_rede_executar(sub ($m) { { auditoria => $m->rede_auditoria($self->param('id')) } });
 }
 
 1;

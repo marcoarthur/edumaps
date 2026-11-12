@@ -36,7 +36,7 @@ sub register ($self, $app, @args) {
   $sessao->post('/logout')->to('pesquisa#logout')->name('gestor_logout');
 
   # --- gestão das pesquisas: sessão do gestor, escola da sessão --------
-  my $signed = $app->routes->under($self->pesquisas_path)->to('pesquisa#_require_gestor');
+  my $signed = $app->routes->under($self->pesquisas_path)->to('pesquisa#_require_gestor_escola');
   $signed->get('/')->to('pesquisa#index')->name('pesquisas_index');
   $signed->post('/')->to('pesquisa#create')->name('pesquisas_create');
   $signed->get('/:id'        => $with_id)->to('pesquisa#show')->name('pesquisa_show');

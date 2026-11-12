@@ -8,6 +8,7 @@
   import NovaVersaoAviso from '@/shared/ui/components/NovaVersaoAviso.svelte';
   import { untrack } from "svelte";
   import { tourManager, BotaoAjuda } from "@/shared/tour";
+  import { getSessaoPapel } from "@/features/gestor/utils/gestorSession.js";
 
   const NAV_LINKS = [
     { to: "/", label: "Home" },
@@ -18,6 +19,13 @@
     { to: "/admin", label: "Administração" },
     { to: "/gestor", label: "Gestor", tour: "menu-gestor" },
   ];
+  // "Rede" só para a conta de rede (#394). O papel guardado no login é uma dica
+  // de UI; quem autoriza é o servidor. Relido a cada navegação.
+  const NAV_REDE = { to: "/rede", label: "Rede" };
+  let navLinks = $derived.by(() => {
+    router.path;
+    return getSessaoPapel() === "rede" ? [...NAV_LINKS, NAV_REDE] : NAV_LINKS;
+  });
 
   // Páginas públicas abertas por link pessoal (token na URL): sem o menu da
   // plataforma e fora de qualquer sessão.
@@ -26,6 +34,7 @@
     "/inscricao/:token",
     "/privacidade/exclusao/:token",
     "/privacidade/sair/:token",
+    "/rede/convite/:token",
   ]);
 
   let match = $derived(matchRoute(router.path.split("?")[0]));
@@ -85,7 +94,7 @@
         <span class="font-bold text-lg">EduMaps</span>
       </a>
       <div class="flex gap-4 text-sm">
-        {#each NAV_LINKS as item}
+        {#each navLinks as item}
           <a href={item.to} use:link class={navLinkClass(item.to)} data-tour={item.tour}>
             {item.label}
           </a>

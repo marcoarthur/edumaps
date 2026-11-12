@@ -17,6 +17,7 @@ cuida dos dados pessoais.
 | conhecer o painel de administração | [Painel de administração](painel-de-administracao.md) |
 | saber o que a telemetria de uso registra | [Telemetria de uso](telemetria-de-uso.md) |
 | ajustar as configurações da plataforma | [Configurações da plataforma](configuracoes-da-plataforma.md) |
+| dar acesso a uma secretaria (conta de rede) | [Contas de rede](contas-de-rede.md) |
 | configurar e acompanhar o bot do Telegram | [Bot Telegram](bot-telegram.md) |
 | ver de onde vêm os dados e quando foram atualizados | [Fontes de dados](fontes-de-dados.md) |
 | acompanhar as cargas e tarefas agendadas | [Execução de jobs](execucao-de-jobs.md) |
