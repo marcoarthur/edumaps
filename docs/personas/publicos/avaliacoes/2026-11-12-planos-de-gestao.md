@@ -32,7 +32,7 @@
 |---|---|---|---|
 | P1-PG-01 | **bloqueia** | Editar ação (descrição, responsável, prazo, custo, fonte), meta (descrição, base, alvo, prazo) e objetivo (título) na tela. Hoje só há a situação da ação e o ✕, e excluir perde as evidências. A API já aceita a edição parcial. | **#383**: entregue no PR #387 |
 | P2-PG-02 | atrapalha | Custo previsto e fonte de recurso no relatório (por ação e o total por fonte) | **#384**: entregue no PR #388 |
-| P1-PG-02 | atrapalha | Ligar o plano ao arquivo dele em Documentos e planos (o campo existe na API) | **#385** |
+| P1-PG-02 | atrapalha | Ligar o plano ao arquivo dele em Documentos e planos (o campo existe na API) | **#385**: entregue no PR #389 |
 | P1-PG-03 | atrapalha | Legenda e anos no gráfico da meta | entregue no PR #387 |
 | P1-PG-05 | detalhe | Explicar "sentido" e "linha de base" no próprio formulário | entregue no PR #387 |
 | P2-PG-04 | detalhe | Cargo de quem emitiu o relatório | critério registrado na **#375** |
@@ -61,3 +61,7 @@
 3. P2-PG-03 e P2-PG-04 registrados como critérios na #375.
 4. Pendente: mostrar o plano a 2 ou 3 diretoras reais e comparar com esta
    avaliação.
+
+**Situação em 2026-11-12, fim do dia:** P1-PG-01 a -05 e P2-PG-02
+entregues (PRs #386 a #389). Restam P2-PG-01, -03 e -04, todos na #375.
+Próximo passo: reavaliar com a P1 e a P2.

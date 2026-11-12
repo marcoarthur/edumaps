@@ -30,8 +30,11 @@
   nunca R$ 0) e colunas de custo/fonte nas ações. Validado.
 - Lição: confirmar o rebuild (md5 e bundle) **antes** de pedir validação; o
   usuário chegou a validar a #384 com a imagem anterior (build ainda rodando).
-- Em andamento: **#385** (plano ligado ao arquivo) na branch
-  `feat/planos-documento` (`749901b`).
+- **PR #389 mergeado** (`3eb6be6`, fecha #385): plano ligado ao arquivo em
+  Documentos e planos (criação, ligar/trocar/desligar/baixar, nome no
+  relatório). Validado com o rebuild conferido.
+- As 3 issues da avaliação (#383–#385) entregues. Nota técnica **192**
+  (personas e ajuste fino dos planos). Épico #368: restam #375 e #376.
 
 ## Sessão 2026-11-12 (az) — planos de gestão: backend (PRs #377–#382)
 
