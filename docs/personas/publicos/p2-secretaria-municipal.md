@@ -32,10 +32,35 @@
 
 - Avaliar a visão da rede quando a #375 existir: consolidação dos planos das
   escolas, metas oficiais comparáveis e custo por fonte de recurso.
-- Rever a barreira P2-PG-02: a #384 (custo e fonte de recurso no relatório)
-  foi entregue no PR #388.
+- P2-PG-05 (base da meta oficial alterável sem marca no relatório) e P2-PG-06
+  (previsto sem executado): abertos na reavaliação, pedem decisão.
 
 ## Entradas
+
+### 2026-11-12 (reavaliação) — Planos de gestão, depois dos PRs #386 a #389
+
+**Material:** o relatório com custos e o arquivo do plano, com os dados de
+demonstração.
+
+**O que mudou para ele:**
+
+- **P2-PG-02 resolvida.** O relatório traz o custo previsto por fonte (PDDE,
+  Fundeb...) com o total, e cada ação mostra custo e fonte. A regra de não
+  contar ação sem custo como R$ 0 é a mesma da ausência de dado: ele confia
+  no total.
+- O **arquivo do plano** no cabeçalho do relatório liga o acompanhamento ao
+  documento oficial que a escola entregou. Ajuda no arquivo da secretaria.
+
+**Barreiras novas:**
+
+| Id | Gravidade | Barreira | Evidência |
+|---|---|---|---|
+| P2-PG-05 | atrapalha | A **linha de base de uma meta oficial** pode ser alterada pela escola, e o relatório não diz que ela foi alterada: uma base menor faz o andamento parecer maior. A mudança fica na auditoria do plano, mas a secretaria não vê a auditoria. | formulário de edição da meta do IDEB; relatório |
+| P2-PG-06 | atrapalha | O relatório mostra o custo **previsto**, mas não o **executado**. Para a prestação de contas do Fundeb e do PDDE, o conselho pergunta quanto foi gasto. | relatório, seção de custos |
+
+**Veredito:** **adotaria com ressalvas, quando a #375 existir** (mantido). O
+relatório por escola agora cobre o que ele pediria a um diretor. A
+P2-PG-05 importa para a credibilidade do número que ele vai consolidar.
 
 ### 2026-11-12 — Planos de gestão acompanháveis (épico #368)
 

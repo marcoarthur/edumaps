@@ -31,12 +31,43 @@
 
 ## Pendências
 
-- Reavaliar o plano: as barreiras P1-PG-01 a -05 foram entregues (PRs #386 a
-  #389).
+- Conferir com 2 ou 3 diretoras reais o veredito da reavaliação (adotaria).
+- Detalhes de leitura P1-PG-06 e -07 (abertos na reavaliação).
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
 
 ## Entradas
+
+### 2026-11-12 (reavaliação) — Planos de gestão, depois dos PRs #386 a #389
+
+**Material:** as mesmas telas com os dados de demonstração, agora com a
+edição, o relatório com custos e o arquivo do plano.
+
+**O que ela tentou fazer:** ligar o PDF do plano, corrigir o prazo da ação
+atrasada e revisar a meta do IDEB.
+
+**O que mudou para ela:**
+
+- **P1-PG-01 resolvida.** O ✎ abre o formulário já preenchido no lugar da
+  ação; ela mudou o prazo, a ação saiu de "Atrasadas", e a ata e o documento
+  continuaram ligados. Era a barreira que a fazia desistir.
+- **P1-PG-02 resolvida.** O PDF do plano fica a um clique, na própria página.
+- **P1-PG-03 e -05 resolvidas.** O gráfico mostra os anos (2021, 2023) e diz
+  qual linha é a base e qual é o alvo; o formulário explica "sentido" e
+  "linha de base".
+- **P1-PG-04 resolvida.** Os textos saem com os espaços certos.
+
+**Barreiras novas:**
+
+| Id | Gravidade | Barreira | Evidência |
+|---|---|---|---|
+| P1-PG-06 | detalhe | A unidade "%" sai separada do número: "alvo 12 %". Em português escreve-se "12%". | linha da meta manual |
+| P1-PG-07 | detalhe | A legenda do gráfico e a explicação do formulário estão em letra muito pequena (10 a 11 px); numa tela de notebook, ela precisa aproximar. | gráfico da meta, formulário |
+
+**Veredito:** **adotaria.** As ressalvas da primeira avaliação foram
+resolvidas, e o que sobrou é acabamento. O passo que falta não é de
+software: confirmar com diretoras reais que objetivos → metas → ações
+cabe no plano delas.
 
 ### 2026-11-12 — Planos de gestão acompanháveis (épico #368)
 
