@@ -31,7 +31,7 @@ describe("PlanoRelatorioPage", () => {
     expect(screen.getByText(/Escola Estadual Teste · INEP 11000040/)).toBeInTheDocument();
     expect(screen.getByText(/Porto Velho\/RO/)).toBeInTheDocument();
     expect(screen.getByText(/período 01\/02\/2026 a 15\/12\/2026/)).toBeInTheDocument();
-    expect(screen.getByText("Emitido em 10/03/2026 às 14:30")).toBeInTheDocument();
+    expect(screen.getByText(/^Emitido em 10\/03\/2026 às 14:30/)).toBeInTheDocument();
   });
 
   it("indicador oficial com fonte e ano; sem medição em texto, nunca 0%", async () => {
@@ -75,20 +75,29 @@ describe("PlanoRelatorioPage", () => {
     expect(screen.getByText("Ata de reunião", { exact: false }).textContent).toBe("Ata de reunião (20/02/2026)");
   });
 
-  it("custo previsto por fonte e nas ações; sem custo não é R$ 0 (#384)", async () => {
+  it("custo previsto × executado por fonte e nas ações; vazio não é R$ 0 (#384, #395)", async () => {
     await abrir();
     await screen.findByRole("heading", { level: 1 });
-    const sec = within(screen.getByRole("heading", { name: "Custo previsto por fonte de recurso" }).parentElement);
-    const pdde = sec.getByText("PDDE").closest("tr");
-    expect(pdde.textContent.replace(/\s+/g, " ")).toMatch(/PDDE\s*1\s*R\$\s*1\.500,00/);
-    expect(sec.getByText("Total").closest("tr").textContent).toMatch(/R\$\s*1\.500,00/);
-    expect(sec.getByText(/1 ação\(ões\) sem custo informado/)).toBeInTheDocument();
+    const sec = within(screen.getByRole("heading", { name: "Custo por fonte de recurso" }).parentElement);
+    const pdde = sec.getByText("PDDE").closest("tr").textContent.replace(/\s+/g, " ");
+    expect(pdde).toMatch(/PDDE\s*1\s*R\$\s*1\.500,00\s*R\$\s*900,00/);
+    const total = sec.getByText("Total").closest("tr").textContent;
+    expect(total).toMatch(/R\$\s*1\.500,00/);
+    expect(total).toMatch(/R\$\s*900,00/);
+    expect(sec.getByText(/1 ação\(ões\) sem custo previsto/)).toBeInTheDocument();
+    expect(sec.getByText(/1 ação\(ões\) sem valor executado/)).toBeInTheDocument();
     const reforco = linhaDe("Reforço de leitura");
     expect(reforco.textContent).toMatch(/R\$\s*1\.500,00/);
+    expect(reforco.textContent).toMatch(/R\$\s*900,00/);
     expect(within(reforco).getByText("PDDE")).toBeInTheDocument();
-    const busca = within(linhaDe("Busca ativa"));
-    expect(busca.getAllByText("—").length).toBeGreaterThanOrEqual(2);
-    expect(linhaDe("Busca ativa").textContent).not.toMatch(/R\$\s*0/);
+    const busca = linhaDe("Busca ativa");
+    expect(within(busca).getAllByText("—").length).toBeGreaterThanOrEqual(3);
+    expect(busca.textContent).not.toMatch(/R\$\s*0/);
+  });
+
+  it("mostra o cargo de quem emitiu, sem o nome (#395)", async () => {
+    await abrir();
+    expect(await screen.findByText(/Emitido em 10\/03\/2026 às 14:30 · por: Diretora/)).toBeInTheDocument();
   });
 
   it("imprime pelo navegador", async () => {

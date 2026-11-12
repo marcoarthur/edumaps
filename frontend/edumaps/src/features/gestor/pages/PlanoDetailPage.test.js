@@ -51,7 +51,7 @@ describe("PlanoDetailPage", () => {
     await screen.findByRole("heading", { name: "Plano de ação 2026" });
     const txt = document.body.textContent.replace(/\s+/g, " ");
     expect(txt).toContain("alvo 6 pontos (0 a 10) · atual 5,4 (2023)");
-    expect(txt).toContain("prazo 05/03/2026 · Coordenação · R$ 1.500 (PDDE) · meta: Subir o IDEB dos anos iniciais");
+    expect(txt).toContain("prazo 05/03/2026 · Coordenação · R$ 1.500 (PDDE) · executado R$ 900 em 01/03/2026 · meta: Subir o IDEB dos anos iniciais");
     expect(txt).toContain("Reforço de leitura · prazo 05/03/2026 · Coordenação");
     expect(txt).toContain("Conselho escolar de fevereiro · 20/02/2026");
     expect(txt).not.toMatch(/\S·|\d[a-z]/);

@@ -128,4 +128,14 @@ describe("Edição do plano", () => {
     expect(celula.textContent).toMatch(/^4,5\s*ajustada pela escola; oficial: 5$/);
     expect(screen.getByText(/a escola mudou a linha de base de uma meta oficial/)).toBeInTheDocument();
   });
+  it("registra o custo executado na ação (#395)", async () => {
+    await abrir();
+    expect(texto()).toContain("R$ 1.500 (PDDE) · executado R$ 900 em 01/03/2026");
+    await fireEvent.click(screen.getByRole("button", { name: "Editar ação Busca ativa" }));
+    await fireEvent.input(screen.getByLabelText("Custo executado (R$)"), { target: { value: "250" } });
+    await fireEvent.input(screen.getByLabelText("Executado em"), { target: { value: "2026-03-09" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith("Ação atualizada.", "success"));
+    await waitFor(() => expect(texto()).toContain("executado R$ 250 em 09/03/2026"));
+  });
 });

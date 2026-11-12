@@ -97,13 +97,43 @@ is $g->{atrasadas}[0]{evidencias}[0]{texto}, 'Visitas feitas em 12 casas.', 'evi
 # custo previsto por fonte (#384): canceladas fora; sem custo contado à parte
 is $r->{custos}, {
   por_fonte => [
-    { fonte => 'pdde',          total => 1500,  n_acoes => 1 },
-    { fonte => 'fundeb',        total => 200,   n_acoes => 1 },
-    { fonte => 'nao_informada', total => 300.5, n_acoes => 1 },
+    { fonte => 'pdde',          total => 1500,  n_acoes => 1, executado => undef, n_executadas => 0 },
+    { fonte => 'fundeb',        total => 200,   n_acoes => 1, executado => undef, n_executadas => 0 },
+    { fonte => 'nao_informada', total => 300.5, n_acoes => 1, executado => undef, n_executadas => 0 },
   ],
-  total             => 2000.5,
-  n_acoes_sem_custo => 1,
-}, 'custos por fonte (ordem das fontes; cancelada fora; Visitas sem custo)';
+  total                 => 2000.5,
+  total_executado       => undef,
+  n_acoes_sem_custo     => 1,
+  n_acoes_sem_executado => 4,
+}, 'custos por fonte (ordem das fontes; cancelada fora; Visitas sem custo; nada executado)';
+is $r->{emitido_por_cargo}, undef, 'sem cargo cadastrado: nada';
+
+# custo executado (#395): sem executado não é R$ 0; fonte só com executado
+$t->put_ok("$base/$plano/acoes/$a_atrasada", $auth, json => { custo_executado => 1200, executado_em => '2026-03-20' })
+  ->status_is(200)->json_is('/custo_executado' => 1200)->json_is('/executado_em' => '2026-03-20');
+$t->put_ok("$base/$plano/acoes/$a_andamento", $auth, json => { custo_executado => -1 })->status_is(400);
+$t->put_ok("$base/$plano/acoes/$a_andamento", $auth, json => { executado_em => '2026-02-30' })->status_is(400);
+my $a_so_exec = $acao->('Material', custo_executado => 80, fonte_recurso => 'proprio');
+$dbh->do(q{UPDATE clean.gestores SET cargo = 'Diretora' WHERE email = ?}, {}, $EMAIL);
+my $r2 = $t->get_ok("$base/$plano/relatorio", $auth)->status_is(200)->tx->res->json;
+is $r2->{custos}, {
+  por_fonte => [
+    { fonte => 'pdde',          total => 1500,  n_acoes => 1, executado => 1200, n_executadas => 1 },
+    { fonte => 'fundeb',        total => 200,   n_acoes => 1, executado => undef, n_executadas => 0 },
+    { fonte => 'proprio',       total => undef, n_acoes => 0, executado => 80,    n_executadas => 1 },
+    { fonte => 'nao_informada', total => 300.5, n_acoes => 1, executado => undef, n_executadas => 0 },
+  ],
+  total                 => 2000.5,
+  total_executado       => 1280,
+  n_acoes_sem_custo     => 2,
+  n_acoes_sem_executado => 3,
+}, 'previsto × executado por fonte; fonte só com executado tem previsto null';
+is $r2->{emitido_por_cargo}, 'Diretora', 'cargo de quem emitiu';
+unlike Mojo::JSON::encode_json($r2), qr/Gestora Relatório/, 'o nome de quem emitiu não aparece';
+my ($exec_aud) = $dbh->selectrow_array(
+  q{SELECT count(*) FROM clean.planos_auditoria WHERE plano_id = ? AND entidade = 'acao' AND acao = 'alterado'
+     AND detalhes->'custo_executado' IS NOT NULL}, {}, $plano);
+is $exec_aud, 1, 'auditoria registra o executado';
 is $g->{atrasadas}[0]{custo_previsto}, 1500, 'ação traz o custo';
 is $g->{atrasadas}[0]{fonte_recurso}, 'pdde', 'ação traz a fonte';
 
