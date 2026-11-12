@@ -4,6 +4,7 @@
   // abre em /gestor/planos/:id (acompanhamento e edição). Exige sessão.
   import { onMount } from "svelte";
   import { listPlanos, createPlano } from "../api/gestorPlanosApi.js";
+  import { getDocumentos } from "../api/gestorDocumentosApi.js";
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
@@ -28,6 +29,7 @@
   let mostrarArquivados = $state(false);
   let form = $state(null);
   let salvando = $state(false);
+  let documentos = $state([]);
 
   const onApiError = (err, padrao) => {
     if (err instanceof ApiError && err.status === 401) {
@@ -54,8 +56,14 @@
     }
   }
 
-  function novoPlano() {
-    form = { tipo: "acao", titulo: "", inicio: "", fim: "" };
+  async function novoPlano() {
+    form = { tipo: "acao", titulo: "", inicio: "", fim: "", documento_id: "" };
+    // arquivo do plano (#385): opcional; sem a lista, o campo só não aparece
+    try {
+      documentos = (await getDocumentos(inep)).documentos ?? [];
+    } catch {
+      documentos = [];
+    }
   }
 
   async function criar() {
@@ -74,6 +82,7 @@
         titulo: form.titulo.trim(),
         inicio: form.inicio || null,
         fim: form.fim || null,
+        documento_id: form.documento_id ? Number(form.documento_id) : null,
       });
       addToast("Plano criado.", "success");
       window.location.href = `/gestor/planos/${p.id}`;
@@ -159,9 +168,17 @@
           <label class="text-xs text-gray-600"><span class="block">Fim</span>
             <input type="date" bind:value={form.fim} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
         </div>
+        {#if documentos.length}
+          <label class="block text-xs text-gray-600"><span class="block">Arquivo do plano (opcional)</span>
+            <select bind:value={form.documento_id} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">
+              <option value="">Nenhum por enquanto</option>
+              {#each documentos as d (d.id)}<option value={String(d.id)}>{d.nome} (v{d.versao_atual})</option>{/each}
+            </select></label>
+        {/if}
         <p class="text-xs text-gray-500">
           O plano nasce como rascunho. Os objetivos, as metas e as ações você cadastra na página do plano.
-          O arquivo do plano (PDF do PPP, por exemplo) continua em Documentos e planos.
+          O arquivo do plano (PDF do PPP, por exemplo) fica guardado em Documentos e planos; aqui você só aponta
+          para ele.
         </p>
         <div class="flex justify-end gap-2">
           <button type="button" onclick={() => (form = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>

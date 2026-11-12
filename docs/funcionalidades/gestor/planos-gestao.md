@@ -31,6 +31,8 @@ conselho escolar o que avançou.
   reabertura fica registrada.
 - **Arquivo do plano:** o plano pode apontar para o arquivo correspondente em
   Documentos e planos (o PDF do PPP, por exemplo), que continua guardado lá.
+  O gestor liga, troca ou desliga o arquivo na página do plano, baixa a
+  versão atual por ali, e o relatório traz o nome do arquivo.
 - **Metas:** cada objetivo tem metas com linha de base, alvo, prazo e sentido
   (aumentar, reduzir ou manter).
 - **Metas com indicador oficial:** a meta pode seguir um indicador oficial da

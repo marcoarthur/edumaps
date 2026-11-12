@@ -80,6 +80,9 @@
       {PLANO_TIPO_LABEL[plano.tipo] ?? plano.tipo} · período {fmtData(plano.inicio)} a {fmtData(plano.fim)} ·
       situação: {PLANO_SITUACAO_LABEL[plano.situacao] ?? plano.situacao}
     </p>
+    {#if plano.documento}
+      <p class="text-gray-700">Arquivo do plano: {plano.documento.nome} (versão {plano.documento.versao_atual})</p>
+    {/if}
     <p class="text-xs text-gray-500">Emitido em {emitidoEm}</p>
   </header>
 

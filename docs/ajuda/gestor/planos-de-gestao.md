@@ -24,7 +24,9 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
 
 1. **Onde ir:** Painel do gestor → **🎯 Planos de gestão** → **+ Novo plano**.
    Escolha o tipo (plano de gestão, plano de ação, PPP ou outro), dê um título
-   e o período. O plano nasce como **rascunho**.
+   e o período. Se o arquivo do plano (o PDF do PPP, por exemplo) já está em
+   Documentos e planos, escolha-o em **Arquivo do plano**. O plano nasce como
+   **rascunho**.
 2. **Monte o plano:** na página do plano, crie os **objetivos** e, em cada um,
    as **metas** e as **ações**.
    - **Meta com indicador oficial** (IDEB, matrículas, infraestrutura): a
@@ -136,7 +138,11 @@ e não o nome completo. Não há dado de aluno.
 ## Perguntas frequentes
 
 - **O PDF do meu PPP some?** Não. Ele continua em Documentos e planos. O plano
-  acompanhável organiza as metas e as ações.
+  acompanhável organiza as metas e as ações, e pode **apontar** para o arquivo:
+  na página do plano, em **Arquivo do plano**, use **Ligar arquivo de
+  Documentos e planos** (ou **Trocar** e **Desligar**). O link baixa a versão
+  atual do documento, e o relatório mostra o nome dele. Se o documento for
+  apagado em Documentos e planos, o plano continua, só sem o arquivo.
 - **Posso ligar o arquivo de uma reunião (a ata em PDF)?** Ligue a reunião:
   o link leva a ela, com a ata em texto e os anexos.
 - **O relatório mostra o nome de alguém?** Só o **responsável** de cada ação,

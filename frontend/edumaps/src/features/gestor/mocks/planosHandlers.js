@@ -7,6 +7,7 @@
 import { http, HttpResponse } from "msw";
 import { PLANOS_PLANOS, INDICADORES_PLANOS, INEP_PLANOS, HOJE_PLANOS, ORIGENS_PLANOS } from "./planosFixtures.js";
 import { SESSION_TOKEN } from "./fixtures.js";
+import { DOCUMENTOS_ARVORE_INICIAL } from "./documentosFixtures.js";
 
 const BASE = "/api/gestor/:cod_inep/planos";
 const clone = (x) => JSON.parse(JSON.stringify(x));
@@ -67,8 +68,11 @@ function planoOut(p) {
   });
   const todasMetas = objetivos.flatMap((o) => o.metas);
   const todasAcoes = objetivos.flatMap((o) => o.acoes);
+  // arquivo do plano (#385): nome e versão atual do documento ligado
+  const doc = DOCUMENTOS_ARVORE_INICIAL.documentos.find((d) => d.id === p.documento_id);
   return {
     ...p, objetivos,
+    documento: doc ? { id: doc.id, nome: doc.nome, versao_atual: doc.versao_atual } : null,
     resumo: {
       n_objetivos: objetivos.length, n_metas: todasMetas.length, n_acoes: todasAcoes.length,
       n_acoes_concluidas: todasAcoes.filter((a) => a.situacao === "concluida").length,

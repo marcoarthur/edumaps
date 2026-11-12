@@ -113,6 +113,16 @@ sub plano_detalhe ($self, $cod_inep, $id) {
   }
 
   my $out = $self->_plano_out($p);
+  # Arquivo do plano em Documentos e planos (#385): nome e versão atual.
+  # Documento apagado vira documento_id NULL (ON DELETE SET NULL).
+  $out->{documento} = defined $p->{documento_id} ? $self->_pl_row(
+    'SELECT d.id, d.nome, (SELECT max(v.versao) FROM clean.escola_documentos_versoes v
+                            WHERE v.documento_id = d.id) AS versao_atual
+       FROM clean.escola_documentos d WHERE d.id = ? AND d.cod_inep = ?',
+    $p->{documento_id} + 0, $cod_inep + 0) : undef;
+  if (my $d = $out->{documento}) {
+    $out->{documento} = { id => $d->{id} + 0, nome => $d->{nome}, versao_atual => _pl_num($d->{versao_atual}) };
+  }
   $out->{objetivos} = [ map {
     my $o = $self->_objetivo_out($_);
     $o->{metas} = $por_obj{ $_->{id} }{metas} // [];
