@@ -148,6 +148,27 @@ subtest 'origem apagada: a evidência fica' => sub {
   is $nota->{origem_removida}, Mojo::JSON::false, 'nota nunca é origem removida';
 };
 
+subtest 'editar ação, meta e objetivo como a tela envia (#383): evidências ficam' => sub {
+  $t->put_ok("$base/$plano/acoes/$acao", $auth, json => {
+    meta_id => $meta, descricao => 'Reunião bimestral com as famílias', responsavel => 'Coordenação',
+    inicio => '2026-03-01', prazo => '2026-06-30', custo_previsto => 250, fonte_recurso => 'pdde' })
+    ->status_is(200)
+    ->json_is('/descricao' => 'Reunião bimestral com as famílias')->json_is('/prazo' => '2026-06-30')
+    ->json_is('/meta_id' => $meta)->json_is('/fonte_recurso' => 'pdde');
+  is [ map { $_->{tipo} } @{ $t->tx->res->json->{evidencias} } ], [ 'ata' ], 'ação editada mantém a evidência';
+
+  $t->put_ok("$base/$plano/metas/$meta", $auth, json => {
+    descricao => 'Presença das famílias nas reuniões', sentido => 'aumentar', linha_base => 25, alvo => 70,
+    prazo => '2026-12-15', unidade => '%' })
+    ->status_is(200)->json_is('/alvo' => 70)->json_is('/linha_base' => 25);
+  is [ map { $_->{tipo} } @{ $t->tx->res->json->{evidencias} } ], [ 'documento', 'nota' ], 'meta editada mantém as evidências';
+
+  $t->put_ok("$base/$plano/acoes/$acao", $auth, json => { prazo => '2026-02-01', inicio => '2026-03-01' })
+    ->status_is(400)->json_like('/error' => qr/prazo/);
+  $t->put_ok("$base/$plano/objetivos/$obj", $auth, json => { titulo => 'Aproximar as famílias da escola' })
+    ->status_is(200)->json_is('/titulo' => 'Aproximar as famílias da escola');
+};
+
 subtest 'excluir, encerrado e auditoria' => sub {
   my $o = $t->get_ok("$base/$plano", $auth)->tx->res->json->{objetivos}[0];
   my ($nota) = grep { $_->{tipo} eq 'nota' } @{ $o->{metas}[0]{evidencias} };
