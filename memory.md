@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-12 (az) — planos de gestão: backend base (PR #377, #369)
+
+- Sprint dos planos de gestão (épico #368, spec
+  `docs/specs/2026-11-11-planos-de-gestao.md`): #369–#374 no sprint; #375
+  (papel da rede) e #376 (rendimento INEP) no backlog.
+- **PR #377 mergeado** (`3a4ce2d`, fecha #369): planos, objetivos, metas,
+  ações e auditoria (change `planos_gestao`); CI do `main` verde.
+- PRs empilhados ainda abertos: **#378** (#370, indicadores oficiais,
+  medições, progresso; base já no `main`) e **#379** (#373, alertas de prazo
+  às 7h; base `feat/backend-planos-indicadores`). #371 (interface) na branch
+  `feat/frontend-planos-gestao`, sem PR — aguarda validação visual.
+- **Armadilha**: `gh pr merge --delete-branch` do PR-base FECHOU o #378 (o
+  GitHub não refaz a base quando a branch é apagada pela API). Recuperado
+  (re-push da branch, reopen, `--base main`). Antes do merge do #378,
+  `gh pr edit 379 --base main`.
+- Docker local roda a branch da #371 (superconjunto); banco local com as 3
+  changes (`planos_gestao`, `planos_indicadores`, `planos_alertas`) —
+  desfazer com `sqitch revert --to antt_sem_fonte` se preciso.
+- Nota técnica fica para o fim do ciclo (consolida #369–#373).
+
 ## Sessão 2026-11-11 (ay) — camada de km real da ANTT, #168 fechada (PR #367)
 
 - Host: `libsodium-dev` instalado pelo usuário → `plumber` instalado; 16/16
