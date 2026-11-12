@@ -14,11 +14,11 @@ negócios (P2, secretaria municipal, alvo principal).
 
 | Ordem | Issue | Cobre |
 |---|---|---|
-| 1 | Papel de rede: conta por convite, vínculo e autorização | RF-101, RF-102, RF-103 |
-| 1 (paralelo) | Custo executado na ação e cargo de quem emite o relatório | RF-107, RF-108 |
-| 2 | Painel da rede e relatório da escola pela rede | RF-104, RF-105 |
-| 3 (paralelo) | Metas comparáveis por indicador | RF-106 |
-| 3 (paralelo) | Custo por fonte na rede (previsto × executado) | RF-109 |
+| 1 | #394 — Papel de rede: conta por convite, vínculo e autorização | RF-101, RF-102, RF-103 |
+| 1 (paralelo) | #395 — Custo executado na ação e cargo de quem emite o relatório | RF-107, RF-108 |
+| 2 | #396 — Painel da rede e relatório da escola pela rede | RF-104, RF-105 |
+| 3 (paralelo) | #397 — Metas comparáveis por indicador | RF-106 |
+| 3 (paralelo) | #398 — Custo por fonte na rede (previsto × executado) | RF-109 |
 
 O 1 e o 1 (paralelo) não dependem um do outro. O 2 depende do papel de rede.
 O custo na rede depende do custo executado e do painel.
