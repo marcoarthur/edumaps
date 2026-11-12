@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-12 (bb) — visão da rede: papel de rede (PR #399, #394)
+
+- Spec `docs/specs/2026-11-12-visao-da-rede.md` (#375): sprint #394–#398
+  (papel de rede; custo executado + cargo do emissor; painel da rede;
+  metas comparáveis; custo por fonte na rede). Decisões: vínculo concedido
+  pelo admin; rede vê agregado + relatório da escola (só leitura); 1ª
+  entrega completa; relatório mostra o cargo de quem emitiu.
+- **PR #399 mergeado** (`aabdf99`, fecha #394): change `rede_acesso`
+  (access_role 'rede', rede_vinculos/convites/auditoria, índice
+  co_municipio no Censo); conta de rede = gestores cod_inep 0 sem senha até
+  o convite (uso único, 7 dias, hash); escola da rede pela linha mais
+  recente do Censo, conferida a cada pedido. `gestor#_require_sessao`
+  (me/logout) × `_require_gestor` (recusa rede); pesquisas usam
+  `pesquisa#_require_gestor_escola`. Frontend: /config/rede, /rede,
+  /rede/convite/:token; papel guardado no login (dica de UI) para o menu.
+  Perfil `rede` na ajuda (validador `tools/help-wiki/export.py`).
+- Local: a conta de teste (e2e_gestor_local) foi **promovida a admin** no
+  banco de dev para validar (reverter: access_role = 'gestor').
+- LXC (próximo deploy): + change `rede_acesso` (6 changes no total desde o
+  último deploy, mais as do ANTT).
+- Próximo: #395 (custo executado + cargo), depois #396 (painel da rede).
+
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 
 - **Personas de público** (`docs/personas/publicos/`, `7e36ed7`): as 6 do
