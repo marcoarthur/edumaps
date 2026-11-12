@@ -76,3 +76,8 @@ export function createEvidencia(inep, planoId, dados) {
 export function deleteEvidencia(inep, planoId, evidenciaId) {
   return apiClient.delete(`${BASE(inep)}/${planoId}/evidencias/${evidenciaId}`);
 }
+
+/** Dados do relatório de acompanhamento (#374): plano, escola, ações por situação, emissão. */
+export function getRelatorio(inep, id) {
+  return apiClient.get(`${BASE(inep)}/${id}/relatorio`);
+}

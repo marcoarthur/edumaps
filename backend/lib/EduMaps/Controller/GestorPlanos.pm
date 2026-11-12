@@ -25,6 +25,7 @@ use EduMaps::Roles::Business::Gestor::Planos ();
 #   GET    .../planos/evidencias/origens       reuniões e versões de documento
 #                                             da escola que podem virar evidência (#372)
 #   POST   .../planos/:id/evidencias          | DELETE .../evidencias/:eid
+#   GET    .../planos/:id/relatorio           dados do relatório de acompanhamento (#374)
 #
 # PUT é PARCIAL: só os campos enviados mudam; um campo enviado como null (ou
 # texto vazio) limpa o valor.
@@ -151,6 +152,11 @@ sub evidencia_origens($self) {
 
 sub evidencia_create($self) { $self->_filho_create('evidencia') }
 sub evidencia_destroy($self) { $self->_filho_destroy('evidencia', 'eid') }
+
+sub relatorio($self) {
+  return unless $self->_gestor_inep_ok;
+  $self->_executar(sub ($m) { $m->plano_relatorio($self->param('cod_inep'), $self->param('id')) });
+}
 
 sub auditoria($self) {
   return unless $self->_gestor_inep_ok;

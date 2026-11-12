@@ -51,11 +51,17 @@ conselho escolar o que avançou.
   uma nota. Nada é reenviado, e só entra o que é da própria escola. Se a
   reunião ou o documento for apagado depois, a evidência continua, marcada
   como "origem removida".
+- **Relatório de acompanhamento:** com um clique, o gestor gera o relatório
+  do plano para imprimir ou salvar em PDF (A4) e prestar contas à secretaria e
+  ao conselho escolar. Ele traz a escola, o plano e o período, o andamento por
+  objetivo e por meta (cada indicador oficial com a fonte e o ano; meta sem
+  medição aparece escrita assim, nunca como 0%), as ações por situação, as
+  evidências e a data de emissão. O único nome que pode aparecer é o
+  responsável de cada ação, como o gestor escreveu.
 - **Histórico:** toda mudança no plano fica registrada, com autor e data.
 
 ## Ainda não disponível
 
-- Relatório de acompanhamento para imprimir e prestar contas (#374).
 - Visão da secretaria sobre os planos das escolas da rede (#375).
 
 ## Valor

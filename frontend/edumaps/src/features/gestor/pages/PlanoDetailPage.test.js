@@ -40,6 +40,12 @@ describe("PlanoDetailPage", () => {
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
   });
 
+  it("leva ao relatório de acompanhamento (#374)", async () => {
+    abrir(1);
+    await screen.findByRole("heading", { name: "Plano de ação 2026" });
+    expect(screen.getByRole("link", { name: "🖨️ Relatório" })).toHaveAttribute("href", "/gestor/planos/1/relatorio");
+  });
+
   it("destaca a ação atrasada", async () => {
     abrir(1);
     await screen.findByRole("heading", { name: "Plano de ação 2026" });

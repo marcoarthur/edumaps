@@ -25,6 +25,7 @@ import {
   GestorRelacaoDetailPage,
   GestorPlanosPage,
   GestorPlanoDetailPage,
+  GestorPlanoRelatorioPage,
   GestorDocumentosPage,
   GestorEnviosPage,
   GestorSegmentosPage,
@@ -84,6 +85,7 @@ export const routes = [
   { path: "/gestor/relacoes/:id", component: GestorRelacaoDetailPage },
   { path: "/gestor/planos", component: GestorPlanosPage },
   { path: "/gestor/planos/:id", component: GestorPlanoDetailPage },
+  { path: "/gestor/planos/:id/relatorio", component: GestorPlanoRelatorioPage },
   { path: "/gestor/documentos", component: GestorDocumentosPage },
   // salvos antes de qualquer padrão que os capture (fase 3 do #219)
   { path: "/gestor/relatorios/salvos", component: GestorRelatoriosSalvosPage },

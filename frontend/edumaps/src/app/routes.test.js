@@ -143,6 +143,13 @@ describe("matchRoute", () => {
     expect(matchRoute("/escola/search/1")).toBeNull();
   });
 
+  it("plano e relatório do plano são rotas distintas (#374)", () => {
+    expect(matchRoute("/gestor/planos/7")?.path).toBe("/gestor/planos/:id");
+    const r = matchRoute("/gestor/planos/7/relatorio");
+    expect(r?.path).toBe("/gestor/planos/:id/relatorio");
+    expect(r?.params).toEqual({ id: "7" });
+  });
+
   it("retorna null para rota inexistente", () => {
     expect(matchRoute("/nao-existe")).toBeNull();
   });
