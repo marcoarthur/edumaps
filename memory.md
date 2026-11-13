@@ -51,6 +51,11 @@
   (`ciclos/2026-11-13-visao-da-rede.md`). P2: adotaria em piloto. Achados
   P2-RD-01..03 e P1-RD-01 viraram as issues #404 a #407;
   P2-RD-04 só com rede estadual real.
+- **PR #408 mergeado** (`55b4228`, fecha #407, P1-RD-01): aviso no plano e
+  no relatório da escola (fora da impressão) de que a secretaria da rede,
+  se usa o EduMaps, os vê só para leitura; dica de cargo no responsável.
+  Abertas: #404 (custo por exercício), #405 (documento da rede), #406
+  (sincronização oficial em lote).
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 

@@ -125,7 +125,9 @@ Continua as notas 190 a 192 (planos de gestão acompanháveis).
   - P2-RD-01: custo por exercício (#404);
   - P2-RD-02: documento consolidado da rede (#405);
   - P2-RD-03: sincronização das medições oficiais em lote (#406);
-  - P1-RD-01: aviso na tela do plano de que a secretaria o lê (#407).
+  - P1-RD-01: aviso na tela do plano de que a secretaria o lê (#407,
+    entregue no PR #408: aviso no plano e no relatório, fora da impressão, e
+    dica de cargo no campo responsável).
 - **P2-RD-04 (vínculo por regional):** só com uma rede estadual real.
 - **Deploy LXC pendente**, com as changes desde o último deploy:
   - `planos_gestao`, `planos_indicadores`, `planos_alertas`,

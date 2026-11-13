@@ -41,7 +41,8 @@ secretaria, o que dá peso a mantê-lo em dia.
 
 **Pendente:**
 
-- O aviso, na tela do plano, de que a secretaria o lê (P1-RD-01, #407).
+- Nenhum. O aviso, na tela do plano, de que a secretaria o lê (P1-RD-01)
+  entrou no PR #408 (#407).
 
 ## P2 — Secretaria municipal (secretário de educação)
 

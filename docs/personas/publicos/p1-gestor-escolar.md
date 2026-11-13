@@ -40,7 +40,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - Conferir com 2 ou 3 diretoras reais o veredito da reavaliação (adotaria).
 - P1-PG-06 e -07 corrigidos no PR #390.
-- P1-RD-01 (aviso na tela de que a secretaria lê o plano): #407.
+- P1-RD-01 (aviso na tela de que a secretaria lê o plano): entregue no PR #408 (#407).
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
 
