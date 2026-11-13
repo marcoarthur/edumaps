@@ -214,7 +214,7 @@
         </p>
         <p>
           Custos: ações canceladas ficam fora; ação sem valor não conta como R$ 0. Os valores oficiais novos entram
-          quando a escola abre o plano. Fonte: EduMaps, com os dados cadastrados pelas escolas.
+          todo dia de manhã, nos planos vigentes. Fonte: EduMaps, com os dados cadastrados pelas escolas.
         </p>
       </footer>
     </article>

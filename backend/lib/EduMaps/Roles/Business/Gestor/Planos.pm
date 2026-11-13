@@ -522,6 +522,33 @@ sub _sincronizar_oficiais ($self, $plano_id, $meta_id = undef) {
     $plano_id + 0, $meta_id, $meta_id);
 }
 
+# Em lote (#406): o mesmo INSERT da sincronização por plano, para TODOS os
+# planos vigentes não arquivados, numa consulta. Idempotente (ON CONFLICT da
+# meta e do ano oficiais); plano encerrado ou em rascunho não recebe nada.
+# Devolve quantas medições novas e em quantos planos. Usado pela task diária
+# `planos_oficiais`, para o painel da rede não depender de a escola abrir o
+# plano.
+sub planos_sincronizar_oficiais ($self) {
+  my $novas = $self->_pl_rows(
+    q{INSERT INTO clean.planos_metas_medicoes (meta_id, origem, data_ref, ano_ref, valor)
+      SELECT m.id, 'oficial', make_date(v.ano, 12, 31), v.ano, v.valor
+        FROM clean.planos_metas m
+        JOIN clean.planos_objetivos o ON o.id = m.objetivo_id
+        JOIN clean.planos_gestao p ON p.id = o.plano_id
+        JOIN analytics.escola_indicadores_meta v
+          ON v.cod_inep = p.cod_inep AND v.codigo = m.indicador_codigo
+       WHERE p.situacao = 'vigente' AND p.arquivado_em IS NULL
+      ON CONFLICT (meta_id, ano_ref) WHERE origem = 'oficial' DO NOTHING
+      RETURNING meta_id});
+  my %metas = map { $_->{meta_id} => 1 } @$novas;
+  my $planos = %metas
+    ? $self->_pl_row(q{SELECT count(DISTINCT o.plano_id) AS n FROM clean.planos_metas m
+                       JOIN clean.planos_objetivos o ON o.id = m.objetivo_id WHERE m.id = ANY(?::bigint[])},
+                     [ map { $_ + 0 } keys %metas ])->{n} + 0
+    : 0;
+  return { medicoes => scalar @$novas, metas => scalar keys %metas, planos => $planos };
+}
+
 sub _indicador_ou_400 ($self, $codigo) {
   my $c = $self->_pl_row('SELECT codigo, unidade FROM analytics.indicadores_meta_catalogo WHERE codigo = ?', $codigo);
   $self->_falha(400, "Indicador '$codigo' não está no catálogo.") unless $c;

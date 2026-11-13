@@ -145,7 +145,7 @@
       {/each}
     </ul>
     <p class="text-xs text-gray-500">
-      O andamento médio considera só as metas medidas. Os valores oficiais novos entram quando a escola abre o plano.
+      O andamento médio considera só as metas medidas. Os valores oficiais novos entram todo dia de manhã, sem a escola precisar abrir o plano.
     </p>
   {/if}
 </div>
