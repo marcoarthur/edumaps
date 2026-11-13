@@ -13,7 +13,7 @@
   (#154). Spec `docs/specs/2026-11-13-similaridade-territorial.md` (v0.1,
   decisões D1–D7 com o developer); comentário na issue.
 - Ordem: LXC (16/11) → #295 → medição dos componentes no LXC → issues.
-- Achado à parte (issue pequena, não aberta): `refresh_school_embeddings`
+- Achado à parte → **#413**: `refresh_school_embeddings`
   nunca é enfileirado; embedding com `COALESCE(…, 0)`.
 
 ## Sessão 2026-11-13 (bc) — INEP: rendimento e distorção (PR #412 mergeado, #376)
