@@ -225,4 +225,69 @@ sub rede_indicadores ($self, $escolas) {
   };
 }
 
+# Custo por fonte na rede (#398, RF-109): previsto × executado por fonte de
+# recurso, por escola e consolidado. Por escola, o plano vigente que o painel
+# mostra (o mais recente), com os MESMOS números do relatório dele (mesma
+# função _pl_custos, canceladas fora, sem valor não é R$ 0). O consolidado
+# soma só esses planos vigentes; os planos encerrados das escolas da rede vêm
+# numa linha à parte. Rascunho não entra. Só leitura.
+sub rede_custos ($self, $escolas) {
+  my %escola = map { $_->{cod_inep} => $_ } @$escolas;
+  my @ineps  = map { $_ + 0 } keys %escola;
+  my ($vigente) = @ineps ? $self->_rp_vigentes(\@ineps) : ({});
+  my %vig_id = map { $vigente->{$_}{id} => $_ } keys %$vigente;
+
+  my (%acoes_vig, @acoes_enc, %planos_enc, %escolas_enc);
+  if (@ineps) {
+    my $acoes = $self->_pl_rows(
+      q{SELECT p.id AS plano_id, p.cod_inep, p.situacao AS plano_situacao,
+               a.custo_previsto, a.fonte_recurso, a.custo_executado
+          FROM clean.planos_gestao p
+          JOIN clean.planos_objetivos o ON o.plano_id = p.id
+          JOIN clean.planos_acoes a ON a.objetivo_id = o.id
+         WHERE p.cod_inep = ANY(?::bigint[]) AND p.arquivado_em IS NULL
+           AND p.situacao IN ('vigente', 'encerrado') AND a.situacao <> 'cancelada'}, \@ineps);
+    for my $a (@$acoes) {
+      if ($a->{plano_situacao} eq 'encerrado') {
+        push @acoes_enc, $a;
+        $planos_enc{ $a->{plano_id} } = 1;
+        $escolas_enc{ $a->{cod_inep} } = 1;
+      }
+      elsif (exists $vig_id{ $a->{plano_id} }) {
+        push @{ $acoes_vig{ $a->{plano_id} } }, $a;
+      }
+    }
+  }
+
+  my @linhas;
+  for my $inep (keys %$vigente) {
+    my $p = $vigente->{$inep};
+    my $e = $escola{$inep};
+    push @linhas, {
+      cod_inep     => $inep + 0,
+      nome         => $e->{nome},
+      municipio    => $e->{municipio},
+      uf           => $e->{uf},
+      plano_id     => $p->{id} + 0,
+      plano_titulo => $p->{titulo},
+      custos       => EduMaps::Roles::Business::Gestor::Planos::_pl_custos(@{ $acoes_vig{ $p->{id} } // [] }),
+    };
+  }
+  @linhas = sort { $a->{nome} cmp $b->{nome} } @linhas;
+
+  my $consolidado = EduMaps::Roles::Business::Gestor::Planos::_pl_custos(map { @$_ } values %acoes_vig);
+  $consolidado->{n_escolas_com_custo} = scalar grep { @{ $_->{custos}{por_fonte} } } @linhas;
+  my $encerrados = EduMaps::Roles::Business::Gestor::Planos::_pl_custos(@acoes_enc);
+  $encerrados->{n_planos}  = scalar keys %planos_enc;
+  $encerrados->{n_escolas} = scalar keys %escolas_enc;
+
+  return {
+    consolidado         => $consolidado,
+    encerrados          => $encerrados,
+    escolas             => \@linhas,
+    n_escolas           => scalar @$escolas,
+    n_com_plano_vigente => scalar keys %$vigente,
+  };
+}
+
 1;

@@ -44,3 +44,8 @@ export function getRedeRelatorio(inep, planoId) {
 export function getRedeIndicadores() {
   return apiClient.get(`${BASE}/indicadores`);
 }
+
+/** Custo por fonte de recurso na rede (#398): consolidado, por escola e encerrados à parte. */
+export function getRedeCustos() {
+  return apiClient.get(`${BASE}/custos`);
+}

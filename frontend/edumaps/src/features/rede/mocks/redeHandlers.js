@@ -2,7 +2,7 @@
 // MSW da conta de rede (#394): convite (anônimo), /api/rede (sessão REDE_TOKEN;
 // a sessão de admin recebe 403) e /api/admin/rede/contas (sessão de admin).
 import { http, HttpResponse } from "msw";
-import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS, REDE_PAINEL, REDE_INDICADORES } from "./redeFixtures.js";
+import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS, REDE_PAINEL, REDE_INDICADORES, REDE_CUSTOS } from "./redeFixtures.js";
 import { relatorioMock, planoMockPorId } from "@/features/gestor/mocks/planosHandlers.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 
@@ -67,6 +67,10 @@ export const redeHandlers = [
   http.get("/api/rede/indicadores", ({ request }) => {
     if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
     return HttpResponse.json(clone(REDE_INDICADORES));
+  }),
+  http.get("/api/rede/custos", ({ request }) => {
+    if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
+    return HttpResponse.json(clone(REDE_CUSTOS));
   }),
   http.get("/api/rede/escolas/:inep/planos/:id/relatorio", ({ request, params }) => {
     if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
