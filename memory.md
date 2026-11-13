@@ -37,8 +37,12 @@
   planos e relatório da escola pela rede em modo `somente_leitura` (não
   sincroniza medições oficiais). /rede vira painel (totais, filtros,
   ordenação, link para o relatório).
-- Próximo: #397 (metas comparáveis) e #398 (custo por fonte na rede), em
-  paralelo; depois nota técnica + fechamento de ciclo por público.
+- **PR #402 mergeado** (`b3d0917`, fecha #397): `GET /api/rede/indicadores`
+  (metas oficiais do vigente por indicador; andamento médio das medidas;
+  base ajustada contada; manuais à parte) e /rede/indicadores; na escola,
+  `sugerirIndicador` sugere o indicador para meta manual parecida.
+- Próximo: #398 (custo por fonte na rede); depois nota técnica +
+  fechamento de ciclo por público do sprint da rede.
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 
