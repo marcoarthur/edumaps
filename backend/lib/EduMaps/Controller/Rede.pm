@@ -13,7 +13,7 @@ use Scalar::Util qw(blessed);
 #   GET /api/rede/escolas/:cod_inep  a escola, se for da rede (403 se não)
 #   GET /api/rede/painel             planos das escolas da rede e totais (#396)
 #   GET /api/rede/indicadores        metas comparáveis por indicador oficial (#397)
-#   GET /api/rede/custos             custo por fonte, previsto × executado (#398)
+#   GET /api/rede/custos             custo por fonte, previsto × executado (#398; ?exercicio, #404)
 #   GET /api/rede/escolas/:cod_inep/planos                 planos não arquivados
 #   GET /api/rede/escolas/:cod_inep/planos/:id/relatorio   relatório (só leitura)
 
@@ -47,9 +47,17 @@ sub indicadores($self) {
   $self->render(json => $self->model('Gestor')->rede_indicadores($escolas));
 }
 
+# ?exercicio=AAAA (#404): previsto pelo ano do prazo, executado pelo da execução.
 sub custos($self) {
   my $escolas = $self->instantiate_model(model => 'Pesquisa')->rede_escolas($self->stash('gestor')->{id});
-  $self->render(json => $self->model('Gestor')->rede_custos($escolas));
+  my $out = eval { $self->model('Gestor')->rede_custos($escolas, $self->param('exercicio')) };
+  if (my $err = $@) {
+    if (blessed $err && $err->isa('EduMaps::Roles::Business::Gestor::Planos::Erro')) {
+      return $self->render(json => { error => $err->mensagem }, status => $err->status);
+    }
+    die $err;
+  }
+  $self->render(json => $out);
 }
 
 sub escola_planos($self) {
@@ -63,7 +71,7 @@ sub relatorio($self) {
   my $e = $self->_escola_ok or return;
   my $out = eval {
     $self->model('Gestor')->plano_relatorio($e->{co_entidade}, $self->param('id'),
-      $self->stash('gestor')->{id}, { somente_leitura => 1 });
+      $self->stash('gestor')->{id}, { somente_leitura => 1, exercicio => $self->param('exercicio') });
   };
   if (my $err = $@) {
     if (blessed $err && $err->isa('EduMaps::Roles::Business::Gestor::Planos::Erro')) {

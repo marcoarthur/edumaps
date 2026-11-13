@@ -61,7 +61,8 @@ conselho escolar o que avançou.
   ao conselho escolar. Ele traz a escola, o plano e o período, o andamento por
   objetivo e por meta (cada indicador oficial com a fonte e o ano; meta sem
   medição aparece escrita assim, nunca como 0%), o custo previsto e o executado
-  por fonte de recurso (PDDE, Fundeb, recurso próprio, parceria), o cargo de
+  por fonte de recurso (PDDE, Fundeb, recurso próprio, parceria), filtrável
+  por exercício (previsto pelo ano do prazo, executado pelo da execução), o cargo de
   quem emitiu, as ações por situação,
   as evidências e a data de emissão. O único nome que pode aparecer é o
   responsável de cada ação, como o gestor escreveu.

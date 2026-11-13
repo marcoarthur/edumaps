@@ -111,7 +111,11 @@ em **🖨️ Relatório**. A página mostra:
 - o **custo por fonte de recurso** (PDDE, Fundeb, recurso próprio, parceria,
   outro): **previsto** e **executado**, com os totais. Entram só as ações não
   canceladas com valor informado; as sem valor são contadas à parte, e não como
-  R$ 0;
+  R$ 0. Em **Exercício**, escolha um ano para a prestação de contas anual
+  (Fundeb, PDDE): o previsto entra pelo ano do **prazo** da ação e o executado
+  pelo ano da **data da execução**. Ação sem prazo e valor executado sem data
+  ficam fora do ano, e o relatório diz quantos são. O título da seção mostra o
+  ano escolhido, também na impressão;
 - cada objetivo com a tabela das metas: **fonte e ano** de cada indicador
   oficial, linha de base, alvo, valor atual e andamento. Meta sem medição
   aparece como **Sem medição**, nunca como 0%;

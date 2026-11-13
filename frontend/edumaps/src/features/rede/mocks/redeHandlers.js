@@ -2,7 +2,7 @@
 // MSW da conta de rede (#394): convite (anônimo), /api/rede (sessão REDE_TOKEN;
 // a sessão de admin recebe 403) e /api/admin/rede/contas (sessão de admin).
 import { http, HttpResponse } from "msw";
-import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS, REDE_PAINEL, REDE_INDICADORES, REDE_CUSTOS } from "./redeFixtures.js";
+import { CONVITES, REDE_TOKEN, REDE_CONTA, REDE_ESCOLAS, ADMIN_REDE_CONTAS, MUNICIPIOS, REDE_PAINEL, REDE_INDICADORES, REDE_CUSTOS, REDE_CUSTOS_2026 } from "./redeFixtures.js";
 import { relatorioMock, planoMockPorId } from "@/features/gestor/mocks/planosHandlers.js";
 import { SESSION_TOKEN } from "@/features/gestor/mocks/fixtures.js";
 
@@ -70,6 +70,12 @@ export const redeHandlers = [
   }),
   http.get("/api/rede/custos", ({ request }) => {
     if (auth(request) !== `Bearer ${REDE_TOKEN}`) return HttpResponse.json({ error: "Acesso restrito às contas de rede." }, { status: 403 });
+    const ex = Number(new URL(request.url).searchParams.get("exercicio")) || null;
+    if (ex === 2026) return HttpResponse.json(clone(REDE_CUSTOS_2026));
+    if (ex) return HttpResponse.json({ ...clone(REDE_CUSTOS_2026), exercicio: ex,
+      consolidado: { por_fonte: [], total: 0, total_executado: null, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0,
+                     n_acoes_sem_prazo: 1, n_executado_sem_data: 0, n_escolas_com_custo: 0, exercicio: ex, exercicios: [2025, 2026] },
+      escolas: [] });
     return HttpResponse.json(clone(REDE_CUSTOS));
   }),
   http.get("/api/rede/escolas/:inep/planos/:id/relatorio", ({ request, params }) => {
@@ -79,7 +85,7 @@ export const redeHandlers = [
     }
     const p = Number(params.inep) === 11000040 ? planoMockPorId(params.id) : null;
     if (!p) return HttpResponse.json({ error: "Plano não encontrado." }, { status: 404 });
-    return HttpResponse.json(relatorioMock(p, "Técnica pedagógica"));
+    return HttpResponse.json(relatorioMock(p, "Técnica pedagógica", Number(new URL(request.url).searchParams.get("exercicio")) || null));
   }),
 
   // --- admin ---

@@ -36,8 +36,8 @@ export function getRedeEscolaPlanos(inep) {
 }
 
 /** Relatório de acompanhamento do plano, só leitura (o mesmo que a escola imprime). */
-export function getRedeRelatorio(inep, planoId) {
-  return apiClient.get(`${BASE}/escolas/${inep}/planos/${planoId}/relatorio`);
+export function getRedeRelatorio(inep, planoId, exercicio = null) {
+  return apiClient.get(`${BASE}/escolas/${inep}/planos/${planoId}/relatorio${exercicio ? `?exercicio=${exercicio}` : ""}`);
 }
 
 /** Metas comparáveis por indicador oficial (#397). */
@@ -46,6 +46,6 @@ export function getRedeIndicadores() {
 }
 
 /** Custo por fonte de recurso na rede (#398): consolidado, por escola e encerrados à parte. */
-export function getRedeCustos() {
-  return apiClient.get(`${BASE}/custos`);
+export function getRedeCustos(exercicio = null) {
+  return apiClient.get(`${BASE}/custos${exercicio ? `?exercicio=${exercicio}` : ""}`);
 }

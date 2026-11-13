@@ -656,7 +656,8 @@ sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef, $opt = {}) {
     }
   }
 
-  my $custos = _pl_custos(map { @{ $grupo{$_} } } grep { $_ ne 'canceladas' } keys %grupo);
+  my $custos = _pl_custos([ map { @{ $grupo{$_} } } grep { $_ ne 'canceladas' } keys %grupo ],
+    $self->_pl_exercicio($opt->{exercicio}));
 
   my @evid = map { @{ $_->{evidencias} // [] } }
              map { (@{ $_->{metas} }, @{ $_->{acoes} }) } @{ $plano->{objetivos} };
@@ -681,12 +682,30 @@ sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef, $opt = {}) {
 # valor não é R$ 0, a ação é contada à parte, e a fonte sem nenhum valor de um
 # lado fica null. Função pura: o relatório da escola e a rede (#398) usam a
 # mesma, para os números baterem.
-sub _pl_custos (@acoes) {
-  my (%prev, %n_prev, %exec, %n_exec, $sem_custo, $sem_exec);
-  for my $a (@acoes) {
+#
+# Com exercício (#404): o previsto entra pelo ano do PRAZO da ação e o
+# executado pelo ano da DATA DE EXECUÇÃO. Ação sem prazo não entra em nenhum
+# exercício (n_acoes_sem_prazo); executado sem data também não
+# (n_executado_sem_data). "Sem custo" e "sem executado" contam as ações com
+# prazo no exercício. `exercicios`: os anos que aparecem nas ações.
+sub _pl_custos ($acoes, $exercicio = undef) {
+  my (%prev, %n_prev, %exec, %n_exec, $sem_custo, $sem_exec, $sem_prazo, $exec_sem_data, %anos);
+  my $ano = sub ($d) { defined $d && $d =~ /^(\d{4})/ ? $1 + 0 : undef };
+  for my $a (@$acoes) {
     my $f = $a->{fonte_recurso} // 'nao_informada';
-    if (defined $a->{custo_previsto}) { $prev{$f} += $a->{custo_previsto}; $n_prev{$f}++ } else { $sem_custo++ }
-    if (defined $a->{custo_executado}) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ } else { $sem_exec++ }
+    my ($a_prazo, $a_exec) = ($ano->($a->{prazo}), $ano->($a->{executado_em}));
+    $anos{$a_prazo} = 1 if defined $a_prazo;
+    $anos{$a_exec}  = 1 if defined $a_exec;
+    my $no_ex = !defined $exercicio || (defined $a_prazo && $a_prazo == $exercicio);
+    if (defined $exercicio && !defined $a_prazo) { $sem_prazo++ }
+    if ($no_ex) {
+      if (defined $a->{custo_previsto}) { $prev{$f} += $a->{custo_previsto}; $n_prev{$f}++ } else { $sem_custo++ }
+      $sem_exec++ unless defined $a->{custo_executado};
+    }
+    next unless defined $a->{custo_executado};
+    if (!defined $exercicio) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ }
+    elsif (!defined $a_exec) { $exec_sem_data++ }
+    elsif ($a_exec == $exercicio) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ }
   }
   my $din = sub ($v) { defined $v ? 0 + sprintf('%.2f', $v) : undef };
   my @custos = map { {
@@ -707,7 +726,19 @@ sub _pl_custos (@acoes) {
     total_executado       => $din->($total_exec),
     n_acoes_sem_custo     => $sem_custo // 0,
     n_acoes_sem_executado => $sem_exec // 0,
+    exercicio             => $exercicio,
+    exercicios            => [ sort { $a <=> $b } keys %anos ],
+    (defined $exercicio
+      ? (n_acoes_sem_prazo => $sem_prazo // 0, n_executado_sem_data => $exec_sem_data // 0) : ()),
   };
+}
+
+# Exercício pedido (#404): vazio = todos os anos; senão um ano de 4 dígitos.
+sub _pl_exercicio ($self, $v) {
+  return undef if !defined $v || $v eq '';
+  $self->_falha(400, 'Exercício inválido: informe o ano com 4 dígitos.')
+    unless $v =~ /^(19|20|21)\d{2}$/;
+  return $v + 0;
 }
 
 # ---------------------------------------------------------------------------

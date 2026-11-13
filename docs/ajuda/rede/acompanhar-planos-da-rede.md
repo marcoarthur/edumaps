@@ -69,6 +69,11 @@ próprio, parceria, outro), no **total da rede**.
   ser só falta de registro: confira com a escola.
 - Os planos **encerrados** aparecem numa linha separada, fora do total, para
   a prestação de contas do ciclo anterior.
+- **Exercício:** escolha o ano no seletor da seção. O previsto entra pelo ano
+  do **prazo** da ação e o executado pelo ano da **data da execução**. Ação
+  sem prazo e executado sem data ficam fora do ano, e a página diz quantos
+  são. O mesmo seletor existe no relatório de cada escola, com os mesmos
+  números.
 
 ## Entendendo os números
 

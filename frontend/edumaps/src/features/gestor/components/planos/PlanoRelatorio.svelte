@@ -6,6 +6,7 @@
   // andamento por objetivo e por meta (fonte e ano de cada indicador oficial;
   // "Sem medição" em texto, nunca 0%), custo previsto por fonte de recurso
   // (#384), ações por situação, evidências e a data de emissão. O único nome possível é o responsável da ação (texto livre).
+  import ExercicioSelect from "./ExercicioSelect.svelte";
   import {
     PLANO_TIPO_LABEL,
     PLANO_SITUACAO_LABEL,
@@ -20,7 +21,8 @@
   } from "../../constants/planos.js";
 
   /** @type {{ relatorio: object }} */
-  let { relatorio } = $props();
+  // onExercicio (opcional, #404): mostra o seletor de exercício dos custos.
+  let { relatorio, onExercicio = null } = $props();
 
   let plano = $derived(relatorio.plano);
   let escola = $derived(relatorio.escola ?? {});
@@ -37,6 +39,8 @@
   const TIPO_EVIDENCIA = { ata: "Ata de reunião", documento: "Documento", nota: "Nota" };
   const fonteRotulo = (f) => (f === "nao_informada" ? "Fonte não informada" : (FONTE_RECURSO_LABEL[f] ?? f));
   let custos = $derived(relatorio.custos ?? { por_fonte: [], total: 0, total_executado: null, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0 });
+  // sem nenhum previsto no recorte, o total é "—", nunca R$ 0 (#154)
+  let temPrevisto = $derived(custos.por_fonte.some((c) => c.total !== null && c.total !== undefined));
 
   const emitidoEm = $derived.by(() => {
     const [d, h] = String(relatorio.emitido_em ?? "").split("T");
@@ -116,7 +120,10 @@
   </section>
 
   <section aria-labelledby="rel-custos" class="space-y-1 print:break-inside-avoid">
-    <h2 id="rel-custos" class="text-base font-semibold">Custo por fonte de recurso</h2>
+    <div class="flex flex-wrap items-end justify-between gap-2">
+      <h2 id="rel-custos" class="text-base font-semibold">Custo por fonte de recurso{custos.exercicio ? ` — exercício ${custos.exercicio}` : ""}</h2>
+      {#if onExercicio}<ExercicioSelect exercicio={custos.exercicio} exercicios={custos.exercicios} onchange={onExercicio} />{/if}
+    </div>
     {#if custos.por_fonte.length}
       <table class="w-full max-w-md border-collapse text-xs">
         <thead>
@@ -139,16 +146,19 @@
           <tr class="font-semibold">
             <td class={TD}>Total</td>
             <td class={`${TD} text-right`}>{custos.por_fonte.reduce((s, c) => s + c.n_acoes, 0)}</td>
-            <td class={`${TD} text-right`}>{fmtMoeda(custos.total)}</td>
+            <td class={`${TD} text-right`}>{temPrevisto ? fmtMoeda(custos.total) : "—"}</td>
             <td class={`${TD} text-right`}>{fmtMoeda(custos.total_executado)}</td>
           </tr>
         </tbody>
       </table>
     {:else}
-      <p class="text-gray-500">Nenhuma ação com custo informado.</p>
+      <p class="text-gray-500">Nenhuma ação com custo informado{custos.exercicio ? " neste exercício" : ""}.</p>
     {/if}
     <p class="text-xs text-gray-500">
       Soma das ações não canceladas com valor informado; vazio não entra como R$ 0.
+      {#if custos.exercicio}{" "}Previsto pelo ano do prazo da ação; executado pelo ano da execução.{/if}
+      {#if custos.n_acoes_sem_prazo}{" "}{custos.n_acoes_sem_prazo} ação(ões) sem prazo, fora do exercício.{/if}
+      {#if custos.n_executado_sem_data}{" "}{custos.n_executado_sem_data} valor(es) executado(s) sem data, fora do exercício.{/if}
       {#if custos.n_acoes_sem_custo}{custos.n_acoes_sem_custo} ação(ões) sem custo previsto.{/if}
       {#if custos.n_acoes_sem_executado}{custos.n_acoes_sem_executado} ação(ões) sem valor executado.{/if}
     </p>

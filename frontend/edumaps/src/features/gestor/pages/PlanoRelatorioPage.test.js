@@ -32,6 +32,18 @@ describe("PlanoRelatorioPage", () => {
     expect(aviso).toHaveClass("print:hidden");
   });
 
+  it("filtra os custos pelo exercício e diz o ano no título (#404)", async () => {
+    await abrir(1);
+    await screen.findByRole("heading", { name: "Custo por fonte de recurso" });
+    const seletor = screen.getByLabelText("Exercício");
+    expect(within(seletor).getAllByRole("option").map((o) => o.textContent)).toEqual(["Todos os anos", "2026"]);
+    await fireEvent.change(seletor, { target: { value: "2026" } });
+    expect(await screen.findByRole("heading", { name: "Custo por fonte de recurso — exercício 2026" })).toBeInTheDocument();
+    expect(screen.getByText(/Previsto pelo ano do prazo da ação; executado pelo ano da execução/)).toBeInTheDocument();
+    await fireEvent.change(screen.getByLabelText("Exercício"), { target: { value: "" } });
+    expect(await screen.findByRole("heading", { name: "Custo por fonte de recurso" })).toBeInTheDocument();
+  });
+
   it("cabeçalho com escola, plano, período e emissão", async () => {
     await abrir();
     expect(await screen.findByRole("heading", { level: 1, name: "Plano de ação 2026" })).toBeInTheDocument();
@@ -85,7 +97,7 @@ describe("PlanoRelatorioPage", () => {
   it("custo previsto × executado por fonte e nas ações; vazio não é R$ 0 (#384, #395)", async () => {
     await abrir();
     await screen.findByRole("heading", { level: 1 });
-    const sec = within(screen.getByRole("heading", { name: "Custo por fonte de recurso" }).parentElement);
+    const sec = within(screen.getByRole("heading", { name: "Custo por fonte de recurso" }).closest("section"));
     const pdde = sec.getByText("PDDE").closest("tr").textContent.replace(/\s+/g, " ");
     expect(pdde).toMatch(/PDDE\s*1\s*R\$\s*1\.500,00\s*R\$\s*900,00/);
     const total = sec.getByText("Total").closest("tr").textContent;
