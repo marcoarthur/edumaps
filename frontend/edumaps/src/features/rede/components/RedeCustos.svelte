@@ -5,22 +5,29 @@
   // plano vigente. Sem valor não é R$ 0: a fonte sem valor mostra "—" e as
   // ações sem valor são contadas à parte. Os planos encerrados ficam numa
   // linha separada, fora do consolidado.
+  // Exercício (#404): previsto pelo ano do prazo, executado pelo da execução.
   import { fmtMoeda, FONTE_RECURSO_LABEL } from "@/features/gestor/constants/planos.js";
+  import ExercicioSelect from "@/features/gestor/components/planos/ExercicioSelect.svelte";
 
-  let { custos } = $props();
+  let { custos, onExercicio = null } = $props();
   let porEscola = $state(false);
 
   const TH = "px-3 py-2 text-left";
   const fonteRotulo = (f) => (f === "nao_informada" ? "Fonte não informada" : (FONTE_RECURSO_LABEL[f] ?? f));
   const nAcoes = (c) => c.por_fonte.reduce((s, f) => s + f.n_acoes, 0);
   const temValor = (c) => c.por_fonte.length > 0;
+  // sem nenhum previsto no recorte, o total previsto é "—", nunca R$ 0 (#154)
+  const temPrevisto = (c) => c.por_fonte.some((f) => f.total !== null && f.total !== undefined);
   const fontes = (c) => c.por_fonte.map((f) => fonteRotulo(f.fonte)).join(", ");
 </script>
 
 <section class="space-y-3" aria-labelledby="rede-custos">
-  <div>
-    <h2 id="rede-custos" class="text-lg font-semibold text-gray-900">Custo por fonte de recurso</h2>
-    <p class="text-sm text-gray-600">Previsto × executado nos planos vigentes das escolas da rede. Ações canceladas ficam fora.</p>
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 id="rede-custos" class="text-lg font-semibold text-gray-900">Custo por fonte de recurso{custos.exercicio ? ` — exercício ${custos.exercicio}` : ""}</h2>
+      <p class="text-sm text-gray-600">Previsto × executado nos planos vigentes das escolas da rede. Ações canceladas ficam fora.</p>
+    </div>
+    {#if onExercicio}<ExercicioSelect exercicio={custos.exercicio} exercicios={custos.exercicios} onchange={onExercicio} />{/if}
   </div>
 
   {#if temValor(custos.consolidado)}
@@ -46,26 +53,29 @@
           <tr class="border-t border-gray-300 font-semibold">
             <td class="px-3 py-2">Total da rede</td>
             <td class="px-3 py-2 text-right">{nAcoes(custos.consolidado)}</td>
-            <td class="px-3 py-2 text-right">{fmtMoeda(custos.consolidado.total)}</td>
+            <td class="px-3 py-2 text-right">{temPrevisto(custos.consolidado) ? fmtMoeda(custos.consolidado.total) : "—"}</td>
             <td class="px-3 py-2 text-right">{fmtMoeda(custos.consolidado.total_executado)}</td>
           </tr>
         </tbody>
       </table>
     </div>
   {:else}
-    <p class="text-sm text-gray-500">Nenhuma ação dos planos vigentes tem custo informado.</p>
+    <p class="text-sm text-gray-500">Nenhuma ação dos planos vigentes tem custo informado{custos.exercicio ? " neste exercício" : ""}.</p>
   {/if}
 
   <p class="text-xs text-gray-600">
     {custos.consolidado.n_escolas_com_custo} de {custos.escolas.length} escola(s) com plano vigente informaram custo.
     {#if custos.consolidado.n_acoes_sem_custo}{" "}{custos.consolidado.n_acoes_sem_custo} ação(ões) sem custo previsto.{/if}
     {#if custos.consolidado.n_acoes_sem_executado}{" "}{custos.consolidado.n_acoes_sem_executado} ação(ões) sem valor executado.{/if}
+    {#if custos.exercicio}{" "}Previsto pelo ano do prazo da ação; executado pelo ano da execução.{/if}
+    {#if custos.consolidado.n_acoes_sem_prazo}{" "}{custos.consolidado.n_acoes_sem_prazo} ação(ões) sem prazo, fora do exercício.{/if}
+    {#if custos.consolidado.n_executado_sem_data}{" "}{custos.consolidado.n_executado_sem_data} valor(es) executado(s) sem data, fora do exercício.{/if}
   </p>
 
   {#if custos.encerrados.n_planos}
     <p class="text-sm text-gray-700" aria-label="Planos encerrados">
       Planos encerrados ({custos.encerrados.n_planos} em {custos.encerrados.n_escolas} escola(s)), fora do total:
-      previsto <strong>{temValor(custos.encerrados) ? fmtMoeda(custos.encerrados.total) : "—"}</strong>,
+      previsto <strong>{temPrevisto(custos.encerrados) ? fmtMoeda(custos.encerrados.total) : "—"}</strong>,
       executado <strong>{fmtMoeda(custos.encerrados.total_executado)}</strong>.
     </p>
   {/if}
@@ -96,7 +106,7 @@
                 <p class="font-medium text-gray-900">{e.nome}</p>
                 <p class="text-xs text-gray-500">{temValor(e.custos) ? fontes(e.custos) : "Nenhuma ação com custo informado"}</p>
               </td>
-              <td class="px-3 py-2 text-right">{temValor(e.custos) ? fmtMoeda(e.custos.total) : "—"}</td>
+              <td class="px-3 py-2 text-right">{temPrevisto(e.custos) ? fmtMoeda(e.custos.total) : "—"}</td>
               <td class="px-3 py-2 text-right">{fmtMoeda(e.custos.total_executado)}</td>
               <td class="px-3 py-2 text-right">{e.custos.n_acoes_sem_custo}</td>
               <td class="px-3 py-2"><a href={`/rede/escolas/${e.cod_inep}/planos/${e.plano_id}/relatorio`} class="text-blue-700 hover:underline text-xs" aria-label={`Custos no relatório de ${e.nome}`}>Relatório</a></td>

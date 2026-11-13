@@ -114,32 +114,43 @@ const objetivoDe = (p, id) => p.objetivos.find((o) => o.id === Number(id));
 const metaDe = (p, id) => p.objetivos.flatMap((o) => o.metas).find((m) => m.id === Number(id));
 const acaoDe = (p, id) => p.objetivos.flatMap((o) => o.acoes).find((a) => a.id === Number(id));
 
-// Custo previsto por fonte (#384): ações não canceladas com custo informado.
-function custosPorFonte(grupos) {
-  // previsto × executado por fonte (#384, #395); vazio não é R$ 0 (null)
+// Custo por fonte (#384, #395), espelho de Planos::_pl_custos: canceladas
+// fora; vazio não é R$ 0 (null). Com exercício (#404): previsto pelo ano do
+// prazo, executado pelo ano da execução; sem prazo e executado sem data à parte.
+export function custosPorFonte(acoes, exercicio = null) {
   const ordem = ["pdde", "fundeb", "proprio", "parceria", "outro", "nao_informada"];
   const soma = {};
-  let semCusto = 0;
-  let semExec = 0;
+  const anos = new Set();
+  let semCusto = 0, semExec = 0, semPrazo = 0, execSemData = 0;
   const tem = (v) => v !== null && v !== undefined;
-  for (const [g, lista] of Object.entries(grupos)) {
-    if (g === "canceladas") continue;
-    for (const a of lista) {
-      const f = a.fonte_recurso ?? "nao_informada";
-      const b = (soma[f] ??= { fonte: f, total: null, n_acoes: 0, executado: null, n_executadas: 0 });
+  const ano = (d) => (d ? Number(String(d).slice(0, 4)) : null);
+  for (const a of acoes) {
+    const f = a.fonte_recurso ?? "nao_informada";
+    const b = (soma[f] ??= { fonte: f, total: null, n_acoes: 0, executado: null, n_executadas: 0 });
+    const [aPrazo, aExec] = [ano(a.prazo), ano(a.executado_em)];
+    if (aPrazo) anos.add(aPrazo);
+    if (aExec) anos.add(aExec);
+    const noEx = !exercicio || aPrazo === exercicio;
+    if (exercicio && !aPrazo) semPrazo += 1;
+    if (noEx) {
       if (tem(a.custo_previsto)) { b.total = (b.total ?? 0) + Number(a.custo_previsto); b.n_acoes += 1; } else semCusto += 1;
-      if (tem(a.custo_executado)) { b.executado = (b.executado ?? 0) + Number(a.custo_executado); b.n_executadas += 1; } else semExec += 1;
+      if (!tem(a.custo_executado)) semExec += 1;
     }
+    if (!tem(a.custo_executado)) continue;
+    if (!exercicio || aExec === exercicio) { b.executado = (b.executado ?? 0) + Number(a.custo_executado); b.n_executadas += 1; }
+    else if (!aExec) execSemData += 1;
   }
   const por_fonte = ordem.filter((f) => soma[f] && (soma[f].n_acoes || soma[f].n_executadas)).map((f) => soma[f]);
   const somar = (k) => por_fonte.reduce((s, c) => (tem(c[k]) ? (s ?? 0) + c[k] : s), null);
   return { por_fonte, total: somar("total") ?? 0, total_executado: somar("executado"),
-           n_acoes_sem_custo: semCusto, n_acoes_sem_executado: semExec };
+           n_acoes_sem_custo: semCusto, n_acoes_sem_executado: semExec,
+           exercicio, exercicios: [...anos].sort((x, y) => x - y),
+           ...(exercicio ? { n_acoes_sem_prazo: semPrazo, n_executado_sem_data: execSemData } : {}) };
 }
 
 // Relatório de acompanhamento montado do estado do mock (#374); a rede (#396)
 // usa o mesmo, com o cargo da conta de rede.
-export function relatorioMock(p, cargo) {
+export function relatorioMock(p, cargo, exercicio = null) {
   const plano = planoOut(p);
   const grupos = { atrasadas: [], em_andamento: [], nao_iniciadas: [], concluidas: [], canceladas: [] };
   for (const o of plano.objetivos) {
@@ -156,7 +167,7 @@ export function relatorioMock(p, cargo) {
     plano,
     escola: { cod_inep: Number(INEP_PLANOS), nome: "Escola Estadual Teste", municipio: "Porto Velho", uf: "RO" },
     acoes_por_situacao: grupos,
-    custos: custosPorFonte(grupos),
+    custos: custosPorFonte(Object.entries(grupos).filter(([g]) => g !== "canceladas").flatMap(([, l]) => l), exercicio),
     emitido_por_cargo: cargo,
     n_evidencias: n,
     emitido_em: `${HOJE_PLANOS}T14:30:00`,
@@ -214,7 +225,8 @@ export const gestorPlanosHandlers = [
     if (params.cod_inep !== INEP_PLANOS) return HttpResponse.json({ error: "Acesso negado" }, { status: 403 });
     const p = achar(params);
     if (!p) return NAO_ACHOU("Plano");
-    return HttpResponse.json(relatorioMock(p, "Diretora"));
+    const ex = Number(new URL(request.url).searchParams.get("exercicio")) || null;
+    return HttpResponse.json(relatorioMock(p, "Diretora", ex));
   }),
 
   http.put(`${BASE}/:id`, async ({ request, params }) => {

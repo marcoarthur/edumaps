@@ -105,6 +105,8 @@ is $r->{custos}, {
   total_executado       => undef,
   n_acoes_sem_custo     => 1,
   n_acoes_sem_executado => 4,
+  exercicio             => undef,
+  exercicios            => [2020],
 }, 'custos por fonte (ordem das fontes; cancelada fora; Visitas sem custo; nada executado)';
 is $r->{emitido_por_cargo}, undef, 'sem cargo cadastrado: nada';
 
@@ -127,7 +129,25 @@ is $r2->{custos}, {
   total_executado       => 1280,
   n_acoes_sem_custo     => 2,
   n_acoes_sem_executado => 3,
+  exercicio             => undef,
+  exercicios            => [ 2020, 2026 ],
 }, 'previsto × executado por fonte; fonte só com executado tem previsto null';
+
+# exercício (#404): previsto pelo ano do prazo, executado pelo da execução;
+# sem prazo e executado sem data ficam à parte
+my $ex = sub ($ano) { $t->get_ok("$base/$plano/relatorio?exercicio=$ano", $auth)->status_is(200)->tx->res->json->{custos} };
+is $ex->(2020), {
+  por_fonte => [ { fonte => 'pdde', total => 1500, n_acoes => 1, executado => undef, n_executadas => 0 } ],
+  total => 1500, total_executado => undef, n_acoes_sem_custo => 0, n_acoes_sem_executado => 0,
+  exercicio => 2020, exercicios => [ 2020, 2026 ], n_acoes_sem_prazo => 4, n_executado_sem_data => 1,
+}, '2020: o previsto da ação com prazo em 2020; o executado de 2026 fica fora';
+is $ex->(2026), {
+  por_fonte => [ { fonte => 'pdde', total => undef, n_acoes => 0, executado => 1200, n_executadas => 1 } ],
+  total => 0, total_executado => 1200, n_acoes_sem_custo => 0, n_acoes_sem_executado => 0,
+  exercicio => 2026, exercicios => [ 2020, 2026 ], n_acoes_sem_prazo => 4, n_executado_sem_data => 1,
+}, '2026: só o executado em 2026; previsto de outro ano fora';
+$t->get_ok("$base/$plano/relatorio?exercicio=26", $auth)->status_is(400)->json_like('/error' => qr/Exercício inválido/);
+$t->get_ok("$base/$plano/relatorio?exercicio=", $auth)->status_is(200)->json_is('/custos/exercicio' => undef);
 is $r2->{emitido_por_cargo}, 'Diretora', 'cargo de quem emitiu';
 unlike Mojo::JSON::encode_json($r2), qr/Gestora Relatório/, 'o nome de quem emitiu não aparece';
 my ($exec_aud) = $dbh->selectrow_array(

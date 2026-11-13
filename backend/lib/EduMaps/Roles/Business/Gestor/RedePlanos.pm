@@ -230,8 +230,10 @@ sub rede_indicadores ($self, $escolas) {
 # mostra (o mais recente), com os MESMOS números do relatório dele (mesma
 # função _pl_custos, canceladas fora, sem valor não é R$ 0). O consolidado
 # soma só esses planos vigentes; os planos encerrados das escolas da rede vêm
-# numa linha à parte. Rascunho não entra. Só leitura.
-sub rede_custos ($self, $escolas) {
+# numa linha à parte. Rascunho não entra. Só leitura. Com exercício (#404),
+# as mesmas regras de _pl_custos; `exercicios` do consolidado lista os anos.
+sub rede_custos ($self, $escolas, $exercicio = undef) {
+  $exercicio = $self->_pl_exercicio($exercicio);
   my %escola = map { $_->{cod_inep} => $_ } @$escolas;
   my @ineps  = map { $_ + 0 } keys %escola;
   my ($vigente) = @ineps ? $self->_rp_vigentes(\@ineps) : ({});
@@ -241,7 +243,7 @@ sub rede_custos ($self, $escolas) {
   if (@ineps) {
     my $acoes = $self->_pl_rows(
       q{SELECT p.id AS plano_id, p.cod_inep, p.situacao AS plano_situacao,
-               a.custo_previsto, a.fonte_recurso, a.custo_executado
+               a.custo_previsto, a.fonte_recurso, a.custo_executado, a.prazo, a.executado_em
           FROM clean.planos_gestao p
           JOIN clean.planos_objetivos o ON o.plano_id = p.id
           JOIN clean.planos_acoes a ON a.objetivo_id = o.id
@@ -270,18 +272,21 @@ sub rede_custos ($self, $escolas) {
       uf           => $e->{uf},
       plano_id     => $p->{id} + 0,
       plano_titulo => $p->{titulo},
-      custos       => EduMaps::Roles::Business::Gestor::Planos::_pl_custos(@{ $acoes_vig{ $p->{id} } // [] }),
+      custos       => EduMaps::Roles::Business::Gestor::Planos::_pl_custos($acoes_vig{ $p->{id} } // [], $exercicio),
     };
   }
   @linhas = sort { $a->{nome} cmp $b->{nome} } @linhas;
 
-  my $consolidado = EduMaps::Roles::Business::Gestor::Planos::_pl_custos(map { @$_ } values %acoes_vig);
+  my $consolidado = EduMaps::Roles::Business::Gestor::Planos::_pl_custos([ map { @$_ } values %acoes_vig ], $exercicio);
   $consolidado->{n_escolas_com_custo} = scalar grep { @{ $_->{custos}{por_fonte} } } @linhas;
-  my $encerrados = EduMaps::Roles::Business::Gestor::Planos::_pl_custos(@acoes_enc);
+  my $encerrados = EduMaps::Roles::Business::Gestor::Planos::_pl_custos(\@acoes_enc, $exercicio);
   $encerrados->{n_planos}  = scalar keys %planos_enc;
   $encerrados->{n_escolas} = scalar keys %escolas_enc;
+  my %anos = map { $_ => 1 } @{ $consolidado->{exercicios} }, @{ $encerrados->{exercicios} };
 
   return {
+    exercicio           => $exercicio,
+    exercicios          => [ sort { $a <=> $b } keys %anos ],
     consolidado         => $consolidado,
     encerrados          => $encerrados,
     escolas             => \@linhas,

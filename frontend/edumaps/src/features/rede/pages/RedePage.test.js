@@ -85,6 +85,23 @@ describe("RedePage (painel da rede)", () => {
     expect(screen.queryByText(/R\$\s*0,00/)).not.toBeInTheDocument();
   });
 
+  it("filtra os custos da rede pelo exercício (#404)", async () => {
+    entrarCom(REDE_TOKEN);
+    render(RedePage);
+    const consolidado = () => within(screen.getByRole("table", { name: "Custo consolidado da rede" }));
+    expect((await screen.findByRole("table", { name: "Custo consolidado da rede" }))).toHaveTextContent("Fundeb");
+    await fireEvent.change(screen.getByLabelText("Exercício"), { target: { value: "2026" } });
+    expect(await screen.findByRole("heading", { name: "Custo por fonte de recurso — exercício 2026" })).toBeInTheDocument();
+    expect(consolidado().queryByText("Fundeb")).not.toBeInTheDocument();
+    expect(screen.getByText(/1 ação\(ões\) sem prazo, fora do exercício/)).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole("button", { name: "Ver por escola" }));
+    const rio = within(within(screen.getByRole("table", { name: "Custo por escola" })).getByText("EMEF Rio Novo").closest("tr"));
+    expect(rio.getAllByText("—").length).toBe(2); // sem previsto nem executado no ano: nunca R$ 0
+    expect(screen.queryByText(/R\$\s*0,00/)).not.toBeInTheDocument();
+    // a tabela das escolas do painel não muda
+    expect(screen.getByText("3 de 3 escola(s)")).toBeInTheDocument();
+  });
+
   it("conta de escola ou admin vê o aviso, sem dado da rede", async () => {
     entrarCom(SESSION_TOKEN);
     render(RedePage);

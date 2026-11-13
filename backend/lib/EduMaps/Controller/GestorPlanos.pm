@@ -157,7 +157,8 @@ sub evidencia_destroy($self) { $self->_filho_destroy('evidencia', 'eid') }
 
 sub relatorio($self) {
   return unless $self->_gestor_inep_ok;
-  $self->_executar(sub ($m) { $m->plano_relatorio($self->param('cod_inep'), $self->param('id'), $self->_gid) });
+  $self->_executar(sub ($m) { $m->plano_relatorio($self->param('cod_inep'), $self->param('id'), $self->_gid,
+    { exercicio => $self->param('exercicio') }) });
 }
 
 sub auditoria($self) {

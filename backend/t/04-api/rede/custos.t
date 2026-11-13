@@ -87,13 +87,14 @@ is $a->{custos}, {
     { fonte => 'fundeb', total => 500.5, n_acoes => 1, executado => undef, n_executadas => 0 },
   ],
   total => 1500.5, total_executado => 400, n_acoes_sem_custo => 1, n_acoes_sem_executado => 2,
+  exercicio => undef, exercicios => [],
 }, 'A: previsto × executado por fonte; cancelada fora; executado sem valor é null';
 
 my $rel = $t->get_ok("/api/rede/escolas/$E{A}/planos/$pa/relatorio", $H)->status_is(200)->tx->res->json;
 is $a->{custos}, $rel->{custos}, 'A: os mesmos números do relatório da escola';
 
 is $b->{custos}, { por_fonte => [], total => 0, total_executado => undef,
-  n_acoes_sem_custo => 1, n_acoes_sem_executado => 1 }, 'B: sem custo informado, nenhuma fonte (não R$ 0 por fonte)';
+  n_acoes_sem_custo => 1, n_acoes_sem_executado => 1, exercicio => undef, exercicios => [] }, 'B: sem custo informado, nenhuma fonte (não R$ 0 por fonte)';
 
 my $k = $r->{consolidado};
 is [ map { [ $_->{fonte}, $_->{total}, $_->{executado} ] } @{ $k->{por_fonte} } ],
@@ -103,5 +104,22 @@ is [ @{$k}{qw(total total_executado n_acoes_sem_custo n_acoes_sem_executado n_es
 
 my $enc = $r->{encerrados};
 is [ @{$enc}{qw(total total_executado n_planos n_escolas)} ], [ 200, 200, 1, 1 ], 'encerrados à parte';
+
+# exercício (#404): previsto pelo ano do prazo, executado pelo da execução
+$dbh->do(q{UPDATE clean.planos_acoes SET prazo = '2026-05-01', executado_em = '2026-06-01'
+            WHERE objetivo_id = ? AND fonte_recurso = 'pdde' AND situacao <> 'cancelada'}, {}, $oa);
+$dbh->do(q{UPDATE clean.planos_acoes SET prazo = '2025-03-01' WHERE objetivo_id = ? AND fonte_recurso = 'fundeb'}, {}, $oa);
+my $r26 = $t->get_ok('/api/rede/custos?exercicio=2026', $H)->status_is(200)->tx->res->json;
+is [ @{$r26}{qw(exercicio exercicios)} ], [ 2026, [ 2025, 2026 ] ], 'exercício pedido e anos disponíveis';
+my $k26 = $r26->{consolidado};
+is [ map { [ $_->{fonte}, $_->{total}, $_->{executado} ] } @{ $k26->{por_fonte} } ], [ [ 'pdde', 1000, 400 ] ],
+   '2026: o Fundeb com prazo em 2025 fica fora';
+is [ @{$k26}{qw(total total_executado n_acoes_sem_custo n_acoes_sem_prazo n_executado_sem_data)} ],
+   [ 1000, 400, 0, 2, 0 ], '2026: ações sem prazo à parte';
+is [ @{ $r26->{encerrados} }{qw(n_acoes_sem_prazo n_executado_sem_data total_executado)} ], [ 1, 1, undef ],
+   'encerrado: executado sem data não entra no exercício';
+my $rel26 = $t->get_ok("/api/rede/escolas/$E{A}/planos/$pa/relatorio?exercicio=2026", $H)->status_is(200)->tx->res->json;
+is $r26->{escolas}[0]{custos}, $rel26->{custos}, '2026: os mesmos números do relatório da escola';
+$t->get_ok('/api/rede/custos?exercicio=dois', $H)->status_is(400);
 
 done_testing;

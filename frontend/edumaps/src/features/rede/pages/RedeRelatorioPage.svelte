@@ -17,13 +17,14 @@
   let precisaLogin = $state(false);
   let error = $state(null);
   let relatorio = $state(null);
+  let exercicio = $state(null);
 
   async function carregar() {
     carregando = true;
     error = null;
     precisaLogin = false;
     try {
-      relatorio = await getRedeRelatorio(inep, planoId);
+      relatorio = await getRedeRelatorio(inep, planoId, exercicio);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) precisaLogin = true;
       else error = err instanceof ApiError ? err.message : "Não foi possível abrir o relatório.";
@@ -36,6 +37,20 @@
     setSessaoToken(sessao.token);
     restaurarSessao();
     await carregar();
+  }
+
+  async function recarregar() {
+    relatorio = await getRedeRelatorio(inep, planoId, exercicio);
+  }
+
+  // Troca o exercício dos custos (#404) sem esconder o relatório.
+  async function trocarExercicio(ano) {
+    exercicio = ano;
+    try {
+      await recarregar();
+    } catch {
+      error = "Não foi possível filtrar os custos pelo exercício.";
+    }
   }
 
   onMount(() => {
@@ -61,7 +76,7 @@
   {:else if relatorio}
     <p class="text-xs text-gray-500 print:hidden">Visão da rede: só leitura. O plano é editado pela escola.</p>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-6 print:border-0 print:shadow-none print:p-0">
-      <PlanoRelatorio {relatorio} />
+      <PlanoRelatorio {relatorio} onExercicio={trocarExercicio} />
     </div>
   {/if}
 </div>

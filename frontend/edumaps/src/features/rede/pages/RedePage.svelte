@@ -24,6 +24,16 @@
   let painel = $state(null);
   let custos = $state(null);
   let erroCustos = $state(false);
+
+  // Exercício dos custos (#404): recarrega só a seção de custos.
+  async function trocarExercicio(ano) {
+    try {
+      custos = await getRedeCustos(ano);
+      erroCustos = false;
+    } catch {
+      erroCustos = true;
+    }
+  }
   let filtro = $state("todas");
   let ordem = $state("nome");
 
@@ -233,7 +243,7 @@
       </section>
 
       {#if custos}
-        <RedeCustos {custos} />
+        <RedeCustos {custos} onExercicio={trocarExercicio} />
       {:else if erroCustos}
         <p class="text-sm text-red-700">Não foi possível carregar os custos da rede.</p>
       {/if}

@@ -50,7 +50,10 @@ só lê: não altera nada do que a escola cadastra.
   Fundeb, recurso próprio, parceria, outro), consolidado na rede e por escola,
   com os mesmos números do relatório de cada escola. Ação cancelada fica fora;
   ação sem valor não vira R$ 0, é contada à parte. Só os planos vigentes
-  entram no total; os encerrados aparecem numa linha separada.
+  entram no total; os encerrados aparecem numa linha separada. O custo pode
+  ser filtrado por **exercício** (ano): o previsto entra pelo ano do prazo da
+  ação e o executado pelo ano da execução; ação sem prazo e executado sem data
+  ficam à parte, contados.
 
 ## Valor
 

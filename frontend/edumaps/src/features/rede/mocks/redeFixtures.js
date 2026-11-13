@@ -90,6 +90,8 @@ export const REDE_INDICADORES = {
 // relatório do plano 1 dos mocks de planos; Rio Novo sem valor executado
 // (null, nunca R$ 0); um plano encerrado à parte.
 export const REDE_CUSTOS = {
+  exercicio: null,
+  exercicios: [2025, 2026],
   n_escolas: 3,
   n_com_plano_vigente: 2,
   consolidado: {
@@ -112,5 +114,34 @@ export const REDE_CUSTOS = {
       plano_titulo: "Plano de gestão 2026",
       custos: { por_fonte: [{ fonte: "fundeb", total: 3200, n_acoes: 2, executado: null, n_executadas: 0 }],
                 total: 3200, total_executado: null, n_acoes_sem_custo: 1, n_acoes_sem_executado: 2 } },
+  ],
+};
+
+// Custos de 2026 (#404): o Fundeb de Rio Novo tem prazo em 2025 e sai; uma
+// ação sem prazo fica à parte. Só o executado de 2026 de Pioneiros entra.
+export const REDE_CUSTOS_2026 = {
+  exercicio: 2026,
+  exercicios: [2025, 2026],
+  n_escolas: 3,
+  n_com_plano_vigente: 2,
+  consolidado: {
+    por_fonte: [{ fonte: "pdde", total: 1500, n_acoes: 1, executado: 900, n_executadas: 1 }],
+    total: 1500, total_executado: 900, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0,
+    n_acoes_sem_prazo: 1, n_executado_sem_data: 0, n_escolas_com_custo: 1, exercicio: 2026, exercicios: [2026],
+  },
+  encerrados: {
+    por_fonte: [], total: 0, total_executado: null, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0,
+    n_acoes_sem_prazo: 0, n_executado_sem_data: 0, n_planos: 1, n_escolas: 1, exercicio: 2026, exercicios: [2025],
+  },
+  escolas: [
+    { cod_inep: 11000040, nome: "EMEF Pioneiros", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 1,
+      plano_titulo: "Plano de ação 2026",
+      custos: { por_fonte: [{ fonte: "pdde", total: 1500, n_acoes: 1, executado: 900, n_executadas: 1 }],
+                total: 1500, total_executado: 900, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0,
+                n_acoes_sem_prazo: 0, n_executado_sem_data: 0, exercicio: 2026, exercicios: [2026] } },
+    { cod_inep: 11000066, nome: "EMEF Rio Novo", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 7,
+      plano_titulo: "Plano de gestão 2026",
+      custos: { por_fonte: [], total: 0, total_executado: null, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0,
+                n_acoes_sem_prazo: 1, n_executado_sem_data: 0, exercicio: 2026, exercicios: [2025] } },
   ],
 };
