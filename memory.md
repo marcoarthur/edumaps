@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-13 (be) — embedding diário e sem 0 (PR #414, #413)
+
+- Branch `fix/school-embedding-refresh` (226209f), PR #414 aberto após
+  validação visual. `refresh_school_embeddings` diária às 05:00 BRT
+  (autorreagendável, lock, manual); insere/atualiza só o que mudou/remove;
+  escola com nota nula fica fora (#154) e o painel devolve
+  `similar_schools_motivo: "sem_dado"`. Sem change de banco (backfill
+  deployado não editado).
+- Local: md5 f70a603ea804 (backend/minion); rodada manual 180.540 escolas
+  em 0,86 s, nada alterado. Nenhuma escola ativa local sem nota: o caso
+  "sem_dado" só é coberto por teste.
+- LXC (16/11): + `deploy_backend_dev`/`deploy_minion_dev` para a #413.
+
 ## Sessão 2026-11-13 (bd) — reavaliação da #138 (similaridade)
 
 - #138 reavaliada: pré-requisitos cumpridos e o motivo do rebaixamento caiu
