@@ -125,6 +125,44 @@ ciclo no nome da tabela. Baixo risco LGPD desde que só se use o agregado públi
 
 ---
 
+### INEP — Taxas de rendimento e distorção idade-série por escola (#376)
+
+| Campo | Valor |
+|---|---|
+| **URL** | `https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/<ano>/tx_rend_escolas_<ano>.zip` e `…/<ano>/TDI_<ano>_ESCOLAS.zip` |
+| **Mantenedor** | INEP |
+| **Licença** | ❌ não verificada (a mesma pendência do Censo e do IDEB; e-SIC INEP não protocolado). Uso institucional interno. |
+| **Formato** | ZIP com `.xlsx` e `.ods` (mesmo conteúdo) e um MD5. 9 linhas de título, a 10ª com os códigos das colunas (`NU_ANO_CENSO`, `CO_ENTIDADE`, `1_CAT_FUN…` / `FUN_CAT_0…`), rodapé "Fonte: …". |
+| **Granularidade** | **escola** × etapa e série; taxas em %, uma casa; `--` = sem dado |
+| **Cobertura temporal** | ✅ 2019 e 2021–2025 encontrados por HEAD (2026-11-13) |
+| **LGPD** | sem dado pessoal: taxas agregadas por escola |
+
+**Verificação (2026-11-13):**
+
+- As páginas `gov.br/inep/.../taxas-de-rendimento-escolar` e
+  `.../taxas-de-distorcao-idade-serie` não trazem os links no HTML. As URLs
+  foram achadas por HEAD.
+- Tamanhos: rendimento ~67–72 MB; distorção ~29–35 MB.
+- 2025:
+  - 126.684 escolas no rendimento e 126.605 na distorção, uma linha por
+    escola, sem duplicata;
+  - o MD5 publicado bate com o arquivo.
+- **TLS:** o servidor manda só o certificado folha. O intermediário (RNP
+  ICPEdu GR46 OV TLS CA 2025, da GlobalSign Root R46) foi obtido pela AIA e
+  está versionado em `backend/lib/EduMaps/Ingestion/certs/`. A verificação
+  não é desligada.
+
+**Ingestão:** job `INEPIndicadores`.
+
+- **O que carrega:** as etapas agregadas (fundamental total, anos iniciais,
+  anos finais, ensino médio) em `clean.inep_rendimento_escola` e
+  `clean.inep_distorcao_escola`.
+- **No catálogo das metas:** 12 códigos.
+- **Regra de ausência:** `--` vira NULL, e a etapa sem nenhum valor não vira
+  linha (#154).
+
+---
+
 ### PNUD / Ipea / FJP — Atlas do Desenvolvimento Humano (IDHM)
 
 | Campo | Valor |

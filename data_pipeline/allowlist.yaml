@@ -165,6 +165,18 @@ sources:
         method: GET
         description: "Microdados IDEB/ENEM — aguardando e-SIC para licença"
         license: "Não verificada (e-SIC protocolado ______)"
+      # #376, medido em 2026-11-13: indicadores educacionais por escola
+      # (agregados, sem dado pessoal), 2019-2025, um zip por ano com .xlsx e
+      # .ods. Cadeia TLS incompleta no servidor: o job completa com o
+      # intermediário RNP ICPEdu GR46 (EduMaps/Ingestion/certs/).
+      - path: "/informacoes_estatisticas/indicadores_educacionais/*/tx_rend_escolas_*.zip"
+        method: GET
+        description: "Taxas de rendimento (aprovação, reprovação, abandono) por escola — job INEPIndicadores"
+        license: "Não verificada (e-SIC INEP pendente; uso institucional interno, como o Censo e o IDEB)"
+      - path: "/informacoes_estatisticas/indicadores_educacionais/*/TDI_*_ESCOLAS.zip"
+        method: GET
+        description: "Taxa de distorção idade-série por escola — job INEPIndicadores"
+        license: "Não verificada (e-SIC INEP pendente; uso institucional interno, como o Censo e o IDEB)"
 
   - id: mec_nicbr
     name: "MEC/NIC.br - Medidor Educação Conectada"
