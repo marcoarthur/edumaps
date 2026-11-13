@@ -33,15 +33,37 @@
 Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p2--secretaria-municipal-secretário-de-educação): adotaria com ressalvas (aguarda #375), **mantido**.
+- [2026-11-13 — visão da rede](ciclos/2026-11-13-visao-da-rede.md#p2--secretaria-municipal-secretário-de-educação): adotaria com ressalvas (aguarda #375) → **adotaria, em piloto numa rede**.
 
 ## Pendências
 
-- Avaliar a visão da rede quando a #375 existir: consolidação dos planos das
-  escolas, metas oficiais comparáveis e custo por fonte de recurso.
-- P2-PG-05 entregue no PR #391 (opção b). P2-PG-06 (previsto sem executado)
-  é critério da #375.
+- P2-RD-01 (custo por exercício), P2-RD-02 (documento consolidado da rede),
+  P2-RD-03 (valores oficiais sem a escola abrir o plano): aguardam aprovação
+  para virar issue.
+- P2-RD-04 (vínculo por diretoria regional): só com uma rede estadual real.
+- Reavaliar com uma secretaria real num piloto.
 
 ## Entradas
+
+### 2026-11-13 — Visão da rede (#375, PRs #399 a #403)
+
+**Material:** ficha, ajuda da rede, spec e as telas com os dados de
+demonstração (painel, metas comparáveis, custos, relatório pela rede).
+Consolidação em
+[`avaliacoes/2026-11-13-visao-da-rede.md`](avaliacoes/2026-11-13-visao-da-rede.md).
+
+**O que mudou para ele:** P2-PG-01, -03, -04 e -06 resolvidas. Painel com
+todas as escolas da rede; metas oficiais lado a lado; cargo do emissor no
+relatório; previsto × executado por fonte, na rede e por escola, com os
+números do relatório de cada escola.
+
+**Barreiras novas:** P2-RD-01 (custo sem recorte por exercício, atrapalha),
+P2-RD-02 (sem documento consolidado da rede, atrapalha), P2-RD-03 (valor
+oficial só entra quando a escola abre o plano, incomoda), P2-RD-04 (rede
+estadual por regional vira um vínculo por município, incomoda).
+
+**Veredito:** **adotaria, em piloto numa rede**. Usa com a equipe técnica;
+ainda não leva ao conselho municipal.
 
 ### 2026-11-12 (reavaliação) — Planos de gestão, depois dos PRs #386 a #389
 

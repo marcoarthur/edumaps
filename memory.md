@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-12 (bb) — visão da rede: papel de rede (PR #399, #394)
+## Sessão 2026-11-12/13 (bb) — visão da rede (PRs #399–#403, #394–#398)
 
 - Spec `docs/specs/2026-11-12-visao-da-rede.md` (#375): sprint #394–#398
   (papel de rede; custo executado + cargo do emissor; painel da rede;
@@ -41,8 +41,16 @@
   (metas oficiais do vigente por indicador; andamento médio das medidas;
   base ajustada contada; manuais à parte) e /rede/indicadores; na escola,
   `sugerirIndicador` sugere o indicador para meta manual parecida.
-- Próximo: #398 (custo por fonte na rede); depois nota técnica +
-  fechamento de ciclo por público do sprint da rede.
+- **PR #403 mergeado** (`9f023eb`, fecha #398): `GET /api/rede/custos`;
+  soma por fonte extraída para `Planos::_pl_custos` (relatório e rede usam
+  a mesma; `custos.t` compara escola × relatório); por escola o vigente do
+  painel, consolidado só vigentes, encerrados à parte. Seção RedeCustos no
+  painel. Ficha da visão da rede agora 🟢.
+- **Sprint da rede fechado (#375):** nota técnica 193; avaliação P1/P2
+  (`avaliacoes/2026-11-13-visao-da-rede.md`) e fechamento por público
+  (`ciclos/2026-11-13-visao-da-rede.md`). P2: adotaria em piloto. Achados
+  P2-RD-01..03 e P1-RD-01 **aguardam aprovação** para virar issue;
+  P2-RD-04 só com rede estadual real.
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 

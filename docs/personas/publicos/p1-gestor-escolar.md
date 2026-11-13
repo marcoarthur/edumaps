@@ -34,15 +34,32 @@
 Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria com ressalvas → **adotaria**.
+- [2026-11-13 — visão da rede](ciclos/2026-11-13-visao-da-rede.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria → **adotaria** (mantido).
 
 ## Pendências
 
 - Conferir com 2 ou 3 diretoras reais o veredito da reavaliação (adotaria).
 - P1-PG-06 e -07 corrigidos no PR #390.
+- P1-RD-01 (aviso na tela de que a secretaria lê o plano): aguarda aprovação.
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
 
 ## Entradas
+
+### 2026-11-13 — Visão da rede (#375, PRs #399 a #403)
+
+**Material:** ficha, ajuda do gestor e da rede, spec e as telas com os dados
+de demonstração. Consolidação em
+[`avaliacoes/2026-11-13-visao-da-rede.md`](avaliacoes/2026-11-13-visao-da-rede.md).
+
+**O que mudou para ela:** custo executado e data na ação, previsto ×
+executado no relatório, cargo do emissor, sugestão de indicador oficial. A
+secretaria da rede lê o plano e o relatório.
+
+**Barreira nova:** P1-RD-01 (incomoda): a tela do plano não avisa que a
+secretaria o lê; só a ajuda diz.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-12 (reavaliação) — Planos de gestão, depois dos PRs #386 a #389
 

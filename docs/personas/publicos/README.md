@@ -60,6 +60,7 @@ de gestão (§6) recomenda mostrar a funcionalidade a 2 ou 3 gestores reais.
 | Funcionalidade | P1 | P2 | P3 | P4 | P5 | P6 | Avaliação |
 |---|---|---|---|---|---|---|---|
 | Planos de gestão acompanháveis (épico #368) | ✅ | ✅ parcial | — | — | — | — | [2026-11-12](avaliacoes/2026-11-12-planos-de-gestao.md), [reavaliação](avaliacoes/2026-11-12-planos-de-gestao-reavaliacao.md) |
+| Visão da rede (#375) | ✅ parcial | ✅ | — | — | — | — | [2026-11-13](avaliacoes/2026-11-13-visao-da-rede.md) |
 
 Motivos de "não se aplica" para os planos de gestão:
 
