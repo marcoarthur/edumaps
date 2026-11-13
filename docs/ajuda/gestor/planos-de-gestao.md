@@ -34,6 +34,11 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
      meta sozinha.
    - **Meta manual** (ex.: "reduzir as faltas para 12%"): você registra as
      medições em **+ Registrar medição**.
+   - Se a descrição de uma meta manual lembra um indicador oficial (por
+     exemplo, "aumentar as matrículas"), a tela **sugere** o indicador. Com
+     ele, o valor vem da fonte e a secretaria compara a sua meta com a das
+     outras escolas da rede. **Usar este indicador** liga a meta;
+     **Manter meta manual** segue como estava.
 3. **Ponha em vigor:** **Colocar em vigor**. Daqui para a frente, o plano
    aparece nos alertas de prazo.
 4. **Acompanhe:** mude a situação de cada ação (não iniciada, em andamento,

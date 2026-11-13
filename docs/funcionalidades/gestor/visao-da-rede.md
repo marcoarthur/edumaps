@@ -42,9 +42,14 @@ só lê: não altera nada do que a escola cadastra.
   escola imprime, aberto pela rede só para leitura, com o cargo de quem o
   emitiu.
 
+- **Metas comparáveis:** as metas que seguem o mesmo indicador oficial
+  aparecem juntas, com quantas escolas têm a meta, quantas mediram, o
+  andamento médio e a lista das escolas (base ajustada pela escola marcada).
+  Metas manuais ficam à parte. Na escola, a tela sugere o indicador oficial
+  quando a descrição de uma meta manual lembra um deles.
+
 ## Ainda não disponível
 
-- Metas comparáveis por indicador oficial (#397).
 - Custo previsto e executado por fonte de recurso na rede (#398).
 
 ## Valor

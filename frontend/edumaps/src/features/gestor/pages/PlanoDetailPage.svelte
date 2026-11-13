@@ -38,6 +38,7 @@
     META_ESTADO_LABEL,
     PLANO_LIMITS as L,
     pct,
+    sugerirIndicador,
     fmtData,
     fmtNum,
     fmtComUnidade,
@@ -203,6 +204,20 @@
     metaForm = { id: m.id, objetivo_id: m.objetivo_id, descricao: m.descricao, indicador_codigo: m.indicador_codigo ?? "",
                  sentido: m.sentido, unidade: txt(m.unidade), linha_base: txt(m.linha_base), alvo: txt(m.alvo),
                  prazo: m.prazo ?? "", linha_base_oficial: txt(m.linha_base_oficial) };
+  }
+
+  // Sugestão de indicador oficial para meta manual nova (#397): só sugere, a
+  // escola pode manter a meta manual ("Manter meta manual" esconde o aviso).
+  let sugestao = $derived(
+    metaForm && !metaForm.id && !metaForm.indicador_codigo && !metaForm.sugestaoDispensada
+      && metaForm.descricao.trim().length >= 4
+      ? sugerirIndicador(metaForm.descricao, indicadores)
+      : null,
+  );
+
+  function usarSugestao() {
+    metaForm.indicador_codigo = sugestao.codigo;
+    escolherIndicador();
   }
 
   function escolherIndicador() {
@@ -473,6 +488,18 @@
     {/if}
     <label class="block text-xs text-gray-600"><span class="block">Meta *</span>
       <input bind:value={metaForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reduzir as faltas para 12%" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+    {#if sugestao}
+      <div class="rounded-md border border-indigo-200 bg-indigo-50 p-2 text-xs text-indigo-900 space-y-1" role="status" aria-label="Sugestão de indicador oficial">
+        <p>
+          Esta meta parece com o indicador oficial <strong>{sugestao.rotulo}</strong>. Com o indicador, o valor vem
+          da fonte e a secretaria consegue comparar com as outras escolas da rede.
+        </p>
+        <div class="flex gap-2">
+          <button type="button" onclick={usarSugestao} class="px-2 py-0.5 rounded bg-indigo-600 text-white hover:bg-indigo-700">Usar este indicador</button>
+          <button type="button" onclick={() => (metaForm.sugestaoDispensada = true)} class="px-2 py-0.5 rounded bg-white border border-indigo-200 hover:bg-indigo-100">Manter meta manual</button>
+        </div>
+      </div>
+    {/if}
     <div class="grid gap-2 sm:grid-cols-4">
       <label class="text-xs text-gray-600"><span class="block">Sentido</span>
         <select bind:value={metaForm.sentido} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm bg-white">

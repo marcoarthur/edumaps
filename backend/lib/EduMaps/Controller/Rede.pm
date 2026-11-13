@@ -12,6 +12,7 @@ use Scalar::Util qw(blessed);
 #   GET /api/rede/escolas            escolas em atividade das redes da conta
 #   GET /api/rede/escolas/:cod_inep  a escola, se for da rede (403 se não)
 #   GET /api/rede/painel             planos das escolas da rede e totais (#396)
+#   GET /api/rede/indicadores        metas comparáveis por indicador oficial (#397)
 #   GET /api/rede/escolas/:cod_inep/planos                 planos não arquivados
 #   GET /api/rede/escolas/:cod_inep/planos/:id/relatorio   relatório (só leitura)
 
@@ -38,6 +39,11 @@ sub escola($self) {
 sub painel($self) {
   my $escolas = $self->instantiate_model(model => 'Pesquisa')->rede_escolas($self->stash('gestor')->{id});
   $self->render(json => $self->model('Gestor')->rede_painel($escolas));
+}
+
+sub indicadores($self) {
+  my $escolas = $self->instantiate_model(model => 'Pesquisa')->rede_escolas($self->stash('gestor')->{id});
+  $self->render(json => $self->model('Gestor')->rede_indicadores($escolas));
 }
 
 sub escola_planos($self) {

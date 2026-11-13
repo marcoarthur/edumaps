@@ -85,3 +85,43 @@ export function fmtNum(v) {
 }
 
 export const PLANO_LIMITS = { TITULO_MAX: 200, OBJETIVO_MAX: 300, DESCRICAO_MAX: 500, RESPONSAVEL_MAX: 120 };
+
+// ---------------------------------------------------------------------------
+// sugestão de indicador oficial (#397, P2-PG-03)
+// ---------------------------------------------------------------------------
+
+// Palavras que não distinguem um indicador de outro (sem acento, minúsculas).
+const PALAVRAS_GENERICAS = new Set([
+  "tem", "para", "dos", "das", "com", "sala", "algum", "alguma", "recurso", "anos", "total",
+  "educacao", "basica", "rede", "publica", "raio", "escola", "meta", "aumentar", "reduzir",
+  "manter", "melhorar", "subir", "ate", "nos", "nas", "pelo", "pela", "uma", "mais",
+]);
+
+const normalizar = (t) =>
+  String(t ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const palavras = (t) =>
+  new Set(normalizar(t).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !PALAVRAS_GENERICAS.has(w)));
+
+/**
+ * Indicador do catálogo que a descrição de uma meta manual lembra, ou null.
+ * Conta as palavras distintivas em comum com o rótulo do indicador; vence quem
+ * tem mais (empate: a ordem do catálogo). Só sugere: a escola pode manter a
+ * meta manual.
+ * @param {string} descricao
+ * @param {Array<{codigo: string, rotulo: string}>} indicadores
+ */
+export function sugerirIndicador(descricao, indicadores) {
+  const alvo = palavras(descricao);
+  if (!alvo.size) return null;
+  let melhor = null;
+  let melhorScore = 0;
+  for (const ind of indicadores ?? []) {
+    let score = 0;
+    for (const w of palavras(ind.rotulo)) if (alvo.has(w)) score += 1;
+    if (score > melhorScore) {
+      melhor = ind;
+      melhorScore = score;
+    }
+  }
+  return melhor;
+}
