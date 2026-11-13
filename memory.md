@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-13 (bc) — INEP: rendimento e distorção (PR #412 rascunho, #376)
+
+- **Modo automático** (o developer ausente por 4 h, decisões delegadas,
+  avisos pelo Telegram). PR #412 aberto como **rascunho**: aguarda a
+  validação do developer; merge só com permissão.
+- Fonte medida: `download.inep.gov.br/informacoes_estatisticas/
+  indicadores_educacionais/<ano>/tx_rend_escolas_<ano>.zip` e
+  `TDI_<ano>_ESCOLAS.zip` (2019, 2021–2025). Cadeia TLS incompleta: o
+  intermediário RNP ICPEdu GR46 está versionado em
+  `backend/lib/EduMaps/Ingestion/certs/` (válido até 2030-11-19).
+- Decisões: licença não verificada, mas segue o precedente do Censo/IDEB (uso
+  interno); grão escola × ano × etapa (fun/ai/af/em); 12 códigos no grupo
+  `fluxo`; anos padrão 2023–2025; "taxa" é palavra genérica na sugestão.
+- Change `inep_rendimento_distorcao` deployada no banco local; carga real
+  2023–2025 feita no minion local (925.171 + 933.132 linhas). GDAL 3.6 do
+  minion não lê .xlsx por /vsizip: o job extrai a planilha.
+- A escola da conta e2e só tem educação infantil: os indicadores de fluxo
+  aparecem "sem dado" (correto). Para validar na tela, usar escola com
+  fundamental.
+- LXC (segunda, 2026-11-16): + change `inep_rendimento_distorcao` e rodar o
+  job `INEPIndicadores` depois do deploy.
+
 ## Sessão 2026-11-12/13 (bb) — visão da rede (PRs #399–#403, #394–#398)
 
 - Spec `docs/specs/2026-11-12-visao-da-rede.md` (#375): sprint #394–#398
