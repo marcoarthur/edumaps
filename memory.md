@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-13 (bd) — reavaliação da #138 (similaridade)
+
+- #138 reavaliada: pré-requisitos cumpridos e o motivo do rebaixamento caiu
+  (B, C-isócrona, D-distância e F já variam por escola). A parte `pgvector`
+  já existe (`analytics.school_embedding`, bloco A, painel da escola).
+  Reescopo: entorno parecido pelos componentes do IVET, Gower recomendado
+  (#154). Spec `docs/specs/2026-11-13-similaridade-territorial.md` (v0.1,
+  decisões D1–D7 com o developer); comentário na issue.
+- Ordem: LXC (16/11) → #295 → medição dos componentes no LXC → issues.
+- Achado à parte (issue pequena, não aberta): `refresh_school_embeddings`
+  nunca é enfileirado; embedding com `COALESCE(…, 0)`.
+
 ## Sessão 2026-11-13 (bc) — INEP: rendimento e distorção (PR #412 mergeado, #376)
 
 - **Modo automático** (o developer ausente por 4 h, decisões delegadas,
