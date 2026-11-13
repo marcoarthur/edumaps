@@ -61,7 +61,13 @@
 - **PR #410 mergeado** (`b55df4f`, fecha #405, P2-RD-02): /rede/documento,
   folha A4 com resumo, escolas, custos (com exercício) e metas comparáveis;
   só frontend, mesmos endpoints do painel; emissão com hora do navegador
-  (Brasília) e cargo, sem nome. Aberta: #406 (sincronização oficial em lote).
+  (Brasília) e cargo, sem nome.
+- **PR #411 mergeado** (`5a0fbb6`, fecha #406, P2-RD-03): task Minion diária
+  `planos_oficiais` (06:00 BRT) grava em lote as medições oficiais dos
+  planos vigentes (`planos_sincronizar_oficiais`, mesma consulta
+  idempotente). **LXC: o próximo deploy precisa do `deploy_minion_dev`.**
+  Achados da avaliação da rede: todos entregues, exceto P2-RD-04 (regional,
+  só com rede estadual real).
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 

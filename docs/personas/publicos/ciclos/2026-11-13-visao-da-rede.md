@@ -79,7 +79,7 @@ resolvidas.
 - um **documento consolidado** da rede para o conselho municipal (P2-RD-02,
   #405): entregue no PR #410, em `/rede/documento`;
 - valores oficiais que se atualizam **sem a escola abrir o plano**
-  (P2-RD-03, #406);
+  (P2-RD-03, #406): entregue no PR #411, com uma tarefa diária;
 - vínculo por **diretoria regional**, para a rede estadual (P2-RD-04, só com
   uma rede estadual real).
 

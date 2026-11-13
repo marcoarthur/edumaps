@@ -1,7 +1,7 @@
-# Nota técnica 194: achados da avaliação da rede (#407, #404, #405)
+# Nota técnica 194: achados da avaliação da rede (#407, #404, #405, #406)
 
-PRs #408 a #410 (2026-11-13). Fecham a #407 (P1-RD-01), a #404 (P2-RD-01) e
-a #405 (P2-RD-02),
+PRs #408 a #411 (2026-11-13). Fecham a #407 (P1-RD-01), a #404 (P2-RD-01),
+a #405 (P2-RD-02) e a #406 (P2-RD-03),
 abertas pela avaliação das personas da visão da rede. Continua a nota 193.
 
 ## #407: aviso de que a secretaria vê o plano (PR #408)
@@ -69,7 +69,26 @@ abertas pela avaliação das personas da visão da rede. Continua a nota 193.
   - **quem emitiu:** só o cargo da conta de rede, sem o nome nem o e-mail
     (teste).
 
+## #406: medições oficiais em lote (PR #411)
+
+- **Task Minion `planos_oficiais`:**
+  - diária, às 06:00 de Brasília, antes dos alertas das 07:00;
+  - autorreagendável, com lock e modo manual;
+  - no mesmo padrão da `planos_alertas`.
+- **O que ela grava:** `planos_sincronizar_oficiais` usa o mesmo
+  `INSERT … ON CONFLICT DO NOTHING` da sincronização por plano, numa consulta
+  só, para todos os planos vigentes não arquivados.
+  - Plano encerrado fica congelado e rascunho não entra.
+  - Rodar de novo não duplica.
+- **Por que lote e não sincronizar na leitura da rede:** a rede é só leitura
+  (decisão da spec). Quem grava é o job, e a medição fica com a origem
+  `oficial`. A sincronização ao abrir o plano continua.
+- **Textos:** os rodapés do painel, das metas comparáveis e do documento da
+  rede deixaram de dizer "quando a escola abre o plano".
+
 ## Pendente
 
-- #406: sincronização das medições oficiais em lote.
-- Deploy LXC: o mesmo da nota 193, sem change nova de banco nestes dois PRs.
+- P2-RD-04 (vínculo por diretoria regional): só com uma rede estadual real.
+- **Deploy LXC:** o mesmo da nota 193, sem change nova de banco nestes PRs. O
+  `deploy_minion_dev` é obrigatório, para a task `planos_oficiais` entrar no
+  worker.
