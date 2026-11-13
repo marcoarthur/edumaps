@@ -93,8 +93,8 @@ secretaria: é bom para o plano, mas é mais um campo a manter.
 
 | Achado | Proposta | Situação |
 |---|---|---|
-| P2-RD-01 | filtro por exercício (ano da execução / do prazo) na seção de custos | aguarda aprovação do developer para virar issue |
-| P2-RD-02 | "Imprimir / salvar PDF" do painel e dos custos da rede, no padrão do relatório da escola | aguarda aprovação |
-| P2-RD-03 | sincronizar as medições oficiais em lote (job), não só ao abrir o plano | aguarda aprovação |
-| P1-RD-01 | uma linha no topo do plano: "a secretaria da sua rede vê este plano, só para leitura" | aguarda aprovação (pequena, cabe numa correção) |
+| P2-RD-01 | filtro por exercício (ano da execução / do prazo) na seção de custos | #404 |
+| P2-RD-02 | "Imprimir / salvar PDF" do painel e dos custos da rede, no padrão do relatório da escola | #405 |
+| P2-RD-03 | sincronizar as medições oficiais em lote (job), não só ao abrir o plano | #406 |
+| P1-RD-01 | uma linha no topo do plano: "a secretaria da sua rede vê este plano, só para leitura" | #407 |
 | P2-RD-04 | vínculo por diretoria regional (change nova, já prevista na spec como risco) | registrar no backlog; só com uma rede estadual real |

@@ -41,8 +41,7 @@ secretaria, o que dá peso a mantê-lo em dia.
 
 **Pendente:**
 
-- O aviso, na tela do plano, de que a secretaria o lê (P1-RD-01, aguarda
-  aprovação).
+- O aviso, na tela do plano, de que a secretaria o lê (P1-RD-01, #407).
 
 ## P2 — Secretaria municipal (secretário de educação)
 
@@ -72,12 +71,12 @@ visão consolidada. Ele deixa de depender de cada diretor mandar o relatório,
 e a equipe técnica sabe onde ir primeiro. P2-PG-01, -03, -04 e -06
 resolvidas.
 
-**Pendente (aguardam aprovação para virar issue):**
+**Pendente:**
 
-- custo **por exercício** (P2-RD-01);
-- um **documento consolidado** da rede para o conselho municipal (P2-RD-02);
+- custo **por exercício** (P2-RD-01, #404);
+- um **documento consolidado** da rede para o conselho municipal (P2-RD-02, #405);
 - valores oficiais que se atualizam **sem a escola abrir o plano**
-  (P2-RD-03);
+  (P2-RD-03, #406);
 - vínculo por **diretoria regional**, para a rede estadual (P2-RD-04, só com
   uma rede estadual real).
 

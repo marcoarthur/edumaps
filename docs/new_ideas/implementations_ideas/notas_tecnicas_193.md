@@ -121,11 +121,11 @@ Continua as notas 190 a 192 (planos de gestão acompanháveis).
   fechamento por público, em `docs/personas/publicos/ciclos/2026-11-13-visao-da-rede.md`.
   - P2 passou a "adotaria, em piloto numa rede".
   - P1 mantém "adotaria".
-- **Achados que aguardam aprovação para virar issue:**
-  - P2-RD-01: custo por exercício;
-  - P2-RD-02: documento consolidado da rede;
-  - P2-RD-03: sincronização das medições oficiais em lote;
-  - P1-RD-01: aviso na tela do plano de que a secretaria o lê.
+- **Achados que viraram issue:**
+  - P2-RD-01: custo por exercício (#404);
+  - P2-RD-02: documento consolidado da rede (#405);
+  - P2-RD-03: sincronização das medições oficiais em lote (#406);
+  - P1-RD-01: aviso na tela do plano de que a secretaria o lê (#407).
 - **P2-RD-04 (vínculo por regional):** só com uma rede estadual real.
 - **Deploy LXC pendente**, com as changes desde o último deploy:
   - `planos_gestao`, `planos_indicadores`, `planos_alertas`,
