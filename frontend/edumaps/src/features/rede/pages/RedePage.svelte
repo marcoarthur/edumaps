@@ -239,7 +239,7 @@
         </div>
         <p class="text-xs text-gray-500">
           Escolas em atividade pelo Censo Escolar mais recente. O andamento é a média das metas já medidas; os
-          valores oficiais novos entram quando a escola abre o plano.
+          valores oficiais novos entram todo dia de manhã, sem a escola precisar abrir o plano.
         </p>
       </section>
 

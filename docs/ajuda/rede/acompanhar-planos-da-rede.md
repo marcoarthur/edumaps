@@ -99,8 +99,9 @@ o documento em A4, com a data de emissão e o seu **cargo** (sem o nome).
 - **Plano vigente:** a escola pode ter mais de um; o painel mostra o mais
   recente e avisa quantos são. Plano em rascunho ou encerrado não conta como
   vigente.
-- Os **valores oficiais** (IDEB, matrículas, infraestrutura) entram no plano
-  quando a escola o abre; o painel usa o que já está gravado.
+- Os **valores oficiais** (IDEB, matrículas, infraestrutura) entram todo dia
+  de manhã nos planos vigentes, sem a escola precisar abrir o plano. Plano
+  encerrado não recebe valores novos.
 
 ## Limitações conhecidas
 

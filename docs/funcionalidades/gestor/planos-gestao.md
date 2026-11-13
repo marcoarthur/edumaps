@@ -37,7 +37,8 @@ conselho escolar o que avançou.
   (aumentar, reduzir ou manter).
 - **Metas com indicador oficial:** a meta pode seguir um indicador oficial da
   escola (IDEB, matrículas, infraestrutura do Censo, vulnerabilidade
-  territorial), que se atualiza sozinho e mostra a fonte e o ano. O histórico
+  territorial), que se atualiza sozinho todo dia nos planos vigentes (o
+  encerrado fica congelado) e mostra a fonte e o ano. O histórico
   fica guardado mesmo que a fonte mude depois. Se a escola ajustar a linha de
   base de uma meta oficial, o ajuste aparece marcado ("ajustada pela escola",
   com o valor oficial) na tela e no relatório.
