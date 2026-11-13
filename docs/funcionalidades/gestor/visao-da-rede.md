@@ -1,14 +1,14 @@
 ---
 titulo: Visão da rede (secretaria)
 modulo: gestor
-status: parcial
+status: ativo
 audiencia: [gestor, administrador]
 relacionadas: [planos-gestao, painel]
 ---
 
 # Visão da rede (secretaria)
 
-> Módulo: `gestor` · Status: 🟡 parcial · Público: secretaria municipal ou estadual, administrador
+> Módulo: `gestor` · Status: 🟢 ativo · Público: secretaria municipal ou estadual, administrador
 
 ## Resumo
 
@@ -41,16 +41,16 @@ só lê: não altera nada do que a escola cadastra.
 - **Relatório de cada escola:** o mesmo relatório de acompanhamento que a
   escola imprime, aberto pela rede só para leitura, com o cargo de quem o
   emitiu.
-
 - **Metas comparáveis:** as metas que seguem o mesmo indicador oficial
   aparecem juntas, com quantas escolas têm a meta, quantas mediram, o
   andamento médio e a lista das escolas (base ajustada pela escola marcada).
   Metas manuais ficam à parte. Na escola, a tela sugere o indicador oficial
   quando a descrição de uma meta manual lembra um deles.
-
-## Ainda não disponível
-
-- Custo previsto e executado por fonte de recurso na rede (#398).
+- **Custo por fonte de recurso:** previsto × executado por fonte (PDDE,
+  Fundeb, recurso próprio, parceria, outro), consolidado na rede e por escola,
+  com os mesmos números do relatório de cada escola. Ação cancelada fica fora;
+  ação sem valor não vira R$ 0, é contada à parte. Só os planos vigentes
+  entram no total; os encerrados aparecem numa linha separada.
 
 ## Valor
 

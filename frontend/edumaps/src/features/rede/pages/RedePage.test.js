@@ -13,7 +13,7 @@ const entrarCom = (token) => {
 };
 const linha = (nome) => screen.getByText(nome).closest("tr");
 const ordemDasEscolas = () =>
-  within(screen.getByRole("table")).getAllByRole("row").slice(1).map((r) => r.querySelector("td p")?.textContent);
+  within(within(screen.getByLabelText("Escolas da rede")).getByRole("table")).getAllByRole("row").slice(1).map((r) => r.querySelector("td p")?.textContent);
 
 describe("RedePage (painel da rede)", () => {
   beforeEach(() => window.localStorage.clear());
@@ -61,6 +61,28 @@ describe("RedePage (painel da rede)", () => {
     await fireEvent.change(screen.getByLabelText("Ordenar por"), { target: { value: "atrasadas" } });
     expect(ordemDasEscolas()[0]).toBe("EMEF Pioneiros");
     expect(screen.getByText("3 de 3 escola(s)")).toBeInTheDocument();
+  });
+
+  it("mostra o custo por fonte, consolidado e por escola, com os encerrados à parte (#398)", async () => {
+    entrarCom(REDE_TOKEN);
+    render(RedePage);
+    const consolidado = within(await screen.findByRole("table", { name: "Custo consolidado da rede" }));
+    const pdde = within(consolidado.getByText("PDDE").closest("tr"));
+    expect(pdde.getByText(/1\.500,00/)).toBeInTheDocument();
+    expect(pdde.getByText(/900,00/)).toBeInTheDocument();
+    const total = within(consolidado.getByText("Total da rede").closest("tr"));
+    expect(total.getByText(/4\.700,00/)).toBeInTheDocument();
+    expect(screen.getByText(/2 de 2 escola\(s\) com plano vigente informaram custo/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Planos encerrados")).toHaveTextContent(/1 em 1 escola\(s\)/);
+
+    expect(screen.queryByRole("table", { name: "Custo por escola" })).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole("button", { name: "Ver por escola" }));
+    const porEscola = within(screen.getByRole("table", { name: "Custo por escola" }));
+    const rio = within(porEscola.getByText("EMEF Rio Novo").closest("tr"));
+    expect(rio.getByText("—")).toBeInTheDocument(); // executado sem valor: nunca R$ 0
+    expect(porEscola.getByRole("link", { name: "Custos no relatório de EMEF Pioneiros" }))
+      .toHaveAttribute("href", "/rede/escolas/11000040/planos/1/relatorio");
+    expect(screen.queryByText(/R\$\s*0,00/)).not.toBeInTheDocument();
   });
 
   it("conta de escola ou admin vê o aviso, sem dado da rede", async () => {

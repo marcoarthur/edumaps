@@ -4,15 +4,17 @@
   // gestão vigente com o andamento ("N de M metas medidas"; sem medida é texto,
   // nunca 0%), as ações atrasadas, as que vencem em 7 dias e as evidências.
   // Filtro e ordenação para achar quem precisa de apoio. Do painel, abre-se o
-  // relatório de cada escola, só leitura. Exige sessão com papel `rede`.
+  // relatório de cada escola, só leitura. Embaixo, o custo por fonte de
+  // recurso, consolidado e por escola (#398). Exige sessão com papel `rede`.
   import { onMount } from "svelte";
-  import { getRedeMe, getRedePainel } from "../api/redeApi.js";
+  import { getRedeMe, getRedePainel, getRedeCustos } from "../api/redeApi.js";
   import { logoutGestor } from "@/features/gestor/api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { restaurarSessao } from "@/features/gestor/utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "@/features/gestor/utils/gestorSession.js";
   import { pct, fmtData } from "@/features/gestor/constants/planos.js";
   import GestorLoginCard from "@/features/gestor/components/survey/GestorLoginCard.svelte";
+  import RedeCustos from "../components/RedeCustos.svelte";
 
   let carregando = $state(true);
   let precisaLogin = $state(false);
@@ -20,6 +22,8 @@
   let error = $state(null);
   let conta = $state(null);
   let painel = $state(null);
+  let custos = $state(null);
+  let erroCustos = $state(false);
   let filtro = $state("todas");
   let ordem = $state("nome");
 
@@ -66,6 +70,12 @@
     try {
       conta = await getRedeMe();
       painel = await getRedePainel();
+      // os custos não seguram o painel: se falharem, só a seção avisa
+      erroCustos = false;
+      custos = await getRedeCustos().catch(() => {
+        erroCustos = true;
+        return null;
+      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) precisaLogin = true;
       else if (err instanceof ApiError && err.status === 403) semPermissao = true;
@@ -221,6 +231,12 @@
           valores oficiais novos entram quando a escola abre o plano.
         </p>
       </section>
+
+      {#if custos}
+        <RedeCustos {custos} />
+      {:else if erroCustos}
+        <p class="text-sm text-red-700">Não foi possível carregar os custos da rede.</p>
+      {/if}
     {/if}
   {/if}
 </div>

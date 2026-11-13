@@ -656,31 +656,7 @@ sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef, $opt = {}) {
     }
   }
 
-  # Custo por fonte de recurso (#384), previsto × executado (#395): soma das
-  # ações não canceladas com valor informado. Sem valor não é R$ 0: a ação é
-  # contada à parte, e a fonte sem nenhum valor de um lado fica null.
-  my (%prev, %n_prev, %exec, %n_exec, $sem_custo, $sem_exec);
-  for my $g (grep { $_ ne 'canceladas' } keys %grupo) {
-    for my $a (@{ $grupo{$g} }) {
-      my $f = $a->{fonte_recurso} // 'nao_informada';
-      if (defined $a->{custo_previsto}) { $prev{$f} += $a->{custo_previsto}; $n_prev{$f}++ } else { $sem_custo++ }
-      if (defined $a->{custo_executado}) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ } else { $sem_exec++ }
-    }
-  }
-  my $din = sub ($v) { defined $v ? 0 + sprintf('%.2f', $v) : undef };
-  my @ordem = (@FONTES_RECURSO, 'nao_informada');
-  my @custos = map { {
-    fonte        => $_,
-    total        => $din->($prev{$_}),
-    n_acoes      => $n_prev{$_} // 0,
-    executado    => $din->($exec{$_}),
-    n_executadas => $n_exec{$_} // 0,
-  } } grep { exists $prev{$_} || exists $exec{$_} } @ordem;
-  my ($total, $total_exec);
-  for (@custos) {
-    $total      += $_->{total}     if defined $_->{total};
-    $total_exec += $_->{executado} if defined $_->{executado};
-  }
+  my $custos = _pl_custos(map { @{ $grupo{$_} } } grep { $_ ne 'canceladas' } keys %grupo);
 
   my @evid = map { @{ $_->{evidencias} // [] } }
              map { (@{ $_->{metas} }, @{ $_->{acoes} }) } @{ $plano->{objetivos} };
@@ -693,16 +669,44 @@ sub plano_relatorio ($self, $cod_inep, $id, $emissor_id = undef, $opt = {}) {
       uf        => $escola ? $escola->{sg_uf}        : undef,
     },
     acoes_por_situacao => \%grupo,
-    custos             => {
-      por_fonte             => \@custos,
-      total                 => $din->($total) // 0,
-      total_executado       => $din->($total_exec),
-      n_acoes_sem_custo     => $sem_custo // 0,
-      n_acoes_sem_executado => $sem_exec // 0,
-    },
+    custos             => $custos,
     emitido_por_cargo  => $cargo,
     n_evidencias       => scalar @evid,
     emitido_em         => $emitido->{em},
+  };
+}
+
+# Custo por fonte de recurso (#384), previsto × executado (#395), das ações
+# recebidas (quem chama tira as canceladas). Soma só o valor informado: sem
+# valor não é R$ 0, a ação é contada à parte, e a fonte sem nenhum valor de um
+# lado fica null. Função pura: o relatório da escola e a rede (#398) usam a
+# mesma, para os números baterem.
+sub _pl_custos (@acoes) {
+  my (%prev, %n_prev, %exec, %n_exec, $sem_custo, $sem_exec);
+  for my $a (@acoes) {
+    my $f = $a->{fonte_recurso} // 'nao_informada';
+    if (defined $a->{custo_previsto}) { $prev{$f} += $a->{custo_previsto}; $n_prev{$f}++ } else { $sem_custo++ }
+    if (defined $a->{custo_executado}) { $exec{$f} += $a->{custo_executado}; $n_exec{$f}++ } else { $sem_exec++ }
+  }
+  my $din = sub ($v) { defined $v ? 0 + sprintf('%.2f', $v) : undef };
+  my @custos = map { {
+    fonte        => $_,
+    total        => $din->($prev{$_}),
+    n_acoes      => $n_prev{$_} // 0,
+    executado    => $din->($exec{$_}),
+    n_executadas => $n_exec{$_} // 0,
+  } } grep { exists $prev{$_} || exists $exec{$_} } (@FONTES_RECURSO, 'nao_informada');
+  my ($total, $total_exec);
+  for (@custos) {
+    $total      += $_->{total}     if defined $_->{total};
+    $total_exec += $_->{executado} if defined $_->{executado};
+  }
+  return {
+    por_fonte             => \@custos,
+    total                 => $din->($total) // 0,
+    total_executado       => $din->($total_exec),
+    n_acoes_sem_custo     => $sem_custo // 0,
+    n_acoes_sem_executado => $sem_exec // 0,
   };
 }
 

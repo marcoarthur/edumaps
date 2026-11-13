@@ -20,6 +20,7 @@ sub register ($self, $app, @args) {
   $auth->get('/escolas/:cod_inep' => [ cod_inep => qr/\d{8}/ ])->to('rede#escola')->name('rede_escola');
   $auth->get('/painel')->to('rede#painel')->name('rede_painel');
   $auth->get('/indicadores')->to('rede#indicadores')->name('rede_indicadores');
+  $auth->get('/custos')->to('rede#custos')->name('rede_custos');
   $auth->get('/escolas/:cod_inep/planos' => [ cod_inep => qr/\d{8}/ ])->to('rede#escola_planos')->name('rede_escola_planos');
   $auth->get('/escolas/:cod_inep/planos/:id/relatorio' => [ cod_inep => qr/\d{8}/, id => qr/\d{1,18}/ ])
     ->to('rede#relatorio')->name('rede_relatorio');

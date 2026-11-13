@@ -3,16 +3,16 @@ titulo: "Acompanhar os planos de gestão da rede"
 publico: [rede]
 modulo: gestor
 nivel: basico
-status: parcial
+status: ativo
 relacionadas: [primeiros-passos]
 funcionalidade: ../../funcionalidades/gestor/visao-da-rede.md
-ultima_revisao: 2026-11-12
+ultima_revisao: 2026-11-13
 ---
 
 # Acompanhar os planos de gestão da rede
 
 > **Para quem:** técnico ou secretário de educação com conta de rede.
-> **Tempo de leitura:** ~4 min
+> **Tempo de leitura:** ~5 min
 
 ## Em 30 segundos
 
@@ -54,6 +54,22 @@ infraestrutura do Censo, IVET) aparecem juntas. Para cada indicador:
 As **metas manuais** (o valor é informado pela escola) não entram na
 comparação, porque não há um indicador comum; a página diz quantas são.
 
+## Custo por fonte de recurso
+
+Embaixo do painel, **Custo por fonte de recurso** soma o custo **previsto** e o
+**executado** das ações dos planos vigentes, por fonte (PDDE, Fundeb, recurso
+próprio, parceria, outro), no **total da rede**.
+
+- **Ver por escola** abre a tabela com o previsto, o executado e as ações sem
+  custo de cada escola, e o link para o relatório dela. Os números são os
+  mesmos do relatório da escola.
+- Ação **cancelada** fica fora das somas.
+- Ação **sem valor** não conta como R$ 0: aparece "—" e a página diz quantas
+  ações estão sem custo previsto e sem valor executado. Executado baixo pode
+  ser só falta de registro: confira com a escola.
+- Os planos **encerrados** aparecem numa linha separada, fora do total, para
+  a prestação de contas do ciclo anterior.
+
 ## Entendendo os números
 
 - **Andamento:** a média das metas que já têm medição, sempre com "N de M
@@ -70,8 +86,8 @@ comparação, porque não há um indicador comum; a página diz quantas são.
 ## Limitações conhecidas
 
 - A conta de rede **só lê**: quem edita o plano é a escola.
-- O custo por fonte somado na rede vem numa próxima versão.
-- Só os planos **vigentes** entram no painel e na comparação.
+- Só os planos **vigentes** entram no painel, na comparação e no total dos
+  custos (os encerrados vêm à parte, só nos custos).
 
 ## Privacidade
 

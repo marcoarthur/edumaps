@@ -85,3 +85,32 @@ export const REDE_INDICADORES = {
       ] },
   ],
 };
+
+// Custo por fonte na rede (#398). EMEF Pioneiros com os mesmos números do
+// relatório do plano 1 dos mocks de planos; Rio Novo sem valor executado
+// (null, nunca R$ 0); um plano encerrado à parte.
+export const REDE_CUSTOS = {
+  n_escolas: 3,
+  n_com_plano_vigente: 2,
+  consolidado: {
+    por_fonte: [
+      { fonte: "pdde", total: 1500, n_acoes: 1, executado: 900, n_executadas: 1 },
+      { fonte: "fundeb", total: 3200, n_acoes: 2, executado: null, n_executadas: 0 },
+    ],
+    total: 4700, total_executado: 900, n_acoes_sem_custo: 2, n_acoes_sem_executado: 3, n_escolas_com_custo: 2,
+  },
+  encerrados: {
+    por_fonte: [{ fonte: "proprio", total: 800, n_acoes: 1, executado: 750, n_executadas: 1 }],
+    total: 800, total_executado: 750, n_acoes_sem_custo: 0, n_acoes_sem_executado: 0, n_planos: 1, n_escolas: 1,
+  },
+  escolas: [
+    { cod_inep: 11000040, nome: "EMEF Pioneiros", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 1,
+      plano_titulo: "Plano de ação 2026",
+      custos: { por_fonte: [{ fonte: "pdde", total: 1500, n_acoes: 1, executado: 900, n_executadas: 1 }],
+                total: 1500, total_executado: 900, n_acoes_sem_custo: 1, n_acoes_sem_executado: 1 } },
+    { cod_inep: 11000066, nome: "EMEF Rio Novo", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 7,
+      plano_titulo: "Plano de gestão 2026",
+      custos: { por_fonte: [{ fonte: "fundeb", total: 3200, n_acoes: 2, executado: null, n_executadas: 0 }],
+                total: 3200, total_executado: null, n_acoes_sem_custo: 1, n_acoes_sem_executado: 2 } },
+  ],
+};
