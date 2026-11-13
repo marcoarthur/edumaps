@@ -102,5 +102,10 @@ export function transformPanelData(apiData) {
       row.ideb_observado == null ? null : Number(row.ideb_observado),
   }));
 
-  return { school, indicators, similarSchools, desempenho };
+  // Motivo de não haver escolas semelhantes (#413): "sem_dado" quando falta
+  // alguma das notas da escola. Ausência não é 0 (#154): a escola fica fora
+  // da comparação em vez de ser comparada com um 0 no lugar da nota.
+  const similarSchoolsMotivo = apiData.similar_schools_motivo ?? null;
+
+  return { school, indicators, similarSchools, similarSchoolsMotivo, desempenho };
 }

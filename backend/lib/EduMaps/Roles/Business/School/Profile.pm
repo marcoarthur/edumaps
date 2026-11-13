@@ -4,6 +4,7 @@ use DateTime;
 use Mojo::Collection qw(c);
 use EduMaps::Model::Rank::School;
 use EduMaps::Model::Domain::SchoolQuality;
+use EduMaps::Task::SchoolEmbedding ();
 use Carp qw(croak);
 
 requires qw(schema default_columns);
@@ -196,8 +197,20 @@ sub panel_info($self, $params) {
   };
 
   my $similars;
+  my $similars_motivo;
 
-  if ($neighbors && @$neighbors) {
+  # Escola sem alguma das 6 notas fica fora do embedding (#413, #154): sem
+  # vizinhas, e o painel diz que falta dado, em vez de cair calado no método
+  # antigo. Erro de banco (tabela ausente) segue caindo no método antigo.
+  my $sem_dado = $neighbors && !@$neighbors && !eval {
+    EduMaps::Task::SchoolEmbedding::notas_completas($self->schema->storage->dbh, $school->{co_entidade});
+  };
+
+  if ($sem_dado) {
+    $similars        = c();
+    $similars_motivo = 'sem_dado';
+  }
+  elsif ($neighbors && @$neighbors) {
     my %distance = map { $_->{co_entidade} => $_->{distance} } @$neighbors;
     my @ids = map { $_->{co_entidade} } @$neighbors;
 
@@ -245,6 +258,7 @@ sub panel_info($self, $params) {
     },
     indicators => \%values,
     similar_schools => $similars->to_array,
+    similar_schools_motivo => $similars_motivo,
     desempenho => $desempenho,
   };
 }

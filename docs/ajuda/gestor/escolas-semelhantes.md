@@ -28,8 +28,11 @@ As sugestões aparecem em três lugares:
    com nome, INEP, **Similaridade NN%** e IDEB. Clique num cartão para abrir o
    perfil daquela escola. Mostra até 10 escolas.
 2. **Painel da Escola**, seção **Escolas semelhantes** (carrega sozinha):
-   cartões com rede, etapas e número de matrículas. Clique para abrir o painel
-   daquela escola.
+   até 3 escolas do mesmo município, comparadas pelas seis notas da escola
+   (atendimento, infraestrutura, docentes, diversidade, gestão e
+   sustentabilidade). Os cartões mostram rede, etapas e número de matrículas;
+   clique para abrir o painel daquela escola. A comparação se atualiza
+   sozinha todo dia de madrugada.
 3. **Painel do Gestor** (com login), **Escolas similares**: escolha o
    **Escopo** (Município, Estado ou Região) e clique em **Buscar escolas
    similares**. O resultado aparece no mapa e numa tabela com Escola,
@@ -46,6 +49,9 @@ similaridade.
   de outro estado pode ser a mais parecida.
 - No Painel do Gestor, um **INSE ausente** é ignorado na comparação (não vira
   zero).
+- No Painel da Escola, se falta alguma das seis notas da escola, a seção diz
+  **"Sem dado para comparar"**: a escola fica fora da comparação em vez de ser
+  comparada como se tivesse nota zero.
 - No Perfil da Escola, o rótulo **fonte** diz se os pares vieram da base já
   calculada ou de um cálculo feito na hora dentro do município.
 

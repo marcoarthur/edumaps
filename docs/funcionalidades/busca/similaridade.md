@@ -27,6 +27,11 @@ escolas e investidores que avaliam redes.
   contexto.
 - Sistema pode levar a comparação para o painel da escola e para os agrupamentos
   (clusters).
+- Sistema mantém a comparação do painel da escola em dia sozinho, todo dia,
+  quando as notas das escolas mudam (Censo novo), e tira da comparação as
+  escolas que deixaram de existir.
+- Sistema não compara uma escola a que falta dado como se o dado fosse zero:
+  ela fica fora da comparação, e a tela diz que falta dado.
 
 ## Valor
 

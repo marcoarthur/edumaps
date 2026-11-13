@@ -47,4 +47,12 @@ describe("transformPanelData", () => {
     const { desempenho } = transformPanelData({ ...API, desempenho: undefined });
     expect(desempenho).toEqual([]);
   });
+
+  it("repassa o motivo de não haver semelhantes (#413)", () => {
+    expect(transformPanelData(API).similarSchoolsMotivo).toBeNull();
+    expect(
+      transformPanelData({ ...API, similar_schools_motivo: "sem_dado" })
+        .similarSchoolsMotivo,
+    ).toBe("sem_dado");
+  });
 });

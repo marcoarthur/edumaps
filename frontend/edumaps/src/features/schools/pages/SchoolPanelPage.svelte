@@ -12,6 +12,7 @@
   let school = $state(null);
   let indicators = $state([]);
   let similarSchools = $state([]);
+  let similarSchoolsMotivo = $state(null);
   let desempenho = $state([]);
   let loading = $state(true);
   let error = $state(null);
@@ -51,11 +52,13 @@
       school = transformed.school;
       indicators = transformed.indicators;
       similarSchools = transformed.similarSchools;
+      similarSchoolsMotivo = transformed.similarSchoolsMotivo;
       desempenho = transformed.desempenho;
     } catch (err) {
       school = null;
       indicators = [];
       similarSchools = [];
+      similarSchoolsMotivo = null;
       desempenho = [];
       error = err instanceof ApiError ? err.message : 'Erro ao carregar dados da escola.';
     } finally {
@@ -128,6 +131,7 @@
       {school}
       {indicators}
       {similarSchools}
+      {similarSchoolsMotivo}
       {desempenho}
       {ivet}
       {isocrona}
