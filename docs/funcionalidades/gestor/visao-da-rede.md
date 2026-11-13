@@ -55,6 +55,11 @@ só lê: não altera nada do que a escola cadastra.
   ação e o executado pelo ano da execução; ação sem prazo e executado sem data
   ficam à parte, contados.
 
+- **Documento da rede:** uma folha para imprimir ou salvar em PDF, para o
+  conselho municipal, com o resumo, as escolas e os planos, o custo por fonte
+  (por exercício, se escolhido) e as metas comparáveis. Os mesmos números do
+  painel; a emissão traz a data e o cargo de quem emitiu, sem o nome.
+
 ## Valor
 
 É o primeiro passo do que o plano de negócios chama de alvo principal: a

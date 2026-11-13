@@ -127,6 +127,7 @@
       <div class="flex items-center gap-2">
       {#if conta.vinculos.length}
         <a href="/rede/indicadores" class="px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-800 text-xs font-medium hover:bg-indigo-100">Metas comparáveis por indicador</a>
+        <a href="/rede/documento" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">🖨️ Documento da rede</a>
       {/if}
       <button type="button" onclick={sair} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Sair</button>
       </div>
