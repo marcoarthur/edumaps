@@ -38,7 +38,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 ## Pendências
 
 - P2-RD-01 (custo por exercício), P2-RD-02 (documento consolidado da rede),
-  P2-RD-03 (valores oficiais sem a escola abrir o plano): #404, #405 e #406.
+  P2-RD-03 (valores oficiais sem a escola abrir o plano): #404 (entregue no
+  PR #409), #405 e #406.
 - P2-RD-04 (vínculo por diretoria regional): só com uma rede estadual real.
 - Reavaliar com uma secretaria real num piloto.
 

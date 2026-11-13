@@ -74,7 +74,8 @@ resolvidas.
 
 **Pendente:**
 
-- custo **por exercício** (P2-RD-01, #404);
+- custo **por exercício** (P2-RD-01, #404): entregue no PR #409, com o
+  previsto pelo ano do prazo e o executado pelo ano da execução;
 - um **documento consolidado** da rede para o conselho municipal (P2-RD-02, #405);
 - valores oficiais que se atualizam **sem a escola abrir o plano**
   (P2-RD-03, #406);

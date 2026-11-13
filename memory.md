@@ -54,8 +54,11 @@
 - **PR #408 mergeado** (`55b4228`, fecha #407, P1-RD-01): aviso no plano e
   no relatório da escola (fora da impressão) de que a secretaria da rede,
   se usa o EduMaps, os vê só para leitura; dica de cargo no responsável.
-  Abertas: #404 (custo por exercício), #405 (documento da rede), #406
-  (sincronização oficial em lote).
+- **PR #409 mergeado** (`c02438a`, fecha #404, P2-RD-01): `?exercicio=AAAA`
+  no relatório (escola e rede) e em /api/rede/custos; previsto pelo ano do
+  prazo, executado pelo da execução; sem prazo e executado sem data à parte
+  (decisão do developer; padrão "todos os anos"). Nota técnica 194.
+  Abertas: #405 (documento da rede), #406 (sincronização oficial em lote).
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 
