@@ -66,6 +66,13 @@
   `planos_oficiais` (06:00 BRT) grava em lote as medições oficiais dos
   planos vigentes (`planos_sincronizar_oficiais`, mesma consulta
   idempotente). **LXC: o próximo deploy precisa do `deploy_minion_dev`.**
+- **LXC continua fora; deploy reagendado para segunda, 2026-11-16** (o
+  developer volta para casa, onde está o servidor). Lista: changes dos planos
+  (planos_gestao, planos_indicadores, planos_alertas, planos_evidencias,
+  planos_base_oficial, planos_custo_executado), rede_acesso e as do ANTT;
+  `deploy_db_dev`, `deploy_backend_dev`, `deploy_minion_dev` e
+  `deploy_frontend_dev` (este fecha também a exposição do nginx do LXC, PR
+  #344). Exportar a master key de dev antes do backend/minion.
   Achados da avaliação da rede: todos entregues, exceto P2-RD-04 (regional,
   só com rede estadual real).
 
