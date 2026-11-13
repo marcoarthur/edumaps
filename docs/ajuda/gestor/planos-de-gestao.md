@@ -6,7 +6,7 @@ nivel: basico
 status: parcial
 relacionadas: [painel-do-gestor, documentos-e-planos, reunioes-e-atas, ajuda-guiada-painel]
 funcionalidade: ../../funcionalidades/gestor/planos-gestao.md
-ultima_revisao: 2026-11-12
+ultima_revisao: 2026-11-13
 ---
 
 # Acompanhar os planos da escola
@@ -148,7 +148,8 @@ rede, criada pelo administrador da plataforma) **vê** o andamento do plano no
 painel dela e abre o **relatório de acompanhamento**, o mesmo que você
 imprime, só para leitura. O campo **responsável** é texto livre e aparece
 nesse relatório; prefira o cargo ou a equipe ("Coordenação"), e não o nome
-completo. Não há dado de aluno.
+completo. Não há dado de aluno. O aviso no topo do plano e do relatório
+lembra isso; ele não sai na impressão.
 
 ## Perguntas frequentes
 

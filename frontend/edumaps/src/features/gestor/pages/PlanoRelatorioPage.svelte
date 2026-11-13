@@ -61,6 +61,7 @@
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">{error}</div>
   {:else if relatorio}
+    <p class="text-xs text-gray-500 print:hidden" aria-label="Quem vê o relatório">Se a secretaria de educação da sua rede usa o EduMaps, ela vê este plano e o relatório, só para leitura. Quem edita é a escola.</p>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-6 print:border-0 print:shadow-none print:p-0">
       <PlanoRelatorio {relatorio} />
     </div>

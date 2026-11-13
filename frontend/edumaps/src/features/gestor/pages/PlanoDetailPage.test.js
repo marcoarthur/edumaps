@@ -99,6 +99,15 @@ describe("PlanoDetailPage", () => {
     expect(screen.getByText(/A fonte não tem valor desta escola/)).toBeInTheDocument();
   });
 
+  it("avisa que a secretaria da rede vê o plano e pede cargo no responsável (#407)", async () => {
+    abrir(1);
+    await screen.findByText("Melhorar a aprendizagem");
+    expect(screen.getByLabelText("Quem vê o plano")).toHaveTextContent(/secretaria de educação da sua rede.*só para leitura/);
+    await fireEvent.click(screen.getByRole("button", { name: "+ Ação" }));
+    const responsavel = screen.getByPlaceholderText("Ex.: Coordenação pedagógica");
+    expect(responsavel).toHaveAccessibleDescription(/Prefira o cargo ou a equipe ao nome/);
+  });
+
   it("adiciona uma ação e conclui", async () => {
     abrir(1);
     await screen.findByText("Melhorar a aprendizagem");

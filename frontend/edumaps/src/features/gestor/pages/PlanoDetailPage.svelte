@@ -539,7 +539,8 @@
       <input bind:value={acaoForm.descricao} maxlength={L.DESCRICAO_MAX} placeholder="Ex.: Reforço de leitura no contraturno" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
     <div class="grid gap-2 sm:grid-cols-3">
       <label class="text-xs text-gray-600"><span class="block">Responsável</span>
-        <input bind:value={acaoForm.responsavel} maxlength={L.RESPONSAVEL_MAX} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
+        <input bind:value={acaoForm.responsavel} maxlength={L.RESPONSAVEL_MAX} placeholder="Ex.: Coordenação pedagógica" aria-describedby="dica-responsavel" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" />
+        <span id="dica-responsavel" class="block mt-1 text-[11px] text-gray-500">Prefira o cargo ou a equipe ao nome: o responsável aparece no relatório.</span></label>
       <label class="text-xs text-gray-600"><span class="block">Início</span>
         <input type="date" bind:value={acaoForm.inicio} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
       <label class="text-xs text-gray-600"><span class="block">Prazo</span>
@@ -645,6 +646,10 @@
   {:else if error}
     <div class="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm p-4">{error}</div>
   {:else if plano}
+    <!-- quem mais vê o plano (#407, P1-RD-01) -->
+    <p class="rounded-md bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-2" aria-label="Quem vê o plano">
+      Se a secretaria de educação da sua rede usa o EduMaps, ela vê este plano e o relatório, só para leitura. Quem edita é a escola.
+    </p>
     <!-- resumo e situação -->
     <section class="rounded-card bg-white border border-gray-200 shadow-card p-4 space-y-3" data-tour="plano-resumo">
       <div class="grid gap-4 sm:grid-cols-2">

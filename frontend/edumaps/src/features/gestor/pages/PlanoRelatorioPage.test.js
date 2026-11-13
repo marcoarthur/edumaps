@@ -25,6 +25,13 @@ describe("PlanoRelatorioPage", () => {
     vi.restoreAllMocks();
   });
 
+  it("avisa, fora da impressão, que a secretaria da rede vê o relatório (#407)", async () => {
+    await abrir(1);
+    const aviso = await screen.findByLabelText("Quem vê o relatório");
+    expect(aviso).toHaveTextContent(/secretaria de educação da sua rede.*só para leitura/);
+    expect(aviso).toHaveClass("print:hidden");
+  });
+
   it("cabeçalho com escola, plano, período e emissão", async () => {
     await abrir();
     expect(await screen.findByRole("heading", { level: 1, name: "Plano de ação 2026" })).toBeInTheDocument();
