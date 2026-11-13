@@ -32,7 +32,13 @@
 - Lição (memória persistente): scripts em fundo fixam o SHA e commitam por
   worktree do main — o fechamento do #399 notificou sem conferir o CI porque
   leu o HEAD da branch da #395.
-- Próximo: #396 (painel da rede e relatório da escola pela rede).
+- **PR #401 mergeado** (`0354fd6`, fecha #396): `GET /api/rede/painel`
+  (role Gestor::RedePlanos, 4 consultas em lote; 304 escolas ~0,12 s),
+  planos e relatório da escola pela rede em modo `somente_leitura` (não
+  sincroniza medições oficiais). /rede vira painel (totais, filtros,
+  ordenação, link para o relatório).
+- Próximo: #397 (metas comparáveis) e #398 (custo por fonte na rede), em
+  paralelo; depois nota técnica + fechamento de ciclo por público.
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 
