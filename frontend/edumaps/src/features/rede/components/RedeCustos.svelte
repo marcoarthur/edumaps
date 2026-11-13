@@ -9,8 +9,9 @@
   import { fmtMoeda, FONTE_RECURSO_LABEL } from "@/features/gestor/constants/planos.js";
   import ExercicioSelect from "@/features/gestor/components/planos/ExercicioSelect.svelte";
 
-  let { custos, onExercicio = null } = $props();
-  let porEscola = $state(false);
+  // sempreAberto (#405): no documento da rede, a tabela por escola fica aberta.
+  let { custos, onExercicio = null, sempreAberto = false } = $props();
+  let porEscola = $state(sempreAberto);
 
   const TH = "px-3 py-2 text-left";
   const fonteRotulo = (f) => (f === "nao_informada" ? "Fonte não informada" : (FONTE_RECURSO_LABEL[f] ?? f));
@@ -80,7 +81,7 @@
     </p>
   {/if}
 
-  {#if custos.escolas.length}
+  {#if custos.escolas.length && !sempreAberto}
     <button type="button" onclick={() => (porEscola = !porEscola)} aria-expanded={porEscola}
       class="px-3 py-1 rounded-md bg-gray-100 text-gray-800 text-xs hover:bg-gray-200">
       {porEscola ? "Ocultar por escola" : "Ver por escola"}
@@ -96,7 +97,7 @@
             <th class={`${TH} text-right`} scope="col">Previsto</th>
             <th class={`${TH} text-right`} scope="col">Executado</th>
             <th class={`${TH} text-right`} scope="col">Sem custo previsto</th>
-            <th class="px-3 py-2" scope="col"><span class="sr-only">Relatório</span></th>
+            <th class="px-3 py-2 print:hidden" scope="col"><span class="sr-only">Relatório</span></th>
           </tr>
         </thead>
         <tbody>
@@ -109,7 +110,7 @@
               <td class="px-3 py-2 text-right">{temPrevisto(e.custos) ? fmtMoeda(e.custos.total) : "—"}</td>
               <td class="px-3 py-2 text-right">{fmtMoeda(e.custos.total_executado)}</td>
               <td class="px-3 py-2 text-right">{e.custos.n_acoes_sem_custo}</td>
-              <td class="px-3 py-2"><a href={`/rede/escolas/${e.cod_inep}/planos/${e.plano_id}/relatorio`} class="text-blue-700 hover:underline text-xs" aria-label={`Custos no relatório de ${e.nome}`}>Relatório</a></td>
+              <td class="px-3 py-2 print:hidden"><a href={`/rede/escolas/${e.cod_inep}/planos/${e.plano_id}/relatorio`} class="text-blue-700 hover:underline text-xs" aria-label={`Custos no relatório de ${e.nome}`}>Relatório</a></td>
             </tr>
           {/each}
         </tbody>

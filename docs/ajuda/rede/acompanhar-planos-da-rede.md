@@ -12,7 +12,7 @@ ultima_revisao: 2026-11-13
 # Acompanhar os planos de gestão da rede
 
 > **Para quem:** técnico ou secretário de educação com conta de rede.
-> **Tempo de leitura:** ~5 min
+> **Tempo de leitura:** ~6 min
 
 ## Em 30 segundos
 
@@ -74,6 +74,20 @@ próprio, parceria, outro), no **total da rede**.
   sem prazo e executado sem data ficam fora do ano, e a página diz quantos
   são. O mesmo seletor existe no relatório de cada escola, com os mesmos
   números.
+
+## Documento da rede para o conselho
+
+No topo da página **Rede**, **🖨️ Documento da rede** monta numa folha só:
+
+- o resumo (escolas em atividade, com e sem plano vigente, ações atrasadas);
+- a tabela das escolas com o plano vigente, o andamento, as atrasadas, as que
+  vencem em 7 dias e as evidências;
+- o custo por fonte, consolidado e por escola, com os encerrados à parte;
+- as metas comparáveis por indicador oficial.
+
+Os números são os mesmos do painel. Escolha o **Exercício** dos custos antes
+de imprimir: o ano aparece no título da seção. **Imprimir / salvar PDF** gera
+o documento em A4, com a data de emissão e o seu **cargo** (sem o nome).
 
 ## Entendendo os números
 
