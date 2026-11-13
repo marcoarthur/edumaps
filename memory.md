@@ -4,11 +4,14 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-13 (bc) — INEP: rendimento e distorção (PR #412 rascunho, #376)
+## Sessão 2026-11-13 (bc) — INEP: rendimento e distorção (PR #412 mergeado, #376)
 
 - **Modo automático** (o developer ausente por 4 h, decisões delegadas,
-  avisos pelo Telegram). PR #412 aberto como **rascunho**: aguarda a
-  validação do developer; merge só com permissão.
+  avisos pelo Telegram). PR #412 validado pelo developer e mergeado
+  (526a05b); #376 fechada. Imagens locais conferidas (md5 fad0198acba6 no
+  backend e no minion). Fechamento do ciclo:
+  `docs/personas/publicos/ciclos/2026-11-13-fluxo-inep.md` (sem rodada das
+  personas; P1/P2 com impacto, P3–P6 sem impacto direto).
 - Fonte medida: `download.inep.gov.br/informacoes_estatisticas/
   indicadores_educacionais/<ano>/tx_rend_escolas_<ano>.zip` e
   `TDI_<ano>_ESCOLAS.zip` (2019, 2021–2025). Cadeia TLS incompleta: o

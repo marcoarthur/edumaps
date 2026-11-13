@@ -30,3 +30,4 @@ mudanças contado do lado do usuário. A nota técnica do ciclo (em
 |---|---|---|---|---|---|
 | [2026-11-12](2026-11-12-planos-de-gestao.md) | 2026-11-11 a 2026-11-12 | Planos de gestão (épico #368) | ⬆️ com ressalvas → adotaria | ➡️ com ressalvas (aguarda #375) | sem impacto direto |
 | [2026-11-13](2026-11-13-visao-da-rede.md) | 2026-11-12 a 2026-11-13 | Visão da rede (#375) | ➡️ adotaria | ⬆️ com ressalvas → adotaria em piloto | sem impacto direto |
+| [2026-11-13 (fluxo)](2026-11-13-fluxo-inep.md) | 2026-11-13 | Rendimento e distorção do INEP nas metas (#376) | ➡️ adotaria (sem nova avaliação) | ➡️ piloto (sem nova avaliação) | sem impacto direto |

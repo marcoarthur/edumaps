@@ -31,6 +31,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
 - [2026-11-13 — visão da rede](ciclos/2026-11-13-visao-da-rede.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
+- [2026-11-13 — fluxo do INEP](ciclos/2026-11-13-fluxo-inep.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
 
 ## Pendências
 

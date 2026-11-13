@@ -33,6 +33,9 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
      abandono, distorção idade-série, matrículas, infraestrutura): a
      plataforma usa o último valor da escola como linha de base e atualiza a
      meta sozinha.
+     As taxas do INEP saem uma vez por ano, com o Censo: a meta do ano
+     corrente só ganha a medição oficial quando o INEP publicar o ano
+     seguinte. Se a escola não tem a etapa, a meta mostra "sem dado", não 0.
    - **Meta manual** (ex.: "reduzir as faltas para 12%"): você registra as
      medições em **+ Registrar medição**.
    - Se a descrição de uma meta manual lembra um indicador oficial (por
