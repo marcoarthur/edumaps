@@ -58,7 +58,10 @@
   no relatório (escola e rede) e em /api/rede/custos; previsto pelo ano do
   prazo, executado pelo da execução; sem prazo e executado sem data à parte
   (decisão do developer; padrão "todos os anos"). Nota técnica 194.
-  Abertas: #405 (documento da rede), #406 (sincronização oficial em lote).
+- **PR #410 mergeado** (`b55df4f`, fecha #405, P2-RD-02): /rede/documento,
+  folha A4 com resumo, escolas, custos (com exercício) e metas comparáveis;
+  só frontend, mesmos endpoints do painel; emissão com hora do navegador
+  (Brasília) e cargo, sem nome. Aberta: #406 (sincronização oficial em lote).
 
 ## Sessão 2026-11-12 (ba) — personas de público e avaliação dos planos (PR #386)
 

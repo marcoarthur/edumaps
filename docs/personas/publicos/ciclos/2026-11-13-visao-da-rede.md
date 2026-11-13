@@ -76,7 +76,8 @@ resolvidas.
 
 - custo **por exercício** (P2-RD-01, #404): entregue no PR #409, com o
   previsto pelo ano do prazo e o executado pelo ano da execução;
-- um **documento consolidado** da rede para o conselho municipal (P2-RD-02, #405);
+- um **documento consolidado** da rede para o conselho municipal (P2-RD-02,
+  #405): entregue no PR #410, em `/rede/documento`;
 - valores oficiais que se atualizam **sem a escola abrir o plano**
   (P2-RD-03, #406);
 - vínculo por **diretoria regional**, para a rede estadual (P2-RD-04, só com

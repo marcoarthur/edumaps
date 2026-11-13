@@ -1,6 +1,7 @@
-# Nota técnica 194: achados da avaliação da rede (#407, #404)
+# Nota técnica 194: achados da avaliação da rede (#407, #404, #405)
 
-PRs #408 e #409 (2026-11-13). Fecham a #407 (P1-RD-01) e a #404 (P2-RD-01),
+PRs #408 a #410 (2026-11-13). Fecham a #407 (P1-RD-01), a #404 (P2-RD-01) e
+a #405 (P2-RD-02),
 abertas pela avaliação das personas da visão da rede. Continua a nota 193.
 
 ## #407: aviso de que a secretaria vê o plano (PR #408)
@@ -46,8 +47,29 @@ abertas pela avaliação das personas da visão da rede. Continua a nota 193.
   - no painel, só a seção de custos é recarregada.
 - **Mocks:** o mock dos planos espelha a mesma regra (`custosPorFonte`).
 
+## #405: documento da rede (PR #410)
+
+- **Página `/rede/documento`:** uma folha A4 para o conselho municipal com
+  quatro partes:
+  - o resumo;
+  - as escolas e os planos vigentes;
+  - os custos por fonte, consolidados e por escola;
+  - as metas comparáveis.
+- **Sem cálculo novo:** a página chama os mesmos quatro endpoints do painel
+  (`me`, `painel`, `indicadores`, `custos`). Os números são os do painel por
+  construção, e não houve mudança no backend.
+- **Reaproveitamento:** os custos usam o próprio `RedeCustos`. O novo
+  `sempreAberto` deixa a tabela por escola aberta e esconde o botão, e a
+  coluna do link para o relatório não sai na impressão. O seletor de exercício
+  continua, fora da impressão, e o título da seção diz o ano.
+- **Emissão:**
+  - **data:** a hora do navegador no fuso de Brasília (`Intl`), porque não
+    havia um campo do servidor para isso. Se for preciso a hora do servidor,
+    como no relatório da escola, é um campo a mais na API;
+  - **quem emitiu:** só o cargo da conta de rede, sem o nome nem o e-mail
+    (teste).
+
 ## Pendente
 
-- #405: documento consolidado da rede para imprimir.
 - #406: sincronização das medições oficiais em lote.
 - Deploy LXC: o mesmo da nota 193, sem change nova de banco nestes dois PRs.
