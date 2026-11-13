@@ -38,6 +38,22 @@ de cada escola, o mesmo que o diretor imprime.
 5. **Como saber que deu certo:** o relatório diz "Visão da rede: só leitura"
    e, na emissão, "por:" com o seu cargo.
 
+## Comparar as metas entre escolas
+
+Em **Metas comparáveis por indicador** (botão no topo da página **Rede**), as
+metas que seguem o **mesmo indicador oficial** (IDEB, matrículas,
+infraestrutura do Censo, IVET) aparecem juntas. Para cada indicador:
+
+- quantas escolas têm a meta, quantas já mediram e o **andamento médio** das
+  que mediram (sem nenhuma medida: "sem metas medidas", nunca 0%);
+- **Ver as escolas** abre a tabela: meta, linha de base, alvo, valor atual com
+  o ano, andamento e o link para o relatório da escola;
+- a linha de base que a escola **ajustou** aparece marcada, com o valor
+  oficial ao lado.
+
+As **metas manuais** (o valor é informado pela escola) não entram na
+comparação, porque não há um indicador comum; a página diz quantas são.
+
 ## Entendendo os números
 
 - **Andamento:** a média das metas que já têm medição, sempre com "N de M
@@ -54,8 +70,8 @@ de cada escola, o mesmo que o diretor imprime.
 ## Limitações conhecidas
 
 - A conta de rede **só lê**: quem edita o plano é a escola.
-- Ainda não há a comparação das metas entre escolas por indicador nem o custo
-  por fonte somado na rede: vêm nas próximas versões.
+- O custo por fonte somado na rede vem numa próxima versão.
+- Só os planos **vigentes** entram no painel e na comparação.
 
 ## Privacidade
 

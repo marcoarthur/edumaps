@@ -39,3 +39,8 @@ export function getRedeEscolaPlanos(inep) {
 export function getRedeRelatorio(inep, planoId) {
   return apiClient.get(`${BASE}/escolas/${inep}/planos/${planoId}/relatorio`);
 }
+
+/** Metas comparáveis por indicador oficial (#397). */
+export function getRedeIndicadores() {
+  return apiClient.get(`${BASE}/indicadores`);
+}

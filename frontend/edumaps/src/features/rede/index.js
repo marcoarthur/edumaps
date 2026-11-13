@@ -2,3 +2,4 @@
 export { default as RedePage } from "./pages/RedePage.svelte";
 export { default as RedeConvitePage } from "./pages/RedeConvitePage.svelte";
 export { default as RedeRelatorioPage } from "./pages/RedeRelatorioPage.svelte";
+export { default as RedeIndicadoresPage } from "./pages/RedeIndicadoresPage.svelte";

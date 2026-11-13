@@ -155,6 +155,7 @@ describe("matchRoute", () => {
   it("rotas da conta de rede (#394)", () => {
     expect(matchRoute("/rede")?.path).toBe("/rede");
     expect(matchRoute("/config/rede")?.path).toBe("/config/rede");
+    expect(matchRoute("/rede/indicadores")?.path).toBe("/rede/indicadores");
     const convite = matchRoute(`/rede/convite/${"A".repeat(43)}`);
     expect(convite?.path).toBe("/rede/convite/:token");
     expect(convite?.params.token).toBe("A".repeat(43));

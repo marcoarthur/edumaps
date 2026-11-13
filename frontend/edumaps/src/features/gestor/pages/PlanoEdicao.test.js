@@ -138,4 +138,25 @@ describe("Edição do plano", () => {
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Ação atualizada.", "success"));
     await waitFor(() => expect(texto()).toContain("executado R$ 250 em 09/03/2026"));
   });
+  it("sugere o indicador oficial para meta manual parecida, sem obrigar (#397)", async () => {
+    await abrir();
+    await fireEvent.click(screen.getAllByRole("button", { name: "+ Meta" })[0]);
+    await fireEvent.input(screen.getByPlaceholderText("Ex.: Reduzir as faltas para 12%"), { target: { value: "Aumentar as matrículas" } });
+    const aviso = await screen.findByLabelText("Sugestão de indicador oficial");
+    expect(aviso).toHaveTextContent("Matrículas — total da educação básica");
+    await fireEvent.click(screen.getByRole("button", { name: "Manter meta manual" }));
+    expect(screen.queryByLabelText("Sugestão de indicador oficial")).not.toBeInTheDocument();
+
+    await fireEvent.input(screen.getByPlaceholderText("Ex.: Reduzir as faltas para 12%"), { target: { value: "Construir a quadra" } });
+    expect(screen.queryByLabelText("Sugestão de indicador oficial")).not.toBeInTheDocument();
+  });
+
+  it("usar a sugestão liga a meta ao indicador", async () => {
+    await abrir();
+    await fireEvent.click(screen.getAllByRole("button", { name: "+ Meta" })[0]);
+    await fireEvent.input(screen.getByPlaceholderText("Ex.: Reduzir as faltas para 12%"), { target: { value: "Ter quadra de esportes" } });
+    await fireEvent.click(await screen.findByRole("button", { name: "Usar este indicador" }));
+    expect(screen.getByLabelText("Indicador oficial (opcional)").value).toBe("infra_quadra");
+    expect(screen.queryByLabelText("Sugestão de indicador oficial")).not.toBeInTheDocument();
+  });
 });

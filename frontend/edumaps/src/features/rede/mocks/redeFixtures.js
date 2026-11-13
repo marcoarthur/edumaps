@@ -59,3 +59,29 @@ export const REDE_PAINEL = {
                n_atrasadas: 0, n_vencem_7d: 0, n_evidencias: 0, atualizado_em: "2026-02-01T10:00:00", n_vigentes: 2 } },
   ],
 };
+
+// Metas comparáveis (#397)
+export const REDE_INDICADORES = {
+  n_escolas: 3,
+  n_com_plano_vigente: 2,
+  manuais: { n_metas: 2, n_escolas: 1 },
+  indicadores: [
+    { codigo: "ideb_ai", rotulo: "IDEB — anos iniciais", unidade: "pontos (0 a 10)", fonte: "INEP — IDEB",
+      n_escolas: 2, n_metas: 2, n_medidas: 1, andamento_medio: 0.4, n_base_ajustada: 1,
+      escolas: [
+        { cod_inep: 11000040, nome: "EMEF Pioneiros", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 1, plano_titulo: "Plano de ação 2026",
+          meta: { id: 100, descricao: "Subir o IDEB dos anos iniciais", sentido: "aumentar", linha_base: 5.0, linha_base_oficial: 5.2,
+                  base_ajustada: true, alvo: 6.0, atual: { valor: 5.4, ano_ref: 2023, data_ref: "2023-12-31" }, progresso: 0.4, estado: "medida" } },
+        { cod_inep: 11000066, nome: "EMEF Rio Novo", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 7, plano_titulo: "Plano de gestão 2026",
+          meta: { id: 700, descricao: "IDEB 6,0", sentido: "aumentar", linha_base: 4.8, linha_base_oficial: 4.8,
+                  base_ajustada: false, alvo: 6.0, atual: null, progresso: null, estado: "sem_dado" } },
+      ] },
+    { codigo: "infra_quadra", rotulo: "Tem quadra de esportes", unidade: "sim/não", fonte: "INEP — Censo Escolar",
+      n_escolas: 1, n_metas: 1, n_medidas: 0, andamento_medio: null, n_base_ajustada: 0,
+      escolas: [
+        { cod_inep: 11000066, nome: "EMEF Rio Novo", municipio: "Alta Floresta D'Oeste", uf: "RO", plano_id: 7, plano_titulo: "Plano de gestão 2026",
+          meta: { id: 701, descricao: "Construir a quadra", sentido: "aumentar", linha_base: 0, linha_base_oficial: 0,
+                  base_ajustada: false, alvo: 1, atual: null, progresso: null, estado: "sem_dado" } },
+      ] },
+  ],
+};
