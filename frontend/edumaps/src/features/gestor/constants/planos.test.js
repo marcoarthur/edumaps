@@ -9,6 +9,11 @@ const CATALOGO = [
   { codigo: "matriculas_infantil", rotulo: "Matrículas — educação infantil" },
   { codigo: "infra_quadra", rotulo: "Tem quadra de esportes" },
   { codigo: "infra_biblioteca", rotulo: "Tem biblioteca ou sala de leitura" },
+  { codigo: "aprovacao_ai", rotulo: "Taxa de aprovação — anos iniciais" },
+  { codigo: "aprovacao_af", rotulo: "Taxa de aprovação — anos finais" },
+  { codigo: "abandono_ai", rotulo: "Taxa de abandono — anos iniciais" },
+  { codigo: "abandono_af", rotulo: "Taxa de abandono — anos finais" },
+  { codigo: "distorcao_af", rotulo: "Distorção idade-série — anos finais" },
 ];
 
 describe("sugerirIndicador", () => {
@@ -20,6 +25,13 @@ describe("sugerirIndicador", () => {
   it("prefere o rótulo com mais palavras em comum", () => {
     expect(sugerirIndicador("Aumentar as matrículas da educação infantil", CATALOGO)?.codigo).toBe("matriculas_infantil");
     expect(sugerirIndicador("Subir o IDEB dos anos finais", CATALOGO)?.codigo).toBe("ideb_af");
+  });
+
+  it("taxas de rendimento e distorção do INEP (#376)", () => {
+    expect(sugerirIndicador("Reduzir o abandono nos anos finais", CATALOGO)?.codigo).toBe("abandono_af");
+    expect(sugerirIndicador("Aumentar a taxa de aprovação", CATALOGO)?.codigo).toBe("aprovacao_ai");
+    expect(sugerirIndicador("Diminuir a distorção idade-série", CATALOGO)?.codigo).toBe("distorcao_af");
+    expect(sugerirIndicador("Taxa de frequência nas reuniões", CATALOGO)).toBeNull();
   });
 
   it("não sugere por palavra genérica nem sem relação", () => {

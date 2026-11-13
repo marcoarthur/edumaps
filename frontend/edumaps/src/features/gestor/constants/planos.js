@@ -95,6 +95,8 @@ const PALAVRAS_GENERICAS = new Set([
   "tem", "para", "dos", "das", "com", "sala", "algum", "alguma", "recurso", "anos", "total",
   "educacao", "basica", "rede", "publica", "raio", "escola", "meta", "aumentar", "reduzir",
   "manter", "melhorar", "subir", "ate", "nos", "nas", "pelo", "pela", "uma", "mais",
+  // "taxa" está em todos os rótulos de rendimento (#376): sozinha não distingue
+  "taxa",
 ]);
 
 const normalizar = (t) =>

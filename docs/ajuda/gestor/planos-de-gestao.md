@@ -29,7 +29,8 @@ destaca o que está atrasado e manda um resumo dos prazos por e-mail.
    **rascunho**.
 2. **Monte o plano:** na página do plano, crie os **objetivos** e, em cada um,
    as **metas** e as **ações**.
-   - **Meta com indicador oficial** (IDEB, matrículas, infraestrutura): a
+   - **Meta com indicador oficial** (IDEB, taxas de aprovação, reprovação e
+     abandono, distorção idade-série, matrículas, infraestrutura): a
      plataforma usa o último valor da escola como linha de base e atualiza a
      meta sozinha.
    - **Meta manual** (ex.: "reduzir as faltas para 12%"): você registra as
@@ -77,6 +78,10 @@ guiada. Ele abre sozinho na primeira visita e volta pelo botão **?** do menu.
   lê o relatório sabe de onde o andamento está sendo medido.
 - **Indicadores oficiais são anuais**, e o IDEB sai a cada dois anos. No dia a
   dia, quem mostra o avanço são as **ações** e as **metas manuais**.
+- **Taxas de aprovação, reprovação e abandono e distorção idade-série** são do
+  INEP, por escola e etapa (anos iniciais, anos finais, ensino médio), em %.
+  As de um ano letivo saem no ano seguinte. Etapa que a escola não oferece, ou
+  sem dado na fonte, aparece como **sem dado**, nunca como 0%.
 
 ## Evidências
 

@@ -36,7 +36,8 @@ conselho escolar o que avançou.
 - **Metas:** cada objetivo tem metas com linha de base, alvo, prazo e sentido
   (aumentar, reduzir ou manter).
 - **Metas com indicador oficial:** a meta pode seguir um indicador oficial da
-  escola (IDEB, matrículas, infraestrutura do Censo, vulnerabilidade
+  escola (IDEB, taxas de aprovação, reprovação e abandono, distorção
+  idade-série, matrículas, infraestrutura do Censo, vulnerabilidade
   territorial), que se atualiza sozinho todo dia nos planos vigentes (o
   encerrado fica congelado) e mostra a fonte e o ano. O histórico
   fica guardado mesmo que a fonte mude depois. Se a escola ajustar a linha de

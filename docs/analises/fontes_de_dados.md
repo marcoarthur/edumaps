@@ -147,6 +147,7 @@ licença, endpoint e granularidade) foi aplicado sem exceção: **nenhuma** font
 | CPTEC | 6 | Contexto sazonal; **só listagem de diretório**, sem API. |
 | Atlas do IDHM (PNUD/Ipea/FJP) | 1, 6 | ~120 indicadores municipais **com dimensões SAÚDE e VULNERABILIDADE**; sem API, download em XLSX. |
 | IDEB (INEP) | resultado | Já ingerido (`clean.ideb_notas_escolas`); sem licença verificada. |
+| Taxas de rendimento e distorção idade-série (INEP) | resultado | **Ingerido (#376)**, job `INEPIndicadores`: por escola, 2019 e 2021–2025 publicados (padrão 2023–2025); sem licença verificada (mesmo tratamento do IDEB). Ficha em `fontes/educacao.md`. |
 | ENEM (INEP) | resultado | Auto-seleção não censitária; granularidade individual. |
 | Censo Escolar (INEP) | base | **Já ingerido.** 1995–2025 confirmado; licença não verificada. |
 | **Prefeitura do Recife — CKAN** (transporte escolar, OD, fluxo, velocidade) | **5** | 16 pts e **única granularidade escolar** do lote de mobilidade, com a melhor API (CKAN DataStore consultável por SQL, sem auth) — mas **ODbL share-alike**, exatamente a razão que descartou o Banco Central. Vale como **prova de viabilidade** do indicador, não como fonte a ingerir. |
