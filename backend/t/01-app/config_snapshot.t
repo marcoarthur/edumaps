@@ -1,11 +1,15 @@
 # t/01-app/config_snapshot.t
 # ConfigSnapshot (t/lib): os testes rodam no mesmo banco da stack local e
 # mexem na config; o helper devolve as linhas como estavam no fim do
-# processo, inclusive o segredo cifrado (bytea).
+# processo, inclusive o segredo cifrado (bytea). E segura uma trava entre
+# processos do `guardar` ao `restaurar`, para a suíte rodar com `prove -j4`.
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
 use DBD::Pg ();
+use File::Temp qw(tempdir);
+use Time::HiRes qw(sleep);
+use ConfigSnapshot;
 use utf8;
 
 my $t   = Test::Mojo->new('EduMaps');
@@ -59,5 +63,33 @@ is estado(), $antes, 'linhas de volta como estavam (valor, segredo, metadados)';
 my ($bytes) = $dbh->selectrow_array('SELECT secret FROM app_config.items WHERE key = ?', {}, "$P.segredo");
 is length($bytes // ''), 256, 'segredo binário íntegro';
 ok $bytes eq $SEGREDO, 'mesmos bytes';
+
+subtest 'trava: outro processo só fotografa depois do restaurar' => sub {
+  my $marca = tempdir(CLEANUP => 1) . '/fotografou';
+  ConfigSnapshot::guardar($dbh, "$P.trava.%");
+  ok ConfigSnapshot::travado(), 'o primeiro guardar pega a trava';
+
+  my $outro = <<"PERL";
+use lib qw(t/lib lib);
+use Imports;
+use ConfigSnapshot;
+use Test::Mojo;
+my \$dbh = Test::Mojo->new('EduMaps')->app->schema->storage->dbh;
+ConfigSnapshot::guardar(\$dbh, '$P.trava.%');
+open my \$fh, '>', '$marca' or die \$!;
+close \$fh;
+PERL
+  my $pid = fork // die "fork: $!";
+  unless ($pid) { exec $^X, '-e', $outro; die "exec: $!" }
+
+  sleep 3;   # tempo de sobra para o outro processo subir a app e chegar à trava
+  ok !-e $marca, 'o outro processo espera a trava';
+
+  ConfigSnapshot::restaurar();
+  ok !ConfigSnapshot::travado(), 'restaurar solta a trava';
+  waitpid $pid, 0;
+  is $? >> 8, 0, 'o outro processo terminou bem';
+  ok -e $marca, 'e fotografou depois';
+};
 
 done_testing;
