@@ -390,7 +390,7 @@ sub _require_gestor($self) {
   }
 
   $self->stash(gestor => $gestor, gestor_token => $token);
-  return 1;
+  return $self->idempotencia_inicio;    # #416
 }
 
 # Pesquisas são da escola: a conta de rede (#394) tem sessão (me, logout), mas

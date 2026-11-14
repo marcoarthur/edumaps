@@ -31,6 +31,8 @@ sub startup ($self) {
   # Observabilidade: Sentry (5xx + jobs Minion falhos). Sem `sentry.dsn` no
   # conf/ambiente o plugin é no-op (helper `sentry` inativo).
   $self->plugin('EduMaps::Plugin::Sentry');
+  # #416: POST autenticado com Idempotency-Key não cria duas vezes.
+  $self->plugin('EduMaps::Plugin::Idempotencia');
   $self->plugin("EduMaps::Task::$_") for qw/Siope OSM Clustering Similarity SchoolEmbedding CityAnalytics GruposFolha Chat Relatorio SchoolProfile TelegramPolling CanaisRetencao CanaisEnvio GestorSenha Influencia Entorno Ivet PlanosAlertas PlanosOficiais/;
   # Session ANTES de Cache::SchoolSearch: o cache curto-circuita o
   # around_dispatch em HIT (não chama $next), então qualquer middleware

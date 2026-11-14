@@ -14,6 +14,27 @@ export function getApiToken() {
   return bearerToken;
 }
 
+// Chave de idempotência (#416). A trava de envio (`criarEnvio`) roda o
+// handler dentro de `comChaveDeEnvio`; o PRIMEIRO POST que começa na parte
+// síncrona dele leva o cabeçalho `Idempotency-Key`. O servidor devolve a
+// resposta guardada se a mesma chave voltar (ex.: tempo esgotado e clique de
+// novo), em vez de criar outra vez. Um POST feito depois de um `await` não
+// leva a chave e segue como antes.
+//
+// `ctx` = { chave, usada, renovar }: o cliente marca `renovar` quando a chave
+// não deve ser reaproveitada (2xx: concluída; 422: já usada com outros dados).
+let envioAtual = null;
+
+export function comChaveDeEnvio(ctx, fn) {
+  const anterior = envioAtual;
+  envioAtual = ctx;
+  try {
+    return fn();
+  } finally {
+    envioAtual = anterior;
+  }
+}
+
 export class ApiError extends Error {
   constructor(message, { status, url, data = null } = {}) {
     super(message);
@@ -49,9 +70,15 @@ async function request(path, { method = "GET", params, body, headers } = {}) {
 
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
   const authHeaders = bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {};
+  let envio = null;
+  if (method === "POST" && envioAtual && !envioAtual.usada) {
+    envio = envioAtual;
+    envio.usada = true;
+  }
   const requestHeaders = Object.assign(
     isFormData ? {} : { "Content-Type": "application/json" },
     authHeaders,
+    envio ? { "Idempotency-Key": envio.chave } : {},
     headers || {},
   );
 
@@ -60,6 +87,8 @@ async function request(path, { method = "GET", params, body, headers } = {}) {
     headers: requestHeaders,
     body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  if (envio && (response.ok || response.status === 422)) envio.renovar = true;
 
   if (!response.ok) {
     let message = `Erro ${response.status}`;
