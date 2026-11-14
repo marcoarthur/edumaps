@@ -11,9 +11,10 @@
 #   2. Roda o gate das migrations (db/fixtures/ci_db.sh verify): cada change
 #      roda o seu verify/*.sql e uma falha derruba o job (issue #160).
 #   3. Instala as dependências do backend (cpanfile: `apt` + `cpanm`) no runner.
-#   4. Roda `prove -r -l t/` com EDUMAPS_FIXTURES=1 — os testes que dependem de
-#      R, de serviços externos ou do schema staging se auto-pulam
-#      (t/lib/CI.pm).
+#   4. Roda `prove -r -l -j4 t/` com EDUMAPS_FIXTURES=1 — os testes que dependem
+#      de R, de serviços externos ou do schema staging se auto-pulam
+#      (t/lib/CI.pm). Em paralelo: os que mexem na config global passam um de
+#      cada vez pela trava do t/lib/ConfigSnapshot.pm.
 #
 # O CI não depende do dataset real (765 MB): o fixture traz 18 municípios e as
 # escolas exigidas pelos testes. Para reproduzir localmente o mesmo banco,
@@ -125,7 +126,9 @@ jobs:
 
       - name: suíte de testes
         working-directory: backend
-        run: prove -r -l t/
+        # 4 processos (o runner tem 4 vCPUs); quem grava config se serializa
+        # pela trava do ConfigSnapshot.
+        run: prove -r -l -j4 t/
 
       # Gerador do dicionário do Censo a partir do dicionário oficial do INEP
       # (#134): testes unittest com um xlsx sintético (só stdlib, sem rede).
