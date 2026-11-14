@@ -4,6 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-14 (bh) — #416: trava no backend contra criação repetida (PR aberto)
+
+- Plano aprovado: chave de idempotência (não o bloqueio por conteúdo, que
+  barraria repetições legítimas). Ela cobre o caso que sobrou do #415 (tempo
+  esgotado e novo clique); **não** cobre duas abas (cada uma tem a sua chave).
+- Sqitch `idempotencia`: `clean.idempotencia` (gestor_id, chave, rota,
+  corpo_hash, status, resposta, criado_em), sem GRANT ao leitor e na lista de
+  sensíveis de `leitor_grants.t`.
+- `EduMaps::Plugin::Idempotencia`: helper `idempotencia_inicio` no fim dos 4
+  portões de login (gestor#_require_sessao/_require_rede/_require_admin,
+  pesquisa#_require_gestor) + `after_dispatch`. Replay com
+  `Idempotent-Replayed: true`; 422 outra rota/corpo; 409 em andamento; erro
+  apaga a chave; validade 10 min, abandono 2 min, limpeza a cada envio (sem
+  job). Multipart: hash fixo (boundary muda). Falha do banco: segue sem trava.
+- Frontend: `comChaveDeEnvio` no `client.js` (só o primeiro POST síncrono do
+  handler leva a chave); `criarEnvio()` mantém a chave após falha e troca
+  após 2xx/422.
+- Testes: `t/04-api/gestor/idempotencia.t` 18/18; vitest 1246. A suíte Perl
+  com `-j4` falha em 7 arquivos de canais por concorrência; em série passam.
+- Local: imagens reconstruídas, change aplicada no dev; smoke via nginx
+  (replay com o mesmo id, 422). Plano "Smoke idempotência #416" ficou
+  arquivado no banco dev. Validado pelo developer.
+
 ## Sessão 2026-11-14 (bg) — duplo envio nos botões de salvar (PR #415 mergeado)
 
 - Achado do developer no teste local de metas e ações: entre o clique e o
