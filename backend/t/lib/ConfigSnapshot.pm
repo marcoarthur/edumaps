@@ -19,14 +19,48 @@ use DBD::Pg ();
 # colunas, inclusive o segredo cifrado). Como o módulo é compilado antes do
 # corpo do teste, o END dele roda depois dos END do teste, ou seja, depois
 # das limpezas que o próprio teste faz.
+#
+# Suíte em paralelo (`prove -j4`): a config é uma só para todos os processos.
+# Dois testes mexendo nela ao mesmo tempo viam a config um do outro (SMTP,
+# ritmo, limites) e, pior, um fotografava a config já alterada pelo outro e a
+# "restaurava" assim, deixando-a no banco. Por isso o primeiro `guardar` do
+# processo pega uma trava do Postgres (pg_advisory_lock, numa conexão só dela)
+# ANTES da foto, e o `restaurar` a solta depois de devolver as linhas. Os testes
+# que mexem na config rodam um de cada vez; o resto segue em paralelo. Se o
+# processo morrer, a conexão fecha e o Postgres solta a trava sozinho.
 
 my @COLUNAS = qw(key value secret secret_key_version sensitive updated_by updated_at);
 my @FOTOS;   # { dbh, padroes, linhas }
+
+our $TRAVA         = 4_157_041_416;   # chave da advisory lock (fixa, só dos testes)
+our $ESPERA_MAXIMA = '15min';         # lock_timeout: teste travado não prende a suíte
+my  $CONEXAO_TRAVA;                   # conexão dedicada que segura a trava
+my  $DONO;                            # pid que fotografou (filho de fork não restaura)
+
+sub _travar {
+  my ($dbh) = @_;
+  return if $CONEXAO_TRAVA;
+  $CONEXAO_TRAVA = $dbh->clone({ AutoCommit => 1, RaiseError => 1, PrintError => 0 })
+    or die "ConfigSnapshot: sem conexão para a trava: $DBI::errstr\n";
+  $CONEXAO_TRAVA->do("SET lock_timeout = '$ESPERA_MAXIMA'");
+  $CONEXAO_TRAVA->do('SELECT pg_advisory_lock(?)', {}, $TRAVA);
+}
+
+sub _soltar {
+  my $c = $CONEXAO_TRAVA or return;
+  undef $CONEXAO_TRAVA;
+  eval { $c->do('SELECT pg_advisory_unlock(?)', {}, $TRAVA); $c->disconnect; 1 }
+    or warn "ConfigSnapshot: falha ao soltar a trava: $@";
+}
+
+sub travado { $CONEXAO_TRAVA ? 1 : 0 }
 
 sub guardar {
   my ($dbh, @padroes) = @_;
   die "ConfigSnapshot::guardar: informe ao menos um padrão LIKE\n" unless @padroes;
   return unless $dbh->selectrow_array("SELECT to_regclass('app_config.items')");
+  _travar($dbh);
+  $DONO //= $$;
   my $cols   = join ', ', @COLUNAS;
   my $filtro = join ' OR ', ('key LIKE ?') x @padroes;
   my $linhas = $dbh->selectall_arrayref(
@@ -36,6 +70,7 @@ sub guardar {
 }
 
 sub restaurar {
+  return if defined $DONO && $DONO != $$;   # filho de fork: a foto é do pai
   # do último para o primeiro: se duas fotos cobrem a mesma chave, vale a
   # mais antiga (o estado de antes do teste)
   while (my $f = pop @FOTOS) {
@@ -58,6 +93,7 @@ sub restaurar {
     };
     warn "ConfigSnapshot: falha ao restaurar a config: $@" unless $ok;
   }
+  _soltar();
 }
 
 sub pendentes { scalar @FOTOS }

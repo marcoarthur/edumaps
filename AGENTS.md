@@ -99,6 +99,23 @@ yath -l t/02-models/SchoolNetwork.t     # runner moderno (preferido)
 Sem `-l`, o módulo `EduMaps` não é encontrado e os testes falham com
 "Can't find application class EduMaps in @INC".
 
+**Suíte inteira em paralelo**: `prove -r -l -j4 t/` (~1 min, contra ~3 min em
+série; o CI também roda com `-j4`). A config (`app_config.items`) é uma só
+para todos os processos, então **todo teste que grava config chama
+`ConfigSnapshot::guardar($dbh, ...)` antes da primeira escrita** (logo depois
+do `Test::Mojo`). Além de devolver a config no fim, o `guardar` pega uma trava
+do Postgres que faz esses testes rodarem um de cada vez; o resto segue em
+paralelo. Teste que grava config sem o `guardar` volta a falhar com `-j4`
+(429/409 e SMTP trocados) e pode deixar config gravada no banco.
+
+**Escola de teste com INEP só do arquivo.** Teste que cria escola
+(`clean.escolas`/`clean.censo_escolas`) declara o INEP como
+`my $INEP = 'NNNNNNNN';` com um número que nenhum outro arquivo usa — prefixo
+`60` (não há UF 60). Dois arquivos com o mesmo INEP apagam a escola e os dados
+um do outro com `-j4`. A `99999999` não é criada por teste nenhum: é a "escola
+que não existe" dos testes de 404 e o agregado da secretaria no SIOPE.
+`t/06-tools/inep_teste_unico.t` acusa as duas coisas.
+
 Alguns testes dependem de serviços externos e podem falhar por eles, não por
 regressão: `t/05-tasks/osm.t` (API Overpass do OpenStreetMap, às vezes lenta ou
 fora do ar) e `t/05-tasks/siope.t` (download do SIOPE). No CI eles são pulados

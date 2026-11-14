@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-14 (bi) — suíte do backend em paralelo (PR #418)
+
+- Roteiro do deploy do LXC de 16/11 em `docs/admin/deploy-lxc-2026-11-16.md`
+  (`9146f8d`, direto no main). Armadilha registrada lá: `sqitch status` sem
+  alvo vai ao `dev_super` (`database.dev`), a base errada; o motor R do LXC é
+  `analytic:8000`; os hosts LXC não resolvem por DNS (curl via ssh).
+- `prove -j4` falhava por duas fontes de concorrência:
+  1. **config global**: `ConfigSnapshot::guardar` agora pega advisory lock
+     (conexão própria) até o `restaurar` → testes que gravam config rodam um
+     de cada vez. A rodada paralela antiga tinha deixado 3 chaves
+     `canais.email.*` no banco de fixtures (apagadas).
+  2. **INEPs de teste repetidos** entre arquivos (10 INEPs, ~22 arquivos): um
+     apagava escola e dados (contatos, reuniões, pastas) do outro. Repetidos
+     → prefixo `60` (não há UF 60); ninguém cria a 99999999.
+     `t/06-tools/inep_teste_unico.t` acusa.
+- Suíte -j4: 65–71 s (3 rodadas PASS); série 205 s PASS. CI com `-j4`.
+- Branch `test/suite-paralela`, PR #418 (sem issue). Sem deploy/rebuild.
+
 ## Sessão 2026-11-14 (bh) — #416: trava no backend contra criação repetida (PR #417 mergeado)
 
 - Plano aprovado: chave de idempotência (não o bloqueio por conteúdo, que

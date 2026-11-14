@@ -19,8 +19,8 @@ my $has_tables = $dbh->selectrow_array("SELECT to_regclass('app_config.items')")
   && $dbh->selectrow_array(
   "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='clean' AND table_name='gestores' AND column_name='access_role')");
 
-my $INEP_ADMIN = '99999999';
-my $INEP_USER  = '88888888';
+my $INEP_ADMIN = '60001401';
+my $INEP_USER  = '60001402';
 my $ADMIN_EMAIL = sprintf('admin.config.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.config.%d@edumaps.test', $$);
 my $CPF_ADMIN   = sprintf('5111111%04d', $$ % 10000);

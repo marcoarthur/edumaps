@@ -40,7 +40,7 @@ my $dbh = $t->app->schema->storage->dbh;
 my $has = $dbh->selectrow_array("SELECT to_regclass('clean.planos_metas_medicoes')");
 skip_all('clean.planos_metas_medicoes ausente (migration nao aplicada)') unless $has;
 
-my $INEP  = '77777771';
+my $INEP  = '60000301';
 my $EMAIL = sprintf 'planos.ind.%d@edumaps.test', $$;
 my $SENHA = 'senha123';
 

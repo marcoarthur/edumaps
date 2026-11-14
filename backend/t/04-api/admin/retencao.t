@@ -31,7 +31,7 @@ my $minion = $app->minion;
 # os jobs do teste
 my $FILA = "teste_$$";
 $minion->app->config->{minion_filas}{canais_retencao} = $FILA;
-my $INEP_ADMIN  = '77777773';
+my $INEP_ADMIN  = '60000501';
 my $INEP_USER   = '66666663';
 my $ADMIN_EMAIL = sprintf('admin.retencao.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.retencao.%d@edumaps.test', $$);

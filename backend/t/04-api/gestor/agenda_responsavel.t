@@ -16,8 +16,8 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.reunioes')"
 );
 
-my $INEP  = '77777777';
-my $OUTRA = '66666666';
+my $INEP  = '60000102';
+my $OUTRA = '60000101';
 my $SENHA = 'senha123';
 
 my $email_a = sprintf 'resp.a.%d@edumaps.test', $$;
