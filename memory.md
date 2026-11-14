@@ -22,8 +22,10 @@
   conferida no bundle. Nota técnica **197**; ciclo
   `docs/personas/publicos/ciclos/2026-11-14-duplo-envio.md`.
 - **Regra para telas novas:** todo botão que grava usa `criarEnvio()`.
-- Fora do ciclo: trava no backend contra criação repetida (rede lenta, dois
-  navegadores); issue só se o developer pedir.
+- CI do main verde em `ff67fb1`; notify done enviado.
+- Trava no backend contra criação repetida (rede lenta, dois navegadores):
+  **issue #416** aberta a pedido do developer (chave de idempotência por
+  envio, ou alternativa por conteúdo; decisão no plano).
 
 ## Sessão 2026-11-14 (bf) — #138: decisões D1 a D7 aprovadas
 
