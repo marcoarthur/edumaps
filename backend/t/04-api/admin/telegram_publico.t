@@ -28,7 +28,7 @@ my $has = $dbh->selectrow_array("SELECT to_regclass('app_config.items')")
 
 my $model  = $t->app->model('Canal');
 my $minion = $t->app->minion;
-my $INEP_ADMIN = '77777771';
+my $INEP_ADMIN = '60000302';
 my $INEP_USER  = '66666661';
 my $ADMIN_EMAIL = sprintf('admin.tgpub.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.tgpub.%d@edumaps.test', $$);

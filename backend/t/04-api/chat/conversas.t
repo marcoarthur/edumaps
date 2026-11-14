@@ -14,8 +14,8 @@ my $dbh = $t->app->schema->storage->dbh;
 my $has_tables = $dbh->selectrow_array("SELECT to_regclass('clean.chat_conversas')")
   && $dbh->selectrow_array("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='clean' AND table_name='gestores' AND column_name='access_role')");
 
-my $INEP_ADMIN = '99999999';
-my $INEP_USER  = '88888888';
+my $INEP_ADMIN = '60001501';
+my $INEP_USER  = '60001502';
 my $ADMIN_EMAIL = sprintf('admin.chat.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.chat.%d@edumaps.test', $$);
 my $SENHA = 'senha123';

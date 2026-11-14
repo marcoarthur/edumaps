@@ -21,7 +21,7 @@ my $has = $dbh->selectrow_array("SELECT to_regclass('clean.consentimento_versoes
   && $dbh->selectrow_array(
   "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='clean' AND table_name='gestores' AND column_name='access_role')");
 
-my $INEP_ADMIN  = '77777772';
+my $INEP_ADMIN  = '60000401';
 my $INEP_USER   = '66666662';
 my $ADMIN_EMAIL = sprintf('admin.consent.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.consent.%d@edumaps.test', $$);

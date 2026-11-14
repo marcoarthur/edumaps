@@ -16,7 +16,7 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.reunioes')"
 );
 
-my $INEP  = '99999999';
+my $INEP  = '60001001';
 my $CPF   = sprintf('1234567%04d', $$ % 10000);
 my $EMAIL = sprintf 'teste.contatos.%d@edumaps.test', $$;
 my $SENHA = 'senha123';
@@ -25,11 +25,11 @@ my $token;
 my $auth = sub { { Authorization => "Bearer $token" } };
 
 my $out_token;
-my $OUTRA = '88888888';
+my $OUTRA = '60001002';
 my $out_email = sprintf 'outra.contatos.%d@edumaps.test', $$;
 
 # INEP usado no subteste da folha de pagamento (com três categorias).
-my $INEP_FOLHA = '99999998';
+my $INEP_FOLHA = '60001003';
 my $FOLHA_EMAIL = sprintf 'folha.contatos.%d@edumaps.test', $$;
 
 # Self-signup governado exige escola existente; garante INEPs de teste no

@@ -24,7 +24,7 @@ my $has_tables = $dbh->selectrow_array("SELECT to_regclass('clean.event_store')"
   && $dbh->selectrow_array(
   "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='clean' AND table_name='gestores' AND column_name='access_role')");
 
-my $INEP_ADMIN = '99999997';
+my $INEP_ADMIN = '60000801';
 my $INEP_USER  = '88888887';
 my $ADMIN_EMAIL = sprintf('admin.telemetry.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.telemetry.%d@edumaps.test', $$);

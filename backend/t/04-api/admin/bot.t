@@ -20,7 +20,7 @@ my $has_tables = $dbh->selectrow_array("SELECT to_regclass('app_config.items')")
   && $dbh->selectrow_array(
   "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='clean' AND table_name='gestores' AND column_name='access_role')");
 
-my $INEP_ADMIN = '77777777';
+my $INEP_ADMIN = '60000601';
 my $INEP_USER  = '66666666';
 my $ADMIN_EMAIL = sprintf('admin.bot.%d@edumaps.test', $$);
 my $USER_EMAIL  = sprintf('user.bot.%d@edumaps.test', $$);

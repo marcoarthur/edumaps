@@ -20,7 +20,7 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
 my $UPLOAD_DIR = "/tmp/edumaps_inventario_test_$$";
 $t->app->config->{upload_dir} = $UPLOAD_DIR;
 
-my $INEP   = '77777770';
+my $INEP   = '60000201';
 my $OUTRA  = '66666660';
 my $SENHA  = 'senha123';
 my $EMAIL  = sprintf 'inv.a.%d@edumaps.test', $$;

@@ -39,7 +39,7 @@ $t->app->helper(canais_smtp => sub {
   sub ($cfg, $to, $from, $envelope) { push @enviados, { to => $to, envelope => $envelope }; { ok => 1 } };
 });
 
-my $INEP  = '77777772';
+my $INEP  = '60000402';
 my $EMAIL = sprintf 'planos.alerta.%d@edumaps.test', $$;
 my $SENHA = 'senha123';
 my $BASE  = 'https://edumaps.teste.example';

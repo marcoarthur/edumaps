@@ -20,7 +20,7 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
   "SELECT to_regclass('clean.gestor_pesquisas')"
 );
 
-my $INEP  = '99999999';
+my $INEP  = '60001301';
 my $CPF   = sprintf('1234567%04d', $$ % 10000);
 my $EMAIL = sprintf 'teste.pesquisa.%d@edumaps.test', $$;
 

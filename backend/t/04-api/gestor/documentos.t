@@ -24,7 +24,7 @@ my $has_tables = $t->app->schema->storage->dbh->selectrow_array(
 my $UPLOAD_DIR = "/tmp/edumaps_documentos_test_$$";
 $t->app->config->{upload_dir} = $UPLOAD_DIR;
 
-my $INEP  = '99999999';
+my $INEP  = '60001101';
 my $CPF   = sprintf('1122334%04d', $$ % 10000);
 my $EMAIL = sprintf 'teste.documentos.%d@edumaps.test', $$;
 my $SENHA = 'senha123';
@@ -33,7 +33,7 @@ my ($token, $gestor_id);
 my $auth = sub { { Authorization => "Bearer $token" } };
 
 my $out_token;
-my $OUTRA = '88888888';
+my $OUTRA = '60001102';
 my $out_email = sprintf 'outra.documentos.%d@edumaps.test', $$;
 
 # Self-signup governado exige escola existente; garante INEPs de teste no
