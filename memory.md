@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-14 (bf) — #138: decisões D1 a D7 aprovadas
+
+- O developer aprovou as sete decisões da spec
+  `docs/specs/2026-11-13-similaridade-territorial.md` conforme a recomendação
+  (spec v0.2): componentes territoriais B–G do default do card (sem o bloco A
+  e sem `preto_pardo`); Gower no R com peso comum mínimo de 70%; qualquer
+  município, padrão mesma UF e etapa; avaliação por coerência, estabilidade e
+  validade de face; explicação top 3 parecidos + o mais diferente; bloco novo
+  no perfil da escola; sem raça/cor e lente **pública**.
+- Registrado na #138. Próximo passo segue as pré-condições da seção 5: deploy
+  do LXC (2026-11-16) → #295 → medição dos componentes no LXC → issues do
+  sprint.
+
 ## Sessão 2026-11-13 (be) — embedding diário e sem 0 (PR #414 mergeado, #413)
 
 - PR #414 mergeado (`fddd9fe`); #413 fechada. Nota técnica **196**; ciclo

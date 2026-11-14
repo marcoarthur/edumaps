@@ -2,7 +2,7 @@
 
 **Data:** 2026-11-13
 **Autor:** engenharia de requisitos (agente) com o developer
-**Versão:** 0.1 — rascunho; as decisões da seção 2 aguardam o developer
+**Versão:** 0.2 — decisões D1 a D7 aprovadas pelo developer (2026-11-14), todas conforme a recomendação
 **Issue relacionado:** #138 (reescopada nesta spec)
 **Base:**
 - a reavaliação da #138 (comentário de 2026-11-13);
@@ -66,7 +66,8 @@ ausência de dado nunca é tratada como zero (#154).
 | Pares do perfil | perfil da escola ("Escolas similares") | indicadores do Censo, IDEB e INSE | Gower no serviço R (`/similarity/db`, `analytics.similarity_pairs`) |
 | Municípios similares | análise da cidade | indicadores municipais | matriz euclidiana (`analytics_municipios_similaridade`) |
 
-Achados à parte, fora do escopo desta spec (vão para uma issue pequena):
+Achados à parte, fora do escopo desta spec, **resolvidos na #413** (PR #414,
+embedding atualizado todo dia e sem 0 no lugar de nota ausente):
 
 - nada no código enfileira `refresh_school_embeddings`, o job que atualiza o
   embedding; depois de um Censo novo ele fica velho até alguém rodá-lo à mão;
@@ -81,7 +82,10 @@ Achados à parte, fora do escopo desta spec (vão para uma issue pequena):
   escolas da rede por entorno.
 - **P4 — academia:** consumidora indireta, sem exportação nesta spec.
 
-## 2. Decisões a tomar (com recomendação)
+## 2. Decisões (aprovadas)
+
+**Registro:** em 2026-11-14 o developer aprovou as sete decisões conforme a
+recomendação de cada uma. Na D7, a lente é **pública**, como o próprio IVET.
 
 **D1 — Quais entradas.**
 - **Recomendação:** os **componentes territoriais do default do card**:
@@ -147,9 +151,7 @@ issue exige. Recomendação, três medidas:
   - nenhum componente de raça ou cor;
   - a explicação fala do entorno, nunca da população atendida;
   - pares só entre escolas, nada por pessoa.
-- **Ponto a decidir:** se a lente é pública (como o IVET da escola) ou fica
-  só para gestor logado.
-- **Recomendação para o ponto:** pública, como o próprio IVET.
+- **Acesso:** a lente é pública, como o IVET da escola, sem exigir login.
 
 ## 3. Requisitos formais (rascunho)
 
@@ -233,7 +235,7 @@ na nota técnica do ciclo. Se a coerência falhar, a lente não é publicada.
 
 ## 7. Critérios de aceitação globais
 
-- As decisões D1 a D7 estão registradas pelo developer.
+- As decisões D1 a D7 estão registradas pelo developer (feito em 2026-11-14).
 - Nenhum componente ausente é tratado como 0, em nenhuma camada (#154).
 - Cada par exibido diz por que as escolas são parecidas.
 - A avaliação da D4 passa antes da publicação, e os números estão na nota
