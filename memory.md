@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-14 (bg) — duplo envio nos botões de salvar (PR #415)
+## Sessão 2026-11-14 (bg) — duplo envio nos botões de salvar (PR #415 mergeado)
 
 - Achado do developer no teste local de metas e ações: entre o clique e o
   toast, o botão de salvar seguia clicável e o segundo clique criava réplica.
@@ -18,6 +18,9 @@
   `PlanoDetailPage.test.js` (POST contado pelo `server.events` do MSW);
   sem a trava falham com 2 POSTs. Suíte 1243/1243.
 - Branch `fix/frontend-duplo-envio`, PR #415 (sem issue). Validado na tela.
+- PR #415 mergeado (`2ffdf41`), CI verde. Imagem local do frontend
+  conferida no bundle. Nota técnica **197**; ciclo
+  `docs/personas/publicos/ciclos/2026-11-14-duplo-envio.md`.
 - **Regra para telas novas:** todo botão que grava usa `criarEnvio()`.
 - Fora do ciclo: trava no backend contra criação repetida (rede lenta, dois
   navegadores); issue só se o developer pedir.

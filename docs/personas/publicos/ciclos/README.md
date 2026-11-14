@@ -32,3 +32,4 @@ mudanças contado do lado do usuário. A nota técnica do ciclo (em
 | [2026-11-13](2026-11-13-visao-da-rede.md) | 2026-11-12 a 2026-11-13 | Visão da rede (#375) | ➡️ adotaria | ⬆️ com ressalvas → adotaria em piloto | sem impacto direto |
 | [2026-11-13 (fluxo)](2026-11-13-fluxo-inep.md) | 2026-11-13 | Rendimento e distorção do INEP nas metas (#376) | ➡️ adotaria (sem nova avaliação) | ➡️ piloto (sem nova avaliação) | sem impacto direto |
 | [2026-11-13 (embedding)](2026-11-13-embedding-diario.md) | 2026-11-13 | Escolas semelhantes do painel em dia e sem zero falso (#413) | ➡️ adotaria (sem nova avaliação) | sem impacto direto | sem impacto direto |
+| [2026-11-14 (duplo envio)](2026-11-14-duplo-envio.md) | 2026-11-14 | Botão de salvar sem réplica (PR #415) | ➡️ adotaria (sem nova avaliação) | ➡️ adotaria em piloto (sem nova avaliação) | sem impacto direto |

@@ -33,6 +33,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-13 — visão da rede](ciclos/2026-11-13-visao-da-rede.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-13 — fluxo do INEP](ciclos/2026-11-13-fluxo-inep.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-13 — escolas semelhantes em dia](ciclos/2026-11-13-embedding-diario.md#p3--rede-privada-mantenedor): sem impacto direto.
+- [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p3--rede-privada-mantenedor): sem impacto direto.
 
 ## Pendências
 
