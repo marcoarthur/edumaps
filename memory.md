@@ -4,7 +4,7 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-14 (bh) — #416: trava no backend contra criação repetida (PR aberto)
+## Sessão 2026-11-14 (bh) — #416: trava no backend contra criação repetida (PR #417 mergeado)
 
 - Plano aprovado: chave de idempotência (não o bloqueio por conteúdo, que
   barraria repetições legítimas). Ela cobre o caso que sobrou do #415 (tempo
@@ -26,6 +26,11 @@
 - Local: imagens reconstruídas, change aplicada no dev; smoke via nginx
   (replay com o mesmo id, 422). Plano "Smoke idempotência #416" ficou
   arquivado no banco dev. Validado pelo developer.
+- PR #417 mergeado (`8229bd2`), #416 fechada; CI do PR verde. Imagens
+  locais reconstruídas do main (md5 conferido). Nota técnica **198**; ciclo
+  `docs/personas/publicos/ciclos/2026-11-14-envio-sem-duplicidade.md`.
+  Entra no deploy do LXC de 2026-11-16 (`deploy_db_dev` com a change
+  `idempotencia`).
 
 ## Sessão 2026-11-14 (bg) — duplo envio nos botões de salvar (PR #415 mergeado)
 

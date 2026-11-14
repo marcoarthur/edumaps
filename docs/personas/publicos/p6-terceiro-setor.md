@@ -31,6 +31,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-13 — fluxo do INEP](ciclos/2026-11-13-fluxo-inep.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-13 — escolas semelhantes em dia](ciclos/2026-11-13-embedding-diario.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
+- [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 
 ## Pendências
 
