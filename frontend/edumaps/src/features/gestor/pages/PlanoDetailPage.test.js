@@ -141,11 +141,14 @@ describe("PlanoDetailPage", () => {
   // Duplo clique em "Salvar" não cria réplica: o botão trava até a resposta.
   describe("duplo envio", () => {
     let posts;
+    let chaves;
     const contar = ({ request }) => {
+      if (request.method === "POST") chaves.push(request.headers.get("Idempotency-Key"));
       if (request.method === "POST") posts.push(new URL(request.url).pathname);
     };
     beforeEach(() => {
       posts = [];
+      chaves = [];
       server.events.on("request:start", contar);
     });
     afterEach(() => server.events.removeListener("request:start", contar));
@@ -163,6 +166,8 @@ describe("PlanoDetailPage", () => {
       await waitFor(() => expect(addToast).toHaveBeenCalledWith("Meta adicionada.", "success"));
       expect(posts.filter((p) => p.endsWith("/metas"))).toHaveLength(1);
       expect(addToast.mock.calls.filter(([m]) => m === "Meta adicionada.")).toHaveLength(1);
+      // #416: o POST leva a chave de idempotência
+      expect(chaves[0]).toMatch(/^[0-9a-f-]{36}$/);
     });
 
     it("dois cliques em Salvar ação criam uma ação só", async () => {

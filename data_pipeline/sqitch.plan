@@ -170,3 +170,4 @@ planos_base_oficial [planos_evidencias] 2026-11-12T20:00:00Z Marco Arthur <arthu
 rede_acesso [gestor_access_role planos_base_oficial] 2026-11-12T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # #394: papel de rede (vinculos, convites, auditoria)
 planos_custo_executado [rede_acesso] 2026-11-12T23:00:00Z Marco Arthur <arthurpbs@gmail.com> # #395: custo executado e data da execucao nas acoes dos planos
 inep_rendimento_distorcao [planos_custo_executado] 2026-11-13T14:00:00Z Marco Arthur <arthurpbs@gmail.com> # #376: taxas de rendimento e distorcao idade-serie por escola (INEP) e 12 codigos de meta
+idempotencia [inep_rendimento_distorcao] 2026-11-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #416: chaves de idempotencia dos POSTs autenticados (sem criacao repetida)

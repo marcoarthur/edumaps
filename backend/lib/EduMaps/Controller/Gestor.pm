@@ -87,7 +87,7 @@ sub _require_sessao($self) {
   }
 
   $self->stash(gestor => $gestor, gestor_token => $token);
-  return 1;
+  return $self->idempotencia_inicio;    # #416
 }
 
 sub _require_gestor($self) {
@@ -120,7 +120,7 @@ sub _require_rede($self) {
     return 0;
   }
   $self->stash(gestor => $conta, gestor_token => $token);
-  return 1;
+  return $self->idempotencia_inicio;    # #416
 }
 
 # Gatilho dos under() administrativos: sessão de gestor válida + papel admin
@@ -147,7 +147,7 @@ sub _require_admin($self) {
   }
 
   $self->stash(gestor => $gestor, gestor_token => $token);
-  return 1;
+  return $self->idempotencia_inicio;    # #416
 }
 
 # Garante que o cod_inep da rota é o da escola logada (403 caso contrário).

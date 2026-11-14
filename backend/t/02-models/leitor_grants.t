@@ -37,7 +37,7 @@ my %SENSIVEIS = map { $_ => 1 } qw(
   pastas_escolares relatorios_salvos consentimento_versoes
   planos_gestao planos_objetivos planos_metas planos_acoes planos_auditoria
   planos_metas_medicoes planos_alertas_envio planos_evidencias
-  rede_vinculos rede_convites rede_auditoria
+  rede_vinculos rede_convites rede_auditoria idempotencia
   event_store session_tracking
   minion_jobs minion_locks minion_schedules minion_workers mojo_migrations
 );
