@@ -35,6 +35,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-12 — planos de gestão](ciclos/2026-11-12-planos-de-gestao.md#p4--academia-pesquisadora): sem impacto direto.
 - [2026-11-13 — visão da rede](ciclos/2026-11-13-visao-da-rede.md#p4--academia-pesquisadora): sem impacto direto.
 - [2026-11-13 — fluxo do INEP](ciclos/2026-11-13-fluxo-inep.md#p4--academia-pesquisadora): sem impacto direto.
+- [2026-11-13 — escolas semelhantes em dia](ciclos/2026-11-13-embedding-diario.md#p4--academia-pesquisadora): sem impacto direto.
 
 ## Pendências
 

@@ -4,9 +4,11 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-13 (be) — embedding diário e sem 0 (PR #414, #413)
+## Sessão 2026-11-13 (be) — embedding diário e sem 0 (PR #414 mergeado, #413)
 
-- Branch `fix/school-embedding-refresh` (226209f), PR #414 aberto após
+- PR #414 mergeado (`fddd9fe`); #413 fechada. Nota técnica **196**; ciclo
+  `docs/personas/publicos/ciclos/2026-11-13-embedding-diario.md`.
+  Branch `fix/school-embedding-refresh` (226209f), aberto após
   validação visual. `refresh_school_embeddings` diária às 05:00 BRT
   (autorreagendável, lock, manual); insere/atualiza só o que mudou/remove;
   escola com nota nula fica fora (#154) e o painel devolve
