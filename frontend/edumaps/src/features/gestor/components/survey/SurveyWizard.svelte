@@ -9,6 +9,7 @@
   // Autosave: debounce -> PUT (id existe) ou POST (primeiro save do rascunho).
   import { onMount, tick } from "svelte";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { ApiError } from "@/shared/api/client.js";
   import StepsIndicator from "./StepsIndicator.svelte";
   import PhoneMockup from "./PhoneMockup.svelte";
@@ -159,7 +160,10 @@
   }
 
   // ---- finalizar --------------------------------------------------------
-  async function finalize() {
+
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+  const finalize = envio.travar(async () => {
     const problema = draftValidoParaFinalizar(draft);
     if (problema) {
       addToast(problema, "warning");
@@ -176,7 +180,7 @@
         "error",
       );
     }
-  }
+  });
 
   function voltarParaLista() {
     window.location.href = `/gestor/pesquisas?inep=${inep}`;
@@ -488,12 +492,12 @@
           >
             ← Voltar
           </button>
-          <button
+          <button disabled={envio.ocupado}
             type="button"
             onclick={finalize}
-            class="px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors"
+            class="disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors"
           >
-            Finalizar e publicar
+            {envio.ocupado ? "Publicando…" : "Finalizar e publicar"}
           </button>
         </div>
       </div>

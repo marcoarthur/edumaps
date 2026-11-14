@@ -22,6 +22,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -133,7 +134,10 @@
     }
   }
 
-  async function salvarCategoria() {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const salvarCategoria = envio.travar(async () => {
     if (!novaCategoria.nome.trim()) return;
     try {
       const cat = await createCategoria(inep, {
@@ -147,9 +151,9 @@
       const msg = onApiError(err, "Não foi possível criar a categoria.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirCategoria(cat) {
+  const excluirCategoria = envio.travar(async (cat) => {
     if (!window.confirm(`Excluir a categoria "${cat.nome}"?`)) return;
     try {
       await deleteCategoria(inep, cat.id);
@@ -159,7 +163,7 @@
       const msg = onApiError(err, "Não foi possível excluir a categoria.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function abrirItem(tipo, item = null) {
     if (item) {
@@ -208,7 +212,7 @@
     return out;
   }
 
-  async function salvarItem() {
+  const salvarItem = envio.travar(async () => {
     if (!itemForm.nome.trim()) {
       addToast("Informe o nome do item.", "warning");
       return;
@@ -247,9 +251,9 @@
       const msg = onApiError(err, "Não foi possível salvar o item.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirItem(item) {
+  const excluirItem = envio.travar(async (item) => {
     if (!window.confirm(`Excluir "${item.nome}"?`)) return;
     try {
       await deleteItem(inep, item.id);
@@ -259,7 +263,7 @@
       const msg = onApiError(err, "Não foi possível excluir o item.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function enviarAnexo(event) {
     const file = event.target.files?.[0];
@@ -295,7 +299,7 @@
     }
   }
 
-  async function removerAnexo(anexo) {
+  const removerAnexo = envio.travar(async (anexo) => {
     try {
       await deleteAnexo(inep, itemForm.id, anexo.id);
       itemAnexos = itemAnexos.filter((a) => a.id !== anexo.id);
@@ -305,7 +309,7 @@
       const msg = onApiError(err, "Não foi possível remover o anexo.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function abrirFornecedor(f = null) {
     fornForm = f
@@ -322,7 +326,7 @@
       : { id: null, nome: "", tipo_servico: "", email: "", telefone: "", site: "", documento: "", observacoes: "" };
   }
 
-  async function salvarFornecedor() {
+  const salvarFornecedor = envio.travar(async () => {
     if (!fornForm.nome.trim()) {
       addToast("Informe o nome do fornecedor.", "warning");
       return;
@@ -350,9 +354,9 @@
       const msg = onApiError(err, "Não foi possível salvar o fornecedor.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirFornecedor(f) {
+  const excluirFornecedor = envio.travar(async (f) => {
     if (!window.confirm(`Excluir o fornecedor "${f.nome}"?`)) return;
     try {
       await deleteFornecedor(inep, f.id);
@@ -362,7 +366,7 @@
       const msg = onApiError(err, "Não foi possível excluir o fornecedor.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function sair() {
     try {
@@ -498,7 +502,7 @@
               <span class="block">Nome da categoria</span>
               <input bind:value={novaCategoria.nome} maxlength={L.CATEGORIA_NOME_MAX} placeholder="Ex.: Material de limpeza" class="mt-1 h-9 px-2 rounded-md border border-gray-300 text-sm" />
             </label>
-            <button type="button" onclick={salvarCategoria} class="h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">Criar</button>
+            <button disabled={envio.ocupado} type="button" onclick={salvarCategoria} class="disabled:opacity-50 disabled:cursor-not-allowed h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">{envio.ocupado ? "Criando…" : "Criar"}</button>
             <button type="button" onclick={() => (novaCategoria = { aberto: false, tipo, nome: "" })} class="h-9 px-3 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
           </div>
         {/if}
@@ -509,7 +513,7 @@
               <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] text-gray-600">
                 {c.nome}
                 {#if c.origem === "manual"}
-                  <button type="button" onclick={() => excluirCategoria(c)} class="text-gray-400 hover:text-red-600" title="Excluir categoria">✕</button>
+                  <button disabled={envio.ocupado} type="button" onclick={() => excluirCategoria(c)} class="disabled:opacity-50 disabled:cursor-not-allowed text-gray-400 hover:text-red-600" title="Excluir categoria">✕</button>
                 {/if}
               </span>
             {/each}
@@ -535,7 +539,7 @@
               </div>
               <div class="flex items-center gap-1">
                 <button type="button" onclick={() => abrirItem(tipo, item)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
-                <button type="button" onclick={() => excluirItem(item)} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => excluirItem(item)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
               </div>
             </div>
           {:else}
@@ -571,7 +575,7 @@
               </div>
               <div class="flex items-center gap-1">
                 <button type="button" onclick={() => abrirFornecedor(f)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
-                <button type="button" onclick={() => excluirFornecedor(f)} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => excluirFornecedor(f)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
               </div>
             </div>
           {:else}
@@ -702,7 +706,7 @@
               {#each itemAnexos as a (a.id)}
                 <li class="flex items-center justify-between text-xs text-gray-600">
                   <button type="button" onclick={() => baixarAnexo(a)} class="text-blue-600 hover:underline truncate">{a.nome_original}</button>
-                  <button type="button" onclick={() => removerAnexo(a)} class="text-gray-400 hover:text-red-600">✕</button>
+                  <button disabled={envio.ocupado} type="button" onclick={() => removerAnexo(a)} class="disabled:opacity-50 disabled:cursor-not-allowed text-gray-400 hover:text-red-600">✕</button>
                 </li>
               {:else}
                 <li class="text-xs text-gray-400">Nenhum anexo.</li>
@@ -714,7 +718,7 @@
 
       <footer class="flex justify-end gap-2 border-t border-gray-100 p-4">
         <button type="button" onclick={fecharItem} class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
-        <button type="button" onclick={salvarItem} class="px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Salvar</button>
+        <button disabled={envio.ocupado} type="button" onclick={salvarItem} class="disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
       </footer>
     </div>
   </div>
@@ -760,7 +764,7 @@
       </div>
       <footer class="flex justify-end gap-2 border-t border-gray-100 p-4">
         <button type="button" onclick={() => (fornForm = null)} class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
-        <button type="button" onclick={salvarFornecedor} class="px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Salvar</button>
+        <button disabled={envio.ocupado} type="button" onclick={salvarFornecedor} class="disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
       </footer>
     </div>
   </div>

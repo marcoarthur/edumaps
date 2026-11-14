@@ -21,6 +21,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -282,8 +283,16 @@
       "versoes-doc": () => abrirVersoes(payload.doc),
       "historico-doc": () => abrirHistorico(payload.doc),
     };
-    acoes[tipo]?.();
+    const fn = acoes[tipo];
+    if (!fn) return;
+    // Ações que gravam passam pela trava: uma por vez, sem réplica.
+    if (GRAVAM.has(tipo)) envio.rodar(fn);
+    else fn();
   }
+
+  const GRAVAM = new Set(["nova-pasta", "renomear-pasta", "mover-pasta", "excluir-pasta",
+                          "renomear-doc", "mover-doc", "excluir-doc", "tags-doc"]);
+  const envio = criarEnvio();
 
   const qtdEm = (pai) =>
     documentos.filter((d) => (d.pasta_id ?? null) === pai).length +

@@ -17,6 +17,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import { parseContatos } from "../utils/contatoParser.js";
@@ -77,7 +78,10 @@
 
   const totalSelecionados = $derived(parseContatos(textoImport).length);
 
-  async function salvarNovo() {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const salvarNovo = envio.travar(async () => {
     if (!novo.nome.trim()) {
       addToast("Informe o nome do contato.", "warning");
       return;
@@ -98,9 +102,9 @@
     } catch (err) {
       error = onApiError(err, "Não foi possível salvar o contato.") ?? "Não foi possível salvar o contato.";
     }
-  }
+  });
 
-  async function salvarEdicao() {
+  const salvarEdicao = envio.travar(async () => {
     if (!edit.nome.trim()) {
       addToast("Informe o nome do contato.", "warning");
       return;
@@ -121,7 +125,7 @@
       const msg = onApiError(err, "Não foi possível atualizar o contato.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function abrirEdicao(c) {
     editId = c.id;
@@ -134,7 +138,7 @@
     };
   }
 
-  async function excluirContato(c) {
+  const excluirContato = envio.travar(async (c) => {
     if (!window.confirm(`Excluir ${c.nome}?`)) return;
     try {
       await deleteContato(inep, c.id);
@@ -144,9 +148,9 @@
       const msg = onApiError(err, "Não foi possível excluir o contato.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function enviarImport() {
+  const enviarImport = envio.travar(async () => {
     const lista = parseContatos(textoImport);
     if (lista.length === 0) {
       addToast("Cole ao menos um contato no formato nome; email; telefone; grupo.", "warning");
@@ -168,10 +172,10 @@
       const msg = onApiError(err, "Não foi possível importar os contatos.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   // Importa os profissionais da folha de pagamento como contatos (nome + cargo).
-  async function importarDaFolha() {
+  const importarDaFolha = envio.travar(async () => {
     resultadoImport = null;
     try {
       const res = await importarContatosFolha(inep);
@@ -188,9 +192,9 @@
       const msg = onApiError(err, "Não foi possível importar da folha.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function criarGrupo() {
+  const criarGrupo = envio.travar(async () => {
     if (!novoGrupo.trim()) return;
     try {
       const criado = await createGrupo(inep, novoGrupo.trim());
@@ -201,9 +205,9 @@
       const msg = onApiError(err, "Não foi possível criar o grupo.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirGrupo(g) {
+  const excluirGrupo = envio.travar(async (g) => {
     if (!window.confirm(`Excluir o grupo "${g.nome}" (${g.n_contatos} contato(s))?`)) return;
     try {
       await deleteGrupo(inep, g.id);
@@ -216,7 +220,7 @@
       const msg = onApiError(err, "Não foi possível excluir o grupo.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function sair() {
     try {
@@ -299,7 +303,7 @@
         <button
           type="button"
           onclick={enviarImport}
-          disabled={totalSelecionados === 0}
+          disabled={envio.ocupado || totalSelecionados === 0}
           class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >Importar</button>
         {#if resultadoImport}
@@ -317,10 +321,10 @@
             Traz os profissionais da folha da escola como contatos (nome e cargo),
             organizados nos grupos da folha. Não repete quem já está na agenda.
           </p>
-          <button
+          <button disabled={envio.ocupado}
             type="button"
             onclick={importarDaFolha}
-            class="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+            class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
           >Importar da folha</button>
         </div>
 
@@ -337,11 +341,11 @@
                     class="rounded bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase"
                   >folha</span>
                 {:else}
-                  <button
+                  <button disabled={envio.ocupado}
                     type="button"
                     title={`Excluir ${g.nome}`}
                     onclick={() => excluirGrupo(g)}
-                    class="text-blue-400 hover:text-red-600 transition-colors"
+                    class="disabled:opacity-50 disabled:cursor-not-allowed text-blue-400 hover:text-red-600 transition-colors"
                   >✕</button>
                 {/if}
               </span>
@@ -358,7 +362,7 @@
             />
             <button
               type="submit"
-              disabled={!novoGrupo.trim()}
+              disabled={envio.ocupado || !novoGrupo.trim()}
               class="px-3 h-9 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors"
             >Criar</button>
           </form>
@@ -406,8 +410,9 @@
             </select>
             <button
               type="submit"
-              class="w-full h-9 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-            >Salvar</button>
+              disabled={envio.ocupado}
+              class="w-full h-9 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >{envio.ocupado ? "Salvando…" : "Salvar"}</button>
           </form>
         {/if}
 
@@ -429,7 +434,7 @@
                     {/each}
                   </select>
                   <div class="flex gap-1">
-                    <button type="submit" class="px-2 h-7 rounded bg-blue-600 text-white text-xs">Salvar</button>
+                    <button type="submit" disabled={envio.ocupado} class="px-2 h-7 rounded bg-blue-600 text-white text-xs disabled:opacity-50">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
                     <button type="button" onclick={() => { editId = null; }} class="px-2 h-7 rounded bg-gray-200 text-gray-700 text-xs">Cancelar</button>
                   </div>
                 </form>
@@ -445,7 +450,7 @@
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
                   <button type="button" onclick={() => abrirEdicao(c)} class="px-2 py-1 rounded text-xs text-gray-500 hover:bg-gray-100 transition-colors">Editar</button>
-                  <button type="button" onclick={() => excluirContato(c)} class="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                  <button disabled={envio.ocupado} type="button" onclick={() => excluirContato(c)} class="disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                 </div>
               {/if}
             </li>

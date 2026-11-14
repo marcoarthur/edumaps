@@ -24,6 +24,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -121,9 +122,13 @@
     plano = await getPlano(inep, planoId);
   }
 
+  // Uma mudança por vez: enquanto uma está em curso, os botões que mudam o
+  // plano ficam desabilitados e um segundo clique é ignorado (sem réplica).
+  const envio = criarEnvio();
+
   // Executa uma mudança, mostra o toast e recarrega o plano (o progresso é
   // recalculado no backend).
-  async function mudar(fn, ok, padrao) {
+  const mudar = envio.travar(async (fn, ok, padrao) => {
     try {
       await fn();
       if (ok) addToast(ok, "success");
@@ -134,7 +139,7 @@
       if (msg) addToast(msg, "error");
       return false;
     }
-  }
+  });
 
   // --- plano -----------------------------------------------------------------
   const situacao = (nova, ok) =>
@@ -147,7 +152,7 @@
       "Não foi possível mudar os alertas.",
     );
 
-  async function arquivar() {
+  const arquivar = envio.travar(async () => {
     if (!window.confirm(`Arquivar o plano "${plano.titulo}"? Ele sai da lista, mas não é apagado.`)) return;
     try {
       await arquivarPlano(inep, planoId);
@@ -157,7 +162,7 @@
       const msg = onApiError(err, "Não foi possível arquivar o plano.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   // --- objetivos ---------------------------------------------------------------
   async function salvarObjetivo() {
@@ -528,7 +533,7 @@
     {/if}
     <div class="flex justify-end gap-2">
       <button type="button" onclick={() => (metaForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-      <button type="button" onclick={salvarMeta} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{metaForm.id ? "Salvar alterações" : "Salvar meta"}</button>
+      <button type="button" disabled={envio.ocupado} onclick={salvarMeta} class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : metaForm.id ? "Salvar alterações" : "Salvar meta"}</button>
     </div>
   </div>
 {/snippet}
@@ -569,7 +574,7 @@
     </div>
     <div class="flex justify-end gap-2">
       <button type="button" onclick={() => (acaoForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-      <button type="button" onclick={salvarAcao} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{acaoForm.id ? "Salvar alterações" : "Salvar ação"}</button>
+      <button type="button" disabled={envio.ocupado} onclick={salvarAcao} class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : acaoForm.id ? "Salvar alterações" : "Salvar ação"}</button>
     </div>
   </div>
 {/snippet}
@@ -600,7 +605,7 @@
               {/if}
             </span>
             {#if editavel}
-              <button type="button" onclick={() => desligarEvidencia(ev)} aria-label={`Retirar evidência ${ev.titulo ?? ev.texto}`} class="text-red-600 hover:underline shrink-0">✕</button>
+              <button type="button" disabled={envio.ocupado} onclick={() => desligarEvidencia(ev)} aria-label={`Retirar evidência ${ev.titulo ?? ev.texto}`} class="disabled:opacity-50 disabled:cursor-not-allowed text-red-600 hover:underline shrink-0">✕</button>
             {/if}
           </li>
         {/each}
@@ -674,7 +679,7 @@
               <option value="">Escolha o documento…</option>
               {#each documentosEscola as d (d.id)}<option value={String(d.id)}>{d.nome} (v{d.versao_atual})</option>{/each}
             </select>
-            <button type="button" onclick={() => salvarArquivo(Number(docEscolhido))} disabled={!docEscolhido} class="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">Ligar</button>
+            <button type="button" onclick={() => salvarArquivo(Number(docEscolhido))} disabled={envio.ocupado || !docEscolhido} class="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">Ligar</button>
           {:else}
             <span class="text-xs text-gray-500">Nenhum documento guardado. Envie o arquivo em Documentos e planos.</span>
           {/if}
@@ -683,7 +688,7 @@
           <button type="button" onclick={baixarArquivo} class="text-blue-700 hover:underline" title="Baixar a versão atual">📄 {plano.documento.nome} (v{plano.documento.versao_atual})</button>
           {#if editavel}
             <button type="button" onclick={escolherArquivo} class="text-xs text-blue-700 hover:underline">Trocar</button>
-            <button type="button" onclick={desligarArquivo} class="text-xs text-red-700 hover:underline">Desligar</button>
+            <button type="button" disabled={envio.ocupado} onclick={desligarArquivo} class="disabled:opacity-50 disabled:cursor-not-allowed text-xs text-red-700 hover:underline">Desligar</button>
           {/if}
         {:else}
           <span class="text-xs text-gray-500">Nenhum arquivo ligado.</span>
@@ -694,22 +699,22 @@
       </div>
       <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
         {#if plano.situacao === "rascunho"}
-          <button type="button" onclick={() => situacao("vigente", "Plano em vigor.")} class="px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Colocar em vigor</button>
+          <button type="button" disabled={envio.ocupado} onclick={() => situacao("vigente", "Plano em vigor.")} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Colocar em vigor</button>
         {/if}
         {#if plano.situacao === "vigente"}
-          <button type="button" onclick={() => situacao("encerrado", "Plano encerrado.")} class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">Encerrar plano</button>
+          <button type="button" disabled={envio.ocupado} onclick={() => situacao("encerrado", "Plano encerrado.")} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">Encerrar plano</button>
         {/if}
         {#if plano.situacao === "encerrado"}
-          <button type="button" onclick={() => situacao("vigente", "Plano reaberto.")} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300">Reabrir plano</button>
+          <button type="button" disabled={envio.ocupado} onclick={() => situacao("vigente", "Plano reaberto.")} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300">Reabrir plano</button>
           <span class="text-xs text-gray-500">Plano encerrado: só leitura.</span>
         {/if}
         {#if editavel}
           <label class="flex items-center gap-2 text-xs text-gray-600 ml-auto">
-            <input type="checkbox" checked={plano.alertas_ativos} onchange={alternarAlertas} class="accent-blue-600" />
+            <input type="checkbox" checked={plano.alertas_ativos} disabled={envio.ocupado} onchange={alternarAlertas} class="accent-blue-600" />
             Receber alertas de prazo por e-mail
           </label>
         {/if}
-        <button type="button" onclick={arquivar} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Arquivar</button>
+        <button type="button" disabled={envio.ocupado} onclick={arquivar} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Arquivar</button>
       </div>
     </section>
 
@@ -741,7 +746,7 @@
           <label class="text-xs text-gray-600 flex-1 min-w-[16rem]"><span class="block">Objetivo *</span>
             <input bind:value={objetivoForm.titulo} maxlength={L.OBJETIVO_MAX} placeholder="Ex.: Melhorar a aprendizagem em leitura" class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
           <button type="button" onclick={() => (objetivoForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-          <button type="button" onclick={salvarObjetivo} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar objetivo</button>
+          <button type="button" disabled={envio.ocupado} onclick={salvarObjetivo} class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar objetivo"}</button>
         </div>
       {/if}
 
@@ -752,7 +757,7 @@
               <label class="text-xs text-gray-600 flex-1 min-w-[16rem]"><span class="block">Objetivo *</span>
                 <input bind:value={objetivoEdit.titulo} maxlength={L.OBJETIVO_MAX} class="mt-1 w-full h-9 px-2 rounded-md border border-gray-300 text-sm" /></label>
               <button type="button" onclick={() => (objetivoEdit = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-              <button type="button" onclick={salvarObjetivoEdit} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar alterações</button>
+              <button type="button" disabled={envio.ocupado} onclick={salvarObjetivoEdit} class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar alterações"}</button>
             </div>
           {:else}
           <div class="flex items-start justify-between gap-2">
@@ -760,7 +765,7 @@
             {#if editavel}
               <div class="flex gap-1 shrink-0">
               <button type="button" onclick={() => (objetivoEdit = { id: o.id, titulo: o.titulo })} aria-label={`Editar objetivo ${o.titulo}`} class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">✎</button>
-              <button type="button" onclick={() => excluirObjetivo(o)} aria-label={`Excluir objetivo ${o.titulo}`} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">✕</button>
+              <button type="button" disabled={envio.ocupado} onclick={() => excluirObjetivo(o)} aria-label={`Excluir objetivo ${o.titulo}`} class="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">✕</button>
               </div>
             {/if}
           </div>
@@ -796,7 +801,7 @@
                     {#if editavel}
                       <div class="flex gap-1 shrink-0">
                         <button type="button" onclick={() => editarMeta(m)} aria-label={`Editar meta ${m.descricao}`} class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs hover:bg-gray-200">✎</button>
-                        <button type="button" onclick={() => excluirMeta(m)} aria-label={`Excluir meta ${m.descricao}`} class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
+                        <button type="button" disabled={envio.ocupado} onclick={() => excluirMeta(m)} aria-label={`Excluir meta ${m.descricao}`} class="disabled:opacity-50 disabled:cursor-not-allowed px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
                       </div>
                     {/if}
                   </div>
@@ -814,7 +819,7 @@
                     {#if m.medicoes.length}
                       <ul class="text-[11px] text-gray-500 flex flex-wrap gap-x-3">
                         {#each m.medicoes as med (med.id)}
-                          <li>{fmtData(med.data_ref)}: {fmtNum(med.valor)}{#if editavel} <button type="button" onclick={() => excluirMedicao(m, med)} aria-label={`Excluir medição de ${fmtData(med.data_ref)}`} class="text-red-600 hover:underline">✕</button>{/if}</li>
+                          <li>{fmtData(med.data_ref)}: {fmtNum(med.valor)}{#if editavel} <button type="button" disabled={envio.ocupado} onclick={() => excluirMedicao(m, med)} aria-label={`Excluir medição de ${fmtData(med.data_ref)}`} class="disabled:opacity-50 disabled:cursor-not-allowed text-red-600 hover:underline">✕</button>{/if}</li>
                         {/each}
                       </ul>
                     {/if}
@@ -828,7 +833,7 @@
                           <label class="text-xs text-gray-600 flex-1 min-w-[10rem]"><span class="block">Nota</span>
                             <input bind:value={medicaoForm.nota} maxlength="500" class="mt-1 w-full h-8 px-2 rounded-md border border-gray-300 text-sm" /></label>
                           <button type="button" onclick={() => (medicaoForm = null)} class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 text-xs hover:bg-gray-300">Cancelar</button>
-                          <button type="button" onclick={salvarMedicao} class="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Registrar</button>
+                          <button type="button" disabled={envio.ocupado} onclick={salvarMedicao} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Registrar"}</button>
                         </div>
                       {:else}
                         <button type="button" onclick={() => novaMedicao(m)} class="text-xs text-blue-700 hover:underline">+ Registrar medição</button>
@@ -874,11 +879,11 @@
                     </p>
                   </div>
                   {#if editavel}
-                    <select value={a.situacao} onchange={(e) => mudarSituacaoAcao(a, e.target.value)} aria-label={`Situação de ${a.descricao}`} class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white">
+                    <select value={a.situacao} disabled={envio.ocupado} onchange={(e) => mudarSituacaoAcao(a, e.target.value)} aria-label={`Situação de ${a.descricao}`} class="h-8 px-2 rounded-md border border-gray-300 text-xs bg-white">
                       {#each ACAO_SITUACOES as s (s.valor)}<option value={s.valor}>{s.rotulo}</option>{/each}
                     </select>
                     <button type="button" onclick={() => editarAcao(a)} aria-label={`Editar ação ${a.descricao}`} class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs hover:bg-gray-200">✎</button>
-                    <button type="button" onclick={() => excluirAcao(a)} aria-label={`Excluir ação ${a.descricao}`} class="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
+                    <button type="button" disabled={envio.ocupado} onclick={() => excluirAcao(a)} aria-label={`Excluir ação ${a.descricao}`} class="disabled:opacity-50 disabled:cursor-not-allowed px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs hover:bg-red-100">✕</button>
                   {:else}
                     <span class="text-xs text-gray-600">{ACAO_SITUACAO_LABEL[a.situacao]}</span>
                   {/if}

@@ -18,6 +18,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -102,7 +103,10 @@
     };
   }
 
-  async function salvarInteracao() {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const salvarInteracao = envio.travar(async () => {
     if (!interForm.assunto.trim()) {
       addToast("Informe o assunto da interação.", "warning");
       return;
@@ -130,9 +134,9 @@
       const msg = onApiError(err, "Não foi possível salvar a interação.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirInteracao(i) {
+  const excluirInteracao = envio.travar(async (i) => {
     if (!window.confirm("Excluir esta interação?")) return;
     try {
       await deleteInteracao(inep, relacaoId, i.id);
@@ -142,7 +146,7 @@
       const msg = onApiError(err, "Não foi possível excluir a interação.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function enviarDocumento() {
     if (!docForm.arquivo) {
@@ -178,7 +182,7 @@
     }
   }
 
-  async function removerDocumento(d) {
+  const removerDocumento = envio.travar(async (d) => {
     if (!window.confirm(`Remover "${d.nome_original}"?`)) return;
     try {
       await deleteDocumento(inep, relacaoId, d.id);
@@ -188,7 +192,7 @@
       const msg = onApiError(err, "Não foi possível remover o documento.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function fmtData(d) {
     if (!d) return "";
@@ -197,7 +201,7 @@
   }
 
   // ------------------------------- tarefas ---------------------------------
-  async function adicionarTarefa() {
+  const adicionarTarefa = envio.travar(async () => {
     if (!tarefaForm.descricao.trim()) {
       addToast("Descreva a tarefa.", "warning");
       return;
@@ -215,9 +219,9 @@
       const msg = onApiError(err, "Não foi possível adicionar a tarefa.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function alternarTarefa(t) {
+  const alternarTarefa = envio.travar(async (t) => {
     const status = t.status === "concluida" ? "pendente" : "concluida";
     try {
       const atual = await updateTarefa(inep, relacaoId, t.id, {
@@ -229,9 +233,9 @@
       const msg = onApiError(err, "Não foi possível atualizar a tarefa.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirTarefa(t) {
+  const excluirTarefa = envio.travar(async (t) => {
     if (!window.confirm("Excluir esta tarefa?")) return;
     try {
       await deleteTarefa(inep, relacaoId, t.id);
@@ -241,7 +245,7 @@
       const msg = onApiError(err, "Não foi possível excluir a tarefa.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function sair() {
     try {
@@ -330,7 +334,7 @@
             <textarea bind:value={interForm.resultado} rows="2" class="mt-1 w-full rounded-md border border-gray-300 text-sm p-2"></textarea></label>
           <div class="flex justify-end gap-2">
             <button type="button" onclick={() => (interForm = null)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Cancelar</button>
-            <button type="button" onclick={salvarInteracao} class="px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Salvar</button>
+            <button disabled={envio.ocupado} type="button" onclick={salvarInteracao} class="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
           </div>
         </div>
       {/if}
@@ -352,7 +356,7 @@
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 <button type="button" onclick={() => editarInteracao(i)} class="px-2.5 py-1 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
-                <button type="button" onclick={() => excluirInteracao(i)} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">✕</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => excluirInteracao(i)} class="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">✕</button>
               </div>
             </div>
           </li>
@@ -374,14 +378,14 @@
         </div>
         <div class="flex items-center gap-2">
           <input bind:value={tarefaForm.responsavel} placeholder="Responsável" class="flex-1 h-9 px-2 rounded-md border border-gray-300 text-sm" />
-          <button type="button" onclick={adicionarTarefa} class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">+ Adicionar</button>
+          <button disabled={envio.ocupado} type="button" onclick={adicionarTarefa} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">{envio.ocupado ? "Salvando…" : "+ Adicionar"}</button>
         </div>
       </div>
 
       <ul class="rounded-card bg-white border border-gray-200 shadow-card divide-y divide-gray-100">
         {#each tarefas as t (t.id)}
           <li class="flex items-center gap-3 p-3">
-            <input type="checkbox" checked={t.status === "concluida"} onchange={() => alternarTarefa(t)} class="accent-blue-600" />
+            <input type="checkbox" checked={t.status === "concluida"} disabled={envio.ocupado} onchange={() => alternarTarefa(t)} class="accent-blue-600" />
             <div class="min-w-0 flex-1">
               <p class={`text-sm ${t.status === "concluida" ? "line-through text-gray-400" : "text-gray-800"}`}>{t.descricao}</p>
               <p class="text-xs text-gray-500">
@@ -389,7 +393,7 @@
                 {#if t.prazo}· até {fmtData(t.prazo)}{/if}
               </p>
             </div>
-            <button type="button" onclick={() => excluirTarefa(t)} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 shrink-0">✕</button>
+            <button disabled={envio.ocupado} type="button" onclick={() => excluirTarefa(t)} class="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 shrink-0">✕</button>
           </li>
         {:else}
           <li class="p-6 text-center text-sm text-gray-400">Nenhuma tarefa.</li>
@@ -430,7 +434,7 @@
                 {d.tipo ?? "documento"}{#if d.referencia} · {d.referencia}{/if}{#if d.data} · {fmtData(d.data)}{/if}
               </p>
             </div>
-            <button type="button" onclick={() => removerDocumento(d)} class="px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 shrink-0">Remover</button>
+            <button disabled={envio.ocupado} type="button" onclick={() => removerDocumento(d)} class="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 shrink-0">Remover</button>
           </li>
         {:else}
           <li class="p-6 text-center text-sm text-gray-400">Nenhum documento anexado.</li>

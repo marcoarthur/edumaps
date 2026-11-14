@@ -7,6 +7,7 @@ import { setSessaoToken } from "../utils/gestorSession.js";
 import { addToast } from "@/shared/stores/toastStore.js";
 import { SESSION_TOKEN } from "../mocks/fixtures.js";
 import { resetPlanosMock } from "../mocks/planosHandlers.js";
+import { server } from "../../../mocks/server.js";
 
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: vi.fn() }));
 
@@ -135,5 +136,46 @@ describe("PlanoDetailPage", () => {
     await screen.findByRole("heading", { name: "Plano de ação 2026" });
     await fireEvent.click(screen.getByLabelText("Receber alertas de prazo por e-mail"));
     await waitFor(() => expect(addToast).toHaveBeenCalledWith("Alertas de prazo desligados.", "success"));
+  });
+
+  // Duplo clique em "Salvar" não cria réplica: o botão trava até a resposta.
+  describe("duplo envio", () => {
+    let posts;
+    const contar = ({ request }) => {
+      if (request.method === "POST") posts.push(new URL(request.url).pathname);
+    };
+    beforeEach(() => {
+      posts = [];
+      server.events.on("request:start", contar);
+    });
+    afterEach(() => server.events.removeListener("request:start", contar));
+
+    it("dois cliques em Salvar meta criam uma meta só", async () => {
+      abrir(1);
+      await screen.findByText("Melhorar a aprendizagem");
+      await fireEvent.click(screen.getByRole("button", { name: "+ Meta" }));
+      await fireEvent.input(screen.getByLabelText("Alvo"), { target: { value: "10" } });
+      await fireEvent.input(screen.getByPlaceholderText("Ex.: Reduzir as faltas para 12%"), { target: { value: "Meta repetida" } });
+      const botao = screen.getByRole("button", { name: "Salvar meta" });
+      fireEvent.click(botao);
+      fireEvent.click(botao);
+      expect(await screen.findByRole("button", { name: "Salvando…" })).toBeDisabled();
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Meta adicionada.", "success"));
+      expect(posts.filter((p) => p.endsWith("/metas"))).toHaveLength(1);
+      expect(addToast.mock.calls.filter(([m]) => m === "Meta adicionada.")).toHaveLength(1);
+    });
+
+    it("dois cliques em Salvar ação criam uma ação só", async () => {
+      abrir(1);
+      await screen.findByText("Melhorar a aprendizagem");
+      await fireEvent.click(screen.getByRole("button", { name: "+ Ação" }));
+      await fireEvent.input(screen.getByPlaceholderText("Ex.: Reforço de leitura no contraturno"), { target: { value: "Ação repetida" } });
+      const botao = screen.getByRole("button", { name: "Salvar ação" });
+      fireEvent.click(botao);
+      fireEvent.click(botao);
+      await waitFor(() => expect(addToast).toHaveBeenCalledWith("Ação adicionada.", "success"));
+      expect(posts.filter((p) => p.endsWith("/acoes"))).toHaveLength(1);
+      expect(screen.getAllByText("Ação repetida")).toHaveLength(1);
+    });
   });
 });

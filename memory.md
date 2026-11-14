@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-14 (bg) — duplo envio nos botões de salvar (PR #415)
+
+- Achado do developer no teste local de metas e ações: entre o clique e o
+  toast, o botão de salvar seguia clicável e o segundo clique criava réplica.
+  A varredura achou o mesmo padrão em várias telas do gestor.
+- Correção: `shared/utils/envio.svelte.js` (`criarEnvio()` → `ocupado`,
+  `rodar`, `travar`). Ignora o segundo clique na hora e desabilita o botão
+  ("Salvando…") até a resposta, com sucesso ou erro. Aplicada em Plano (via
+  `mudar()`), Inventário, Relações, Relação, Contatos, Listas, Documentos
+  (`onAcao`), Pesquisa (finalizar), Reuniões e Contas da rede.
+- Testes: `envio.test.js` e duplo clique em meta e ação no
+  `PlanoDetailPage.test.js` (POST contado pelo `server.events` do MSW);
+  sem a trava falham com 2 POSTs. Suíte 1243/1243.
+- Branch `fix/frontend-duplo-envio`, PR #415 (sem issue). Validado na tela.
+- **Regra para telas novas:** todo botão que grava usa `criarEnvio()`.
+- Fora do ciclo: trava no backend contra criação repetida (rede lenta, dois
+  navegadores); issue só se o developer pedir.
+
 ## Sessão 2026-11-14 (bf) — #138: decisões D1 a D7 aprovadas
 
 - O developer aprovou as sete decisões da spec
