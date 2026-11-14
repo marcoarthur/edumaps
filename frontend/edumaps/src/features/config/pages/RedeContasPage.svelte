@@ -18,6 +18,7 @@
   import { fetchMe } from "@/features/gestor/api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "@/features/gestor/utils/gestorAuth.js";
   import { setSessaoToken } from "@/features/gestor/utils/gestorSession.js";
   import GestorLoginCard from "@/features/gestor/components/survey/GestorLoginCard.svelte";
@@ -90,7 +91,10 @@
     }
   }
 
-  async function novoConvite(c) {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const novoConvite = envio.travar(async (c) => {
     if (c.convite_pendente && !window.confirm(`Gerar um convite novo para ${c.nome}? O link anterior deixa de valer.`)) return;
     try {
       const r = await gerarRedeConvite(c.id);
@@ -99,7 +103,7 @@
     } catch (err) {
       addToast(msg(err, "Não foi possível gerar o convite."), "error");
     }
-  }
+  });
 
   async function copiar() {
     try {
@@ -114,7 +118,7 @@
     vinculoForm = { ...vinculoForm, [c.id]: { tp_dependencia: "3", co_municipio: "" } };
   }
 
-  async function conceder(c) {
+  const conceder = envio.travar(async (c) => {
     const f = vinculoForm[c.id];
     if (!/^\d{7}$/.test(f.co_municipio.trim())) {
       addToast("Informe o código IBGE do município (7 dígitos).", "warning");
@@ -129,9 +133,9 @@
     } catch (err) {
       addToast(msg(err, "Não foi possível conceder a rede."), "error");
     }
-  }
+  });
 
-  async function revogar(c, v) {
+  const revogar = envio.travar(async (c, v) => {
     if (!window.confirm(`Revogar a rede ${v.dependencia.toLowerCase()} de ${v.municipio}/${v.uf} de ${c.nome}? O acesso acaba na hora.`)) return;
     try {
       await revogarRedeVinculo(c.id, v.id);
@@ -140,7 +144,7 @@
     } catch (err) {
       addToast(msg(err, "Não foi possível revogar."), "error");
     }
-  }
+  });
 
   async function alternarAuditoria(c) {
     if (auditoria[c.id]) {
@@ -230,7 +234,7 @@
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button type="button" onclick={() => novoConvite(c)} class="px-3 py-1 rounded-md bg-gray-100 text-gray-800 text-xs hover:bg-gray-200">Novo convite</button>
+              <button disabled={envio.ocupado} type="button" onclick={() => novoConvite(c)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-md bg-gray-100 text-gray-800 text-xs hover:bg-gray-200">Novo convite</button>
               <button type="button" onclick={() => alternarAuditoria(c)} class="px-3 py-1 rounded-md bg-gray-100 text-gray-800 text-xs hover:bg-gray-200">{auditoria[c.id] ? "Ocultar histórico" : "Histórico"}</button>
             </div>
           </div>
@@ -242,7 +246,7 @@
                 {#each c.vinculos as v (v.id)}
                   <li class="flex items-center gap-2">
                     <span>Rede {v.dependencia.toLowerCase()} · {v.municipio}/{v.uf} <span class="text-xs text-gray-500">({v.co_municipio})</span></span>
-                    <button type="button" onclick={() => revogar(c, v)} aria-label={`Revogar rede ${v.dependencia} de ${v.municipio}`} class="text-xs text-red-700 hover:underline">Revogar</button>
+                    <button disabled={envio.ocupado} type="button" onclick={() => revogar(c, v)} aria-label={`Revogar rede ${v.dependencia} de ${v.municipio}`} class="disabled:opacity-50 disabled:cursor-not-allowed text-xs text-red-700 hover:underline">Revogar</button>
                   </li>
                 {/each}
               </ul>
@@ -258,7 +262,7 @@
                   </select></label>
                 <label class="text-xs text-gray-600"><span class="block">Município (código IBGE)</span>
                   <input bind:value={vinculoForm[c.id].co_municipio} inputmode="numeric" maxlength="7" placeholder="Ex.: 3550308" class="mt-1 w-32 h-8 px-2 rounded-md border border-gray-300 text-xs" /></label>
-                <button type="button" onclick={() => conceder(c)} class="px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Conceder</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => conceder(c)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-md bg-green-600 text-white text-xs font-semibold hover:bg-green-700">Conceder</button>
                 <button type="button" onclick={() => { const { [c.id]: _, ...r } = vinculoForm; vinculoForm = r; }} class="px-3 py-1 rounded-md bg-gray-200 text-gray-700 text-xs hover:bg-gray-300">Cancelar</button>
               </div>
             {:else}

@@ -32,6 +32,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import GestorLoginCard from "../components/survey/GestorLoginCard.svelte";
@@ -172,7 +173,10 @@
     await carregarExclusoes();
   }
 
-  async function confirmarRemocao() {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const confirmarRemocao = envio.travar(async () => {
     if (!removendo) return;
     const { lista, membro } = removendo;
     removendoOcupado = true;
@@ -196,9 +200,9 @@
     } finally {
       removendoOcupado = false;
     }
-  }
+  });
 
-  async function criarLista() {
+  const criarLista = envio.travar(async () => {
     const nome = nova.nome.trim();
     if (!nome) {
       addToast("Informe o nome da lista.", "warning");
@@ -220,9 +224,9 @@
       const msg = onApiError(err, "Não foi possível criar a lista.");
       if (msg) error = msg;
     }
-  }
+  });
 
-  async function excluirLista(lista) {
+  const excluirLista = envio.travar(async (lista) => {
     if (!window.confirm(`Excluir a lista "${lista.nome}"? Os contatos ficam na agenda da escola.`)) {
       return;
     }
@@ -238,7 +242,7 @@
       const msg = onApiError(err, "Não foi possível excluir a lista.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   async function alternarExigeConfirmacao(lista, exige, el = null) {
     salvandoExige = true;
@@ -318,7 +322,7 @@
     qrcodeAberto = { lista, qrcode: lista.qrcode ?? null };
   }
 
-  async function gerarQr(lista, opcoes = {}) {
+  const gerarQr = envio.travar(async (lista, opcoes = {}) => {
     gerando = true;
     erroGerarQr = null;
     try {
@@ -334,9 +338,9 @@
     } finally {
       gerando = false;
     }
-  }
+  });
 
-  async function revogarQr() {
+  const revogarQr = envio.travar(async () => {
     if (!qrcodeAberto) return;
     const alvo = qrcodeAberto.lista;
     revogando = true;
@@ -351,7 +355,7 @@
     } finally {
       revogando = false;
     }
-  }
+  });
 
   async function sair() {
     try {
@@ -487,8 +491,9 @@
           </label>
           <button
             type="submit"
-            class="w-full h-9 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-          >Criar lista</button>
+            disabled={envio.ocupado}
+            class="w-full h-9 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >{envio.ocupado ? "Criando…" : "Criar lista"}</button>
         </form>
       {/if}
 
@@ -540,11 +545,11 @@
                   aria-label={`Enviar e-mail para ${lista.nome}`}
                   class="px-2 py-1 rounded text-xs text-indigo-700 hover:bg-indigo-50 transition-colors"
                 >Enviar e-mail</a>
-                <button
+                <button disabled={envio.ocupado}
                   type="button"
                   aria-label={`Excluir lista ${lista.nome}`}
                   onclick={() => excluirLista(lista)}
-                  class="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors"
+                  class="disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors"
                 >Excluir</button>
               </div>
             </li>

@@ -19,6 +19,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -150,7 +151,10 @@
   }
 
   // ----------------------------- categorias --------------------------------
-  async function salvarCategoria() {
+
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+  const salvarCategoria = envio.travar(async () => {
     if (!novaCategoria.nome.trim()) return;
     try {
       const cat = await createCategoria(inep, { eixo: novaCategoria.eixo, nome: novaCategoria.nome.trim() });
@@ -161,9 +165,9 @@
       const msg = onApiError(err, "Não foi possível criar a categoria.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirCategoria(cat) {
+  const excluirCategoria = envio.travar(async (cat) => {
     if (!window.confirm(`Excluir a categoria "${cat.nome}"?`)) return;
     try {
       await deleteCategoria(inep, cat.id);
@@ -173,7 +177,7 @@
       const msg = onApiError(err, "Não foi possível excluir a categoria.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   // ------------------------------ entidades --------------------------------
   function abrirEntidade(e = null) {
@@ -196,7 +200,7 @@
         };
   }
 
-  async function salvarEntidade() {
+  const salvarEntidade = envio.travar(async () => {
     if (!entForm.nome.trim()) {
       addToast("Informe o nome da entidade.", "warning");
       return;
@@ -227,9 +231,9 @@
       const msg = onApiError(err, "Não foi possível salvar a entidade.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirEntidade(e) {
+  const excluirEntidade = envio.travar(async (e) => {
     if (!window.confirm(`Excluir "${e.nome}"?`)) return;
     try {
       await deleteEntidade(inep, e.id);
@@ -239,7 +243,7 @@
       const msg = onApiError(err, "Não foi possível excluir a entidade.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   // ------------------------------ relações ---------------------------------
   function abrirRelacao(r = null) {
@@ -272,7 +276,7 @@
         };
   }
 
-  async function salvarRelacao() {
+  const salvarRelacao = envio.travar(async () => {
     if (!relForm.assunto.trim()) {
       addToast("Informe o assunto da relação.", "warning");
       return;
@@ -308,9 +312,9 @@
       const msg = onApiError(err, "Não foi possível salvar a relação.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
-  async function excluirRelacao(r) {
+  const excluirRelacao = envio.travar(async (r) => {
     if (!window.confirm(`Excluir a relação "${r.assunto}"?`)) return;
     try {
       await deleteRelacao(inep, r.id);
@@ -320,7 +324,7 @@
       const msg = onApiError(err, "Não foi possível excluir a relação.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function fmtData(d) {
     if (!d) return "";
@@ -423,7 +427,7 @@
                 <span class={`px-2 py-0.5 rounded-full text-[11px] font-medium ${RELACAO_PRIORIDADE_BADGE[r.prioridade] ?? "bg-gray-100 text-gray-600"}`}>{RELACAO_PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade}</span>
                 <a href={`/gestor/relacoes/${r.id}`} class="px-3 py-1.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100">Abrir</a>
                 <button type="button" onclick={() => abrirRelacao(r)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
-                <button type="button" onclick={() => excluirRelacao(r)} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => excluirRelacao(r)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
               </div>
             </div>
           {:else}
@@ -602,7 +606,7 @@
               <span class="block">Nome</span>
               <input bind:value={novaCategoria.nome} maxlength="80" class="mt-1 h-9 px-2 rounded-md border border-gray-300 text-sm" />
             </label>
-            <button type="button" onclick={salvarCategoria} class="h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">Criar</button>
+            <button disabled={envio.ocupado} type="button" onclick={salvarCategoria} class="disabled:opacity-50 disabled:cursor-not-allowed h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">{envio.ocupado ? "Criando…" : "Criar"}</button>
             <button type="button" onclick={() => (novaCategoria = { aberto: false, eixo: "entidade", nome: "" })} class="h-9 px-3 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
           </div>
         {/if}
@@ -611,7 +615,7 @@
           {#each categorias.filter((c) => c.origem === "manual") as c (c.id)}
             <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] text-gray-600">
               {c.nome} <span class="text-gray-400">({c.eixo})</span>
-              <button type="button" onclick={() => excluirCategoria(c)} class="text-gray-400 hover:text-red-600" title="Excluir categoria">✕</button>
+              <button disabled={envio.ocupado} type="button" onclick={() => excluirCategoria(c)} class="disabled:opacity-50 disabled:cursor-not-allowed text-gray-400 hover:text-red-600" title="Excluir categoria">✕</button>
             </span>
           {/each}
         </div>
@@ -631,7 +635,7 @@
               </div>
               <div class="flex items-center gap-1">
                 <button type="button" onclick={() => abrirEntidade(e)} class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300">Editar</button>
-                <button type="button" onclick={() => excluirEntidade(e)} class="px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
+                <button disabled={envio.ocupado} type="button" onclick={() => excluirEntidade(e)} class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100">Excluir</button>
               </div>
             </div>
           {:else}
@@ -694,7 +698,7 @@
       </div>
       <footer class="flex justify-end gap-2 border-t border-gray-100 p-4">
         <button type="button" onclick={() => (entForm = null)} class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
-        <button type="button" onclick={salvarEntidade} class="px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Salvar</button>
+        <button disabled={envio.ocupado} type="button" onclick={salvarEntidade} class="disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
       </footer>
     </div>
   </div>
@@ -762,7 +766,7 @@
       </div>
       <footer class="flex justify-end gap-2 border-t border-gray-100 p-4">
         <button type="button" onclick={() => (relForm = null)} class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">Cancelar</button>
-        <button type="button" onclick={salvarRelacao} class="px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Salvar</button>
+        <button disabled={envio.ocupado} type="button" onclick={salvarRelacao} class="disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700">{envio.ocupado ? "Salvando…" : "Salvar"}</button>
       </footer>
     </div>
   </div>

@@ -11,6 +11,7 @@
   import { fetchMe, logoutGestor } from "../api/gestorPesquisasApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import { addToast } from "@/shared/stores/toastStore.js";
+  import { criarEnvio } from "@/shared/utils/envio.svelte.js";
   import { restaurarSessao } from "../utils/gestorAuth.js";
   import { setSessaoToken, clearSessaoToken } from "../utils/gestorSession.js";
   import {
@@ -75,7 +76,10 @@
     }
   }
 
-  async function acao(r, tipo) {
+  // Um envio por vez: o botão fica desabilitado até a resposta (sem réplica).
+  const envio = criarEnvio();
+
+  const acao = envio.travar(async (r, tipo) => {
     try {
       if (tipo === "realizar") await marcarRealizada(inep, r.id);
       else if (tipo === "cancelar") await cancelarReuniao(inep, r.id);
@@ -90,7 +94,7 @@
       const msg = onApiError(err, "Não foi possível concluir a ação.");
       if (msg) addToast(msg, "error");
     }
-  }
+  });
 
   function dataHora(iso) {
     const d = new Date(iso.replace(" ", "T"));
@@ -219,25 +223,25 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             {#if r.status === "agendada"}
-              <button
+              <button disabled={envio.ocupado}
                 type="button"
                 onclick={() => acao(r, "realizar")}
-                class="px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors"
+                class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors"
               >Realizada</button>
-              <button
+              <button disabled={envio.ocupado}
                 type="button"
                 onclick={() => acao(r, "cancelar")}
-                class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors"
+                class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors"
               >Cancelar</button>
               <a
                 href={`/gestor/reunioes/${r.id}/editar`}
                 class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors"
               >Editar</a>
             {:else if r.status === "cancelada"}
-              <button
+              <button disabled={envio.ocupado}
                 type="button"
                 onclick={() => acao(r, "excluir")}
-                class="px-3 py-1.5 rounded-md bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 transition-colors"
+                class="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 transition-colors"
               >Excluir</button>
             {/if}
             <a
