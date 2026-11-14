@@ -25,6 +25,7 @@
    * Campos internos de `school` mantidos em português: contrato da API.
    * @property {Array} [indicators] - saída de rank() para os indicadores exibidos
    * @property {Array} [similarSchools] - saída do endpoint de escolas semelhantes
+   * @property {string|null} [similarSchoolsMotivo] - por que não há semelhantes ("sem_dado")
    * @property {Array} [desempenho] - série histórica de IDEB { ano, etapa, ideb_observado }
    * @property {Object|null} [ivet] - última medição vigente do IVET (#296)
    * @property {Object|null} [isocrona] - células H3 da área de influência (#296)
@@ -37,6 +38,7 @@
     school,
     indicators = [],
     similarSchools = [],
+    similarSchoolsMotivo = null,
     desempenho = [],
     ivet = null,
     isocrona = null,
@@ -111,7 +113,7 @@
     {#if loadingSimilarSchools}
       <p class="text-sm text-gray-500">Buscando escolas semelhantes…</p>
     {:else}
-      <SimilarSchools schools={similarSchools} onSelect={onSelectSimilarSchool} />
+      <SimilarSchools schools={similarSchools} motivo={similarSchoolsMotivo} onSelect={onSelectSimilarSchool} />
     {/if}
   </section>
 

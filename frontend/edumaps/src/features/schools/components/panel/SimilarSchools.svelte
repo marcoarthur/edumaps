@@ -8,8 +8,10 @@
    * cada item:
    * { id_escola, nome, rede, matriculas, etapas: {...},
    *   indicador_principal: { label, valor } }
+   * motivo: por que a lista veio vazia — "sem_dado" quando falta alguma nota
+   * da escola (#413); null quando simplesmente não há semelhantes.
    */
-  let { schools = [], onSelect = (schoolId) => {} } = $props();
+  let { schools = [], motivo = null, onSelect = (schoolId) => {} } = $props();
 </script>
 
 <section class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4" aria-label="Escolas semelhantes">
@@ -42,7 +44,13 @@
     </button>
   {/each}
 
-  {#if schools.length === 0}
+  {#if schools.length === 0 && motivo === 'sem_dado'}
+    <p class="col-span-full text-gray-500 font-sans">
+      Sem dado para comparar: falta alguma das notas desta escola no Censo
+      Escolar. Sem a nota, a escola fica fora da comparação, em vez de ser
+      comparada como se tivesse nota zero.
+    </p>
+  {:else if schools.length === 0}
     <p class="col-span-full text-gray-500 font-sans">
       Nenhuma escola semelhante encontrada para os critérios atuais.
     </p>
