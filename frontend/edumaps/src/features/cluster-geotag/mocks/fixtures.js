@@ -148,6 +148,7 @@ export const EXECUCAO_FIXTURE = {
     clusters: 4,
     preset: "infraestrutura",
     features: ["in_agua_potavel", "in_esgoto_rede_publica"],
+    dados: { censo: { ano: "2025", carga: "2026-10-14" }, ideb: { ano: "2023", carga: null } },
   },
   universo: {
     n_total: 226,

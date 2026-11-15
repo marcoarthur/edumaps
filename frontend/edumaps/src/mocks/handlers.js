@@ -18,6 +18,7 @@ import { configHandlers } from "@/features/config/mocks/configHandlers.js";
 import { redeHandlers } from "@/features/rede/mocks/redeHandlers.js";
 import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
 import { chatHandlers } from "@/features/chat/mocks/chatHandlers.js";
+import { fontesHandlers } from "@/features/fontes/mocks/handlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -38,4 +39,5 @@ export const handlers = [
   ...configHandlers,
   ...telemetryHandlers,
   ...chatHandlers,
+  ...fontesHandlers,
 ];

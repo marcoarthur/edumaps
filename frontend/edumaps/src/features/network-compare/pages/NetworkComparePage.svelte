@@ -1,5 +1,6 @@
 <script>
   // src/features/network-compare/pages/NetworkComparePage.svelte
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { onMount } from "svelte";
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
   import { ApiError } from "@/shared/api/client.js";
@@ -147,4 +148,5 @@
       </p>
     </div>
   {/if}
+  <FonteDado tela="comparacao_redes" class="pt-2" />
 </div>

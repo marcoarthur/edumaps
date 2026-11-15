@@ -113,6 +113,13 @@
       <p class="text-gray-500">Página não encontrada.</p>
     {/if}
   </main>
+  <!-- #428: de onde vêm os números, em todas as páginas com menu. -->
+  <footer class="print:hidden border-t border-gray-200 bg-white">
+    <div class="max-w-5xl mx-auto w-full px-6 py-3 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+      <a href="/fontes" class="hover:underline">Fontes e metodologia</a>
+      <a href="/privacidade" class="hover:underline">Privacidade</a>
+    </div>
+  </footer>
   {/if}
   <!-- Aviso de nova versão (#225): em todas as páginas, inclusive as públicas. -->
   <NovaVersaoAviso />

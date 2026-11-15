@@ -1,6 +1,7 @@
 <!-- src/features/schools/pages/SchoolFinancePage.svelte -->
 <script>
   // src/features/schools/pages/SchoolFinancePage.svelte
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { onMount, onDestroy } from "svelte";
   import {
     getSchoolFinance,
@@ -239,4 +240,5 @@
       <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} />
     {/if}
   {/if}
+  <FonteDado tela="financeiro" class="pt-2" />
 </div>

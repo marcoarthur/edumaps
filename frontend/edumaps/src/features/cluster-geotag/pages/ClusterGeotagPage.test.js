@@ -86,6 +86,7 @@ describe("ClusterGeotagPage", () => {
     expect(universo).toHaveTextContent(/6 sem dado de .*esgoto/i);
     expect(universo).toHaveTextContent(/13 escolas agrupadas sem coordenada/);
     expect(universo).toHaveTextContent(/até 13\/02\/2027/);
+    expect(screen.getByTestId("versao-dados")).toHaveTextContent("Dados: Censo Escolar 2025 (carga em 14/10/2026) · IDEB 2023.");
     expect(screen.getByRole("link", { name: "Baixar CSV" })).toHaveAttribute(
       "href", `/api/cluster/execucoes/${EXECUCAO_FIXTURE.run_id}/csv`);
     expect(window.location.search).toBe(`?execucao=${EXECUCAO_FIXTURE.run_id}`);

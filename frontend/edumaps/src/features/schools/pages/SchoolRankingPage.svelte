@@ -1,5 +1,6 @@
 <!-- src/features/schools/pages/SchoolRankingPage.svelte -->
 <script>
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { onMount } from 'svelte';
   import { getSchoolInfo } from '../api/schoolApi.js';
   import SchoolRanking from '../components/SchoolRanking.svelte';
@@ -160,4 +161,5 @@
       Nenhuma escola encontrada.
     </div>
   {/if}
+  <FonteDado tela="ranking" class="pt-2" />
 </div>

@@ -10,6 +10,14 @@
   let { execucao, columns = [] } = $props();
 
   const r = $derived(resumoUniverso(execucao, columns));
+  // Versão dos dados guardada na execução (#428): ano do Censo e do IDEB.
+  const versaoDados = $derived.by(() => {
+    const d = execucao?.parametros?.dados ?? {};
+    const partes = [];
+    if (d.censo?.ano) partes.push(`Censo Escolar ${d.censo.ano}${d.censo.carga ? ` (carga em ${dataBR(d.censo.carga)})` : ""}`);
+    if (d.ideb?.ano) partes.push(`IDEB ${d.ideb.ano}`);
+    return partes.join(" · ");
+  });
   const fmt = (n) => (n == null ? "–" : Number(n).toLocaleString("pt-BR"));
   let copiado = $state(false);
   // Sem acesso à área de transferência (http, permissão negada): mostra o
@@ -71,6 +79,9 @@
       Copie o link:
       <input readonly value={linkManual} class="mt-1 w-full border border-gray-300 rounded-md px-2 py-1 text-xs" onfocus={(e) => e.currentTarget.select()} />
     </label>
+  {/if}
+  {#if versaoDados}
+    <p class="text-xs text-gray-600" data-testid="versao-dados">Dados: {versaoDados}.</p>
   {/if}
   {#if execucao.expira_em}
     <p class="text-xs text-gray-500">O link reabre este mesmo resultado até {dataBR(execucao.expira_em)}.</p>
