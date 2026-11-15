@@ -47,6 +47,11 @@ sub job_progress($self) {
       my $err = $job->{error} // $job->{result};
       $resp{error} = ref $err eq 'HASH' ? ($err->{error} // Mojo::JSON::encode_json($err)) : "$err";
     }
+    # #427: o agrupamento terminado diz qual execução guardou (link e CSV).
+    if ($job->{state} eq 'finished' && ref $job->{result} eq 'HASH'
+        && ref $job->{result}{meta} eq 'HASH' && defined $job->{result}{meta}{run_id}) {
+      $resp{run_id} = $job->{result}{meta}{run_id};
+    }
     return $self->render(json => \%resp);
   }
 

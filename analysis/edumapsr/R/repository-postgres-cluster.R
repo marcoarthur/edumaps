@@ -122,8 +122,22 @@ persist_cluster.postgres_cluster_repository <- function(
     clusters_df = clusters_df
   )
 
+  # 3. execução guardada (#427): só quando o chamador criou a execução em
+  #    analytics.cluster_execucoes e passou o run_id dela.
+  execucao <- isTRUE(list(...)$execucao)
+  atribuicoes <- 0L
+  if (execucao) {
+    atribuicoes <- .write_cluster_execucao(
+      con, output_schema, run_id, id_column, assignments,
+      valores = attr(result, "valores"),
+      universo = result$metadata$universo
+    )
+  }
+
   list(
     run_id = run_id,
+    execucao = execucao,
+    atribuicoes = atribuicoes,
     rows_updated = rows_updated,
     metadata_table = paste0(output_schema, ".", CLUSTERING_METADATA_TABLE),
     algorithm = algorithm,
@@ -187,6 +201,64 @@ persist_cluster.postgres_cluster_repository <- function(
   )
 
   rows_updated
+}
+
+#' Grava as atribuições e o universo de uma execução guardada (#427)
+#'
+#' A execução já existe em `<schema>.cluster_execucoes` (criada pelo
+#' backend). Grava uma linha por entidade em `cluster_atribuicoes`, com os
+#' valores dos indicadores em JSON, e mescla o universo calculado aqui
+#' (`n_recorte`, `n_incompletas`, `n_agrupadas`, `sem_dado`...) ao que o
+#' backend já registrou (escolas que não funcionam mais).
+#'
+#' @return número de atribuições gravadas.
+#' @keywords internal
+.write_cluster_execucao <- function(con, schema, run_id, id_column, assignments,
+                                    valores = NULL, universo = list()) {
+  df <- data.frame(
+    entidade = as.character(assignments[[id_column]]),
+    cluster_id = as.integer(assignments$cluster_id),
+    cluster_label = if ("cluster_label" %in% names(assignments)) as.character(assignments$cluster_label) else NA_character_,
+    cluster_rank = if ("cluster_rank" %in% names(assignments)) as.integer(assignments$cluster_rank) else NA_integer_,
+    stringsAsFactors = FALSE
+  )
+  feature_cols <- character(0)
+  if (is.data.frame(valores) && nrow(valores) > 0) {
+    v <- valores[match(df$entidade, as.character(valores[[id_column]])), , drop = FALSE]
+    feature_cols <- setdiff(names(v), id_column)
+    for (col in feature_cols) df[[paste0("v_", col)]] <- as.numeric(v[[col]])
+  }
+
+  tmp <- paste0("tmp_cluster_atrib_", gsub("[^A-Za-z0-9]", "", run_id))
+  DBI::dbWriteTable(con, tmp, df, temporary = TRUE, overwrite = TRUE, row.names = FALSE)
+  on.exit(try(DBI::dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", DBI::dbQuoteIdentifier(con, tmp))), silent = TRUE), add = TRUE)
+
+  valores_sql <- if (length(feature_cols) > 0) {
+    pares <- vapply(feature_cols, function(col) {
+      sprintf("%s, t.%s", DBI::dbQuoteLiteral(con, col), DBI::dbQuoteIdentifier(con, paste0("v_", col)))
+    }, character(1))
+    sprintf("jsonb_strip_nulls(jsonb_build_object(%s))", paste(pares, collapse = ", "))
+  } else {
+    "'{}'::jsonb"
+  }
+
+  n <- DBI::dbExecute(con, sprintf(
+    "INSERT INTO %s.cluster_atribuicoes
+       (run_id, co_entidade, cluster_id, cluster_label, cluster_rank, valores)
+     SELECT $1, t.entidade::bigint, t.cluster_id, t.cluster_label, t.cluster_rank, %s
+       FROM %s t",
+    DBI::dbQuoteIdentifier(con, schema), valores_sql, DBI::dbQuoteIdentifier(con, tmp)
+  ), params = list(run_id))
+
+  DBI::dbExecute(con, sprintf(
+    "UPDATE %s.cluster_execucoes SET universo = universo || $1::jsonb WHERE run_id = $2",
+    DBI::dbQuoteIdentifier(con, schema)
+  ), params = list(
+    as.character(jsonlite::toJSON(universo %||% list(), auto_unbox = TRUE, null = "null")),
+    run_id
+  ))
+
+  as.integer(n)
 }
 
 #' Insere os metadados por cluster na tabela compartilhada

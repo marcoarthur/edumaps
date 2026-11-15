@@ -240,3 +240,73 @@ test_that("resultado dbscan pode ter clusters_df vazio (tudo ruído)", {
   expect_equal(nrow(result$tables$clusters), 0)
   expect_equal(result$metrics$n_noise, 20)
 })
+test_that("universo conta o recorte, as incompletas por indicador e as agrupadas (#427)", {
+  model <- fixture_cluster_model()
+  model$data$qt_mat_bas[c(1, 2)] <- NA
+  model$data$qt_doc_bas[c(2, 3)] <- NA
+
+  result <- suppressWarnings(analyze_cluster(model, list(algorithm = "kmeans", clusters = 3)))
+  u <- result$metadata$universo
+
+  expect_equal(u$n_recorte, 40)
+  expect_equal(u$n_incompletas, 3)
+  expect_equal(u$n_agrupadas, 37)
+  expect_equal(u$sem_dado, list(qt_mat_bas = 2, qt_doc_bas = 2))
+  expect_length(u$features_sem_variancia, 0)
+
+  valores <- attr(result, "valores")
+  expect_equal(nrow(valores), 37)
+  expect_setequal(names(valores), c("co_entidade", "qt_mat_bas", "qt_doc_bas"))
+  expect_false(any(valores$co_entidade %in% c("ESC01", "ESC02", "ESC03")))
+  # valores na unidade original (não escalados)
+  expect_gt(min(valores$qt_mat_bas), 100)
+})
+
+test_that("execução guardada grava atribuições com valores e mescla o universo (#427)", {
+  con <- tryCatch(
+    DBI::dbConnect(
+      RPostgres::Postgres(),
+      host = Sys.getenv("PGHOST", "localhost"),
+      port = as.integer(Sys.getenv("PGPORT", "5432")),
+      dbname = Sys.getenv("PGDATABASE", "edumaps_dev"),
+      user = Sys.getenv("PGUSER", "devel"),
+      password = Sys.getenv("PGPASSWORD", "senhaboa123")
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(con)) skip("Banco de teste não disponível")
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  if (is.na(DBI::dbGetQuery(con, "SELECT to_regclass('analytics.cluster_execucoes')::text AS t")$t)) {
+    skip("analytics.cluster_execucoes ausente")
+  }
+
+  run_id <- "run_teste_r_427"
+  DBI::dbExecute(con, "DELETE FROM analytics.cluster_execucoes WHERE run_id = $1", params = list(run_id))
+  on.exit(DBI::dbExecute(con, "DELETE FROM analytics.cluster_execucoes WHERE run_id = $1", params = list(run_id)), add = TRUE, after = FALSE)
+  DBI::dbExecute(con,
+    "INSERT INTO analytics.cluster_execucoes (run_id, universo) VALUES ($1, '{\"n_inativas\": 5}')",
+    params = list(run_id))
+
+  model <- fixture_cluster_model()
+  model$data$co_entidade <- as.character(60002700 + seq_len(nrow(model$data)))
+  model$data$qt_doc_bas[1] <- NA
+  result <- suppressWarnings(analyze_cluster(model, list(algorithm = "kmeans", clusters = 3)))
+
+  n <- .write_cluster_execucao(con, "analytics", run_id, "co_entidade", result$data,
+    valores = attr(result, "valores"), universo = result$metadata$universo)
+  expect_equal(n, 39L)
+
+  linha <- DBI::dbGetQuery(con,
+    "SELECT valores->>'qt_mat_bas' AS mat, cluster_id FROM analytics.cluster_atribuicoes
+      WHERE run_id = $1 AND co_entidade = 60002702", params = list(run_id))
+  expect_equal(nrow(linha), 1)
+  expect_gt(as.numeric(linha$mat), 100)
+
+  u <- jsonlite::fromJSON(DBI::dbGetQuery(con,
+    "SELECT universo::text AS u FROM analytics.cluster_execucoes WHERE run_id = $1",
+    params = list(run_id))$u)
+  expect_equal(u$n_inativas, 5)
+  expect_equal(u$n_recorte, 40)
+  expect_equal(u$n_agrupadas, 39)
+  expect_equal(u$sem_dado$qt_doc_bas, 1)
+})

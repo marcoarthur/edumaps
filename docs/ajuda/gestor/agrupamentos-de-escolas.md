@@ -38,8 +38,19 @@ em vez de tratar toda a rede do mesmo jeito.
 6. **Como saber que deu certo:** o mapa mostra as escolas coloridas por grupo e
    a tabela **Resumo dos grupos** lista cada grupo com o número de escolas e
    os indicadores que mais o distinguem.
+7. **Guardar e compartilhar:** a caixa **Universo** tem **Copiar link** (reabre
+   este mesmo resultado, com o formulário preenchido, por 90 dias) e **Baixar
+   CSV** (uma linha por escola: INEP, nome, município, rede, grupo e os
+   valores dos indicadores; separador `;`, abre direto no Excel).
 
 ## Entendendo os resultados
+
+- **Universo:** a caixa diz quantas escolas o recorte tinha, quantas foram
+  agrupadas e quantas ficaram de fora, com o motivo. Escolas que **não
+  funcionam mais** saem antes de agrupar. Escolas **sem dado** em algum
+  indicador escolhido também saem (uma escola sem dois indicadores conta nos
+  dois). Escolas agrupadas **sem coordenada** não aparecem no mapa, mas estão
+  no CSV.
 
 - **Grupo** é só um rótulo (1, 2, 3…): o número não indica melhor ou
   pior. Leia a coluna **Indicadores principais** para saber o que caracteriza
@@ -53,8 +64,11 @@ em vez de tratar toda a rede do mesmo jeito.
 
 ## Limitações conhecidas
 
-- Escolas sem dado em algum indicador escolhido podem ficar de fora; se nenhuma
-  sobrar, a tela avisa *"Nenhuma escola com cluster gerado para este recorte"*.
+- Escolas sem dado em algum indicador escolhido ficam de fora (a caixa
+  **Universo** diz quantas); se nenhuma sobrar, a tela avisa *"Nenhuma escola
+  agrupada neste recorte"*.
+- O link de um agrupamento vale **90 dias**; depois, a tela avisa que a
+  execução venceu. O CSV baixado continua valendo.
 - Recortes grandes (uma região inteira) demoram mais para processar.
 - Os grupos desta tela são gerados na hora e não alteram o grupo de referência
   usado no [Perfil da escola](perfil-da-escola.md).

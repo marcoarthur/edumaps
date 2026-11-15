@@ -136,3 +136,29 @@ export const COLUMNS_FIXTURE = [
 
 // Fixture do backend GET /api/cluster/years.
 export const YEARS_FIXTURE = [{ ano: 2023 }, { ano: 2021 }, { ano: 2019 }];
+
+// Execução guardada (#427): recorte AC/Rio Branco, k-means 3, universo com
+// escolas fora por motivo e uma escola sem coordenada.
+export const EXECUCAO_FIXTURE = {
+  run_id: "run_1731700000_a1b2c3d4",
+  estado: "concluida",
+  recorte: { codigo_regiao: "1", codigo_uf: "12", codigo_ibge: "1200401" },
+  parametros: {
+    algorithm: "kmeans",
+    clusters: 4,
+    preset: "infraestrutura",
+    features: ["in_agua_potavel", "in_esgoto_rede_publica"],
+  },
+  universo: {
+    n_total: 226,
+    n_inativas: 40,
+    n_recorte: 186,
+    n_incompletas: 6,
+    n_agrupadas: 180,
+    sem_dado: { in_esgoto_rede_publica: 6 },
+  },
+  n_atribuicoes: 180,
+  n_no_mapa: 167,
+  expira_em: "2027-02-13",
+  resumo: [],
+};

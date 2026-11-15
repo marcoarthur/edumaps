@@ -169,23 +169,26 @@ sub years($self) {
 # (JSON) do cluster.
 # ---------------------------------------------------------------------------
 
-sub cluster_summary($self) {
+sub cluster_summary($self, $run_id = undef) {
   my $dbh = eval { $self->schema->storage->dbh } || return [];
+  # Com run_id (#427), o resumo é o daquela execução; sem, o da mais recente
+  # (comportamento antigo, mantido para quem ainda chama sem run_id).
+  my $alvo = defined $run_id ? '?' : <<~'EOSQL';
+    (SELECT run_id
+       FROM analytics.clustering_metadata
+      WHERE target_table = 'clean.school_indicators'
+      ORDER BY run_id DESC
+      LIMIT 1)
+    EOSQL
   my $rows = eval {
-    $dbh->selectall_arrayref(<<~'EOSQL', { Slice => {} });
+    $dbh->selectall_arrayref(<<~"EOSQL", { Slice => {} }, (defined $run_id ? ($run_id) : ()));
       SELECT cluster_id::int   AS cluster_id,
              cluster_size::int AS cluster_size,
              is_noise::int     AS is_noise,
              centroids,
              extra_metrics
       FROM analytics.clustering_metadata
-      WHERE run_id = (
-        SELECT run_id
-        FROM analytics.clustering_metadata
-        WHERE target_table = 'clean.school_indicators'
-        ORDER BY run_id DESC
-        LIMIT 1
-      )
+      WHERE run_id = $alvo
       ORDER BY cluster_id
       EOSQL
   };
@@ -213,6 +216,118 @@ sub cluster_summary($self) {
     };
   }
   return \@summary;
+}
+
+# ---------------------------------------------------------------------------
+# Execuções guardadas (#427): cada agrupamento da tela tem um run_id, com
+# recorte, parâmetros, universo, resumo, mapa e exportação próprios. Nome,
+# município e coordenadas das escolas vêm do Censo mais recente; o grupo e
+# os valores dos indicadores, da própria execução (citável).
+# ---------------------------------------------------------------------------
+
+sub execucao($self, $run_id) {
+  my $dbh = eval { $self->schema->storage->dbh } || return undef;
+  my $row = eval {
+    $dbh->selectrow_hashref(<<~'EOSQL', undef, $run_id);
+      SELECT run_id, job_id, estado, recorte::text AS recorte, parametros::text AS parametros,
+             universo::text AS universo,
+             to_char(criado_em AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI:SS') AS criado_em,
+             to_char(expira_em AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') AS expira_em,
+             (SELECT count(*)::int FROM analytics.cluster_atribuicoes a WHERE a.run_id = e.run_id) AS n_atribuicoes,
+             (SELECT count(*)::int
+                FROM analytics.cluster_atribuicoes a
+                JOIN clean.censo_escolas c
+                  ON c.co_entidade = a.co_entidade
+                 AND c.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+               WHERE a.run_id = e.run_id
+                 AND (c.geometry IS NOT NULL OR (c.latitude IS NOT NULL AND c.longitude IS NOT NULL))
+             ) AS n_no_mapa
+        FROM analytics.cluster_execucoes e
+       WHERE run_id = ? AND expira_em > now()
+      EOSQL
+  };
+  return undef unless $row;
+
+  my $json = $self->json->utf8(0);
+  $row->{$_} = eval { $json->decode($row->{$_} // '{}') } || {} for qw(recorte parametros universo);
+  $row->{resumo} = $self->cluster_summary($run_id);
+  return $row;
+}
+
+sub escolas_execucao_geojson($self, $run_id) {
+  my $dbh = eval { $self->schema->storage->dbh } || return undef;
+  my ($geojson) = eval {
+    $dbh->selectrow_array(<<~'EOSQL', undef, $run_id);
+      SELECT json_build_object(
+        'type', 'FeatureCollection',
+        'features', COALESCE(json_agg(json_build_object(
+          'type', 'Feature',
+          'geometry', COALESCE(
+            ST_AsGeoJSON(c.geometry)::json,
+            ST_AsGeoJSON(ST_SetSRID(ST_MakePoint(c.longitude, c.latitude), 4326))::json
+          ),
+          'properties', json_build_object(
+            'co_entidade', a.co_entidade,
+            'no_entidade', c.no_entidade,
+            'cluster_id', a.cluster_id,
+            'cluster_label', a.cluster_label,
+            'cluster_rank', a.cluster_rank,
+            'latitude', c.latitude,
+            'longitude', c.longitude
+          )
+        )) FILTER (WHERE c.geometry IS NOT NULL OR (c.latitude IS NOT NULL AND c.longitude IS NOT NULL)),
+        '[]'::json)
+      )
+      FROM analytics.cluster_atribuicoes a
+      JOIN analytics.cluster_execucoes e ON e.run_id = a.run_id AND e.expira_em > now()
+      LEFT JOIN clean.censo_escolas c
+        ON c.co_entidade = a.co_entidade
+       AND c.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+      WHERE a.run_id = ?
+      EOSQL
+  };
+  return $geojson;
+}
+
+# Linhas da exportação: uma por escola agrupada, com os indicadores usados
+# na ordem dos parâmetros da execução.
+sub linhas_execucao($self, $run_id, $features = []) {
+  my $dbh = eval { $self->schema->storage->dbh } || return [];
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~'EOSQL', { Slice => {} }, $run_id);
+      SELECT a.co_entidade, c.no_entidade, c.no_municipio, c.sg_uf,
+             CASE c.tp_dependencia WHEN 1 THEN 'Federal' WHEN 2 THEN 'Estadual'
+                                   WHEN 3 THEN 'Municipal' WHEN 4 THEN 'Privada' END AS rede,
+             a.cluster_id, a.cluster_label, a.valores::text AS valores
+        FROM analytics.cluster_atribuicoes a
+        LEFT JOIN clean.censo_escolas c
+          ON c.co_entidade = a.co_entidade
+         AND c.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+       WHERE a.run_id = ?
+       ORDER BY a.cluster_id, c.no_entidade, a.co_entidade
+      EOSQL
+  } || [];
+  my $json = $self->json->utf8(0);
+  for my $r (@$rows) {
+    my $v = eval { $json->decode(delete $r->{valores} // '{}') } || {};
+    $r->{valores} = [ map { $v->{$_} } @$features ];
+  }
+  return $rows;
+}
+
+# Apaga as execuções vencidas (90 dias) e os metadados por grupo delas.
+# As atribuições saem pela FK (ON DELETE CASCADE). Devolve quantas saíram.
+sub limpar_execucoes_vencidas($self) {
+  my $dbh = $self->schema->storage->dbh;
+  # clustering_metadata é criada pelo motor R na primeira execução.
+  my ($tem_meta) = $dbh->selectrow_array(
+    q{SELECT to_regclass('analytics.clustering_metadata') IS NOT NULL});
+  $dbh->do(<<~'EOSQL') if $tem_meta;
+    DELETE FROM analytics.clustering_metadata m
+     USING analytics.cluster_execucoes e
+     WHERE m.run_id = e.run_id AND e.expira_em <= now()
+    EOSQL
+  return 0 + $dbh->do('DELETE FROM analytics.cluster_execucoes WHERE expira_em <= now()');
 }
 
 # ---------------------------------------------------------------------------

@@ -235,12 +235,23 @@ analyze_cluster <- function(model, parameters = list()) {
 
   x <- as.matrix(data[, features, drop = FALSE])
   rownames(x) <- entity_ids
+  features_pedidas <- features
+
+  # Universo (#427): quantas entidades o recorte trouxe e por que as que
+  # ficam de fora ficam de fora. `sem_dado` conta, por indicador, as linhas
+  # sem valor nele (uma escola sem dois indicadores conta nos dois).
+  sem_dado <- colSums(is.na(x))
+  universo <- list(
+    n_recorte = nrow(x),
+    sem_dado = as.list(sem_dado[sem_dado > 0])
+  )
 
   # Robustez a dados ausentes: escolas do Censo podem não ter nota em todas
   # as features selecionadas (NA). scale()/kmeans falham com NA/NaN no kernel,
   # então removemos linhas incompletas e colunas sem variância, mantendo
   # `entity_ids` e `features` alinhados ao subconjunto efetivo.
   complete_rows <- stats::complete.cases(x)
+  universo$n_incompletas <- sum(!complete_rows)
   if (!all(complete_rows)) {
     warning(sprintf(
       "Linhas sem dados completos removidas: %d de %d",
@@ -259,6 +270,8 @@ analyze_cluster <- function(model, parameters = list()) {
     x <- x[, keep_columns, drop = FALSE]
     features <- features[keep_columns]
   }
+  universo$n_agrupadas <- nrow(x)
+  universo$features_sem_variancia <- as.list(setdiff(features_pedidas, features))
 
   if (nrow(x) < 2L) {
     stop_invalid_dataset("cluster requer pelo menos duas entidades com dados completos nas features")
@@ -387,7 +400,7 @@ analyze_cluster <- function(model, parameters = list()) {
 
   noise_count <- sum(assignments_df$cluster_id == 0L, na.rm = TRUE)
 
-  new_analysis_result(
+  result <- new_analysis_result(
     analysis = paste0("cluster_", algorithm),
     parameters = parameters,
     data = assignments_df,
@@ -404,7 +417,18 @@ analyze_cluster <- function(model, parameters = list()) {
     metadata = list(
       entity_id = model$entity_id,
       features = features,
-      data_source = model$metadata
+      data_source = model$metadata,
+      universo = universo
     )
   )
+
+  # Valores dos indicadores das entidades agrupadas, na unidade original (para
+  # a exportação da execução, #427). Atributo: não vai no JSON da resposta.
+  # Mesma ordem e mesmo vetor de ids das atribuições (`entity_ids` já
+  # filtrado): nada de casar por rownames, que perde o tipo (bigint vem como
+  # integer64 do RPostgres).
+  valores <- as.data.frame(data[complete_rows, features_pedidas, drop = FALSE])
+  valores[[model$entity_id]] <- entity_ids
+  attr(result, "valores") <- valores
+  result
 }
