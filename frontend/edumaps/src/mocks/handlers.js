@@ -19,6 +19,7 @@ import { redeHandlers } from "@/features/rede/mocks/redeHandlers.js";
 import { telemetryHandlers } from "@/features/admin/mocks/telemetryHandlers.js";
 import { chatHandlers } from "@/features/chat/mocks/chatHandlers.js";
 import { fontesHandlers } from "@/features/fontes/mocks/handlers.js";
+import { rankingRecorteHandlers } from "@/features/ranking-recorte/mocks/handlers.js";
 
 export const handlers = [
   ...schoolsHandlers,
@@ -40,4 +41,5 @@ export const handlers = [
   ...telemetryHandlers,
   ...chatHandlers,
   ...fontesHandlers,
+  ...rankingRecorteHandlers,
 ];

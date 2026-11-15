@@ -60,4 +60,45 @@ sub ranking ($self) {
   $self->render(json => $result);
 }
 
+
+# GET /api/ranking/escolas?codigo_ibge=&indicador=&rede= (#430)
+sub escolas_recorte ($self) {
+  my $v = $self->validation;
+  $v->required('codigo_ibge', 'trim')->like(qr/^\d{7}$/);
+  $v->required('indicador', 'trim')->like(qr/^[a-z0-9_]+$/);
+  $v->optional('rede')->in(qw/municipal estadual privada/);
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'Rank::School');
+  my $r = eval {
+    $model->escolas_do_municipio($v->param('codigo_ibge'), $v->param('indicador'),
+      { network => $v->param('rede') });
+  };
+  return $self->render(json => { error => 'Indicador ou rede de ensino inválidos.' }, status => 400) if $@;
+  return $self->render(json => { error => 'Sem escolas com este indicador no município.' }, status => 404)
+    unless $r && $r->{total};
+  $self->render(json => $r);
+}
+
+# GET /api/ranking/redes?indicador=&uf=XX | nacional=1 (#430)
+sub redes_municipais ($self) {
+  my $v = $self->validation;
+  $v->required('indicador', 'trim')->like(qr/^[a-z0-9_]+$/);
+  $v->optional('uf', 'trim')->like(qr/^[A-Z]{2}$/);
+  $v->optional('nacional')->in(qw/0 1/);
+  return $self->bad_req if $self->any_error;
+  return $self->bad_req('Informe a UF ou nacional=1')
+    unless $v->param('uf') || $v->param('nacional');
+
+  my $model = $self->instantiate_model(model => 'Rank::School');
+  my $r = eval {
+    $model->redes_municipais($v->param('indicador'),
+      { uf => $v->param('uf'), national => $v->param('nacional') ? 1 : 0 });
+  };
+  return $self->render(json => { error => 'Indicador inválido para o ranking de redes (use um do IDEB/SAEB).' }, status => 400) if $@;
+  return $self->render(json => { error => 'Sem redes com este indicador no recorte.' }, status => 404) unless $r;
+  $self->res->headers->cache_control('public, max-age=600');
+  $self->render(json => $r);
+}
+
 1;

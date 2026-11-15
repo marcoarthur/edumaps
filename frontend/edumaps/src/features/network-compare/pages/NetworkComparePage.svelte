@@ -1,6 +1,7 @@
 <script>
   // src/features/network-compare/pages/NetworkComparePage.svelte
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
+  import { ufDoMunicipio } from "@/features/ranking-recorte/constants.js";
   import { onMount } from "svelte";
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
   import { ApiError } from "@/shared/api/client.js";
@@ -147,6 +148,14 @@
         Selecione um município acima para ver a comparação das redes.
       </p>
     </div>
+  {/if}
+  {#if codigoIbge}
+    <p class="text-sm flex flex-wrap gap-x-4" data-testid="links-ranking">
+      <a href="/ranking?aba=escolas&codigo_ibge={codigoIbge}" class="text-blue-700 hover:underline">Ranking das escolas deste município</a>
+      {#if ufDoMunicipio(codigoIbge)}
+        <a href="/ranking?aba=redes&uf={ufDoMunicipio(codigoIbge)}" class="text-blue-700 hover:underline">Ranking das redes municipais de {ufDoMunicipio(codigoIbge)}</a>
+      {/if}
+    </p>
   {/if}
   <FonteDado tela="comparacao_redes" class="pt-2" />
 </div>
