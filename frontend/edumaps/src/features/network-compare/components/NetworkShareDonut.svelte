@@ -1,5 +1,6 @@
 <script>
   // src/features/network-compare/components/NetworkShareDonut.svelte
+  import { centroRosca } from "@/shared/ui/components/charts/centroRosca.js";
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import { NETWORK_COLORS, NETWORK_ORDER } from "../constants/indicators.js";
   import { buildShareDonut, formatInt } from "../utils/transformNetworkData.js";
@@ -21,7 +22,7 @@
 
   const options = $derived({
     title,
-    donut: { center: { label: "Total", number: formatInt(total) } },
+    donut: { center: centroRosca("Total", total, formatInt) },
     data: { groupMapsTo: "group" },
     color: { scale: colorScale },
     legend: { position: "bottom" },

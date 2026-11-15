@@ -1,5 +1,6 @@
 <script>
   // src/features/schools/components/panel/SchoolFinance.svelte
+  import { centroRosca } from "@/shared/ui/components/charts/centroRosca.js";
   import LineChart from "@/shared/ui/components/charts/LineChart.svelte";
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
@@ -79,7 +80,7 @@
 
   const categoryOptions = $derived({
     title: `Custo por categoria${ehRede ? " — rede municipal" : ""}`,
-    donut: { center: { label: "Total", number: formatBRLCompact(stats.totalCusto) } },
+    donut: { center: centroRosca("Total", stats.totalCusto, formatBRLCompact) },
     data: { groupMapsTo: "group" },
     color: { scale: categoryColorScale },
     legend: { position: "bottom" },

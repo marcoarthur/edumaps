@@ -59,5 +59,6 @@ describe("transformFinanceData", () => {
   it("formatBRLCompact usa mil/mi", () => {
     expect(formatBRLCompact(1500)).toMatch(/mil/);
     expect(formatBRLCompact(2_000_000)).toMatch(/mi/);
+    expect(formatBRLCompact(8_895_579.41)).toBe("R$ 8,9 mi");
   });
 });

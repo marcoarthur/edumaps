@@ -1,5 +1,6 @@
 <script>
   // src/features/gestor/components/TeachersSection.svelte
+  import { centroRosca } from "@/shared/ui/components/charts/centroRosca.js";
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import BarChartGrouped from "@/shared/ui/components/charts/BarChartGrouped.svelte";
   import BreakdownList from "./BreakdownList.svelte";
@@ -22,7 +23,7 @@
 
   const vinculoOptions = $derived({
     title: "Docentes por vínculo",
-    donut: { center: { label: "Docentes", number: formatInt(docentes.total) } },
+    donut: { center: centroRosca("Docentes", docentes.total, formatInt) },
     data: { groupMapsTo: "group" },
     legend: { position: "bottom" },
   });
