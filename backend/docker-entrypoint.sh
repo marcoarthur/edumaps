@@ -48,7 +48,11 @@ cat > /opt/edumaps/backend/edu_maps.conf <<EOF
 EOF
 
 if [ "$1" = 'minion' ]; then
-    exec carton exec ./script/edumaps.pl minion worker
+    # Argumentos depois de 'minion' vão para o worker (#423): o serviço
+    # minion-analytics do compose passa '-q analytics'. Sem argumentos, o
+    # worker atende só a fila 'default', como antes.
+    shift
+    exec carton exec ./script/edumaps.pl minion worker "$@"
 else
     exec carton exec morbo script/edumaps.pl
 fi
