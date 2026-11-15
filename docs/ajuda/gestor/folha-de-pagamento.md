@@ -68,8 +68,9 @@ reproduz como estão. Mesmo assim:
 - **Um profissional da escola não está na lista.** Ele pode ser pago por outra
   fonte, estar lotado em outra unidade no SIOPE, ou o mês escolhido pode ser
   anterior à sua entrada.
-- **Aparece "Nenhum registro de pagamento encontrado para esta escola".** Não
-  há folha detalhada para a escola no período carregado.
+- **Aparece "Não há folha de pagamento desta escola para esta competência".**
+  Não há folha detalhada da escola no período. O link para o Painel
+  financeiro leva à explicação do motivo e à lista de municípios com folha.
 
 ## Veja também
 

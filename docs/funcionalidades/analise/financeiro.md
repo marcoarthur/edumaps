@@ -28,10 +28,16 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   rede municipal** (não como se fosse da unidade), com aviso de que os números
   não permitem identificar quem atua na escola. A folha detalhada (nomes) fica
   indisponível nesse caso.
+- Quando não há folha para a escola, o sistema diz o motivo (escola fora da
+  rede municipal, município ainda sem dados, ou o SIOPE não traz a escola) e
+  de quais municípios há folha, com os anos e se o dado é por escola ou só o
+  total da Secretaria. O total da Secretaria só é usado para escolas da rede
+  municipal, nunca para outra rede.
 - Sistema pode contextualizar os recursos frente à rede e ao desempenho.
 - Sistema pode buscar, sob demanda e em segundo plano, os dados do **SIOPE**
   (remuneração municipal) de um ano que ainda não está disponível — para escolas
-  da rede municipal, a partir do painel financeiro. O progresso é acompanhado em
+  da rede municipal, a partir do painel financeiro, pelo gestor da escola com
+  login (o visitante é avisado de que essa busca existe). O progresso é acompanhado em
   tempo real, inclusive quando a busca falha.
 - Sistema pode apoiar a prestação de contas e o planejamento orçamentário.
 

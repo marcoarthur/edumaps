@@ -329,6 +329,39 @@ sub siope_disponivel($self, $cod_inep, $ano) {
   return { ok => 1, cod_municipio => $st->{cod_municipio} };
 }
 
+# Cobertura da folha (#422): um item por município com remuneração
+# carregada. `escolas` conta as unidades com folha própria; 0 quando o SIOPE
+# só traz o agregado da secretaria (código 99999999).
+sub folha_cobertura($self) {
+  my $dbh = $self->schema->storage->dbh;
+  my $sql_nome = <<~'SQL';
+    SELECT r.cod_municipio,
+           m.nm_mun   AS municipio,
+           m.sigla_uf AS uf,
+           MIN(r.ano)::int AS ano_inicial,
+           MAX(r.ano)::int AS ano_final,
+           (COUNT(DISTINCT r.cod_inep) FILTER (WHERE r.cod_inep <> 99999999))::int AS escolas
+      FROM clean.remuneracao_municipal r
+      LEFT JOIN raw.br_municipios_2024 m
+        ON substr(m.cd_mun::text, 1, 6) = r.cod_municipio::text
+     GROUP BY r.cod_municipio, m.nm_mun, m.sigla_uf
+     ORDER BY m.nm_mun NULLS LAST, r.cod_municipio
+  SQL
+  # Sem a tabela de municípios (ambiente parcial), sai sem o nome.
+  my $rows = eval { $dbh->selectall_arrayref($sql_nome, { Slice => {} }) }
+    // eval {
+      $dbh->selectall_arrayref(<<~'SQL', { Slice => {} });
+        SELECT cod_municipio, NULL AS municipio, NULL AS uf,
+               MIN(ano)::int AS ano_inicial, MAX(ano)::int AS ano_final,
+               (COUNT(DISTINCT cod_inep) FILTER (WHERE cod_inep <> 99999999))::int AS escolas
+          FROM clean.remuneracao_municipal
+         GROUP BY cod_municipio ORDER BY cod_municipio
+        SQL
+    }
+    // [];
+  return { municipios => scalar(@$rows), lista => $rows };
+}
+
 sub financial_summary($self, $params) {
   croak "need cod_inep" unless $params->{cod_inep};
 
@@ -364,13 +397,18 @@ sub financial_summary($self, $params) {
     undef, $cod,
   );
 
-  my $cod_municipio = $self->_cod_municipio_escola($cod);
+  # #422: o agregado só vale para escola da REDE MUNICIPAL (o SIOPE é a
+  # remuneração municipal) e soma só as linhas da secretaria (99999999).
+  # Antes somava o município inteiro e valia para qualquer rede: uma escola
+  # estadual de Cuiabá aparecia com a folha municipal toda (13.547
+  # profissionais) rotulada como "Folha da Secretaria".
+  my $siope  = $self->siope_status($cod);
   my $origem = 'escola';
   my $where  = 'cod_inep = ?';
   my @bind   = ($cod);
-  if (!$tem_escola && defined $cod_municipio) {
-    $where = 'cod_municipio::text = ?';
-    @bind  = ($cod_municipio);
+  if (!$tem_escola && $siope->{habilitado}) {
+    $where  = 'cod_municipio::text = ? AND cod_inep = 99999999';
+    @bind   = ($siope->{cod_municipio});
     $origem = 'secretaria';
   }
 
@@ -407,7 +445,15 @@ sub financial_summary($self, $params) {
     undef, @bind,
   );
 
-  my $siope = $self->siope_status($cod);
+  # #422: sem série, dizer POR QUE (ausência não é erro nem zero, #154).
+  my $ausencia;
+  if (!@{ $series // [] }) {
+    $ausencia = !$siope->{escola_existe}          ? 'escola_inexistente'
+              : !$siope->{habilitado}             ? 'nao_municipal'
+              : @{ $siope->{anos_presentes} // [] } ? 'escola_sem_folha'
+              :                                     'municipio_sem_carga';
+    $origem = 'escola';   # nada veio do agregado
+  }
 
   return {
     escola     => {
@@ -423,6 +469,14 @@ sub financial_summary($self, $params) {
       ? 'Folha da Secretaria municipal (o SIOPE não detalha por escola neste município)'
       : undef,
     total_profissionais => ($total_profissionais // 0) + 0,
+    # null quando há dado; senão 'escola_inexistente', 'nao_municipal' (o
+    # SIOPE só cobre a remuneração da rede municipal), 'escola_sem_folha' (o
+    # município tem folha carregada, mas não desta escola nem agregado da
+    # secretaria) ou 'municipio_sem_carga'.
+    ausencia   => $ausencia,
+    # Onde há folha carregada: municípios, anos e se o SIOPE detalha por
+    # escola ou só pelo agregado da secretaria.
+    cobertura  => $self->folha_cobertura,
     series     => $series     // [],
     categorias => $categorias // [],
     siope      => {
