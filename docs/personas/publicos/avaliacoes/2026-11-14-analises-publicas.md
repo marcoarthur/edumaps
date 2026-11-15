@@ -80,9 +80,9 @@ Protocolo em [`../README.md`](../README.md).
 
 **Issues só com a aprovação do developer.** Proposta de agrupamento:
 
-1. **Defeitos de leitura numérica:** AN-01, AN-02 e AN-03, mais o "0.00".
+1. **Defeitos de leitura numérica** (#421): AN-01, AN-02 e AN-03, mais o "0.00".
    É o que dá número errado ou sinal trocado na tela.
-2. **Ausência e cobertura honestas:** AN-04 e AN-12, ou seja, dizer o que
+2. **Ausência e cobertura honestas** (#422): AN-04 e AN-12, ou seja, dizer o que
    falta e onde há dado, e oferecer a busca do SIOPE.
 3. **Agrupamento prestando contas e reprodutível:** AN-05 e AN-09.
 4. **Fonte, data e versão na tela, com uma página pública de fontes:**
@@ -92,5 +92,5 @@ Protocolo em [`../README.md`](../README.md).
 6. **Mercado local para a rede privada:** AN-10. Decisão de produto, ligada
    ao posicionamento de P3 como público de entrada.
 7. **Detalhes:** AN-06 e AN-07, que cabem num PR pequeno.
-8. **ENV-01:** um serviço `minion-analytics` no `docker-compose.yml`
+8. **ENV-01** (#423): um serviço `minion-analytics` no `docker-compose.yml`
    (código, então branch e PR).
