@@ -17,6 +17,11 @@ sub register ($self, $app, @args) {
   # Resumo semântico dos clusters (rótulo em linguagem natural + indicadores)
   $api->get('/summary')->to('cluster#summary')->name('cluster_summary');
 
+  # Execuções guardadas (#427): resumo + universo, mapa e exportação CSV.
+  $api->get('/execucoes/:run_id')->to('cluster#execucao')->name('cluster_execucao');
+  $api->get('/execucoes/:run_id/escolas')->to('cluster#execucao_escolas')->name('cluster_execucao_escolas');
+  $api->get('/execucoes/:run_id/csv')->to('cluster#execucao_csv')->name('cluster_execucao_csv');
+
   # Cascata de seleção de geotag (região → UF → município)
   $api->get('/regions')->to('cluster#regions')->name('cluster_regions');
   $api->get('/ufs')->to('cluster#ufs')->name('cluster_ufs');

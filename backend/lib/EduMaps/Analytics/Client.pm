@@ -40,7 +40,11 @@ sub new ($class, %args) {
 
 sub run_cluster ($self, $args) {
   my $analysis = 'cluster_' . ($args->{parameters}{algorithm} // 'kmeans');
+  # #427: com run_id, a execução é guardada pelo motor R e não pode vir do
+  # cache (o cache devolveria o resultado sem gravar as atribuições).
+  my $run_id = $args->{run_id};
   $self->_run('cluster', {
+    (defined $run_id ? (run_id => $run_id) : ()),
     schema        => $args->{schema},
     table_name    => $args->{table_name},
     id_column     => $args->{id_column},
@@ -49,7 +53,7 @@ sub run_cluster ($self, $args) {
     parameters    => $args->{parameters} // {},
     output_schema => $args->{output_schema},
   }, $analysis, {
-    cacheable => 1,
+    cacheable => defined $run_id ? 0 : 1,
     cache_params => {
       schema     => $args->{schema},
       table_name => $args->{table_name},

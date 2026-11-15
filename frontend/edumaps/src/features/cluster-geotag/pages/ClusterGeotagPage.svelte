@@ -14,7 +14,10 @@
     getJobProgress,
     getClusterSchools,
     getClusterSummary,
+    getExecucao,
+    getExecucaoEscolas,
   } from "../api/clusterApi.js";
+  import UniversoExecucao from "../components/UniversoExecucao.svelte";
   import ClusterSchoolMap from "../components/ClusterSchoolMap.svelte";
   import ClusterSummaryTable from "../components/ClusterSummaryTable.svelte";
   import PresetSelector from "../components/PresetSelector.svelte";
@@ -56,6 +59,9 @@
   let clustered = $state(false);
   let locating = $state(false);
   let error = $state(null);
+  // Execução guardada (#427): universo, link e CSV. Null no caminho antigo
+  // (backend sem execuções) — a tela segue como antes.
+  let execucao = $state(null);
 
   let popTimer = null;
 
@@ -121,7 +127,7 @@
       if (progress.state === "failed") {
         throw new Error(progress.error || "Falha ao agrupar as escolas.");
       }
-      if (progress.state === "finished") return;
+      if (progress.state === "finished") return progress;
     }
   }
 
@@ -144,6 +150,7 @@
     error = null;
     markers = [];
     clusterSummary = [];
+    execucao = null;
 
     const payload = {
       table_name: "school_indicators",
@@ -166,7 +173,13 @@
 
     try {
       const started = await requestCluster(payload);
-      await pollJob(started.job_id);
+      const fim = await pollJob(started.job_id);
+
+      if (fim?.run_id) {
+        await mostrarExecucao(fim.run_id);
+        definirUrl(fim.run_id);
+        return;
+      }
 
       const geotag = {
         codigo_regiao: codigoRegiao || undefined,
@@ -184,6 +197,59 @@
       }
     } catch (err) {
       error = apiMessage(err, "Erro ao agrupar as escolas.");
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Carrega o resultado de uma execução guardada: resumo e universo da
+  // própria execução, e o mapa só com as escolas dela.
+  async function mostrarExecucao(runId) {
+    const exec = await getExecucao(runId);
+    const fc = await getExecucaoEscolas(runId);
+    execucao = exec;
+    clusterSummary = exec.resumo ?? [];
+    markers = fc?.features ?? [];
+    clustered = true;
+  }
+
+  function definirUrl(runId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("execucao", runId);
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }
+
+  // Link de uma execução (?execucao=...): remonta o formulário com os
+  // parâmetros guardados e mostra o mesmo resultado, sem recalcular.
+  async function abrirExecucaoDaUrl(runId) {
+    loading = true;
+    error = null;
+    try {
+      await mostrarExecucao(runId);
+      const p = execucao.parametros ?? {};
+      const rc = execucao.recorte ?? {};
+      if (p.algorithm) algorithm = p.algorithm;
+      if (p.clusters != null) clusters = String(p.clusters);
+      if (p.eps != null) eps = String(p.eps);
+      if (p.min_pts != null) minPts = String(p.min_pts);
+      if (p.preset) selectedPreset = p.preset;
+      if (Array.isArray(p.features) && p.features.length) selectedFeatures = [...p.features];
+      if (p.ano_ideb != null) anoIdeb = String(p.ano_ideb);
+      // O valor tem de ser o da própria opção (número), senão o <select>
+      // não marca nada.
+      const opcao = (lista, campo, valor) =>
+        lista.find((o) => String(o[campo]) === String(valor))?.[campo] ?? valor;
+      if (rc.codigo_regiao) {
+        codigoRegiao = opcao(regions, "co_regiao", rc.codigo_regiao);
+        ufs = await getUfs(codigoRegiao);
+      }
+      if (rc.codigo_uf) {
+        codigoUf = opcao(ufs, "co_uf", rc.codigo_uf);
+        municipalities = await getMunicipalities(codigoUf);
+      }
+      if (rc.codigo_ibge) codigoIbge = opcao(municipalities, "co_municipio", rc.codigo_ibge);
+    } catch (err) {
+      error = apiMessage(err, "Não foi possível abrir este agrupamento.");
     } finally {
       loading = false;
     }
@@ -225,6 +291,8 @@
       error = apiMessage(err, "Erro ao carregar regiões.");
     }
     await loadCatalog();
+    const runId = new URLSearchParams(window.location.search).get("execucao");
+    if (runId) await abrirExecucaoDaUrl(runId);
   });
 
   onDestroy(() => {
@@ -392,6 +460,9 @@
   {/if}
 
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-2" data-tour="analises-resultado">
+    {#if clustered && execucao}
+      <UniversoExecucao {execucao} {columns} />
+    {/if}
     {#if clustered && markers.length > 0}
       <ClusterSchoolMap {markers} height="460px" />
       <ClusterSummaryTable summary={clusterSummary} />

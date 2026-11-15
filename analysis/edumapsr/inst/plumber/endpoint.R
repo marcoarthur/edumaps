@@ -122,7 +122,10 @@ function(req, res) {
         schema = schema,
         table_name = payload$table_name,
         id_column = payload$id_column,
-        output_schema = output_schema
+        output_schema = output_schema,
+        # #427: execução criada pelo backend; sem run_id, comportamento antigo.
+        run_id = payload$run_id %||% generate_run_id(),
+        execucao = !is.null(payload$run_id)
       )
 
       body <- export_result(result, "json")

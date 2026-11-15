@@ -5,6 +5,9 @@ use EduMaps::Analysis::R::Pipe;
 use EduMaps::Presets;
 use EduMaps::Util::MinionFila qw(minion_fila);
 use Time::Piece;
+use Mojo::JSON qw(encode_json);
+use Mojo::Util qw(sha1_sum);
+use Time::HiRes ();
 
 use constant {
   STAGING_SCHEMA    => 'staging',
@@ -150,6 +153,21 @@ sub _apply_clustering($job, $args) {
   my $r_out;
   my $engine = $job->app->analytics_engine;
 
+  # -------------------------------------------------------------------------
+  # Execução guardada (#427): o agrupamento da tela (tabela de indicadores,
+  # motor http) vira um registro em analytics.cluster_execucoes, com recorte,
+  # parâmetros e o universo. As escolas que não funcionam mais saem antes do
+  # agrupamento e são contadas aqui; o motor R completa o universo e grava as
+  # atribuições sob o mesmo run_id.
+  # -------------------------------------------------------------------------
+  my $run_id;
+  if ($engine eq 'http' && $args->{table_name} eq EduMaps::Presets->INDICATORS_TABLE) {
+    my $err;
+    ($run_id, $err) = _criar_execucao($job, $args, $algorithm);
+    return $job->fail("Error registering clustering run: $err") if $err;
+    $args->{filter} = { %{ $args->{filter} // {} }, tp_situacao_funcionamento => 1 };
+  }
+
   # ---------------------------------------------------------------
   # Motor HTTP: Plumber/edumapsr (POST /cluster). O serviço persiste
   # cluster_id na staging e metadados em analytics.clustering_metadata.
@@ -157,6 +175,7 @@ sub _apply_clustering($job, $args) {
   if ($engine eq 'http') {
     try {
       $r_out = $job->app->analytics->run_cluster({
+        (defined $run_id ? (run_id => $run_id) : ()),
         schema     => $args->{schema},
         table_name => $args->{table_name},
         id_column  => $args->{id_column},
@@ -171,8 +190,10 @@ sub _apply_clustering($job, $args) {
         },
       });
     } catch($err) {
+      _estado_execucao($job, $run_id, 'falhou') if $run_id;
       return $job->fail("Error running analytics ($algorithm): $err");
     }
+    _estado_execucao($job, $run_id, 'concluida') if $run_id;
   }
 
   # ---------------------------------------------------------------
@@ -206,6 +227,7 @@ sub _apply_clustering($job, $args) {
       meta => {
         name => 'clusterization',
         job_id => $job->id,
+        (defined $run_id ? (run_id => $run_id) : ()),
         algorithm => $algorithm,
         took => $end - $start,
       },
@@ -220,6 +242,73 @@ sub _apply_clustering($job, $args) {
       }
     }
   );
+}
+
+# Cria a execução em analytics.cluster_execucoes (#427) e devolve
+# ($run_id, undef) ou (undef, $erro). O universo inicial conta, no recorte,
+# o total de escolas e as que não funcionam mais (ficam fora do agrupamento).
+sub _criar_execucao($job, $args, $algorithm) {
+  my $db = $job->app->pg->db;
+  my $filter = $args->{filter} // {};
+
+  my (@where, @binds);
+  for my $col (sort keys %$filter) {
+    return (undef, "invalid filter column '$col'") unless $col =~ /^\w+$/;
+    push @where, qq{"$col" = ?};
+    push @binds, $filter->{$col};
+  }
+  my $where = @where ? 'WHERE ' . join(' AND ', @where) : '';
+
+  # Validade de 90 dias: as vencidas saem a cada execução nova (a leitura já
+  # ignora as vencidas; sem execução nova, nada cresce).
+  eval { $job->app->model('Cluster')->limpar_execucoes_vencidas; 1 }
+    or $job->app->log->warn("cluster_execucoes: limpeza das vencidas falhou: $@");
+
+  my ($run_id, $err);
+  eval {
+    my $conta = $db->query(
+      "SELECT count(*)::int AS total,
+              (count(*) FILTER (WHERE tp_situacao_funcionamento IS DISTINCT FROM 1))::int AS inativas
+         FROM clean.school_indicators $where", @binds
+    )->hash;
+
+    # run_<epoch>_<sufixo>: ordena por data como os run_id antigos do R e não
+    # colide entre dois jobs no mesmo segundo.
+    $run_id = sprintf 'run_%d_%s', time,
+      substr(sha1_sum(join '|', $job->id, Time::HiRes::time(), $$, rand), 0, 8);
+
+    my %recorte = (
+      (defined $filter->{co_regiao}    ? (codigo_regiao => "$filter->{co_regiao}")    : ()),
+      (defined $filter->{co_uf}        ? (codigo_uf     => sprintf('%02d', $filter->{co_uf})) : ()),
+      (defined $filter->{co_municipio} ? (codigo_ibge   => "$filter->{co_municipio}") : ()),
+    );
+    my %parametros = (
+      algorithm => $algorithm,
+      features  => $args->{features} // [],
+      (map { defined $args->{$_} ? ($_ => $args->{$_}) : () } qw(clusters eps min_pts ano_ideb)),
+      (defined $args->{preset_id} ? (preset => $args->{preset_id}) : ()),
+    );
+
+    $db->query(
+      'INSERT INTO analytics.cluster_execucoes (run_id, job_id, recorte, parametros, universo)
+       VALUES (?, ?, ?::jsonb, ?::jsonb, ?::jsonb)',
+      $run_id, $job->id, encode_json(\%recorte), encode_json(\%parametros),
+      encode_json({ n_total => $conta->{total}, n_inativas => $conta->{inativas} })
+    );
+    1;
+  } or $err = "$@" || 'unknown error';
+
+  return (undef, $err) if $err;
+  return ($run_id, undef);
+}
+
+sub _estado_execucao($job, $run_id, $estado) {
+  eval {
+    $job->app->pg->db->query(
+      'UPDATE analytics.cluster_execucoes SET estado = ? WHERE run_id = ?', $estado, $run_id
+    );
+    1;
+  } or $job->app->log->warn("cluster_execucoes: não atualizou $run_id para $estado: $@");
 }
 
 # Preenche clean.school_indicators para o ano IDEB escolhido. Retorna undef em

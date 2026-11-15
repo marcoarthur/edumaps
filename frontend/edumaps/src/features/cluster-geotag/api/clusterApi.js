@@ -92,3 +92,25 @@ export function getYears() {
 export function getClusterSummary() {
   return apiClient.get("/api/cluster/summary");
 }
+
+/**
+ * Execução guardada do agrupamento (#427): parâmetros, recorte, universo e
+ * resumo dos grupos.
+ * @param {string} runId
+ */
+export function getExecucao(runId) {
+  return apiClient.get(`/api/cluster/execucoes/${encodeURIComponent(runId)}`);
+}
+
+/**
+ * GeoJSON das escolas de uma execução (só as que têm coordenada).
+ * @param {string} runId
+ */
+export function getExecucaoEscolas(runId) {
+  return apiClient.get(`/api/cluster/execucoes/${encodeURIComponent(runId)}/escolas`);
+}
+
+/** URL da exportação CSV de uma execução. */
+export function execucaoCsvUrl(runId) {
+  return `/api/cluster/execucoes/${encodeURIComponent(runId)}/csv`;
+}

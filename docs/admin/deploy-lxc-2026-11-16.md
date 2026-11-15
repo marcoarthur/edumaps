@@ -64,6 +64,7 @@ já estar lá — o registry é quem diz):
 | `rede_acesso`, `planos_custo_executado` | #375 (visão da rede) |
 | `inep_rendimento_distorcao` | #376 |
 | `idempotencia` | #416 |
+| `analytics_cluster_execucoes` | #427 |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -71,7 +72,7 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `idempotencia` e o `deploy_db_dev` não
+- [ ] A última change do registry é `analytics_cluster_execucoes` (#427; antes era `idempotencia`) e o `deploy_db_dev` não
       reportou erro.
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
@@ -149,6 +150,10 @@ dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
 (`regra_sinais` diferente; agora 3, com o rótulo do IDEB com a etapa, #431).
+O agrupamento passa a guardar cada execução (#427): o motor grava em
+`analytics.cluster_atribuicoes` com o mesmo usuário do banco que já grava
+`analytics.clustering_metadata`; conferir com um agrupamento de teste na tela
+(caixa **Universo** e **Baixar CSV**).
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

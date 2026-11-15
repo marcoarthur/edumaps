@@ -13,6 +13,8 @@ import {
   getJobProgress,
   getClusterSchools,
   getClusterSummary,
+  getExecucao,
+  getExecucaoEscolas,
 } from "../api/clusterApi.js";
 import {
   REGIONS_FIXTURE,
@@ -24,6 +26,7 @@ import {
   CLUSTER_POLYGONS_FIXTURE,
   CLUSTER_SUMMARY_FIXTURE,
   FIXTURE_GEOTAG,
+  EXECUCAO_FIXTURE,
 } from "../mocks/fixtures.js";
 import { ApiError } from "@/shared/api/client.js";
 
@@ -38,6 +41,9 @@ vi.mock("../api/clusterApi.js", () => ({
   getJobProgress: vi.fn(),
   getClusterSchools: vi.fn(),
   getClusterSummary: vi.fn(),
+  getExecucao: vi.fn(),
+  getExecucaoEscolas: vi.fn(),
+  execucaoCsvUrl: (id) => `/api/cluster/execucoes/${id}/csv`,
 }));
 
 describe("ClusterGeotagPage", () => {
@@ -58,6 +64,64 @@ describe("ClusterGeotagPage", () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("execução guardada: mostra o universo, o link e o CSV, e põe ?execucao= na URL (#427)", async () => {
+    getRegions.mockResolvedValue(REGIONS_FIXTURE);
+    getUfs.mockResolvedValue(UFS_FIXTURE);
+    requestCluster.mockResolvedValue({ task: "cluster", job_id: 42 });
+    getJobProgress.mockResolvedValue({ state: "finished", run_id: EXECUCAO_FIXTURE.run_id });
+    getExecucao.mockResolvedValue({ ...EXECUCAO_FIXTURE, resumo: CLUSTER_SUMMARY_FIXTURE });
+    getExecucaoEscolas.mockResolvedValue(CLUSTER_POLYGONS_FIXTURE);
+
+    render(ClusterGeotagPage);
+    const regiao = await screen.findByLabelText("Região");
+    await fireEvent.change(regiao, { target: { value: "1" } });
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
+
+    const universo = await screen.findByTestId("universo-execucao", {}, { timeout: 3000 });
+    expect(universo).toHaveTextContent(/226\s*escolas no recorte, 180\s*agrupadas, 46\s*fora/);
+    expect(universo).toHaveTextContent(/40 não funcionam mais/);
+    expect(universo).toHaveTextContent(/6 sem dado de .*esgoto/i);
+    expect(universo).toHaveTextContent(/13 escolas agrupadas sem coordenada/);
+    expect(universo).toHaveTextContent(/até 13\/02\/2027/);
+    expect(screen.getByRole("link", { name: "Baixar CSV" })).toHaveAttribute(
+      "href", `/api/cluster/execucoes/${EXECUCAO_FIXTURE.run_id}/csv`);
+    expect(window.location.search).toBe(`?execucao=${EXECUCAO_FIXTURE.run_id}`);
+    expect(getClusterSchools).not.toHaveBeenCalled();
+    expect(getClusterSummary).not.toHaveBeenCalled();
+  });
+
+  it("link ?execucao= reabre o resultado e remonta o formulário sem recalcular (#427)", async () => {
+    window.history.replaceState({}, "", `/cluster/geotag?execucao=${EXECUCAO_FIXTURE.run_id}`);
+    getRegions.mockResolvedValue(REGIONS_FIXTURE);
+    getUfs.mockResolvedValue(UFS_FIXTURE);
+    getMunicipalities.mockResolvedValue(MUNICIPALITIES_FIXTURE);
+    getExecucao.mockResolvedValue({ ...EXECUCAO_FIXTURE, resumo: CLUSTER_SUMMARY_FIXTURE });
+    getExecucaoEscolas.mockResolvedValue(CLUSTER_POLYGONS_FIXTURE);
+
+    render(ClusterGeotagPage);
+
+    await screen.findByTestId("universo-execucao", {}, { timeout: 3000 });
+    expect(getExecucao).toHaveBeenCalledWith(EXECUCAO_FIXTURE.run_id);
+    expect(requestCluster).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByLabelText("Região").value).toBe("1");
+      expect(screen.getByLabelText("UF").value).toBe("12");
+      expect(screen.getByLabelText("Município").value).toBe("1200401");
+      expect(screen.getByLabelText("Nº de grupos").value).toBe("4");
+    });
+  });
+
+  it("execução vencida ou inexistente: mensagem, sem quebrar a página (#427)", async () => {
+    window.history.replaceState({}, "", "/cluster/geotag?execucao=run_1_ffff");
+    getRegions.mockResolvedValue(REGIONS_FIXTURE);
+    getExecucao.mockRejectedValue(new ApiError("Execução não encontrada ou vencida (as execuções valem 90 dias).", { status: 404 }));
+
+    render(ClusterGeotagPage);
+    expect(await screen.findByText(/vencida \(as execuções valem 90 dias\)/)).toBeInTheDocument();
+    expect(screen.queryByTestId("universo-execucao")).toBeNull();
   });
 
   it("carrega e exibe as regiões da cascata", async () => {
