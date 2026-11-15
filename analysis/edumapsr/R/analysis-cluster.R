@@ -162,6 +162,40 @@ CLUSTER_ALGORITHMS <- c("kmeans", "dbscan", "gmm", "spectral")
   }
 }
 
+# Grupo pequeno demais para um rótulo de qualidade (#427): menos de
+# `minimo` entidades ou menos de `fracao` das agrupadas.
+.cluster_pequeno <- function(sizes, n_total, minimo = 5L, fracao = 0.02) {
+  sizes < minimo | sizes < fracao * n_total
+}
+
+# `a %|na|% b`: a, trocando NA por b (mesmo comprimento).
+`%|na|%` <- function(a, b) {
+  a[is.na(a)] <- b[is.na(a)]
+  a
+}
+
+# Até `n` indicadores que mais afastam o grupo `ci` da média geral, em JSON:
+# [{indicador, media_grupo, media_geral, z}], |z| decrescente. Indicador sem
+# variância fica de fora.
+.cluster_destaques <- function(x, cluster_id, ci, n = 3L) {
+  membros <- x[cluster_id == ci, , drop = FALSE]
+  if (nrow(membros) == 0) return("[]")
+  mu <- colMeans(x)
+  sdv <- apply(x, 2, stats::sd)
+  mg <- colMeans(membros)
+  z <- (mg - mu) / sdv
+  ok <- is.finite(z)
+  if (!any(ok)) return("[]")
+  ord <- order(-abs(z[ok]))
+  sel <- names(z[ok])[ord][seq_len(min(n, sum(ok)))]
+  as.character(jsonlite::toJSON(lapply(sel, function(f) list(
+    indicador = f,
+    media_grupo = unname(round(mg[[f]], 4)),
+    media_geral = unname(round(mu[[f]], 4)),
+    z = unname(round(z[[f]], 2))
+  )), auto_unbox = TRUE))
+}
+
 #' Calcula similaridade entre entidades via clusterização
 #'
 #' Executa o algoritmo de clusterização pedido sobre as features
@@ -387,6 +421,24 @@ analyze_cluster <- function(model, parameters = list()) {
 
   clusters_df$cluster_rank  <- cluster_labels_df$cluster_rank[match(clusters_df$cluster_id, cluster_labels_df$cluster_id)]
   clusters_df$cluster_label <- cluster_labels_df$cluster_label[match(clusters_df$cluster_id, cluster_labels_df$cluster_id)]
+
+  # #427 (AN-05): grupo pequeno não recebe rótulo de qualidade — com 1 ou 2
+  # escolas, "Média qualidade de infraestrutura" diz mais do que o dado.
+  if (nrow(clusters_df) > 0) {
+    pequeno <- .cluster_pequeno(clusters_df$cluster_size, nrow(x)) & clusters_df$cluster_id != 0L
+    clusters_df$cluster_label[pequeno] <- sprintf(
+      "Grupo pequeno (%d %s)", clusters_df$cluster_size[pequeno],
+      ifelse(clusters_df$cluster_size[pequeno] == 1L, "escola", "escolas")
+    )
+    cluster_labels_df$cluster_label <- clusters_df$cluster_label[match(cluster_labels_df$cluster_id, clusters_df$cluster_id)] %|na|% cluster_labels_df$cluster_label
+
+    # Indicadores que mais distinguem cada grupo: distância da média do grupo
+    # à média de todas as agrupadas, em desvios padrão (o valor bruto mistura
+    # escalas: 0/1, proporções, notas).
+    clusters_df$destaques <- vapply(clusters_df$cluster_id, function(ci) {
+      .cluster_destaques(x, cluster_id, ci)
+    }, character(1))
+  }
 
   assignments_df <- data.frame(
     entity_id = entity_ids,

@@ -37,7 +37,7 @@ em vez de tratar toda a rede do mesmo jeito.
    escolas… aguarde"*).
 6. **Como saber que deu certo:** o mapa mostra as escolas coloridas por grupo e
    a tabela **Resumo dos grupos** lista cada grupo com o número de escolas e
-   os indicadores que mais o distinguem.
+   o que mais distingue cada grupo.
 7. **Guardar e compartilhar:** a caixa **Universo** tem **Copiar link** (reabre
    este mesmo resultado, com o formulário preenchido, por 90 dias) e **Baixar
    CSV** (uma linha por escola: INEP, nome, município, rede, grupo e os
@@ -52,9 +52,15 @@ em vez de tratar toda a rede do mesmo jeito.
   dois). Escolas agrupadas **sem coordenada** não aparecem no mapa, mas estão
   no CSV.
 
-- **Grupo** é só um rótulo (1, 2, 3…): o número não indica melhor ou
-  pior. Leia a coluna **Indicadores principais** para saber o que caracteriza
-  cada grupo.
+- **Rótulo do grupo:** com um conjunto pronto, o grupo recebe uma gradação
+  (*"Alta qualidade de infraestrutura"*). Grupo com menos de 5 escolas (ou
+  menos de 2% das agrupadas) aparece como **Grupo pequeno (N escolas)**, sem
+  gradação: é pouco para dizer muito. Sem conjunto pronto, o rótulo é só
+  **Grupo 1, 2, 3…**, e o número não indica melhor ou pior.
+- **O que mais o distingue:** para cada grupo, os indicadores em que ele mais
+  se afasta da média das escolas agrupadas, com o valor do grupo e a média
+  geral (▲ acima, ▼ abaixo). Indicadores de sim/não aparecem como % das
+  escolas do grupo.
 - Mudar o recorte, os indicadores ou o número de grupos muda o resultado: é uma
   leitura exploratória, não uma classificação oficial.
 - **Algoritmos:** *K-Means* separa em grupos de tamanho parecido; *Gaussian

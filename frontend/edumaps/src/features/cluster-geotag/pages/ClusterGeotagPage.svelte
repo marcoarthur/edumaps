@@ -465,7 +465,7 @@
     {/if}
     {#if clustered && markers.length > 0}
       <ClusterSchoolMap {markers} height="460px" />
-      <ClusterSummaryTable summary={clusterSummary} />
+      <ClusterSummaryTable summary={clusterSummary} {columns} />
     {:else if clustered}
       <div class="text-center py-16 text-sm text-gray-500">
         Nenhuma escola agrupada neste recorte.

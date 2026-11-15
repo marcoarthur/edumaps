@@ -310,3 +310,41 @@ test_that("execução guardada grava atribuições com valores e mescla o univer
   expect_equal(u$n_agrupadas, 39)
   expect_equal(u$sem_dado$qt_doc_bas, 1)
 })
+
+test_that("grupo pequeno não recebe rótulo de qualidade (#427)", {
+  set.seed(1)
+  dados <- data.frame(
+    co_entidade = sprintf("E%03d", 1:61),
+    a = c(rnorm(30, 0, 0.1), rnorm(30, 10, 0.1), 100),
+    b = c(rnorm(30, 0, 0.1), rnorm(30, 10, 0.1), 100)
+  )
+  model <- new_school_cluster_model(dados, entity_id = "co_entidade", features = c("a", "b"))
+  result <- analyze_cluster(model, list(
+    algorithm = "kmeans", clusters = 3,
+    labeling = list(concept = "qualidade de teste", gender = "f")
+  ))
+  cl <- result$tables$clusters
+  expect_true("Grupo pequeno (1 escola)" %in% cl$cluster_label)
+  expect_equal(sum(grepl("qualidade de teste$", cl$cluster_label)), 2)
+  expect_equal(result$data$cluster_label[result$data$co_entidade == "E061"], "Grupo pequeno (1 escola)")
+  expect_equal(.cluster_pequeno(c(4, 5, 10), 100), c(TRUE, FALSE, FALSE))
+  expect_equal(.cluster_pequeno(c(10, 30), 1000), c(TRUE, FALSE))
+})
+
+test_that("destaques: indicadores que mais afastam o grupo da média, em desvios (#427)", {
+  set.seed(2)
+  x <- cbind(
+    longe = c(rep(0, 20), rep(10, 20)),
+    perto = c(rnorm(20, 5, 1), rnorm(20, 5.2, 1)),
+    plano = rep(3, 40)
+  )
+  d <- jsonlite::fromJSON(.cluster_destaques(x, rep(1:2, each = 20), 2))
+  expect_equal(d$indicador[1], "longe")
+  expect_false("plano" %in% d$indicador)
+  expect_equal(d$media_grupo[1], 10)
+  expect_equal(d$media_geral[1], 5)
+  expect_gt(d$z[1], 0.9)
+
+  result <- analyze_cluster(fixture_cluster_model(), list(algorithm = "kmeans", clusters = 4))
+  expect_true(all(nzchar(result$tables$clusters$destaques)))
+})
