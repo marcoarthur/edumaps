@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-15 (bm) — issues #427 a #431 e PR #432 (#431)
+
+- Issues da curadoria P3–P6: #427 (agrupamento, AN-05/09), #428 (fontes,
+  AN-08), #429 (mercado local, AN-10, decisão de produto), #430 (ranking,
+  AN-11, decisão de produto), #431 (detalhes, AN-06/07).
+- **#431 → PR #432** (`fix/busca-municipio-pt-br`):
+  - busca: `codigo_ibge` do autocompletar filtra; texto livre com
+    `contrib.unaccent` e nome igual > prefixo > parcial; sugestões com sigla;
+  - `comLocale` (Carbon PT-BR) nos 4 wrappers de gráfico;
+  - perfil da rede `?codigo_ibge=` (aceita `?ibge=`);
+  - Análises sem jargão (rota `/cluster/geotag` mantida);
+  - IDEB/SAEB do perfil com edição e etapa; `PROFILE_REGRA_SINAIS` = 3
+    (agora é a "versão do perfil"; o nome do campo ficou).
+- Achado não corrigido: no `.profile_pop_body` o `ORDER BY nota_media DESC`
+  põe NULL primeiro, e as médias de comparação misturam etapas (cada escola
+  na sua etapa principal). Explicado na ajuda; sem issue.
+
 ## Sessão 2026-11-15 (bl) — merge dos PRs #424 a #426
 
 - Merge autorizado pelo developer: #424 (dba9fa8), #425 (f696e01), #426
