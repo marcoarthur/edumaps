@@ -305,7 +305,7 @@
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
     <p class="font-semibold text-gray-800 text-sm mb-3">Parâmetros</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" data-tour="analises-algoritmo">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start" data-tour="analises-algoritmo">
       <div>
         <label for="algorithm" class="block text-sm text-gray-600 mb-1">Algoritmo</label>
         <select id="algorithm" bind:value={algorithm} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
@@ -313,6 +313,9 @@
             <option value={a.value}>{a.label}</option>
           {/each}
         </select>
+        <p class="mt-1 text-xs text-gray-500" data-testid="algoritmo-descricao">
+          {ALGORITHMS.find((a) => a.value === algorithm)?.descricao ?? ""}
+        </p>
       </div>
 
       {#if algorithm === "dbscan"}
@@ -335,7 +338,7 @@
         onclick={generateClusters}
         data-tour="analises-gerar"
         disabled={loading}
-        class="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
+        class="md:mt-6 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
       >
         {loading ? "Agrupando…" : "Agrupar escolas"}
       </button>

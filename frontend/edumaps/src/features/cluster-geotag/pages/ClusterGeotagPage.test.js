@@ -69,6 +69,20 @@ describe("ClusterGeotagPage", () => {
     });
   });
 
+  it("fala a língua do usuário: título, grupos e a frase do algoritmo (#431)", async () => {
+    getRegions.mockResolvedValue(REGIONS_FIXTURE);
+    render(ClusterGeotagPage);
+
+    expect(screen.getByRole("heading", { name: "Agrupar escolas com perfil parecido" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nº de grupos")).toBeInTheDocument();
+    expect(screen.getByTestId("algoritmo-descricao")).toHaveTextContent(/tamanho parecido/);
+    expect(screen.queryByText(/geotag|motor R/i)).toBeNull();
+
+    await fireEvent.change(screen.getByLabelText("Algoritmo"), { target: { value: "dbscan" } });
+    expect(screen.getByTestId("algoritmo-descricao")).toHaveTextContent(/isoladas ficam de fora/);
+    expect(screen.getByLabelText(/Mínimo de escolas por grupo/)).toBeInTheDocument();
+  });
+
   it("carrega UFs ao selecionar região e municípios ao selecionar UF", async () => {
     getRegions.mockResolvedValue(REGIONS_FIXTURE);
     getUfs.mockResolvedValue(UFS_FIXTURE);

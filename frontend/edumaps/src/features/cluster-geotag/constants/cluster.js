@@ -4,10 +4,10 @@
 // Os nomes das features espelham colunas de clean.censo_escolas.
 
 export const ALGORITHMS = [
-  { value: "kmeans", label: "K-Means (grupos de tamanho parecido)" },
-  { value: "gmm", label: "Mistura gaussiana (GMM, grupos de formato livre)" },
-  { value: "dbscan", label: "DBSCAN (por densidade; deixa isoladas de fora)" },
-  { value: "spectral", label: "Espectral (grupos em formas irregulares)" },
+  { value: "kmeans", label: "K-Means", descricao: "Grupos de tamanho parecido, no número que você escolher." },
+  { value: "gmm", label: "Mistura gaussiana (GMM)", descricao: "Grupos de formato livre, no número que você escolher." },
+  { value: "dbscan", label: "DBSCAN", descricao: "Acha os grupos sozinho pela proximidade; escolas isoladas ficam de fora." },
+  { value: "spectral", label: "Espectral", descricao: "Grupos em formas irregulares, no número que você escolher." },
 ];
 
 // Recorte mínimo: região (1-5), UF (2 dígitos) e município (7 dígitos),
