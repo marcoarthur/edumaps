@@ -90,6 +90,9 @@ O que entra: login com Argon2id e limites, sessão com hash, proxy confiável,
 planos de gestão, visão da rede, INEP, idempotência (#416), embeddings diários
 (#413) e as tasks diárias novas.
 
+O `cpanfile` não pede mais o PDL (#419). O PDL já instalado no host pode
+ficar: nada mais o carrega, e não é preciso desinstalar.
+
 - [ ] md5 de um arquivo característico igual ao local:
       ```bash
       ssh root@backend.edumaps md5sum /opt/edumaps/backend/lib/EduMaps/Plugin/Idempotencia.pm

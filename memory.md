@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-14 (bj) — backend sem o PDL (#419, PR #420 mergeado)
+
+- #418 mergeado (`1bcf790`); #419 → PR #420 mergeado (`6082a60`), issue
+  fechada.
+- Saíram do `cpanfile` `PDL`, `PDL::NiceSlice`, `PDL::Stats::Kmeans`, e os
+  módulos `Analysis::Clusterization`/`ClusterAnalyzer` (k-means em Perl, só
+  usados em testes; clustering é do R) com 3 testes. `ClusterEscola` (DBIC)
+  ficou.
+- CI: passo do cpanm 8m44s → 3m14s; suíte -j4 84 s. Build local da imagem do
+  backend 5m17s (carton 296 s). Imagens `backend`/`minion` reconstruídas, md5
+  do `cpanfile` igual, `compose ps` ok.
+- No LXC o PDL instalado pode ficar (linha no roteiro de 16/11).
+- Nota técnica 199 (#418 + #419); ciclo `2026-11-14-build-e-testes.md`.
+
 ## Sessão 2026-11-14 (bi) — suíte do backend em paralelo (PR #418)
 
 - Roteiro do deploy do LXC de 16/11 em `docs/admin/deploy-lxc-2026-11-16.md`
