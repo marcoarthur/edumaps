@@ -75,11 +75,10 @@ export function transformPanelData(apiData) {
       profissionalizante: !!record.in_profissionalizante,
     };
 
-    // Usar distance como indicador principal (ou deixar null)
-    const mainIndicator = {
-      label: "Distância",
-      valor: item.distance.toFixed(2),
-    };
+    // #421 (AN-03): a distância de cosseno (0,0006…0,002) saía "0.00" para
+    // todas e não tem escala que se leia. O cartão não mostra número; o
+    // critério da comparação fica escrito abaixo da lista.
+    const mainIndicator = null;
 
     return {
       id_escola: record.co_entidade,

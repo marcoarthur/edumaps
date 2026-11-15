@@ -44,6 +44,15 @@
     </button>
   {/each}
 
+  {#if schools.length > 0}
+    <p class="col-span-full text-xs text-gray-500 font-sans">
+      Escolas da mesma cidade, com ao menos uma etapa de ensino em comum e as
+      notas do painel (atendimento, infraestrutura, docência, diversidade,
+      gestão e sustentabilidade) mais parecidas. Ordem: da mais parecida para
+      a menos.
+    </p>
+  {/if}
+
   {#if schools.length === 0 && motivo === 'sem_dado'}
     <p class="col-span-full text-gray-500 font-sans">
       Sem dado para comparar: falta alguma das notas desta escola no Censo
