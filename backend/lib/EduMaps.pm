@@ -69,7 +69,7 @@ sub startup ($self) {
   # ------------------------------------------------------------
   push @{$self->routes->namespaces}, 'EduMaps::Controller';
 
-  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Gestor Task Rank SchoolNetwork Cluster Pesquisa Chat Admin Session Canais Rede);
+  $self->plugin("EduMaps::Plugin::API::$_") for qw(City School Gestor Task Rank SchoolNetwork Cluster Pesquisa Chat Admin Session Canais Rede Fontes);
 
   $self->log->info("EduMaps inicializado com sucesso [v$VERSION].");
 }

@@ -47,6 +47,8 @@ is $exec->{estado}, 'concluida', 'estado concluída';
 is $exec->{recorte}{codigo_ibge}, "$mun", 'recorte = município';
 is $exec->{parametros}{clusters}, 3, 'k guardado';
 is $exec->{parametros}{preset}, 'infraestrutura', 'preset guardado';
+like $exec->{parametros}{dados}{censo}{ano}, qr/^\d{4}$/, 'ano do Censo guardado (#428)';
+like $exec->{parametros}{dados}{ideb}{ano}, qr/^\d{4}$/, 'ano do IDEB usado guardado (#428)';
 
 my $u = $exec->{universo};
 my ($total, $inativas) = $dbh->selectrow_array(q{

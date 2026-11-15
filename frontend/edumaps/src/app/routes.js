@@ -3,6 +3,7 @@ import PrivacidadePage, { ExclusaoPage, SairPage } from "@/features/privacidade"
 import HomePage from "@/features/home";
 import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compare";
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
+import { FontesPage } from "@/features/fontes";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage, ConsentimentoVersoesPage, RedeContasPage } from "@/features/config";
 import { RedePage, RedeConvitePage, RedeRelatorioPage, RedeIndicadoresPage, RedeDocumentoPage } from "@/features/rede";
@@ -48,6 +49,7 @@ import {
 export const routes = [
   { path: "/", component: HomePage },
   { path: "/privacidade", component: PrivacidadePage },
+  { path: "/fontes", component: FontesPage },
   { path: "/privacidade/exclusao/:token", component: ExclusaoPage },
   { path: "/privacidade/sair/:token", component: SairPage },
   { path: "/municipio/compare", component: NetworkComparePage },

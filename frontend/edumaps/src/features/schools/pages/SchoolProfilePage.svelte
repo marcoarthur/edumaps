@@ -5,6 +5,7 @@
   // (issue #105). Um único GET /api/school/:inep/profile devolve o
   // diagnóstico, a posição relativa, o benchmarking (cluster + peers) e
   // os sinais de atenção.
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { onMount } from 'svelte';
   import SchoolProfile from '../components/profile/SchoolProfile.svelte';
   import { getSchoolProfile } from '../api/schoolProfileApi.js';
@@ -91,4 +92,5 @@
   {:else if profile}
     <SchoolProfile {profile} {evolutionGroups} onSelectPeer={selectPeer} />
   {/if}
+  <FonteDado tela="perfil_escola" class="pt-2" />
 </div>

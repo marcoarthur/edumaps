@@ -23,6 +23,7 @@ comunidade escolar.
 | ver os dados de uma escola | [Painel público da escola](painel-publico-da-escola.md) |
 | comparar a rede do meu município com outras | [Comparar redes](comparar-redes.md) |
 | responder a uma pesquisa que a escola enviou | [Responder pesquisa pública](responder-pesquisa.md) |
+| saber de onde vêm os números e de que ano são | [Fontes e metodologia](fontes-e-metodologia.md) |
 | saber o que é público e o que é protegido | [Privacidade e dados públicos](privacidade.md) |
 | entender o roteiro de ajuda que aparece na tela | [Usar a ajuda guiada na tela](ajuda-guiada.md) |
 

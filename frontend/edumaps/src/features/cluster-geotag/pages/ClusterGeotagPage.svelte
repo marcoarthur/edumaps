@@ -1,5 +1,6 @@
 <script>
   // src/features/cluster-geotag/pages/ClusterGeotagPage.svelte
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { onMount, onDestroy } from "svelte";
   import { ApiError } from "@/shared/api/client.js";
   import { router } from "@/app/router.svelte.js";
@@ -480,4 +481,5 @@
       </div>
     {/if}
   </div>
+  <FonteDado tela="agrupamento" class="pt-2" />
 </div>

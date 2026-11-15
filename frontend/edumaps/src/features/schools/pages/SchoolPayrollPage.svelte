@@ -1,4 +1,5 @@
 <script>
+  import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { getSchoolPayroll } from "../api/schoolApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import SchoolPayrollTable from "../components/SchoolPayrollTable.svelte";
@@ -106,4 +107,5 @@
   {:else}
     <SchoolPayrollTable payrollData={payrollData} />
   {/if}
+  <FonteDado tela="folha" class="pt-2" />
 </div>

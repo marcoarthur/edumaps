@@ -118,6 +118,23 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   (sem marco no trecho, trecho fora do padrão, ponto fora do mapa municipal), e
   **nunca é atribuído a um município por aproximação**.
 
+### Fonte e versão na tela
+
+- Sistema pode **dizer, em cada análise pública, de onde vem o dado**: a
+  base, o órgão, o ano ou período do dado e a data da última carga, com link
+  para a página pública **Fontes e metodologia**. O ano é lido da própria base
+  no momento da consulta, não escrito à mão.
+- Sistema pode **publicar o catálogo das fontes** das análises públicas
+  (Censo Escolar, IDEB/SAEB, INSE, folha do SIOPE e malha do IBGE), com link
+  oficial, link da metodologia do órgão, e os arquivos da última carga com o
+  SHA-256. Licença aparece só quando verificada; o que é interno (caminhos,
+  notas de engenharia, situações jurídicas em aberto) não é publicado.
+- Sistema pode **dizer quando a carga não foi registrada**, em vez de inventar
+  uma data para trás.
+- Sistema pode **guardar a versão dos dados junto de um resultado**: cada
+  agrupamento de escolas registra o ano do Censo e do IDEB usados e a data da
+  carga.
+
 ### Carga e proveniência
 
 - Sistema pode **registrar o estado de cada carga** de fonte: carregada, em

@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Syntax::Keyword::Try;
 use EduMaps::Analysis::R::Pipe;
 use EduMaps::Presets;
+use EduMaps::Fontes;
 use EduMaps::Util::MinionFila qw(minion_fila);
 use Time::Piece;
 use Mojo::JSON qw(encode_json);
@@ -282,7 +283,16 @@ sub _criar_execucao($job, $args, $algorithm) {
       (defined $filter->{co_uf}        ? (codigo_uf     => sprintf('%02d', $filter->{co_uf})) : ()),
       (defined $filter->{co_municipio} ? (codigo_ibge   => "$filter->{co_municipio}") : ()),
     );
+    # Versão dos dados (#428): ano do Censo e do IDEB usados e a data da
+    # carga de cada um, para citar o resultado com a base de onde veio.
+    my $v = EduMaps::Fontes->versao($job->app->schema->storage->dbh, qw(censo ideb));
+    my %dados = (
+      censo => { ano => $v->{censo}{periodo}, carga => $v->{censo}{carga} },
+      ideb  => { ano => (defined $args->{ano_ideb_efetivo} ? "$args->{ano_ideb_efetivo}" : undef),
+                 carga => $v->{ideb}{carga} },
+    );
     my %parametros = (
+      dados     => \%dados,
       algorithm => $algorithm,
       features  => $args->{features} // [],
       (map { defined $args->{$_} ? ($_ => $args->{$_}) : () } qw(clusters eps min_pts ano_ideb)),
@@ -329,6 +339,9 @@ sub _rebuild_indicators($job, $args) {
     'SELECT 1 FROM clean.ideb_notas_escolas WHERE ano = ?', $ano_ideb
   )->hash;
   return "ano_ideb '$ano_ideb' sem dados em clean.ideb_notas_escolas" unless $has_ano;
+  # Ano IDEB de fato usado (o pedido ou o mais recente), para a versão dos
+  # dados da execução (#428).
+  $args->{ano_ideb_efetivo} = $ano_ideb;
 
   # Toda feature selecionada precisa existir na tabela denormalizada
   # (valida cedo: o motor R só reclamaria depois de ler a tabela inteira).
