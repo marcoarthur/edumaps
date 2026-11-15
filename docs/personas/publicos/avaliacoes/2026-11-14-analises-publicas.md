@@ -65,7 +65,7 @@ Protocolo em [`../README.md`](../README.md).
 | AN-09 | bloqueia | O **agrupamento não se reproduz nem se cita**: a URL não guarda o recorte nem os parâmetros, e não há exportação nem lista das escolas por grupo. | P4, P6 |
 | AN-10 | bloqueia | **Mercado local** para a rede privada: nada responde "quantas crianças em idade escolar há em volta da unidade e quem as atende". A população do entorno (Censo 2022) existe na área de influência, mas só no painel do gestor. | P3 |
 | AN-11 | atrapalha | O **ranking é só da escola**. Não lista escolas de um recorte nem compara redes ou municípios, então "quais redes mais melhoraram no IDEB?" e "este município entrega parecido com os semelhantes?" ficam sem resposta. | P6, P5 |
-| AN-12 | atrapalha | A **cobertura da folha** é de 3 municípios (Cuiabá, com 169 escolas; Ubatuba, só o agregado da secretaria; Alta Floresta D'Oeste, com 19 escolas). Para o fiscal, a folha ainda é uma amostra. | P5 |
+| AN-12 | atrapalha | A **cobertura da folha** é de 3 municípios (Cuiabá, com 168 escolas; Taubaté (SP), só o agregado da secretaria; Alta Floresta D'Oeste, com 18 escolas — a primeira contagem incluía o agregado; o município 355410 é Taubaté, não Ubatuba, como estava aqui). Para o fiscal, a folha ainda é uma amostra. | P5 |
 
 ### Ambiente local (engenharia, fora das personas)
 
