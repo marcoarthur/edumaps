@@ -264,7 +264,7 @@ git grep -cE '^[a-z0-9_]+ ' -- data_pipeline/sqitch.plan
 ```
 
 O mesmo se aplica a `backend`/`minion` (imagens de 4 dias correm código de 4
-dias, sem o dizer): `docker compose build backend minion`.
+dias, sem o dizer): `docker compose build backend minion minion-analytics`.
 
 ### ⚠️ Existem DOIS contentores de base de dados em `ubatexu.lan`
 
@@ -563,19 +563,19 @@ plano → execução → aprovação
    os contentores LXC; a stack local do `ubaxala` é uma *outra* ambiente, com
    as suas próprias imagens, e `docker compose up` **não as reconstrói**. Um
    ciclo que altere código e fique só pelo Rex deixa o ambiente local a correr
-   código antigo, sem qualquer aviso. Os 6 serviços com `build:`:
+   código antigo, sem qualquer aviso. Os 7 serviços com `build:`:
 
    | Área alterada | Imagem local a reconstruir |
    |---------------|-----------------------------|
    | `data_pipeline/` | `sqitch` |
-   | `backend/` | `backend` **e** `minion` (mesmo contexto de build) |
+   | `backend/` | `backend`, `minion` **e** `minion-analytics` (mesmo contexto de build) |
    | `frontend/` | `frontend` (contexto `./frontend`, app em `frontend/edumaps`) |
    | `analysis/edumapsr/` | `analytic` |
    | `db/` | `db` — **atenção**: o cluster vive em `./pgdata` (bind mount), logo reconstruir a imagem **não** re-executa os scripts de `initdb`. só tem efeito num `pgdata` novo. |
    | `docs/`, `*.md`, `.opencode/` | — (sem imagem) |
 
    ```bash
-   sg docker -c 'docker compose build sqitch backend minion'   # só as afetadas
+   sg docker -c 'docker compose build sqitch backend minion minion-analytics'   # só as afetadas
    sg docker -c 'docker compose up -d'                        # ou: up -d --build
    ```
 
@@ -584,6 +584,16 @@ plano → execução → aprovação
    - **`sqitch` obsoleto** → `Cannot find change <id> in sqitch.plan`, mensagem
      que **culpa a base de dados e está errada** (plano e registry batem
      certo; o que está velho é a imagem). Detalhe na secção "Database".
+   **Duas filas, dois workers (#423)**, como no LXC: o `minion` atende a fila
+   `default` (ingestão, alertas, tasks diárias) e o `minion-analytics` a fila
+   `analytics` (clustering, Assistente do Censo, relatórios, IVET, perfis).
+   Sem o segundo, esses jobs ficam `inactive` para sempre e a tela fica em
+   "Processando…". Conferir com
+   `SELECT status->'queues' FROM minion_workers` (uma linha por fila).
+   O nginx do `frontend` resolve o `backend` pelo DNS do Docker a cada 10 s:
+   recriar o `backend` (que pode voltar com outro IP) não exige reiniciar o
+   `frontend`. Antes da #423 isso dava 502 até o restart.
+
    - **`backend`/`minion` obsoletos** → **silencioso**: o contentor arranca
      normal, responde 200, e serve a versão anterior do código. Medido a
      2026-10-03: `Transportes.pm` não existia dentro do contentor com a imagem
