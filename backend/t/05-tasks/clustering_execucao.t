@@ -58,6 +58,10 @@ is $u->{n_recorte}, $total - $inativas, 'o R recebeu só as que funcionam';
 is $u->{n_agrupadas}, $u->{n_recorte} - $u->{n_incompletas}, 'agrupadas = recorte - incompletas';
 is $exec->{n_atribuicoes}, $u->{n_agrupadas}, 'uma atribuição por escola agrupada';
 is scalar @{ $exec->{resumo} }, 3, 'resumo da própria execução (3 grupos)';
+my ($com_destaque) = grep { @{ $_->{destaques} // [] } } @{ $exec->{resumo} };
+ok $com_destaque, 'resumo traz os indicadores que distinguem o grupo';
+like $com_destaque->{destaques}[0]{indicador}, qr/^in_/, 'destaque é um indicador do preset';
+ok defined $com_destaque->{destaques}[0]{z}, 'com a distância em desvios';
 
 my ($valores) = $dbh->selectrow_array(
   'SELECT valores::text FROM analytics.cluster_atribuicoes WHERE run_id = ? LIMIT 1', {}, $run_id);

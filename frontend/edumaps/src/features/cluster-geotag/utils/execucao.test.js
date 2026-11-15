@@ -39,3 +39,12 @@ it("dataBR", () => {
   expect(dataBR("2027-02-13")).toBe("13/02/2027");
   expect(dataBR(null)).toBe("");
 });
+
+import { formatarIndicador } from "./execucao.js";
+
+it("formatarIndicador: 0/1 e proporção em %, o resto em número (#427)", () => {
+  expect(formatarIndicador("in_internet", 0.784)).toBe("78%");
+  expect(formatarIndicador("prop_licenciatura", 0.5)).toBe("50%");
+  expect(formatarIndicador("nota_media", 251.456)).toBe("251,46");
+  expect(formatarIndicador("qt_doc_bas", null)).toBe("–");
+});

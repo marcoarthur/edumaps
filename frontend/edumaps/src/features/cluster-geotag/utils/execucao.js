@@ -53,3 +53,19 @@ export function dataBR(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
   return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
 }
+
+/**
+ * Valor de um indicador na unidade de leitura: indicadores 0/1 (`in_*`) e
+ * proporções (`prop_*`) em % de escolas/docentes; o resto com até 2 casas.
+ * @param {string} coluna
+ * @param {number} valor
+ */
+export function formatarIndicador(coluna, valor) {
+  if (valor === null || valor === undefined || valor === "") return "–";
+  const v = Number(valor);
+  if (!Number.isFinite(v)) return "–";
+  if (/^(in|prop)_/.test(coluna)) {
+    return `${Math.round(v * 100).toLocaleString("pt-BR")}%`;
+  }
+  return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}

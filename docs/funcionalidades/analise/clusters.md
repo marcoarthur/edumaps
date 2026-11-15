@@ -26,7 +26,10 @@ investidores que segmentam redes.
 - Sistema pode agrupar escolas por atributos e geografia, com a tela em
   linguagem de usuário (grupos, conjuntos de indicadores) e uma frase sobre
   cada método de agrupamento.
-- Sistema pode descrever os grupos em linguagem natural.
+- Sistema pode descrever os grupos em linguagem natural, sem dar rótulo de
+  qualidade a grupo pequeno demais ("Grupo pequeno (N escolas)"), e dizer o
+  que mais distingue cada grupo: os indicadores em que ele mais se afasta da
+  média das escolas agrupadas, com o nome legível e os dois valores.
 - Sistema pode prestar contas do universo de cada agrupamento: quantas escolas
   o recorte tinha, quantas entraram e por que as outras ficaram de fora (não
   funcionam mais, sem dado em um indicador), e quantas não aparecem no mapa

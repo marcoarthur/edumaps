@@ -123,7 +123,9 @@ test_that("analyze_cluster rotula 4 clusters com gradação diferente", {
 })
 
 test_that("analyze_cluster usa fallback inteiro com 6+ clusters", {
-  model <- fixture_cluster_model()
+  # 30 por grupo: com 10, os grupos de 6 ficam abaixo de 5 escolas e viram
+  # "Grupo pequeno" (#427).
+  model <- fixture_cluster_model(n_per_group = 30)
   result <- analyze_cluster(model, list(
     algorithm = "kmeans", clusters = 6,
     labeling = list(
@@ -134,7 +136,7 @@ test_that("analyze_cluster usa fallback inteiro com 6+ clusters", {
   ))
 
   labels <- result$tables$clusters$cluster_label
-  expect_setequal(labels, paste0("Cluster ", 1:6))
+  expect_setequal(labels, paste0("Grupo ", 1:6))
   expect_setequal(result$tables$clusters$cluster_rank, 1:6)
 })
 
@@ -142,7 +144,7 @@ test_that("analyze_cluster sem conceito cai no fallback inteiro", {
   model <- fixture_cluster_model()
   result <- analyze_cluster(model, list(algorithm = "kmeans", clusters = 4))
 
-  expect_true(all(grepl("^Cluster [0-9]+$", result$tables$clusters$cluster_label)))
+  expect_true(all(grepl("^Grupo [0-9]+$", result$tables$clusters$cluster_label)))
   expect_setequal(result$tables$clusters$cluster_rank, 1:4)
 })
 

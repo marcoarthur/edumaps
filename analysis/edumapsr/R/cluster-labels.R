@@ -13,7 +13,7 @@
 #   3 -> baixa, média, alta
 #   4 -> muito baixa, baixa, alta, muito alta
 #   5 -> muito baixa, baixa, média, alta, muito alta
-#   >= 6 (excessivo) -> fallback inteiro "Cluster 1..N" (1 = mais baixo, N = mais alto)
+#   >= 6 (excessivo) -> fallback inteiro "Grupo 1..N" (1 = mais baixo, N = mais alto)
 #
 # Quando não há conceito (features customizadas) ou há apenas 1 cluster,
 # também cai no fallback inteiro. Ruído de dbscan (cluster_id == 0) recebe
@@ -127,7 +127,7 @@
     if (!is.null(scale)) {
       labels[i] <- paste0(.first_upper(scale[r]), " ", concept)
     } else {
-      labels[i] <- paste0("Cluster ", r)
+      labels[i] <- paste0("Grupo ", r)
     }
   }
 

@@ -206,11 +206,16 @@ sub cluster_summary($self, $run_id = undef) {
     my $extra = eval { $json->utf8(0)->decode($row->{extra_metrics} // '{}') } || {};
     $extra = $extra->[0] if ref $extra eq 'ARRAY' && @$extra;
     $extra = {} unless ref $extra eq 'HASH';
+    # destaques (#427): JSON gravado como texto dentro do extra_metrics.
+    my $destaques = $extra->{destaques};
+    $destaques = eval { $json->utf8(0)->decode($destaques) } if defined $destaques && !ref $destaques;
+    $destaques = [] unless ref $destaques eq 'ARRAY';
     push @summary, {
+      destaques     => $destaques,
       cluster_id    => 0 + $row->{cluster_id},
       cluster_size  => 0 + $row->{cluster_size},
       is_noise      => $row->{is_noise} ? 1 : 0,
-      cluster_label => $extra->{cluster_label} // ('Cluster ' . $row->{cluster_id}),
+      cluster_label => $extra->{cluster_label} // ('Grupo ' . $row->{cluster_id}),
       cluster_rank  => $extra->{cluster_rank},
       indicators    => $indicators,
     };
