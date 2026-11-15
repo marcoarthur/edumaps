@@ -43,6 +43,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido; sem nova avaliação). Impacto indireto: perfil e folha.
 - [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido; sem nova avaliação). Impacto indireto: busca e IDEB com etapa.
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto direto.
+- [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto indireto: ano do dado na tela.
 
 ## Pendências
 

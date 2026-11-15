@@ -42,14 +42,14 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p4--academia-pesquisadora): não adotaria por ora (mantido; sem reavaliação). Regra dos sinais versionada; ficam AN-05, AN-08, AN-09.
 - [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p4--academia-pesquisadora): não adotaria por ora (mantido). IDEB com edição e etapa; ficam #427 e #428.
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p4--academia-pesquisadora): não adotaria por ora (mantido). AN-05 e AN-09 resolvidos; fica #428. Reavaliar depois dela.
+- [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p4--academia-pesquisadora): não adotaria por ora (mantido). AN-08 resolvido: os três bloqueios saíram; reavaliar.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas (2026-11-14): reavaliar com AN-08 (fontes e versão na
-  tela, #428). AN-09 e AN-05 (agrupamento reprodutível e universo) foram
-  entregues nos PRs #433 e #434.
+- Análises públicas (2026-11-14): **reavaliar** — AN-05, AN-08 e AN-09
+  entregues (PRs #433, #434 e #435).
 
 ## Entradas
 

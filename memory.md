@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-15 (bo) — #428 (PR #435) mergeado; autonomia de 6h
+
+- Developer ausente por 6h: **pode mergear PR com CI verde** e pede as
+  decisões via Telegram.
+- #428 → PR #435 (12e4067): `EduMaps::Fontes`, `/api/fontes`, página
+  `/fontes`, selo `FonteDado` em 6 telas, rodapé, versão dos dados no
+  agrupamento. Nota técnica 203, ciclo `2026-11-15-fontes-e-metodologia.md`.
+- Próximo: #430 (ranking) com decisões conservadoras informadas por
+  Telegram; #429 fica (a issue diz esperar o posicionamento da P3).
+
 ## Sessão 2026-11-15 (bn) — #427 em dois PRs (#433, #434), mergeados
 
 - Merge 81eaddd (#433) e a809061 (#434, retarget para main antes);

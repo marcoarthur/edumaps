@@ -106,3 +106,5 @@ Protocolo em [`../README.md`](../README.md).
   [`../ciclos/2026-11-15-busca-e-linguagem.md`](../ciclos/2026-11-15-busca-e-linguagem.md).
 - 2026-11-15: #427 (PRs #433 e #434) mergeado: AN-05 e AN-09 resolvidos. Fechamento em
   [`../ciclos/2026-11-15-agrupamento-reprodutivel.md`](../ciclos/2026-11-15-agrupamento-reprodutivel.md).
+- 2026-11-15: #428 (PR #435) mergeado: AN-08 resolvido. Fechamento em
+  [`../ciclos/2026-11-15-fontes-e-metodologia.md`](../ciclos/2026-11-15-fontes-e-metodologia.md).
