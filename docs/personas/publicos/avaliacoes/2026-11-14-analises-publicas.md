@@ -84,14 +84,14 @@ Protocolo em [`../README.md`](../README.md).
    É o que dá número errado ou sinal trocado na tela.
 2. **Ausência e cobertura honestas** (#422): AN-04 e AN-12, ou seja, dizer o que
    falta e onde há dado, e oferecer a busca do SIOPE.
-3. **Agrupamento prestando contas e reprodutível:** AN-05 e AN-09.
-4. **Fonte, data e versão na tela, com uma página pública de fontes:**
-   AN-08. Destrava P4 e P6.
-5. **Ranking de recorte (escolas, redes, municípios):** AN-11. Decisão de
+3. **Agrupamento prestando contas e reprodutível** (#427): AN-05 e AN-09.
+4. **Fonte, data e versão na tela, com uma página pública de fontes**
+   (#428): AN-08. Destrava P4 e P6.
+5. **Ranking de recorte (escolas, redes, municípios)** (#430): AN-11. Decisão de
    produto.
-6. **Mercado local para a rede privada:** AN-10. Decisão de produto, ligada
+6. **Mercado local para a rede privada** (#429): AN-10. Decisão de produto, ligada
    ao posicionamento de P3 como público de entrada.
-7. **Detalhes:** AN-06 e AN-07, que cabem num PR pequeno.
+7. **Detalhes** (#431): AN-06 e AN-07, que cabem num PR pequeno.
 8. **ENV-01** (#423): um serviço `minion-analytics` no `docker-compose.yml`
    (código, então branch e PR).
 
@@ -101,4 +101,4 @@ Protocolo em [`../README.md`](../README.md).
   Resolvidos AN-01, AN-02, AN-03 (com o "0.00"), AN-04, a cobertura na tela
   (AN-12) e ENV-01. Fechamento em
   [`../ciclos/2026-11-15-analises-legiveis.md`](../ciclos/2026-11-15-analises-legiveis.md).
-  Sem issue: AN-05 a AN-11.
+  AN-05 a AN-11 viraram as issues #427 a #431.
