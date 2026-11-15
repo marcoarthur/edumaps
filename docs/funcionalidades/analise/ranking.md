@@ -25,6 +25,16 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode comparar a escola com as demais por indicadores educacionais.
 - Sistema pode mostrar a posição no município e no estado.
 - Sistema pode combinar múltiplos indicadores em uma leitura de conjunto.
+- Sistema pode **listar todas as escolas de um município** ordenadas por um
+  indicador, com filtro de rede, o nível socioeconômico (INSE) ao lado e
+  exportação em CSV.
+- Sistema pode **comparar as redes municipais** dos municípios de um estado
+  (ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
+  (média das escolas da rede), quanto mudou desde a edição anterior e o
+  contexto socioeconômico — a média dos municípios de INSE parecido —, para
+  responder "quais redes mais melhoraram?" e "este município entrega parecido
+  com os semelhantes?" sem leitura punitiva. Redes com poucas escolas com dado
+  ficam de fora e são contadas.
 
 ## Valor
 

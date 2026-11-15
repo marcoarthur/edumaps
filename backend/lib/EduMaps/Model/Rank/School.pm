@@ -306,4 +306,202 @@ sub _format_result_live ($self, $indicator_id, $def, $year, $row, $network) {
   };
 }
 
+
+# ============================================================================
+# Ranking por recorte (#430, AN-11)
+# ============================================================================
+#
+# Duas leituras novas, ao vivo (recortes pequenos e indexados):
+#
+#   escolas_do_municipio — todas as escolas de um município (opcionalmente de
+#   uma rede) ordenadas por um indicador do registry, com o INSE ao lado;
+#
+#   redes_municipais — as redes MUNICIPAIS dos municípios de uma UF (ou do
+#   Brasil), por um indicador do IDEB/SAEB. Decisões (informadas ao
+#   developer):
+#     * valor da rede = média simples das escolas da rede com dado (não é o
+#       IDEB oficial da rede, que não está carregado) — o rótulo diz isso;
+#     * rede com menos de MIN_ESCOLAS escolas com dado fica de fora, contada;
+#     * variação = média da edição atual − média da edição anterior (cada
+#       uma sobre as escolas com dado naquela edição);
+#     * leitura não punitiva: INSE médio das escolas da rede e a média dos
+#       municípios do mesmo quinto de INSE no recorte ("esperado pelo
+#       contexto"), em vez de cor de pior/melhor.
+
+our $MIN_ESCOLAS_REDE = 3;
+
+sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
+  my $def = $self->indicator_registry->{$indicator_id}
+    or croak "Indicador desconhecido: $indicator_id";
+  my $network = $opts->{network};
+  if (defined $network) {
+    croak "Rede de ensino desconhecida: $network"
+      unless exists $self->network_map->{ $def->{source} }{$network};
+  }
+  my $column = $self->_assert_known_column($def->{column});
+  my $dbh = $self->schema->storage->dbh;
+
+  my ($sql, @bind, $ano);
+  if ($def->{source} eq 'mv') {
+    ($ano) = $dbh->selectrow_array(
+      "SELECT max(s.nu_ano_censo) FROM clean.mv_escolas_scores s
+         JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+        WHERE e.co_municipio = ? AND s.$column IS NOT NULL", undef, $codigo_ibge);
+    return undef unless $ano;
+    my $rede_sql = defined $network ? 'AND e.tp_dependencia = ?' : '';
+    $sql = qq{
+      SELECT s.co_entidade, e.no_entidade, e.tp_dependencia, s.${column}::float8 AS valor
+        FROM clean.mv_escolas_scores s
+        JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+       WHERE s.nu_ano_censo = ? AND e.co_municipio = ? AND s.$column IS NOT NULL $rede_sql
+    };
+    @bind = ($ano, $codigo_ibge, (defined $network ? ($self->network_map->{mv}{$network}) : ()));
+  } else {
+    ($ano) = $dbh->selectrow_array(
+      "SELECT max(ano) FROM clean.ideb_notas_escolas WHERE co_municipio = ? AND etapa = ? AND $column IS NOT NULL",
+      undef, $codigo_ibge, $def->{etapa});
+    return undef unless $ano;
+    my $rede_sql = defined $network ? 'AND i.rede = ?' : '';
+    $sql = qq{
+      SELECT i.id_escola AS co_entidade, COALESCE(e.no_entidade, i.no_escola) AS no_entidade,
+             e.tp_dependencia, i.${column}::float8 AS valor
+        FROM clean.ideb_notas_escolas i
+        LEFT JOIN clean.censo_escolas e
+          ON e.co_entidade = i.id_escola AND e.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+       WHERE i.ano = ? AND i.co_municipio = ? AND i.etapa = ? AND i.$column IS NOT NULL $rede_sql
+    };
+    @bind = ($ano, $codigo_ibge, $def->{etapa}, (defined $network ? ($self->network_map->{ideb}{$network}) : ()));
+  }
+
+  # INSE da edição mais recente do SAEB (mesma regra do perfil da escola),
+  # num join só: o índice do inse começa pelo ano, e a busca por escola
+  # linha a linha custava segundos em municípios grandes.
+  my $rows = $dbh->selectall_arrayref(qq{
+    WITH base AS ($sql),
+    inse AS (
+      SELECT id_escola, media_inse FROM clean.inse
+       WHERE nu_ano_saeb = (SELECT max(nu_ano_saeb) FROM clean.inse)
+    )
+    SELECT b.*, RANK() OVER (ORDER BY b.valor DESC) AS posicao, n.media_inse::float8 AS inse
+      FROM base b
+      LEFT JOIN inse n ON n.id_escola = b.co_entidade
+     ORDER BY b.valor DESC, b.no_entidade
+  }, { Slice => {} }, @bind);
+
+  my %rede_nome = (1 => 'Federal', 2 => 'Estadual', 3 => 'Municipal', 4 => 'Privada');
+  my ($municipio, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio = ? LIMIT 1', undef, $codigo_ibge);
+
+  return {
+    indicador => { id => $indicator_id, label => $def->{label}, fonte => $def->{source} eq 'mv' ? 'censo' : 'ideb' },
+    ano       => 0 + $ano,
+    municipio => { codigo_ibge => "$codigo_ibge", nome => $municipio, uf => $uf },
+    rede      => $network,
+    total     => scalar @$rows,
+    escolas   => [ map { +{
+      co_entidade => "$_->{co_entidade}",
+      no_entidade => $_->{no_entidade},
+      rede        => defined $_->{tp_dependencia} ? $rede_nome{ $_->{tp_dependencia} } : undef,
+      valor       => 0 + $_->{valor},
+      posicao     => 0 + $_->{posicao},
+      inse        => defined $_->{inse} ? 0 + $_->{inse} : undef,
+    } } @$rows ],
+  };
+}
+
+sub redes_municipais ($self, $indicator_id, $opts = {}) {
+  my $def = $self->indicator_registry->{$indicator_id}
+    or croak "Indicador desconhecido: $indicator_id";
+  croak "Ranking de redes só para indicadores do IDEB/SAEB: $indicator_id"
+    unless $def->{source} eq 'ideb';
+  my $column = $self->_assert_known_column($def->{column});
+  my $dbh = $self->schema->storage->dbh;
+  my $uf = $opts->{uf};
+  croak "Informe a UF ou o recorte nacional" unless $uf || $opts->{national};
+
+  my $uf_sql = $uf ? 'AND sg_uf = ?' : '';
+  my @uf_bind = $uf ? ($uf) : ();
+
+  my $anos = $dbh->selectcol_arrayref(
+    "SELECT DISTINCT ano FROM clean.ideb_notas_escolas
+      WHERE etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
+      ORDER BY ano DESC LIMIT 2", undef, $def->{etapa}, @uf_bind);
+  return undef unless @$anos;
+  my ($ano, $ano_ant) = @$anos;
+
+  my $min = $MIN_ESCOLAS_REDE;
+  my $rows = $dbh->selectall_arrayref(qq{
+    WITH inse_ult AS (
+      SELECT id_escola, media_inse FROM clean.inse
+       WHERE nu_ano_saeb = (SELECT max(nu_ano_saeb) FROM clean.inse)
+    ),
+    atual AS (
+      SELECT i.co_municipio, max(i.no_municipio) AS no_municipio, max(i.sg_uf) AS sg_uf,
+             count(*) AS n, avg(i.$column)::float8 AS media,
+             avg(x.media_inse)::float8 AS inse
+        FROM clean.ideb_notas_escolas i
+        LEFT JOIN inse_ult x ON x.id_escola = i.id_escola
+       WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL $uf_sql
+       GROUP BY i.co_municipio
+    ),
+    anterior AS (
+      SELECT co_municipio, count(*) AS n, avg($column)::float8 AS media
+        FROM clean.ideb_notas_escolas
+       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
+       GROUP BY co_municipio
+    ),
+    elegiveis AS (
+      SELECT a.co_municipio, a.no_municipio, a.sg_uf, a.n, a.media,
+             CASE WHEN p.n >= $min THEN a.media - p.media END AS variacao,
+             a.inse
+        FROM atual a
+        LEFT JOIN anterior p USING (co_municipio)
+       WHERE a.n >= $min
+    ),
+    quintos AS (
+      SELECT e.*, CASE WHEN e.inse IS NOT NULL THEN ntile(5) OVER (PARTITION BY e.inse IS NOT NULL ORDER BY e.inse) END AS quinto_inse
+        FROM elegiveis e
+    )
+    SELECT q.*,
+           CASE WHEN q.quinto_inse IS NOT NULL THEN avg(q.media) OVER (PARTITION BY q.quinto_inse) END AS media_quinto,
+           RANK() OVER (ORDER BY q.media DESC) AS posicao,
+           CASE WHEN q.variacao IS NOT NULL THEN RANK() OVER (ORDER BY q.variacao DESC NULLS LAST) END AS posicao_variacao
+      FROM quintos q
+     ORDER BY q.media DESC, q.no_municipio
+  }, { Slice => {} },
+    $ano, $def->{etapa}, @uf_bind,
+    (defined $ano_ant ? $ano_ant : -1), $def->{etapa}, @uf_bind);
+
+  my ($fora) = $dbh->selectrow_array(qq{
+    SELECT count(*) FROM (
+      SELECT co_municipio FROM clean.ideb_notas_escolas
+       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
+       GROUP BY co_municipio HAVING count(*) < $min
+    ) t}, undef, $ano, $def->{etapa}, @uf_bind);
+
+  my $num = sub ($v) { defined $v ? 0 + $v : undef };
+  return {
+    indicador => { id => $indicator_id, label => $def->{label} },
+    ano => 0 + $ano,
+    ano_anterior => defined $ano_ant ? 0 + $ano_ant : undef,
+    recorte => $uf ? { uf => $uf } : { nacional => \1 },
+    minimo_escolas => $min,
+    total => scalar @$rows,
+    fora_por_poucas_escolas => 0 + ($fora // 0),
+    redes => [ map { +{
+      codigo_ibge => "$_->{co_municipio}",
+      municipio   => $_->{no_municipio},
+      uf          => $_->{sg_uf},
+      escolas     => 0 + $_->{n},
+      media       => $num->($_->{media}),
+      variacao    => $num->($_->{variacao}),
+      inse        => $num->($_->{inse}),
+      quinto_inse => $num->($_->{quinto_inse}),
+      media_quinto_inse => $num->($_->{media_quinto}),
+      posicao     => 0 + $_->{posicao},
+      posicao_variacao => $num->($_->{posicao_variacao}),
+    } } @$rows ],
+  };
+}
+
 1;

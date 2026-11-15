@@ -13,6 +13,12 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/ranking' => $check)
   ->to('rank#ranking')->name('school_rank_ranking');
+
+  # Ranking por recorte (#430): escolas de um município e redes municipais
+  # de uma UF (ou do Brasil).
+  my $rec = $r->under('/api/ranking');
+  $rec->get('/escolas')->to('rank#escolas_recorte')->name('ranking_escolas_recorte');
+  $rec->get('/redes')->to('rank#redes_municipais')->name('ranking_redes_municipais');
 }
 
 1;
