@@ -45,6 +45,27 @@ PROFILE_LABELS <- c(
   inse                    = "INSE (nível socioeconômico)"
 )
 
+# Sentido de cada indicador (#421, AN-02): "maior" = quanto maior, melhor;
+# "menor" = quanto menor, melhor. Decide o lado do cluster que gera o sinal
+# de atenção. INSE fica "maior": o sinal aponta contexto mais vulnerável.
+PROFILE_DIRECAO <- c(
+  prop_licenciatura       = "maior",
+  prop_mestrado           = "maior",
+  prop_doutorado          = "maior",
+  prop_efetivos           = "maior",
+  prop_sem_especializacao = "menor",
+  ratio_aluno_docente     = "menor",
+  ideb_observado          = "maior",
+  nota_media              = "maior",
+  inse                    = "maior"
+)
+
+# Versão da regra dos sinais gravada no payload. Perfil materializado com
+# versão anterior deixa de ser servido do cache (read_school_profile_cache).
+# 1: quartil inferior para todos (#105). 2: sentido do indicador e só pior
+# que a mediana (#421).
+PROFILE_REGRA_SINAIS <- 2L
+
 #' Expressões SQL (whitelist fechado) de cada indicador do perfil
 #'
 #' @keywords internal
@@ -64,9 +85,10 @@ PROFILE_LABELS <- c(
 
 #' Templates dos sinais de atenção (avançam para a análise pura)
 #'
-#' Regra v1 (fiel ao issue #105): atencao = escola no quartil inferior
-#' do cluster. Refinamento por direção do indicador (alguns são "quanto
-#' menor, melhor") fica documentado como evolução futura.
+#' Regra v2 (#421): atencao = escola no quartil do lado ruim do cluster,
+#' segundo o sentido do indicador (`PROFILE_DIRECAO`), e estritamente pior
+#' que a mediana. "Quanto maior, melhor" → quartil inferior; "quanto menor,
+#' melhor" → quartil superior.
 #'
 #' @keywords internal
 .school_profile_flags_meta <- function() {
@@ -83,7 +105,7 @@ PROFILE_LABELS <- c(
     "Proporção de docentes com doutorado no quartil inferior do cluster",
     "Proporção de docentes efetivos no quartil inferior do cluster",
     "Proporção de docentes sem especialização no quartil superior do cluster",
-    "Relação aluno/docente no quartil inferior do cluster",
+    "Relação aluno/docente no quartil superior do cluster",
     "IDEB observado no quartil inferior do cluster",
     "Nota média (SAEB) no quartil inferior do cluster",
     "INSE no quartil inferior do cluster"

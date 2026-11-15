@@ -6,6 +6,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 use Mojo::JSON;
 use Mojo::Util;
+use Mojo::File;
 use IO::Socket::INET;
 
 # O serviço Plumber é emulado por um servidor-filho em Perl (abaixo): o teste
@@ -346,6 +347,30 @@ subtest 'cache do chat é escopado por pergunta e contexto' => sub {
 
   ok $k_a ne $k_b, 'pergunta diferente => chaves diferentes';
   ok $k_a ne $k_c, 'contexto diferente => chaves diferentes';
+};
+
+subtest 'chave do cache do perfil inclui a versão da regra dos sinais (#421)' => sub {
+  my $params;
+  no warnings 'redefine';
+  local *EduMaps::Analytics::Client::_cache_read = sub ($self, $analysis, $p) {
+    $params = $p if $analysis eq 'school_profile';
+    return undef;
+  };
+  local *EduMaps::Analytics::Client::_cache_write = sub { 1 };
+
+  $make_client->({ cache_enabled => 1 })->run_school_profile({ co_entidade => '23165669' });
+  is $params->{regra_sinais}, $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS,
+    'regra_sinais na chave';
+  ok $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS >= 2, 'regra v2 ou mais nova';
+
+  # mesma versão do pacote R (senão o cache do backend guardaria perfis
+  # da regra nova sob a chave antiga, ou o contrário)
+  my $r = Mojo::File->new('../analysis/edumapsr/R/model-datasource-postgres-school-profile-source.R');
+  SKIP: {
+    skip 'pacote R fora do checkout', 1 unless -e $r;
+    my ($v) = $r->slurp =~ /PROFILE_REGRA_SINAIS\s*<-\s*(\d+)L/;
+    is $v, $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS, 'versão igual à do edumapsr';
+  }
 };
 
 subtest 'com cache habilitado mas sem app/pg, o ciclo HTTP segue intacto' => sub {

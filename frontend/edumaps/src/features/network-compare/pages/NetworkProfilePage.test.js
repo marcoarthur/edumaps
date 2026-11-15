@@ -24,6 +24,21 @@ describe("NetworkProfilePage", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("variação segue o sentido do indicador e usa p.p. nas proporções (#421)", async () => {
+    renderWithQuery("?ibge=3551702");
+    await screen.findByText(/Sertãozinho/);
+
+    // sem especialização abaixo do Brasil = melhor: verde, em p.p.
+    const semEsp = screen.getByText("-43.6 p.p.");
+    expect(semEsp.className).toMatch(/text-emerald-700/);
+    expect(screen.getByText("menor é melhor")).toBeInTheDocument();
+
+    // IDEB abaixo do Brasil = pior: vermelho
+    expect(screen.getByText("-0.1").className).toMatch(/text-red-700/);
+    // licenciatura acima do Brasil = melhor: verde
+    expect(screen.getByText("+1.0 p.p.").className).toMatch(/text-emerald-700/);
+  });
+
   it("explica cada seção com legenda e caixa (?)", async () => {
     renderWithQuery("?ibge=3551702");
 

@@ -9,6 +9,10 @@ use JSON::PP;
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
 
+# Versão da regra dos sinais de atenção do perfil da escola (#421). Espelha
+# PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
+our $PERFIL_REGRA_SINAIS = 2;
+
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {
   Mojo::UserAgent->new(inactivity_timeout => shift->timeout);
@@ -95,6 +99,10 @@ sub run_school_profile ($self, $args) {
       include_inactive     => $args->{include_inactive},
       clusters             => $args->{clusters},
       similarity_threshold => $args->{similarity_threshold},
+      # #421: versão da regra dos sinais de atenção (PROFILE_REGRA_SINAIS no
+      # edumapsr). Mudou a regra, muda a chave: o perfil em cache com a
+      # regra antiga deixa de ser servido.
+      regra_sinais         => $PERFIL_REGRA_SINAIS,
     },
   });
 }

@@ -26,6 +26,20 @@ export function formatNetworkValue(indicador, value) {
 }
 
 /**
+ * Diferença rede − Brasil (#421): proporções em pontos percentuais
+ * ("−43,6 p.p.", não "−43,6%", que leria como variação relativa) e sinal
+ * explícito.
+ */
+export function formatNetworkVariacao(indicador, value) {
+  if (value === null || value === undefined || value === "") return "–";
+  const n = Number(value);
+  if (Number.isNaN(n)) return "–";
+  const sinal = n > 0 ? "+" : "";
+  if (/^prop_/.test(String(indicador))) return `${sinal}${(n * 100).toFixed(1)} p.p.`;
+  return `${sinal}${n.toFixed(1)}`;
+}
+
+/**
  * Agrupa a tabela longa de clusters em [{ cluster_id, cluster_label, n,
  * indicadores: [{ indicador, label, media }] }].
  */

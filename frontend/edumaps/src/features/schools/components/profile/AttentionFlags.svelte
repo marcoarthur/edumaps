@@ -21,19 +21,18 @@
     <h2 class="text-base font-bold text-gray-900">Sinais de atenção</h2>
     <InfoHint
       title="O que é um sinal de atenção"
-      text="Indicadores em que a escola está no quartil inferior do seu cluster — comparação justa com escolas de contexto parecido."
+      text="Indicadores em que a escola está pior que o seu cluster — comparação justa com escolas de contexto parecido."
       items={[
-        'Regra (v1): valor no quartil inferior (Q1) do cluster gera atenção.',
+        'Regra: a escola está no quartil do lado ruim do cluster (Q1 quando maior é melhor; Q4 quando menor é melhor, como em "sem especialização" e "aluno/docente") e pior que a mediana.',
         'A severidade indica a prioridade sugerida (alta/média/baixa).',
         'Não é julgamento absoluto: um indicador pode ser baixo no cluster e ainda aceitável no Brasil.',
-        'Indicadores em que "menor é melhor" ainda usam a mesma regra nesta versão.',
       ]}
     />
   </div>
 
   {#if flags.length === 0}
     <p class="text-sm text-gray-500">
-      Nenhum indicador no quartil inferior do cluster. 🎉
+      Nenhum indicador pior que o cluster. 🎉
     </p>
   {:else}
     <ul class="flex flex-col gap-2">

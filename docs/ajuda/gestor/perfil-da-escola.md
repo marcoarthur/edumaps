@@ -38,13 +38,16 @@ trocar experiências.
 ## Entendendo os números
 
 - **Sinais de atenção:** cada sinal tem gravidade **Alta**, **Média** ou
-  **Baixa**. Aparece quando a escola está no **quartil inferior (Q1)** do seu
-  grupo. Não é um julgamento absoluto: um indicador pode ser baixo no grupo e
-  ainda aceitável no Brasil. Sem sinais, a tela diz
-  *"Nenhum indicador no quartil inferior do cluster"*.
+  **Baixa**. Aparece quando a escola está **pior que o seu grupo**: no
+  **Q1** quando maior é melhor (ex.: IDEB) ou no **Q4** quando menor é
+  melhor (docentes sem especialização, alunos por docente), e abaixo/acima da
+  mediana do grupo. Empatar com a mediana não gera sinal. Não é um julgamento
+  absoluto: um indicador pode ser baixo no grupo e ainda aceitável no Brasil.
+  Sem sinais, a tela diz *"Nenhum indicador pior que o cluster"*.
 - **Posição relativa:** tabela com **Escola | Município | Rede | Brasil |
   Cluster | Quartil**. O quartil vai de **Q1** (os 25% mais baixos do grupo)
-  a **Q4** (os 25% mais altos). Linhas em atenção ficam destacadas com ⚠.
+  a **Q4** (os 25% mais altos). Os indicadores em que menor é melhor trazem
+  a nota *"menor é melhor"*. Linhas em atenção ficam destacadas com ⚠.
 - **Evolução:** IDEB por etapa e notas do SAEB ao longo das edições, com ▲/▼
   para a variação. Só aparecem anos em que a prova foi aplicada; nada é
   interpolado nem projetado.

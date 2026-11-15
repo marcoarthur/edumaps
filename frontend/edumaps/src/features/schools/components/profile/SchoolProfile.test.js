@@ -42,7 +42,7 @@ describe("SchoolProfile", () => {
     render(SchoolProfile, { profile });
 
     expect(
-      screen.getByText(/Nenhum indicador no quartil inferior do cluster/i),
+      screen.getByText(/Nenhum indicador pior que o cluster/i),
     ).toBeInTheDocument();
   });
 
