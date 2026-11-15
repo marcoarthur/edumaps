@@ -19,8 +19,10 @@ const fetchSchoolsAdapter = (params) => {
     }
   }
 
-  // 2. Verifica se há filtro válido (escola ou municipio com >=3 caracteres)
+  // 2. Verifica se há filtro válido (escola ou municipio com >=3 caracteres,
+  //    ou o município escolhido no autocompletar)
   const hasValidFilter =
+    !!cleanParams.codigo_ibge ||
     (cleanParams.escola && cleanParams.escola.length >= 3) ||
     (cleanParams.municipio && cleanParams.municipio.length >= 3);
 
@@ -44,6 +46,7 @@ export function createSchoolStore(initialParams = {}) {
       per_page: 10,
       escola: "",
       municipio: "",
+      codigo_ibge: null,
       ...initialParams,
     },
     300,

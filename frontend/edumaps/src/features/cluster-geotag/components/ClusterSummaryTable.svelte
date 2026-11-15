@@ -19,11 +19,11 @@
 
 {#if summary.length > 0}
   <div class="mt-4 bg-white border border-gray-200 rounded-card shadow-card overflow-hidden">
-    <p class="px-4 pt-3 pb-1 font-semibold text-gray-800 text-sm">Resumo dos clusters</p>
+    <p class="px-4 pt-3 pb-1 font-semibold text-gray-800 text-sm">Resumo dos grupos</p>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
-          <th class="px-4 py-2 font-medium">Cluster</th>
+          <th class="px-4 py-2 font-medium">Grupo</th>
           <th class="px-4 py-2 font-medium">Escolas</th>
           <th class="px-4 py-2 font-medium">Indicadores principais</th>
         </tr>

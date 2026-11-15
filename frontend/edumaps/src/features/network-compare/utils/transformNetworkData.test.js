@@ -130,12 +130,12 @@ describe("transformNetworkData", () => {
 describe("URLs do perfil e da comparação de redes", () => {
   it("perfil de uma rede leva o município e o código da rede", () => {
     expect(networkProfileUrl("3551702", 3)).toBe(
-      "/municipio/perfil?ibge=3551702&dependencia=3",
+      "/municipio/perfil?codigo_ibge=3551702&dependencia=3",
     );
   });
 
   it("perfil de todas as redes não leva filtro de rede", () => {
-    expect(networkProfileUrl(3551702)).toBe("/municipio/perfil?ibge=3551702");
+    expect(networkProfileUrl(3551702)).toBe("/municipio/perfil?codigo_ibge=3551702");
   });
 
   it("voltar para a comparação usa codigo_ibge (o que a página lê)", () => {

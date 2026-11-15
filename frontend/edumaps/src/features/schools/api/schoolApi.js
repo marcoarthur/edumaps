@@ -78,6 +78,7 @@ export { getJobProgress, watchJobProgress } from "@/shared/api/taskProgress.js";
  * @param {Object} params
  * @param {string} [params.escola] - Nome da escola (mínimo 3 caracteres)
  * @param {string} [params.municipio] - Município (mínimo 3 caracteres)
+ * @param {number|string} [params.codigo_ibge] - Município escolhido no autocompletar (7 dígitos); filtra só ele
  * @param {number} [params.page=1] - Número da página (>= 1)
  * @param {number} [params.per_page=10] - Itens por página (1 a 500)
  * @returns {Promise<{ data: Array<object>, meta: object }>}
@@ -85,12 +86,14 @@ export { getJobProgress, watchJobProgress } from "@/shared/api/taskProgress.js";
 export function searchPaginatedSchools({
   escola,
   municipio,
+  codigo_ibge,
   page = 1,
   per_page = 10,
 } = {}) {
   return apiClient.get(`${BASE}/search/pageable`, {
     escola,
     municipio,
+    codigo_ibge,
     page,
     per_page,
   });

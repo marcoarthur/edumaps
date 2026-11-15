@@ -19,7 +19,10 @@ Qualquer pessoa pode buscar escolas públicas pelo nome, município ou outros fi
 
 ## Passo a passo
 1. **Onde ir:** Página inicial/busca pública do EduMaps
-2. **Digite** o nome da escola, município ou termo desejado
+2. **Digite** o nome da escola, município ou termo desejado. No campo
+   **Município**, escolha a sugestão com a UF (ex.: *Vitória · ES*): a busca
+   traz só as escolas daquele município. Sem escolher a sugestão, o município
+   de nome igual ao digitado vem primeiro, e acentos não fazem diferença.
 3. **Selecione** a escola nos resultados
 4. **Abra** o painel público da escola
 

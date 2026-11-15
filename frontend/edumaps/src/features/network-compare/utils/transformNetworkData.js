@@ -177,7 +177,7 @@ export function buildTableRows(networks) {
  * @param {number} [codigoRede] tp_dependencia (1 federal … 4 privada)
  */
 export function networkProfileUrl(codigoIbge, codigoRede) {
-  const params = new URLSearchParams({ ibge: String(codigoIbge) });
+  const params = new URLSearchParams({ codigo_ibge: String(codigoIbge) });
   if (codigoRede != null) params.set("dependencia", String(codigoRede));
   return `/municipio/perfil?${params}`;
 }

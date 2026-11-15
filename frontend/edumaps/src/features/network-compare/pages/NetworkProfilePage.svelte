@@ -3,7 +3,9 @@
   //
   // Perfil analítico da rede de um município (issue #109): indicadores da
   // rede vs. Brasil e distribuição das escolas por cluster.
-  // Rota: /municipio/perfil?ibge=XXXXXXX[&dependencia=N]
+  // Rota: /municipio/perfil?codigo_ibge=XXXXXXX[&dependencia=N]. O mesmo
+  // parâmetro da comparação de redes (#431); o `?ibge=` antigo continua
+  // aceito para não quebrar links já compartilhados.
   import { onMount } from "svelte";
   import { getNetworkProfile } from "../api/networkCompareApi.js";
   import {
@@ -48,14 +50,14 @@
 
   onMount(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("ibge");
+    const code = params.get("codigo_ibge") ?? params.get("ibge");
     const dep = params.get("dependencia");
     if (code) {
       ibge = code;
       load(code, dep ? Number(dep) : undefined);
     } else {
       loading = false;
-      error = "Nenhum código IBGE informado (?ibge=XXXXXXX).";
+      error = "Nenhum código IBGE informado (?codigo_ibge=XXXXXXX).";
     }
   });
 
@@ -140,16 +142,16 @@
         </div>
       </section>
 
-      <section aria-label="Distribuição por cluster" class="flex flex-col gap-2">
+      <section aria-label="Distribuição por grupo" class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
-          <h2 class="text-base font-bold text-gray-900">Distribuição por cluster</h2>
+          <h2 class="text-base font-bold text-gray-900">Distribuição por grupo</h2>
           <InfoHint
-            title="Como os clusters agrupam a rede"
-            text="Agrupamos as escolas do recorte pelo cluster a que pertencem (similaridade de contexto) e mostramos a média de cada indicador por grupo."
+            title="Como os grupos dividem a rede"
+            text="Juntamos as escolas do recorte em grupos de contexto parecido e mostramos a média de cada indicador por grupo."
             items={[
-              'Cluster = agrupamento por similaridade (Gower/k-means); "Sem cluster" reúne escolas ainda não clusterizadas.',
+              'Grupo = escolas parecidas entre si (método estatístico de agrupamento, Gower/k-means); "Sem cluster" reúne as escolas ainda não agrupadas.',
               'Médias por indicador calculadas sobre as escolas do grupo.',
-              'Se o município não tem clusterização, todas as escolas aparecem em "Sem cluster".',
+              'Se o município ainda não foi agrupado, todas as escolas aparecem em "Sem cluster".',
             ]}
           />
         </div>

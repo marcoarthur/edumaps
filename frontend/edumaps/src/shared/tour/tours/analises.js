@@ -22,7 +22,7 @@ export default {
       titulo: "Agrupar escolas parecidas",
       texto:
         "Aqui a plataforma forma grupos de escolas com indicadores parecidos e mostra no mapa onde cada uma está. " +
-        "São quatro escolhas: onde, quais indicadores, como agrupar e, então, gerar. " +
+        "São quatro passos: onde, quais indicadores, qual método e, então, agrupar. " +
         "Use as setas do teclado ou os botões; Esc fecha.",
       lado: "bottom",
       alinhamento: "start",
@@ -48,13 +48,13 @@ export default {
       titulo: "3. Como agrupar",
       texto:
         "K-Means, GMM e Spectral dividem as escolas no número de grupos que você escolher (de 2 a 10). " +
-        "O DBSCAN encontra os grupos sozinho pela proximidade dos valores, e usa os campos eps e min_pts. " +
+        "O DBSCAN encontra os grupos sozinho pela proximidade dos valores, e usa a distância máxima entre vizinhas (eps) e o mínimo de escolas por grupo (min_pts). " +
         "Na dúvida, fique com K-Means e 3 grupos.",
       lado: "bottom",
     },
     {
       alvo: "analises-gerar",
-      titulo: "4. Gerar",
+      titulo: "4. Agrupar escolas",
       texto:
         "O cálculo roda no servidor de análises e pode levar alguns instantes. " +
         "Se faltar algo (região, indicadores, ano), a página avisa o que completar.",
@@ -64,7 +64,7 @@ export default {
       alvo: "analises-resultado",
       titulo: "O resultado",
       texto:
-        "Depois de gerar, o mapa mostra as escolas coloridas pelo grupo, e a tabela abaixo resume cada grupo: " +
+        "Depois de agrupar, o mapa mostra as escolas coloridas pelo grupo, e a tabela abaixo resume cada grupo: " +
         "quantas escolas tem e os três indicadores com os valores mais altos. " +
         "Para rever esta ajuda, use o “?” no menu.",
       lado: "top",

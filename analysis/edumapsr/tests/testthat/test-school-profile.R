@@ -66,6 +66,27 @@ test_that("cache com regra de sinais anterior não é servido (#421)", {
   expect_true(.profile_cache_regra_atual(list(metadata = list(regra_sinais = PROFILE_REGRA_SINAIS))))
 })
 
+test_that("cache da versão 2 (antes do rótulo do IDEB) não é servido (#431)", {
+  expect_gte(PROFILE_REGRA_SINAIS, 3L)
+  expect_false(.profile_cache_regra_atual(list(metadata = list(regra_sinais = 2L))))
+})
+
+test_that("IDEB e nota SAEB dizem a edição e a etapa da escola (#431)", {
+  model <- fixture_school_profile_model()
+  sem <- analyze_school_profile(model)$tables$indicadores_comparados
+  expect_equal(sem$label[sem$indicador == "ideb_observado"], "IDEB observado")
+
+  model$metadata$ideb_etapa <- "fundamental_i"
+  model$metadata$ideb_ano <- 2023L
+  cmp <- analyze_school_profile(model)$tables$indicadores_comparados
+  expect_equal(
+    cmp$label[cmp$indicador == "ideb_observado"],
+    "IDEB observado 2023 (escola: anos iniciais)"
+  )
+  expect_match(cmp$label[cmp$indicador == "nota_media"], "2023 \\(escola: anos iniciais\\)$")
+  expect_equal(cmp$label[cmp$indicador == "inse"], unname(PROFILE_LABELS[["inse"]]))
+})
+
 test_that("a coluna `cluster` das comparações é a mediana (p50) do cluster", {
   result <- analyze_school_profile(fixture_school_profile_model())
   cmp <- result$tables$indicadores_comparados

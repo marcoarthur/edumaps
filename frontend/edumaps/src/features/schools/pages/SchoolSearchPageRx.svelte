@@ -93,7 +93,7 @@
 
   function handleClear() {
     hasSearched = false;
-    schoolStore.setSearch({ escola: "", municipio: "", page: 1 });
+    schoolStore.setSearch({ escola: "", municipio: "", codigo_ibge: null, page: 1 });
   }
 
   function handlePageChange(newPage) {

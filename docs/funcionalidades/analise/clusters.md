@@ -23,7 +23,9 @@ investidores que segmentam redes.
 
 ## O que o sistema permite
 
-- Sistema pode agrupar escolas por atributos e geografia.
+- Sistema pode agrupar escolas por atributos e geografia, com a tela em
+  linguagem de usuário (grupos, conjuntos de indicadores) e uma frase sobre
+  cada método de agrupamento.
 - Sistema pode descrever os grupos em linguagem natural.
 - Sistema pode apoiar decisões de rede a partir dos agrupamentos.
 

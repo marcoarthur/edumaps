@@ -97,9 +97,9 @@ describe("NetworkComparePage", () => {
     const hrefs = [...nav.querySelectorAll("a")].map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual([
       ...NETWORK_SUMMARY_FIXTURE.map(
-        (n) => `/municipio/perfil?ibge=3551702&dependencia=${n.codigo_rede}`,
+        (n) => `/municipio/perfil?codigo_ibge=3551702&dependencia=${n.codigo_rede}`,
       ),
-      "/municipio/perfil?ibge=3551702",
+      "/municipio/perfil?codigo_ibge=3551702",
     ]);
   });
 

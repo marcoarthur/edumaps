@@ -9,7 +9,7 @@
   /**
    * @typedef {Object} Props
    * @property {boolean} [loading]
-   * @property {(filters: { escola: string, municipio: string }) => void} [onSearch] -
+   * @property {(filters: { escola: string, municipio: string, codigo_ibge: number|null }) => void} [onSearch] -
    *   chamado direto pelo pai (SchoolSearchPageRx) pra orquestrar a busca de fato.
    * @property {() => void} [onClear]
    */
@@ -19,11 +19,14 @@
 
   let nomeEscola = $state("");
   let municipio = $state("");
-  // Guarda o código IBGE do município escolhido no autocomplete —
-  // usado só para abrir a página de comparação de redes com o município
-  // já pré-selecionado. Texto digitado à mão (sem selecionar sugestão)
-  // não preenche este estado.
-  let selectedCityCode = $state(null);
+  // Município escolhido no autocomplete: o código IBGE filtra a busca só
+  // nele (#431, "Vitória" não mistura Porto Vitória) e abre a comparação de
+  // redes já pré-selecionada. Texto digitado à mão não preenche, e editar o
+  // campo depois da escolha descarta o código.
+  let selectedCity = $state(null);
+  let selectedCityCode = $derived(
+    selectedCity && municipio.trim() === selectedCity.nome ? selectedCity.codigo_ibge : null
+  );
 
   // Espelha a validação do backend (qr/.{3,100}/) só como hint de UX —
   // o servidor continua sendo a fonte de verdade da validação real.
@@ -33,7 +36,11 @@
     event.preventDefault();
     if (!canSubmit) return;
 
-    const filters = { escola: nomeEscola.trim(), municipio: municipio.trim() };
+    const filters = {
+      escola: nomeEscola.trim(),
+      municipio: municipio.trim(),
+      codigo_ibge: selectedCityCode,
+    };
 
     // eventBus: para quem, fora desta árvore de componentes, precisa
     // saber que "uma busca de escola aconteceu" sem se acoplar a este
@@ -49,14 +56,14 @@
   function handleClear() {
     nomeEscola = "";
     municipio = "";
-    selectedCityCode = null;
+    selectedCity = null;
 
     eventBus.emit(SCHOOL_EVENTS.CLEAR, undefined, { source: "SchoolSearchForm" });
     onClear?.();
   }
 
   function handleSelectMunicipio(city) {
-    selectedCityCode = city?.codigo_ibge ?? null;
+    selectedCity = city?.codigo_ibge ? { codigo_ibge: city.codigo_ibge, nome: city.nome } : null;
   }
 
   function handleCompareNetworks() {

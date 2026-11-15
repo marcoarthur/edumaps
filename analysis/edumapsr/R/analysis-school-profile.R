@@ -66,6 +66,31 @@
   d
 }
 
+#' Rótulos dos indicadores com a edição e a etapa do IDEB (#431)
+#'
+#' IDEB e nota SAEB da escola vêm da edição mais recente e, com mais de uma
+#' etapa, da de maior nota (`.profile_pop_body`). O rótulo diz qual:
+#' "IDEB observado 2023 (escola: anos iniciais)". As médias de comparação
+#' usam a etapa principal de cada escola, por isso a etapa fica atribuída
+#' só à escola. Sem a etapa no metadata, fica o rótulo simples.
+#'
+#' @keywords internal
+.profile_labels <- function(indicador, metadata = list()) {
+  labels <- unname(PROFILE_LABELS[indicador])
+  etapa <- metadata$ideb_etapa
+  ano <- metadata$ideb_ano
+  if (is.null(etapa) || is.null(ano) || is.na(etapa) || is.na(ano)) return(labels)
+  etapa_txt <- switch(etapa,
+    fundamental_i = "anos iniciais",
+    fundamental_ii = "anos finais",
+    ensino_medio = "ensino médio",
+    etapa
+  )
+  ideb <- indicador %in% c("ideb_observado", "nota_media")
+  labels[ideb] <- sprintf("%s %d (escola: %s)", labels[ideb], as.integer(ano), etapa_txt)
+  labels
+}
+
 #' Sinal de atenção pela regra v2 (#421)
 #'
 #' Atenção quando a escola está no quartil do lado ruim do cluster
@@ -118,7 +143,7 @@ analyze_school_profile <- function(model, parameters = list()) {
   direcao <- .profile_direcao(indicators$indicador)
   atencao <- .profile_atencao(quartil, indicators$escola, indicators$cluster_p50, direcao)
 
-  labels <- unname(PROFILE_LABELS[indicators$indicador])
+  labels <- .profile_labels(indicators$indicador, model$metadata)
 
   comparados <- data.frame(
     indicador = indicators$indicador,

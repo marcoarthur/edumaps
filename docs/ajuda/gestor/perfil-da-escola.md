@@ -48,6 +48,10 @@ trocar experiências.
   Cluster | Quartil**. O quartil vai de **Q1** (os 25% mais baixos do grupo)
   a **Q4** (os 25% mais altos). Os indicadores em que menor é melhor trazem
   a nota *"menor é melhor"*. Linhas em atenção ficam destacadas com ⚠.
+- **IDEB e nota SAEB na posição relativa:** a linha diz a edição e a etapa
+  da escola (ex.: *IDEB observado 2023 (escola: anos iniciais)*). Com mais de
+  uma etapa, vale a de maior nota. As médias de município, rede, Brasil e
+  grupo usam a etapa principal de cada escola.
 - **Evolução:** IDEB por etapa e notas do SAEB ao longo das edições, com ▲/▼
   para a variação. Só aparecem anos em que a prova foi aplicada; nada é
   interpolado nem projetado.

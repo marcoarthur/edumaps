@@ -131,7 +131,7 @@ describe("ClusterGeotagPage", () => {
     await fireEvent.change(uf, { target: { value: String(FIXTURE_GEOTAG.codigo_uf) } });
 
     // Tenta gerar SEM ano — deve mostrar erro de validação.
-    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/exige escolher o ano/i)).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe("ClusterGeotagPage", () => {
     const anoSelect = screen.getByLabelText(/Ano IDEB\/SAEB/);
     await fireEvent.change(anoSelect, { target: { value: "2023" } });
 
-    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     await waitFor(() => {
       expect(requestCluster).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ describe("ClusterGeotagPage", () => {
 
     await waitFor(() => expect(uf.value).toBe(String(FIXTURE_GEOTAG.codigo_uf)));
 
-    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     await waitFor(() => {
       expect(requestCluster).toHaveBeenCalled();
@@ -195,7 +195,7 @@ describe("ClusterGeotagPage", () => {
       () => {
         expect(getClusterSchools).toHaveBeenCalled();
         expect(getClusterSummary).toHaveBeenCalled();
-        expect(screen.getByText(/Resumo dos clusters/)).toBeInTheDocument();
+        expect(screen.getByText(/Resumo dos grupos/)).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -220,7 +220,7 @@ describe("ClusterGeotagPage", () => {
     await fireEvent.change(uf, { target: { value: String(FIXTURE_GEOTAG.codigo_uf) } });
     await waitFor(() => expect(uf.value).toBe(String(FIXTURE_GEOTAG.codigo_uf)));
 
-    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     // Botão da legenda (não o da tabela) — inicialmente ligado.
     const btn = await screen.findByRole(
@@ -252,7 +252,7 @@ describe("ClusterGeotagPage", () => {
     const uf = screen.getByLabelText("UF");
     await fireEvent.change(uf, { target: { value: "12" } });
 
-    await fireEvent.click(screen.getByRole("button", { name: /Gerar clusters/i }));
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Analytics fora do ar/)).toBeInTheDocument();

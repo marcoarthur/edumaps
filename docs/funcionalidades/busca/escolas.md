@@ -23,7 +23,10 @@ pesquisadores e órgãos públicos.
 
 ## O que o sistema permite
 
-- Sistema pode buscar escolas por nome ou município, com paginação.
+- Sistema pode buscar escolas por nome ou município, com paginação. O
+  município escolhido entre as sugestões (com a UF) restringe a busca a ele;
+  digitado à mão, o nome igual vem antes dos parecidos, sem diferença de
+  acento.
 - Sistema pode exibir, para cada escola, contato, endereço, mapa e WhatsApp.
 - Sistema pode encaminhar da escola encontrada para o painel da escola e para a
   área do gestor daquela unidade.

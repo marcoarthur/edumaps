@@ -113,7 +113,7 @@
 
   {#if clusterIds.length > 0}
     <div class="absolute top-3 right-3 z-[1000] bg-white/95 rounded-md shadow-md p-3 text-sm space-y-1.5">
-      <p class="font-semibold text-gray-700 text-xs uppercase tracking-wide">Clusters</p>
+      <p class="font-semibold text-gray-700 text-xs uppercase tracking-wide">Grupos</p>
       {#each clusterIds as id}
         {@const hidden = hiddenIds.has(id)}
         <button
@@ -128,7 +128,7 @@
             style:background-color={clusterColor(id)}
           ></span>
           <span class="text-gray-700 grow" class:line-through={hidden} class:opacity-50={hidden}>
-            {labelsByCluster[id] ?? `Cluster ${id}`}
+            {labelsByCluster[id] ?? `Grupo ${id}`}
           </span>
           <span class="text-xs text-gray-400">({countsByCluster[id] ?? 0})</span>
         </button>

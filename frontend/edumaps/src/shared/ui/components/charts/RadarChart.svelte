@@ -6,6 +6,7 @@
   // não faz; o consumidor passa `data` e `options` do Carbon.
   import { onMount, onDestroy } from "svelte";
   import { RadarChart as CarbonRadarChart } from "@carbon/charts-svelte";
+  import { comLocale } from "./localeCarbon.js";
 
   let { data = [], options = {}, height = "320px", class: className = "" } = $props();
 
@@ -102,8 +103,11 @@
       window.removeEventListener("unhandledrejection", onUnhandledRejection);
     }
   });
+
+  // Menus e tabela do Carbon em PT-BR (#431).
+  const opcoesTraduzidas = $derived(comLocale(chartOptions));
 </script>
 
 <div bind:this={holder} class="relative w-full overflow-hidden {className}" style:height>
-  <CarbonRadarChart data={data} options={chartOptions} />
+  <CarbonRadarChart data={data} options={opcoesTraduzidas} />
 </div>

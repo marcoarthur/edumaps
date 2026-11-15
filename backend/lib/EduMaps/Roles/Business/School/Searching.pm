@@ -125,18 +125,38 @@ sub search($self, $params = {}) {
   return $results;
 }
 
+# Busca paginada (#431). O município escolhido no autocompletar chega como
+# `codigo_ibge` e filtra só ele; o texto livre ignora acento e põe primeiro o
+# município de nome igual ao digitado, depois o que começa com o texto, e só
+# então ordena pelo nome da escola ("Vitória" traz Vitória (ES) antes de
+# Porto Vitória).
 sub search_pageable($self, $params) {
   my $rs = $self->schema->resultset('CensoEscolas');
   my $ilike = sub($val) { return { -ilike => "%$val%" } };
+  my $municipio = $params->{municipio} // '';
+  my $codigo    = $params->{codigo_ibge};
 
-  my $search = {
-    length($params->{escola})    > 2 ? (no_entidade => $ilike->($params->{escola})) : (),
-    length($params->{municipio}) > 2 ? (no_municipio => $ilike->($params->{municipio})) : (),
-    tp_situacao_funcionamento => 1,
-  };
+  my @and = (
+    length($params->{escola} // '') > 2 ? ({ no_entidade => $ilike->($params->{escola}) }) : (),
+    { tp_situacao_funcionamento => 1 },
+  );
+  my @ordem;
 
-  my $results = $rs->search_rs($search)->columns($self->censo_columns)
-  ->order_by('no_entidade')->as_hash
+  if ($codigo) {
+    push @and, { co_municipio => $codigo };
+  } elsif (length($municipio) > 2) {
+    my $termo = $municipio =~ s/[%_\\]//gr;
+    push @and, \[ 'contrib.unaccent(no_municipio) ILIKE contrib.unaccent(?)', "%$termo%" ];
+    push @ordem, \[
+      q{CASE WHEN lower(contrib.unaccent(no_municipio)) = lower(contrib.unaccent(?)) THEN 0
+             WHEN contrib.unaccent(no_municipio) ILIKE contrib.unaccent(?) THEN 1
+             ELSE 2 END},
+      $termo, "$termo%"
+    ];
+  }
+
+  my $results = $rs->search_rs({ -and => \@and })->columns($self->censo_columns)
+  ->order_by([ @ordem, 'no_entidade' ])->as_hash
   ->page_size($params->{per_page})->set_page($params->{page})
   ->to_api_response;
 
