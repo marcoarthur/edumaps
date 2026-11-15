@@ -108,3 +108,6 @@ Protocolo em [`../README.md`](../README.md).
   [`../ciclos/2026-11-15-agrupamento-reprodutivel.md`](../ciclos/2026-11-15-agrupamento-reprodutivel.md).
 - 2026-11-15: #428 (PR #435) mergeado: AN-08 resolvido. Fechamento em
   [`../ciclos/2026-11-15-fontes-e-metodologia.md`](../ciclos/2026-11-15-fontes-e-metodologia.md).
+- 2026-11-15: #430 (PR #436) mergeado: AN-11 resolvido. Fechamento em
+  [`../ciclos/2026-11-15-ranking-de-redes.md`](../ciclos/2026-11-15-ranking-de-redes.md).
+  Fica só AN-10 (#429, decisão de produto) e AN-12 (cobertura da folha, carga).

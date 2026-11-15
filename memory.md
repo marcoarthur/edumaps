@@ -11,8 +11,9 @@
 - #428 → PR #435 (12e4067): `EduMaps::Fontes`, `/api/fontes`, página
   `/fontes`, selo `FonteDado` em 6 telas, rodapé, versão dos dados no
   agrupamento. Nota técnica 203, ciclo `2026-11-15-fontes-e-metodologia.md`.
-- Próximo: #430 (ranking) com decisões conservadoras informadas por
-  Telegram; #429 fica (a issue diz esperar o posicionamento da P3).
+- #430 → PR #436 (2fedc87): `/api/ranking/redes` e `/escolas`, página
+  `/ranking`; decisões informadas por Telegram; INSE num join só (15,6 s →
+  0,19 s). Nota técnica 204. #429 fica (decisão de posicionamento da P3).
 
 ## Sessão 2026-11-15 (bn) — #427 em dois PRs (#433, #434), mergeados
 

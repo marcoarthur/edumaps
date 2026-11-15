@@ -37,13 +37,14 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Exportação em PT-BR e município certo; ficam #428 e #430.
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Agrupamento com link e CSV; ficam #428 e #430.
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Ano do dado e página citável; fica #430.
+- [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido; reavaliação pendente). AN-11 resolvido.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas (2026-11-14): reavaliar com AN-08 (fonte e ano na tela)
-  e AN-11 (ranking de redes). AN-01 (total da rosca) foi entregue no PR #425.
+- Análises públicas (2026-11-14): **reavaliar** — AN-01, AN-08 e AN-11
+  entregues (PRs #425, #435 e #436).
 
 ## Entradas
 

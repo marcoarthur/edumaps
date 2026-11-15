@@ -43,6 +43,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p4--academia-pesquisadora): não adotaria por ora (mantido). IDEB com edição e etapa; ficam #427 e #428.
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p4--academia-pesquisadora): não adotaria por ora (mantido). AN-05 e AN-09 resolvidos; fica #428. Reavaliar depois dela.
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p4--academia-pesquisadora): não adotaria por ora (mantido). AN-08 resolvido: os três bloqueios saíram; reavaliar.
+- [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p4--academia-pesquisadora): não adotaria por ora (mantido; reavaliação pendente). CSV de redes com INSE.
 
 ## Pendências
 
