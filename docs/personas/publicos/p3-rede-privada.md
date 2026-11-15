@@ -36,13 +36,15 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p3--rede-privada-mantenedor): sem impacto direto.
+- [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p3--rede-privada-mantenedor): não adotaria (mantido; sem reavaliação). Resolvido AN-03; fica AN-10.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
 - Análises públicas (2026-11-14): reavaliar quando houver leitura de mercado
-  local (AN-10) e as escolas semelhantes respeitarem a etapa (AN-03).
+  local (AN-10). A etapa nas escolas semelhantes (AN-03) foi entregue no
+  PR #425.
 
 ## Entradas
 

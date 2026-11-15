@@ -4,7 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-15 (bk) — curadoria P3–P6 e issues #421 a #423 (PRs #424 a #426, aguardam merge)
+## Sessão 2026-11-15 (bl) — merge dos PRs #424 a #426
+
+- Merge autorizado pelo developer: #424 (dba9fa8), #425 (f696e01), #426
+  (758a8b2). Issues #421, #422 e #423 fechadas.
+- Imagens locais reconstruídas do main (`backend minion minion-analytics
+  frontend analytic`); md5 conferido. O `analytic` **não foi recriado** pelo
+  `up -d` (imagem nova, contêiner antigo): precisou de
+  `up -d --force-recreate analytic`. Conferir o ID da imagem, não só o build.
+- Nota técnica 200 e ciclo `ciclos/2026-11-15-analises-legiveis.md`.
+- Pendentes: deploy LXC de 16/11 (agora inclui #421/#422 e o serviço
+  `edumaps-minion-analytics`); AN-05 a AN-11 sem issue; fila `speculative`.
+
+## Sessão 2026-11-15 (bk) — curadoria P3–P6 e issues #421 a #423 (PRs #424 a #426)
 
 - Curadoria P3–P6 nas análises públicas, no navegador contra a stack local
   (`avaliacoes/2026-11-14-analises-publicas.md`, d6a9115/18c9e56). Issues

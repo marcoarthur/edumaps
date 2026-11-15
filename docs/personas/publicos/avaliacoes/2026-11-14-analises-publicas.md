@@ -94,3 +94,11 @@ Protocolo em [`../README.md`](../README.md).
 7. **Detalhes:** AN-06 e AN-07, que cabem num PR pequeno.
 8. **ENV-01** (#423): um serviço `minion-analytics` no `docker-compose.yml`
    (código, então branch e PR).
+
+## Andamento
+
+- 2026-11-15: #421 (PR #425), #422 (PR #426) e #423 (PR #424) mergeados.
+  Resolvidos AN-01, AN-02, AN-03 (com o "0.00"), AN-04, a cobertura na tela
+  (AN-12) e ENV-01. Fechamento em
+  [`../ciclos/2026-11-15-analises-legiveis.md`](../ciclos/2026-11-15-analises-legiveis.md).
+  Sem issue: AN-05 a AN-11.

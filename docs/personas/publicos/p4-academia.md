@@ -39,6 +39,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p4--academia-pesquisadora): sem impacto direto.
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p4--academia-pesquisadora): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p4--academia-pesquisadora): sem impacto direto.
+- [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p4--academia-pesquisadora): não adotaria por ora (mantido; sem reavaliação). Regra dos sinais versionada; ficam AN-05, AN-08, AN-09.
 
 ## Pendências
 

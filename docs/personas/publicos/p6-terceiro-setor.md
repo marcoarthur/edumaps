@@ -33,13 +33,14 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
+- [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido; sem reavaliação). Resolvido AN-01; ficam AN-08, AN-11.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas (2026-11-14): reavaliar com AN-01 (total da rosca), AN-08
-  (fonte e ano na tela) e AN-11 (ranking de redes).
+- Análises públicas (2026-11-14): reavaliar com AN-08 (fonte e ano na tela)
+  e AN-11 (ranking de redes). AN-01 (total da rosca) foi entregue no PR #425.
 
 ## Entradas
 

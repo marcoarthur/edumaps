@@ -36,6 +36,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — botão de salvar sem réplica](ciclos/2026-11-14-duplo-envio.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p5--órgãos-de-controle-e-conselhos): sem impacto direto.
+- [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Resolvidos AN-01, AN-04 e a cobertura na tela (AN-12).
 
 ## Pendências
 
@@ -44,7 +45,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   fiscal, avaliar o relatório do plano como **peça recebida** na prestação de
   contas.
 - Análises públicas (2026-11-14): reavaliar quando a folha cobrir mais
-  municípios (AN-12) e a fonte e a data estiverem na tela (AN-08).
+  municípios (AN-12; a cobertura já aparece na tela, PR #426) e a fonte e
+  a data estiverem na tela (AN-08).
 
 ## Entradas
 
