@@ -4,6 +4,33 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-15 (bk) — curadoria P3–P6 e issues #421 a #423 (PRs #424 a #426, aguardam merge)
+
+- Curadoria P3–P6 nas análises públicas, no navegador contra a stack local
+  (`avaliacoes/2026-11-14-analises-publicas.md`, d6a9115/18c9e56). Issues
+  #421 (números/sinais), #422 (financeiro), #423 (worker analytics).
+- **#423 → PR #424** (`fix/docker-minion-analytics`): serviço
+  `minion-analytics` (`minion worker -q analytics`) no compose; entrypoint
+  passa args ao worker. Achado no caminho: o nginx do frontend resolvia o
+  `backend` só na subida; backend recriado com outro IP = 502. Agora
+  `resolver 127.0.0.11 valid=10s` + `proxy_pass $var`.
+- **#421 → PR #425** (`fix/analises-leitura-numerica`):
+  - rosca do Carbon espera `center.number` numérico (`centroRosca`);
+  - sinais de atenção v2 no edumapsr (`PROFILE_DIRECAO`, só pior que a
+    mediana) com `regra_sinais` no payload: cache do R e chave do
+    `analysis_cache` do backend (`$PERFIL_REGRA_SINAIS`) mudam juntos;
+  - `similar_to` exige etapa em comum; tela sem "Distância 0.00".
+- **#422 → PR #426** (`fix/financeiro-ausencia-cobertura`): `ausencia` e
+  `cobertura` no `/finance`. **Vazamento corrigido:** o fallback "Secretaria"
+  somava o município inteiro e valia para qualquer rede (estadual de Cuiabá
+  com 13.547 profissionais). Agora só municipal e só `99999999`.
+- Erro meu corrigido: 355410 é Taubaté, não Ubatuba (b1c3150, comentário na
+  #422).
+- Fora do escopo: fila `speculative` (CityAnalytics) sem worker em nenhum
+  ambiente.
+- Stack local está com as imagens do branch da #422 (backend/minion/frontend)
+  e o `minion-analytics` da #424: depois dos merges, rebuild a partir do main.
+
 ## Sessão 2026-11-14 (bj) — backend sem o PDL (#419, PR #420 mergeado)
 
 - #418 mergeado (`1bcf790`); #419 → PR #420 mergeado (`6082a60`), issue
