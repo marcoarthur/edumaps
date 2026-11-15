@@ -184,6 +184,12 @@ read_school_profile_cache.postgres_school_profile_repository <- function(
 
   payload <- jsonlite::fromJSON(row$profile_data[1], simplifyVector = FALSE)
 
+  # #421: perfil gravado com regra de sinais anterior não é servido (o
+  # chamador recalcula).
+  if (!.profile_cache_regra_atual(payload)) {
+    return(NULL)
+  }
+
   list(
     payload = payload,
     nu_ano_censo = as.integer(row$nu_ano_censo[1]),
@@ -266,4 +272,16 @@ read_school_profile_cache.postgres_school_profile_repository <- function(
     )),
     error = function(e) NULL
   )
+}
+#' O payload materializado segue a regra de sinais atual? (#421)
+#'
+#' Sem o campo `metadata$regra_sinais` = regra 1 (anterior ao #421).
+#'
+#' @param payload lista do `profile_data` (JSON já lido).
+#' @return `TRUE` quando a regra gravada é a atual (ou mais nova).
+#'
+#' @keywords internal
+.profile_cache_regra_atual <- function(payload) {
+  regra <- suppressWarnings(as.integer(payload$metadata$regra_sinais %||% 1L))
+  !is.na(regra) && regra >= PROFILE_REGRA_SINAIS
 }

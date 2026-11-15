@@ -36,7 +36,7 @@ fixture_boxplot_model <- function() {
 }
 
 # Fixture do perfil da escola (issue #105). Monta um school_profile_model
-# completo (9 indicadores, com dois no quartil inferior do cluster para
+# completo (9 indicadores, com dois do lado ruim do cluster para
 # exercitar os sinais de atenção) sem banco, sem payload HTTP.
 fixture_school_profile_model <- function() {
   inds <- c(

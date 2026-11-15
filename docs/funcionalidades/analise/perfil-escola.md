@@ -29,8 +29,12 @@ que avaliam a escola no contexto da rede e do país.
 - Sistema pode identificar o grupo de referência (cluster) da escola e onde ela
   está dentro da distribuição desse grupo, evitando comparações injustas com
   realidades distantes.
-- Sistema pode apontar sinais de atenção: indicadores em que a escola está no
-  quartil inferior do seu grupo de referência.
+- Sistema pode apontar sinais de atenção: indicadores em que a escola está pior
+  que o seu grupo de referência, respeitando o sentido de cada indicador (em
+  "docentes sem especialização" e "alunos por docente", menor é melhor).
+- Sistema pode comparar a rede de um município com o Brasil e dizer, pela cor,
+  se a diferença é favorável conforme o sentido do indicador; proporções são
+  comparadas em pontos percentuais.
 - Sistema pode sugerir escolas semelhantes (por perfil e contexto) para troca de
   experiências e benchmarking.
 

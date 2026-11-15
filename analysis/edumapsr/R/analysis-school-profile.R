@@ -15,9 +15,11 @@
 # a escola pertence. Não faz I/O e não conhece SQL — apenas classifica a
 # posição relativa, monta as tabelas do payload e os sinais de atenção.
 #
-# Regra dos sinais de atenção (v1, fiel ao issue): um indicador vira
-# `atencao = TRUE` quando a escola está no QUARTIL INFERIOR
-# (`quartil_no_cluster == 1`) do seu cluster. O campo `cluster` das
+# Regra dos sinais de atenção (v2, #421): um indicador vira
+# `atencao = TRUE` quando a escola está no quartil do LADO RUIM do seu
+# cluster (inferior se "quanto maior, melhor"; superior se "quanto menor,
+# melhor", ver `PROFILE_DIRECAO`) e estritamente pior que a mediana. O
+# `quartil_no_cluster` continua sendo a posição do valor (1 = menores). O campo `cluster` das
 # comparações é a MEDIANA do indicador no cluster (benchmark robusto);
 # `cluster_resumo` carrega p25/p50/p75 + média + tamanho.
 
@@ -53,6 +55,40 @@
   out
 }
 
+#' Sentido de cada indicador ("maior" ou "menor" é melhor)
+#'
+#' Indicador fora de `PROFILE_DIRECAO` vale "maior" (regra antiga).
+#'
+#' @keywords internal
+.profile_direcao <- function(indicador) {
+  d <- unname(PROFILE_DIRECAO[indicador])
+  d[is.na(d)] <- "maior"
+  d
+}
+
+#' Sinal de atenção pela regra v2 (#421)
+#'
+#' Atenção quando a escola está no quartil do lado ruim do cluster
+#' (inferior se "maior" é melhor; superior se "menor" é melhor) **e**
+#' estritamente pior que a mediana. Sem a segunda condição, escola e
+#' cluster empatados (ex.: doutorado 0% com mediana 0%) davam sinal.
+#'
+#' @param quartil vetor 1..4 (ou `NA`) de `.profile_quartile`.
+#' @param value valor da escola.
+#' @param p50 mediana do cluster.
+#' @param direcao vetor "maior"/"menor".
+#'
+#' @return Vetor lógico, sem `NA`.
+#'
+#' @keywords internal
+.profile_atencao <- function(quartil, value, p50, direcao) {
+  ruim_lado <- ifelse(direcao == "menor", quartil == 4L, quartil == 1L)
+  pior_que_mediana <- ifelse(direcao == "menor", value > p50, value < p50)
+  out <- ruim_lado & pior_que_mediana
+  out[is.na(out)] <- FALSE
+  out
+}
+
 #' Monta o perfil analítico de uma escola
 #'
 #' @param model objeto da classe `school_profile_model`.
@@ -79,7 +115,8 @@ analyze_school_profile <- function(model, parameters = list()) {
     indicators$cluster_p50,
     indicators$cluster_p75
   )
-  atencao <- !is.na(quartil) & quartil == 1L
+  direcao <- .profile_direcao(indicators$indicador)
+  atencao <- .profile_atencao(quartil, indicators$escola, indicators$cluster_p50, direcao)
 
   labels <- unname(PROFILE_LABELS[indicators$indicador])
 
@@ -93,6 +130,7 @@ analyze_school_profile <- function(model, parameters = list()) {
     cluster = indicators$cluster,
     quartil_no_cluster = quartil,
     atencao = atencao,
+    direcao = direcao,
     stringsAsFactors = FALSE
   )
 
@@ -135,6 +173,6 @@ analyze_school_profile <- function(model, parameters = list()) {
       peers = peers,
       flags = flags
     ),
-    metadata = model$metadata
+    metadata = c(model$metadata, list(regra_sinais = PROFILE_REGRA_SINAIS))
   )
 }

@@ -1,5 +1,6 @@
 <script>
   // src/features/gestor/components/EnrollmentSection.svelte
+  import { centroRosca } from "@/shared/ui/components/charts/centroRosca.js";
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import BarChartGrouped from "@/shared/ui/components/charts/BarChartGrouped.svelte";
   import BreakdownList from "./BreakdownList.svelte";
@@ -25,7 +26,7 @@
 
   const etapaOptions = $derived({
     title: "Matrículas por etapa",
-    donut: { center: { label: "Total", number: formatInt(total) } },
+    donut: { center: centroRosca("Total", total, formatInt) },
     data: { groupMapsTo: "group" },
     color: { scale: etapaColorScale(matriculas.por_etapa ?? []) },
     legend: { position: "bottom" },

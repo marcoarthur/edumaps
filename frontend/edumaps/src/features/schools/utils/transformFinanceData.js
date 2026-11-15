@@ -86,7 +86,8 @@ export function formatBRL(value) {
 export function formatBRLCompact(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "—";
-  if (Math.abs(num) >= 1_000_000) return `R$ ${(num / 1_000_000).toFixed(1)} mi`;
+  // pt-BR: vírgula decimal ("R$ 8,9 mi"), como o resto da tela (#421).
+  if (Math.abs(num) >= 1_000_000) return `R$ ${(num / 1_000_000).toFixed(1).replace(".", ",")} mi`;
   if (Math.abs(num) >= 1_000) return `R$ ${(num / 1_000).toFixed(0)} mil`;
   return formatBRL(num);
 }

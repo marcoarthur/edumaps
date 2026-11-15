@@ -2,9 +2,10 @@
   // src/features/schools/components/profile/ProfileComparison.svelte
   //
   // Posição relativa da escola: cada indicador comparado com o município,
-  // a rede, o Brasil e o cluster (mediana). Linhas no quartil inferior do
-  // cluster ficam destacadas.
+  // a rede, o Brasil e o cluster (mediana). Linhas com sinal de atenção
+  // (pior que o grupo no sentido do indicador, #421) ficam destacadas.
   import { formatIndicator, formatQuartil } from '../../utils/transformProfileData.js';
+  import { sentidoIndicador } from '@/shared/utils/sentidoIndicador.js';
   import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
   let { indicadores = [] } = $props();
@@ -22,7 +23,8 @@
       items={[
         'Fonte: Censo Escolar (docentes e matrículas), IDEB/SAEB e INSE — edição mais recente.',
         'Os comparativos vêm de referências pré-computadas quando disponíveis; senão são calculados na hora.',
-        'Quartil = posição do valor da escola dentro do cluster (Q1 = inferior … Q4 = superior).',
+        'Quartil = posição do valor da escola dentro do cluster (Q1 = menores valores … Q4 = maiores).',
+        'Sinal de atenção: a escola está pior que a mediana do cluster no quartil do lado ruim (Q1 quando maior é melhor; Q4 quando menor é melhor).',
         'Cluster = mediana do indicador entre as escolas do grupo de referência.',
       ]}
     />
@@ -44,6 +46,9 @@
           <tr class={ind.atencao ? 'bg-amber-50' : 'bg-white'}>
             <td class="text-left px-3 py-2 text-gray-800 whitespace-nowrap">
               {ind.label ?? ind.indicador}
+              {#if sentidoIndicador(ind.indicador, ind.direcao) === 'menor'}
+                <span class="block text-xs text-gray-500">menor é melhor</span>
+              {/if}
             </td>
             {#each KEYS as key}
               <td
@@ -69,7 +74,8 @@
   </div>
 
   <p class="text-xs text-gray-500">
-    Cluster = mediana do indicador no cluster da escola. Quartil inferior
-    do cluster (Q1) gera sinal de atenção.
+    Cluster = mediana do indicador no cluster da escola. Sinal de atenção
+    (⚠) quando a escola está pior que o grupo: no Q1 se maior é melhor, no
+    Q4 se menor é melhor.
   </p>
 </section>

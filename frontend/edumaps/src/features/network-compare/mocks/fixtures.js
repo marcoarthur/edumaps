@@ -161,7 +161,7 @@ export const NETWORK_PROFILE_FIXTURE = {
   analysis: "network_profile",
   parameters: { codigo_ibge: FIXTURE_CODIGO_IBGE },
   data: [],
-  metrics: { n_escolas: 30, n_clusters: 2, n_brasil: 180540, n_indicadores: 2 },
+  metrics: { n_escolas: 30, n_clusters: 2, n_brasil: 180540, n_indicadores: 3 },
   metadata: {
     codigo_ibge: FIXTURE_CODIGO_IBGE,
     no_municipio: "Sertãozinho",
@@ -176,6 +176,8 @@ export const NETWORK_PROFILE_FIXTURE = {
     indicadores: [
       { indicador: "prop_licenciatura", label: "Docentes com licenciatura", rede: 0.8, brasil: 0.79, variacao: 0.01 },
       { indicador: "ideb_observado", label: "IDEB observado", rede: 5.1, brasil: 5.2, variacao: -0.1 },
+      // #421: "menor é melhor" — ficar abaixo do Brasil é favorável.
+      { indicador: "prop_sem_especializacao", label: "Docentes sem especialização", rede: 0.102, brasil: 0.538, variacao: -0.436 },
     ],
     clusters: [
       { cluster_id: 1, cluster_label: "Alta perfil escolar", n: 12, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.85 },

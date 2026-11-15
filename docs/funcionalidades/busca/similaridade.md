@@ -24,7 +24,9 @@ escolas e investidores que avaliam redes.
 ## O que o sistema permite
 
 - Sistema pode, a partir de uma escola, sugerir escolas semelhantes por perfil e
-  contexto.
+  contexto: da mesma cidade, com ao menos uma etapa de ensino em comum (uma
+  creche não é sugerida para uma escola de ensino fundamental) e com as notas
+  do painel mais parecidas, explicando esse critério na tela.
 - Sistema pode levar a comparação para o painel da escola e para os agrupamentos
   (clusters).
 - Sistema mantém a comparação do painel da escola em dia sozinho, todo dia,

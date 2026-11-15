@@ -9,7 +9,17 @@
   import {
     transformNetworkProfileData,
     formatNetworkValue,
+    formatNetworkVariacao,
   } from "../utils/transformNetworkProfileData.js";
+  import { diferencaFavoravel, sentidoIndicador } from "@/shared/utils/sentidoIndicador.js";
+
+  // #421: a cor segue o sentido do indicador (em "sem especialização" e
+  // "aluno/docente", ficar abaixo do Brasil é bom).
+  function corVariacao(ind) {
+    const f = diferencaFavoravel(ind.indicador, ind.variacao);
+    if (f === null) return "text-gray-500";
+    return f ? "text-emerald-700" : "text-red-700";
+  }
   import { networkCompareUrl } from "../utils/transformNetworkData.js";
   import InfoHint from "@/shared/ui/components/InfoHint.svelte";
   import { ApiError } from "@/shared/api/client.js";
@@ -94,7 +104,8 @@
             items={[
               'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
               'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola).',
-              'Variação = rede − Brasil (positivo = acima da média nacional).',
+              'Variação = rede − Brasil (positivo = acima da média nacional; proporções em pontos percentuais, p.p.).',
+              'Verde = melhor que o Brasil, vermelho = pior, conforme o sentido do indicador: em "sem especialização" e "aluno/docente", menor é melhor.',
             ]}
           />
         </div>
@@ -111,13 +122,16 @@
             <tbody>
               {#each profile.indicadores as ind (ind.indicador)}
                 <tr class="bg-white">
-                  <td class="text-left px-3 py-2 text-gray-800">{ind.label ?? ind.indicador}</td>
+                  <td class="text-left px-3 py-2 text-gray-800">
+                    {ind.label ?? ind.indicador}
+                    {#if sentidoIndicador(ind.indicador) === "menor"}
+                      <span class="block text-xs text-gray-500">menor é melhor</span>
+                    {/if}
+                  </td>
                   <td class="text-right px-3 py-2 font-mono text-gray-700">{formatNetworkValue(ind.indicador, ind.rede)}</td>
                   <td class="text-right px-3 py-2 font-mono text-gray-500">{formatNetworkValue(ind.indicador, ind.brasil)}</td>
-                  <td
-                    class="text-right px-3 py-2 font-mono {Number(ind.variacao) >= 0 ? 'text-emerald-700' : 'text-red-700'}"
-                  >
-                    {Number(ind.variacao) >= 0 ? '+' : ''}{formatNetworkValue(ind.indicador, ind.variacao)}
+                  <td class="text-right px-3 py-2 font-mono whitespace-nowrap {corVariacao(ind)}">
+                    {formatNetworkVariacao(ind.indicador, ind.variacao)}
                   </td>
                 </tr>
               {/each}

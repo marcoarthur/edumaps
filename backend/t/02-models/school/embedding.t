@@ -70,4 +70,54 @@ $tag <similar_to> vizinhos mais próximos por cosseno (pgvector)
   }
 };
 
+# #421 (AN-03): o vetor só tem as notas; a vizinha precisa dividir ao menos
+# uma etapa com a escola. Três escolas de teste num município fictício: a
+# creche tem o MESMO vetor da escola alvo e mesmo assim não pode aparecer.
+my $INEP_ALVO    = '60001601';
+my $INEP_CRECHE  = '60001602';
+my $INEP_FUND    = '60001603';
+my $MUNI_TESTE   = 6000016;
+
+subtest qq/
+$tag <similar_to> exige etapa em comum (#421)
+/ => sub {
+  plan skip_all => 'analytics.school_embedding ausente (pgvector nao migrado)'
+    unless $has_table;
+
+  my $dbh  = $schema->storage->dbh;
+  my @ids  = ($INEP_ALVO, $INEP_CRECHE, $INEP_FUND);
+  my $limpa = sub {
+    $dbh->do('DELETE FROM analytics.school_embedding WHERE co_entidade = ANY(?)', {}, \@ids);
+    $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ANY(?)', {}, \@ids);
+  };
+  $limpa->();
+
+  my $censo = $dbh->prepare(q{
+    INSERT INTO clean.censo_escolas
+      (nu_ano_censo, co_entidade, no_entidade, co_municipio, tp_situacao_funcionamento,
+       in_comum_creche, in_comum_fund_ai, in_comum_fund_af)
+    VALUES (2025, ?, ?, ?, 1, ?, ?, ?)
+  });
+  $censo->execute($INEP_ALVO,   'EMEF Alvo',   $MUNI_TESTE, 0, 1, 1);
+  $censo->execute($INEP_CRECHE, 'CMEI Igual',  $MUNI_TESTE, 1, 0, 0);
+  $censo->execute($INEP_FUND,   'EMEF Parecida', $MUNI_TESTE, 0, 1, 0);
+
+  my $emb = $dbh->prepare('INSERT INTO analytics.school_embedding (co_entidade, embedding) VALUES (?, ?)');
+  $emb->execute($INEP_ALVO,   '[1,1,1,1,1,1]');
+  $emb->execute($INEP_CRECHE, '[1,1,1,1,1,1]');
+  $emb->execute($INEP_FUND,   '[1,1,1,1,1,0.5]');
+
+  my $vizinhas = $schema->resultset('SchoolEmbedding')->similar_to($INEP_ALVO, 5, $MUNI_TESTE);
+  is([map { $_->{co_entidade} } @$vizinhas], [$INEP_FUND],
+    'só a escola com etapa em comum; a creche de vetor idêntico fica fora');
+
+  # escola sem etapa no Censo não filtra (falta de dado não zera as vizinhas)
+  $dbh->do('UPDATE clean.censo_escolas SET in_comum_fund_ai = NULL, in_comum_fund_af = NULL WHERE co_entidade = ?',
+    {}, $INEP_ALVO);
+  $vizinhas = $schema->resultset('SchoolEmbedding')->similar_to($INEP_ALVO, 5, $MUNI_TESTE);
+  is(scalar @$vizinhas, 2, 'sem etapa registrada, não filtra por etapa');
+
+  $limpa->();
+};
+
 done_testing;

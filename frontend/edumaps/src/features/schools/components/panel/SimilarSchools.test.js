@@ -29,4 +29,14 @@ describe("SimilarSchools", () => {
     expect(screen.getByText("Escola Vizinha")).toBeTruthy();
     expect(screen.queryByText(/Sem dado para comparar/)).toBeNull();
   });
+
+  it("sem distância sem escala; explica o critério (#421)", () => {
+    render(SimilarSchools, {
+      schools: [
+        { id_escola: 1, nome: "Escola Vizinha", rede: "municipal", matriculas: 100, etapas: {}, indicador_principal: null },
+      ],
+    });
+    expect(screen.queryByText(/Distância/)).toBeNull();
+    expect(screen.getByText(/ao menos uma etapa de ensino em comum/)).toBeTruthy();
+  });
 });

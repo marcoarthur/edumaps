@@ -3,6 +3,7 @@ import {
   groupClusters,
   transformNetworkProfileData,
   formatNetworkValue,
+  formatNetworkVariacao,
 } from "./transformNetworkProfileData.js";
 import { NETWORK_PROFILE_FIXTURE } from "../mocks/fixtures.js";
 
@@ -21,7 +22,7 @@ describe("transformNetworkProfileData", () => {
 
     expect(p.metadata.municipio).toBe("Sertãozinho");
     expect(p.metadata.uf).toBe("SP");
-    expect(p.indicadores).toHaveLength(2);
+    expect(p.indicadores).toHaveLength(3);
     expect(p.metrics.n_escolas).toBe(30);
   });
 
@@ -29,6 +30,14 @@ describe("transformNetworkProfileData", () => {
     const p = transformNetworkProfileData({ tables: { clusters: [], indicadores: [] }, metadata: {} });
     expect(p.clusters).toEqual([]);
     expect(p.indicadores).toEqual([]);
+  });
+
+  it("formatNetworkVariacao: p.p. nas proporções e sinal explícito (#421)", () => {
+    expect(formatNetworkVariacao("prop_sem_especializacao", -0.436)).toBe("-43.6 p.p.");
+    expect(formatNetworkVariacao("prop_licenciatura", 0.01)).toBe("+1.0 p.p.");
+    expect(formatNetworkVariacao("ratio_aluno_docente", -2.7)).toBe("-2.7");
+    expect(formatNetworkVariacao("ideb_observado", 0)).toBe("0.0");
+    expect(formatNetworkVariacao("ideb_observado", null)).toBe("–");
   });
 
   it("formatNetworkValue", () => {

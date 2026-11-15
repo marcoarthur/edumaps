@@ -22,17 +22,48 @@ test_that("analyze_school_profile devolve as tabelas do contrato", {
   expect_equal(result$metrics$n_peers, 2L)
 })
 
-test_that("sinal de atenção marca apenas o quartil inferior do cluster", {
+test_that("sinal de atenção segue o sentido do indicador (#421)", {
   result <- analyze_school_profile(fixture_school_profile_model())
   cmp <- result$tables$indicadores_comparados
 
-  esperados <- c("prop_efetivos", "prop_sem_especializacao")
+  # prop_efetivos (maior é melhor): Q1 e abaixo da mediana -> atenção.
+  # ratio_aluno_docente (menor é melhor): Q4 e acima da mediana -> atenção.
+  # prop_sem_especializacao (menor é melhor): Q1 = poucos sem especialização,
+  # é BOM -> sem atenção (a regra v1 marcava).
+  esperados <- c("prop_efetivos", "ratio_aluno_docente")
   expect_setequal(cmp$indicador[cmp$atencao], esperados)
-  expect_true(all(cmp$quartil_no_cluster[cmp$atencao] == 1L))
+  expect_equal(cmp$quartil_no_cluster[cmp$indicador == "prop_sem_especializacao"], 1L)
+  expect_false(cmp$atencao[cmp$indicador == "prop_sem_especializacao"])
+  expect_equal(cmp$quartil_no_cluster[cmp$indicador == "ratio_aluno_docente"], 4L)
+
+  expect_equal(
+    cmp$direcao[match(c("prop_sem_especializacao", "ratio_aluno_docente", "ideb_observado"), cmp$indicador)],
+    c("menor", "menor", "maior")
+  )
 
   expect_equal(nrow(result$tables$flags), 2)
   expect_setequal(result$tables$flags$indicador, esperados)
   expect_true(all(result$tables$flags$severidade == "media"))
+  expect_equal(result$metadata$regra_sinais, PROFILE_REGRA_SINAIS)
+})
+
+test_that("empate com a mediana não gera sinal (doutorado 0% x 0%) (#421)", {
+  model <- fixture_school_profile_model()
+  i <- model$data$indicador == "prop_doutorado"
+  model$data$escola[i] <- 0
+  model$data$cluster_p25[i] <- 0
+  model$data$cluster_p50[i] <- 0
+  model$data$cluster_p75[i] <- 0.02
+
+  cmp <- analyze_school_profile(model)$tables$indicadores_comparados
+  expect_equal(cmp$quartil_no_cluster[cmp$indicador == "prop_doutorado"], 1L)
+  expect_false(cmp$atencao[cmp$indicador == "prop_doutorado"])
+})
+
+test_that("cache com regra de sinais anterior não é servido (#421)", {
+  expect_false(.profile_cache_regra_atual(list(metadata = list())))
+  expect_false(.profile_cache_regra_atual(list(metadata = list(regra_sinais = 1L))))
+  expect_true(.profile_cache_regra_atual(list(metadata = list(regra_sinais = PROFILE_REGRA_SINAIS))))
 })
 
 test_that("a coluna `cluster` das comparações é a mediana (p50) do cluster", {
