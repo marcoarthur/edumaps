@@ -9,7 +9,9 @@
 - Issues da curadoria P3–P6: #427 (agrupamento, AN-05/09), #428 (fontes,
   AN-08), #429 (mercado local, AN-10, decisão de produto), #430 (ranking,
   AN-11, decisão de produto), #431 (detalhes, AN-06/07).
-- **#431 → PR #432** (`fix/busca-municipio-pt-br`):
+- **#431 → PR #432** (`fix/busca-municipio-pt-br`), mergeado em e8b3b0d; imagens
+  locais do main conferidas por ID; nota técnica 201 e ciclo
+  `ciclos/2026-11-15-busca-e-linguagem.md`:
   - busca: `codigo_ibge` do autocompletar filtra; texto livre com
     `contrib.unaccent` e nome igual > prefixo > parcial; sugestões com sigla;
   - `comLocale` (Carbon PT-BR) nos 4 wrappers de gráfico;

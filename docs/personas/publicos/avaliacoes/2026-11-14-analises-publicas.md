@@ -102,3 +102,5 @@ Protocolo em [`../README.md`](../README.md).
   (AN-12) e ENV-01. Fechamento em
   [`../ciclos/2026-11-15-analises-legiveis.md`](../ciclos/2026-11-15-analises-legiveis.md).
   AN-05 a AN-11 viraram as issues #427 a #431.
+- 2026-11-15: #431 (PR #432) mergeado: AN-06 e AN-07 resolvidos. Fechamento em
+  [`../ciclos/2026-11-15-busca-e-linguagem.md`](../ciclos/2026-11-15-busca-e-linguagem.md).

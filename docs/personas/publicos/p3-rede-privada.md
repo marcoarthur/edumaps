@@ -37,6 +37,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p3--rede-privada-mantenedor): sem impacto direto.
 - [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p3--rede-privada-mantenedor): não adotaria (mantido; sem reavaliação). Resolvido AN-03; fica AN-10.
+- [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

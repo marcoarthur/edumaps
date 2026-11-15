@@ -91,6 +91,7 @@ planos de gestão, visão da rede, INEP, idempotência (#416), embeddings diári
 (#413), as tasks diárias novas, as escolas semelhantes com etapa em comum e a
 chave de cache do perfil com a regra dos sinais (#421), e o financeiro com
 `ausencia`/`cobertura` sem o vazamento da folha da secretaria (#422).
+A busca por município com código IBGE e a ordem das sugestões (#431).
 
 O `cpanfile` não pede mais o PDL (#419). O PDL já instalado no host pode
 ficar: nada mais o carrega, e não é preciso desinstalar.
@@ -124,7 +125,8 @@ rex -H backend.edumaps deploy_frontend_dev
 Leva o template novo do nginx (só a SPA e `/api/`, PR #344), as travas de
 envio (#415/#416), planos, visão da rede e documento da rede, os totais das
 roscas e o "menor é melhor" (#421) e a ausência no financeiro e na folha
-(#422). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
+(#422), os menus dos gráficos em PT-BR e a página de Análises sem jargão
+(#431). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
 template do Rexfile.
 
 - [ ] O bundle novo está no ar: a chave de envio está nele.
@@ -146,7 +148,7 @@ Leva `ivet-v1.3` (acesso em log, #295/PR #362) e a instalação completa das
 dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
-(`regra_sinais` diferente).
+(`regra_sinais` diferente; agora 3, com o rótulo do IDEB com a etapa, #431).
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

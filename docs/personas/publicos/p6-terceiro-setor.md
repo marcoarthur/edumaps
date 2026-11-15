@@ -34,6 +34,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-14 — envio sem duplicidade no servidor](ciclos/2026-11-14-envio-sem-duplicidade.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-14 — suíte em paralelo e backend sem o PDL](ciclos/2026-11-14-build-e-testes.md#p6--terceiro-setor-e-jornalismo-de-dados): sem impacto direto.
 - [2026-11-15 — análises públicas legíveis e ausência honesta](ciclos/2026-11-15-analises-legiveis.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido; sem reavaliação). Resolvido AN-01; ficam AN-08, AN-11.
+- [2026-11-15 — busca por município, menus em PT-BR e menos jargão](ciclos/2026-11-15-busca-e-linguagem.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Exportação em PT-BR e município certo; ficam #428 e #430.
 
 ## Pendências
 
