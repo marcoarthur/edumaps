@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-15 (bn) — #427 em dois PRs (#433, #434), aguardam merge
+
+- **PR #433** (`feat/agrupamento-execucoes`, Refs #427): change Sqitch
+  `analytics_cluster_execucoes` (execuções + atribuições com valores, 90
+  dias); o job cria a execução, tira as escolas que não funcionam mais e
+  passa `run_id` ao R **sem cache** (cache hit não gravaria nada); rotas
+  `/api/cluster/execucoes/:run_id` (+ `/escolas`, `/csv`); tela com caixa
+  Universo, `?execucao=` e CSV. Limpeza das vencidas a cada execução nova
+  (não tarefa diária). Deployada no dev local e no banco do CI local.
+- **PR #434** (`feat/agrupamento-rotulos`, empilhado no #433, Closes #427):
+  "Grupo pequeno (N escolas)" (< 5 ou < 2%), "Grupo N" no lugar de
+  "Cluster N", destaques por z-score no `extra_metrics`, tabela legível.
+  **Retarget para main antes do merge do #433 com --delete-branch.**
+- Pegadinha: `co_entidade` bigint vem como integer64 do RPostgres; casar por
+  rownames perde o valor. Usar o mesmo vetor de ids.
+
 ## Sessão 2026-11-15 (bm) — issues #427 a #431 e PR #432 (#431)
 
 - Issues da curadoria P3–P6: #427 (agrupamento, AN-05/09), #428 (fontes,
