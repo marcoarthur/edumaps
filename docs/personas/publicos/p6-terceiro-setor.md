@@ -43,10 +43,27 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas (2026-11-14): **reavaliar** — AN-01, AN-08 e AN-11
-  entregues (PRs #425, #435 e #436).
+- Análises públicas: reavaliada em 2026-11-15 (adotaria). Pendentes RV-01
+  e RV-04, sem issue (aguardam o developer).
 
 ## Entradas
+
+### 2026-11-15 — Análises públicas (reavaliação)
+
+**Veredito:** adotaria com ressalvas (só a comparação de redes) →
+**adotaria**. Consolidação em
+[`avaliacoes/2026-11-15-analises-publicas-reavaliacao.md`](avaliacoes/2026-11-15-analises-publicas-reavaliacao.md).
+
+- **Resolveu:**
+  - "Quais redes mais melhoraram?" tem resposta (`/ranking`, ordem pela
+    variação, Brasil ou UF), com ano, universo, CSV e link (AN-11).
+  - Toda tela diz a fonte, o ano e a carga (AN-08).
+  - O total da rosca está certo (AN-01).
+- **Atrapalha:** RV-01, o topo ordenado pela variação é de redes pequenas
+  com saltos atípicos sem aviso. É publicável só com cuidado.
+- **Detalhe:** RV-04, o ranking de escolas não ordena do menor para o maior
+  ("onde estão as escolas sem infraestrutura?").
+
 
 ### 2026-11-14 — Análises públicas (primeira avaliação)
 

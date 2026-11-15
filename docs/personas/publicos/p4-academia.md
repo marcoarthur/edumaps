@@ -49,10 +49,29 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas (2026-11-14): **reavaliar** — AN-05, AN-08 e AN-09
-  entregues (PRs #433, #434 e #435).
+- Análises públicas: reavaliada em 2026-11-15 (adotaria com ressalvas).
+  Pendentes RV-01, RV-02, RV-03 e RV-05, sem issue (aguardam o developer).
 
 ## Entradas
+
+### 2026-11-15 — Análises públicas (reavaliação)
+
+**Veredito:** não adotaria por ora → **adotaria com ressalvas** (exploração e
+recortes citáveis; ainda não como base de artigo). Consolidação em
+[`avaliacoes/2026-11-15-analises-publicas-reavaliacao.md`](avaliacoes/2026-11-15-analises-publicas-reavaliacao.md).
+
+- **Resolveu:** os três bloqueios (AN-05, AN-08 e AN-09).
+  - O agrupamento diz o universo, guarda parâmetros e versão dos dados, tem
+    link por 90 dias e CSV com os valores.
+  - `/fontes` traz o ano lido da base, a data da carga e o SHA-256.
+- **Atrapalha:**
+  - RV-01: resultados atípicos sem aviso no topo do ranking de redes;
+  - RV-02: sem exportação multi-indicador direta; o agrupamento serve de
+    exportador.
+- **Detalhes:**
+  - RV-03: o CSV do agrupamento não traz o ano dos dados;
+  - RV-05: falta o porte do município como contexto no ranking.
+
 
 ### 2026-11-14 — Análises públicas (primeira avaliação)
 

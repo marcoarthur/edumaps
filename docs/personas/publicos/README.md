@@ -61,7 +61,7 @@ de gestão (§6) recomenda mostrar a funcionalidade a 2 ou 3 gestores reais.
 |---|---|---|---|---|---|---|---|
 | Planos de gestão acompanháveis (épico #368) | ✅ | ✅ parcial | — | — | — | — | [2026-11-12](avaliacoes/2026-11-12-planos-de-gestao.md), [reavaliação](avaliacoes/2026-11-12-planos-de-gestao-reavaliacao.md) |
 | Visão da rede (#375) | ✅ parcial | ✅ | — | — | — | — | [2026-11-13](avaliacoes/2026-11-13-visao-da-rede.md) |
-| Análises públicas (busca, painel e perfil da escola, semelhantes, ranking, agrupamento, comparação de redes, financeiro, folha) | — | — | ✅ | ✅ | ✅ registro | ✅ | [2026-11-14](avaliacoes/2026-11-14-analises-publicas.md) |
+| Análises públicas (busca, painel e perfil da escola, semelhantes, ranking, agrupamento, comparação de redes, financeiro, folha) | — | — | ✅ | ✅ | ✅ registro | ✅ | [2026-11-14](avaliacoes/2026-11-14-analises-publicas.md), [reavaliação P4/P6](avaliacoes/2026-11-15-analises-publicas-reavaliacao.md) |
 
 Motivos de "não se aplica" para os planos de gestão:
 
