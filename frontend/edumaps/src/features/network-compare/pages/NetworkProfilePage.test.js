@@ -12,11 +12,11 @@ describe("NetworkProfilePage", () => {
   afterEach(() => window.history.replaceState({}, "", "/"));
 
   it("carrega e renderiza o perfil da rede via MSW", async () => {
-    renderWithQuery("?ibge=3551702");
+    renderWithQuery("?codigo_ibge=3551702");
 
     await screen.findByText(/Sertãozinho/);
     expect(screen.getByText("Rede vs. Brasil")).toBeInTheDocument();
-    expect(screen.getByText("Distribuição por cluster")).toBeInTheDocument();
+    expect(screen.getByText("Distribuição por grupo")).toBeInTheDocument();
     expect(screen.getByText("Alta perfil escolar")).toBeInTheDocument();
     expect(screen.getByText("Baixa perfil escolar")).toBeInTheDocument();
     expect(
@@ -24,8 +24,14 @@ describe("NetworkProfilePage", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("variação segue o sentido do indicador e usa p.p. nas proporções (#421)", async () => {
+  it("aceita o parâmetro antigo ?ibge= dos links já compartilhados (#431)", async () => {
     renderWithQuery("?ibge=3551702");
+    await screen.findByText(/Sertãozinho/);
+    expect(screen.getByText("Rede vs. Brasil")).toBeInTheDocument();
+  });
+
+  it("variação segue o sentido do indicador e usa p.p. nas proporções (#421)", async () => {
+    renderWithQuery("?codigo_ibge=3551702");
     await screen.findByText(/Sertãozinho/);
 
     // sem especialização abaixo do Brasil = melhor: verde, em p.p.
@@ -40,7 +46,7 @@ describe("NetworkProfilePage", () => {
   });
 
   it("explica cada seção com legenda e caixa (?)", async () => {
-    renderWithQuery("?ibge=3551702");
+    renderWithQuery("?codigo_ibge=3551702");
 
     await screen.findByText(/Sertãozinho/);
     expect(

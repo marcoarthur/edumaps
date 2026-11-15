@@ -17,7 +17,8 @@ ultima_revisao: 2026-11-06
 ## Em 30 segundos
 
 Em **Análises**, você escolhe uma região e um conjunto de indicadores, e o
-EduMaps separa as escolas em **grupos (clusters)** de perfil parecido,
+EduMaps separa as escolas em **grupos** de perfil parecido (no método
+estatístico, *clusters*),
 mostrando cada grupo com uma cor no mapa. Serve para planejar ações por grupo
 em vez de tratar toda a rede do mesmo jeito.
 
@@ -25,21 +26,22 @@ em vez de tratar toda a rede do mesmo jeito.
 
 1. **Onde ir:** menu **Análises** (ou o botão **Ver análises** na página
    inicial). Não precisa de login.
-2. **Recorte:** em **Recorte geotag**, escolha a **Região**; depois, se quiser,
+2. **Recorte:** em **Recorte**, escolha a **Região**; depois, se quiser,
    a **UF** e o **Município**. Cada campo só abre depois do anterior.
-3. **Indicadores:** escolha um conjunto pronto (preset) ou monte sua lista com
+3. **Indicadores:** escolha um conjunto pronto ou monte sua lista com
    **Buscar indicador…**. Alguns conjuntos pedem o **Ano IDEB/SAEB**.
-4. **Parâmetros:** escolha o **Algoritmo** e o **Nº de clusters** (de 2 a 10).
+4. **Parâmetros:** escolha o **Algoritmo** (cada um com uma frase sobre como
+   forma os grupos) e o **Nº de grupos** (de 2 a 10).
    Na dúvida, use **K-Means** com 4 ou 5 grupos.
-5. **Gerar:** clique em **Gerar clusters** e aguarde (*"Processando clusters…
-   aguarde"*).
+5. **Agrupar:** clique em **Agrupar escolas** e aguarde (*"Agrupando as
+   escolas… aguarde"*).
 6. **Como saber que deu certo:** o mapa mostra as escolas coloridas por grupo e
-   a tabela **Resumo dos clusters** lista cada grupo com o número de escolas e
+   a tabela **Resumo dos grupos** lista cada grupo com o número de escolas e
    os indicadores que mais o distinguem.
 
 ## Entendendo os resultados
 
-- **Cluster** é só um rótulo de grupo (1, 2, 3…): o número não indica melhor ou
+- **Grupo** é só um rótulo (1, 2, 3…): o número não indica melhor ou
   pior. Leia a coluna **Indicadores principais** para saber o que caracteriza
   cada grupo.
 - Mudar o recorte, os indicadores ou o número de grupos muda o resultado: é uma

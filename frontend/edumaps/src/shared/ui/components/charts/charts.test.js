@@ -9,6 +9,7 @@ import RadarChart from "./RadarChart.svelte";
 import LineChart from "./LineChart.svelte";
 import BarChartGrouped from "./BarChartGrouped.svelte";
 import DonutChart from "./DonutChart.svelte";
+import { comLocale } from "./localeCarbon.js";
 
 vi.mock("@carbon/charts-svelte", async () => {
   const stub = (
@@ -40,6 +41,24 @@ describe("wrappers de gráfico (Carbon)", () => {
     expect(stub).toBeInTheDocument();
     // height padrão do wrapper (320px) injetado nas options
     expect(stub).toHaveAttribute("data-height", "320");
+  });
+
+  it.each([
+    ["RadarChart", RadarChart],
+    ["LineChart", LineChart],
+    ["BarChartGrouped", BarChartGrouped],
+    ["DonutChart", DonutChart],
+  ])("%s passa o menu do Carbon em PT-BR (#431)", (name, Component) => {
+    render(Component, { props: { data: DATA, options: { title: name } } });
+    const stub = document.querySelector('[data-testid="carbon-chart-stub"]');
+    expect(stub).toHaveAttribute("data-export-csv", "Exportar CSV");
+  });
+
+  it("comLocale preserva a tradução própria da tela", () => {
+    const o = comLocale({ title: "x", locale: { translations: { toolbar: { exportAsCSV: "CSV!" } } } });
+    expect(o.title).toBe("x");
+    expect(o.locale.translations.toolbar.exportAsCSV).toBe("CSV!");
+    expect(o.locale.translations.toolbar.showAsTable).toBe("Ver como tabela");
   });
 
   it("aceita height customizado", () => {

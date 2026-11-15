@@ -8,7 +8,8 @@
   let { data = [], options = {} } = $props();
 </script>
 
-<div data-testid="carbon-chart-stub" data-rows={data.length} data-height={options.height ?? 0}>
+<div data-testid="carbon-chart-stub" data-rows={data.length} data-height={options.height ?? 0}
+  data-export-csv={options.locale?.translations?.toolbar?.exportAsCSV ?? ""}>
   {#if options.title}
     <p>⚛ {options.title}</p>
   {/if}

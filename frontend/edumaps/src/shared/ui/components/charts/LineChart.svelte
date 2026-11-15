@@ -2,6 +2,7 @@
   // src/shared/ui/components/charts/LineChart.svelte
   import { onMount, onDestroy } from "svelte";
   import { LineChart as CarbonLineChart } from "@carbon/charts-svelte";
+  import { comLocale } from "./localeCarbon.js";
 
   let { data = [], options = {}, height = "320px", class: className = "" } = $props();
 
@@ -34,8 +35,11 @@
   });
 
   onDestroy(() => resizeObserver?.disconnect());
+
+  // Menus e tabela do Carbon em PT-BR (#431).
+  const opcoesTraduzidas = $derived(comLocale(chartOptions));
 </script>
 
 <div bind:this={holder} class="relative w-full overflow-hidden {className}" style:height>
-  <CarbonLineChart data={data} options={chartOptions} />
+  <CarbonLineChart data={data} options={opcoesTraduzidas} />
 </div>

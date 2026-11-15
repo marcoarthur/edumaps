@@ -119,7 +119,7 @@
       });
       const progress = await getJobProgress(jobId);
       if (progress.state === "failed") {
-        throw new Error(progress.error || "Falha ao processar clusters no R.");
+        throw new Error(progress.error || "Falha ao agrupar as escolas.");
       }
       if (progress.state === "finished") return;
     }
@@ -131,11 +131,11 @@
       return;
     }
     if (needsYear && !anoIdeb) {
-      error = `O preset "${currentPreset?.name}" exige escolher o ano IDEB/SAEB.`;
+      error = `O conjunto "${currentPreset?.name}" exige escolher o ano IDEB/SAEB.`;
       return;
     }
     if (selectedFeatures.length === 0) {
-      error = "Selecione ao menos um indicador (coluna) para clusterizar.";
+      error = "Selecione ao menos um indicador para agrupar as escolas.";
       return;
     }
 
@@ -183,7 +183,7 @@
         clusterSummary = [];
       }
     } catch (err) {
-      error = apiMessage(err, "Erro ao gerar os clusters.");
+      error = apiMessage(err, "Erro ao agrupar as escolas.");
     } finally {
       loading = false;
     }
@@ -204,7 +204,7 @@
         selectedFeatures = [...first.features];
       }
     } catch (err) {
-      error = apiMessage(err, "Erro ao carregar presets.");
+      error = apiMessage(err, "Erro ao carregar os conjuntos de indicadores.");
     }
     try {
       columns = await getColumns();
@@ -235,9 +235,9 @@
 <div class="space-y-6">
   <header class="flex items-center justify-between flex-wrap gap-3" data-tour="analises-cabecalho">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Clusterizar escolas por geotag</h1>
+      <h1 class="text-2xl font-bold text-gray-900">Agrupar escolas com perfil parecido</h1>
       <p class="text-sm text-gray-600 mt-1">
-        Escolha um preset de indicadores (ou monte sua própria lista), recorte a região e veja as escolas no mapa coloridas por cluster.
+        Escolha um conjunto de indicadores (ou monte sua própria lista), recorte a região e veja no mapa as escolas coloridas pelo grupo a que pertencem.
       </p>
     </div>
     <button
@@ -250,7 +250,7 @@
 
   <!-- Recorte geotag -->
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-5" data-tour="analises-recorte">
-    <p class="font-semibold text-gray-800 text-sm mb-3">Recorte geotag</p>
+    <p class="font-semibold text-gray-800 text-sm mb-3">Recorte</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
@@ -305,7 +305,7 @@
   <div class="bg-white border border-gray-200 rounded-card shadow-card p-5">
     <p class="font-semibold text-gray-800 text-sm mb-3">Parâmetros</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" data-tour="analises-algoritmo">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start" data-tour="analises-algoritmo">
       <div>
         <label for="algorithm" class="block text-sm text-gray-600 mb-1">Algoritmo</label>
         <select id="algorithm" bind:value={algorithm} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
@@ -313,20 +313,23 @@
             <option value={a.value}>{a.label}</option>
           {/each}
         </select>
+        <p class="mt-1 text-xs text-gray-500" data-testid="algoritmo-descricao">
+          {ALGORITHMS.find((a) => a.value === algorithm)?.descricao ?? ""}
+        </p>
       </div>
 
       {#if algorithm === "dbscan"}
         <div>
-          <label for="eps" class="block text-sm text-gray-600 mb-1">eps</label>
+          <label for="eps" class="block text-sm text-gray-600 mb-1">Distância máxima entre vizinhas (eps)</label>
           <input id="eps" type="number" step="0.1" bind:value={eps} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
         </div>
         <div>
-          <label for="minPts" class="block text-sm text-gray-600 mb-1">min_pts</label>
+          <label for="minPts" class="block text-sm text-gray-600 mb-1">Mínimo de escolas por grupo (min_pts)</label>
           <input id="minPts" type="number" bind:value={minPts} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
         </div>
       {:else}
         <div>
-          <label for="clusters" class="block text-sm text-gray-600 mb-1">Nº de clusters</label>
+          <label for="clusters" class="block text-sm text-gray-600 mb-1">Nº de grupos</label>
           <input id="clusters" type="number" min="2" max="10" bind:value={clusters} class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
         </div>
       {/if}
@@ -335,15 +338,15 @@
         onclick={generateClusters}
         data-tour="analises-gerar"
         disabled={loading}
-        class="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
+        class="md:mt-6 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
       >
-        {loading ? "Processando…" : "Gerar clusters"}
+        {loading ? "Agrupando…" : "Agrupar escolas"}
       </button>
     </div>
 
     <div class="mt-6" data-tour="analises-indicadores">
       <p class="block text-sm text-gray-600 mb-2">
-        Indicadores (features) — presets prontos ou seleção livre com busca
+        Indicadores: conjuntos prontos ou seleção livre com busca
       </p>
 
       <div class="mb-3">
@@ -394,15 +397,15 @@
       <ClusterSummaryTable summary={clusterSummary} />
     {:else if clustered}
       <div class="text-center py-16 text-sm text-gray-500">
-        Nenhuma escola com cluster gerado para este recorte.
+        Nenhuma escola agrupada neste recorte.
       </div>
     {:else if loading}
       <div class="text-center py-16 text-sm text-gray-500">
-        Processando clusters no motor R… aguarde.
+        Agrupando as escolas… aguarde.
       </div>
     {:else}
       <div class="text-center py-16 text-sm text-gray-500">
-        Defina o recorte e clique em "Gerar clusters" para visualizar o mapa.
+        Defina o recorte e clique em "Agrupar escolas" para ver o mapa.
       </div>
     {/if}
   </div>

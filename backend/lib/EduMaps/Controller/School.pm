@@ -326,15 +326,18 @@ sub search_pageable($self) {
   my $v = $self->validation;
   $v->optional($_, 'trim')->like(qr/[1-9]\d*/) for qw(page per_page);
   $v->optional($_, 'trim')->like(qr/.{3,100}/) for qw/escola municipio/;
+  $v->optional('codigo_ibge', 'trim')->like(qr/^\d{7}$/);
   return $self->bad_req if $self->any_error;
 
   my $params = {};
+  $params->{codigo_ibge} = $self->param('codigo_ibge');
   $params->{page}       = $self->param('page')        // 1;
   $params->{per_page}   = $self->param('per_page')    // 10;
   $params->{municipio}  = $self->param('municipio')   // '';
   $params->{escola}     = $self->param('escola')      // '';
 
-  my $failed_args = $params->{escola} eq $params->{municipio} && $params->{escola} eq '';
+  my $failed_args = $params->{escola} eq '' && $params->{municipio} eq ''
+    && !$params->{codigo_ibge};
   return $self->bad_req if $failed_args;
 
   my $result = $self->instantiate_model(model => 'School')->search_pageable($params);

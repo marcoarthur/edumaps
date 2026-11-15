@@ -60,11 +60,13 @@ PROFILE_DIRECAO <- c(
   inse                    = "maior"
 )
 
-# Versão da regra dos sinais gravada no payload. Perfil materializado com
-# versão anterior deixa de ser servido do cache (read_school_profile_cache).
-# 1: quartil inferior para todos (#105). 2: sentido do indicador e só pior
-# que a mediana (#421).
-PROFILE_REGRA_SINAIS <- 2L
+# Versão do perfil gravada no payload (`metadata$regra_sinais`; o nome ficou
+# da #421). Perfil materializado com versão anterior deixa de ser servido do
+# cache (read_school_profile_cache), e o backend usa o mesmo número na chave
+# do seu cache. 1: quartil inferior para todos (#105). 2: sentido do
+# indicador e só pior que a mediana (#421). 3: IDEB e nota SAEB rotulados
+# com a etapa e o ano da escola (#431).
+PROFILE_REGRA_SINAIS <- 3L
 
 #' Expressões SQL (whitelist fechado) de cada indicador do perfil
 #'
@@ -292,6 +294,33 @@ SELECT * FROM pop
     pop_body
   )
   DBI::dbGetQuery(con, sql, params = list(co_entidade, as.integer(ano)))
+}
+
+#' Etapa e ano do IDEB usados no perfil da escola (#431)
+#'
+#' Mesma regra do `.profile_pop_body`: edição mais recente do IDEB e, com
+#' mais de uma etapa, a de maior nota média. Sem IDEB, `NULL` nos dois.
+#'
+#' @keywords internal
+.school_profile_ideb_etapa <- function(con, schema_q, co_entidade) {
+  row <- tryCatch(
+    DBI::dbGetQuery(
+      con,
+      sprintf(
+        "SELECT i.etapa, i.ano
+           FROM %s.ideb_notas_escolas i
+          WHERE i.id_escola = $1::bigint
+            AND i.ano = (SELECT max(ano) FROM %s.ideb_notas_escolas)
+          ORDER BY i.nota_media DESC
+          LIMIT 1",
+        schema_q, schema_q
+      ),
+      params = list(co_entidade)
+    ),
+    error = function(e) data.frame()
+  )
+  if (nrow(row) == 0) return(list(etapa = NULL, ano = NULL))
+  list(etapa = as.character(row$etapa[1]), ano = as.integer(row$ano[1]))
 }
 
 #' Média de UM escopo ao vivo (fallback quando falta referência)
@@ -738,6 +767,9 @@ load_school_profile.postgres_source <- function(
     sg_uf = first$sg_uf,
     nu_ano_censo = ano
   )
+  ideb <- .school_profile_ideb_etapa(con, schema_q, co_entidade)
+  school_meta$ideb_etapa <- ideb$etapa
+  school_meta$ideb_ano <- ideb$ano
 
   # --- Comparativos: referência pré-computada, senão live -----------
   ref_long <- NULL

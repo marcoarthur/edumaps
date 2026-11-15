@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/svelte";
+import { fetchMunicipioSuggestions } from "../api/autocompleteApi.js";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import SchoolSearchForm from "./SchoolSearchForm.svelte";
 import { eventBus } from "@/shared/events";
@@ -54,12 +55,32 @@ describe("SchoolSearchForm", () => {
     await fireEvent.input(screen.getByLabelText("Nome da Escola"), { target: { value: "Paulo Freire" } });
     await fireEvent.click(screen.getByRole("button", { name: /buscar escolas/i }));
 
-    const expectedFilters = { escola: "Paulo Freire", municipio: "" };
+    const expectedFilters = { escola: "Paulo Freire", municipio: "", codigo_ibge: null };
     expect(onSearch).toHaveBeenCalledWith(expectedFilters);
     expect(busHandler).toHaveBeenCalledWith(
       expectedFilters,
       expect.objectContaining({ source: "SchoolSearchForm" })
     );
+  });
+
+  it("município escolhido no autocompletar vai como codigo_ibge; editar o texto descarta (#431)", async () => {
+    fetchMunicipioSuggestions.mockResolvedValueOnce([
+      { codigo_ibge: 3205309, nome: "Vitória", uf: "ES" },
+      { codigo_ibge: 4120002, nome: "Porto Vitória", uf: "PR" },
+    ]);
+    const onSearch = vi.fn();
+    render(SchoolSearchForm, { onSearch });
+
+    const campo = screen.getByLabelText("Município");
+    await fireEvent.input(campo, { target: { value: "Vitória" } });
+    const opcao = await screen.findByText("Vitória", { selector: "[role=option] *" }, { timeout: 2000 });
+    await fireEvent.mouseDown(opcao.closest("[role=option]"));
+    await fireEvent.click(screen.getByRole("button", { name: /buscar escolas/i }));
+    expect(onSearch).toHaveBeenLastCalledWith({ escola: "", municipio: "Vitória", codigo_ibge: 3205309 });
+
+    await fireEvent.input(campo, { target: { value: "Vitória da" } });
+    await fireEvent.click(screen.getByRole("button", { name: /buscar escolas/i }));
+    expect(onSearch).toHaveBeenLastCalledWith({ escola: "", municipio: "Vitória da", codigo_ibge: null });
   });
 
   it("não submete (nem chama onSearch, nem emite) quando canSubmit é falso", async () => {

@@ -9,9 +9,9 @@ use JSON::PP;
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
 
-# Versão da regra dos sinais de atenção do perfil da escola (#421). Espelha
+# Versão do perfil da escola: regra dos sinais (#421) e rótulos (#431). Espelha
 # PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
-our $PERFIL_REGRA_SINAIS = 2;
+our $PERFIL_REGRA_SINAIS = 3;
 
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {
