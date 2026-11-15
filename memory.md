@@ -4,7 +4,12 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
-## Sessão 2026-11-15 (bn) — #427 em dois PRs (#433, #434), aguardam merge
+## Sessão 2026-11-15 (bn) — #427 em dois PRs (#433, #434), mergeados
+
+- Merge 81eaddd (#433) e a809061 (#434, retarget para main antes);
+  imagens e sqitch do main conferidos por ID; nota técnica 202 e ciclo
+  `ciclos/2026-11-15-agrupamento-reprodutivel.md`. Próximas: #428 (fontes),
+  #429/#430 (decisões de produto).
 
 - **PR #433** (`feat/agrupamento-execucoes`, Refs #427): change Sqitch
   `analytics_cluster_execucoes` (execuções + atribuições com valores, 90

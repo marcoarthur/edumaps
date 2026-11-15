@@ -104,3 +104,5 @@ Protocolo em [`../README.md`](../README.md).
   AN-05 a AN-11 viraram as issues #427 a #431.
 - 2026-11-15: #431 (PR #432) mergeado: AN-06 e AN-07 resolvidos. Fechamento em
   [`../ciclos/2026-11-15-busca-e-linguagem.md`](../ciclos/2026-11-15-busca-e-linguagem.md).
+- 2026-11-15: #427 (PRs #433 e #434) mergeado: AN-05 e AN-09 resolvidos. Fechamento em
+  [`../ciclos/2026-11-15-agrupamento-reprodutivel.md`](../ciclos/2026-11-15-agrupamento-reprodutivel.md).
