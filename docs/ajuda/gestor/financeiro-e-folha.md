@@ -30,6 +30,11 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
 
 ## Limitações conhecidas
 - **Cobertura parcial:** nem todas as escolas têm desagregação por unidade no SIOPE.
+- **Só a rede municipal:** o SIOPE traz a remuneração da rede municipal. Escola
+  estadual, federal ou privada não tem folha aqui, e a tela diz isso.
+- **Poucos municípios carregados:** quando não há folha, o painel lista de
+  quais municípios há (anos e se o dado é por escola ou só o total da
+  Secretaria).
 - **Divergências entre recortes** podem ocorrer por forma de consolidação.
 - **Atraso na publicação** dos dados oficiais.
 
@@ -40,7 +45,11 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
 
 ## Perguntas frequentes
 - **Por que o valor não bate com a escola?** Provavelmente é um valor **agregado** da rede/Secretaria, não desagregado por unidade.
-- **Não vejo "Folha" para minha escola?** Pode não haver desagregação disponível para aquele ano.
+- **Não vejo "Folha" para minha escola?** O painel diz o motivo: a escola não
+  é da rede municipal; o município ainda não foi carregado (o gestor da escola,
+  com login, pode pedir a busca no SIOPE pelo próprio painel); ou o município
+  tem folha, mas o SIOPE não traz profissionais desta escola nem um total da
+  Secretaria.
 
 ## Veja também
 - [Painel da escola](painel-da-escola.md)

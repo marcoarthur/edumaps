@@ -12,6 +12,7 @@
   import { restaurarSessao } from "@/features/gestor/utils/gestorAuth.js";
   import { fetchMe } from "@/features/gestor/api/gestorPesquisasApi.js";
   import SchoolFinance from "../components/panel/SchoolFinance.svelte";
+  import FinanceAusencia from "../components/panel/FinanceAusencia.svelte";
 
   let inep = $state(null);
   let escola = $state(null);
@@ -20,6 +21,9 @@
   let totalProfissionais = $state(0);
   let origem = $state("escola");
   let rotuloOrigem = $state(null);
+  // #422: por que não há folha e onde há (vêm do /finance)
+  let ausencia = $state(null);
+  let cobertura = $state(null);
   let loading = $state(true);
   let error = $state(null);
 
@@ -56,6 +60,8 @@
       origem = data.origem ?? "escola";
       rotuloOrigem = data.rotulo_origem ?? null;
       siope = data.siope ?? null;
+      ausencia = data.ausencia ?? null;
+      cobertura = data.cobertura ?? null;
       anoSelecionado = anosDisponiveis.at(-1) ?? null;
     } catch (err) {
       escola = null;
@@ -223,11 +229,12 @@
     {/if}
 
     {#if series.length === 0}
-      <div class="bg-white border border-gray-200 rounded-card shadow-card p-8 text-center">
-        <p class="text-gray-500">
-          Sem dados financeiros (folha de pagamento) para esta escola.
-        </p>
-      </div>
+      <FinanceAusencia
+        motivo={ausencia}
+        rede={escola?.dependencia_administrativa}
+        {cobertura}
+        {gestorDaEscola}
+      />
     {:else}
       <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} />
     {/if}

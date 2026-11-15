@@ -130,3 +130,55 @@ describe("SchoolFinancePage — SIOPE", () => {
     expect(screen.queryByText(/Dados do SIOPE/)).toBeNull();
   });
 });
+
+describe("SchoolFinancePage — ausência e cobertura (#422)", () => {
+  const COBERTURA = {
+    municipios: 2,
+    lista: [
+      { cod_municipio: "510340", municipio: "Cuiabá", uf: "MT", ano_inicial: 2025, ano_final: 2026, escolas: 169 },
+      { cod_municipio: "355410", municipio: "Ubatuba", uf: "SP", ano_inicial: 2026, ano_final: 2026, escolas: 0 },
+    ],
+  };
+  const SEM_FOLHA = (motivo, rede = "Municipal") => ({
+    ...FINANCE_MUNICIPAL,
+    escola: { ...FINANCE_MUNICIPAL.escola, dependencia_administrativa: rede },
+    series: [],
+    total_profissionais: 0,
+    ausencia: motivo,
+    cobertura: COBERTURA,
+    siope: { ...FINANCE_MUNICIPAL.siope, habilitado: rede === "Municipal" ? 1 : 0 },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.restaurarSessao.mockReturnValue(false);
+    mocks.fetchMe.mockRejectedValue(new Error("sem sessão"));
+    window.history.replaceState({}, "", `/escola/financeiro?inep=${INEP}`);
+  });
+
+  it("escola estadual: diz que o SIOPE só cobre a rede municipal e lista a cobertura", async () => {
+    mocks.getSchoolFinance.mockResolvedValue(SEM_FOLHA("nao_municipal", "Estadual"));
+    render(SchoolFinancePage);
+
+    expect(await screen.findByText(/só a remuneração da rede municipal/)).toBeInTheDocument();
+    expect(screen.getByText(/Rede desta escola: Estadual/)).toBeInTheDocument();
+    expect(screen.getByText(/Hoje há folha de pagamento de 2/)).toBeInTheDocument();
+    expect(screen.getByText(/Cuiabá \(MT\), 2025–2026: 169 escola\(s\) com folha própria/)).toBeInTheDocument();
+    expect(screen.getByText(/Ubatuba \(SP\), 2026: só o total da Secretaria/)).toBeInTheDocument();
+  });
+
+  it("município sem carga, visitante: diz que o gestor pode buscar no SIOPE", async () => {
+    mocks.getSchoolFinance.mockResolvedValue(SEM_FOLHA("municipio_sem_carga"));
+    render(SchoolFinancePage);
+
+    expect(await screen.findByText(/Ainda não há folha deste município/)).toBeInTheDocument();
+    expect(screen.getByText(/O gestor da escola, com login, pode pedir a busca/)).toBeInTheDocument();
+    expect(screen.queryByText(/Dados do SIOPE/)).toBeNull();
+  });
+
+  it("escola sem folha própria num município com folha", async () => {
+    mocks.getSchoolFinance.mockResolvedValue(SEM_FOLHA("escola_sem_folha"));
+    render(SchoolFinancePage);
+    expect(await screen.findByText(/não traz profissionais desta escola/)).toBeInTheDocument();
+  });
+});
