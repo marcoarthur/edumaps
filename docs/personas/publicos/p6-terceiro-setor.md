@@ -36,9 +36,35 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 ## Pendências
 
-- Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na
-  matriz do [`README.md`](README.md)).
+- Planos de gestão: **não se aplica** (motivo na matriz do
+  [`README.md`](README.md)).
+- Análises públicas (2026-11-14): reavaliar com AN-01 (total da rosca), AN-08
+  (fonte e ano na tela) e AN-11 (ranking de redes).
 
 ## Entradas
 
-(nenhuma)
+### 2026-11-14 — Análises públicas (primeira avaliação)
+
+**Material:** busca, comparação de redes, ranking e agrupamento, numa sessão
+no navegador com a stack local (Vitória, ES). Consolidação em
+[`avaliacoes/2026-11-14-analises-publicas.md`](avaliacoes/2026-11-14-analises-publicas.md).
+
+**O que tentou:** "posso citar este número, e com qual fonte?", "onde estão
+as escolas sem infraestrutura básica?", "quais redes mais melhoraram no
+IDEB?".
+
+**O que funciona para ela:** a comparação de redes tem link estável e
+exporta cada gráfico em CSV, e o ranking diz o ano e o universo.
+
+**Barreiras:**
+- AN-08 (bloqueia): a comparação diz "Censo Escolar e IDEB" sem o ano, e não
+  há página de fontes.
+- AN-01 (atrapalha): o total de matrículas aparece como "77" (são 77.662). Ela
+  citaria o número errado.
+- AN-11 (atrapalha): não há ranking de redes nem de municípios.
+- AN-09 (bloqueia): o agrupamento por infraestrutura não tem link nem lista
+  das escolas para a reportagem.
+- AN-06 (detalhe): a busca por "Vitória" não acha Vitória (ES).
+
+**Veredito:** **adotaria com ressalvas**, só a comparação de redes, e
+conferindo cada número na fonte original.

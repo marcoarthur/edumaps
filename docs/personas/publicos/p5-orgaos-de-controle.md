@@ -43,7 +43,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   [`README.md`](README.md)). Se a decisão de posicionamento incluir o
   fiscal, avaliar o relatório do plano como **peça recebida** na prestação de
   contas.
+- Análises públicas (2026-11-14): reavaliar quando a folha cobrir mais
+  municípios (AN-12) e a fonte e a data estiverem na tela (AN-08).
 
 ## Entradas
 
-(nenhuma)
+### 2026-11-14 — Análises públicas (primeira avaliação, só registro)
+
+**Material:** painel financeiro, folha, comparação de redes, perfil da rede
+e ranking, numa sessão no navegador com a stack local (Vitória, ES, e
+Cuiabá, MT, onde há folha por escola). Consolidação em
+[`avaliacoes/2026-11-14-analises-publicas.md`](avaliacoes/2026-11-14-analises-publicas.md).
+
+**O que tentou:** "este município gasta e entrega parecido com os
+semelhantes?", "a prestação de contas se sustenta nos dados públicos?".
+
+**O que funciona para ele:** a folha por escola em Cuiabá (custo mensal,
+profissionais por mês, por categoria, folha detalhada por competência) e a
+comparação das quatro redes do município.
+
+**Barreiras:**
+- AN-12 (atrapalha): a folha cobre 3 municípios.
+- AN-04 (atrapalha): onde não há dado, a folha diz "Erro ao carregar" e o
+  financeiro não diz por quê.
+- AN-01 (atrapalha): o total do custo por categoria aparece como "NaN".
+- AN-08 (bloqueia): nenhuma tela diz a fonte e a data da extração.
+- AN-11 (atrapalha): não compara municípios semelhantes.
+
+**Veredito:** **não adotaria**. É só registro: a persona não orienta produto
+até a decisão de posicionamento.

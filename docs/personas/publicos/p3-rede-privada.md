@@ -39,9 +39,38 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 ## Pendências
 
-- Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na
-  matriz do [`README.md`](README.md)).
+- Planos de gestão: **não se aplica** (motivo na matriz do
+  [`README.md`](README.md)).
+- Análises públicas (2026-11-14): reavaliar quando houver leitura de mercado
+  local (AN-10) e as escolas semelhantes respeitarem a etapa (AN-03).
 
 ## Entradas
 
-(nenhuma)
+### 2026-11-14 — Análises públicas (primeira avaliação)
+
+**Material:** busca, painel e perfil da escola, escolas semelhantes,
+agrupamento e comparação de redes, numa sessão no navegador com a stack local
+(Vitória, ES). Consolidação em
+[`avaliacoes/2026-11-14-analises-publicas.md`](avaliacoes/2026-11-14-analises-publicas.md).
+
+**O que tentou:** "quantas crianças há em volta da unidade e quem as
+atende?", "quais concorrentes estão perto e como se comparam?".
+
+**O que funciona para ele:** o perfil da escola compara a unidade com o
+município, a rede, o Brasil e o grupo, com o Censo e a data da atualização. A
+comparação de redes mostra o peso da rede privada no município (101 escolas,
+28,6% das matrículas em Vitória).
+
+**Barreiras:**
+- AN-10 (bloqueia): não há leitura de mercado local. A população do entorno
+  existe, mas só no painel do gestor.
+- AN-03 (atrapalha): as "escolas semelhantes" de uma escola de fundamental
+  trazem creches, e a distância aparece como "0.00". Ele não usaria isso como
+  concorrência.
+- AN-05 (atrapalha): o agrupamento tem nomes de variável e um grupo de uma
+  escola só chamado "média qualidade".
+- AN-07 (detalhe): jargão ("geotag", "K-Means", "motor R").
+
+**Veredito:** **não adotaria.** A ferramenta ainda é pensada para a escola
+pública, que é o que o faz desistir; o benchmark do perfil é o que o traria
+de volta.

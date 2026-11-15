@@ -42,9 +42,41 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 ## Pendências
 
-- Nenhuma avaliação ainda. Planos de gestão: **não se aplica** (motivo na
-  matriz do [`README.md`](README.md)).
+- Planos de gestão: **não se aplica** (motivo na matriz do
+  [`README.md`](README.md)).
+- Análises públicas (2026-11-14): reavaliar com AN-08 (fontes e versão na
+  tela), AN-09 (agrupamento reprodutível) e AN-05 (universo do agrupamento).
 
 ## Entradas
 
-(nenhuma)
+### 2026-11-14 — Análises públicas (primeira avaliação)
+
+**Material:** agrupamento, escolas semelhantes, ranking, perfil da escola e
+da rede, comparação de redes, numa sessão no navegador com a stack local
+(Vitória, ES). Consolidação em
+[`avaliacoes/2026-11-14-analises-publicas.md`](avaliacoes/2026-11-14-analises-publicas.md).
+
+**O que tentou:** agrupar as escolas de Vitória por infraestrutura e
+relacionar com o IDEB; ver onde a escola fica contra o município, a rede e
+o Brasil.
+
+**O que funciona para ela:** o perfil diz o Censo usado (2025) e quando foi
+atualizado; a evolução do IDEB e do SAEB vem desde 2005; o ranking diz o
+universo ("de 180").
+
+**Barreiras:**
+- AN-09 (bloqueia): o agrupamento não se reproduz. A URL não guarda os
+  parâmetros, e não há exportação nem lista das escolas.
+- AN-08 (bloqueia): não há página pública de fontes, metodologia e versão dos
+  dados.
+- AN-05 (atrapalha): 167 escolas no mapa, 180 no resumo e 226 no município,
+  sem dizer quem ficou de fora. Para ela, o dado ausente tem que aparecer
+  como ausente.
+- AN-02 (atrapalha): o sinal de atenção lê ao contrário os indicadores em
+  que menor é melhor.
+- AN-03 (atrapalha): a distância das escolas semelhantes aparece como
+  "0.00", sem método.
+
+**Veredito:** **não adotaria** por ora. Usaria para explorar, não para
+publicar: número sem método e resultado que não se reproduz são o que a faz
+desistir.
