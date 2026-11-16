@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bx) — #453 (PR #456) mergeado
+
+- #453 → PR #456 (62c4dbe), só frontend: CSV de redes com `posicao_valor`
+  (renomeado de `posicao`, decisão do developer) e `posicao_variacao`;
+  `variacao()` escreve "0" no lugar de "−0"; nota com "N redes sem variação:
+  tinham menos de M escolas com dado em <ano anterior>" (contagem da própria
+  lista; motivo único pelo CASE do modelo). NE mín. 10 = 105. Os runs do CI
+  do PR demoraram minutos para aparecer: esperar com loop por headSha.
+  Nota técnica 213, ciclo `2026-11-16-variacao-csv.md`. Fica #454.
+
 ## Sessão 2026-11-16 (bw) — avaliação da P6, #452 (PR #455) mergeado
 
 - Terceira rodada da P6 (pautas do NE: redes que mais melhoraram; escolas

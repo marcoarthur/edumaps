@@ -46,6 +46,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: o CSV diz o recorte da posição.
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: link que abre na linha do município.
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-01 e VJ-04 resolvidos; ficam #453 e #454.
+- [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-02 e VJ-03 resolvidos; fica #454.
 
 ## Pendências
 
@@ -53,8 +54,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
-  VJ-05: VJ-01 e VJ-04 entregues (#455); pendentes #453 (VJ-02 e VJ-03) e
-  #454 (VJ-05).
+  VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
+  operacional).
 
 ## Entradas
 

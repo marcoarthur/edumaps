@@ -113,3 +113,8 @@ VJ-04), **#453** (VJ-02 e VJ-03) e **#454** (VJ-05).
   dicionário; latitude e longitude na base). Fechamento em
   [`../ciclos/2026-11-16-infra-inexistente.md`](../ciclos/2026-11-16-infra-inexistente.md).
   Ficam #453 (VJ-02 e VJ-03) e #454 (VJ-05).
+- 2026-11-16: #453 (PR #456) mergeado: VJ-02 e VJ-03 resolvidos
+  (`posicao_valor` e `posicao_variacao` no CSV, "0" sem sinal, a nota conta
+  as redes sem variação e diz o motivo). Fechamento em
+  [`../ciclos/2026-11-16-variacao-csv.md`](../ciclos/2026-11-16-variacao-csv.md).
+  Fica #454 (VJ-05, operacional).
