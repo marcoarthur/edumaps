@@ -51,6 +51,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: compara a rede com as de porte parecido da região.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: CSV das escolas com o município e a rede.
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: a própria rede entre as de mesmo porte na região, e o motivo quando some.
+- [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: escolas sem esgoto ou energia, com mapa.
 
 ## Pendências
 

@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bw) — avaliação da P6, #452 (PR #455) mergeado
+
+- Terceira rodada da P6 (pautas do NE: redes que mais melhoraram; escolas
+  sem infraestrutura no PI): **adotaria** (mantido). Achados VJ-01..05 →
+  #452 (inexistentes + coordenadas), #453 (posição pela variação no CSV,
+  "−0", motivo da variação vazia), #454 (registrar a carga do IDEB).
+- #452 → PR #455 (d418e9d): `in_{agua,energia,esgoto}_inexistente` no bloco
+  de infraestrutura (PI: 179 sem esgoto vs 2.725 fora da rede) e aviso no
+  dicionário; `latitude`/`longitude` na identificação com formato `coord`
+  (6 casas fixas; o `%.6g` cortava). Nota técnica 212, ciclo
+  `2026-11-16-infra-inexistente.md`. Ficam #453 e #454.
+
 ## Sessão 2026-11-16 (bv) — #449 (PR #451) mergeado
 
 - #449 → PR #451 (c06a351): `destaque=<IBGE>` em /api/ranking/redes devolve

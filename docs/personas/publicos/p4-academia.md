@@ -51,6 +51,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p4--academia-pesquisadora): adotaria (mantido). BA-02 resolvido no ranking (região e porte); base por região fica na assinatura. Nenhum achado aberto.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p4--academia-pesquisadora): adotaria (mantido). RG-01 e RG-02 resolvidos; fica #449 (RG-03).
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p4--academia-pesquisadora): adotaria (mantido). RG-03 resolvido; nenhum achado da P4 aberto.
+- [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: infraestrutura básica sem confusão e coordenadas.
 
 ## Pendências
 

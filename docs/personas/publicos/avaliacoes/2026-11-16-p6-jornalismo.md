@@ -105,3 +105,11 @@ VJ-04), **#453** (VJ-02 e VJ-03) e **#454** (VJ-05).
    a nota da variação vazia.
 3. **VJ-05** é operacional: registrar a carga do IDEB na próxima importação.
    Pode ficar como item do roteiro de carga, sem PR de código.
+
+## Andamento
+
+- 2026-11-16: #452 (PR #455) mergeado: VJ-01 e VJ-04 resolvidos (água,
+  energia e esgoto inexistentes ao lado do serviço, com o aviso no
+  dicionário; latitude e longitude na base). Fechamento em
+  [`../ciclos/2026-11-16-infra-inexistente.md`](../ciclos/2026-11-16-infra-inexistente.md).
+  Ficam #453 (VJ-02 e VJ-03) e #454 (VJ-05).
