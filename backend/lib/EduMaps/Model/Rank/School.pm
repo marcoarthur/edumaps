@@ -1,6 +1,7 @@
 package EduMaps::Model::Rank::School;
 use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
+use EduMaps::Fontes;
 
 # ============================================================================
 # Registro de redes de ensino
@@ -335,6 +336,26 @@ our $MIN_ESCOLAS_REDE = 3;
 our ($MIN_ESCOLAS_LIMITE_INF, $MIN_ESCOLAS_LIMITE_SUP) = (3, 30);
 our $DESVIOS_ATIPICO = 2;
 
+# Porte do município (#439, RV-05): as classes de tamanho da população do
+# IBGE, sobre a estimativa populacional carregada (clean.populacao_municipal).
+# O limite superior entra na classe ("até 5 mil" inclui 5.000).
+our @PORTES = (
+  { id => 'ate_5mil',    label => 'Até 5 mil habitantes',          max => 5_000 },
+  { id => '5_10mil',     label => 'De 5 mil a 10 mil habitantes',   max => 10_000 },
+  { id => '10_20mil',    label => 'De 10 mil a 20 mil habitantes',  max => 20_000 },
+  { id => '20_50mil',    label => 'De 20 mil a 50 mil habitantes',  max => 50_000 },
+  { id => '50_100mil',   label => 'De 50 mil a 100 mil habitantes', max => 100_000 },
+  { id => '100_500mil',  label => 'De 100 mil a 500 mil habitantes', max => 500_000 },
+  { id => 'mais_500mil', label => 'Mais de 500 mil habitantes',     max => undef },
+);
+our %PORTE_VALIDO = map { $_->{id} => 1 } @PORTES;
+
+# CASE que devolve o id do porte para a expressão de população dada.
+sub _porte_case ($expr) {
+  my @w = map { defined $_->{max} ? "WHEN $expr <= $_->{max} THEN '$_->{id}'" : "ELSE '$_->{id}'" } @PORTES;
+  return "CASE WHEN $expr IS NULL THEN NULL " . join(' ', @w) . ' END';
+}
+
 sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   my $def = $self->indicator_registry->{$indicator_id}
     or croak "Indicador desconhecido: $indicator_id";
@@ -426,6 +447,9 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
 
   my $uf_sql = $uf ? 'AND sg_uf = ?' : '';
   my @uf_bind = $uf ? ($uf) : ();
+  my $porte = $opts->{porte};
+  croak "Porte desconhecido: $porte" if defined $porte && !$PORTE_VALIDO{$porte};
+  my $porte_case = _porte_case('pm.populacao_estimada');
 
   my $anos = $dbh->selectcol_arrayref(
     "SELECT DISTINCT ano FROM clean.ideb_notas_escolas
@@ -443,6 +467,10 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       SELECT id_escola, media_inse FROM clean.inse
        WHERE nu_ano_saeb = (SELECT max(nu_ano_saeb) FROM clean.inse)
     ),
+    pop AS (
+      SELECT pm.codigo_ibge, pm.populacao_estimada AS populacao, $porte_case AS porte
+        FROM clean.populacao_municipal pm
+    ),
     atual AS (
       SELECT i.co_municipio, max(i.no_municipio) AS no_municipio, max(i.sg_uf) AS sg_uf,
              count(*) AS n, avg(i.$column)::float8 AS media,
@@ -458,13 +486,16 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
        WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
        GROUP BY co_municipio
     ),
+    -- O filtro de porte entra aqui, antes da posição, dos quintos de INSE e
+    -- do salto atípico: o ranking é entre as redes do mesmo porte.
     elegiveis AS (
       SELECT a.co_municipio, a.no_municipio, a.sg_uf, a.n, a.media,
              CASE WHEN p.n >= $min THEN a.media - p.media END AS variacao,
-             a.inse
+             a.inse, po.populacao, po.porte
         FROM atual a
         LEFT JOIN anterior p USING (co_municipio)
-       WHERE a.n >= $min
+        LEFT JOIN pop po ON po.codigo_ibge = a.co_municipio::text
+       WHERE a.n >= $min @{[ defined $porte ? 'AND po.porte = ?' : '' ]}
     ),
     quintos AS (
       SELECT e.*, CASE WHEN e.inse IS NOT NULL THEN ntile(5) OVER (PARTITION BY e.inse IS NOT NULL ORDER BY e.inse) END AS quinto_inse
@@ -478,14 +509,22 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
      ORDER BY q.media DESC, q.no_municipio
   }, { Slice => {} },
     $ano, $def->{etapa}, @uf_bind,
-    (defined $ano_ant ? $ano_ant : -1), $def->{etapa}, @uf_bind);
+    (defined $ano_ant ? $ano_ant : -1), $def->{etapa}, @uf_bind,
+    (defined $porte ? ($porte) : ()));
 
+  my $porte_fora = defined $porte
+    ? "AND EXISTS (SELECT 1 FROM clean.populacao_municipal pm
+                    WHERE pm.codigo_ibge = i.co_municipio::text AND $porte_case = ?)"
+    : '';
   my ($fora) = $dbh->selectrow_array(qq{
     SELECT count(*) FROM (
-      SELECT co_municipio FROM clean.ideb_notas_escolas
-       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
+      SELECT co_municipio FROM clean.ideb_notas_escolas i
+       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql $porte_fora
        GROUP BY co_municipio HAVING count(*) < $min
-    ) t}, undef, $ano, $def->{etapa}, @uf_bind);
+    ) t}, undef, $ano, $def->{etapa}, @uf_bind, (defined $porte ? ($porte) : ()));
+
+  # Ano da estimativa populacional, do catálogo de fontes (#428).
+  my $pop_ano = eval { EduMaps::Fontes->versao($dbh, 'ibge_populacao')->{ibge_populacao}{periodo} };
 
   my $num = sub ($v) { defined $v ? 0 + $v : undef };
 
@@ -518,7 +557,9 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     },
     ano => 0 + $ano,
     ano_anterior => defined $ano_ant ? 0 + $ano_ant : undef,
-    recorte => $uf ? { uf => $uf } : { nacional => \1 },
+    recorte => { ($uf ? (uf => $uf) : (nacional => \1)), (defined $porte ? (porte => $porte) : ()) },
+    portes  => [ map { +{ id => $_->{id}, label => $_->{label} } } @PORTES ],
+    populacao_fonte => { ano => $pop_ano, descricao => 'Estimativa da população do IBGE' },
     minimo_escolas => $min,
     total => scalar @$rows,
     fora_por_poucas_escolas => 0 + ($fora // 0),
@@ -535,6 +576,8 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       posicao     => 0 + $_->{posicao},
       posicao_variacao => $num->($_->{posicao_variacao}),
       atipico     => $atipico->($_->{variacao}),
+      populacao   => $num->($_->{populacao}),
+      porte       => $_->{porte},
     } } @$rows ],
   };
 }

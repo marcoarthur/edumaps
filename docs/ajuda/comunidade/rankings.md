@@ -25,7 +25,9 @@ indicador. Não precisa de login.
    **indicador** e a **ordem**: pelo valor da edição mais recente ou por
    **quanto mudou** desde a edição anterior. Em **Mínimo de escolas por
    rede** dá para deixar de fora as redes muito pequenas (3, 5, 10 ou 20).
-   O botão **Maior primeiro / Menor primeiro** inverte a lista.
+   Em **Porte do município** dá para comparar só redes de cidades do mesmo
+   tamanho (ex.: de 10 mil a 20 mil habitantes). O botão **Maior primeiro /
+   Menor primeiro** inverte a lista.
 2. **Escolas de um município:** digite o município, escolha o indicador e,
    se quiser, a rede (municipal, estadual ou privada). **Menor primeiro**
    mostra o fim da lista (ex.: as escolas com menos infraestrutura).
@@ -50,6 +52,11 @@ indicador. Não precisa de login.
   média das redes do recorte (para cima ou para baixo). O número é o publicado
   pelo INEP, não um erro, mas costuma vir de rede pequena ou de mudança fora
   do comum: confira os dados da rede antes de citar.
+- **População** é a estimativa do IBGE para o município (o ano aparece na
+  nota da tabela). O **porte** usa as classes de tamanho do IBGE: até 5 mil,
+  5 a 10 mil, 10 a 20 mil, 20 a 50 mil, 50 a 100 mil, 100 a 500 mil e mais de
+  500 mil habitantes. Com um porte escolhido, a posição, o INSE parecido e o
+  salto atípico comparam só as redes desse porte.
 - Em **Menor primeiro**, a coluna **#** continua com a posição publicada
   (a última escola aparece no topo com o número dela).
 - Escolas empatadas dividem a posição.

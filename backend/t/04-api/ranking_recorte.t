@@ -33,6 +33,7 @@ my $ph = join ',', ('?') x @INEPS;
 my $limpa = sub {
   $dbh->do("DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN ($ph)", {}, @INEPS);
   $dbh->do("DELETE FROM clean.inse WHERE id_escola IN ($ph)", {}, @INEPS);
+  $dbh->do(q{DELETE FROM clean.populacao_municipal WHERE codigo_ibge IN ('6000301', '6000302')});
 };
 $limpa->();
 END { $limpa->() }
@@ -47,6 +48,11 @@ for my $e (@ESC) {
   $ins->execute($inep, $mun, $NOME{$mun}, "Escola $inep", 2021, $v21) if defined $v21;
   $inse->execute($inep, $nse);
 }
+
+# Porte (#439): Alfa com 5.000 habitantes (limite de "até 5 mil"), Beta com
+# 15 mil; Gama sem população carregada.
+$dbh->do(q{INSERT INTO clean.populacao_municipal (nome_municipio, populacao_estimada, codigo_ibge)
+           VALUES ('Alfa do Teste', 5000, '6000301'), ('Beta do Teste', 15000, '6000302')});
 
 subtest 'redes municipais da UF' => sub {
   my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX')->status_is(200)->tx->res->json;
@@ -65,6 +71,27 @@ subtest 'redes municipais da UF' => sub {
   is $rede{'Alfa do Teste'}{inse}, 5, 'INSE médio das escolas da rede';
   ok defined $rede{'Alfa do Teste'}{quinto_inse}, 'quinto de INSE';
   is $rede{'Alfa do Teste'}{posicao}, 2, 'posição';
+};
+
+subtest 'porte do município (#439)' => sub {
+  my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX')->status_is(200)->tx->res->json;
+  my %rede = map { $_->{municipio} => $_ } @{ $r->{redes} };
+  is $rede{'Alfa do Teste'}{populacao}, 5000, 'população';
+  is $rede{'Alfa do Teste'}{porte}, 'ate_5mil', '5.000 entra em "até 5 mil"';
+  is $rede{'Beta do Teste'}{porte}, '10_20mil', '15 mil: de 10 a 20 mil';
+  is scalar @{ $r->{portes} }, 7, 'as sete classes do IBGE';
+  is $r->{populacao_fonte}{ano}, '2025', 'ano da estimativa, do catálogo de fontes';
+
+  $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&porte=ate_5mil')
+    ->status_is(200)->tx->res->json;
+  is [map { $_->{municipio} } @{ $r->{redes} }], ['Alfa do Teste'], 'só as redes do porte';
+  is $r->{redes}[0]{posicao}, 1, 'posição entre as do mesmo porte';
+  is $r->{recorte}{porte}, 'ate_5mil', 'porte no recorte';
+  is $r->{fora_por_poucas_escolas}, 0, 'Gama (sem população) não conta no porte';
+
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&porte=mais_500mil')
+    ->status_is(200)->json_is('/total' => 0, 'porte sem rede: lista vazia, não erro');
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&porte=enorme')->status_is(400);
 };
 
 # Salto atípico (#437): UF "XY", 8 redes de 3 escolas com 2021 e 2023;

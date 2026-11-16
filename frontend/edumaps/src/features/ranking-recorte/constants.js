@@ -28,6 +28,25 @@ export const INDICADORES_ESCOLA = [...INDICADORES_IDEB, ...INDICADORES_CENSO];
 // Mínimo de escolas por rede oferecido na tela (#437); o backend aceita 3..30.
 export const MINIMOS = [3, 5, 10, 20];
 
+/**
+ * Porte do município (#439): classes de tamanho da população do IBGE, as
+ * mesmas de `@PORTES` em EduMaps::Model::Rank::School.
+ */
+export const PORTES = [
+  { id: "ate_5mil", label: "Até 5 mil hab." },
+  { id: "5_10mil", label: "5 a 10 mil hab." },
+  { id: "10_20mil", label: "10 a 20 mil hab." },
+  { id: "20_50mil", label: "20 a 50 mil hab." },
+  { id: "50_100mil", label: "50 a 100 mil hab." },
+  { id: "100_500mil", label: "100 a 500 mil hab." },
+  { id: "mais_500mil", label: "Mais de 500 mil hab." },
+];
+
+/** Rótulo curto do porte; "–" quando sem população. */
+export function rotuloPorte(id) {
+  return PORTES.find((p) => p.id === id)?.label ?? "–";
+}
+
 export const UFS = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
   "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",

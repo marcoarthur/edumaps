@@ -38,6 +38,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode **avisar do salto atípico**: a rede cuja variação fica muito
   acima ou abaixo das outras do recorte (mais de 2 desvios padrão) é marcada,
   com o convite a conferir o dado antes de citar.
+- Sistema pode **comparar redes de municípios do mesmo porte**: a população
+  estimada pelo IBGE aparece ao lado de cada rede, e o filtro pelas classes
+  de tamanho do IBGE refaz o ranking só entre as cidades daquele tamanho.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 
