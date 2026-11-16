@@ -89,18 +89,29 @@ sub execucao_csv($self) {
     $v = "$v";
     return $v =~ /[";\n\r]/ ? '"' . ($v =~ s/"/""/gr) . '"' : $v;
   };
+  # Versão dos dados (#438): o ano do Censo e do IDEB vão em colunas, no fim
+  # da linha, e no nome do arquivo, para a versão não se perder ao guardar.
+  # Execução antiga, sem `dados`: colunas vazias e o nome sem os anos.
+  my $dados = ref $exec->{parametros}{dados} eq 'HASH' ? $exec->{parametros}{dados} : {};
+  my %ano = map {
+    my $v = ref $dados->{$_} eq 'HASH' ? $dados->{$_}{ano} : undef;
+    $_ => (defined $v && "$v" =~ /^\d{4}$/ ? "$v" : undef);
+  } qw(censo ideb);
+
   # Separador ';' e BOM: abre direto no Excel em PT-BR (vírgula é decimal).
-  my @cab = (qw(inep escola municipio uf rede grupo rotulo), @$features);
+  my @cab = (qw(inep escola municipio uf rede grupo rotulo), @$features, qw(ano_censo ano_ideb));
   my @out = (join ';', map { $q->($_) } @cab);
   for my $r (@$linhas) {
     push @out, join ';', map { $q->($_) } (
       $r->{co_entidade}, $r->{no_entidade}, $r->{no_municipio}, $r->{sg_uf}, $r->{rede},
       $r->{cluster_id}, $r->{cluster_label},
-      map { defined $_ ? (sprintf('%.6g', $_) =~ s/\./,/r) : undef } @{ $r->{valores} },
+      (map { defined $_ ? (sprintf('%.6g', $_) =~ s/\./,/r) : undef } @{ $r->{valores} }),
+      $ano{censo}, $ano{ideb},
     );
   }
 
-  my $nome = "agrupamento-$exec->{run_id}.csv";
+  my $versao = join '', map { defined $ano{$_} ? "$_$ano{$_}-" : '' } qw(censo ideb);
+  my $nome = "agrupamento-$versao$exec->{run_id}.csv";
   $self->res->headers->content_type('text/csv; charset=utf-8');
   $self->res->headers->content_disposition(qq{attachment; filename="$nome"});
   $self->render(data => Mojo::Util::encode('UTF-8', "\x{FEFF}" . join("\r\n", @out) . "\r\n"));
