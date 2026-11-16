@@ -27,7 +27,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode combinar múltiplos indicadores em uma leitura de conjunto.
 - Sistema pode **listar todas as escolas de um município** ordenadas por um
   indicador, com filtro de rede, o nível socioeconômico (INSE) ao lado e
-  exportação em CSV.
+  exportação em CSV. Os arquivos exportados dizem o recorte em cada linha
+  (UF, região ou Brasil, porte e mínimo; ou o município e a rede), porque a
+  posição só vale dentro dele.
 - Sistema pode **comparar as redes municipais** dos municípios de um estado
   (ou de uma região, ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
   (média das escolas da rede), quanto mudou desde a edição anterior e o

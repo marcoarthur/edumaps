@@ -24,8 +24,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 1. **Recorte:** escolha a **UF** (a base sai uma UF por vez). Se quiser,
    restrinja a um **município** e a uma **rede** (pública, municipal,
    estadual, federal ou privada). A página mostra quantas escolas entram.
-2. **Indicadores:** a **identificação** (INEP, nome, município, UF, rede e
-   localização) vem sempre. Marque os blocos que quiser:
+2. **Indicadores:** a **identificação** (INEP, nome, município, UF, região,
+   rede e localização) vem sempre. Marque os blocos que quiser:
    - **Infraestrutura:** água, energia, esgoto, lixo, banheiro, biblioteca,
      laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem);
    - **Docência:** número de docentes e as proporções com licenciatura,
@@ -67,7 +67,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 ## Limitações conhecidas
 - Uma UF por vez. A base de uma região ou do Brasil inteiro, as séries de
   vários anos e o acesso por API não estão nesta página; para uma região,
-  baixe as UFs dela (as colunas são as mesmas) e junte os arquivos. O
+  baixe as UFs dela (as colunas são as mesmas, e a coluna `regiao` já vem
+  em cada linha) e junte os arquivos. O
   [ranking das redes](rankings.md) já aceita a região.
 - O INSE vem só da edição mais recente do SAEB.
 

@@ -16,6 +16,7 @@
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
   import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
+  import { tabelaRedes, tabelaEscolas } from "../utils/exportar.js";
 
   const inicial = new URLSearchParams(window.location.search);
 
@@ -139,14 +140,13 @@
     carregarEscolas();
   }
 
+  const csvDe = (t) => csv(t.cabecalho, t.linhas);
+
   function exportarRedes() {
     const r = redes;
     baixarCsv(
       `ranking-redes-${r.indicador.id}-${abrangencia === "brasil" ? "BR" : abrangencia === "regiao" ? regiao : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
-      csv(
-        ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto", `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte"],
-        redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "", x.inse, x.quinto_inse, x.media_quinto_inse, x.populacao, x.porte ? rotuloPorte(x.porte) : null]),
-      ),
+      csvDe(tabelaRedes(r, redesOrdenadas)),
     );
   }
 
@@ -154,10 +154,7 @@
     const e = escolas;
     baixarCsv(
       `ranking-escolas-${e.municipio.codigo_ibge}-${e.indicador.id}-${e.ano}.csv`,
-      csv(
-        ["posicao", "inep", "escola", "rede", `${e.indicador.id}_${e.ano}`, "inse"],
-        escolasOrdenadas.map((x) => [x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, x.inse]),
-      ),
+      csvDe(tabelaEscolas(e, escolasOrdenadas)),
     );
   }
 

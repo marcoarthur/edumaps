@@ -77,9 +77,9 @@ subtest 'CSV só com a identificação' => sub {
     ->header_like('Content-Type' => qr{text/csv})
     ->header_like('Content-Disposition' => qr/"base-analise-AC-\Q$MUN\E-censo\Q$ANO\E\.csv"/)->tx;
   my $l = ler_csv($tx);
-  is $l->[0], [qw(inep escola codigo_ibge municipio uf rede localizacao ano_censo)], 'cabeçalho';
+  is $l->[0], [qw(inep escola codigo_ibge municipio uf regiao rede localizacao ano_censo)], 'cabeçalho (região depois da UF, #448)';
   is scalar @$l, 3, 'cabeçalho + 2 escolas (a fechada fica fora)';
-  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Municipal', 'Urbana', "$ANO"],
+  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Norte', 'Municipal', 'Urbana', "$ANO"],
     'aspas no nome escapadas';
 };
 
@@ -131,6 +131,7 @@ subtest 'dicionário' => sub {
   like $d{ideb_af}[5], qr{^https://www\.gov\.br/inep/}, 'link oficial';
   is $d{populacao_municipio}[4], '2025', 'ano da população';
   ok $d{ano_censo}, 'colunas de versão no dicionário';
+  like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';
   ok !$d{inse_media}, 'só os blocos pedidos';
 };
 
