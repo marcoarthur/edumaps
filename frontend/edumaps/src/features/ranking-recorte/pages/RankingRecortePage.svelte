@@ -178,6 +178,10 @@
   }
 
   const d = $derived(redes?.destaque ?? null);
+  // #453 (VJ-03): redes sem variação. Pela regra do modelo, a variação fica
+  // vazia só quando a rede tinha menos escolas com dado que o mínimo na
+  // edição anterior (ou não havia edição anterior).
+  const semVariacao = $derived(redes ? redes.redes.filter((r) => r.variacao == null).length : 0);
   const linhaDestaque = $derived(d ? redes.redes.find((r) => r.codigo_ibge === d.codigo_ibge) : null);
   const jaPorteRegiao = $derived(
     !!d && abrangencia === "regiao" && regiao === d.regiao && porte === (d.porte ?? ""),
@@ -385,6 +389,16 @@
           <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-redes">
             Valor da rede = <strong>média simples das escolas municipais</strong> com {redes.indicador.label} em {redes.ano}
             (não é o IDEB oficial da rede, calculado pelo INEP). Variação: diferença para {redes.ano_anterior ?? "a edição anterior"}.
+            {#if semVariacao > 0}
+              <span data-testid="sem-variacao">
+                <strong>{semVariacao.toLocaleString("pt-BR")} {semVariacao === 1 ? "rede sem variação" : "redes sem variação"}</strong>:
+                {#if redes.ano_anterior}
+                  tinham menos de {redes.minimo_escolas} escolas com dado em {redes.ano_anterior} (o mesmo mínimo do ranking).
+                {:else}
+                  sem edição anterior para comparar.
+                {/if}
+              </span>
+            {/if}
             Entram as redes com pelo menos {redes.minimo_escolas} escolas com dado: {redes.total} redes;
             {redes.fora_por_poucas_escolas} ficaram de fora por terem menos escolas.
             "INSE parecido" = municípios do mesmo quinto de nível socioeconômico no recorte.

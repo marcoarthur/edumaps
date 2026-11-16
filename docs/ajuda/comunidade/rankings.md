@@ -41,7 +41,9 @@ indicador. Não precisa de login.
    mostra o fim da lista (ex.: as escolas com menos infraestrutura).
 3. **Para levar a outro lugar:** **Baixar CSV** exporta a tabela (separador
    `;`, abre no Excel); o endereço da página guarda os filtros, então o link
-   reabre a mesma consulta. Cada linha do arquivo diz o recorte em que a
+   reabre a mesma consulta. O arquivo de redes traz as duas posições,
+   `posicao_valor` (pelo valor da edição) e `posicao_variacao` (por quanto
+   mudou), na ordem em que a tabela está. Cada linha do arquivo diz o recorte em que a
    posição e o INSE parecido foram calculados: nas redes, `recorte` (`UF:ES`,
    `regiao:NE` ou `BR`), `porte_filtro` e `minimo_escolas`; nas escolas, o
    município e a rede escolhida (`rede_filtro`). Assim, arquivos de recortes
@@ -53,7 +55,9 @@ indicador. Não precisa de login.
 - **Valor da rede** é a **média simples das escolas municipais** com o
   indicador naquela edição. Não é o IDEB oficial da rede calculado pelo INEP.
 - **Variação** é a diferença para a edição anterior ("–" quando a rede não
-  tinha escolas suficientes com dado nela).
+  tinha escolas suficientes com dado nela). A nota da tabela conta essas
+  redes e diz o mínimo. Em 2021, por exemplo, muitas escolas ficaram sem
+  IDEB, e redes grandes podem aparecer sem variação.
 - **INSE médio** é o nível socioeconômico médio dos alunos das escolas da
   rede. **Contexto** compara a rede com a média dos municípios do **mesmo
   quinto de INSE** no recorte: uma rede abaixo da média do estado pode estar

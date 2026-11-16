@@ -17,6 +17,13 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     for (const l of t.linhas) expect(l.slice(-3)).toEqual(["regiao:NE", "10_20mil", 5]);
   });
 
+  it("redes: as duas posições, com nome (#453)", () => {
+    const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
+    expect(t.cabecalho.slice(0, 3)).toEqual(["posicao_valor", "posicao_variacao", "codigo_ibge"]);
+    expect(t.linhas[1].slice(0, 3)).toEqual([2, 1, "3203304"]);
+    expect(t.linhas[0].slice(0, 2)).toEqual([1, null]);
+  });
+
   it("redes de uma UF sem porte: porte_filtro vazio", () => {
     const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
     expect(t.linhas[0].slice(-3)).toEqual(["UF:ES", "", 3]);

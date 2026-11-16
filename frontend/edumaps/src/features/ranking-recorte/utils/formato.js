@@ -11,7 +11,9 @@ export function variacao(v) {
   if (v === null || v === undefined || !Number.isFinite(Number(v))) return "–";
   const n = Number(v);
   const s = Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-  return n > 0 ? `+${s}` : n < 0 ? `−${s}` : "0";
+  // #453: o que arredonda a zero sai "0", sem sinal (não "−0").
+  if (s === "0") return "0";
+  return n > 0 ? `+${s}` : `−${s}`;
 }
 
 /** Leitura do contexto: média da rede frente à média dos municípios de INSE parecido. */

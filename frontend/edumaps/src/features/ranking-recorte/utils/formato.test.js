@@ -9,6 +9,10 @@ describe("formato do ranking (#430)", () => {
     expect(variacao(0.84)).toBe("+0,84");
     expect(variacao(-0.3)).toBe("−0,3");
     expect(variacao(null)).toBe("–");
+    // #453: arredondado a zero, sem sinal.
+    expect(variacao(-0.004)).toBe("0");
+    expect(variacao(0.004)).toBe("0");
+    expect(variacao(0)).toBe("0");
   });
   it("contexto pelo quinto de INSE", () => {
     expect(contexto({ media: 7, media_quinto_inse: 6 })).toBe("1 acima dos de INSE parecido");

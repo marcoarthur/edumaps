@@ -228,6 +228,15 @@ describe("RankingRecortePage — recorte no CSV (#448)", () => {
     for (const linha of l.slice(1)) expect(linha.slice(-3)).toEqual(["regiao:NE", "10_20mil", "3"]);
   });
 
+  it("CSV das redes traz as duas posições com nome (#453)", async () => {
+    abrir("?aba=redes&uf=ES&ordem=variacao");
+    await screen.findByTestId("tabela-redes");
+    const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
+    expect(l[0].slice(0, 2)).toEqual(["posicao_valor", "posicao_variacao"]);
+    // Linhas na ordem da tela (variação): Mantenópolis, Vitória, Itarana.
+    expect(l.slice(1).map((x) => x.slice(0, 2))).toEqual([["2", "1"], ["3", "2"], ["1", ""]]);
+  });
+
   it("CSV das escolas traz o município e a rede filtrada", async () => {
     abrir("?aba=escolas&codigo_ibge=3205309&rede=municipal");
     await screen.findByTestId("tabela-escolas");
@@ -320,5 +329,33 @@ describe("RankingRecortePage — município destacado (#449)", () => {
     await waitFor(() => expect(pedidos.at(-1).get("destaque")).toBeNull());
     await waitFor(() => expect(screen.queryByTestId("destaque-resumo")).toBeNull());
     expect(window.location.search).not.toContain("destaque");
+  });
+});
+
+describe("RankingRecortePage — variação vazia com motivo (#453)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("conta as redes sem variação e diz o motivo com o mínimo", async () => {
+    abrir("?aba=redes&uf=ES");
+    const s = await screen.findByTestId("sem-variacao");
+    expect(s).toHaveTextContent("1 rede sem variação: tinham menos de 3 escolas com dado em 2021 (o mesmo mínimo do ranking).");
+  });
+
+  it("sem edição anterior: diz que não há com o que comparar", async () => {
+    server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
+      ...REDES_FIXTURE, ano_anterior: null, redes: REDES_FIXTURE.redes.map((r) => ({ ...r, variacao: null })),
+    })));
+    abrir("?aba=redes&uf=ES");
+    expect(await screen.findByTestId("sem-variacao")).toHaveTextContent("3 redes sem variação: sem edição anterior para comparar.");
+  });
+
+  it("todas com variação: sem a frase", async () => {
+    server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
+      ...REDES_FIXTURE, redes: REDES_FIXTURE.redes.filter((r) => r.variacao != null),
+    })));
+    abrir("?aba=redes&uf=ES");
+    await screen.findByTestId("tabela-redes");
+    expect(screen.queryByTestId("sem-variacao")).toBeNull();
   });
 });
