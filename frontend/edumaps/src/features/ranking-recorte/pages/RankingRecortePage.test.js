@@ -85,6 +85,29 @@ describe("RankingRecortePage — atípico, mínimo e ordem (#437)", () => {
     expect(window.location.search).toContain("minimo=10");
   });
 
+  it("porte (#439): coluna de população, filtro na consulta e na URL", async () => {
+    let pedido = null;
+    server.use(http.get("*/api/ranking/redes", ({ request }) => {
+      pedido = new URL(request.url).searchParams;
+      const p = pedido.get("porte");
+      const redes = p ? REDES_FIXTURE.redes.filter((r) => r.porte === p) : REDES_FIXTURE.redes;
+      return HttpResponse.json({ ...REDES_FIXTURE, recorte: { uf: "ES", porte: p }, total: redes.length, redes });
+    }));
+    abrir("?aba=redes&uf=ES&porte=10_20mil");
+    const tabela = await screen.findByTestId("tabela-redes");
+    expect(pedido.get("porte")).toBe("10_20mil");
+    expect(screen.getByLabelText("Porte do município").value).toBe("10_20mil");
+    expect(tabela).toHaveTextContent("11.500");
+    expect(tabela).not.toHaveTextContent("Vitória");
+    const nota = screen.getByTestId("nota-redes");
+    expect(nota).toHaveTextContent("população estimada pelo IBGE (2025)");
+    expect(nota).toHaveTextContent("10 a 20 mil habitantes");
+    expect(window.location.search).toContain("porte=10_20mil");
+
+    await fireEvent.change(screen.getByLabelText("Porte do município"), { target: { value: "mais_500mil" } });
+    expect(await screen.findByTestId("redes-vazio")).toHaveTextContent("Nenhuma rede");
+  });
+
   it("menor primeiro inverte as redes e as escolas, e vai na URL", async () => {
     abrir("?aba=redes&uf=ES");
     await screen.findByTestId("tabela-redes");

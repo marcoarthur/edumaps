@@ -75,6 +75,19 @@ our @CATALOGO = (
     periodo   => ['2024', '2024'],
     telas     => [qw(comparacao_redes agrupamento busca)],
   },
+  {
+    id        => 'ibge_populacao',
+    nome      => 'Estimativa da população dos municípios',
+    orgao     => 'IBGE',
+    descricao => 'População estimada de cada município, usada para o porte do município no ranking de redes.',
+    url       => 'https://www.ibge.gov.br/estatisticas/sociais/populacao/9103-estimativas-de-populacao.html',
+    metodologia => 'https://www.ibge.gov.br/estatisticas/sociais/populacao/9103-estimativas-de-populacao.html',
+    tabelas   => [qw(clean.populacao_municipal)],
+    # A tabela não guarda o ano; a carga é a estimativa de 2025
+    # (data_pipeline/deploy/raw_populacao.sql, pop_2025_mun.csv).
+    periodo   => ['2025', '2025'],
+    telas     => [qw(ranking)],
+  },
 );
 
 # Licença que pode ir a público: preenchida e sem marca de pendência.

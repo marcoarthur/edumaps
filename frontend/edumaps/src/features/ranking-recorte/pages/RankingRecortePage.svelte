@@ -13,7 +13,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
-  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS } from "../constants.js";
+  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, rotuloPorte } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
 
   const inicial = new URLSearchParams(window.location.search);
@@ -30,6 +30,8 @@
   // #437: mínimo de escolas por rede e sentido da ordem (as duas abas).
   let minimo = $state(MINIMOS.includes(Number(inicial.get("minimo"))) ? Number(inicial.get("minimo")) : 3);
   let sentido = $state(inicial.get("sentido") === "asc" ? "asc" : "desc");
+  // #439: porte do município (classes de população do IBGE); "" = todos.
+  let porte = $state(PORTES.some((p) => p.id === inicial.get("porte")) ? inicial.get("porte") : "");
   let redes = $state(null);
 
   // Ordena pelo critério; "menor primeiro" inverte, mas quem não tem valor
@@ -66,6 +68,7 @@
       else p.set("uf", uf);
       if (ordem !== "media") p.set("ordem", ordem);
       if (minimo !== 3) p.set("minimo", String(minimo));
+      if (porte) p.set("porte", porte);
     } else {
       p.set("indicador", indicadorEscola);
       if (codigoIbge) p.set("codigo_ibge", codigoIbge);
@@ -84,7 +87,7 @@
     error = null;
     definirUrl();
     try {
-      redes = await getRankingRedes({ indicador: indicadorRede, uf, nacional, minimo });
+      redes = await getRankingRedes({ indicador: indicadorRede, uf, nacional, minimo, porte });
     } catch (err) {
       redes = null;
       error = mensagem(err, "Não foi possível carregar o ranking das redes.");
@@ -132,10 +135,10 @@
   function exportarRedes() {
     const r = redes;
     baixarCsv(
-      `ranking-redes-${r.indicador.id}-${nacional ? "BR" : uf}-${r.ano}-min${r.minimo_escolas}.csv`,
+      `ranking-redes-${r.indicador.id}-${nacional ? "BR" : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
       csv(
-        ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto"],
-        redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "", x.inse, x.quinto_inse, x.media_quinto_inse]),
+        ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto", `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte"],
+        redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "", x.inse, x.quinto_inse, x.media_quinto_inse, x.populacao, x.porte ? rotuloPorte(x.porte) : null]),
       ),
     );
   }
@@ -179,7 +182,7 @@
 
   {#if aba === "redes"}
     <section class="bg-white border border-gray-200 rounded-card shadow-card p-5 space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+      <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
         <div>
           <label for="uf" class="block text-sm text-gray-600 mb-1">UF</label>
           <select id="uf" bind:value={uf} disabled={nacional} onchange={carregarRedes}
@@ -213,6 +216,14 @@
             {#each MINIMOS as m}<option value={m}>{m}</option>{/each}
           </select>
         </div>
+        <div>
+          <label for="porte" class="block text-sm text-gray-600 mb-1">Porte do município</label>
+          <select id="porte" bind:value={porte} onchange={carregarRedes}
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option value="">Todos</option>
+            {#each PORTES as p}<option value={p.id}>{p.label}</option>{/each}
+          </select>
+        </div>
         <button type="button" onclick={alternarSentido} data-testid="sentido-redes"
           class="px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
           {sentido === "asc" ? "Menor primeiro ↑" : "Maior primeiro ↓"}
@@ -231,6 +242,10 @@
             Entram as redes com pelo menos {redes.minimo_escolas} escolas com dado: {redes.total} redes;
             {redes.fora_por_poucas_escolas} ficaram de fora por terem menos escolas.
             "INSE parecido" = municípios do mesmo quinto de nível socioeconômico no recorte.
+            Porte: população estimada pelo IBGE{redes.populacao_fonte?.ano ? ` (${redes.populacao_fonte.ano})` : ""}, nas classes de tamanho do IBGE.
+            {#if porte}
+              Só as redes de municípios com {rotuloPorte(porte).replace(" hab.", " habitantes").toLowerCase()}: a posição, o INSE parecido e o salto atípico comparam só redes desse porte.
+            {/if}
             {#if redes.atipico?.limite_superior != null}
               <strong>Salto atípico</strong>: variação a mais de {redes.atipico.desvios} desvios padrão da média do recorte
               (fora de {variacao(redes.atipico.limite_inferior)} a {variacao(redes.atipico.limite_superior)});
@@ -250,6 +265,7 @@
                 <th class="px-2 py-2 font-medium text-right">{redes.ano}</th>
                 <th class="px-2 py-2 font-medium text-right">Variação</th>
                 <th class="px-2 py-2 font-medium text-right">INSE médio</th>
+                <th class="px-2 py-2 font-medium text-right">População</th>
                 <th class="px-2 py-2 font-medium">Contexto</th>
               </tr>
             </thead>
@@ -273,12 +289,16 @@
                     {/if}
                   </td>
                   <td class="px-2 py-1.5 text-right">{num(r.inse)}</td>
+                  <td class="px-2 py-1.5 text-right whitespace-nowrap" title={rotuloPorte(r.porte)}>{num(r.populacao, 0)}</td>
                   <td class="px-2 py-1.5 text-xs text-gray-600">{contexto(r)}</td>
                 </tr>
               {/each}
             </tbody>
           </table>
         </div>
+        {#if redes.total === 0}
+          <p class="text-sm text-gray-500" data-testid="redes-vazio">Nenhuma rede neste recorte. Tente outro porte ou um mínimo de escolas menor.</p>
+        {/if}
       {/if}
     </section>
   {:else}
