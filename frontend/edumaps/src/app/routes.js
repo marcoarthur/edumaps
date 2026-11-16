@@ -5,6 +5,7 @@ import { NetworkComparePage, NetworkProfilePage } from "@/features/network-compa
 import { ClusterGeotagPage } from "@/features/cluster-geotag";
 import { FontesPage } from "@/features/fontes";
 import { RankingRecortePage } from "@/features/ranking-recorte";
+import { BaseAnalisePage } from "@/features/base-analise";
 import { ChatPage, ChatHistoricoPage } from "@/features/chat";
 import { ConfigPage, ConsentimentoVersoesPage, RedeContasPage } from "@/features/config";
 import { RedePage, RedeConvitePage, RedeRelatorioPage, RedeIndicadoresPage, RedeDocumentoPage } from "@/features/rede";
@@ -52,6 +53,7 @@ export const routes = [
   { path: "/privacidade", component: PrivacidadePage },
   { path: "/fontes", component: FontesPage },
   { path: "/ranking", component: RankingRecortePage },
+  { path: "/base-analise", component: BaseAnalisePage },
   { path: "/privacidade/exclusao/:token", component: ExclusaoPage },
   { path: "/privacidade/sair/:token", component: SairPage },
   { path: "/municipio/compare", component: NetworkComparePage },

@@ -29,7 +29,7 @@ our @CATALOGO = (
     metodologia => 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar',
     tabelas   => [qw(clean.censo_escolas clean.censo_docentes clean.censo_matriculas)],
     periodo_sql => 'SELECT max(nu_ano_censo)::text, max(nu_ano_censo)::text FROM clean.censo_escolas',
-    telas     => [qw(comparacao_redes perfil_escola ranking agrupamento busca)],
+    telas     => [qw(comparacao_redes perfil_escola ranking agrupamento busca base_analise)],
   },
   {
     id        => 'ideb',
@@ -40,7 +40,7 @@ our @CATALOGO = (
     metodologia => 'https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados',
     tabelas   => [qw(clean.ideb_notas_escolas)],
     periodo_sql => 'SELECT min(ano)::text, max(ano)::text FROM clean.ideb_notas_escolas',
-    telas     => [qw(comparacao_redes perfil_escola ranking agrupamento)],
+    telas     => [qw(comparacao_redes perfil_escola ranking agrupamento base_analise)],
   },
   {
     id        => 'inse',
@@ -51,7 +51,7 @@ our @CATALOGO = (
     metodologia => 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/indicadores-educacionais/nivel-socioeconomico',
     tabelas   => [qw(clean.inse)],
     periodo_sql => 'SELECT max(nu_ano_saeb)::text, max(nu_ano_saeb)::text FROM clean.inse',
-    telas     => [qw(perfil_escola ranking)],
+    telas     => [qw(perfil_escola ranking base_analise)],
   },
   {
     id        => 'siope',
@@ -86,7 +86,7 @@ our @CATALOGO = (
     # A tabela não guarda o ano; a carga é a estimativa de 2025
     # (data_pipeline/deploy/raw_populacao.sql, pop_2025_mun.csv).
     periodo   => ['2025', '2025'],
-    telas     => [qw(ranking)],
+    telas     => [qw(ranking base_analise)],
   },
 );
 

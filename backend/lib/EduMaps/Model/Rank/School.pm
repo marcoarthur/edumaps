@@ -2,6 +2,7 @@ package EduMaps::Model::Rank::School;
 use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
 use EduMaps::Fontes;
+use EduMaps::Porte;
 
 # ============================================================================
 # Registro de redes de ensino
@@ -336,25 +337,7 @@ our $MIN_ESCOLAS_REDE = 3;
 our ($MIN_ESCOLAS_LIMITE_INF, $MIN_ESCOLAS_LIMITE_SUP) = (3, 30);
 our $DESVIOS_ATIPICO = 2;
 
-# Porte do município (#439, RV-05): as classes de tamanho da população do
-# IBGE, sobre a estimativa populacional carregada (clean.populacao_municipal).
-# O limite superior entra na classe ("até 5 mil" inclui 5.000).
-our @PORTES = (
-  { id => 'ate_5mil',    label => 'Até 5 mil habitantes',          max => 5_000 },
-  { id => '5_10mil',     label => 'De 5 mil a 10 mil habitantes',   max => 10_000 },
-  { id => '10_20mil',    label => 'De 10 mil a 20 mil habitantes',  max => 20_000 },
-  { id => '20_50mil',    label => 'De 20 mil a 50 mil habitantes',  max => 50_000 },
-  { id => '50_100mil',   label => 'De 50 mil a 100 mil habitantes', max => 100_000 },
-  { id => '100_500mil',  label => 'De 100 mil a 500 mil habitantes', max => 500_000 },
-  { id => 'mais_500mil', label => 'Mais de 500 mil habitantes',     max => undef },
-);
-our %PORTE_VALIDO = map { $_->{id} => 1 } @PORTES;
-
-# CASE que devolve o id do porte para a expressão de população dada.
-sub _porte_case ($expr) {
-  my @w = map { defined $_->{max} ? "WHEN $expr <= $_->{max} THEN '$_->{id}'" : "ELSE '$_->{id}'" } @PORTES;
-  return "CASE WHEN $expr IS NULL THEN NULL " . join(' ', @w) . ' END';
-}
+# Porte do município (#439): classes em EduMaps::Porte.
 
 sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   my $def = $self->indicator_registry->{$indicator_id}
@@ -448,8 +431,8 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   my $uf_sql = $uf ? 'AND sg_uf = ?' : '';
   my @uf_bind = $uf ? ($uf) : ();
   my $porte = $opts->{porte};
-  croak "Porte desconhecido: $porte" if defined $porte && !$PORTE_VALIDO{$porte};
-  my $porte_case = _porte_case('pm.populacao_estimada');
+  croak "Porte desconhecido: $porte" if defined $porte && !EduMaps::Porte->valido($porte);
+  my $porte_case = EduMaps::Porte->case_sql('pm.populacao_estimada');
 
   my $anos = $dbh->selectcol_arrayref(
     "SELECT DISTINCT ano FROM clean.ideb_notas_escolas
@@ -558,7 +541,7 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     ano => 0 + $ano,
     ano_anterior => defined $ano_ant ? 0 + $ano_ant : undef,
     recorte => { ($uf ? (uf => $uf) : (nacional => \1)), (defined $porte ? (porte => $porte) : ()) },
-    portes  => [ map { +{ id => $_->{id}, label => $_->{label} } } @PORTES ],
+    portes  => EduMaps::Porte->lista,
     populacao_fonte => { ano => $pop_ano, descricao => 'Estimativa da população do IBGE' },
     minimo_escolas => $min,
     total => scalar @$rows,

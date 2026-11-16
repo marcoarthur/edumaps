@@ -45,6 +45,7 @@
 | [Painel da escola](analise/painel-escola.md) | Raio-x da escola: matrículas, docentes, infraestrutura, desempenho, similares, vulnerabilidade de acesso (IVET com blocos) e área de influência no mapa. | 🟢 |
 | [Perfil analítico da escola](analise/perfil-escola.md) | Diagnóstico, posição relativa (município/rede/Brasil), benchmarking justo e sinais de atenção. | 🟢 |
 | [Ranking de escolas](analise/ranking.md) | Posicionar a escola por indicadores no município e no estado. | 🟢 |
+| [Base de análise](analise/base-de-analise.md) | Baixar, sem login, uma planilha por escola com os indicadores escolhidos (infraestrutura, docência, IDEB/SAEB por etapa, INSE, porte), a versão dos dados e o dicionário das colunas. | 🟢 |
 | [Clusters de escolas](analise/clusters.md) | Agrupar escolas por características e geografia. | 🟢 |
 | [Comparação de redes](analise/rede-municipal.md) | Comparar as redes (federal, estadual, municipal, privada) de um município. | 🟢 |
 | [Painel financeiro](analise/financeiro.md) | Acompanhar recursos e gastos da educação. | 🟢 |

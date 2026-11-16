@@ -1,7 +1,7 @@
 package EduMaps::Controller::Rank;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
-use EduMaps::Model::Rank::School ();
+use EduMaps::Porte;
 
 =head1 NAME
 
@@ -88,7 +88,7 @@ sub redes_municipais ($self) {
   $v->optional('uf', 'trim')->like(qr/^[A-Z]{2}$/);
   $v->optional('nacional')->in(qw/0 1/);
   $v->optional('minimo', 'trim')->like(qr/^\d{1,2}$/)->num(3, 30);
-  $v->optional('porte', 'trim')->in(map { $_->{id} } @EduMaps::Model::Rank::School::PORTES);
+  $v->optional('porte', 'trim')->in(EduMaps::Porte->ids);
   return $self->bad_req if $self->any_error;
   return $self->bad_req('Informe a UF ou nacional=1')
     unless $v->param('uf') || $v->param('nacional');
