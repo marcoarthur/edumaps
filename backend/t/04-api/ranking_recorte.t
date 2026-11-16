@@ -67,6 +67,49 @@ subtest 'redes municipais da UF' => sub {
   is $rede{'Alfa do Teste'}{posicao}, 2, 'posição';
 };
 
+# Salto atípico (#437): UF "XY", 8 redes de 3 escolas com 2021 e 2023;
+# sete variam pouco (0 a 0,3) e uma salta 3 pontos.
+my @ATIP;
+for my $m (0 .. 7) {
+  my $mun = 6000311 + $m;
+  my $salto = $m == 7 ? 3 : $m * 0.04;
+  for my $k (1 .. 3) {
+    push @ATIP, [sprintf('600031%02d', $m * 3 + $k), $mun, 5 + $salto, 5];
+  }
+}
+my @INEPS_ATIP = map { $_->[0] } @ATIP;
+my $ph2 = join ',', ('?') x @INEPS_ATIP;
+my $limpa2 = sub { $dbh->do("DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN ($ph2)", {}, @INEPS_ATIP) };
+$limpa2->();
+END { $limpa2->() }
+my $ins2 = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
+  (id_escola, sg_uf, co_municipio, no_municipio, no_escola, rede, ano, etapa, ideb_observado)
+  VALUES (?, 'XY', ?, ?, 'Escola', 'Municipal', ?, 'fundamental_i', ?)});
+for my $e (@ATIP) {
+  $ins2->execute($e->[0], $e->[1], "Mun $e->[1]", 2023, $e->[2]);
+  $ins2->execute($e->[0], $e->[1], "Mun $e->[1]", 2021, $e->[3]);
+}
+
+subtest 'salto atípico e mínimo ajustável (#437)' => sub {
+  my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XY')->status_is(200)->tx->res->json;
+  is $r->{total}, 8, 'oito redes';
+  is $r->{atipico}{desvios}, 2, 'regra de 2 desvios';
+  is $r->{atipico}{marcadas}, 1, 'uma rede marcada';
+  my @marcadas = map { $_->{codigo_ibge} } grep { $_->{atipico} } @{ $r->{redes} };
+  is \@marcadas, ['6000318'], 'só a que saltou 3 pontos';
+  ok $r->{atipico}{limite_superior} < 3, 'limite abaixo do salto';
+
+  $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=4')->status_is(200)->tx->res->json;
+  is $r->{minimo_escolas}, 4, 'mínimo vindo do parâmetro';
+  is [map { $_->{municipio} } @{ $r->{redes} }], ['Alfa do Teste'], 'só Alfa tem 4 escolas';
+  is $r->{fora_por_poucas_escolas}, 2, 'Beta e Gama fora';
+  is $r->{atipico}{marcadas}, 0, 'com uma variação só, ninguém é marcado';
+
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=2')->status_is(400);
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=31')->status_is(400);
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=3.5')->status_is(400);
+};
+
 subtest 'validações das redes' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=infraestrutura&uf=XX')->status_is(400)

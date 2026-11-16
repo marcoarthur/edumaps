@@ -329,6 +329,11 @@ sub _format_result_live ($self, $indicator_id, $def, $year, $row, $network) {
 #       contexto"), em vez de cor de pior/melhor.
 
 our $MIN_ESCOLAS_REDE = 3;
+# Mínimo ajustável na tela (#437) e o limite do salto atípico: variação a
+# mais de $DESVIOS_ATIPICO desvios padrão da média das variações do recorte,
+# para cima ou para baixo.
+our ($MIN_ESCOLAS_LIMITE_INF, $MIN_ESCOLAS_LIMITE_SUP) = (3, 30);
+our $DESVIOS_ATIPICO = 2;
 
 sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   my $def = $self->indicator_registry->{$indicator_id}
@@ -429,7 +434,10 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   return undef unless @$anos;
   my ($ano, $ano_ant) = @$anos;
 
-  my $min = $MIN_ESCOLAS_REDE;
+  my $min = $opts->{minimo} // $MIN_ESCOLAS_REDE;
+  croak "Mínimo de escolas fora de $MIN_ESCOLAS_LIMITE_INF..$MIN_ESCOLAS_LIMITE_SUP: $min"
+    unless $min =~ /^\d+$/ && $min >= $MIN_ESCOLAS_LIMITE_INF && $min <= $MIN_ESCOLAS_LIMITE_SUP;
+  $min = 0 + $min;
   my $rows = $dbh->selectall_arrayref(qq{
     WITH inse_ult AS (
       SELECT id_escola, media_inse FROM clean.inse
@@ -480,8 +488,34 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     ) t}, undef, $ano, $def->{etapa}, @uf_bind);
 
   my $num = sub ($v) { defined $v ? 0 + $v : undef };
+
+  # Salto atípico (#437): variação a mais de $DESVIOS_ATIPICO desvios
+  # padrão da média das variações do recorte. Com menos de 3 variações ou
+  # desvio zero, ninguém é marcado.
+  my @vars = map { 0 + $_->{variacao} } grep { defined $_->{variacao} } @$rows;
+  my ($vmedia, $vdp);
+  if (@vars >= 3) {
+    $vmedia += $_ / @vars for @vars;
+    my $ss = 0; $ss += ($_ - $vmedia) ** 2 for @vars;
+    $vdp = sqrt($ss / (@vars - 1));
+  }
+  my $atipico = sub ($v) {
+    return \0 unless defined $v && $vdp;
+    return abs($v - $vmedia) > $DESVIOS_ATIPICO * $vdp ? \1 : \0;
+  };
+  my $marcadas = grep { ${ $atipico->($_->{variacao}) } } @$rows;
+  my $arred = sub ($v) { defined $v ? 0 + sprintf('%.4f', $v) : undef };
+
   return {
     indicador => { id => $indicator_id, label => $def->{label} },
+    atipico => {
+      desvios       => $DESVIOS_ATIPICO,
+      media_variacao => $arred->($vmedia),
+      desvio_variacao => $arred->($vdp),
+      limite_inferior => defined $vdp ? $arred->($vmedia - $DESVIOS_ATIPICO * $vdp) : undef,
+      limite_superior => defined $vdp ? $arred->($vmedia + $DESVIOS_ATIPICO * $vdp) : undef,
+      marcadas      => 0 + $marcadas,
+    },
     ano => 0 + $ano,
     ano_anterior => defined $ano_ant ? 0 + $ano_ant : undef,
     recorte => $uf ? { uf => $uf } : { nacional => \1 },
@@ -500,6 +534,7 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       media_quinto_inse => $num->($_->{media_quinto}),
       posicao     => 0 + $_->{posicao},
       posicao_variacao => $num->($_->{posicao_variacao}),
+      atipico     => $atipico->($_->{variacao}),
     } } @$rows ],
   };
 }

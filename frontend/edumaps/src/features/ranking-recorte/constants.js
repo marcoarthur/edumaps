@@ -25,6 +25,9 @@ export const INDICADORES_CENSO = [
 
 export const INDICADORES_ESCOLA = [...INDICADORES_IDEB, ...INDICADORES_CENSO];
 
+// Mínimo de escolas por rede oferecido na tela (#437); o backend aceita 3..30.
+export const MINIMOS = [3, 5, 10, 20];
+
 export const UFS = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
   "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",

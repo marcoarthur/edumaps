@@ -13,7 +13,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
-  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES } from "../constants.js";
+  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
 
   const inicial = new URLSearchParams(window.location.search);
@@ -27,16 +27,22 @@
     INDICADORES_IDEB.some((i) => i.id === inicial.get("indicador")) ? inicial.get("indicador") : "ideb_anos_iniciais",
   );
   let ordem = $state(inicial.get("ordem") === "variacao" ? "variacao" : "media");
+  // #437: mínimo de escolas por rede e sentido da ordem (as duas abas).
+  let minimo = $state(MINIMOS.includes(Number(inicial.get("minimo"))) ? Number(inicial.get("minimo")) : 3);
+  let sentido = $state(inicial.get("sentido") === "asc" ? "asc" : "desc");
   let redes = $state(null);
 
-  const redesOrdenadas = $derived.by(() => {
-    if (!redes) return [];
-    const lista = [...redes.redes];
-    if (ordem === "variacao") {
-      lista.sort((a, b) => (b.variacao ?? -Infinity) - (a.variacao ?? -Infinity));
-    }
-    return lista;
-  });
+  // Ordena pelo critério; "menor primeiro" inverte, mas quem não tem valor
+  // (variação "–") fica sempre no fim.
+  function ordenar(lista, chave) {
+    const com = lista.filter((x) => x[chave] != null);
+    const sem = lista.filter((x) => x[chave] == null);
+    com.sort((a, b) => (sentido === "asc" ? a[chave] - b[chave] : b[chave] - a[chave]));
+    return [...com, ...sem];
+  }
+
+  const redesOrdenadas = $derived(redes ? ordenar([...redes.redes], ordem === "variacao" ? "variacao" : "media") : []);
+
 
   // ---- escolas de um município ----------------------------------------
   let codigoIbge = $state(/^\d{7}$/.test(inicial.get("codigo_ibge") ?? "") ? inicial.get("codigo_ibge") : "");
@@ -46,6 +52,7 @@
   );
   let rede = $state(REDES.some((r) => r.id === inicial.get("rede")) ? inicial.get("rede") : "");
   let escolas = $state(null);
+  const escolasOrdenadas = $derived(escolas ? ordenar([...escolas.escolas], "valor") : []);
 
   let loading = $state(false);
   let error = $state(null);
@@ -58,11 +65,13 @@
       if (nacional) p.set("nacional", "1");
       else p.set("uf", uf);
       if (ordem !== "media") p.set("ordem", ordem);
+      if (minimo !== 3) p.set("minimo", String(minimo));
     } else {
       p.set("indicador", indicadorEscola);
       if (codigoIbge) p.set("codigo_ibge", codigoIbge);
       if (rede) p.set("rede", rede);
     }
+    if (sentido === "asc") p.set("sentido", "asc");
     window.history.replaceState({}, "", `/ranking?${p}`);
   }
 
@@ -75,7 +84,7 @@
     error = null;
     definirUrl();
     try {
-      redes = await getRankingRedes({ indicador: indicadorRede, uf, nacional });
+      redes = await getRankingRedes({ indicador: indicadorRede, uf, nacional, minimo });
     } catch (err) {
       redes = null;
       error = mensagem(err, "Não foi possível carregar o ranking das redes.");
@@ -103,6 +112,11 @@
     }
   }
 
+  function alternarSentido() {
+    sentido = sentido === "asc" ? "desc" : "asc";
+    definirUrl();
+  }
+
   function trocarAba(nova) {
     aba = nova;
     error = null;
@@ -118,10 +132,10 @@
   function exportarRedes() {
     const r = redes;
     baixarCsv(
-      `ranking-redes-${r.indicador.id}-${nacional ? "BR" : uf}-${r.ano}.csv`,
+      `ranking-redes-${r.indicador.id}-${nacional ? "BR" : uf}-${r.ano}-min${r.minimo_escolas}.csv`,
       csv(
-        ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto"],
-        redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.inse, x.quinto_inse, x.media_quinto_inse]),
+        ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto"],
+        redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "", x.inse, x.quinto_inse, x.media_quinto_inse]),
       ),
     );
   }
@@ -132,7 +146,7 @@
       `ranking-escolas-${e.municipio.codigo_ibge}-${e.indicador.id}-${e.ano}.csv`,
       csv(
         ["posicao", "inep", "escola", "rede", `${e.indicador.id}_${e.ano}`, "inse"],
-        e.escolas.map((x) => [x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, x.inse]),
+        escolasOrdenadas.map((x) => [x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, x.inse]),
       ),
     );
   }
@@ -165,7 +179,7 @@
 
   {#if aba === "redes"}
     <section class="bg-white border border-gray-200 rounded-card shadow-card p-5 space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+      <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
         <div>
           <label for="uf" class="block text-sm text-gray-600 mb-1">UF</label>
           <select id="uf" bind:value={uf} disabled={nacional} onchange={carregarRedes}
@@ -192,6 +206,17 @@
             <option value="variacao">Quanto mudou desde a edição anterior</option>
           </select>
         </div>
+        <div>
+          <label for="minimo" class="block text-sm text-gray-600 mb-1">Mínimo de escolas por rede</label>
+          <select id="minimo" bind:value={minimo} onchange={carregarRedes}
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+            {#each MINIMOS as m}<option value={m}>{m}</option>{/each}
+          </select>
+        </div>
+        <button type="button" onclick={alternarSentido} data-testid="sentido-redes"
+          class="px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+          {sentido === "asc" ? "Menor primeiro ↑" : "Maior primeiro ↓"}
+        </button>
       </div>
 
       {#if loading}
@@ -206,6 +231,11 @@
             Entram as redes com pelo menos {redes.minimo_escolas} escolas com dado: {redes.total} redes;
             {redes.fora_por_poucas_escolas} ficaram de fora por terem menos escolas.
             "INSE parecido" = municípios do mesmo quinto de nível socioeconômico no recorte.
+            {#if redes.atipico?.limite_superior != null}
+              <strong>Salto atípico</strong>: variação a mais de {redes.atipico.desvios} desvios padrão da média do recorte
+              (fora de {variacao(redes.atipico.limite_inferior)} a {variacao(redes.atipico.limite_superior)});
+              {redes.atipico.marcadas} {redes.atipico.marcadas === 1 ? "rede marcada" : "redes marcadas"}. É o dado publicado; confira os dados da rede antes de citar.
+            {/if}
           </p>
           <button type="button" onclick={exportarRedes}
             class="px-3 py-1.5 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800">Baixar CSV</button>
@@ -233,7 +263,15 @@
                   </td>
                   <td class="px-2 py-1.5 text-right">{r.escolas}</td>
                   <td class="px-2 py-1.5 text-right font-medium">{num(r.media)}</td>
-                  <td class="px-2 py-1.5 text-right">{variacao(r.variacao)}</td>
+                  <td class="px-2 py-1.5 text-right whitespace-nowrap">
+                    {variacao(r.variacao)}
+                    {#if r.atipico}
+                      <span class="ml-1 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 text-[11px] font-medium" data-testid="salto-atipico"
+                        title="Variação muito acima ou abaixo das outras redes do recorte. É o dado publicado pelo INEP; confira os dados da rede antes de citar.">
+                        salto atípico
+                      </span>
+                    {/if}
+                  </td>
                   <td class="px-2 py-1.5 text-right">{num(r.inse)}</td>
                   <td class="px-2 py-1.5 text-xs text-gray-600">{contexto(r)}</td>
                 </tr>
@@ -277,6 +315,10 @@
           </select>
         </div>
       </div>
+      <button type="button" onclick={alternarSentido} data-testid="sentido-escolas"
+        class="px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+        {sentido === "asc" ? "Menor primeiro ↑" : "Maior primeiro ↓"}
+      </button>
 
       {#if !codigoIbge}
         <p class="text-sm text-gray-500">Escolha um município para ver as escolas.</p>
@@ -305,7 +347,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each escolas.escolas as e (e.co_entidade)}
+              {#each escolasOrdenadas as e (e.co_entidade)}
                 <tr class="border-b border-gray-50">
                   <td class="px-2 py-1.5 text-gray-500">{e.posicao}</td>
                   <td class="px-2 py-1.5">
