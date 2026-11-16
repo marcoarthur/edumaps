@@ -85,3 +85,6 @@ RV-04), **#438** (RV-03) e **#439** (RV-02 e RV-05, decisão de produto).
   [`../ciclos/2026-11-16-base-analise.md`](../ciclos/2026-11-16-base-analise.md).
   Nenhum achado da reavaliação fica aberto; uma rodada nova da P4 confirmaria o
   veredito.
+- 2026-11-16: terceira rodada da P4: **adotaria**. Consolidação em
+  [`2026-11-16-p4-base-analise.md`](2026-11-16-p4-base-analise.md), com os
+  achados novos BA-01 a BA-04.

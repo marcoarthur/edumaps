@@ -52,11 +52,45 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas: reavaliada em 2026-11-15 (adotaria com ressalvas).
-  RV-01 entregue (PR #440). Pendentes
-  RV-03 (#438), RV-02 e RV-05 (#439).
+- Análises públicas: reavaliada em 2026-11-16 (**adotaria**). Os achados
+  RV-01 a RV-05 foram entregues (#440 a #443). Pendentes, sem issue até a
+  aprovação do developer: BA-01 (IDEB antigo cruzado com o Censo 2025 sem
+  aviso), BA-02 (recorte por região), BA-03 (o link da base não fixa a
+  versão), BA-04 (fórmula das proporções de docência).
+- Voltar a checar quando houver mais de um Censo carregado (séries) ou base
+  nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (terceira rodada, base de análise)
+
+**Veredito:** adotaria com ressalvas → **adotaria**, como base de artigo para
+um corte transversal de uma UF; séries e Brasil inteiro, ainda não.
+Consolidação em
+[`avaliacoes/2026-11-16-p4-base-analise.md`](avaliacoes/2026-11-16-p4-base-analise.md).
+
+**O que tentou:** as três perguntas do perfil.
+- "IDEB × infraestrutura, controlando por rede": baixou a base do ES, abriu
+  com `read.csv2()` e rodou `lm(ideb_ai ~ infra + rede + inse_media)` (822
+  escolas).
+- "Porte e região semelhantes": o ranking nacional de 10 a 20 mil
+  habitantes.
+- "Perfil docente entre regiões": o bloco de docência da base.
+
+**O que funciona para ela:**
+- a base sai sem SQL e com o IDEB por etapa ao lado do Censo;
+- a versão vem em cada linha e no nome do arquivo;
+- o dicionário dá a fonte e o link de cada coluna;
+- ausente é `NA`, nunca zero;
+- o porte refaz o ranking entre cidades do mesmo tamanho.
+
+**Barreiras:**
+- BA-01 (atrapalha): o IDEB de uma edição antiga é cruzado com o Censo 2025
+  sem aviso.
+- BA-02 (detalhe): não há recorte por região.
+- BA-03 (detalhe): o link não fixa a versão.
+- BA-04 (detalhe): falta a fórmula das proporções de docência.
+
 
 ### 2026-11-15 — Análises públicas (reavaliação)
 
