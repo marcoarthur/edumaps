@@ -23,9 +23,12 @@ indicador. Não precisa de login.
 ## Passo a passo
 1. **Redes municipais:** escolha a **UF** (ou marque **Brasil inteiro**), o
    **indicador** e a **ordem**: pelo valor da edição mais recente ou por
-   **quanto mudou** desde a edição anterior.
+   **quanto mudou** desde a edição anterior. Em **Mínimo de escolas por
+   rede** dá para deixar de fora as redes muito pequenas (3, 5, 10 ou 20).
+   O botão **Maior primeiro / Menor primeiro** inverte a lista.
 2. **Escolas de um município:** digite o município, escolha o indicador e,
-   se quiser, a rede (municipal, estadual ou privada).
+   se quiser, a rede (municipal, estadual ou privada). **Menor primeiro**
+   mostra o fim da lista (ex.: as escolas com menos infraestrutura).
 3. **Para levar a outro lugar:** **Baixar CSV** exporta a tabela (separador
    `;`, abre no Excel); o endereço da página guarda os filtros, então o link
    reabre a mesma consulta.
@@ -41,8 +44,14 @@ indicador. Não precisa de login.
   rede. **Contexto** compara a rede com a média dos municípios do **mesmo
   quinto de INSE** no recorte: uma rede abaixo da média do estado pode estar
   acima das de contexto parecido.
-- Entram só redes com **pelo menos 3 escolas** com dado; as demais ficam de
-  fora e a página diz quantas.
+- Entram só redes com **pelo menos 3 escolas** com dado (ou o mínimo que
+  você escolher); as demais ficam de fora e a página diz quantas.
+- **Salto atípico**: a variação da rede ficou a mais de 2 desvios padrão da
+  média das redes do recorte (para cima ou para baixo). O número é o publicado
+  pelo INEP, não um erro, mas costuma vir de rede pequena ou de mudança fora
+  do comum: confira os dados da rede antes de citar.
+- Em **Menor primeiro**, a coluna **#** continua com a posição publicada
+  (a última escola aparece no topo com o número dela).
 - Escolas empatadas dividem a posição.
 
 ## Limitações conhecidas

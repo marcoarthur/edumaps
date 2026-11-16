@@ -34,7 +34,12 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   contexto socioeconômico — a média dos municípios de INSE parecido —, para
   responder "quais redes mais melhoraram?" e "este município entrega parecido
   com os semelhantes?" sem leitura punitiva. Redes com poucas escolas com dado
-  ficam de fora e são contadas.
+  ficam de fora e são contadas; o mínimo de escolas por rede é ajustável.
+- Sistema pode **avisar do salto atípico**: a rede cuja variação fica muito
+  acima ou abaixo das outras do recorte (mais de 2 desvios padrão) é marcada,
+  com o convite a conferir o dado antes de citar.
+- Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
+  quem está no fim (ex.: escolas com menos infraestrutura).
 
 ## Valor
 

@@ -86,6 +86,7 @@ sub redes_municipais ($self) {
   $v->required('indicador', 'trim')->like(qr/^[a-z0-9_]+$/);
   $v->optional('uf', 'trim')->like(qr/^[A-Z]{2}$/);
   $v->optional('nacional')->in(qw/0 1/);
+  $v->optional('minimo', 'trim')->like(qr/^\d{1,2}$/)->num(3, 30);
   return $self->bad_req if $self->any_error;
   return $self->bad_req('Informe a UF ou nacional=1')
     unless $v->param('uf') || $v->param('nacional');
@@ -93,7 +94,8 @@ sub redes_municipais ($self) {
   my $model = $self->instantiate_model(model => 'Rank::School');
   my $r = eval {
     $model->redes_municipais($v->param('indicador'),
-      { uf => $v->param('uf'), national => $v->param('nacional') ? 1 : 0 });
+      { uf => $v->param('uf'), national => $v->param('nacional') ? 1 : 0,
+        (defined $v->param('minimo') ? (minimo => 0 + $v->param('minimo')) : ()) });
   };
   return $self->render(json => { error => 'Indicador inválido para o ranking de redes (use um do IDEB/SAEB).' }, status => 400) if $@;
   return $self->render(json => { error => 'Sem redes com este indicador no recorte.' }, status => 404) unless $r;
