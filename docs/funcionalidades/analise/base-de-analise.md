@@ -33,6 +33,11 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   arquivo (ano do Censo, edição do IDEB e do INSE, ano da população).
 - Sistema pode **identificar a região** de cada escola, para juntar as bases
   de várias UFs e comparar regiões sem tabela auxiliar.
+- Sistema pode **dizer se a escola não tem água, energia ou esgoto**, além
+  de se o serviço vem da rede pública, para contar as escolas sem
+  infraestrutura básica sem confundir "fora da rede" com "sem".
+- Sistema pode **localizar cada escola** (latitude e longitude declaradas ao
+  Censo Escolar), para mapas.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a
   fonte, o ano e o link oficial de cada uma.
 - Sistema pode **mostrar o tamanho do recorte** (quantas escolas) antes de
