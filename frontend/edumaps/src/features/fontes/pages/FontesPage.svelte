@@ -52,6 +52,7 @@
       <li><strong>Cada tela diz o ano.</strong> O selo "Fonte" no pé de cada análise diz a base, o ano do dado e a data da carga.</li>
       <li><strong>Perfil da escola:</strong> a escola é comparada com o seu grupo de escolas parecidas; um sinal de atenção só aparece quando ela está pior que a mediana do grupo, no sentido de cada indicador. O IDEB é o da etapa de maior nota da edição mais recente.</li>
       <li><strong>Agrupamento de escolas:</strong> cada resultado diz o seu universo (quantas escolas entraram e por que as outras ficaram de fora), tem link que o reabre por 90 dias e exportação em CSV com os parâmetros guardados.</li>
+      <li><strong>Base de análise:</strong> a <a href="/base-analise" class="text-blue-700 hover:underline">base de análise</a> exporta os indicadores por escola de uma UF, com a versão dos dados em cada linha e um dicionário com a fonte de cada coluna.</li>
       <li><strong>Folha de pagamento:</strong> cobre só os municípios já carregados e só a rede municipal; a tela diz quais são.</li>
     </ul>
   </section>

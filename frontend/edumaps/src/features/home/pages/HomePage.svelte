@@ -76,6 +76,13 @@
         Rankings
       </a>
       <a
+        href="/base-analise"
+        onclick={(event) => go(event, "/base-analise")}
+        class="px-5 py-2.5 rounded-md border border-gray-300 text-gray-800 font-medium hover:bg-gray-100 transition-colors"
+      >
+        Base de análise
+      </a>
+      <a
         href="/gestor"
         onclick={(event) => go(event, "/gestor")}
         class="px-5 py-2.5 rounded-md border border-brand-700 text-brand-700 font-medium hover:bg-brand-50 transition-colors"

@@ -1,0 +1,65 @@
+import { render, screen, fireEvent } from "@testing-library/svelte";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import BaseAnalisePage from "./BaseAnalisePage.svelte";
+import { _resetFontes } from "@/features/fontes/api/fontesApi.js";
+
+function abrir(query = "") {
+  window.history.replaceState({}, "", `/base-analise${query}`);
+  return render(BaseAnalisePage);
+}
+
+describe("BaseAnalisePage (#439)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("sem UF: pede a UF e não oferece a base, mas o dicionário sim", async () => {
+    abrir();
+    expect(await screen.findByTestId("total-recorte")).toHaveTextContent("Escolha a UF");
+    expect(screen.queryByTestId("baixar-base")).toBeNull();
+    expect(screen.getByTestId("baixar-dicionario").getAttribute("href")).toBe("/api/base-analise/dicionario?");
+  });
+
+  it("identificação fixa; blocos marcados mudam a URL e os links", async () => {
+    abrir("?uf=ES");
+    expect(await screen.findByTestId("total-recorte")).toHaveTextContent("3.010 escolas em funcionamento");
+    expect(screen.getByLabelText(/Identificação/)).toBeDisabled();
+    expect(screen.getByLabelText(/Identificação/)).toBeChecked();
+
+    await fireEvent.click(screen.getByLabelText(/Infraestrutura/));
+    await fireEvent.click(screen.getByLabelText(/IDEB e SAEB por etapa/));
+    expect(window.location.search).toBe("?uf=ES&blocos=infraestrutura%2Cdesempenho&ano_ideb=2023");
+    expect(screen.getByTestId("baixar-base").getAttribute("href"))
+      .toBe("/api/base-analise/csv?uf=ES&blocos=infraestrutura%2Cdesempenho&ano_ideb=2023");
+    expect(screen.getByTestId("baixar-dicionario").getAttribute("href"))
+      .toBe("/api/base-analise/dicionario?blocos=infraestrutura%2Cdesempenho&ano_ideb=2023");
+    expect(screen.getByTestId("versao-dados")).toHaveTextContent("Censo Escolar 2025 · IDEB 2023.");
+  });
+
+  it("edição do IDEB escolhida vai no link; sem o bloco, o ano some", async () => {
+    abrir("?uf=ES&blocos=desempenho&ano_ideb=2021");
+    const sel = await screen.findByLabelText("Edição do IDEB");
+    expect(sel.value).toBe("2021");
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_ideb=2021");
+    await fireEvent.click(screen.getByLabelText(/IDEB e SAEB por etapa/));
+    expect(screen.queryByLabelText("Edição do IDEB")).toBeNull();
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toBe("/api/base-analise/csv?uf=ES");
+  });
+
+  it("rede filtra a contagem e entra no link", async () => {
+    abrir("?uf=ES");
+    await screen.findByText(/3\.010/);
+    await fireEvent.change(screen.getByLabelText("Rede"), { target: { value: "municipal" } });
+    expect(await screen.findByText(/1\.200/)).toBeInTheDocument();
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toBe("/api/base-analise/csv?uf=ES&rede=municipal");
+    expect(window.location.search).toBe("?uf=ES&rede=municipal");
+  });
+
+  it("parâmetros inválidos na URL são ignorados", async () => {
+    abrir("?uf=ES&blocos=salarios,inse&rede=comunitaria&ano_ideb=1990");
+    await screen.findByText(/3\.010/);
+    expect(screen.getByLabelText(/Nível socioeconômico/)).toBeChecked();
+    expect(screen.getByLabelText("Rede").value).toBe("");
+    const href = screen.getByTestId("baixar-base").getAttribute("href");
+    expect(href).toBe("/api/base-analise/csv?uf=ES&blocos=inse");
+  });
+});

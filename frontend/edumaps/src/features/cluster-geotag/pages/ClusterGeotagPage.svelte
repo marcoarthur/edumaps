@@ -308,6 +308,9 @@
       <p class="text-sm text-gray-600 mt-1">
         Escolha um conjunto de indicadores (ou monte sua própria lista), recorte a região e veja no mapa as escolas coloridas pelo grupo a que pertencem.
       </p>
+      <p class="text-xs text-gray-500 mt-1" data-testid="link-base-analise">
+        Quer só os indicadores por escola, sem agrupar? Use a <a href="/base-analise" class="text-blue-700 hover:underline">base de análise</a>.
+      </p>
     </div>
     <button
       onclick={voltarParaBusca}

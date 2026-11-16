@@ -46,6 +46,8 @@ genéricas.
 
 ## Relacionadas
 
+- [Base de análise](base-de-analise.md) — os indicadores por escola, sem agrupar
+
 - [Ranking de escolas](ranking.md)
 - [Escolas similares](../busca/similaridade.md)
 - [Comparação de redes](rede-municipal.md)
