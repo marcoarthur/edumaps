@@ -54,6 +54,27 @@ describe("BaseAnalisePage (#439)", () => {
     expect(window.location.search).toBe("?uf=ES&rede=municipal");
   });
 
+  it("edição antiga do IDEB: avisa o cruzamento com o Censo (#444)", async () => {
+    abrir("?uf=ES&blocos=desempenho");
+    await screen.findByLabelText("Edição do IDEB");
+    expect(screen.queryByTestId("aviso-anos")).toBeNull();
+
+    await fireEvent.change(screen.getByLabelText("Edição do IDEB"), { target: { value: "2021" } });
+    const aviso = await screen.findByTestId("aviso-anos");
+    expect(aviso).toHaveTextContent("são do Censo 2025; o IDEB é de 2021");
+    expect(aviso).toHaveTextContent("Escolas fechadas depois de 2021 não entram");
+    expect(screen.getByTestId("aviso-anos-baixar")).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByLabelText(/IDEB e SAEB por etapa/));
+    expect(screen.queryByTestId("aviso-anos")).toBeNull();
+    expect(screen.queryByTestId("aviso-anos-baixar")).toBeNull();
+  });
+
+  it("diz que o link traz a carga mais recente e que o arquivo é o que se cita (#444)", async () => {
+    abrir("?uf=ES");
+    expect(await screen.findByTestId("aviso-link")).toHaveTextContent("traz sempre a carga mais recente");
+  });
+
   it("parâmetros inválidos na URL são ignorados", async () => {
     abrir("?uf=ES&blocos=salarios,inse&rede=comunitaria&ano_ideb=1990");
     await screen.findByText(/3\.010/);

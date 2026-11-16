@@ -28,6 +28,10 @@
   const filtros = $derived({ uf, codigoIbge, rede, blocos, anoIdeb });
   const escolhidos = $derived(catalogo ? catalogo.blocos.filter((b) => b.fixo || blocos.includes(b.id)) : []);
   const nColunas = $derived(escolhidos.reduce((n, b) => n + b.colunas.length, 0));
+  // #444 (BA-01): edição antiga do IDEB cruzada com o Censo mais recente.
+  const idebAntigo = $derived(
+    !!catalogo && blocos.includes("desempenho") && anoIdeb != null && anoIdeb !== catalogo.anos.ideb[0],
+  );
 
   function definirUrl() {
     const p = new URLSearchParams();
@@ -97,6 +101,13 @@
     }
   });
 </script>
+
+{#snippet avisoAnos(testid)}
+  <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2" role="note" data-testid={testid}>
+    A lista de escolas, a infraestrutura e a docência são do Censo {catalogo.anos.censo}; o IDEB é de {anoIdeb}.
+    Escolas fechadas depois de {anoIdeb} não entram, e o cruzamento é entre anos diferentes.
+  </p>
+{/snippet}
 
 <div class="space-y-6">
   <header>
@@ -189,6 +200,7 @@
                   class="border border-gray-300 rounded-md px-2 py-1 text-sm">
                   {#each catalogo.anos.ideb as a}<option value={a}>{a}</option>{/each}
                 </select>
+                {#if idebAntigo}<div class="mt-2">{@render avisoAnos("aviso-anos")}</div>{/if}
               </div>
             {/if}
           </li>
@@ -203,6 +215,7 @@
         Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}.
         Separador ";" e vírgula decimal (abre direto no Excel). Ausência é célula vazia, nunca zero.
       </p>
+      {#if idebAntigo}{@render avisoAnos("aviso-anos-baixar")}{/if}
       <div class="flex flex-wrap gap-2">
         {#if uf}
           <a href={baseCsvUrl(filtros)} download data-testid="baixar-base"
@@ -214,6 +227,7 @@
           class="px-3 py-1.5 text-sm rounded-md border border-blue-700 text-blue-700 hover:bg-blue-50">Baixar dicionário das colunas</a>
       </div>
       <p class="text-xs text-gray-500">
+        <span data-testid="aviso-link">O link desta página traz sempre a carga mais recente. Para citar, guarde o arquivo: os anos estão no nome e nas últimas colunas.</span>
         Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção. Veja <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a>.
       </p>
     </section>
