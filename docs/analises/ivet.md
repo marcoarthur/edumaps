@@ -3,8 +3,10 @@
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
-> **Versão da fórmula**: `ivet-v1.3` (histórico: `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-10
-> (`ivet-v1.3`: escala logarítmica nos dois acessos do bloco C, §4.5.5).
+> **Versão da fórmula**: `ivet-v1.4` (histórico: `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-16
+> (`ivet-v1.4`: insumo corrigido, sem mudar a agregação. O `score_diversidade_discente`
+> passou a medir a inclusão pela educação especial em classe comum, #459; antes
+> somava os turnos. `ivet-v1.3`: escala logarítmica nos dois acessos do bloco C, §4.5.5).
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
 > **Estado**: documento vivo. A composição do índice-alvo está fixada; os **pesos
 > das dimensões territoriais** dependem de dado (#125–#127) e do versionamento
@@ -109,7 +111,7 @@ agregação final** (os 6 scores vivem lado a lado). Base: escolas ativas
 | `score_capacidade_atendimento` | `0.4·10·(1 − (qt_mat_bas/qt_salas_utilizadas)/50) + 0.2·(etapas/7·10) + 0.2·(qt_mat_bas_int/qt_mat_bas·10) + 0.2·(alimentação?10:0)` |
 | `score_infraestrutura` | `média( A,B,C,D )` onde A=5 colunas básicas, B=9 itens pedagógicos, C=5 de acessibilidade, D=5 de tecnologia (cada `÷N·10`) |
 | `score_capacitacao_docente` | `0.3·sup_grad/quadro·10 + 0.3·pós/quadro·10 + 0.2·concurso/quadro·10 + 0.2·especializações/quadro·10` |
-| `score_diversidade_discente` | `0.35·racial + 0.25·gênero + 0.20·PcD + 0.20·EJA` (cada bloco em 0–10) |
+| `score_diversidade_discente` | `0.35·racial + 0.25·gênero + 0.20·inclusão + 0.20·EJA` (cada bloco em 0–10). Inclusão = `qt_mat_esp_cc/qt_mat_bas` (educação especial em classe comum), desde `ivet-v1.4` (#459); até a `ivet-v1.3` somava `qt_mat_bas_d+dm+dv`, que são **turnos** (componente ≈ 9,8 em quase toda escola) |
 | `score_capacidade_gestora` | `0.3·qualificação + 0.2·especialização_gestão + 0.2·proporção_gestor_aluno + 0.2·colegiados + 0.1·acesso_meritocrático` |
 | `score_sustentabilidade` | `(energia_renovável?10:0 + resíduos?10:0 + média(área_verde, área_plantio)·10 + educação_ambiental?10:0) / 4` |
 
