@@ -184,12 +184,20 @@
   );
   const jaNaUf = $derived(!!d && abrangencia === "uf" && uf === d.uf);
 
-  // Leva a linha destacada para a vista quando a lista chega ou muda de ordem.
+  // Leva a linha destacada para a vista quando a lista chega ou muda de
+  // ordem. Rolagem direta depois do próximo quadro: a suave era interrompida
+  // pelo resto da página ainda montando.
+  function irParaDestaque() {
+    if (!linhaDestaque) return;
+    const el = document.getElementById(`rede-${linhaDestaque.codigo_ibge}`);
+    el?.scrollIntoView?.({ block: "center" });
+  }
+
   $effect(() => {
     if (!linhaDestaque || loading) return;
     void redesOrdenadas;
-    const el = document.getElementById(`rede-${linhaDestaque.codigo_ibge}`);
-    el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    const raf = requestAnimationFrame(() => setTimeout(irParaDestaque, 50));
+    return () => cancelAnimationFrame(raf);
   });
 
   function motivo(x, r) {
@@ -350,6 +358,7 @@
               {#if d.uf}({d.uf}{d.regiao ? `, ${rotuloRegiao(d.regiao)}` : ""}{d.porte ? `, ${rotuloPorte(d.porte)}` : ""}){/if}:
               {#if d.situacao === "no_ranking"}
                 {d.posicao}ª de {redes.total} {redes.total === 1 ? "rede" : "redes"} neste recorte pelo valor de {redes.ano}{#if ordem === "variacao" && linhaDestaque?.posicao_variacao}{" "}e {linhaDestaque.posicao_variacao}ª pela variação{/if}.
+                <button type="button" onclick={irParaDestaque} data-testid="ir-destaque" class="ml-1 text-xs text-blue-700 hover:underline">Ver na tabela</button>
               {:else}
                 {motivo(d, redes)}
               {/if}

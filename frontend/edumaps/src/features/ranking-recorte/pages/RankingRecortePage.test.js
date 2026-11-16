@@ -266,6 +266,11 @@ describe("RankingRecortePage — município destacado (#449)", () => {
     expect(screen.getByTestId("sugerir-porte-regiao")).toHaveTextContent("mesmo porte no Sudeste");
     expect(screen.queryByTestId("sugerir-uf")).toBeNull();
     expect(window.location.search).toContain("destaque=3205309");
+
+    const rolar = vi.fn();
+    linha.scrollIntoView = rolar;
+    await fireEvent.click(screen.getByTestId("ir-destaque"));
+    expect(rolar).toHaveBeenCalledWith({ block: "center" });
   });
 
   it("sugestão de porte e região troca o recorte e mantém o destaque", async () => {
