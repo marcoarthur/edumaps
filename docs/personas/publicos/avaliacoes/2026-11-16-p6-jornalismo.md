@@ -118,3 +118,6 @@ VJ-04), **#453** (VJ-02 e VJ-03) e **#454** (VJ-05).
   as redes sem variação e diz o motivo). Fechamento em
   [`../ciclos/2026-11-16-variacao-csv.md`](../ciclos/2026-11-16-variacao-csv.md).
   Fica #454 (VJ-05, operacional).
+- 2026-11-16: quarta rodada da P6: **adotaria** (mantido). Consolidação em
+  [`2026-11-16-p6-pautas-revisitadas.md`](2026-11-16-p6-pautas-revisitadas.md),
+  com o achado novo VK-01.

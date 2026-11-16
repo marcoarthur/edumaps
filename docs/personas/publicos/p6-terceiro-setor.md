@@ -55,9 +55,30 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
   VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
-  operacional).
+  operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 aguarda a
+  aprovação do developer para virar issue.
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (quarta rodada, pautas revisitadas)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-16-p6-pautas-revisitadas.md`](avaliacoes/2026-11-16-p6-pautas-revisitadas.md).
+
+**O que tentou:**
+- O mapa das escolas sem infraestrutura básica no PI (258 escolas; 179 sem
+  esgoto, 147 delas com coordenada).
+- As redes do Nordeste que mais pioraram.
+
+**O que funciona para ele:**
+- "sem" é "sem" na base, e o mapa sai pelo exemplo da ajuda;
+- as duas posições e o motivo da variação vazia.
+
+**Barreira:**
+- VK-01 (atrapalha): o índice "Infraestrutura" do ranking de escolas não
+  tem método na tela e não mede infraestrutura básica (Gilbués: uma escola
+  sem água, energia e esgoto fica em 20º de 27).
+
 
 ### 2026-11-16 — Análises públicas (terceira rodada, pautas do Nordeste)
 
