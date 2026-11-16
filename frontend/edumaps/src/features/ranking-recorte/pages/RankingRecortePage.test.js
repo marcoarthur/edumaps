@@ -359,3 +359,47 @@ describe("RankingRecortePage — variação vazia com motivo (#453)", () => {
     expect(screen.queryByTestId("sem-variacao")).toBeNull();
   });
 });
+
+describe("RankingRecortePage — infraestrutura básica e método (#457)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  const BASICA = {
+    indicador: { id: "infraestrutura_basica", label: "Infraestrutura básica", fonte: "censo", maximo: 4,
+      metodo: "Quantos dos 4 itens básicos a escola tem, de 0 a 4 (maior é melhor)." },
+    ano: 2025, municipio: { codigo_ibge: "2204402", nome: "Gilbués", uf: "PI" }, rede: null, total: 2,
+    escolas: [
+      { co_entidade: "22000001", no_entidade: "ESCOLA COMPLETA", rede: "Municipal", valor: 4, posicao: 1, inse: null, faltam: [] },
+      { co_entidade: "22063960", no_entidade: "ESCOLA SEM TRES", rede: "Municipal", valor: 1, posicao: 2, inse: null, faltam: ["água", "energia", "esgoto"] },
+    ],
+  };
+
+  it("mostra 'x de 4', a coluna Falta e o método", async () => {
+    let pedido = null;
+    server.use(http.get("*/api/ranking/escolas", ({ request }) => {
+      pedido = new URL(request.url).searchParams;
+      return HttpResponse.json(BASICA);
+    }));
+    abrir("?aba=escolas&indicador=infraestrutura_basica&codigo_ibge=2204402&sentido=asc");
+    const tabela = await screen.findByTestId("tabela-escolas");
+    expect(pedido.get("indicador")).toBe("infraestrutura_basica");
+    expect(screen.getByLabelText("Indicador").value).toBe("infraestrutura_basica");
+    const linhas = [...tabela.querySelectorAll("tbody tr")];
+    expect(linhas[0]).toHaveTextContent("ESCOLA SEM TRES");
+    expect(linhas[0]).toHaveTextContent("1 de 4");
+    expect(linhas[0]).toHaveTextContent("água, energia, esgoto");
+    expect(linhas[1]).toHaveTextContent("4 de 4");
+    expect(screen.getAllByTestId("faltam")[1]).toHaveTextContent("–");
+    expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("Quantos dos 4 itens básicos");
+  });
+
+  it("índice antigo: método na nota, sem a coluna Falta", async () => {
+    server.use(http.get("*/api/ranking/escolas", () => HttpResponse.json({
+      ...ESCOLAS_FIXTURE, indicador: { id: "infraestrutura", label: "Infraestrutura", fonte: "censo", metodo: "Índice de 0 a 10. Não é infraestrutura básica." },
+    })));
+    abrir("?aba=escolas&indicador=infraestrutura&codigo_ibge=3205309");
+    await screen.findByTestId("tabela-escolas");
+    expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("Não é infraestrutura básica");
+    expect(screen.queryAllByTestId("faltam")).toHaveLength(0);
+  });
+});

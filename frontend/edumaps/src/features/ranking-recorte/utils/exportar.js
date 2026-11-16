@@ -35,13 +35,20 @@ export function tabelaRedes(r, redes) {
   };
 }
 
-/** Escolas de um município: o município e a rede filtrada em cada linha. */
+/**
+ * Escolas de um município: o município e a rede filtrada em cada linha.
+ * #457: na infraestrutura básica, a coluna `faltam` lista os itens ausentes.
+ */
 export function tabelaEscolas(e, escolas) {
+  const comFaltas = escolas.some((x) => Array.isArray(x.faltam));
   return {
-    cabecalho: ["posicao", "inep", "escola", "rede", `${e.indicador.id}_${e.ano}`, "inse", "codigo_ibge", "municipio", "uf", "rede_filtro"],
+    cabecalho: [
+      "posicao", "inep", "escola", "rede", `${e.indicador.id}_${e.ano}`, ...(comFaltas ? ["faltam"] : []),
+      "inse", "codigo_ibge", "municipio", "uf", "rede_filtro",
+    ],
     linhas: escolas.map((x) => [
-      x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, x.inse,
-      e.municipio?.codigo_ibge, e.municipio?.nome, e.municipio?.uf, e.rede ?? "",
+      x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, ...(comFaltas ? [(x.faltam ?? []).join(", ")] : []),
+      x.inse, e.municipio?.codigo_ibge, e.municipio?.nome, e.municipio?.uf, e.rede ?? "",
     ]),
   };
 }

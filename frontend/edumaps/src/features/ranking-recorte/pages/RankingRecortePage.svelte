@@ -517,6 +517,10 @@
           <p class="text-xs text-gray-600" data-testid="nota-escolas">
             {escolas.total} escolas de {escolas.municipio.nome} ({escolas.municipio.uf}) com {escolas.indicador.label} em {escolas.ano}.
             Escolas empatadas dividem a posição.
+            {#if escolas.indicador.metodo}
+              <span class="block mt-1" data-testid="metodo-indicador"><strong>Como se calcula:</strong> {escolas.indicador.metodo}
+                Veja <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a>.</span>
+            {/if}
           </p>
           <button type="button" onclick={exportarEscolas}
             class="px-3 py-1.5 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800">Baixar CSV</button>
@@ -529,6 +533,7 @@
                 <th class="px-2 py-2 font-medium">Escola</th>
                 <th class="px-2 py-2 font-medium">Rede</th>
                 <th class="px-2 py-2 font-medium text-right">{escolas.ano}</th>
+                {#if escolas.indicador.maximo}<th class="px-2 py-2 font-medium">Falta</th>{/if}
                 <th class="px-2 py-2 font-medium text-right">INSE</th>
               </tr>
             </thead>
@@ -540,7 +545,12 @@
                     <a href="/escola/panel?inep={e.co_entidade}" class="text-blue-700 hover:underline">{e.no_entidade}</a>
                   </td>
                   <td class="px-2 py-1.5 text-gray-600">{e.rede ?? "–"}</td>
-                  <td class="px-2 py-1.5 text-right font-medium">{num(e.valor)}</td>
+                  <td class="px-2 py-1.5 text-right font-medium whitespace-nowrap">
+                    {escolas.indicador.maximo ? `${num(e.valor, 0)} de ${escolas.indicador.maximo}` : num(e.valor)}
+                  </td>
+                  {#if escolas.indicador.maximo}
+                    <td class="px-2 py-1.5 text-gray-700" data-testid="faltam">{e.faltam?.length ? e.faltam.join(", ") : "–"}</td>
+                  {/if}
                   <td class="px-2 py-1.5 text-right">{num(e.inse)}</td>
                 </tr>
               {/each}

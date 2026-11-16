@@ -38,7 +38,10 @@ indicador. Não precisa de login.
    um município**.
 2. **Escolas de um município:** digite o município, escolha o indicador e,
    se quiser, a rede (municipal, estadual ou privada). **Menor primeiro**
-   mostra o fim da lista (ex.: as escolas com menos infraestrutura).
+   mostra o fim da lista. Para "escolas sem infraestrutura básica", use o
+   indicador **Infraestrutura básica**: ele mostra "2 de 4" e, na coluna
+   **Falta**, quais itens faltam (água, energia, esgoto, banheiro). A nota
+   da tabela diz como cada indicador é calculado.
 3. **Para levar a outro lugar:** **Baixar CSV** exporta a tabela (separador
    `;`, abre no Excel); o endereço da página guarda os filtros, então o link
    reabre a mesma consulta. O arquivo de redes traz as duas posições,
@@ -80,6 +83,40 @@ indicador. Não precisa de login.
 - Em **Menor primeiro**, a coluna **#** continua com a posição publicada
   (a última escola aparece no topo com o número dela).
 - Escolas empatadas dividem a posição.
+
+## O que cada índice mede
+Os índices do Censo vão de 0 a 10, e maior é melhor. Em todos, item sem
+resposta no Censo conta como ausente, e a escola sem o registro (docentes,
+gestores, matrículas) fica com 0.
+- **Infraestrutura básica** (não é índice): quantos dos 4 itens a escola
+  tem, de 0 a 4. Os itens são água, energia elétrica, esgotamento sanitário
+  e banheiro. "Sem" é a resposta "inexistente" do Censo: poço, gerador,
+  energia solar e fossa contam como tem. Escola sem resposta num dos itens
+  fica fora da lista.
+- **Infraestrutura (índice):** média de quatro grupos de peso igual:
+  - básico: água potável, energia da rede pública, esgoto da rede ou fossa
+    séptica, lixo e banheiro;
+  - salas e equipamentos;
+  - acessibilidade;
+  - tecnologia.
+
+  O básico pesa um quarto, e a energia de gerador ou solar conta como
+  falta. Uma escola sem água, energia e esgoto pode ficar no meio da
+  lista, à frente de escolas que têm o básico mas poucas salas e
+  equipamentos.
+- **Capacidade de atendimento:** alunos por sala (40%), etapas oferecidas
+  (20%), tempo integral (20%) e alimentação escolar (20%).
+- **Capacitação docente:** ensino superior (30%), pós-graduação (30%),
+  concursados (20%) e formação continuada (20%).
+- **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e
+  meninos (25%) e EJA (20%). Os outros 20% deveriam medir os alunos com
+  deficiência, mas hoje somam as matrículas dos turnos diurno, matutino e
+  vespertino, que são quase todas, e quase toda escola recebe esses pontos.
+- **Capacidade gestora:** formação dos gestores (30%), formação em gestão
+  (20%), gestores por aluno (20%), órgãos colegiados (20%) e acesso ao
+  cargo por concurso, eleição ou seleção (10%).
+- **Sustentabilidade:** energia renovável, reciclagem do lixo, área verde e
+  de plantio, e educação ambiental, com peso igual.
 
 ## Limitações conhecidas
 - Por ora, só redes **municipais** entram no ranking de redes.

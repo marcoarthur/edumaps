@@ -37,14 +37,70 @@ has network_map => sub {
   };
 };
 
+# Método dos índices do Censo (#457, VK-01), lido de
+# data_pipeline/deploy/escolas_scores.sql. Escala 0 a 10, maior é melhor;
+# no índice, item sem resposta no Censo conta como ausente, e escola sem o
+# registro (docentes, gestores, matrículas) fica com 0.
+my $SEM_DADO = 'Item sem resposta no Censo conta como ausente.';
+our %METODO = (
+  infraestrutura => 'Índice de 0 a 10 (maior é melhor): média de quatro grupos de peso igual. '
+    . 'Básico: água potável, energia da rede pública, esgoto da rede ou fossa séptica, coleta de lixo e banheiro. '
+    . 'Salas e equipamentos: biblioteca ou sala de leitura, laboratórios de ciências e de informática, quadra, cozinha, refeitório e salas da diretoria, da secretaria e dos professores. '
+    . 'Acessibilidade: rampas, corrimão, piso tátil, sinalização e banheiro adaptado. '
+    . 'Tecnologia: computador, internet, lousa digital, multimídia e impressora. '
+    . 'Não é infraestrutura básica: o básico pesa um quarto, e energia de gerador ou solar conta como falta. Para água, energia, esgoto e banheiro, use "Infraestrutura básica". '
+    . $SEM_DADO,
+  capacidade_atendimento => 'Índice de 0 a 10 (maior é melhor). 40%: alunos por sala (10 sem lotação, 0 com 50 ou mais por sala). '
+    . '20%: etapas oferecidas, de 7 (creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional). '
+    . '20%: proporção de matrículas em tempo integral. 20%: alimentação escolar. '
+    . 'Sem salas ou matrículas informadas, a parte correspondente conta 0. ' . $SEM_DADO,
+  capacitacao_docente => 'Índice de 0 a 10 (maior é melhor). 30%: docentes com ensino superior. '
+    . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados. '
+    . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '
+    . 'Escola sem registro de docentes no Censo fica com 0.',
+  diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas (1 menos a soma dos quadrados das proporções). '
+    . '25%: equilíbrio entre meninas e meninos. 20%: proporção de matrículas na EJA. '
+    . '20%: deveria medir os alunos com deficiência, mas hoje soma as matrículas dos turnos diurno, matutino e vespertino, '
+    . 'que são quase todas: na prática, quase toda escola recebe esses 2 pontos. Escola sem matrículas informadas fica com 0.',
+  capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
+    . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
+    . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
+    . '10%: acesso ao cargo por concurso, eleição ou processo seletivo. Escola sem registro de gestores no Censo fica com 0.',
+  sustentabilidade => 'Índice de 0 a 10 (maior é melhor): média de quatro partes de peso igual. '
+    . 'Energia renovável; reciclagem ou reaproveitamento do lixo; área verde e área de plantio (meio ponto cada); educação ambiental. '
+    . $SEM_DADO,
+);
+
+# Indicadores só da lista de escolas de um município (#457): ficam fora do
+# indicator_registry, que o job de ranking pré-calculado (bin/ranking.pl) e
+# o painel da escola percorrem só com as fontes mv e ideb.
+our %BASICA = (
+  agua     => ['água',     'e.in_agua_inexistente = 0',    'e.in_agua_inexistente'],
+  energia  => ['energia',  'e.in_energia_inexistente = 0', 'e.in_energia_inexistente'],
+  esgoto   => ['esgoto',   'e.in_esgoto_inexistente = 0',  'e.in_esgoto_inexistente'],
+  banheiro => ['banheiro', 'e.in_banheiro = 1',            'e.in_banheiro'],
+);
+our @BASICA_ORDEM = qw(agua energia esgoto banheiro);
+has indicadores_municipio => sub {
+  return {
+    infraestrutura_basica => {
+      source => 'censo_basica', label => 'Infraestrutura básica',
+      metodo => 'Quantos dos 4 itens básicos a escola tem, de 0 a 4 (maior é melhor): água, energia elétrica, '
+        . 'esgotamento sanitário (da rede, fossa ou outro) e banheiro, como declarados ao Censo Escolar. '
+        . '"Sem água", "sem energia" e "sem esgoto" são as respostas "inexistente" do Censo: poço, gerador, '
+        . 'energia solar e fossa contam como tem. "Menor primeiro" mostra as escolas com mais faltas.',
+    },
+  };
+};
+
 has indicator_registry => sub {
   return {
-    infraestrutura => { source => 'mv', column => 'score_infraestrutura', label => 'Infraestrutura' },
-    capacidade_atendimento => { source => 'mv', column => 'score_capacidade_atendimento', label => 'Capacidade de Atendimento' },
-    capacitacao_docente => { source => 'mv', column => 'score_capacitacao_docente', label => 'Capacitação Docente' },
-    diversidade_discente => { source => 'mv', column => 'score_diversidade_discente', label => 'Diversidade Discente' },
-    capacidade_gestora => { source => 'mv', column => 'score_capacidade_gestora', label => 'Capacidade Gestora' },
-    sustentabilidade => { source => 'mv', column => 'score_sustentabilidade', label => 'Sustentabilidade' },
+    infraestrutura => { source => 'mv', column => 'score_infraestrutura', label => 'Infraestrutura', metodo => $METODO{infraestrutura} },
+    capacidade_atendimento => { source => 'mv', column => 'score_capacidade_atendimento', label => 'Capacidade de Atendimento', metodo => $METODO{capacidade_atendimento} },
+    capacitacao_docente => { source => 'mv', column => 'score_capacitacao_docente', label => 'Capacitação Docente', metodo => $METODO{capacitacao_docente} },
+    diversidade_discente => { source => 'mv', column => 'score_diversidade_discente', label => 'Diversidade Discente', metodo => $METODO{diversidade_discente} },
+    capacidade_gestora => { source => 'mv', column => 'score_capacidade_gestora', label => 'Capacidade Gestora', metodo => $METODO{capacidade_gestora} },
+    sustentabilidade => { source => 'mv', column => 'score_sustentabilidade', label => 'Sustentabilidade', metodo => $METODO{sustentabilidade} },
     ideb_anos_iniciais => { source => 'ideb', column => 'ideb_observado', etapa => 'fundamental_i', label => 'IDEB – Anos Iniciais' },
     ideb_anos_finais => { source => 'ideb', column => 'ideb_observado', etapa => 'fundamental_ii', label => 'IDEB – Anos Finais' },
     ideb_ensino_medio => { source => 'ideb', column => 'ideb_observado', etapa => 'ensino_medio', label => 'IDEB – Ensino Médio' },
@@ -341,18 +397,39 @@ our $DESVIOS_ATIPICO = 2;
 # Porte do município (#439): classes em EduMaps::Porte.
 
 sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
-  my $def = $self->indicator_registry->{$indicator_id}
+  my $def = $self->indicator_registry->{$indicator_id} // $self->indicadores_municipio->{$indicator_id}
     or croak "Indicador desconhecido: $indicator_id";
+  my $basica = $def->{source} eq 'censo_basica';
+  my $fonte_rede = $basica ? 'mv' : $def->{source};    # o Censo usa o mapa de tp_dependencia
   my $network = $opts->{network};
   if (defined $network) {
     croak "Rede de ensino desconhecida: $network"
-      unless exists $self->network_map->{ $def->{source} }{$network};
+      unless exists $self->network_map->{$fonte_rede}{$network};
   }
-  my $column = $self->_assert_known_column($def->{column});
+  my $column = $basica ? undef : $self->_assert_known_column($def->{column});
   my $dbh = $self->schema->storage->dbh;
 
   my ($sql, @bind, $ano);
-  if ($def->{source} eq 'mv') {
+  if ($basica) {
+    # #457: itens básicos presentes (0 a 4) e os que faltam, do último Censo.
+    ($ano) = $dbh->selectrow_array(
+      'SELECT max(nu_ano_censo) FROM clean.censo_escolas WHERE co_municipio = ? AND tp_situacao_funcionamento = 1',
+      undef, $codigo_ibge);
+    return undef unless $ano;
+    my @tem = map { "($BASICA{$_}[1])" } @BASICA_ORDEM;
+    my $valor = join ' + ', map { "($_)::int" } @tem;
+    my $faltam = 'array_remove(ARRAY[' . join(', ', map { "CASE WHEN NOT ($BASICA{$_}[1]) THEN '$BASICA{$_}[0]' END" } @BASICA_ORDEM) . '], NULL)';
+    # Escola sem resposta em algum item fica fora (ausência não vira falta).
+    my $completo = join ' AND ', map { "$BASICA{$_}[2] IS NOT NULL" } @BASICA_ORDEM;
+    my $rede_sql = defined $network ? 'AND e.tp_dependencia = ?' : '';
+    $sql = qq{
+      SELECT e.co_entidade, e.no_entidade, e.tp_dependencia, ($valor)::float8 AS valor, $faltam AS faltam
+        FROM clean.censo_escolas e
+       WHERE e.nu_ano_censo = ? AND e.co_municipio = ? AND e.tp_situacao_funcionamento = 1 AND $completo $rede_sql
+    };
+    @bind = ($ano, $codigo_ibge, (defined $network ? ($self->network_map->{mv}{$network}) : ()));
+  }
+  elsif ($def->{source} eq 'mv') {
     ($ano) = $dbh->selectrow_array(
       "SELECT max(s.nu_ano_censo) FROM clean.mv_escolas_scores s
          JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
@@ -403,7 +480,9 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
     'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio = ? LIMIT 1', undef, $codigo_ibge);
 
   return {
-    indicador => { id => $indicator_id, label => $def->{label}, fonte => $def->{source} eq 'mv' ? 'censo' : 'ideb' },
+    indicador => { id => $indicator_id, label => $def->{label}, fonte => $def->{source} eq 'ideb' ? 'ideb' : 'censo',
+                   (defined $def->{metodo} ? (metodo => $def->{metodo}) : ()),
+                   ($basica ? (maximo => 0 + @BASICA_ORDEM) : ()) },
     ano       => 0 + $ano,
     municipio => { codigo_ibge => "$codigo_ibge", nome => $municipio, uf => $uf },
     rede      => $network,
@@ -415,6 +494,7 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
       valor       => 0 + $_->{valor},
       posicao     => 0 + $_->{posicao},
       inse        => defined $_->{inse} ? 0 + $_->{inse} : undef,
+      ($basica ? (faltam => $_->{faltam} // []) : ()),
     } } @$rows ],
   };
 }
