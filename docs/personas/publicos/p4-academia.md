@@ -46,6 +46,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p4--academia-pesquisadora): não adotaria por ora (mantido; reavaliação pendente). CSV de redes com INSE.
 - [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido). RV-01 resolvido; ficam #438 e #439.
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido). RV-03 resolvido; fica #439.
+- [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido até nova rodada). RV-02 e RV-05 resolvidos; nenhum achado da reavaliação aberto.
 
 ## Pendências
 

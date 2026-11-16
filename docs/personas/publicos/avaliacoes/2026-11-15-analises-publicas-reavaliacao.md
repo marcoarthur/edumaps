@@ -80,3 +80,8 @@ RV-04), **#438** (RV-03) e **#439** (RV-02 e RV-05, decisão de produto).
   CSV do agrupamento). Fechamento em
   [`../ciclos/2026-11-16-csv-versao.md`](../ciclos/2026-11-16-csv-versao.md).
   Fica #439 (RV-02 e RV-05, decisão de produto).
+- 2026-11-16: #439 (PRs #442 e #443) mergeado: RV-05 (porte no ranking) e
+  RV-02 (base de análise pública, uma UF por vez) resolvidos. Fechamento em
+  [`../ciclos/2026-11-16-base-analise.md`](../ciclos/2026-11-16-base-analise.md).
+  Nenhum achado da reavaliação fica aberto; uma rodada nova da P4 confirmaria o
+  veredito.

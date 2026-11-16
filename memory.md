@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (br) — #439 em dois PRs (#442, #443), mergeados
+
+- Decisões do developer (2026-11-16): base de análise **pública**, **uma UF
+  por vez**, **só CSV**; porte pelas **classes de população do IBGE**. Base
+  nacional, séries e API = assinatura de dados (fora).
+- #442 (514f93b): porte no ranking de redes; filtro antes do RANK/quintos/
+  salto atípico; base `ibge_populacao` no catálogo de fontes (ano fixo 2025,
+  a tabela não tem ano).
+- #443 (6230eab, empilhado; retarget para main antes do merge do #442):
+  `EduMaps::BaseAnalise` + `/api/base-analise[/csv|/dicionario]` + página
+  `/base-analise`; lê as tabelas de origem (não `school_indicators`, que o
+  agrupamento trunca); `EduMaps::Porte` compartilhado. `aprovacao_si_4` está
+  em % (não 0–1). Nota técnica 207, ciclo `2026-11-16-base-analise.md`.
+- #439 fechada à mão (PRs com "Refs"). Reavaliação P4/P6 sem achado aberto.
+
 ## Sessão 2026-11-16 (bq) — #438 (PR #441) mergeado
 
 - #438 → PR #441 (8ce6730): CSV do agrupamento com `ano_censo`/`ano_ideb` no
