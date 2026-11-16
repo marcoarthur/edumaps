@@ -58,8 +58,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
-  RG-01 a RG-03, detalhes, aguardando a aprovação do developer para virar
-  issue.
+  RG-01 a RG-03, detalhes: #448 (RG-01 e RG-02) e #449 (RG-03).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

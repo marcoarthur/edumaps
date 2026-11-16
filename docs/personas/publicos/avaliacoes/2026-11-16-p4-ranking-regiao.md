@@ -15,8 +15,8 @@ por decisão de produto.
     - para a pergunta das regiões, baixar a docência das 27 UFs (como a
       ajuda orienta), juntar no R e comparar as regiões.
 - ⚠️ Simulação: não substitui uma pesquisadora de verdade.
-- Feita a pedido do developer. Os achados abaixo **não viraram issue**: pela
-  regra, issue só com a aprovação dele.
+- Feita a pedido do developer. Issues **#448** e **#449**, abertas com a
+  aprovação dele.
 
 ## As perguntas do perfil
 
@@ -75,8 +75,12 @@ por decisão de produto.
 
 ## Encaminhamento
 
-Os três são detalhes; a P4 continua em **adotaria**. Proposta, se o developer
-aprovar as issues:
+Issues abertas com a aprovação do developer (2026-11-16): **#448** (RG-01 e
+RG-02) e **#449** (RG-03).
+
+### Proposta original
+
+Os três são detalhes; a P4 continua em **adotaria**.
 
 1. **RG-01 e RG-02 cabem num PR pequeno.** Uma coluna na identificação da
    base (com a linha no dicionário) e as colunas de recorte no CSV do
