@@ -36,6 +36,10 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
 - Sistema pode **dizer se a escola não tem água, energia ou esgoto**, além
   de se o serviço vem da rede pública, para contar as escolas sem
   infraestrutura básica sem confundir "fora da rede" com "sem".
+- Sistema pode **dizer as etapas que cada escola oferece**, para separar
+  "não oferece a etapa" de "não teve IDEB", e avisa, no dicionário e na
+  ajuda, que a falta do IDEB se concentra nas escolas pequenas, rurais e sem
+  infraestrutura.
 - Sistema pode **localizar cada escola** (latitude e longitude declaradas ao
   Censo Escolar), para mapas.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a

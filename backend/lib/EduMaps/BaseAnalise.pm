@@ -69,6 +69,21 @@ my @INFRA = (
   [in_acessibilidade_rampas   => 'Tem rampas de acessibilidade (1 = sim, 0 = não)'],
 );
 
+# Etapas oferecidas (#461): 1 = oferece, 0 = não; vazio quando o Censo não
+# traz. O sufixo casa com o do IDEB (_ai, _af, _em). O ensino médio do SAEB
+# inclui o integrado e o normal, por isso o GREATEST (que ignora NULL).
+my @ETAPAS_OFERTA = (
+  [oferece_creche       => 'e.in_comum_creche', 'Oferece creche (1 = sim, 0 = não). Censo: in_comum_creche'],
+  [oferece_pre          => 'e.in_comum_pre', 'Oferece pré-escola (1 = sim, 0 = não). Censo: in_comum_pre'],
+  [oferece_ai           => 'e.in_comum_fund_ai', 'Oferece os anos iniciais do fundamental (1 = sim, 0 = não). Casa com ideb_ai. Censo: in_comum_fund_ai'],
+  [oferece_af           => 'e.in_comum_fund_af', 'Oferece os anos finais do fundamental (1 = sim, 0 = não). Casa com ideb_af. Censo: in_comum_fund_af'],
+  [oferece_em           => 'GREATEST(e.in_comum_medio_medio, e.in_comum_medio_integrado, e.in_comum_medio_normal)',
+                           'Oferece ensino médio, inclusive integrado e normal (1 = sim, 0 = não). Casa com ideb_em. Censo: in_comum_medio_medio, _integrado e _normal'],
+  [oferece_eja          => 'e.in_eja', 'Oferece EJA (1 = sim, 0 = não). Censo: in_eja'],
+  [oferece_profissional => 'e.in_profissionalizante', 'Oferece educação profissional (1 = sim, 0 = não, vazio quando o Censo não traz). Censo: in_profissionalizante'],
+  [classe_especial_exclusiva => 'e.in_especial_exclusiva', 'Tem classe especial exclusiva (1 = sim, 0 = não). Censo: in_especial_exclusiva'],
+);
+
 # Docência: as mesmas fórmulas do agrupamento (Task::Clustering). A contagem
 # é a do Censo Escolar, por escola: quem dá aula em mais de uma escola conta
 # em cada uma (#444, BA-04).
@@ -89,7 +104,11 @@ sub _blocos {
     my ($suf, $etapa, $nome_etapa) = @$e;
     for my $m (@MEDIDAS_IDEB) {
       my ($col, $origem, $desc) = @$m;
-      push @ideb, ["${col}_$suf", "i.${col}_$suf", "$desc, $nome_etapa", 1];
+      # #461 (RX-02): o vazio do IDEB mistura "não oferece" e "não teve
+      # resultado", e a falta não é aleatória.
+      push @ideb, ["${col}_$suf", "i.${col}_$suf",
+        "$desc, $nome_etapa. Vazio: a escola não oferece a etapa (veja oferece_$suf) ou não teve resultado publicado "
+        . '(participação insuficiente no SAEB). A falta não é aleatória: é mais comum nas escolas pequenas, rurais e sem infraestrutura (veja a ajuda)', 1];
     }
   }
   return [
@@ -110,6 +129,10 @@ sub _blocos {
         ['latitude',    'e.latitude::float8',  'Latitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
         ['longitude',   'e.longitude::float8', 'Longitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
       ] },
+    # #461 (RX-02): a oferta separa "não oferece a etapa" de "não teve IDEB".
+    { id => 'etapas', label => 'Etapas oferecidas', fonte => 'censo',
+      descricao => 'Se a escola oferece creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional, e se tem classe especial exclusiva. Com o IDEB, separa "não oferece a etapa" de "não teve nota".',
+      colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @ETAPAS_OFERTA ] },
     { id => 'infraestrutura', label => 'Infraestrutura', fonte => 'censo',
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
@@ -117,7 +140,7 @@ sub _blocos {
       descricao => 'Número de docentes e proporções de formação, mestrado, doutorado, efetivos e sem especialização, sobre o total de docentes da escola. Quem dá aula em mais de uma escola conta em cada uma.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @DOCENCIA ] },
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
-      descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida.',
+      descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida. O IDEB falta sobretudo nas escolas pequenas, rurais e sem infraestrutura: marque também as etapas oferecidas.',
       colunas => \@ideb },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',

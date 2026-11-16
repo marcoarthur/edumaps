@@ -27,6 +27,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 2. **Indicadores:** a **identificação** (INEP, nome, município, UF, região,
    rede, localização urbana ou rural, latitude e longitude) vem sempre.
    Marque os blocos que quiser:
+   - **Etapas oferecidas:** se a escola oferece creche, pré-escola, anos
+     iniciais (`oferece_ai`), anos finais (`oferece_af`), ensino médio
+     (`oferece_em`, inclusive integrado e normal), EJA e educação
+     profissional, e se tem classe especial exclusiva (1 = sim, 0 = não);
    - **Infraestrutura:** água, energia, esgoto, lixo, banheiro, biblioteca,
      laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem), e se a
      escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
@@ -50,6 +54,20 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 ## Entendendo os números
 - **Ausência é célula vazia, nunca zero.** Escola sem IDEB numa etapa (porque
   não oferece a etapa ou não teve nota publicada) fica com a célula vazia.
+  Para separar os dois casos, marque **Etapas oferecidas**: `oferece_ai = 1`
+  com `ideb_ai` vazio é "oferece e não teve nota".
+- **Quem fica sem IDEB.** O IDEB só é publicado para as escolas com
+  participação suficiente no SAEB, e a falta não é aleatória: as escolas
+  pequenas, as rurais e as sem infraestrutura ficam de fora com muito mais
+  frequência.
+  - **Exemplo:** entre as escolas públicas da BA e do ES que oferecem anos
+    iniciais, 12,7% das que não têm algum item básico (água, energia,
+    esgoto ou banheiro) têm IDEB 2023, contra 44,3% das completas.
+  - **O efeito:** um modelo do IDEB que use só as escolas com nota quase não
+    vê as escolas sem infraestrutura, e a associação some por seleção.
+  - **Antes de modelar,** compare quem tem IDEB entre os grupos. No R:
+    `base$tem_ideb <- !is.na(base$ideb_ai)` e
+    `with(subset(base, oferece_ai == 1), tapply(tem_ideb, in_agua_inexistente, mean))`.
 - **Versão dos dados:** as últimas colunas (`ano_censo`, `ano_ideb`,
   `ano_inse`, `ano_populacao`) repetem em toda linha o ano de cada base, e o
   nome do arquivo também leva os anos (ex.:

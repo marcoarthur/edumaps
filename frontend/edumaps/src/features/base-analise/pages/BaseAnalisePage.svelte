@@ -28,6 +28,7 @@
   const filtros = $derived({ uf, codigoIbge, rede, blocos, anoIdeb });
   const escolhidos = $derived(catalogo ? catalogo.blocos.filter((b) => b.fixo || blocos.includes(b.id)) : []);
   const nColunas = $derived(escolhidos.reduce((n, b) => n + b.colunas.length, 0));
+  const temEtapas = $derived(!!catalogo && catalogo.blocos.some((b) => b.id === "etapas"));
   // #444 (BA-01): edição antiga do IDEB cruzada com o Censo mais recente.
   const idebAntigo = $derived(
     !!catalogo && blocos.includes("desempenho") && anoIdeb != null && anoIdeb !== catalogo.anos.ideb[0],
@@ -201,6 +202,13 @@
                   {#each catalogo.anos.ideb as a}<option value={a}>{a}</option>{/each}
                 </select>
                 {#if idebAntigo}<div class="mt-2">{@render avisoAnos("aviso-anos")}</div>{/if}
+                {#if temEtapas && !blocos.includes("etapas")}
+                  <!-- #461 (RX-02): o vazio do IDEB mistura "não oferece" e "não teve nota". -->
+                  <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="dica-etapas">
+                    O IDEB vazio mistura "não oferece a etapa" e "não teve nota", e a nota falta sobretudo nas escolas pequenas, rurais e sem infraestrutura.
+                    <button type="button" class="text-blue-700 hover:underline" onclick={() => alternarBloco("etapas")}>Marcar também as etapas oferecidas</button>
+                  </p>
+                {/if}
               </div>
             {/if}
           </li>
