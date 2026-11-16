@@ -65,6 +65,7 @@ já estar lá — o registry é quem diz):
 | `inep_rendimento_distorcao` | #376 |
 | `idempotencia` | #416 |
 | `analytics_cluster_execucoes` | #427 |
+| `escolas_scores_diversidade_esp` | #459 (recria `clean.mv_escolas_scores`; ver §6, passo 3) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -72,8 +73,9 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `analytics_cluster_execucoes` (#427; antes era `idempotencia`) e o `deploy_db_dev` não
-      reportou erro.
+- [ ] A última change do registry é `escolas_scores_diversidade_esp` (#459; antes `analytics_cluster_execucoes`) e o `deploy_db_dev` não
+      reportou erro. Conferir a change pelo verify dela:
+      `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -183,6 +185,15 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    ```
    Esperado: ~80% dos acidentes com município. Se faltar memória, rodar com
    `--arg apenas_marcos` depois de uma carga parcial (nota técnica 189).
+3. **Índices das escolas recalculados (#459)**, nesta ordem, depois do
+   `deploy_db_dev` (a MV já sai recalculada da change):
+   ```bash
+   perl -Ilib bin/ranking.pl --source mv          # ranking pré-calculado (~1 min)
+   ./script/edumaps.pl eval 'app->build_controller->refresh_school_embeddings'   # escolas semelhantes
+   ```
+   Esperado: média do `score_diversidade_discente` perto de 4,2 (era 6,0);
+   `refresh_school_embeddings` termina com ~177 mil vetores. O IVET vem no
+   §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.4`).
 
 ## 7. Isócrona ES/MG e IVET (#295)
 
@@ -206,7 +217,7 @@ mostra (esperado `2026-10-21`). A carga roda destacada no host do banco
 Depois, reprocessar o IVET pelo job `refresh_ivet` (fila `analytics`), como na
 validação de 2026-10-20, e conferir:
 
-- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.3`.
+- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.4` (#459: insumo de diversidade corrigido).
 - [ ] Publicáveis próximos dos 145 mil da última medição nacional.
 - [ ] Fechar a #295 e abrir a issue de Sul, Centro-Oeste e Norte (~47 mil
       escolas), condicionada a ampliar o disco do banco.

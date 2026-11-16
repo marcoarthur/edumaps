@@ -83,3 +83,7 @@ Issue aberta com a aprovação do developer (2026-11-16): **#457** (VK-01).
   e na ajuda). Ao escrever o método, apareceu o erro do índice de diversidade
   discente (soma os turnos), registrado na **#459**. Fechamento em
   [`../ciclos/2026-11-16-infraestrutura-basica.md`](../ciclos/2026-11-16-infraestrutura-basica.md).
+- 2026-11-16: #459 (PR #460) mergeado: o índice de diversidade discente mede a
+  inclusão pela educação especial em classe comum (antes somava os turnos); o
+  IVET sobe para `ivet-v1.4`. Fechamento em
+  [`../ciclos/2026-11-16-diversidade-especial.md`](../ciclos/2026-11-16-diversidade-especial.md).

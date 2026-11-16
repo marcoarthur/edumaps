@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bz) — #459 (PR #460) mergeado
+
+- Decisões do developer: opção A (`qt_mat_esp_cc`, educação especial em
+  classe comum) e IVET `ivet-v1.4`.
+- PR #460 (6dea752): change nova `escolas_scores_diversidade_esp` (DROP+CREATE
+  da `clean.mv_escolas_scores`, repõe 7 índices, comentários e GRANT ao
+  `edumaps_leitor`; verify com RAISE contra os turnos). IVET v1.4 em
+  `ivet_versao()`, card, testes e `docs/analises/ivet.md`.
+- Pós-deploy (ordem): `bin/ranking.pl --source mv` (container:
+  `PERL5LIB=local/lib/perl5 perl -Ilib bin/ranking.pl`), `refresh_school_embeddings`
+  (`carton exec -- ./script/edumaps.pl eval 'app->build_controller->refresh_school_embeddings'`;
+  sem `--`, o carton come o `-v`), rebuild do `analytic` e `refresh_ivet`
+  (`apply_ivet_refresh`). Média da diversidade 6,00 → 4,16. Os refresh_ivet de
+  09–10/11 tinham ficado "stuck" (antes do worker analytics). Nota 215,
+  ciclo `2026-11-16-diversidade-especial.md`. Roteiro do LXC com os passos.
+
 ## Sessão 2026-11-16 (by) — quarta avaliação da P6, #457 (PR #458), #459 aberta
 
 - Quarta rodada da P6 (pautas revisitadas): **adotaria** (mantido). VK-01:

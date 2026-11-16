@@ -48,6 +48,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-01 e VJ-04 resolvidos; ficam #453 e #454.
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-02 e VJ-03 resolvidos; fica #454.
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VK-01 resolvido; ficam #454 e #459.
+- [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: ranking de diversidade sem premiar o turno. Fica #454.
 
 ## Pendências
 
@@ -57,7 +58,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
   VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
   operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 entregue (#458); a fórmula da diversidade
-  discente ficou na #459.
+  discente foi corrigida na #459 (#460). Pendente: #454 (operacional).
 
 ## Entradas
 
