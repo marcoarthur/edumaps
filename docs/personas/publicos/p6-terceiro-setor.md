@@ -44,7 +44,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). Pendentes RV-01
-  e RV-04, sem issue (aguardam o developer).
+  e RV-04 (#437).
 
 ## Entradas
 

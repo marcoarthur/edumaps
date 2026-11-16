@@ -58,7 +58,12 @@ os bloqueios delas serem entregues no mesmo dia:
 | RV-04 | detalhe | **Ranking de escolas só em ordem decrescente.** "Onde estão as escolas sem infraestrutura básica?" pede o fim da lista; dá para ler, mas não ordenar nem filtrar. | `/ranking?aba=escolas&indicador=infraestrutura` | P6 |
 | RV-05 | detalhe | **Porte do município fora do ranking de redes.** "Municípios de porte e região semelhantes" (P4) só tem o contexto de INSE, não de porte. | `/ranking` | P4 |
 
-## Encaminhamento proposto (aguarda o developer)
+## Encaminhamento
+
+Issues abertas com a aprovação do developer (2026-11-15): **#437** (RV-01 e
+RV-04), **#438** (RV-03) e **#439** (RV-02 e RV-05, decisão de produto).
+
+### Proposta original
 
 1. RV-01 e RV-04 cabem num PR pequeno: marca de salto atípico, mínimo
    ajustável e ordem crescente.
