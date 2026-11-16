@@ -41,7 +41,10 @@ em vez de tratar toda a rede do mesmo jeito.
 7. **Guardar e compartilhar:** a caixa **Universo** tem **Copiar link** (reabre
    este mesmo resultado, com o formulário preenchido, por 90 dias) e **Baixar
    CSV** (uma linha por escola: INEP, nome, município, rede, grupo e os
-   valores dos indicadores; separador `;`, abre direto no Excel).
+   valores dos indicadores; separador `;`, abre direto no Excel). As duas
+   últimas colunas, `ano_censo` e `ano_ideb`, dizem a versão dos dados, que
+   também vai no nome do arquivo (`agrupamento-censo2025-ideb2023-….csv`):
+   guardado ou renomeado, o arquivo continua dizendo de que base veio.
 
 ## Entendendo os resultados
 
