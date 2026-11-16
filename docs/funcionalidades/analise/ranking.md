@@ -50,6 +50,11 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   no recorte, o motivo quando a rede fica de fora (outro recorte, outro
   porte, poucas escolas ou sem dado) e a sugestão de comparar com os de
   mesmo porte na região ou na UF dele.
+- Sistema pode **listar as escolas sem infraestrutura básica** de um
+  município: quantos dos 4 itens (água, energia, esgoto, banheiro) cada uma
+  tem e quais faltam, pelas respostas do Censo Escolar.
+- Sistema pode **dizer como cada índice é calculado** (escala, partes e
+  ressalvas), na própria tabela.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

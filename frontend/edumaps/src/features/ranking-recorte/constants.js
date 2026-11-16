@@ -15,7 +15,10 @@ export const INDICADORES_IDEB = [
 ];
 
 export const INDICADORES_CENSO = [
-  { id: "infraestrutura", label: "Infraestrutura" },
+  // #457 (VK-01): itens básicos (água, energia, esgoto, banheiro), de 0 a 4;
+  // só na lista de escolas de um município.
+  { id: "infraestrutura_basica", label: "Infraestrutura básica (água, energia, esgoto, banheiro)" },
+  { id: "infraestrutura", label: "Infraestrutura (índice)" },
   { id: "capacidade_atendimento", label: "Capacidade de Atendimento" },
   { id: "capacitacao_docente", label: "Capacitação Docente" },
   { id: "diversidade_discente", label: "Diversidade Discente" },

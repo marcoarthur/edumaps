@@ -210,6 +210,49 @@ subtest 'município destacado (#449)' => sub {
   ok !defined EduMaps::Regiao->de_uf('XX'), 'de_uf: UF desconhecida';
 };
 
+# Infraestrutura básica (#457): município fictício 6000392 com três escolas
+# no Censo — completa, sem esgoto (fossa conta como tem, então "inexistente")
+# e sem água, energia e esgoto — mais uma fechada e uma sem resposta.
+subtest 'infraestrutura básica (#457)' => sub {
+  my $MUNB = 6000392;
+  my @IB = ('60003921', '60003922', '60003923', '60003924', '60003925');
+  my $ph3 = join ',', ('?') x @IB;
+  my $limpa3 = sub { $dbh->do("DELETE FROM clean.censo_escolas WHERE co_entidade IN ($ph3)", {}, @IB) };
+  $limpa3->();
+  my ($ano) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas') // 2025;
+  my $ins3 = $dbh->prepare(q{INSERT INTO clean.censo_escolas
+    (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio, no_municipio, sg_uf, tp_situacao_funcionamento,
+     in_agua_inexistente, in_energia_inexistente, in_esgoto_inexistente, in_banheiro)
+    VALUES (?, ?, ?, ?, ?, 'Basica do Teste', 'XX', ?, ?, ?, ?, ?)});
+  $ins3->execute($ano, $IB[0], 'Completa',      3, $MUNB, 1, 0, 0, 0, 1);
+  $ins3->execute($ano, $IB[1], 'Sem esgoto',    2, $MUNB, 1, 0, 0, 1, 1);
+  $ins3->execute($ano, $IB[2], 'Sem tres',      3, $MUNB, 1, 1, 1, 1, 1);
+  $ins3->execute($ano, $IB[3], 'Fechada',       3, $MUNB, 2, 1, 1, 1, 0);
+  $ins3->execute($ano, $IB[4], 'Sem resposta',  3, $MUNB, 1, 0, 0, undef, 1);
+
+  my $r = $t->get_ok("/api/ranking/escolas?codigo_ibge=$MUNB&indicador=infraestrutura_basica")->status_is(200)->tx->res->json;
+  is $r->{total}, 3, 'só as em funcionamento e com os quatro itens respondidos';
+  is $r->{indicador}{maximo}, 4, 'de 4 itens';
+  like $r->{indicador}{metodo}, qr/Quantos dos 4 itens básicos.*poço, gerador/s, 'método';
+  my %e = map { $_->{co_entidade} => $_ } @{ $r->{escolas} };
+  is [ @{ $e{$IB[0]} }{qw(valor posicao)} ], [4, 1], 'completa: 4 de 4, primeira';
+  is $e{$IB[0]}{faltam}, [], 'sem faltas';
+  is [ @{ $e{$IB[1]} }{qw(valor posicao)} ], [3, 2], 'sem esgoto: 3 de 4';
+  is $e{$IB[1]}{faltam}, ['esgoto'], 'falta esgoto';
+  is [ @{ $e{$IB[2]} }{qw(valor posicao)} ], [1, 3], 'sem água, energia e esgoto: 1 de 4, última';
+  is $e{$IB[2]}{faltam}, ['água', 'energia', 'esgoto'], 'as três faltas, na ordem';
+
+  is $t->get_ok("/api/ranking/escolas?codigo_ibge=$MUNB&indicador=infraestrutura_basica&rede=estadual")
+    ->tx->res->json->{total}, 1, 'filtro de rede';
+
+  require EduMaps::Model::Rank::School;
+  my $mv = EduMaps::Model::Rank::School->new(schema => $t->app->schema);
+  ok !exists $mv->indicator_registry->{infraestrutura_basica}, 'fora do registro geral (job e painel não veem)';
+  like $mv->indicator_registry->{infraestrutura}{metodo}, qr/Não é infraestrutura básica/, 'método do índice antigo';
+  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/turnos diurno, matutino e vespertino/, 'diversidade: o que o índice calcula de fato';
+  $limpa3->();
+};
+
 subtest 'validações das redes' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=infraestrutura&uf=XX')->status_is(400)

@@ -35,4 +35,16 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     expect(t.linhas[1].slice(-4)).toEqual(["3205309", "Vitória", "ES", "municipal"]);
     expect(tabelaEscolas({ ...ESCOLAS_FIXTURE, rede: null }, ESCOLAS_FIXTURE.escolas).linhas[0].at(-1)).toBe("");
   });
+
+  it("escolas, infraestrutura básica: coluna faltam (#457)", () => {
+    const e = { ...ESCOLAS_FIXTURE, indicador: { id: "infraestrutura_basica", label: "Infraestrutura básica", maximo: 4 } };
+    const lista = [
+      { ...ESCOLAS_FIXTURE.escolas[0], valor: 1, faltam: ["água", "energia", "esgoto"] },
+      { ...ESCOLAS_FIXTURE.escolas[1], valor: 4, faltam: [] },
+    ];
+    const t = tabelaEscolas(e, lista);
+    expect(t.cabecalho.slice(4, 7)).toEqual(["infraestrutura_basica_2023", "faltam", "inse"]);
+    expect(t.linhas.map((l) => l[5])).toEqual(["água, energia, esgoto", ""]);
+    expect(tabelaEscolas(ESCOLAS_FIXTURE, ESCOLAS_FIXTURE.escolas).cabecalho).not.toContain("faltam");
+  });
 });
