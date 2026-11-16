@@ -65,8 +65,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.
 
 ## Limitações conhecidas
-- Uma UF por vez. A base do Brasil inteiro, as séries de vários anos e o
-  acesso por API não estão nesta página.
+- Uma UF por vez. A base de uma região ou do Brasil inteiro, as séries de
+  vários anos e o acesso por API não estão nesta página; para uma região,
+  baixe as UFs dela (as colunas são as mesmas) e junte os arquivos. O
+  [ranking das redes](rankings.md) já aceita a região.
 - O INSE vem só da edição mais recente do SAEB.
 
 ## Veja também

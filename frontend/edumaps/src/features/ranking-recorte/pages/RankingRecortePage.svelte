@@ -2,7 +2,8 @@
   // src/features/ranking-recorte/pages/RankingRecortePage.svelte
   //
   // Ranking por recorte (#430, AN-11):
-  //   * Redes municipais — as redes dos municípios de uma UF (ou do Brasil)
+  //   * Redes municipais — as redes dos municípios de uma UF, de uma região
+  //     (#445) ou do Brasil
   //     por um indicador do IDEB/SAEB, com a variação entre edições e o
   //     contexto socioeconômico (INSE) ao lado;
   //   * Escolas de um município — todas as escolas por um indicador.
@@ -13,7 +14,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
-  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, rotuloPorte } from "../constants.js";
+  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
 
   const inicial = new URLSearchParams(window.location.search);
@@ -22,7 +23,12 @@
 
   // ---- redes municipais -----------------------------------------------
   let uf = $state(UFS.includes(inicial.get("uf") ?? "") ? inicial.get("uf") : "ES");
-  let nacional = $state(inicial.get("nacional") === "1");
+  // #445: abrangência do recorte — UF, região ou Brasil. O link antigo com
+  // nacional=1 continua valendo.
+  const regiaoInicial = REGIOES.some((r) => r.id === inicial.get("regiao")) ? inicial.get("regiao") : "";
+  let abrangencia = $state(inicial.get("nacional") === "1" ? "brasil" : regiaoInicial ? "regiao" : "uf");
+  let regiao = $state(regiaoInicial || "SE");
+  const multiUf = $derived(abrangencia !== "uf");
   let indicadorRede = $state(
     INDICADORES_IDEB.some((i) => i.id === inicial.get("indicador")) ? inicial.get("indicador") : "ideb_anos_iniciais",
   );
@@ -64,7 +70,8 @@
     p.set("aba", aba);
     if (aba === "redes") {
       p.set("indicador", indicadorRede);
-      if (nacional) p.set("nacional", "1");
+      if (abrangencia === "brasil") p.set("nacional", "1");
+      else if (abrangencia === "regiao") p.set("regiao", regiao);
       else p.set("uf", uf);
       if (ordem !== "media") p.set("ordem", ordem);
       if (minimo !== 3) p.set("minimo", String(minimo));
@@ -87,7 +94,7 @@
     error = null;
     definirUrl();
     try {
-      redes = await getRankingRedes({ indicador: indicadorRede, uf, nacional, minimo, porte });
+      redes = await getRankingRedes({ indicador: indicadorRede, abrangencia, uf, regiao, minimo, porte });
     } catch (err) {
       redes = null;
       error = mensagem(err, "Não foi possível carregar o ranking das redes.");
@@ -135,7 +142,7 @@
   function exportarRedes() {
     const r = redes;
     baixarCsv(
-      `ranking-redes-${r.indicador.id}-${nacional ? "BR" : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
+      `ranking-redes-${r.indicador.id}-${abrangencia === "brasil" ? "BR" : abrangencia === "regiao" ? regiao : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
       csv(
         ["posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`, "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto", `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte"],
         redesOrdenadas.map((x) => [x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "", x.inse, x.quinto_inse, x.media_quinto_inse, x.populacao, x.porte ? rotuloPorte(x.porte) : null]),
@@ -164,7 +171,7 @@
   <header>
     <h1 class="text-2xl font-bold text-gray-900">Rankings</h1>
     <p class="mt-1 text-sm text-gray-600">
-      Compare as redes municipais de um estado, ou as escolas de um município, por um indicador.
+      Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
       O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
     </p>
   </header>
@@ -184,16 +191,31 @@
     <section class="bg-white border border-gray-200 rounded-card shadow-card p-5 space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
         <div>
-          <label for="uf" class="block text-sm text-gray-600 mb-1">UF</label>
-          <select id="uf" bind:value={uf} disabled={nacional} onchange={carregarRedes}
+          <label for="abrangencia" class="block text-sm text-gray-600 mb-1">Abrangência</label>
+          <select id="abrangencia" bind:value={abrangencia} onchange={carregarRedes}
             class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-            {#each UFS as u}<option value={u}>{u}</option>{/each}
+            <option value="uf">Uma UF</option>
+            <option value="regiao">Uma região</option>
+            <option value="brasil">Brasil inteiro</option>
           </select>
         </div>
-        <label class="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" bind:checked={nacional} onchange={carregarRedes} />
-          Brasil inteiro
-        </label>
+        {#if abrangencia === "uf"}
+          <div>
+            <label for="uf" class="block text-sm text-gray-600 mb-1">UF</label>
+            <select id="uf" bind:value={uf} onchange={carregarRedes}
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              {#each UFS as u}<option value={u}>{u}</option>{/each}
+            </select>
+          </div>
+        {:else if abrangencia === "regiao"}
+          <div>
+            <label for="regiao" class="block text-sm text-gray-600 mb-1">Região</label>
+            <select id="regiao" bind:value={regiao} onchange={carregarRedes}
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              {#each REGIOES as r}<option value={r.id}>{r.label}</option>{/each}
+            </select>
+          </div>
+        {/if}
         <div>
           <label for="indicador-rede" class="block text-sm text-gray-600 mb-1">Indicador</label>
           <select id="indicador-rede" bind:value={indicadorRede} onchange={carregarRedes}
@@ -243,6 +265,9 @@
             {redes.fora_por_poucas_escolas} ficaram de fora por terem menos escolas.
             "INSE parecido" = municípios do mesmo quinto de nível socioeconômico no recorte.
             Porte: população estimada pelo IBGE{redes.populacao_fonte?.ano ? ` (${redes.populacao_fonte.ano})` : ""}, nas classes de tamanho do IBGE.
+            {#if redes.recorte?.regiao}
+              Só as redes da região {redes.recorte.regiao.nome ?? rotuloRegiao(redes.recorte.regiao.id)}: a posição, o INSE parecido e o salto atípico comparam só redes da região.
+            {/if}
             {#if porte}
               Só as redes de municípios com {rotuloPorte(porte).replace(" hab.", " habitantes").toLowerCase()}: a posição, o INSE parecido e o salto atípico comparam só redes desse porte.
             {/if}
@@ -275,7 +300,7 @@
                   <td class="px-2 py-1.5 text-gray-500">{ordem === "variacao" ? (r.posicao_variacao ?? "–") : r.posicao}</td>
                   <td class="px-2 py-1.5">
                     <a href="/municipio/compare?codigo_ibge={r.codigo_ibge}" class="text-blue-700 hover:underline">{r.municipio}</a>
-                    {#if nacional}<span class="text-gray-400"> · {r.uf}</span>{/if}
+                    {#if multiUf}<span class="text-gray-400"> · {r.uf}</span>{/if}
                   </td>
                   <td class="px-2 py-1.5 text-right">{r.escolas}</td>
                   <td class="px-2 py-1.5 text-right font-medium">{num(r.media)}</td>

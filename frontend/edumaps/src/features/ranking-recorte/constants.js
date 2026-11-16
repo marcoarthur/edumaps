@@ -47,6 +47,23 @@ export function rotuloPorte(id) {
   return PORTES.find((p) => p.id === id)?.label ?? "–";
 }
 
+/**
+ * Regiões do IBGE (#445): as mesmas de `@REGIOES` em EduMaps::Regiao. O
+ * ranking de redes aceita a região como recorte, entre a UF e o Brasil.
+ */
+export const REGIOES = [
+  { id: "N", label: "Norte" },
+  { id: "NE", label: "Nordeste" },
+  { id: "SE", label: "Sudeste" },
+  { id: "S", label: "Sul" },
+  { id: "CO", label: "Centro-Oeste" },
+];
+
+/** Nome da região pelo id; "" quando desconhecida. */
+export function rotuloRegiao(id) {
+  return REGIOES.find((r) => r.id === id)?.label ?? "";
+}
+
 export const UFS = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
   "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
