@@ -35,12 +35,16 @@ my $esc = $dbh->prepare('INSERT INTO clean.censo_escolas
    (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, tp_localizacao, co_municipio, no_municipio,
     sg_uf, tp_situacao_funcionamento, in_agua_potavel, in_internet,
     in_esgoto_rede_publica, in_esgoto_inexistente, in_energia_inexistente, in_agua_inexistente,
-    latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    latitude, longitude,
+    in_comum_fund_ai, in_comum_medio_medio, in_comum_medio_integrado, in_comum_medio_normal, in_profissionalizante)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+# #461: Alfa oferece anos iniciais e não oferece médio; Beta só tem o médio
+# integrado (conta como médio) e não respondeu a educação profissional.
 # #452: Alfa tem fossa (esgoto fora da rede pública, mas tem esgoto) e
 # coordenadas com mais de 6 casas; Beta não tem esgoto nem coordenadas.
-$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1,     0, 0, 0, 0, -9.97432149, -67.8076543);
-$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef, 0, 1, 0, 0, undef, undef);
-$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1,     1, 0, 0, 0, undef, undef);
+$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1,     0, 0, 0, 0, -9.97432149, -67.8076543, 1, 0, 0, 0, 0);
+$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef, 0, 1, 0, 0, undef, undef, 0, 0, 1, 0, undef);
+$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1,     1, 0, 0, 0, undef, undef, 1, 0, 0, 0, 0);
 
 $dbh->do('INSERT INTO clean.censo_docentes (nu_ano_censo, co_entidade, qt_doc_bas,
    qt_doc_bas_esco_sup_grad_licen, qt_doc_bas_esco_sup_pos_mestra, qt_doc_bas_esco_sup_pos_douto,
@@ -67,7 +71,7 @@ sub ler_csv ($tx) {
 
 subtest 'catálogo e total do recorte' => sub {
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->status_is(200)->tx->res->json;
-  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao infraestrutura docencia desempenho inse porte)], 'blocos';
+  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho inse porte)], 'blocos (etapas depois da identificação, #461)';
   is $r->{total}, 2, 'só as escolas em funcionamento';
   is $r->{anos}{censo}, $ANO, 'ano do Censo';
   ok( (grep { $_ == $IDEB } @{ $r->{anos}{ideb} }), 'edições do IDEB');
@@ -120,6 +124,24 @@ subtest 'todos os blocos' => sub {
   is $a[$i{porte_municipio}], 'mais_500mil', 'porte';
   is [@cab[-4 .. -1]], [qw(ano_censo ano_ideb ano_inse ano_populacao)], 'versão no fim';
   is [@a[-4 .. -1]], ["$ANO", "$IDEB", "$SAEB", '2025'], 'versão em toda linha';
+};
+
+subtest 'etapas oferecidas e cobertura do IDEB (#461)' => sub {
+  my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=etapas,desempenho&ano_ideb=$IDEB")->status_is(200)->tx);
+  my %i; @i{ @{ $l->[0] } } = 0 .. $#{ $l->[0] };
+  my ($a) = grep { $_->[0] eq $A } @$l;
+  my ($b) = grep { $_->[0] eq $B } @$l;
+  is [ @$a[ @i{qw(oferece_ai oferece_em oferece_profissional)} ] ], ['1', '0', '0'], 'Alfa: anos iniciais, sem médio';
+  is $b->[$i{oferece_em}], '1', 'Beta: médio integrado conta como médio';
+  is $b->[$i{oferece_profissional}], '', 'sem resposta: vazio, não 0';
+  is $a->[$i{ideb_ai}], '6,1', 'IDEB ao lado da oferta';
+  ok $i{classe_especial_exclusiva}, 'classe especial exclusiva';
+
+  my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=etapas,desempenho')->status_is(200)->tx);
+  my %dd = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $dd{ideb_af}[1], qr/Vazio: a escola não oferece a etapa \(veja oferece_af\).*A falta não é aleatória/, 'aviso de cobertura no IDEB';
+  like $dd{nota_matematica_em}[1], qr/veja oferece_em/, 'e nas notas';
+  like $dd{oferece_em}[1], qr/inclusive integrado e normal.*in_comum_medio_medio, _integrado e _normal/, 'origem da oferta';
 };
 
 subtest 'edição anterior do IDEB' => sub {

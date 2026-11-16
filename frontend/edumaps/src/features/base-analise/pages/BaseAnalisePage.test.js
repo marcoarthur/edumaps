@@ -83,4 +83,19 @@ describe("BaseAnalisePage (#439)", () => {
     const href = screen.getByTestId("baixar-base").getAttribute("href");
     expect(href).toBe("/api/base-analise/csv?uf=ES&blocos=inse");
   });
+
+  it("IDEB sem as etapas: dica e botão que marca as etapas (#461)", async () => {
+    abrir("?uf=ES&blocos=desempenho");
+    expect(await screen.findByTestId("dica-etapas")).toHaveTextContent("mistura \"não oferece a etapa\" e \"não teve nota\"");
+    await fireEvent.click(screen.getByRole("button", { name: "Marcar também as etapas oferecidas" }));
+    expect(screen.queryByTestId("dica-etapas")).toBeNull();
+    expect(screen.getByLabelText(/Etapas oferecidas/)).toBeChecked();
+    expect(window.location.search).toContain("blocos=desempenho%2Cetapas");
+  });
+
+  it("sem o IDEB, sem a dica", async () => {
+    abrir("?uf=ES&blocos=infraestrutura");
+    await screen.findByText(/3\.010/);
+    expect(screen.queryByTestId("dica-etapas")).toBeNull();
+  });
 });
