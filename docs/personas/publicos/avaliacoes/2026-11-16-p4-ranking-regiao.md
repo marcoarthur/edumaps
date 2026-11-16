@@ -100,3 +100,6 @@ Os três são detalhes; a P4 continua em **adotaria**.
   Fechamento em
   [`../ciclos/2026-11-16-destaque-municipio.md`](../ciclos/2026-11-16-destaque-municipio.md).
   Nenhum achado desta avaliação fica aberto.
+- 2026-11-16: quinta rodada da P4: **adotaria** (mantido). Consolidação em
+  [`2026-11-16-p4-indices-e-cobertura.md`](2026-11-16-p4-indices-e-cobertura.md),
+  com os achados novos RX-01 e RX-02.

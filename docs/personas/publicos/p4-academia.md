@@ -64,11 +64,35 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
-  RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto.
+  RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
+  (2026-11-16, **adotaria**): RX-01 e RX-02 aguardam a aprovação do developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (quinta rodada, índices e cobertura do IDEB)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-16-p4-indices-e-cobertura.md`](avaliacoes/2026-11-16-p4-indices-e-cobertura.md).
+
+**O que tentou:**
+- Juntou a BA e o ES (19.152 escolas, com a coluna `regiao`).
+- Refez o modelo do IDEB com a infraestrutura básica.
+- Montou os pontos com as coordenadas.
+- Tentou citar a diversidade corrigida hoje.
+
+**O que funciona para ela:**
+- a região, as coordenadas e o "sem" que é "sem";
+- o método de cada índice, com a data da correção.
+
+**Barreiras:**
+- RX-02 (atrapalha): o IDEB falta sobretudo nas escolas sem infraestrutura
+  (12,7% contra 44,3% com nota), e a base não traz as etapas oferecidas
+  para separar a falta da não oferta.
+- RX-01 (atrapalha): os índices próprios não têm versão citável nem lugar
+  em `/fontes`.
+
 
 ### 2026-11-16 — Análises públicas (quarta rodada, região no ranking)
 
