@@ -55,8 +55,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
   VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
-  operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 aguarda a
-  aprovação do developer para virar issue.
+  operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 em #457.
 
 ## Entradas
 

@@ -11,8 +11,7 @@ rodada. VJ-05 (#454, carga do IDEB) é operacional e segue aberto.
   - **o trabalho que ele faria:** voltar às duas pautas da rodada anterior e
     dar o passo seguinte de cada uma.
 - ⚠️ Simulação: não substitui um jornalista de verdade.
-- Feita a pedido do developer. Os achados abaixo **não viraram issue**: pela
-  regra, issue só com a aprovação dele.
+- Feita a pedido do developer. Issue **#457**, aberta com a aprovação dele.
 
 ## As pautas
 
@@ -65,7 +64,9 @@ rodada. VJ-05 (#454, carga do IDEB) é operacional e segue aberto.
 
 ## Encaminhamento
 
-Proposta, se o developer aprovar a issue:
+Issue aberta com a aprovação do developer (2026-11-16): **#457** (VK-01).
+
+### Proposta original
 
 1. **Método na tela e na ajuda** (barato, só texto): a nota do ranking de
    escolas diz a escala e os grupos de cada índice do Censo, com link para
