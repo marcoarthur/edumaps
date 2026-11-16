@@ -57,11 +57,37 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Análises públicas: reavaliada em 2026-11-16 (**adotaria**). Os achados
   RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
-  assinatura (decisão de produto). Nenhum achado aberto.
+  assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
+  RG-01 a RG-03, detalhes, aguardando a aprovação do developer para virar
+  issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (quarta rodada, região no ranking)
+
+**Veredito:** **adotaria** (mantido), agora também para comparar regiões no
+ranking. Consolidação em
+[`avaliacoes/2026-11-16-p4-ranking-regiao.md`](avaliacoes/2026-11-16-p4-ranking-regiao.md).
+
+**O que tentou:**
+- "Porte e região semelhantes": o ranking do Nordeste com 10 a 20 mil
+  habitantes (519 redes), contra o Sul e o Brasil do mesmo porte.
+- "Perfil docente entre regiões": baixou a docência das 27 UFs (22 s),
+  juntou no R (180.540 escolas) e comparou a licenciatura por região e porte.
+
+**O que funciona para ela:**
+- região e porte no mesmo link, com o salto atípico e o INSE medidos no
+  recorte;
+- as bases das UFs se juntam sem ajuste (mesmo cabeçalho, versão na linha,
+  `NA` como ausência).
+
+**Barreiras (detalhes):**
+- RG-01: a base não traz a região, e o mapa UF → região vai à mão;
+- RG-02: o CSV do ranking não diz o recorte nas colunas;
+- RG-03: não dá para achar um município na lista de redes.
+
 
 ### 2026-11-16 — Análises públicas (terceira rodada, base de análise)
 

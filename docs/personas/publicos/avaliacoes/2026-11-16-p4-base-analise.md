@@ -96,3 +96,6 @@ developer em 2026-11-16.
   (decisão de produto). Fechamento em
   [`../ciclos/2026-11-16-ranking-regiao.md`](../ciclos/2026-11-16-ranking-regiao.md).
   Nenhum achado desta avaliação fica aberto.
+- 2026-11-16: quarta rodada da P4: **adotaria** (mantido). Consolidação em
+  [`2026-11-16-p4-ranking-regiao.md`](2026-11-16-p4-ranking-regiao.md), com os
+  achados novos RG-01 a RG-03.
