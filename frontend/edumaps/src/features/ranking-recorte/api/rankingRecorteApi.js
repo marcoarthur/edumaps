@@ -5,9 +5,11 @@ import { apiClient } from "@/shared/api/client.js";
 /**
  * Recorte: `abrangencia` "uf" (com `uf`), "regiao" (com `regiao`, #445) ou
  * "brasil".
- * @param {{indicador: string, abrangencia?: string, uf?: string, regiao?: string, minimo?: number, porte?: string}} p
+ * `destaque` (#449): código IBGE do município a destacar; a resposta diz a
+ * situação da rede dele.
+ * @param {{indicador: string, abrangencia?: string, uf?: string, regiao?: string, minimo?: number, porte?: string, destaque?: string}} p
  */
-export function getRankingRedes({ indicador, abrangencia = "uf", uf, regiao, minimo, porte }) {
+export function getRankingRedes({ indicador, abrangencia = "uf", uf, regiao, minimo, porte, destaque }) {
   return apiClient.get("/api/ranking/redes", {
     indicador,
     uf: abrangencia === "uf" ? uf : undefined,
@@ -15,6 +17,7 @@ export function getRankingRedes({ indicador, abrangencia = "uf", uf, regiao, min
     nacional: abrangencia === "brasil" ? 1 : undefined,
     minimo: minimo && minimo !== 3 ? minimo : undefined,
     porte: porte || undefined,
+    destaque: destaque || undefined,
   });
 }
 

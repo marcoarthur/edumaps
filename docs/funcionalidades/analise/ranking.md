@@ -46,6 +46,10 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode **comparar redes de uma região** (Norte, Nordeste, Sudeste,
   Sul, Centro-Oeste): a posição, o contexto de INSE e o salto atípico passam a
   ser medidos entre as redes da região, inclusive junto com o porte.
+- Sistema pode **destacar um município** na lista de redes: a posição dele
+  no recorte, o motivo quando a rede fica de fora (outro recorte, outro
+  porte, poucas escolas ou sem dado) e a sugestão de comparar com os de
+  mesmo porte na região ou na UF dele.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

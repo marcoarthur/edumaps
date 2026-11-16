@@ -533,8 +533,17 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   my $marcadas = grep { ${ $atipico->($_->{variacao}) } } @$rows;
   my $arred = sub ($v) { defined $v ? 0 + sprintf('%.4f', $v) : undef };
 
+  # #449 (RG-03): o município destacado, e por que a rede dele não está na
+  # lista quando não está. Uma consulta a mais, só com `destaque`.
+  my $destaque = defined $opts->{destaque}
+    ? $self->_destaque_rede($opts->{destaque}, $rows, {
+        column => $column, etapa => $def->{etapa}, ano => $ano, min => $min,
+        uf => $uf, regiao => $regiao, porte => $porte, porte_case => $porte_case })
+    : undef;
+
   return {
     indicador => { id => $indicator_id, label => $def->{label} },
+    (defined $destaque ? (destaque => $destaque) : ()),
     atipico => {
       desvios       => $DESVIOS_ATIPICO,
       media_variacao => $arred->($vmedia),
@@ -571,6 +580,53 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       populacao   => $num->($_->{populacao}),
       porte       => $_->{porte},
     } } @$rows ],
+  };
+}
+
+# Situação da rede de um município no ranking (#449): no_ranking (com a
+# posição), fora_do_recorte (outra UF ou região), sem_populacao ou
+# fora_do_porte (com filtro de porte), sem_dado (nenhuma escola com o
+# indicador na edição, ou município desconhecido) ou poucas_escolas.
+sub _destaque_rede ($self, $codigo, $rows, $c) {
+  my $dbh = $self->schema->storage->dbh;
+  my $col = $c->{column};
+  my ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.ideb_notas_escolas WHERE co_municipio = ? ORDER BY ano DESC LIMIT 1',
+    undef, $codigo);
+  ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio = ? ORDER BY nu_ano_censo DESC LIMIT 1',
+    undef, $codigo) unless defined $nome;
+  my ($pop, $porte) = $dbh->selectrow_array(
+    "SELECT pm.populacao_estimada, $c->{porte_case} FROM clean.populacao_municipal pm WHERE pm.codigo_ibge = ?",
+    undef, "$codigo");
+  my ($n) = $dbh->selectrow_array(
+    "SELECT count(*) FROM clean.ideb_notas_escolas
+      WHERE co_municipio = ? AND ano = ? AND etapa = ? AND rede = 'Municipal' AND $col IS NOT NULL",
+    undef, $codigo, $c->{ano}, $c->{etapa});
+  my ($row) = grep { "$_->{co_municipio}" eq "$codigo" } @$rows;
+
+  my $situacao =
+      $row                                     ? 'no_ranking'
+    : !defined $nome                           ? 'sem_dado'
+    : (defined $c->{uf} && $uf ne $c->{uf})
+      || (defined $c->{regiao} && (EduMaps::Regiao->de_uf($uf) // '') ne $c->{regiao})
+                                               ? 'fora_do_recorte'
+    : defined $c->{porte} && !defined $porte   ? 'sem_populacao'
+    : defined $c->{porte} && $porte ne $c->{porte} ? 'fora_do_porte'
+    : !$n                                      ? 'sem_dado'
+    : $n < $c->{min}                           ? 'poucas_escolas'
+    :                                            'sem_dado';
+
+  return {
+    codigo_ibge => "$codigo",
+    municipio   => $nome,
+    uf          => $uf,
+    regiao      => EduMaps::Regiao->de_uf($uf),
+    populacao   => defined $pop ? 0 + $pop : undef,
+    porte       => $porte,
+    escolas     => 0 + ($n // 0),
+    situacao    => $situacao,
+    posicao     => $row ? 0 + $row->{posicao} : undef,
   };
 }
 

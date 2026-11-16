@@ -91,6 +91,7 @@ sub redes_municipais ($self) {
   $v->optional('nacional')->in(qw/0 1/);
   $v->optional('minimo', 'trim')->like(qr/^\d{1,2}$/)->num(3, 30);
   $v->optional('porte', 'trim')->in(EduMaps::Porte->ids);
+  $v->optional('destaque', 'trim')->like(qr/^\d{7}$/);
   return $self->bad_req if $self->any_error;
   return $self->bad_req('Informe a UF, a região ou nacional=1')
     unless $v->param('uf') || $v->param('regiao') || $v->param('nacional');
@@ -100,7 +101,8 @@ sub redes_municipais ($self) {
     $model->redes_municipais($v->param('indicador'),
       { uf => $v->param('uf'), regiao => $v->param('regiao'), national => $v->param('nacional') ? 1 : 0,
         (defined $v->param('minimo') ? (minimo => 0 + $v->param('minimo')) : ()),
-        (defined $v->param('porte') ? (porte => $v->param('porte')) : ()) });
+        (defined $v->param('porte') ? (porte => $v->param('porte')) : ()),
+        (defined $v->param('destaque') ? (destaque => $v->param('destaque')) : ()) });
   };
   return $self->render(json => { error => 'Indicador inválido para o ranking de redes (use um do IDEB/SAEB).' }, status => 400) if $@;
   return $self->render(json => { error => 'Sem redes com este indicador no recorte.' }, status => 404) unless $r;

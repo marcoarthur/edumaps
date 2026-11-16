@@ -35,6 +35,13 @@ sub case_sql ($class, $expr) {
   return 'CASE ' . join(' ', @w) . ' END';
 }
 
+# Região (id) de uma UF (#449); undef para UF desconhecida.
+sub de_uf ($class, $uf) {
+  return undef unless defined $uf;
+  for my $r (@REGIOES) { return $r->{id} if grep { $_ eq $uf } @{ $r->{ufs} } }
+  return undef;
+}
+
 sub lista ($class) { [ map { +{ id => $_->{id}, label => $_->{label}, ufs => [ @{ $_->{ufs} } ] } } @REGIOES ] }
 
 1;
