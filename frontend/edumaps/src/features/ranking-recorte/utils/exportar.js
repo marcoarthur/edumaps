@@ -13,18 +13,22 @@ export function rotuloRecorte(recorte) {
   return "BR";
 }
 
-/** Ranking de redes: cabeçalho e linhas, com o recorte no fim de cada linha. */
+/**
+ * Ranking de redes: cabeçalho e linhas, com o recorte no fim de cada linha.
+ * #453 (VJ-02): as duas posições, pelo valor e pela variação, com nomes que
+ * dizem de qual ordem são; a ordem das linhas é a da tela.
+ */
 export function tabelaRedes(r, redes) {
   const recorte = rotuloRecorte(r.recorte);
   const porte = r.recorte?.porte ?? "";
   return {
     cabecalho: [
-      "posicao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`,
+      "posicao_valor", "posicao_variacao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`,
       "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto",
       `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "recorte", "porte_filtro", "minimo_escolas",
     ],
     linhas: redes.map((x) => [
-      x.posicao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "",
+      x.posicao, x.posicao_variacao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.atipico ? "sim" : "",
       x.inse, x.quinto_inse, x.media_quinto_inse, x.populacao, x.porte ? rotuloPorte(x.porte) : null,
       recorte, porte, r.minimo_escolas,
     ]),
