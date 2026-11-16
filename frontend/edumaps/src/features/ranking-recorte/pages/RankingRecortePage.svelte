@@ -171,7 +171,7 @@
   <header>
     <h1 class="text-2xl font-bold text-gray-900">Rankings</h1>
     <p class="mt-1 text-sm text-gray-600">
-      Compare as redes municipais de um estado, ou as escolas de um município, por um indicador.
+      Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
       O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
     </p>
   </header>
