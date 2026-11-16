@@ -33,10 +33,14 @@ END { $limpa->() }
 
 my $esc = $dbh->prepare('INSERT INTO clean.censo_escolas
    (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, tp_localizacao, co_municipio, no_municipio,
-    sg_uf, tp_situacao_funcionamento, in_agua_potavel, in_internet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1);
-$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef);
-$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1);
+    sg_uf, tp_situacao_funcionamento, in_agua_potavel, in_internet,
+    in_esgoto_rede_publica, in_esgoto_inexistente, in_energia_inexistente, in_agua_inexistente,
+    latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+# #452: Alfa tem fossa (esgoto fora da rede pública, mas tem esgoto) e
+# coordenadas com mais de 6 casas; Beta não tem esgoto nem coordenadas.
+$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1,     0, 0, 0, 0, -9.97432149, -67.8076543);
+$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef, 0, 1, 0, 0, undef, undef);
+$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1,     1, 0, 0, 0, undef, undef);
 
 $dbh->do('INSERT INTO clean.censo_docentes (nu_ano_censo, co_entidade, qt_doc_bas,
    qt_doc_bas_esco_sup_grad_licen, qt_doc_bas_esco_sup_pos_mestra, qt_doc_bas_esco_sup_pos_douto,
@@ -77,9 +81,10 @@ subtest 'CSV só com a identificação' => sub {
     ->header_like('Content-Type' => qr{text/csv})
     ->header_like('Content-Disposition' => qr/"base-analise-AC-\Q$MUN\E-censo\Q$ANO\E\.csv"/)->tx;
   my $l = ler_csv($tx);
-  is $l->[0], [qw(inep escola codigo_ibge municipio uf regiao rede localizacao ano_censo)], 'cabeçalho (região depois da UF, #448)';
+  is $l->[0], [qw(inep escola codigo_ibge municipio uf regiao rede localizacao latitude longitude ano_censo)],
+    'cabeçalho (região depois da UF, #448; coordenadas no fim da identificação, #452)';
   is scalar @$l, 3, 'cabeçalho + 2 escolas (a fechada fica fora)';
-  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Norte', 'Municipal', 'Urbana', "$ANO"],
+  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Norte', 'Municipal', 'Urbana', '-9,974321', '-67,807654', "$ANO"],
     'aspas no nome escapadas';
 };
 
@@ -96,6 +101,12 @@ subtest 'todos os blocos' => sub {
 
   is $a[$i{in_agua_potavel}], '1', 'infraestrutura';
   is $b[$i{in_internet}], '', 'sem dado fica vazio (não zero)';
+  # #452 (VJ-01): fora da rede pública não é "sem".
+  is [ @a[ @i{qw(in_esgoto_rede_publica in_esgoto_inexistente)} ] ], ['0', '0'], 'Alfa: fossa, tem esgoto';
+  is [ @b[ @i{qw(in_esgoto_rede_publica in_esgoto_inexistente)} ] ], ['0', '1'], 'Beta: sem esgoto';
+  is [ @cab[ $i{in_agua_potavel} + 1, $i{in_energia_rede_publica} + 1, $i{in_esgoto_rede_publica} + 1 ] ],
+    [qw(in_agua_inexistente in_energia_inexistente in_esgoto_inexistente)], 'cada "inexistente" ao lado do serviço';
+  is $b[$i{latitude}], '', 'sem coordenada: vazio';
   is $a[$i{qt_docentes}], '20', 'docentes';
   is $a[$i{prop_licenciatura}], '0,75', 'proporção com vírgula';
   is $a[$i{ideb_ai}], '6,1', 'IDEB dos anos iniciais na edição pedida';
@@ -132,7 +143,20 @@ subtest 'dicionário' => sub {
   is $d{populacao_municipio}[4], '2025', 'ano da população';
   ok $d{ano_censo}, 'colunas de versão no dicionário';
   like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';
+  like $d{latitude}[1], qr/como declarada ao Censo Escolar, sem verificação/, 'coordenada no dicionário (#452)';
   ok !$d{inse_media}, 'só os blocos pedidos';
+};
+
+subtest 'dicionário: rede pública não é "sem" (#452)' => sub {
+  my $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=infraestrutura")->status_is(200)->tx);
+  my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
+  like $d{in_esgoto_rede_publica}[1], qr/0 não quer dizer sem esgoto.*in_esgoto_inexistente/, 'esgoto';
+  like $d{in_energia_rede_publica}[1], qr/0 não quer dizer sem energia.*in_energia_inexistente/, 'energia';
+  like $d{in_agua_potavel}[1], qr/0 não quer dizer sem água.*in_agua_inexistente/, 'água';
+  like $d{in_esgoto_inexistente}[1], qr/^Não tem esgotamento sanitário \(1 = não tem/, 'inexistente';
+  my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
+  my ($infra) = grep { $_->{id} eq 'infraestrutura' } @{ $r->{blocos} };
+  is scalar @{ $infra->{colunas} }, 14, 'bloco de infraestrutura com 14 colunas';
 };
 
 subtest 'dicionário: ressalvas (#444)' => sub {

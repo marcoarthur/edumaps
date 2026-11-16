@@ -25,9 +25,12 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
    restrinja a um **município** e a uma **rede** (pública, municipal,
    estadual, federal ou privada). A página mostra quantas escolas entram.
 2. **Indicadores:** a **identificação** (INEP, nome, município, UF, região,
-   rede e localização) vem sempre. Marque os blocos que quiser:
+   rede, localização urbana ou rural, latitude e longitude) vem sempre.
+   Marque os blocos que quiser:
    - **Infraestrutura:** água, energia, esgoto, lixo, banheiro, biblioteca,
-     laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem);
+     laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem), e se a
+     escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
+     tem);
    - **Docência:** número de docentes e as proporções com licenciatura,
      mestrado, doutorado, concursados e sem especialização;
    - **IDEB e SAEB por etapa:** IDEB, notas e aprovação nos anos iniciais
@@ -57,6 +60,19 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   de escolas, a infraestrutura e a docência do Censo mais recente, e as
   escolas fechadas depois daquela edição não entram. A página e o dicionário
   avisam; para uma série de anos, cada ano precisaria do seu Censo.
+- **"Rede pública = 0" não quer dizer "sem".** `in_energia_rede_publica = 0`
+  pode ser gerador ou energia renovável; `in_esgoto_rede_publica = 0` pode
+  ser fossa; `in_agua_potavel = 0` pode ser água não potável. Para contar as
+  escolas **sem** o serviço, use `in_agua_inexistente`,
+  `in_energia_inexistente` e `in_esgoto_inexistente`. No Piauí, por exemplo,
+  2.725 escolas têm esgoto fora da rede pública, e 179 não têm esgoto
+  nenhum.
+- **Coordenadas:** `latitude` e `longitude` em graus decimais, com 6 casas,
+  como a escola declarou ao Censo Escolar, sem verificação. Cerca de 4 em 5
+  escolas têm; nas outras, a célula fica vazia. Para um mapa, no R:
+  `sf::st_as_sf(na.omit(base[, c("inep", "latitude", "longitude")]),
+  coords = c("longitude", "latitude"), crs = 4326)`; no Python, com
+  `geopandas.points_from_xy(base.longitude, base.latitude)`.
 - **Docência:** as proporções são sobre o total de docentes da escola
   (`qt_docentes`). Na contagem do Censo Escolar, quem dá aula em mais de uma
   escola conta em cada uma.

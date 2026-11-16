@@ -49,11 +49,16 @@ my @MEDIDAS_IDEB = (
   [aprovacao       => 'aprovacao_si_4',  'Indicador de rendimento (taxa de aprovação, em %)'],
 );
 
-# Infraestrutura: as mesmas 11 colunas do conjunto pronto do agrupamento.
+# Infraestrutura: as 11 colunas do conjunto pronto do agrupamento e, ao lado
+# de água, energia e esgoto, se a escola não tem o serviço (#452, VJ-01):
+# "rede pública = 0" não quer dizer "sem" (pode ser poço, gerador, fossa).
 my @INFRA = (
-  [in_agua_potavel            => 'Tem água potável (1 = sim, 0 = não)'],
-  [in_energia_rede_publica    => 'Energia da rede pública (1 = sim, 0 = não)'],
-  [in_esgoto_rede_publica     => 'Esgoto na rede pública (1 = sim, 0 = não)'],
+  [in_agua_potavel            => 'Tem água potável (1 = sim, 0 = não). 0 não quer dizer sem água: veja in_agua_inexistente'],
+  [in_agua_inexistente        => 'Não tem abastecimento de água (1 = não tem, 0 = tem)'],
+  [in_energia_rede_publica    => 'Energia da rede pública (1 = sim, 0 = não). 0 não quer dizer sem energia (pode ser gerador ou fonte renovável): veja in_energia_inexistente'],
+  [in_energia_inexistente     => 'Não tem energia elétrica (1 = não tem, 0 = tem)'],
+  [in_esgoto_rede_publica     => 'Esgoto na rede pública (1 = sim, 0 = não). 0 não quer dizer sem esgoto (pode ser fossa): veja in_esgoto_inexistente'],
+  [in_esgoto_inexistente      => 'Não tem esgotamento sanitário (1 = não tem, 0 = tem)'],
   [in_lixo_servico_coleta     => 'Coleta de lixo pelo serviço público (1 = sim, 0 = não)'],
   [in_banheiro                => 'Tem banheiro (1 = sim, 0 = não)'],
   [in_biblioteca              => 'Tem biblioteca (1 = sim, 0 = não)'],
@@ -89,7 +94,7 @@ sub _blocos {
   }
   return [
     { id => 'identificacao', label => 'Identificação', fixo => 1, fonte => 'censo',
-      descricao => 'INEP, nome, município, UF, região, rede e localização da escola (sempre incluído).',
+      descricao => 'INEP, nome, município, UF, região, rede, localização (urbana ou rural) e as coordenadas da escola (sempre incluído).',
       colunas => [
         ['inep',        'e.co_entidade::text', 'Código INEP da escola', 0],
         ['escola',      'e.no_entidade', 'Nome da escola', 0],
@@ -101,9 +106,12 @@ sub _blocos {
         ['regiao',      EduMaps::Regiao->case_sql('e.sg_uf'), 'Região geográfica do IBGE (Norte, Nordeste, Sudeste, Sul ou Centro-Oeste), derivada da UF', 0],
         ['rede',        q{CASE e.tp_dependencia WHEN 1 THEN 'Federal' WHEN 2 THEN 'Estadual' WHEN 3 THEN 'Municipal' WHEN 4 THEN 'Privada' END}, 'Rede (dependência administrativa)', 0],
         ['localizacao', q{CASE e.tp_localizacao WHEN 1 THEN 'Urbana' WHEN 2 THEN 'Rural' END}, 'Localização (urbana ou rural)', 0],
+        # #452 (VJ-04): coordenadas como declaradas ao Censo, com 6 casas.
+        ['latitude',    'e.latitude::float8',  'Latitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
+        ['longitude',   'e.longitude::float8', 'Longitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
       ] },
     { id => 'infraestrutura', label => 'Infraestrutura', fonte => 'censo',
-      descricao => 'Água, energia, esgoto, lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
+      descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
     { id => 'docencia', label => 'Docência', fonte => 'censo',
       descricao => 'Número de docentes e proporções de formação, mestrado, doutorado, efetivos e sem especialização, sobre o total de docentes da escola. Quem dá aula em mais de uma escola conta em cada uma.',
@@ -280,9 +288,15 @@ sub csv ($class, $cab, $linhas, $num = []) {
     return sprintf('%d', $v) if $v == int($v) && abs($v) < 1e15;
     return sprintf('%.6g', $v) =~ s/\./,/r;
   };
+  # Coordenada (#452): 6 casas fixas (cerca de 0,1 m); 6 dígitos
+  # significativos cortariam -10,123456 em -10,1235 (cerca de 11 m).
+  my $coord = sub ($v) { defined $v ? sprintf('%.6f', $v) =~ s/\./,/r : undef };
   my @out = (join ';', map { $q->($_) } @$cab);
   for my $l (@$linhas) {
-    push @out, join ';', map { $q->($num->[$_] ? $n->($l->[$_]) : $l->[$_]) } 0 .. $#$l;
+    push @out, join ';', map {
+      my $f = $num->[$_] // 0;
+      $q->($f eq 'coord' ? $coord->($l->[$_]) : $f ? $n->($l->[$_]) : $l->[$_])
+    } 0 .. $#$l;
   }
   return "\x{FEFF}" . join("\r\n", @out) . "\r\n";
 }
