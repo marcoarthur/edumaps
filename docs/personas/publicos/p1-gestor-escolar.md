@@ -48,6 +48,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: fim da lista visível.
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não exporta agrupamentos.
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: base do município para apresentar.
+- [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não monta base de análise.
 
 ## Pendências
 

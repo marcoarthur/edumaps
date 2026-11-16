@@ -85,3 +85,9 @@ developer em 2026-11-16.
      assinatura.
 4. **Séries históricas** (vários Censos) continuam fora, por decisão. O
    BA-01 só pede que o cruzamento entre anos seja dito.
+
+## Andamento
+
+- 2026-11-16: #444 (PR #446) mergeado: BA-01, BA-03 e BA-04 resolvidos.
+  Fechamento em [`../ciclos/2026-11-16-avisos-base.md`](../ciclos/2026-11-16-avisos-base.md).
+  Fica #445 (BA-02, decisão de produto).

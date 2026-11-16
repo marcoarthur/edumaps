@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bs) — avaliação da P4, #444 (PR #446) mergeado
+
+- Terceira avaliação da P4 (base usada no R: `read.csv2` + `lm`): **adotaria**
+  (corte transversal de uma UF). Achados BA-01..04 → issues #444 (avisos) e
+  #445 (região, decisão de produto).
+- #444 → PR #446 (f724249): aviso do cruzamento IDEB antigo × Censo 2025 na
+  tela e no dicionário (`descricao_ano_ideb`), frase do link (carga mais
+  recente), fórmula das proporções de docência. Nota técnica 208, ciclo
+  `2026-11-16-avisos-base.md`. Fica #445.
+
 ## Sessão 2026-11-16 (br) — #439 em dois PRs (#442, #443), mergeados
 
 - Decisões do developer (2026-11-16): base de análise **pública**, **uma UF

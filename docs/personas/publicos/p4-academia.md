@@ -47,16 +47,15 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido). RV-01 resolvido; ficam #438 e #439.
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido). RV-03 resolvido; fica #439.
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido até nova rodada). RV-02 e RV-05 resolvidos; nenhum achado da reavaliação aberto.
+- [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p4--academia-pesquisadora): adotaria (mantido). BA-01, BA-03 e BA-04 resolvidos; fica #445.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-16 (**adotaria**). Os achados
-  RV-01 a RV-05 foram entregues (#440 a #443). Pendentes: #444 (BA-01, BA-03, BA-04) e #445
-  (BA-02, decisão de produto). BA-01 (IDEB antigo cruzado com o Censo 2025 sem
-  aviso), BA-02 (recorte por região), BA-03 (o link da base não fixa a
-  versão), BA-04 (fórmula das proporções de docência).
+  RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
+  (#446). Pendente: #445 (BA-02, recorte por região, decisão de produto).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
