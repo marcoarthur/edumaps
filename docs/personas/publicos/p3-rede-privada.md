@@ -45,6 +45,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: base da rede privada da UF; #429 continua.
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
+- [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

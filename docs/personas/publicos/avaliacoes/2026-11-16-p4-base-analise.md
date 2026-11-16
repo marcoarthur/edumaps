@@ -91,3 +91,8 @@ developer em 2026-11-16.
 - 2026-11-16: #444 (PR #446) mergeado: BA-01, BA-03 e BA-04 resolvidos.
   Fechamento em [`../ciclos/2026-11-16-avisos-base.md`](../ciclos/2026-11-16-avisos-base.md).
   Fica #445 (BA-02, decisão de produto).
+- 2026-11-16: #445 (PR #447) mergeado: BA-02 resolvido no ranking de redes
+  (região, combinável com o porte). A base de análise segue uma UF por vez
+  (decisão de produto). Fechamento em
+  [`../ciclos/2026-11-16-ranking-regiao.md`](../ciclos/2026-11-16-ranking-regiao.md).
+  Nenhum achado desta avaliação fica aberto.

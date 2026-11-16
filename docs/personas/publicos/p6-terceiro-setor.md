@@ -42,6 +42,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: base da matéria com o ano no nome.
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: base com versão e dicionário; comparação por porte.
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: aviso do cruzamento entre anos.
+- [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: ranking da região com salto atípico medido nela.
 
 ## Pendências
 

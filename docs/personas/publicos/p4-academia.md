@@ -48,6 +48,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido). RV-03 resolvido; fica #439.
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p4--academia-pesquisadora): adotaria com ressalvas (mantido até nova rodada). RV-02 e RV-05 resolvidos; nenhum achado da reavaliação aberto.
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p4--academia-pesquisadora): adotaria (mantido). BA-01, BA-03 e BA-04 resolvidos; fica #445.
+- [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p4--academia-pesquisadora): adotaria (mantido). BA-02 resolvido no ranking (região e porte); base por região fica na assinatura. Nenhum achado aberto.
 
 ## Pendências
 
@@ -55,7 +56,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-16 (**adotaria**). Os achados
   RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
-  (#446). Pendente: #445 (BA-02, recorte por região, decisão de produto).
+  (#446). BA-02 entregue no ranking (#447); a base por região fica na
+  assinatura (decisão de produto). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bt) — #445 (PR #447) mergeado
+
+- Decisão do developer: região **só no ranking**; a base de análise segue uma
+  UF por vez (região/nacional na assinatura).
+- #445 → PR #447 (b412062): `EduMaps::Regiao` (N, NE, SE, S, CO → UFs, sem
+  cache para o teste estender com `local`); `regiao=` no ranking de redes
+  (`sg_uf = ANY(?)` antes de posição/quintos/atípico; UF > região > nacional);
+  tela com seletor "Abrangência", link antigo `nacional=1` mantido. NE real =
+  1.334 redes = soma das 9 UFs. Nota técnica 209, ciclo
+  `2026-11-16-ranking-regiao.md`. Nenhum achado das avaliações da P4 aberto.
+
 ## Sessão 2026-11-16 (bs) — avaliação da P4, #444 (PR #446) mergeado
 
 - Terceira avaliação da P4 (base usada no R: `read.csv2` + `lm`): **adotaria**
