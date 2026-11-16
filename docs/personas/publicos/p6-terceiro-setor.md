@@ -51,9 +51,35 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
-  entregues (PR #440); sem pendência das análises.
+  entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
+  VJ-05 aguardam a aprovação do developer para virar issue.
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (terceira rodada, pautas do Nordeste)
+
+**Veredito:** **adotaria** (mantido), agora também com a base de análise.
+Consolidação em
+[`avaliacoes/2026-11-16-p6-jornalismo.md`](avaliacoes/2026-11-16-p6-jornalismo.md).
+
+**O que tentou:**
+- "Quais redes mais melhoraram": o Nordeste ordenado pela variação, com
+  mínimo de 10 escolas e o destaque de Coruripe.
+- "Escolas sem infraestrutura básica": a base do Piauí no R.
+- "Posso citar": a linha de fonte, o CSV e o dicionário.
+
+**O que funciona para ele:**
+- link, destaque e salto atípico dão a pauta das redes pronta;
+- o recorte e a versão viajam no arquivo.
+
+**Barreiras:**
+- VJ-01 (atrapalha): a base só traz esgoto e energia "da rede pública".
+  "Sem esgoto" daria 2.725 escolas no PI, contra 179 de fato.
+- VJ-02 (detalhe): o CSV ordenado pela variação não traz essa posição.
+- VJ-03 (detalhe): a variação vazia não tem motivo na tela.
+- VJ-04 (detalhe): a base não traz as coordenadas.
+- VJ-05 (detalhe): o IDEB aparece com "carga não registrada".
+
 
 ### 2026-11-15 — Análises públicas (reavaliação)
 
