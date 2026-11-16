@@ -63,14 +63,17 @@ my @INFRA = (
   [in_acessibilidade_rampas   => 'Tem rampas de acessibilidade (1 = sim, 0 = não)'],
 );
 
-# Docência: as mesmas fórmulas do agrupamento (Task::Clustering).
+# Docência: as mesmas fórmulas do agrupamento (Task::Clustering). A contagem
+# é a do Censo Escolar, por escola: quem dá aula em mais de uma escola conta
+# em cada uma (#444, BA-04).
+my $DENOM = 'docentes da escola (qt_docentes)';
 my @DOCENCIA = (
-  [qt_docentes             => 'd.qt_doc_bas', 'Docentes da educação básica (total)'],
-  [prop_licenciatura       => 'd.qt_doc_bas_esco_sup_grad_licen::float8 / NULLIF(d.qt_doc_bas, 0)', 'Proporção de docentes com licenciatura'],
-  [prop_mestrado           => 'd.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0)', 'Proporção de docentes com mestrado'],
-  [prop_doutorado          => 'd.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0)', 'Proporção de docentes com doutorado'],
-  [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', 'Proporção de docentes concursados (efetivos)'],
-  [prop_sem_especializacao => 'd.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0)', 'Proporção de docentes sem especialização'],
+  [qt_docentes             => 'd.qt_doc_bas', 'Docentes da educação básica da escola. Quem dá aula em mais de uma escola conta em cada uma (contagem do Censo Escolar)'],
+  [prop_licenciatura       => 'd.qt_doc_bas_esco_sup_grad_licen::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com licenciatura ÷ $DENOM"],
+  [prop_mestrado           => 'd.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com mestrado ÷ $DENOM"],
+  [prop_doutorado          => 'd.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com doutorado ÷ $DENOM"],
+  [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes concursados (efetivos) ÷ $DENOM"],
+  [prop_sem_especializacao => 'd.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes sem especialização ÷ $DENOM"],
 );
 
 # Cada bloco: colunas [nome, expressão SQL, descrição, numérica?] e a fonte.
@@ -99,7 +102,7 @@ sub _blocos {
       descricao => 'Água, energia, esgoto, lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
     { id => 'docencia', label => 'Docência', fonte => 'censo',
-      descricao => 'Número de docentes e proporções de formação, mestrado, doutorado, efetivos e sem especialização.',
+      descricao => 'Número de docentes e proporções de formação, mestrado, doutorado, efetivos e sem especialização, sobre o total de docentes da escola. Quem dá aula em mais de uma escola conta em cada uma.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @DOCENCIA ] },
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
       descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida.',
@@ -172,12 +175,23 @@ sub contar ($class, $dbh, $recorte) {
   return 0 + $n;
 }
 
+# Descrição de ano_ideb (#444, BA-01): com uma edição antiga, o IDEB é
+# cruzado com o Censo mais recente (o único carregado), e o dicionário diz.
+sub descricao_ano_ideb ($class, $anos, $ano_ideb) {
+  my $ultimo = $anos->{ideb}[0];
+  return 'Edição do IDEB/SAEB'
+    if !defined $ano_ideb || !defined $ultimo || $ano_ideb >= $ultimo || !defined $anos->{censo};
+  return "Edição do IDEB/SAEB ($ano_ideb), cruzada com o Censo Escolar $anos->{censo}: "
+       . "a lista de escolas, a infraestrutura e a docência são de $anos->{censo}, "
+       . "e as escolas fechadas depois de $ano_ideb não entram";
+}
+
 # Colunas e blocos efetivos, na ordem do catálogo, mais as colunas de versão.
 sub colunas ($class, $blocos, $anos, $ano_ideb) {
   my %quer = map { $_ => 1 } @$blocos;
   my @b = grep { $_->{fixo} || $quer{ $_->{id} } } @{ _blocos() };
   my @versao = (['ano_censo', $anos->{censo}, 'Ano do Censo Escolar', 'censo']);
-  push @versao, ['ano_ideb', $ano_ideb, 'Edição do IDEB/SAEB', 'ideb'] if $quer{desempenho};
+  push @versao, ['ano_ideb', $ano_ideb, $class->descricao_ano_ideb($anos, $ano_ideb), 'ideb'] if $quer{desempenho};
   push @versao, ['ano_inse', $anos->{inse}, 'Edição do SAEB do INSE', 'inse'] if $quer{inse};
   push @versao, ['ano_populacao', $anos->{populacao}, 'Ano da estimativa de população', 'ibge_populacao'] if $quer{porte};
   return (\@b, \@versao);

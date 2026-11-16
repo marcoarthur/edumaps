@@ -134,6 +134,20 @@ subtest 'dicionário' => sub {
   ok !$d{inse_media}, 'só os blocos pedidos';
 };
 
+subtest 'dicionário: ressalvas (#444)' => sub {
+  my $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=docencia,desempenho")->status_is(200)->tx);
+  my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
+  is $d{ano_ideb}[1], 'Edição do IDEB/SAEB', 'edição mais recente: sem ressalva';
+  like $d{qt_docentes}[1], qr/mais de uma escola conta em cada uma/, 'contagem por escola';
+  like $d{$_}[1], qr/÷ docentes da escola \(qt_docentes\)/, "$_: denominador"
+    for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao);
+
+  $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=desempenho&ano_ideb=2021")->status_is(200)->tx);
+  %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
+  like $d{ano_ideb}[1], qr/\(2021\), cruzada com o Censo Escolar \Q$ANO\E/, 'edição antiga: cruzamento dito';
+  like $d{ano_ideb}[1], qr/fechadas depois de 2021 não entram/, 'escolas fechadas';
+};
+
 subtest 'erros' => sub {
   $t->get_ok('/api/base-analise/csv')->status_is(400)->json_like('/error' => qr/UF/);
   $t->get_ok('/api/base-analise/csv?uf=XX')->status_is(400);

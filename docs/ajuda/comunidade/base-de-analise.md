@@ -40,7 +40,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 3. **Baixar:** **Baixar base (CSV)** gera a planilha; **Baixar dicionário das
    colunas** gera a lista das colunas com a descrição, a fonte, o ano e o
    link oficial. O endereço da página guarda as escolhas, então o link
-   reabre a mesma base.
+   reabre a mesma base. Mas o link traz sempre a **carga mais recente**:
+   depois de uma carga nova do Censo, o mesmo link dá outros números. Para
+   citar, guarde o **arquivo**: os anos estão no nome e nas últimas colunas.
 
 ## Entendendo os números
 - **Ausência é célula vazia, nunca zero.** Escola sem IDEB numa etapa (porque
@@ -50,6 +52,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   nome do arquivo também leva os anos (ex.:
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
+- **Edição antiga do IDEB:** só o Censo Escolar mais recente está
+  carregado. Com uma edição antiga (ex.: 2019), o IDEB é cruzado com a lista
+  de escolas, a infraestrutura e a docência do Censo mais recente, e as
+  escolas fechadas depois daquela edição não entram. A página e o dicionário
+  avisam; para uma série de anos, cada ano precisaria do seu Censo.
+- **Docência:** as proporções são sobre o total de docentes da escola
+  (`qt_docentes`). Na contagem do Censo Escolar, quem dá aula em mais de uma
+  escola conta em cada uma.
 - O arquivo usa `;` como separador e vírgula decimal: abre direto no Excel.
   No R, `read.csv2()`; no Python, `pandas.read_csv(sep=";", decimal=",")`.
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.
