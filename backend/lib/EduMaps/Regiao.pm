@@ -25,6 +25,16 @@ sub nome ($class, $id) { my $r = _por_id($id); $r ? $r->{label} : undef }
 
 sub ufs ($class, $id) { my $r = _por_id($id); $r ? [ @{ $r->{ufs} } ] : undef }
 
+# CASE SQL que devolve o nome da região para a expressão de UF dada (#448).
+# A expressão vem do código (nunca do usuário).
+sub case_sql ($class, $expr) {
+  my @w = map {
+    my $r = $_;
+    "WHEN $expr IN (" . join(', ', map { "'$_'" } @{ $r->{ufs} }) . ") THEN '$r->{label}'"
+  } @REGIOES;
+  return 'CASE ' . join(' ', @w) . ' END';
+}
+
 sub lista ($class) { [ map { +{ id => $_->{id}, label => $_->{label}, ufs => [ @{ $_->{ufs} } ] } } @REGIOES ] }
 
 1;

@@ -4,6 +4,7 @@ use utf8;
 use Carp qw(croak);
 use EduMaps::Fontes;
 use EduMaps::Porte;
+use EduMaps::Regiao;
 
 # ============================================================================
 # BASE DE ANÁLISE (#439, RV-02)
@@ -88,13 +89,16 @@ sub _blocos {
   }
   return [
     { id => 'identificacao', label => 'Identificação', fixo => 1, fonte => 'censo',
-      descricao => 'INEP, nome, município, UF, rede e localização da escola (sempre incluído).',
+      descricao => 'INEP, nome, município, UF, região, rede e localização da escola (sempre incluído).',
       colunas => [
         ['inep',        'e.co_entidade::text', 'Código INEP da escola', 0],
         ['escola',      'e.no_entidade', 'Nome da escola', 0],
         ['codigo_ibge', 'e.co_municipio::text', 'Código IBGE do município', 0],
         ['municipio',   'e.no_municipio', 'Município', 0],
         ['uf',          'e.sg_uf', 'UF', 0],
+        # #448 (RG-01): a região vem da UF (EduMaps::Regiao, a mesma do
+        # ranking), para juntar bases de várias UFs sem mapa à mão.
+        ['regiao',      EduMaps::Regiao->case_sql('e.sg_uf'), 'Região geográfica do IBGE (Norte, Nordeste, Sudeste, Sul ou Centro-Oeste), derivada da UF', 0],
         ['rede',        q{CASE e.tp_dependencia WHEN 1 THEN 'Federal' WHEN 2 THEN 'Estadual' WHEN 3 THEN 'Municipal' WHEN 4 THEN 'Privada' END}, 'Rede (dependência administrativa)', 0],
         ['localizacao', q{CASE e.tp_localizacao WHEN 1 THEN 'Urbana' WHEN 2 THEN 'Rural' END}, 'Localização (urbana ou rural)', 0],
       ] },

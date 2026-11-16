@@ -34,7 +34,11 @@ indicador. Não precisa de login.
    mostra o fim da lista (ex.: as escolas com menos infraestrutura).
 3. **Para levar a outro lugar:** **Baixar CSV** exporta a tabela (separador
    `;`, abre no Excel); o endereço da página guarda os filtros, então o link
-   reabre a mesma consulta.
+   reabre a mesma consulta. Cada linha do arquivo diz o recorte em que a
+   posição e o INSE parecido foram calculados: nas redes, `recorte` (`UF:ES`,
+   `regiao:NE` ou `BR`), `porte_filtro` e `minimo_escolas`; nas escolas, o
+   município e a rede escolhida (`rede_filtro`). Assim, arquivos de recortes
+   diferentes podem ser juntados sem misturar as posições.
 4. Da **Comparação de redes** de um município há atalhos para os dois
    rankings.
 

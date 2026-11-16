@@ -31,6 +31,8 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   edição escolhida), nível socioeconômico (INSE) e porte do município.
 - Sistema pode **dizer a versão dos dados** em cada linha e no nome do
   arquivo (ano do Censo, edição do IDEB e do INSE, ano da população).
+- Sistema pode **identificar a região** de cada escola, para juntar as bases
+  de várias UFs e comparar regiões sem tabela auxiliar.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a
   fonte, o ano e o link oficial de cada uma.
 - Sistema pode **mostrar o tamanho do recorte** (quantas escolas) antes de

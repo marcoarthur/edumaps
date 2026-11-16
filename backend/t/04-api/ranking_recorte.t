@@ -148,6 +148,13 @@ subtest 'região (#445)' => sub {
     'as 27 UFs, cada uma numa região';
   ok !(grep { $_ > 1 } values %todas), 'nenhuma UF em duas regiões';
 
+  # #448: o CASE SQL da base de análise dá a região de cada UF.
+  my $case = EduMaps::Regiao->case_sql('u');
+  my $got = $dbh->selectall_arrayref("SELECT u, $case FROM unnest(?::text[]) u", undef, [sort keys %todas]);
+  my %esperado = map { my $r = $_; map { $_ => $r->{label} } @{ $r->{ufs} } } @{ EduMaps::Regiao->lista };
+  is { map { @$_ } @$got }, \%esperado, 'case_sql: a região das 27 UFs';
+  is scalar $dbh->selectrow_array("SELECT $case FROM (SELECT 'XX'::text u) t"), undef, 'UF desconhecida: sem região';
+
   local @EduMaps::Regiao::REGIOES = (@EduMaps::Regiao::REGIOES, { id => 'TT', label => 'Teste', ufs => [qw(XX XY)] });
 
   my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=TT')->status_is(200)->tx->res->json;

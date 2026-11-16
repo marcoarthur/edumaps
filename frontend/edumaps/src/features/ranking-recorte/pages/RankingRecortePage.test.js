@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import RankingRecortePage from "./RankingRecortePage.svelte";
 import { _resetFontes } from "@/features/fontes/api/fontesApi.js";
 
@@ -191,5 +191,48 @@ describe("RankingRecortePage — região (#445)", () => {
     await screen.findByTestId("tabela-redes");
     expect(screen.getByLabelText("Abrangência").value).toBe("uf");
     expect(pedidos.at(-1).get("uf")).toBe("ES");
+  });
+});
+
+describe("RankingRecortePage — recorte no CSV (#448)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => {
+    window.history.replaceState({}, "", "/");
+    vi.restoreAllMocks();
+  });
+
+  async function baixado(botao) {
+    let blob = null;
+    URL.createObjectURL = vi.fn((b) => { blob = b; return "blob:teste"; });
+    URL.revokeObjectURL = vi.fn();
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    await fireEvent.click(botao);
+    expect(clique).toHaveBeenCalled();
+    // O Blob do jsdom não tem .text(); o FileReader lê.
+    const texto = await new Promise((ok) => {
+      const fr = new FileReader();
+      fr.onload = () => ok(fr.result);
+      fr.readAsText(blob);
+    });
+    return texto.replace(/^﻿/, "").split("\r\n").filter(Boolean).map((l) => l.split(";"));
+  }
+
+  it("CSV das redes da região com porte traz o recorte em toda linha", async () => {
+    server.use(http.get("*/api/ranking/redes", () =>
+      HttpResponse.json({ ...REDES_FIXTURE, recorte: { regiao: { id: "NE", nome: "Nordeste" }, porte: "10_20mil" } })));
+    abrir("?aba=redes&regiao=NE&porte=10_20mil");
+    await screen.findByTestId("tabela-redes");
+    const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
+    expect(l[0].slice(-3)).toEqual(["recorte", "porte_filtro", "minimo_escolas"]);
+    expect(l).toHaveLength(4);
+    for (const linha of l.slice(1)) expect(linha.slice(-3)).toEqual(["regiao:NE", "10_20mil", "3"]);
+  });
+
+  it("CSV das escolas traz o município e a rede filtrada", async () => {
+    abrir("?aba=escolas&codigo_ibge=3205309&rede=municipal");
+    await screen.findByTestId("tabela-escolas");
+    const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
+    expect(l[0].slice(-4)).toEqual(["codigo_ibge", "municipio", "uf", "rede_filtro"]);
+    expect(l[1].slice(-4)).toEqual(["3205309", "Vitória", "ES", "municipal"]);
   });
 });
