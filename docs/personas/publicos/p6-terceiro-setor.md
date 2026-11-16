@@ -38,13 +38,14 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Agrupamento com link e CSV; ficam #428 e #430.
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Ano do dado e página citável; fica #430.
 - [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido; reavaliação pendente). AN-11 resolvido.
+- [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). RV-01 e RV-04 resolvidos.
 
 ## Pendências
 
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
-- Análises públicas: reavaliada em 2026-11-15 (adotaria). Pendentes RV-01
-  e RV-04 (#437).
+- Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
+  entregues (PR #440); sem pendência das análises.
 
 ## Entradas
 

@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-15 (bp) — issues #437 a #439 e PR #440 (#437) mergeado
+
+- Developer de volta: aprovou o trabalho autônomo; merges voltam a exigir
+  permissão explícita a cada PR.
+- Issues da reavaliação P4/P6: #437 (RV-01, RV-04), #438 (RV-03), #439
+  (RV-02, RV-05; decisão de produto).
+- #437 → PR #440 (4366b50): salto atípico (> 2 desvios, dois sentidos),
+  `minimo` 3..30 (padrão 3), Maior/Menor primeiro nas duas abas. Nota técnica
+  205, ciclo `2026-11-15-ranking-atipico.md`.
+
 ## Sessão 2026-11-15 (bo) — #428 (PR #435) mergeado; autonomia de 6h
 
 - Developer ausente por 6h: **pode mergear PR com CI verde** e pede as

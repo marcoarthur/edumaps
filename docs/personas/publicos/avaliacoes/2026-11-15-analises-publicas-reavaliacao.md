@@ -71,3 +71,8 @@ RV-04), **#438** (RV-03) e **#439** (RV-02 e RV-05, decisão de produto).
    arquivo com a versão.
 3. RV-02 e RV-05 são uma decisão de produto: uma exportação de "base de
    análise" para a P4 (assinatura de dados/API, no plano de negócios).
+
+## Andamento
+
+- 2026-11-15: #437 (PR #440) mergeado: RV-01 e RV-04 resolvidos. Fechamento em
+  [`../ciclos/2026-11-15-ranking-atipico.md`](../ciclos/2026-11-15-ranking-atipico.md).

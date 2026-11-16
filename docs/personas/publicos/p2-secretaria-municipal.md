@@ -44,6 +44,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — agrupamento que presta contas e se reproduz](ciclos/2026-11-15-agrupamento-reprodutivel.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto indireto: agrupamento com link e CSV.
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto indireto: ano do dado na tela.
 - [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: a rede entre as do estado, com contexto.
+- [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto indireto: salto da rede sinalizado.
 
 ## Pendências
 
