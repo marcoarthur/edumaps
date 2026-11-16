@@ -65,7 +65,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
   RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
-  (2026-11-16, **adotaria**): RX-01 e RX-02 aguardam a aprovação do developer.
+  (2026-11-16, **adotaria**): RX-02 em #461 e RX-01 em #462.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

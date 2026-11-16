@@ -21,8 +21,8 @@ usa:
     as colunas novas (BA e ES juntas), e conferir como citaria um índice que
     mudou hoje.
 - ⚠️ Simulação: não substitui uma pesquisadora de verdade.
-- Feita a pedido do developer. Os achados abaixo **não viraram issue**: pela
-  regra, issue só com a aprovação dele.
+- Feita a pedido do developer. Issues **#461** (RX-02) e **#462** (RX-01),
+  abertas com a aprovação dele.
 
 ## O que ela fez
 
@@ -87,7 +87,10 @@ usa:
 
 ## Encaminhamento
 
-Proposta, se o developer aprovar as issues:
+Issues abertas com a aprovação do developer (2026-11-16): **#461** (RX-02) e
+**#462** (RX-01).
+
+### Proposta original
 
 1. **RX-02**: as etapas oferecidas entram como um bloco da base, e o aviso
    de cobertura entra no dicionário e na ajuda. Mexe só na base e nos
