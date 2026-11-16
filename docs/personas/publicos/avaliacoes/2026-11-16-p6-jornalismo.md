@@ -20,8 +20,8 @@ cinco entregas da P4 que a P6 também usa:
   - **o trabalho que ele faria:** duas pautas de um veículo regional do
     Nordeste, com as três perguntas do perfil.
 - ⚠️ Simulação: não substitui um jornalista de verdade.
-- Feita a pedido do developer. Os achados abaixo **não viraram issue**: pela
-  regra, issue só com a aprovação dele.
+- Feita a pedido do developer. Issues **#452**, **#453** e **#454**, abertas
+  com a aprovação dele.
 
 ## As perguntas do perfil
 
@@ -93,7 +93,10 @@ cinco entregas da P4 que a P6 também usa:
 
 ## Encaminhamento
 
-Proposta, se o developer aprovar as issues:
+Issues abertas com a aprovação do developer (2026-11-16): **#452** (VJ-01 e
+VJ-04), **#453** (VJ-02 e VJ-03) e **#454** (VJ-05).
+
+### Proposta original
 
 1. **VJ-01 primeiro** (atrapalha): as colunas "inexistente" na base, com o
    dicionário e a ajuda. Cabe junto com **VJ-04** (coordenadas), porque os

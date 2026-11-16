@@ -52,7 +52,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
-  VJ-05 aguardam a aprovação do developer para virar issue.
+  VJ-05 em #452 (VJ-01 e VJ-04), #453 (VJ-02 e VJ-03) e #454 (VJ-05).
 
 ## Entradas
 
