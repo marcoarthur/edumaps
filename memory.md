@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bu) — quarta avaliação da P4, #448 (PR #450) mergeado
+
+- Quarta rodada da P4 (região no ranking; base das 27 UFs juntada no R):
+  **adotaria** (mantido). Achados RG-01..03 → #448 (região na base e recorte
+  nos CSVs) e #449 (achar município na lista de redes).
+- #448 → PR #450 (0a25fbb): coluna `regiao` na identificação da base
+  (`EduMaps::Regiao->case_sql('e.sg_uf')`, não o `no_regiao` do Censo); CSVs
+  do ranking com `recorte`/`porte_filtro`/`minimo_escolas` (redes) e
+  município/`rede_filtro` (escolas), lidos da resposta da API, em
+  `utils/exportar.js`. Blob do jsdom sem `.text()`: ler com FileReader.
+  Nota técnica 210, ciclo `2026-11-16-regiao-base-csv.md`. Fica #449.
+
 ## Sessão 2026-11-16 (bt) — #445 (PR #447) mergeado
 
 - Decisão do developer: região **só no ranking**; a base de análise segue uma

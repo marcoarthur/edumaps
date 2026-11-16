@@ -87,3 +87,11 @@ Os três são detalhes; a P4 continua em **adotaria**.
    ranking.
 2. **RG-03** é uma melhoria de tela no ranking (campo de município com
    destaque e sugestão de recorte), num PR separado.
+
+## Andamento
+
+- 2026-11-16: #448 (PR #450) mergeado: RG-01 e RG-02 resolvidos (região na
+  base de análise; recorte em cada linha dos CSVs do ranking, também no de
+  escolas). Fechamento em
+  [`../ciclos/2026-11-16-regiao-base-csv.md`](../ciclos/2026-11-16-regiao-base-csv.md).
+  Fica #449 (RG-03).

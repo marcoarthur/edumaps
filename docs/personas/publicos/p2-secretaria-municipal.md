@@ -49,6 +49,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — porte no ranking e base de análise](ciclos/2026-11-16-base-analise.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: comparação com redes do mesmo porte e base da rede.
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: docência com o denominador dito.
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: compara a rede com as de porte parecido da região.
+- [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: CSV das escolas com o município e a rede.
 
 ## Pendências
 
