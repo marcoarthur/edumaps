@@ -53,6 +53,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p4--academia-pesquisadora): adotaria (mantido). RG-03 resolvido; nenhum achado da P4 aberto.
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: infraestrutura básica sem confusão e coordenadas.
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: as duas posições no arquivo.
+- [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: índices com método, inclusive a falha da diversidade (#459).
 
 ## Pendências
 

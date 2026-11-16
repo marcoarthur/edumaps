@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (by) — quarta avaliação da P6, #457 (PR #458), #459 aberta
+
+- Quarta rodada da P6 (pautas revisitadas): **adotaria** (mantido). VK-01:
+  índice "Infraestrutura" sem método e não é "básica" → #457.
+- #457 → PR #458 (d2ff160): indicador `infraestrutura_basica` (0 a 4, coluna
+  Falta, `faltam` no CSV) numa lista própria `indicadores_municipio`, fora do
+  `indicator_registry` (bin/ranking.pl e painel só conhecem mv/ideb);
+  `%METODO` dos 6 índices em `indicador.metodo`, na nota e na ajuda.
+- Achado: `score_diversidade_discente` usa `qt_mat_bas_d/dm/dv` (turnos!) como
+  deficiência (média 0,976 vs educação especial 0,056) → **#459** (developer
+  pediu issue; a fórmula não muda neste PR, o método diz o erro).
+  Nota técnica 214, ciclo `2026-11-16-infraestrutura-basica.md`.
+
 ## Sessão 2026-11-16 (bx) — #453 (PR #456) mergeado
 
 - #453 → PR #456 (62c4dbe), só frontend: CSV de redes com `posicao_valor`

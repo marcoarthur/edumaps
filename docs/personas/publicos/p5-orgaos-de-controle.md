@@ -50,6 +50,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: acha a própria rede.
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: conta as escolas sem esgoto com o número certo.
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto direto.
+- [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: lista das escolas sem infraestrutura básica.
 
 ## Pendências
 

@@ -53,6 +53,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: a própria rede entre as de mesmo porte na região, e o motivo quando some.
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: escolas sem esgoto ou energia, com mapa.
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o motivo da variação vazia da rede.
+- [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: escolas da rede sem infraestrutura básica, com o item.
 
 ## Pendências
 

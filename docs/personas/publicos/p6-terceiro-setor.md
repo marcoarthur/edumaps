@@ -47,6 +47,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: link que abre na linha do município.
 - [2026-11-16 — itens inexistentes e coordenadas na base](ciclos/2026-11-16-infra-inexistente.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-01 e VJ-04 resolvidos; ficam #453 e #454.
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-02 e VJ-03 resolvidos; fica #454.
+- [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VK-01 resolvido; ficam #454 e #459.
 
 ## Pendências
 
@@ -55,7 +56,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Análises públicas: reavaliada em 2026-11-15 (adotaria). RV-01 e RV-04
   entregues (PR #440). Terceira rodada em 2026-11-16 (**adotaria**): VJ-01 a
   VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
-  operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 em #457.
+  operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 entregue (#458); a fórmula da diversidade
+  discente ficou na #459.
 
 ## Entradas
 

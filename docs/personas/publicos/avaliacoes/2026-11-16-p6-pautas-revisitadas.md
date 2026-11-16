@@ -75,3 +75,11 @@ Issue aberta com a aprovação do developer (2026-11-16): **#457** (VK-01).
    É uma decisão de produto: mexer no índice atual mudaria também o
    agrupamento e as escolas semelhantes, que o usam. Um indicador novo não
    mexe no índice.
+
+## Andamento
+
+- 2026-11-16: #457 (PR #458) mergeado: VK-01 resolvido (indicador
+  "Infraestrutura básica" com a coluna Falta; método de cada índice na tela
+  e na ajuda). Ao escrever o método, apareceu o erro do índice de diversidade
+  discente (soma os turnos), registrado na **#459**. Fechamento em
+  [`../ciclos/2026-11-16-infraestrutura-basica.md`](../ciclos/2026-11-16-infraestrutura-basica.md).
