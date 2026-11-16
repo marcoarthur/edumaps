@@ -21,8 +21,8 @@ ter todos os achados entregues:
     abrir no R com `read.csv2()` (como a ajuda diz) e rodar o modelo da
     pergunta dela.
 - ⚠️ Simulação: não substitui uma pesquisadora de verdade.
-- Os achados abaixo **não viraram issue**: issue só com a aprovação do
-  developer.
+- Issues abertas com a aprovação do developer (2026-11-16): **#444**
+  (BA-01, BA-03 e BA-04) e **#445** (BA-02, decisão de produto).
 
 ## As perguntas do perfil
 
@@ -63,7 +63,12 @@ ter todos os achados entregues:
 | BA-03 | detalhe | **O link da base não fixa a versão.** A URL guarda o recorte e os blocos, e não os dados: depois de uma carga nova do Censo, o mesmo link traz outra base. O arquivo diz o ano, mas a tela e a ajuda não dizem que o link traz sempre a carga mais recente e que é o arquivo que se guarda. | ajuda `base-de-analise.md` | P4 |
 | BA-04 | detalhe | **O dicionário não dá a fórmula das proporções de docência.** "Proporção de docentes com licenciatura" não diz o denominador (o total de docentes, `qt_docentes`) nem que um docente que atua em mais de uma escola conta em cada uma. | `base-analise-dicionario-….csv` | P4 |
 
-## Encaminhamento (proposta, à espera do developer)
+## Encaminhamento
+
+Issues **#444** (itens 1 e 2) e **#445** (item 3), abertas com a aprovação do
+developer em 2026-11-16.
+
+### Proposta original
 
 1. **BA-01 e BA-03 cabem num PR pequeno.**
    - BA-01: aviso na tela quando a edição do IDEB não é a mais recente ("a

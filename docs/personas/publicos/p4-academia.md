@@ -53,8 +53,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Planos de gestão: **não se aplica** (motivo na matriz do
   [`README.md`](README.md)).
 - Análises públicas: reavaliada em 2026-11-16 (**adotaria**). Os achados
-  RV-01 a RV-05 foram entregues (#440 a #443). Pendentes, sem issue até a
-  aprovação do developer: BA-01 (IDEB antigo cruzado com o Censo 2025 sem
+  RV-01 a RV-05 foram entregues (#440 a #443). Pendentes: #444 (BA-01, BA-03, BA-04) e #445
+  (BA-02, decisão de produto). BA-01 (IDEB antigo cruzado com o Censo 2025 sem
   aviso), BA-02 (recorte por região), BA-03 (o link da base não fixa a
   versão), BA-04 (fórmula das proporções de docência).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
