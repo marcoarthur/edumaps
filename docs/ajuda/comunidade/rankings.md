@@ -109,9 +109,11 @@ gestores, matrículas) fica com 0.
 - **Capacitação docente:** ensino superior (30%), pós-graduação (30%),
   concursados (20%) e formação continuada (20%).
 - **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e
-  meninos (25%) e EJA (20%). Os outros 20% deveriam medir os alunos com
-  deficiência, mas hoje somam as matrículas dos turnos diurno, matutino e
-  vespertino, que são quase todas, e quase toda escola recebe esses pontos.
+  meninos (25%), inclusão (20%: a proporção de alunos da educação especial
+  em classe comum) e EJA (20%). A parte da inclusão foi corrigida em
+  16/11/2026: antes ela somava as matrículas dos turnos, que são quase
+  todas, e quase toda escola recebia esses pontos. Por isso as notas de
+  diversidade caíram, e as de antes dessa data não são comparáveis.
 - **Capacidade gestora:** formação dos gestores (30%), formação em gestão
   (20%), gestores por aluno (20%), órgãos colegiados (20%) e acesso ao
   cargo por concurso, eleição ou seleção (10%).

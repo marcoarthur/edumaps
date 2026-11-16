@@ -59,9 +59,9 @@ our %METODO = (
     . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '
     . 'Escola sem registro de docentes no Censo fica com 0.',
   diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas (1 menos a soma dos quadrados das proporções). '
-    . '25%: equilíbrio entre meninas e meninos. 20%: proporção de matrículas na EJA. '
-    . '20%: deveria medir os alunos com deficiência, mas hoje soma as matrículas dos turnos diurno, matutino e vespertino, '
-    . 'que são quase todas: na prática, quase toda escola recebe esses 2 pontos. Escola sem matrículas informadas fica com 0.',
+    . '25%: equilíbrio entre meninas e meninos. 20%: inclusão (proporção de alunos da educação especial em classe comum). '
+    . '20%: proporção de matrículas na EJA. Escola sem matrículas informadas fica com 0. '
+    . 'A parte da inclusão foi corrigida em 16/11/2026 (antes somava os turnos): notas de antes dessa data não são comparáveis.',
   capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
     . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
     . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
