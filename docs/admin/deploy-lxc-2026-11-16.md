@@ -153,7 +153,9 @@ perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
 O agrupamento passa a guardar cada execução (#427): o motor grava em
 `analytics.cluster_atribuicoes` com o mesmo usuário do banco que já grava
 `analytics.clustering_metadata`; conferir com um agrupamento de teste na tela
-(caixa **Universo** e **Baixar CSV**).
+(caixa **Universo** e **Baixar CSV**; o arquivo sai como
+`agrupamento-censo<ano>-ideb<ano>-<run_id>.csv`, com as colunas `ano_censo` e
+`ano_ideb`, #438).
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

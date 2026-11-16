@@ -39,6 +39,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido). Ano do dado e página citável; fica #430.
 - [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria com ressalvas (mantido; reavaliação pendente). AN-11 resolvido.
 - [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). RV-01 e RV-04 resolvidos.
+- [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: base da matéria com o ano no nome.
 
 ## Pendências
 

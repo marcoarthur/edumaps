@@ -76,3 +76,7 @@ RV-04), **#438** (RV-03) e **#439** (RV-02 e RV-05, decisão de produto).
 
 - 2026-11-15: #437 (PR #440) mergeado: RV-01 e RV-04 resolvidos. Fechamento em
   [`../ciclos/2026-11-15-ranking-atipico.md`](../ciclos/2026-11-15-ranking-atipico.md).
+- 2026-11-16: #438 (PR #441) mergeado: RV-03 resolvido (versão dos dados no
+  CSV do agrupamento). Fechamento em
+  [`../ciclos/2026-11-16-csv-versao.md`](../ciclos/2026-11-16-csv-versao.md).
+  Fica #439 (RV-02 e RV-05, decisão de produto).

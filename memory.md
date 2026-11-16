@@ -4,6 +4,14 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bq) — #438 (PR #441) mergeado
+
+- #438 → PR #441 (8ce6730): CSV do agrupamento com `ano_censo`/`ano_ideb` no
+  fim da linha e os anos no nome (`agrupamento-censo2025-ideb2023-<run_id>.csv`);
+  execução sem `dados` exporta com colunas vazias e nome antigo. Só backend.
+  Nota técnica 206, ciclo `2026-11-16-csv-versao.md`. Da reavaliação P4/P6 só
+  resta #439 (decisão de produto).
+
 ## Sessão 2026-11-15 (bp) — issues #437 a #439 e PR #440 (#437) mergeado
 
 - Developer de volta: aprovou o trabalho autônomo; merges voltam a exigir

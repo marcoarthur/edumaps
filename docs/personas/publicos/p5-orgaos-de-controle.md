@@ -42,6 +42,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-15 — fonte, ano e versão dos dados na tela](ciclos/2026-11-15-fontes-e-metodologia.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Fonte e data na tela; fica AN-12.
 - [2026-11-15 — ranking de redes municipais e de escolas por município](ciclos/2026-11-15-ranking-de-redes.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Município vs. semelhantes respondido.
 - [2026-11-15 — ranking com salto atípico, mínimo e ordem crescente](ciclos/2026-11-15-ranking-atipico.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto indireto: casos atípicos marcados.
+- [2026-11-16 — versão dos dados no CSV do agrupamento](ciclos/2026-11-16-csv-versao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto indireto: anexo com a versão dos dados.
 
 ## Pendências
 
