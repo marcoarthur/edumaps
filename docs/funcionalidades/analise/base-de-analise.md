@@ -43,8 +43,10 @@ base citável: quem recebe o arquivo sabe de onde e de que ano é cada número.
 
 ## Limites
 
-- Uma UF por vez. A base nacional, as séries históricas e o acesso
-  programático ficam fora desta capacidade.
+- Uma UF por vez. A base por região ou nacional, as séries históricas e o
+  acesso programático ficam fora desta capacidade (decisão de produto de
+  2026-11-16, confirmada na #445; o recorte por região existe no ranking de
+  redes).
 
 ## Relacionadas
 

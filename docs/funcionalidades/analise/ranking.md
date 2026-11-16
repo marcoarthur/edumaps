@@ -29,7 +29,7 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   indicador, com filtro de rede, o nível socioeconômico (INSE) ao lado e
   exportação em CSV.
 - Sistema pode **comparar as redes municipais** dos municípios de um estado
-  (ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
+  (ou de uma região, ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
   (média das escolas da rede), quanto mudou desde a edição anterior e o
   contexto socioeconômico — a média dos municípios de INSE parecido —, para
   responder "quais redes mais melhoraram?" e "este município entrega parecido
@@ -41,6 +41,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode **comparar redes de municípios do mesmo porte**: a população
   estimada pelo IBGE aparece ao lado de cada rede, e o filtro pelas classes
   de tamanho do IBGE refaz o ranking só entre as cidades daquele tamanho.
+- Sistema pode **comparar redes de uma região** (Norte, Nordeste, Sudeste,
+  Sul, Centro-Oeste): a posição, o contexto de INSE e o salto atípico passam a
+  ser medidos entre as redes da região, inclusive junto com o porte.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

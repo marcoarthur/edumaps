@@ -3,6 +3,7 @@ use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
 use EduMaps::Fontes;
 use EduMaps::Porte;
+use EduMaps::Regiao;
 
 # ============================================================================
 # Registro de redes de ensino
@@ -426,10 +427,14 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   my $column = $self->_assert_known_column($def->{column});
   my $dbh = $self->schema->storage->dbh;
   my $uf = $opts->{uf};
-  croak "Informe a UF ou o recorte nacional" unless $uf || $opts->{national};
+  my $regiao = $uf ? undef : $opts->{regiao};
+  croak "Região desconhecida: $regiao" if defined $regiao && !EduMaps::Regiao->valido($regiao);
+  croak "Informe a UF, a região ou o recorte nacional" unless $uf || $regiao || $opts->{national};
 
-  my $uf_sql = $uf ? 'AND sg_uf = ?' : '';
-  my @uf_bind = $uf ? ($uf) : ();
+  # #445 (BA-02): a UF vence a região, e a região vence o nacional; a região
+  # só restringe as UFs, antes da posição, do INSE e do salto atípico.
+  my $uf_sql = $uf ? 'AND sg_uf = ?' : $regiao ? 'AND sg_uf = ANY(?)' : '';
+  my @uf_bind = $uf ? ($uf) : $regiao ? (EduMaps::Regiao->ufs($regiao)) : ();
   my $porte = $opts->{porte};
   croak "Porte desconhecido: $porte" if defined $porte && !EduMaps::Porte->valido($porte);
   my $porte_case = EduMaps::Porte->case_sql('pm.populacao_estimada');
@@ -540,8 +545,12 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     },
     ano => 0 + $ano,
     ano_anterior => defined $ano_ant ? 0 + $ano_ant : undef,
-    recorte => { ($uf ? (uf => $uf) : (nacional => \1)), (defined $porte ? (porte => $porte) : ()) },
+    recorte => {
+      ($uf ? (uf => $uf) : $regiao ? (regiao => { id => $regiao, nome => EduMaps::Regiao->nome($regiao) }) : (nacional => \1)),
+      (defined $porte ? (porte => $porte) : ()),
+    },
     portes  => EduMaps::Porte->lista,
+    regioes => EduMaps::Regiao->lista,
     populacao_fonte => { ano => $pop_ano, descricao => 'Estimativa da população do IBGE' },
     minimo_escolas => $min,
     total => scalar @$rows,

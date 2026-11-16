@@ -133,3 +133,63 @@ describe("RankingRecortePage — atípico, mínimo e ordem (#437)", () => {
     expect(primeira.querySelector("td")).toHaveTextContent("2");
   });
 });
+
+describe("RankingRecortePage — região (#445)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  function capturar() {
+    const pedidos = [];
+    server.use(http.get("*/api/ranking/redes", ({ request }) => {
+      const q = new URL(request.url).searchParams;
+      pedidos.push(q);
+      const regiao = q.get("regiao");
+      const recorte = regiao ? { regiao: { id: regiao, nome: "Sudeste" } } : q.get("nacional") ? { nacional: true } : { uf: q.get("uf") };
+      return HttpResponse.json({ ...REDES_FIXTURE, recorte });
+    }));
+    return pedidos;
+  }
+
+  it("região pelo link: consulta, UF ao lado do município, nota e URL", async () => {
+    const pedidos = capturar();
+    abrir("?aba=redes&regiao=SE");
+    const tabela = await screen.findByTestId("tabela-redes");
+    const q = pedidos.at(-1);
+    expect(q.get("regiao")).toBe("SE");
+    expect(q.get("uf")).toBeNull();
+    expect(q.get("nacional")).toBeNull();
+    expect(screen.getByLabelText("Abrangência").value).toBe("regiao");
+    expect(screen.getByLabelText("Região").value).toBe("SE");
+    expect(screen.queryByLabelText("UF")).toBeNull();
+    expect(tabela).toHaveTextContent("Itarana · ES");
+    expect(screen.getByTestId("nota-redes")).toHaveTextContent("Só as redes da região Sudeste");
+    expect(window.location.search).toBe("?aba=redes&indicador=ideb_anos_iniciais&regiao=SE");
+  });
+
+  it("trocar a abrangência muda a consulta; o link antigo nacional=1 abre o Brasil", async () => {
+    const pedidos = capturar();
+    abrir("?aba=redes&nacional=1");
+    await screen.findByTestId("tabela-redes");
+    expect(screen.getByLabelText("Abrangência").value).toBe("brasil");
+    expect(pedidos.at(-1).get("nacional")).toBe("1");
+
+    await fireEvent.change(screen.getByLabelText("Abrangência"), { target: { value: "regiao" } });
+    await waitFor(() => expect(pedidos.at(-1).get("regiao")).toBe("SE"));
+    await fireEvent.change(screen.getByLabelText("Região"), { target: { value: "NE" } });
+    await waitFor(() => expect(pedidos.at(-1).get("regiao")).toBe("NE"));
+    expect(window.location.search).toContain("regiao=NE");
+
+    await fireEvent.change(screen.getByLabelText("Abrangência"), { target: { value: "uf" } });
+    await waitFor(() => expect(pedidos.at(-1).get("uf")).toBe("ES"));
+    expect(pedidos.at(-1).get("regiao")).toBeNull();
+    await waitFor(() => expect(screen.getByTestId("nota-redes")).not.toHaveTextContent("Só as redes da região"));
+  });
+
+  it("região desconhecida no link: volta para a UF", async () => {
+    const pedidos = capturar();
+    abrir("?aba=redes&regiao=XX&uf=ES");
+    await screen.findByTestId("tabela-redes");
+    expect(screen.getByLabelText("Abrangência").value).toBe("uf");
+    expect(pedidos.at(-1).get("uf")).toBe("ES");
+  });
+});

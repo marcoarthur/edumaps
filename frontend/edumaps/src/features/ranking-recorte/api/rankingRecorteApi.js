@@ -2,12 +2,17 @@
 // Ranking por recorte (#430): escolas de um município e redes municipais.
 import { apiClient } from "@/shared/api/client.js";
 
-/** @param {{indicador: string, uf?: string, nacional?: boolean, minimo?: number, porte?: string}} p */
-export function getRankingRedes({ indicador, uf, nacional, minimo, porte }) {
+/**
+ * Recorte: `abrangencia` "uf" (com `uf`), "regiao" (com `regiao`, #445) ou
+ * "brasil".
+ * @param {{indicador: string, abrangencia?: string, uf?: string, regiao?: string, minimo?: number, porte?: string}} p
+ */
+export function getRankingRedes({ indicador, abrangencia = "uf", uf, regiao, minimo, porte }) {
   return apiClient.get("/api/ranking/redes", {
     indicador,
-    uf: nacional ? undefined : uf,
-    nacional: nacional ? 1 : undefined,
+    uf: abrangencia === "uf" ? uf : undefined,
+    regiao: abrangencia === "regiao" ? regiao : undefined,
+    nacional: abrangencia === "brasil" ? 1 : undefined,
     minimo: minimo && minimo !== 3 ? minimo : undefined,
     porte: porte || undefined,
   });

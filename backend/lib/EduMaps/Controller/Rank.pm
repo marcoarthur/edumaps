@@ -2,6 +2,7 @@ package EduMaps::Controller::Rank;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use utf8;
 use EduMaps::Porte;
+use EduMaps::Regiao;
 
 =head1 NAME
 
@@ -81,22 +82,23 @@ sub escolas_recorte ($self) {
   $self->render(json => $r);
 }
 
-# GET /api/ranking/redes?indicador=&uf=XX | nacional=1 (#430)
+# GET /api/ranking/redes?indicador=&uf=XX | regiao=NE (#445) | nacional=1 (#430)
 sub redes_municipais ($self) {
   my $v = $self->validation;
   $v->required('indicador', 'trim')->like(qr/^[a-z0-9_]+$/);
   $v->optional('uf', 'trim')->like(qr/^[A-Z]{2}$/);
+  $v->optional('regiao', 'trim')->in(EduMaps::Regiao->ids);
   $v->optional('nacional')->in(qw/0 1/);
   $v->optional('minimo', 'trim')->like(qr/^\d{1,2}$/)->num(3, 30);
   $v->optional('porte', 'trim')->in(EduMaps::Porte->ids);
   return $self->bad_req if $self->any_error;
-  return $self->bad_req('Informe a UF ou nacional=1')
-    unless $v->param('uf') || $v->param('nacional');
+  return $self->bad_req('Informe a UF, a região ou nacional=1')
+    unless $v->param('uf') || $v->param('regiao') || $v->param('nacional');
 
   my $model = $self->instantiate_model(model => 'Rank::School');
   my $r = eval {
     $model->redes_municipais($v->param('indicador'),
-      { uf => $v->param('uf'), national => $v->param('nacional') ? 1 : 0,
+      { uf => $v->param('uf'), regiao => $v->param('regiao'), national => $v->param('nacional') ? 1 : 0,
         (defined $v->param('minimo') ? (minimo => 0 + $v->param('minimo')) : ()),
         (defined $v->param('porte') ? (porte => $v->param('porte')) : ()) });
   };

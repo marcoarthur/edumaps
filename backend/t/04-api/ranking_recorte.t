@@ -5,6 +5,7 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use EduMaps::Regiao;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -135,6 +136,41 @@ subtest 'salto atípico e mínimo ajustável (#437)' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=2')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=31')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=3.5')->status_is(400);
+};
+
+# Região (#445): uma região fictícia "TT" com as UFs de teste XX e XY. A
+# região só restringe as UFs; posição, INSE e salto atípico são dela.
+subtest 'região (#445)' => sub {
+  is [EduMaps::Regiao->ids], [qw(N NE SE S CO)], 'as cinco regiões do IBGE';
+  is(EduMaps::Regiao->ufs('NE'), [qw(AL BA CE MA PB PE PI RN SE)], 'UFs do Nordeste');
+  my %todas; $todas{$_}++ for map { @{ $_->{ufs} } } @{ EduMaps::Regiao->lista };
+  is [sort keys %todas], [sort qw(AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO)],
+    'as 27 UFs, cada uma numa região';
+  ok !(grep { $_ > 1 } values %todas), 'nenhuma UF em duas regiões';
+
+  local @EduMaps::Regiao::REGIOES = (@EduMaps::Regiao::REGIOES, { id => 'TT', label => 'Teste', ufs => [qw(XX XY)] });
+
+  my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=TT')->status_is(200)->tx->res->json;
+  is $r->{total}, 10, 'as redes das duas UFs (2 de XX e 8 de XY)';
+  is [sort { $a cmp $b } keys %{{ map { $_->{uf} => 1 } @{ $r->{redes} } }}], [qw(XX XY)], 'só UFs da região';
+  is $r->{recorte}{regiao}, { id => 'TT', nome => 'Teste' }, 'região no recorte';
+  ok !exists $r->{recorte}{nacional}, 'não é o nacional';
+  is $r->{fora_por_poucas_escolas}, 1, 'Gama fora pelo mínimo';
+  my %rede = map { $_->{municipio} => $_ } @{ $r->{redes} };
+  is $r->{redes}[0]{uf}, 'XY', 'a rede com o salto (8,0) lidera a região';
+  is $rede{'Beta do Teste'}{posicao}, 2, 'Beta (7,0), primeira na UF, é a segunda na região';
+  is $r->{atipico}{marcadas}, 1, 'salto atípico medido na região';
+  ok( (grep { $_->{id} eq 'TT' } @{ $r->{regioes} }), 'lista de regiões na resposta');
+
+  $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=TT&porte=ate_5mil')->status_is(200)->tx->res->json;
+  is [map { $_->{municipio} } @{ $r->{redes} }], ['Alfa do Teste'], 'região com porte';
+
+  $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&regiao=TT&nacional=1')->status_is(200)->tx->res->json;
+  is $r->{total}, 2, 'a UF vence a região e o nacional';
+  is $r->{recorte}{uf}, 'XX', 'recorte da UF';
+
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=ZZ')->status_is(400);
+  $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=ne')->status_is(400);
 };
 
 subtest 'validações das redes' => sub {

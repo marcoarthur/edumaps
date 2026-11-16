@@ -21,8 +21,9 @@ pelo IDEB/SAEB, e **Escolas de um município**, que lista as escolas por um
 indicador. Não precisa de login.
 
 ## Passo a passo
-1. **Redes municipais:** escolha a **UF** (ou marque **Brasil inteiro**), o
-   **indicador** e a **ordem**: pelo valor da edição mais recente ou por
+1. **Redes municipais:** em **Abrangência**, escolha **uma UF**, **uma
+   região** (Norte, Nordeste, Sudeste, Sul ou Centro-Oeste) ou o **Brasil
+   inteiro**; depois o **indicador** e a **ordem**: pelo valor da edição mais recente ou por
    **quanto mudou** desde a edição anterior. Em **Mínimo de escolas por
    rede** dá para deixar de fora as redes muito pequenas (3, 5, 10 ou 20).
    Em **Porte do município** dá para comparar só redes de cidades do mesmo
@@ -57,6 +58,10 @@ indicador. Não precisa de login.
   5 a 10 mil, 10 a 20 mil, 20 a 50 mil, 50 a 100 mil, 100 a 500 mil e mais de
   500 mil habitantes. Com um porte escolhido, a posição, o INSE parecido e o
   salto atípico comparam só as redes desse porte.
+- Com uma **região** escolhida, a lista junta as redes das UFs dela, e a
+  posição, o INSE parecido e o salto atípico são calculados entre elas (a UF
+  aparece ao lado do município). Região e porte se combinam: "municípios de
+  porte e região semelhantes".
 - Em **Menor primeiro**, a coluna **#** continua com a posição publicada
   (a última escola aparece no topo com o número dela).
 - Escolas empatadas dividem a posição.

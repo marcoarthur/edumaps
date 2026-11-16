@@ -2,6 +2,7 @@ package EduMaps::Roles::Business::Gestor::Relatorios;
 use Mojo::Base -role, -signatures;
 use utf8;
 use Mojo::JSON ();
+use EduMaps::Regiao;
 
 # Assistente de Relatório (#219): recorte-padrão da escola do gestor e as
 # tabelas de referência usadas para validar o `geotag` ({nivel, codigo}).
@@ -17,13 +18,8 @@ requires qw(schema);
 # co_regiao do Censo (1..5) -> sigla do contrato do geotag.
 our %REGIAO_SIGLA = (1 => 'N', 2 => 'NE', 3 => 'SE', 4 => 'S', 5 => 'CO');
 
-our %REGIAO_NOME = (
-  N  => 'Norte',
-  NE => 'Nordeste',
-  SE => 'Sudeste',
-  S  => 'Sul',
-  CO => 'Centro-Oeste',
-);
+# Nomes das regiões: fonte única em EduMaps::Regiao (#445).
+our %REGIAO_NOME = map { $_ => EduMaps::Regiao->nome($_) } EduMaps::Regiao->ids;
 
 our %UF_NOME = (
   AC => 'Acre',             AL => 'Alagoas',            AP => 'Amapá',
