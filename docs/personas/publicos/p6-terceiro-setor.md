@@ -44,6 +44,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: aviso do cruzamento entre anos.
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: ranking da região com salto atípico medido nela.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: o CSV diz o recorte da posição.
+- [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: link que abre na linha do município.
 
 ## Pendências
 

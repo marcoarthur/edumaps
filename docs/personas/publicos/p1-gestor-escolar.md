@@ -51,6 +51,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não monta base de análise.
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não usa o ranking de redes da região.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não junta bases nem rankings.
+- [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: acha a rede do município sem procurar.
 
 ## Pendências
 

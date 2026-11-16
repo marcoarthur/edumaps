@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (bv) — #449 (PR #451) mergeado
+
+- #449 → PR #451 (c06a351): `destaque=<IBGE>` em /api/ranking/redes devolve
+  `destaque {situacao, posicao, escolas, porte, regiao…}` (`_destaque_rede`;
+  situações no_ranking, fora_do_recorte, sem_populacao, fora_do_porte,
+  poucas_escolas, sem_dado); tela com "Destacar município", linha marcada,
+  quadro com posição/motivo e sugestões de recorte; `Regiao->de_uf`.
+  `scrollIntoView` suave num `$effect` parava no topo no navegador real →
+  rolagem direta após rAF + botão "Ver na tabela". Nota técnica 211, ciclo
+  `2026-11-16-destaque-municipio.md`. Nenhum achado da P4 aberto.
+
 ## Sessão 2026-11-16 (bu) — quarta avaliação da P4, #448 (PR #450) mergeado
 
 - Quarta rodada da P4 (região no ranking; base das 27 UFs juntada no R):

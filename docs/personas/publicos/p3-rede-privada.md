@@ -47,6 +47,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
+- [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

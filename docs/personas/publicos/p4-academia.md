@@ -50,6 +50,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p4--academia-pesquisadora): adotaria (mantido). BA-01, BA-03 e BA-04 resolvidos; fica #445.
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p4--academia-pesquisadora): adotaria (mantido). BA-02 resolvido no ranking (região e porte); base por região fica na assinatura. Nenhum achado aberto.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p4--academia-pesquisadora): adotaria (mantido). RG-01 e RG-02 resolvidos; fica #449 (RG-03).
+- [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p4--academia-pesquisadora): adotaria (mantido). RG-03 resolvido; nenhum achado da P4 aberto.
 
 ## Pendências
 
@@ -59,8 +60,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RV-01 a RV-05 foram entregues (#440 a #443). BA-01, BA-03 e BA-04 entregues
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
-  RG-01 a RG-03, detalhes: RG-01 e RG-02 entregues (#450); pendente #449
-  (RG-03).
+  RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

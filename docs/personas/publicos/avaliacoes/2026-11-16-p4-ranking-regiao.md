@@ -95,3 +95,8 @@ Os três são detalhes; a P4 continua em **adotaria**.
   escolas). Fechamento em
   [`../ciclos/2026-11-16-regiao-base-csv.md`](../ciclos/2026-11-16-regiao-base-csv.md).
   Fica #449 (RG-03).
+- 2026-11-16: #449 (PR #451) mergeado: RG-03 resolvido (destacar um
+  município, com a posição ou o motivo da ausência e a sugestão de recorte).
+  Fechamento em
+  [`../ciclos/2026-11-16-destaque-municipio.md`](../ciclos/2026-11-16-destaque-municipio.md).
+  Nenhum achado desta avaliação fica aberto.

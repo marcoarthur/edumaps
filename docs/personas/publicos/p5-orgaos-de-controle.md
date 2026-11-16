@@ -47,6 +47,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — avisos da base de análise](ciclos/2026-11-16-avisos-base.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto direto.
 - [2026-11-16 — recorte por região no ranking](ciclos/2026-11-16-ranking-regiao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto direto.
 - [2026-11-16 — região na base e recorte nos CSVs](ciclos/2026-11-16-regiao-base-csv.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto direto.
+- [2026-11-16 — município destacado no ranking](ciclos/2026-11-16-destaque-municipio.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: acha a própria rede.
 
 ## Pendências
 
