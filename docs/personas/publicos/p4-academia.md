@@ -55,6 +55,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: as duas posições no arquivo.
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: índices com método, inclusive a falha da diversidade (#459).
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p4--academia-pesquisadora): adotaria (mantido). Impacto direto: índice sem componente constante; IVET ivet-v1.4.
+- [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido). RX-02 resolvido; fica #462.
 
 ## Pendências
 
@@ -65,7 +66,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
   RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
-  (2026-11-16, **adotaria**): RX-02 em #461 e RX-01 em #462.
+  (2026-11-16, **adotaria**): RX-02 entregue (#463); pendente
+  #462 (RX-01).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

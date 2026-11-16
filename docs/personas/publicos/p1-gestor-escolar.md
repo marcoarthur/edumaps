@@ -56,6 +56,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não baixa o ranking de redes.
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: o que falta na escola e o método dos índices.
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: nota de diversidade corrigida, com aviso.
+- [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não usa a base.
 
 ## Pendências
 

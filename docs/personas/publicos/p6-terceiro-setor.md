@@ -49,6 +49,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — posição pela variação e variação vazia](ciclos/2026-11-16-variacao-csv.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VJ-02 e VJ-03 resolvidos; fica #454.
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). VK-01 resolvido; ficam #454 e #459.
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: ranking de diversidade sem premiar o turno. Fica #454.
+- [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: quem ficou fora da avaliação.
 
 ## Pendências
 

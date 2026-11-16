@@ -98,3 +98,11 @@ Issues abertas com a aprovação do developer (2026-11-16): **#461** (RX-02) e
 2. **RX-01**: a versão dos índices em `/fontes` e no CSV. Pede decidir o
    nome e onde a versão vive. A sugestão é um registro no backend, ao lado
    do `%METODO`, com a data de cada mudança de fórmula.
+
+## Andamento
+
+- 2026-11-16: #461 (PR #463) mergeado: RX-02 resolvido (bloco "Etapas
+  oferecidas" na base; aviso de cobertura do IDEB no dicionário, na tela e na
+  ajuda). Fechamento em
+  [`../ciclos/2026-11-16-etapas-cobertura.md`](../ciclos/2026-11-16-etapas-cobertura.md).
+  Fica #462 (RX-01).

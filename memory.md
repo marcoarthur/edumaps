@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (ca) — quinta avaliação da P4, #461 (PR #463) mergeado
+
+- Quinta rodada da P4: **adotaria** (mantido). RX-02 (IDEB ausente sobretudo
+  nas escolas sem infraestrutura: 12,7% vs 44,3% entre as que oferecem AI,
+  BA+ES; base sem as etapas) → #461; RX-01 (índices próprios sem versão
+  citável) → #462.
+- #461 → PR #463 (25eb372): bloco "Etapas oferecidas" (`oferece_*`, `oferece_em`
+  = GREATEST de médio/integrado/normal, `classe_especial_exclusiva`), aviso de
+  cobertura nas 15 colunas do IDEB, dica na tela, seção "Quem fica sem IDEB"
+  na ajuda. Descrições do dicionário sem `;` (o parser ingênuo dos testes
+  quebra). Uma rodada local da suíte Perl falhou e não reproduziu (instável,
+  não identificado). Nota técnica 216, ciclo `2026-11-16-etapas-cobertura.md`.
+  Fica #462.
+
 ## Sessão 2026-11-16 (bz) — #459 (PR #460) mergeado
 
 - Decisões do developer: opção A (`qt_mat_esp_cc`, educação especial em
