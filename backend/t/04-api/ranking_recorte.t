@@ -180,6 +180,36 @@ subtest 'região (#445)' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=ne')->status_is(400);
 };
 
+# Destaque (#449): a rede de um município na lista, ou o motivo de não estar.
+subtest 'município destacado (#449)' => sub {
+  my $url = '/api/ranking/redes?indicador=ideb_anos_iniciais';
+  my $d = $t->get_ok("$url&uf=XX&destaque=6000302")->status_is(200)->tx->res->json->{destaque};
+  is $d->{situacao}, 'no_ranking', 'Beta está no ranking da UF';
+  is $d->{posicao}, 1, 'com a posição';
+  is $d->{municipio}, 'Beta do Teste', 'nome';
+  is $d->{porte}, '10_20mil', 'porte';
+  is $d->{escolas}, 3, 'escolas com dado';
+
+  $d = $t->get_ok("$url&uf=XX&destaque=6000303")->tx->res->json->{destaque};
+  is $d->{situacao}, 'poucas_escolas', 'Gama: poucas escolas';
+  is $d->{escolas}, 2, 'duas escolas com dado';
+  ok !defined $d->{posicao}, 'sem posição';
+
+  is $t->get_ok("$url&uf=XX&destaque=6000311")->tx->res->json->{destaque}{situacao}, 'fora_do_recorte',
+    'município de XY com o recorte XX';
+  is $t->get_ok("$url&uf=XX&porte=ate_5mil&destaque=6000302")->tx->res->json->{destaque}{situacao}, 'fora_do_porte',
+    'Beta (15 mil) fora do porte até 5 mil';
+  is $t->get_ok("$url&uf=XX&porte=ate_5mil&destaque=6000303")->tx->res->json->{destaque}{situacao}, 'sem_populacao',
+    'Gama sem população com filtro de porte';
+  is $t->get_ok("$url&uf=XX&destaque=6000398")->tx->res->json->{destaque}{situacao}, 'sem_dado',
+    'município desconhecido: sem dado';
+  ok !exists $t->get_ok("$url&uf=XX")->tx->res->json->{destaque}, 'sem destaque na URL, sem o bloco';
+  $t->get_ok("$url&uf=XX&destaque=123")->status_is(400);
+
+  is(EduMaps::Regiao->de_uf('SE'), 'NE', 'de_uf: Sergipe no Nordeste');
+  ok !defined EduMaps::Regiao->de_uf('XX'), 'de_uf: UF desconhecida';
+};
+
 subtest 'validações das redes' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=infraestrutura&uf=XX')->status_is(400)

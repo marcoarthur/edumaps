@@ -40,6 +40,9 @@
   // #439: porte do município (classes de população do IBGE); "" = todos.
   let porte = $state(PORTES.some((p) => p.id === inicial.get("porte")) ? inicial.get("porte") : "");
   let redes = $state(null);
+  // #449 (RG-03): município destacado na lista de redes (código IBGE).
+  let destaque = $state(/^\d{7}$/.test(inicial.get("destaque") ?? "") ? inicial.get("destaque") : "");
+  let destaqueTexto = $state("");
 
   // Ordena pelo critério; "menor primeiro" inverte, mas quem não tem valor
   // (variação "–") fica sempre no fim.
@@ -77,6 +80,7 @@
       if (ordem !== "media") p.set("ordem", ordem);
       if (minimo !== 3) p.set("minimo", String(minimo));
       if (porte) p.set("porte", porte);
+      if (destaque) p.set("destaque", destaque);
     } else {
       p.set("indicador", indicadorEscola);
       if (codigoIbge) p.set("codigo_ibge", codigoIbge);
@@ -95,7 +99,8 @@
     error = null;
     definirUrl();
     try {
-      redes = await getRankingRedes({ indicador: indicadorRede, abrangencia, uf, regiao, minimo, porte });
+      redes = await getRankingRedes({ indicador: indicadorRede, abrangencia, uf, regiao, minimo, porte, destaque });
+      if (redes?.destaque?.municipio && !destaqueTexto) destaqueTexto = redes.destaque.municipio;
     } catch (err) {
       redes = null;
       error = mensagem(err, "Não foi possível carregar o ranking das redes.");
@@ -131,6 +136,11 @@
   function trocarAba(nova) {
     aba = nova;
     error = null;
+    // #449: o município destacado nas redes já vem escolhido nas escolas.
+    if (nova === "escolas" && !codigoIbge && destaque) {
+      codigoIbge = destaque;
+      municipioTexto = destaqueTexto;
+    }
     if (nova === "redes") carregarRedes();
     else carregarEscolas();
   }
@@ -138,6 +148,72 @@
   function escolherMunicipio(city) {
     codigoIbge = city?.codigo_ibge ? String(city.codigo_ibge) : "";
     carregarEscolas();
+  }
+
+  function escolherDestaque(city) {
+    destaque = city?.codigo_ibge ? String(city.codigo_ibge) : "";
+    destaqueTexto = city?.nome ?? "";
+    carregarRedes();
+  }
+
+  function limparDestaque() {
+    destaque = "";
+    destaqueTexto = "";
+    carregarRedes();
+  }
+
+  // Sugestões de recorte a partir do município destacado.
+  function compararPorteRegiao() {
+    const d = redes.destaque;
+    abrangencia = "regiao";
+    regiao = d.regiao;
+    porte = d.porte;
+    carregarRedes();
+  }
+
+  function compararNaUf() {
+    abrangencia = "uf";
+    uf = redes.destaque.uf;
+    carregarRedes();
+  }
+
+  const d = $derived(redes?.destaque ?? null);
+  const linhaDestaque = $derived(d ? redes.redes.find((r) => r.codigo_ibge === d.codigo_ibge) : null);
+  const jaPorteRegiao = $derived(
+    !!d && abrangencia === "regiao" && regiao === d.regiao && porte === (d.porte ?? ""),
+  );
+  const jaNaUf = $derived(!!d && abrangencia === "uf" && uf === d.uf);
+
+  // Leva a linha destacada para a vista quando a lista chega ou muda de
+  // ordem. Rolagem direta depois do próximo quadro: a suave era interrompida
+  // pelo resto da página ainda montando.
+  function irParaDestaque() {
+    if (!linhaDestaque) return;
+    const el = document.getElementById(`rede-${linhaDestaque.codigo_ibge}`);
+    el?.scrollIntoView?.({ block: "center" });
+  }
+
+  $effect(() => {
+    if (!linhaDestaque || loading) return;
+    void redesOrdenadas;
+    const raf = requestAnimationFrame(() => setTimeout(irParaDestaque, 50));
+    return () => cancelAnimationFrame(raf);
+  });
+
+  function motivo(x, r) {
+    const fora = "A rede não está nesta lista:";
+    switch (x.situacao) {
+      case "fora_do_recorte":
+        return `${fora} o município é de ${x.uf} (${rotuloRegiao(x.regiao) || "região desconhecida"}), fora deste recorte.`;
+      case "fora_do_porte":
+        return `${fora} o município tem ${num(x.populacao, 0)} habitantes (${rotuloPorte(x.porte)}), fora do porte escolhido.`;
+      case "sem_populacao":
+        return `${fora} o município não tem estimativa de população carregada, então não entra com filtro de porte.`;
+      case "poucas_escolas":
+        return `${fora} só ${x.escolas} ${x.escolas === 1 ? "escola municipal" : "escolas municipais"} com dado em ${r.ano}; o mínimo é ${r.minimo_escolas}.`;
+      default:
+        return `${fora} nenhuma escola municipal com ${r.indicador.label} em ${r.ano}.`;
+    }
   }
 
   const csvDe = (t) => csv(t.cabecalho, t.linhas);
@@ -243,6 +319,27 @@
             {#each PORTES as p}<option value={p.id}>{p.label}</option>{/each}
           </select>
         </div>
+        <div>
+          <InputAutocomplete
+            id="destaque-rede"
+            label="Destacar município"
+            placeholder="Ex: Vitória"
+            bind:value={destaqueTexto}
+            fetchSuggestions={fetchMunicipioSuggestions}
+            getOptionLabel={(city) => city.nome}
+            getOptionKey={(city) => city.codigo_ibge}
+            noResultsText="Nenhum município encontrado"
+            onSelect={escolherDestaque}
+          >
+            {#snippet option(city)}
+              <span>{city.nome}</span>
+              <span class="text-gray-400"> · {city.uf}</span>
+            {/snippet}
+          </InputAutocomplete>
+          {#if destaque}
+            <button type="button" onclick={limparDestaque} class="mt-1 text-xs text-blue-700 hover:underline">Tirar o destaque</button>
+          {/if}
+        </div>
         <button type="button" onclick={alternarSentido} data-testid="sentido-redes"
           class="px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
           {sentido === "asc" ? "Menor primeiro ↑" : "Maior primeiro ↓"}
@@ -254,6 +351,36 @@
       {:else if error}
         <p class="text-sm text-red-700" role="alert">{error}</p>
       {:else if redes}
+        {#if d}
+          <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-800 space-y-2" data-testid="destaque-resumo" role="status">
+            <p>
+              <strong>{d.municipio ?? d.codigo_ibge}</strong>
+              {#if d.uf}({d.uf}{d.regiao ? `, ${rotuloRegiao(d.regiao)}` : ""}{d.porte ? `, ${rotuloPorte(d.porte)}` : ""}){/if}:
+              {#if d.situacao === "no_ranking"}
+                {d.posicao}ª de {redes.total} {redes.total === 1 ? "rede" : "redes"} neste recorte pelo valor de {redes.ano}{#if ordem === "variacao" && linhaDestaque?.posicao_variacao}{" "}e {linhaDestaque.posicao_variacao}ª pela variação{/if}.
+                <button type="button" onclick={irParaDestaque} data-testid="ir-destaque" class="ml-1 text-xs text-blue-700 hover:underline">Ver na tabela</button>
+              {:else}
+                {motivo(d, redes)}
+              {/if}
+            </p>
+            {#if d.uf && (!jaPorteRegiao || !jaNaUf)}
+              <div class="flex flex-wrap gap-2">
+                {#if d.regiao && d.porte && !jaPorteRegiao}
+                  <button type="button" onclick={compararPorteRegiao} data-testid="sugerir-porte-regiao"
+                    class="px-2 py-1 text-xs rounded-md border border-blue-700 text-blue-700 hover:bg-white">
+                    Comparar com os de mesmo porte no {rotuloRegiao(d.regiao)}
+                  </button>
+                {/if}
+                {#if !jaNaUf}
+                  <button type="button" onclick={compararNaUf} data-testid="sugerir-uf"
+                    class="px-2 py-1 text-xs rounded-md border border-blue-700 text-blue-700 hover:bg-white">
+                    Comparar na UF ({d.uf})
+                  </button>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
         <div class="flex flex-wrap items-start justify-between gap-3">
           <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-redes">
             Valor da rede = <strong>média simples das escolas municipais</strong> com {redes.indicador.label} em {redes.ano}
@@ -293,7 +420,10 @@
             </thead>
             <tbody>
               {#each redesOrdenadas as r (r.codigo_ibge)}
-                <tr class="border-b border-gray-50">
+                <tr id="rede-{r.codigo_ibge}"
+                  class="border-b border-gray-50 {d && r.codigo_ibge === d.codigo_ibge ? 'bg-yellow-50 font-semibold' : ''}"
+                  data-testid={d && r.codigo_ibge === d.codigo_ibge ? "linha-destaque" : undefined}
+                  aria-current={d && r.codigo_ibge === d.codigo_ibge ? "true" : undefined}>
                   <td class="px-2 py-1.5 text-gray-500">{ordem === "variacao" ? (r.posicao_variacao ?? "–") : r.posicao}</td>
                   <td class="px-2 py-1.5">
                     <a href="/municipio/compare?codigo_ibge={r.codigo_ibge}" class="text-blue-700 hover:underline">{r.municipio}</a>

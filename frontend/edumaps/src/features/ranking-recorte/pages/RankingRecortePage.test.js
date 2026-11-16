@@ -53,7 +53,7 @@ describe("RankingRecortePage (#430)", () => {
 
 import { http, HttpResponse } from "msw";
 import { server } from "../../../mocks/server.js";
-import { REDES_FIXTURE } from "../mocks/fixtures.js";
+import { REDES_FIXTURE, ESCOLAS_FIXTURE } from "../mocks/fixtures.js";
 
 describe("RankingRecortePage — atípico, mínimo e ordem (#437)", () => {
   beforeEach(() => _resetFontes());
@@ -234,5 +234,91 @@ describe("RankingRecortePage — recorte no CSV (#448)", () => {
     const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
     expect(l[0].slice(-4)).toEqual(["codigo_ibge", "municipio", "uf", "rede_filtro"]);
     expect(l[1].slice(-4)).toEqual(["3205309", "Vitória", "ES", "municipal"]);
+  });
+});
+
+describe("RankingRecortePage — município destacado (#449)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  const VITORIA = { codigo_ibge: "3205309", municipio: "Vitória", uf: "ES", regiao: "SE", populacao: 368000, porte: "100_500mil", escolas: 51, situacao: "no_ranking", posicao: 3 };
+
+  function capturar(destaque) {
+    const pedidos = [];
+    server.use(http.get("*/api/ranking/redes", ({ request }) => {
+      const q = new URL(request.url).searchParams;
+      pedidos.push(q);
+      return HttpResponse.json({ ...REDES_FIXTURE, ...(q.get("destaque") ? { destaque } : {}) });
+    }));
+    return pedidos;
+  }
+
+  it("pelo link: destaca a linha, resume a posição e sugere recortes", async () => {
+    const pedidos = capturar(VITORIA);
+    abrir("?aba=redes&uf=ES&destaque=3205309");
+    const linha = await screen.findByTestId("linha-destaque");
+    expect(pedidos.at(-1).get("destaque")).toBe("3205309");
+    expect(linha).toHaveTextContent("Vitória");
+    expect(screen.getAllByTestId("linha-destaque")).toHaveLength(1);
+    const resumo = screen.getByTestId("destaque-resumo");
+    expect(resumo).toHaveTextContent("Vitória (ES, Sudeste, 100 a 500 mil hab.)");
+    expect(resumo).toHaveTextContent("3ª de 3 redes neste recorte");
+    expect(screen.getByTestId("sugerir-porte-regiao")).toHaveTextContent("mesmo porte no Sudeste");
+    expect(screen.queryByTestId("sugerir-uf")).toBeNull();
+    expect(window.location.search).toContain("destaque=3205309");
+
+    const rolar = vi.fn();
+    linha.scrollIntoView = rolar;
+    await fireEvent.click(screen.getByTestId("ir-destaque"));
+    expect(rolar).toHaveBeenCalledWith({ block: "center" });
+  });
+
+  it("sugestão de porte e região troca o recorte e mantém o destaque", async () => {
+    const pedidos = capturar(VITORIA);
+    abrir("?aba=redes&uf=ES&destaque=3205309");
+    await fireEvent.click(await screen.findByTestId("sugerir-porte-regiao"));
+    await waitFor(() => expect(pedidos.at(-1).get("regiao")).toBe("SE"));
+    const q = pedidos.at(-1);
+    expect(q.get("porte")).toBe("100_500mil");
+    expect(q.get("destaque")).toBe("3205309");
+    expect(q.get("uf")).toBeNull();
+    expect(screen.getByLabelText("Abrangência").value).toBe("regiao");
+    expect(window.location.search).toContain("regiao=SE");
+  });
+
+  it("rede fora da lista: diz o motivo", async () => {
+    capturar({ codigo_ibge: "3200102", municipio: "Afonso Cláudio", uf: "ES", regiao: "SE", populacao: 30000, porte: "20_50mil", escolas: 2, situacao: "poucas_escolas", posicao: null });
+    abrir("?aba=redes&uf=ES&destaque=3200102");
+    const resumo = await screen.findByTestId("destaque-resumo");
+    expect(resumo).toHaveTextContent("A rede não está nesta lista: só 2 escolas municipais com dado em 2023; o mínimo é 3.");
+    expect(screen.queryByTestId("linha-destaque")).toBeNull();
+  });
+
+  it("município de outra UF: motivo e sugestão da UF dele", async () => {
+    capturar({ codigo_ibge: "2304400", municipio: "Fortaleza", uf: "CE", regiao: "NE", populacao: 2400000, porte: "mais_500mil", escolas: 200, situacao: "fora_do_recorte", posicao: null });
+    abrir("?aba=redes&uf=ES&destaque=2304400");
+    const resumo = await screen.findByTestId("destaque-resumo");
+    expect(resumo).toHaveTextContent("o município é de CE (Nordeste), fora deste recorte");
+    expect(screen.getByTestId("sugerir-uf")).toHaveTextContent("Comparar na UF (CE)");
+  });
+
+  it("tirar o destaque e levar o município para a aba de escolas", async () => {
+    const pedidos = capturar(VITORIA);
+    let escolasPedido = null;
+    server.use(http.get("*/api/ranking/escolas", ({ request }) => {
+      escolasPedido = new URL(request.url).searchParams;
+      return HttpResponse.json(ESCOLAS_FIXTURE);
+    }));
+    abrir("?aba=redes&uf=ES&destaque=3205309");
+    await screen.findByTestId("linha-destaque");
+    await fireEvent.click(screen.getByRole("tab", { name: "Escolas de um município" }));
+    await waitFor(() => expect(escolasPedido?.get("codigo_ibge")).toBe("3205309"));
+
+    await fireEvent.click(screen.getByRole("tab", { name: "Redes municipais" }));
+    await screen.findByTestId("linha-destaque");
+    await fireEvent.click(screen.getByRole("button", { name: "Tirar o destaque" }));
+    await waitFor(() => expect(pedidos.at(-1).get("destaque")).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId("destaque-resumo")).toBeNull());
+    expect(window.location.search).not.toContain("destaque");
   });
 });

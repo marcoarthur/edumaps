@@ -28,7 +28,14 @@ indicador. Não precisa de login.
    rede** dá para deixar de fora as redes muito pequenas (3, 5, 10 ou 20).
    Em **Porte do município** dá para comparar só redes de cidades do mesmo
    tamanho (ex.: de 10 mil a 20 mil habitantes). O botão **Maior primeiro /
-   Menor primeiro** inverte a lista.
+   Menor primeiro** inverte a lista. Em **Destacar município**, digite o
+   seu: a linha da rede fica marcada na tabela, e um quadro acima diz a
+   posição dela no recorte. Se a rede não estiver na lista, o quadro diz por
+   quê (outra UF ou região, outro porte, poucas escolas com dado ou sem dado
+   na edição). Os botões **Comparar com os de mesmo porte na região** e
+   **Comparar na UF** trocam o recorte para o do município, sem tirar o
+   destaque. O município destacado também vem escolhido na aba **Escolas de
+   um município**.
 2. **Escolas de um município:** digite o município, escolha o indicador e,
    se quiser, a rede (municipal, estadual ou privada). **Menor primeiro**
    mostra o fim da lista (ex.: as escolas com menos infraestrutura).
