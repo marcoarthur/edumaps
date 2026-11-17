@@ -85,7 +85,11 @@ indicador. Não precisa de login.
 - Escolas empatadas dividem a posição.
 
 ## O que cada índice mede
-Os índices do Censo vão de 0 a 10, e maior é melhor. Em todos, item sem
+Os índices do Censo vão de 0 a 10, e maior é melhor. Os pesos de cada
+parte são uma escolha do EduMaps para resumir o tema num número; não foram
+estimados contra o IDEB nem contra outro resultado. Índice alto não quer
+dizer IDEB alto. Para um modelo, use as partes: as da capacitação docente
+estão na [base de análise](base-de-analise.md), bloco "Docência". Em todos, item sem
 resposta no Censo conta como ausente. A escola sem o registro de que o
 índice depende fica **sem o índice** e fora da lista daquele índice, não com
 0: sem matrículas no Censo, sem capacidade de atendimento e sem diversidade;

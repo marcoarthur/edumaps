@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/base-de-analise.md
-ultima_revisao: 2026-11-16
+ultima_revisao: 2026-11-17
 ---
 
 # Base de análise: indicadores por escola para baixar
@@ -36,7 +36,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
      tem);
    - **Docência:** número de docentes e as proporções com licenciatura,
-     mestrado, doutorado, concursados e sem especialização;
+     mestrado, doutorado, concursados e sem especialização, e as com ensino
+     superior, pós-graduação e formação continuada, que são as partes do
+     índice de capacitação docente;
    - **IDEB e SAEB por etapa:** IDEB, notas e aprovação nos anos iniciais
      (`_ai`), nos anos finais (`_af`) e no ensino médio (`_em`), na edição que
      você escolher;
@@ -113,6 +115,16 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Docência:** as proporções são sobre o total de docentes da escola
   (`qt_docentes`). Na contagem do Censo Escolar, quem dá aula em mais de uma
   escola conta em cada uma.
+- **As partes do índice de capacitação docente:**
+  - **as quatro partes:** `prop_superior` (30%), `prop_pos_graduacao` (30%),
+    `prop_efetivos` (20%) e `prop_formacao_continuada` (20%);
+  - **o limite a 1:** a pós-graduação e a formação continuada são limitadas a
+    1, como no índice. No Censo, quem tem mais de uma pós ou formação conta
+    mais de uma vez;
+  - **para refazer o índice no R:**
+    `round(10 * (0.3 * prop_superior + 0.3 * prop_pos_graduacao + 0.2 * pmin(prop_efetivos, 1) + 0.2 * prop_formacao_continuada), 2)`;
+  - **para modelar, use as partes:** elas podem se associar ao resultado em
+    sentidos opostos, e o índice soma todas com peso positivo.
 - O arquivo usa `;` como separador e vírgula decimal: abre direto no Excel.
   No R, `read.csv2()`; no Python, `pandas.read_csv(sep=";", decimal=",")`.
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.

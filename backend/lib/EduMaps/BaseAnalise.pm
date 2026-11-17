@@ -107,6 +107,8 @@ sub _indices_colunas {
   return [ map {
     my $d = $met->{$_} =~ s/;\s*/, /gr;
     $d =~ s/Para água, energia, esgoto e banheiro, use "Infraestrutura básica"\./$BASICA_NA_BASE/;
+    # #469 (RW-02): os pesos são normativos.
+    $d .= ' Os pesos são uma escolha do EduMaps, não estimados contra o IDEB: índice alto não quer dizer IDEB alto.';
     my $vazio = 'Vazio: '
       . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
       . 'índices ainda não recalculados depois de uma carga nova do Censo';
@@ -116,13 +118,30 @@ sub _indices_colunas {
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
 my $DENOM = 'docentes da escola (qt_docentes)';
+# Proporção sobre qt_doc_bas limitada a 1; vazia sem docentes (#469).
+sub _ate_um ($num) {
+  "CASE WHEN d.qt_doc_bas > 0 THEN LEAST(1, ($num)::float8 / d.qt_doc_bas) END";
+}
 my @DOCENCIA = (
   [qt_docentes             => 'd.qt_doc_bas', 'Docentes da educação básica da escola. Quem dá aula em mais de uma escola conta em cada uma (contagem do Censo Escolar)'],
   [prop_licenciatura       => 'd.qt_doc_bas_esco_sup_grad_licen::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com licenciatura ÷ $DENOM"],
   [prop_mestrado           => 'd.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com mestrado ÷ $DENOM"],
   [prop_doutorado          => 'd.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com doutorado ÷ $DENOM"],
-  [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes concursados (efetivos) ÷ $DENOM"],
+  [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes concursados (efetivos) ÷ $DENOM. Parte de 20% do índice de capacitação docente"],
   [prop_sem_especializacao => 'd.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes sem especialização ÷ $DENOM"],
+  # #469 (RW-01): as outras partes do índice de capacitação docente, com as
+  # mesmas expressões de clean.mv_escolas_scores (escolas_scores_sem_registro),
+  # inclusive o limite a 1. No fim do bloco, para não mudar a posição das
+  # colunas antigas. O LEAST do Postgres ignora NULL (LEAST(1, NULL) = 1):
+  # sem docentes, o CASE deixa a célula vazia.
+  [prop_superior           => _ate_um('COALESCE(d.qt_doc_bas_esco_sup_grad,0)'),
+   "Docentes com ensino superior completo ÷ $DENOM. Parte de 30% do índice de capacitação docente"],
+  [prop_pos_graduacao      => _ate_um('COALESCE(d.qt_doc_bas_esco_sup_pos_espec,0) + COALESCE(d.qt_doc_bas_esco_sup_pos_mestra,0) + COALESCE(d.qt_doc_bas_esco_sup_pos_douto,0)'),
+   "Docentes com pós-graduação (especialização, mestrado ou doutorado) ÷ $DENOM, limitada a 1 (quem tem mais de uma pós conta mais de uma vez no Censo). Parte de 30% do índice de capacitação docente"],
+  [prop_formacao_continuada => _ate_um(join ' + ', map { "COALESCE(d.qt_doc_bas_espec_$_,0)" }
+       qw(cre pre_escola anos_iniciais anos_finais ens_medio eja ed_especial bil_surdos ed_indigena campo
+          ambiental dir_humanos div_sexual dir_adolesc afro gestao educ_tic outros)),
+   "Formações continuadas dos docentes (soma das formações específicas do Censo) ÷ $DENOM, limitada a 1. Parte de 20% do índice de capacitação docente"],
 );
 
 # Cada bloco: colunas [nome, expressão SQL, descrição, numérica?] e a fonte.
@@ -165,7 +184,7 @@ sub _blocos {
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
     { id => 'docencia', label => 'Docência', fonte => 'censo',
-      descricao => 'Número de docentes e proporções de formação, mestrado, doutorado, efetivos e sem especialização, sobre o total de docentes da escola. Quem dá aula em mais de uma escola conta em cada uma.',
+      descricao => 'Número de docentes e proporções de licenciatura, mestrado, doutorado, efetivos, sem especialização, ensino superior, pós-graduação e formação continuada, sobre o total de docentes da escola (as quatro partes do índice de capacitação docente). Quem dá aula em mais de uma escola conta em cada uma.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @DOCENCIA ] },
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
       descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida. O IDEB falta sobretudo nas escolas pequenas, rurais e sem infraestrutura: marque também as etapas oferecidas.',
