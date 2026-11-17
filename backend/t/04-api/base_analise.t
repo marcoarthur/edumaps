@@ -219,6 +219,35 @@ subtest 'índices do EduMaps (#465)' => sub {
   is $d{versao_indice}[4], $V, 'versão no dicionário';
 };
 
+# #469 (RW-01): as quatro partes do índice de capacitação docente estão na
+# base e refazem o índice da MV.
+subtest 'partes do índice de capacitação docente (#469)' => sub {
+  my $s = $dbh->selectrow_hashref(q{
+    SELECT e.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun, s.score_capacitacao_docente::float8 AS cap
+      FROM clean.mv_escolas_scores s
+      JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+     WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ? AND s.score_capacitacao_docente > 0
+     ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+  SKIP: {
+    skip 'nenhuma escola com o índice de capacitação na MV', 6 unless $s;
+    my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=docencia,indices")->status_is(200)->tx);
+    my @cab = @{ $l->[0] };
+    my %i; @i{@cab} = 0 .. $#cab;
+    is [ @cab[ $i{prop_sem_especializacao} + 1 .. $i{prop_sem_especializacao} + 3 ] ],
+      [qw(prop_superior prop_pos_graduacao prop_formacao_continuada)], 'no fim do bloco, na ordem';
+    my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
+    my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; $x =~ tr/,/./; 0 + $x };
+    my $refeito = 10 * (0.3 * $v->('prop_superior') + 0.3 * $v->('prop_pos_graduacao')
+                      + 0.2 * ($v->('prop_efetivos') > 1 ? 1 : $v->('prop_efetivos')) + 0.2 * $v->('prop_formacao_continuada'));
+    ok abs($refeito - $s->{cap}) < 0.01, "índice refeito com as partes ($refeito vs $s->{cap})";
+    ok $v->('prop_pos_graduacao') <= 1 && $v->('prop_formacao_continuada') <= 1, 'limitadas a 1';
+  }
+  my $l = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices')->tx);
+  my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
+  like $d{$_}[1], qr/pesos são uma escolha do EduMaps, não estimados contra o IDEB/, "$_: pesos normativos (RW-02)"
+    for map {"indice_$_"} qw(infraestrutura capacitacao_docente sustentabilidade);
+};
+
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {
   my $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=infraestrutura")->status_is(200)->tx);
   my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
@@ -237,7 +266,12 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   is $d{ano_ideb}[1], 'Edição do IDEB/SAEB', 'edição mais recente: sem ressalva';
   like $d{qt_docentes}[1], qr/mais de uma escola conta em cada uma/, 'contagem por escola';
   like $d{$_}[1], qr/÷ docentes da escola \(qt_docentes\)/, "$_: denominador"
-    for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao);
+    for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao
+           prop_superior prop_pos_graduacao prop_formacao_continuada);
+  like $d{prop_superior}[1], qr/Parte de 30% do índice de capacitação docente/, 'superior: parte do índice (#469)';
+  like $d{prop_pos_graduacao}[1], qr/limitada a 1.*Parte de 30%/, 'pós: limite e parte';
+  like $d{prop_formacao_continuada}[1], qr/Parte de 20%/, 'formação continuada: parte';
+  like $d{prop_efetivos}[1], qr/Parte de 20%/, 'efetivos: parte';
 
   $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=desempenho&ano_ideb=2021")->status_is(200)->tx);
   %d = map { $_->[0] => $_ } @$l[1 .. $#$l];

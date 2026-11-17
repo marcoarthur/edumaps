@@ -34,6 +34,11 @@ subtest 'MV: nenhum 0 no lugar do registro ausente' => sub {
   is $nulos, 0, 'infraestrutura e sustentabilidade sempre presentes';
 };
 
+sub ler ($tx) {
+  my $txt = decode('UTF-8', $tx->res->body) =~ s/^\x{FEFF}//r;
+  return [ map { [ split /;/, $_, -1 ] } split /\r\n/, $txt ];
+}
+
 my $s = $dbh->selectrow_hashref(q{
   SELECT s.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun
     FROM clean.mv_escolas_scores s
@@ -47,13 +52,17 @@ SKIP: {
 
   subtest 'base: célula vazia' => sub {
     my $tx = $t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->status_is(200)->tx;
-    my $txt = decode('UTF-8', $tx->res->body) =~ s/^\x{FEFF}//r;
-    my @l = map { [ split /;/, $_, -1 ] } split /\r\n/, $txt;
+    my @l = @{ ler($tx) };
     my %i; @i{ @{ $l[0] } } = 0 .. $#{ $l[0] };
     my ($linha) = grep { $_->[0] eq $s->{inep} } @l[1 .. $#l];
     ok $linha, 'a escola está na base';
     is $linha->[ $i{indice_capacitacao_docente} ], '', 'capacitação docente vazia, não 0';
     isnt $linha->[ $i{indice_infraestrutura} ], '', 'infraestrutura presente';
+    my $d = ler($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=docencia")->tx);
+    my %j; @j{ @{ $d->[0] } } = 0 .. $#{ $d->[0] };
+    my ($ld) = grep { $_->[0] eq $s->{inep} } @$d[1 .. $#$d];
+    is [ @$ld[ @j{qw(prop_superior prop_pos_graduacao prop_formacao_continuada)} ] ], ['', '', ''],
+      'partes do índice vazias sem docentes (#469; LEAST(1, NULL) seria 1)';
   };
 
   subtest 'ranking de escolas: fora do índice sem registro' => sub {
