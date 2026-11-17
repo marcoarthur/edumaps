@@ -53,6 +53,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: lista das escolas sem infraestrutura básica.
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: inclusão no índice.
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: oferta sem avaliação.
+- [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: número rastreável à fórmula.
 
 ## Pendências
 

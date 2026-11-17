@@ -106,3 +106,8 @@ Issues abertas com a aprovação do developer (2026-11-16): **#461** (RX-02) e
   ajuda). Fechamento em
   [`../ciclos/2026-11-16-etapas-cobertura.md`](../ciclos/2026-11-16-etapas-cobertura.md).
   Fica #462 (RX-01).
+- 2026-11-16: #462 (PR #464) mergeado: RX-01 resolvido (versão citável
+  `indices-v2` em `/fontes`, no ranking de escolas e no CSV, e no comentário
+  da MV; regra e teste para a próxima mudança de fórmula). Fechamento em
+  [`../ciclos/2026-11-16-versao-indices.md`](../ciclos/2026-11-16-versao-indices.md).
+  Nenhum achado desta avaliação fica aberto.

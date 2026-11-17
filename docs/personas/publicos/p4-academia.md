@@ -56,6 +56,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: índices com método, inclusive a falha da diversidade (#459).
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p4--academia-pesquisadora): adotaria (mantido). Impacto direto: índice sem componente constante; IVET ivet-v1.4.
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido). RX-02 resolvido; fica #462.
+- [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p4--academia-pesquisadora): adotaria (mantido). RX-01 resolvido; nenhum achado aberto da quinta avaliação.
 
 ## Pendências
 

@@ -57,6 +57,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — infraestrutura básica e método dos índices](ciclos/2026-11-16-infraestrutura-basica.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: o que falta na escola e o método dos índices.
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: nota de diversidade corrigida, com aviso.
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: não usa a base.
+- [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a queda da diversidade explicada pela versão.
 
 ## Pendências
 

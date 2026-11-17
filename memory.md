@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-16 (cb) — #462 (PR #464) mergeado
+
+- #462 (RX-01) → PR #464 (96e34e0). Decisões do developer: formato
+  `indices-vN` (separado do IVET) e a versão também no COMMENT da MV.
+- Registro `$INDICES_VERSAO`/`@INDICES_HISTORICO` em `Model::Rank::School`
+  (`indices-v1` 2026-06-04, `indices-v2` 2026-11-16); `indicador.versao` só na
+  fonte `mv`; CSV `versao_indice`; `/fontes` com `indices_edumaps` (`proprio`,
+  `carga_sql` = max(data_atualizacao) da MV; `Fontes->indices_versao` faz
+  `require` do Model, que já usa o Fontes).
+- Change `escolas_scores_versao` (só COMMENT). Regra no AGENTS.md (Database);
+  `t/02-models/indices_versao.t` compara COMMENT e registro.
+- Nota técnica 217, ciclo `2026-11-16-versao-indices.md`. Quinta avaliação
+  da P4 sem achado aberto. Abertas: #454, #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-16 (ca) — quinta avaliação da P4, #461 (PR #463) mergeado
 
 - Quinta rodada da P4: **adotaria** (mantido). RX-02 (IDEB ausente sobretudo
