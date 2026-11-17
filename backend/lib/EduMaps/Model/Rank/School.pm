@@ -43,8 +43,10 @@ has network_map => sub {
 # change. O teste t/02-models/indices_versao.t compara o COMMENT com
 # $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
 # deploy da fórmula. Correção de texto do %METODO não sobe a versão.
-our $INDICES_VERSAO = 'indices-v5';
+our $INDICES_VERSAO = 'indices-v6';
 our @INDICES_HISTORICO = (
+  { versao => 'indices-v6', data => '2026-11-17',
+    mudou  => 'Capacidade gestora: a parte de gestores por aluno fica de fora na escola sem matrículas, e a de acesso ao cargo fica de fora nas escolas privadas (o Censo não registra a escolha pela mantenedora); o peso da parte que fica de fora vai para as outras. Antes, as duas contavam 0. Nas escolas públicas com matrícula, a nota não muda.' },
   { versao => 'indices-v5', data => '2026-11-17',
     mudou  => 'Capacidade de atendimento: a parte de alunos por sala passa a ser por sala e por turno (antes, todas as matrículas sobre as salas, e a escola de dois ou três turnos parecia lotada).' },
   { versao => 'indices-v4', data => '2026-11-17',
@@ -89,7 +91,9 @@ our %METODO = (
   capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
     . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
     . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
-    . '10%: acesso ao cargo por concurso, eleição ou processo seletivo. Escola sem registro de gestores no Censo fica sem o índice (vazio, não 0).',
+    . '10%: acesso ao cargo por concurso, eleição ou processo seletivo, só na rede pública. Escola sem registro de gestores no Censo fica sem o índice (vazio, não 0). '
+    . 'Na escola sem matrículas, a parte de gestores por aluno fica de fora; na escola privada, a de acesso ao cargo (o Censo não registra a escolha pela mantenedora). O peso da parte que fica de fora vai para as outras. '
+    . 'As duas partes contavam 0 até a versão indices-v6, de 17/11/2026.',
   sustentabilidade => 'Índice de 0 a 10 (maior é melhor): média de quatro partes de peso igual. '
     . 'Energia renovável; reciclagem ou reaproveitamento do lixo; área verde e área de plantio (meio ponto cada); educação ambiental. '
     . $SEM_DADO,

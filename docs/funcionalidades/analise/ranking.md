@@ -61,6 +61,11 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   cor**, sem premiar a escola que não declara.
 - Sistema pode **medir a lotação das salas por turno**, sem tratar como
   lotada a escola que usa a mesma sala em dois ou três turnos.
+- Sistema pode **medir a capacidade gestora sem descontar o que o Censo não
+  registra**: a escola privada não perde pontos pelo acesso ao cargo, que só
+  existe na rede pública, nem a escola sem matrícula pelos gestores por
+  aluno. A parte que não se aplica fica de fora, e o peso dela vai para as
+  outras.
 - Sistema pode **deixar de fora quem não tem o dado**: a escola sem o
   registro de que um índice depende (matrículas, docentes ou gestores no
   Censo) não entra na lista daquele índice, em vez de aparecer no fim com 0.

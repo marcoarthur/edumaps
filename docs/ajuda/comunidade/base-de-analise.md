@@ -84,7 +84,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP, e não dá para refazê-los só com as colunas da base (a
   fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
-  versão (`versao_indice`, ex.: `indices-v5`, que também vai no nome do
+  versão (`versao_indice`, ex.: `indices-v6`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
   uma carga nova do Censo, as células dos índices podem ficar vazias até o
@@ -135,6 +135,21 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     Censo, que não são a soma das colunas `oferece_*`;
   - **para refazer o índice no R:**
     `10 * (0.4 * ifelse(is.na(alunos_sala_turno), 0, pmax(0, 1 - alunos_sala_turno / 50)) + 0.2 * etapas_regulares / 7 + 0.2 * prop_tempo_integral + 0.2 * ifelse(is.na(alimentacao), 0, alimentacao))`.
+- **As partes do índice de capacidade gestora** (bloco Índices do
+  EduMaps):
+  - **as cinco partes:** `gestores_formacao` (30%, média entre superior e
+    pós-graduação), `prop_gestores_espec_gestao` (20%), `alunos_por_gestor`
+    (20%, a parte vale 10 com 200 alunos ou menos por gestor),
+    `orgaos_colegiados` (20%, de 5) e `prop_acesso_cargo_selecao` (10%,
+    concurso, eleição ou processo seletivo);
+  - **partes vazias:** `alunos_por_gestor` fica vazia sem matrículas, e
+    `prop_acesso_cargo_selecao` nas privadas, onde o gestor é escolhido pela
+    mantenedora. A parte vazia fica de fora, e o peso dela vai para as
+    outras;
+  - **para refazer o índice no R:**
+    `{p3 <- pmin(1, 200 / alunos_por_gestor); 10 * (0.3 * gestores_formacao + 0.2 * prop_gestores_espec_gestao + 0.2 * ifelse(is.na(p3), 0, p3) + 0.2 * pmin(1, orgaos_colegiados / 5) + 0.1 * ifelse(is.na(prop_acesso_cargo_selecao), 0, prop_acesso_cargo_selecao)) / (0.7 + 0.2 * !is.na(p3) + 0.1 * !is.na(prop_acesso_cargo_selecao))}`;
+  - **para comparar pública com privada,** deixe o acesso ao cargo de fora:
+    ele só existe na rede pública.
 - **INSE vazio:** o INSE só existe para as escolas com alunos avaliados no
   SAEB. As privadas nunca têm, e as creches e pré-escolas quase nunca:
   cerca de 60% das escolas de uma UF ficam sem. Entre as escolas com IDEB,

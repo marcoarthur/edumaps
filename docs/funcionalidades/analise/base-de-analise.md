@@ -49,6 +49,10 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
 - Sistema pode **entregar as partes do índice de capacidade de
   atendimento** (alunos por sala e por turno, turnos, etapas do ensino
   regular, tempo integral e alimentação), que refazem o índice.
+- Sistema pode **entregar as partes do índice de capacidade gestora**
+  (formação dos gestores, formação em gestão, alunos por gestor, órgãos
+  colegiados e acesso ao cargo por seleção, que fica vazio nas privadas),
+  que refazem o índice.
 - Sistema pode **entregar as partes do índice de diversidade discente**
   (cor/raça sobre os declarados, proporção sem cor declarada, equilíbrio de
   gênero, inclusão e EJA), que refazem o índice, e diz no dicionário por

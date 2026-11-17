@@ -58,7 +58,11 @@
 # ivet-v1.7 (#473): mesma agregação; o insumo score_capacidade_atendimento
 # (indices-v5) passou a medir a lotação por sala e por turno, e os
 # resultados mudam, por isso a versão sobe.
-ivet_versao <- function() "ivet-v1.7"
+# ivet-v1.8 (#475): mesma agregação; o insumo score_capacidade_gestora
+# (indices-v6) deixa de fora a parte de gestores por aluno sem matrícula e a
+# de acesso ao cargo nas privadas, com o peso redistribuído, e os resultados
+# mudam, por isso a versão sobe.
+ivet_versao <- function() "ivet-v1.8"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export

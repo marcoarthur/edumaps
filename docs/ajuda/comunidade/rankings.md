@@ -149,7 +149,13 @@ notas de versões diferentes não são comparáveis. O histórico está em
   comparáveis.
 - **Capacidade gestora:** formação dos gestores (30%), formação em gestão
   (20%), gestores por aluno (20%), órgãos colegiados (20%) e acesso ao
-  cargo por concurso, eleição ou seleção (10%).
+  cargo por concurso, eleição ou seleção (10%). O acesso ao cargo só se
+  aplica à rede pública: na privada, o gestor é escolhido pela mantenedora,
+  e o Censo não tem essa categoria. Por isso, na escola privada essa parte
+  fica de fora, e o peso dela vai para as outras. Na escola sem matrículas,
+  a parte de gestores por aluno também fica de fora. Antes da `indices-v6`
+  (17/11/2026), as duas contavam 0, e toda escola privada perdia até 1
+  ponto por construção.
 - **Sustentabilidade:** energia renovável, reciclagem do lixo, área verde e
   de plantio, e educação ambiental, com peso igual.
 
