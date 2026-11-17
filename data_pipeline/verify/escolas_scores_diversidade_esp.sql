@@ -9,8 +9,11 @@ BEGIN;
   DECLARE
       def text := pg_get_viewdef('clean.mv_escolas_scores'::regclass);
   BEGIN
-      IF def ~ 'qt_mat_bas_dm' OR def ~ 'qt_mat_bas_dv' THEN
-          RAISE EXCEPTION 'mv_escolas_scores ainda soma os turnos (qt_mat_bas_dm/dv) na diversidade';
+      -- A soma antiga dos turnos sempre incluía qt_mat_bas_d (diurno). Desde a
+      -- #473 o atendimento usa qt_mat_bas_dm/dv/n para CONTAR os turnos, então
+      -- a checagem procura só a coluna do diurno (palavra inteira).
+      IF def ~ 'qt_mat_bas_d\M' THEN
+          RAISE EXCEPTION 'mv_escolas_scores ainda soma os turnos (qt_mat_bas_d+dm+dv) na diversidade';
       END IF;
       IF def !~ 'qt_mat_esp_cc' THEN
           RAISE EXCEPTION 'mv_escolas_scores não usa qt_mat_esp_cc na diversidade';

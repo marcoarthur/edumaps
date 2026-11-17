@@ -84,7 +84,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP, e não dá para refazê-los só com as colunas da base (a
   fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
-  versão (`versao_indice`, ex.: `indices-v4`, que também vai no nome do
+  versão (`versao_indice`, ex.: `indices-v5`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
   uma carga nova do Censo, as células dos índices podem ficar vazias até o
@@ -126,6 +126,15 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `ifelse(is.na(diversidade_racial), 10 * (0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja) / 0.65, 10 * (0.35 * diversidade_racial + 0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja))`;
   - **para modelar, use as partes:** a inclusão e a cor/raça podem ir em
     sentidos opostos.
+- **As partes do índice de capacidade de atendimento** (bloco Índices do
+  EduMaps):
+  - **as quatro partes:** `alunos_sala_turno` (40%, matrículas ÷ salas ×
+    `turnos`), `etapas_regulares` (20%, de 7), `prop_tempo_integral` (20%)
+    e `alimentacao` (20%);
+  - **as etapas:** `etapas_regulares` conta as etapas do ensino regular do
+    Censo, que não são a soma das colunas `oferece_*`;
+  - **para refazer o índice no R:**
+    `10 * (0.4 * ifelse(is.na(alunos_sala_turno), 0, pmax(0, 1 - alunos_sala_turno / 50)) + 0.2 * etapas_regulares / 7 + 0.2 * prop_tempo_integral + 0.2 * ifelse(is.na(alimentacao), 0, alimentacao))`.
 - **INSE vazio:** o INSE só existe para as escolas com alunos avaliados no
   SAEB. As privadas nunca têm, e as creches e pré-escolas quase nunca:
   cerca de 60% das escolas de uma UF ficam sem. Entre as escolas com IDEB,

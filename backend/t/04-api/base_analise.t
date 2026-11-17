@@ -277,13 +277,45 @@ subtest 'partes do índice de diversidade (#471)' => sub {
   }
   my $l = ler_csv($t->get_ok('/api/base-analise/csv?uf=AC&codigo_ibge=' . $MUN . '&blocos=indices')->tx);
   my @cab = @{ $l->[0] };
-  is [ @cab[ -7 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja)],
-    'partes no fim do bloco, antes de ano_censo e versao_indice';
+  is [ @cab[ -12 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja
+                               alunos_sala_turno turnos etapas_regulares prop_tempo_integral alimentacao)],
+    'partes da diversidade e do atendimento (#473) no fim do bloco, antes de ano_censo e versao_indice';
   my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices,inse')->tx);
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{diversidade_racial}[1], qr/sobre as matrículas com cor declarada.*Vazio: menos de metade/, 'parte racial no dicionário';
   like $d{inse_media}[1], qr/Vazio: a escola não teve alunos avaliados no SAEB.*privadas nunca/, 'motivo do INSE vazio (RT-03)';
   like $d{inse_classificacao}[1], qr/privadas nunca/, 'nível do INSE também';
+};
+
+# #473 (RS-02): as partes do índice de capacidade de atendimento refazem o
+# índice, numa escola de um turno e numa de dois ou mais.
+subtest 'partes do índice de capacidade de atendimento (#473)' => sub {
+  my $T = 'GREATEST(1, (COALESCE(m.qt_mat_bas_dm,0)>0)::int + (COALESCE(m.qt_mat_bas_dv,0)>0)::int + (COALESCE(m.qt_mat_bas_n,0)>0)::int)';
+  for my $caso (['um turno', "= 1"], ['dois ou mais turnos', "> 1"]) {
+    my ($nome, $cond) = @$caso;
+    my $s = $dbh->selectrow_hashref(qq{
+      SELECT e.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun, s.score_capacidade_atendimento::float8 AS cap
+        FROM clean.mv_escolas_scores s
+        JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+        JOIN clean.censo_matriculas m ON m.co_entidade = s.co_entidade AND m.nu_ano_censo = s.nu_ano_censo
+       WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ? AND m.qt_mat_bas > 0 AND e.qt_salas_utilizadas > 0 AND $T $cond
+       ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+    SKIP: {
+      skip "nenhuma escola com $nome na MV", 2 unless $s;
+      my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->tx);
+      my %i; @i{ @{ $l->[0] } } = 0 .. $#{ $l->[0] };
+      my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
+      my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; return undef if $x eq ''; $x =~ tr/,/./; 0 + $x };
+      my $dens = 1 - $v->('alunos_sala_turno') / 50; $dens = 0 if $dens < 0;
+      my $refeito = 10 * (0.4 * $dens + 0.2 * $v->('etapas_regulares') / 7 + 0.2 * $v->('prop_tempo_integral') + 0.2 * ($v->('alimentacao') // 0));
+      ok abs($refeito - $s->{cap}) < 0.01, "$nome: índice refeito ($refeito vs $s->{cap})";
+      ok( ($nome eq 'um turno') == ($v->('turnos') == 1), "$nome: turnos = " . $v->('turnos'));
+    }
+  }
+  my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices')->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{alunos_sala_turno}[1], qr/salas utilizadas × turnos/, 'parte de alunos por sala e turno no dicionário';
+  like $d{indice_capacidade_atendimento}[1], qr/alunos por sala e por turno/, 'método com os turnos';
 };
 
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {
