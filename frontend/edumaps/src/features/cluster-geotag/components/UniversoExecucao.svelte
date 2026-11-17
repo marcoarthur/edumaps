@@ -4,7 +4,7 @@
   // Universo de uma execução do agrupamento (#427, AN-05): quantas escolas o
   // recorte tinha, quantas entraram e por que as outras ficaram de fora; e o
   // link e a exportação da execução (AN-09).
-  import { resumoUniverso, dataBR } from "../utils/execucao.js";
+  import { resumoUniverso, dataBR, etapaExecucao } from "../utils/execucao.js";
   import { execucaoCsvUrl } from "../api/clusterApi.js";
 
   let { execucao, columns = [] } = $props();
@@ -15,7 +15,10 @@
     const d = execucao?.parametros?.dados ?? {};
     const partes = [];
     if (d.censo?.ano) partes.push(`Censo Escolar ${d.censo.ano}${d.censo.carga ? ` (carga em ${dataBR(d.censo.carga)})` : ""}`);
-    if (d.ideb?.ano) partes.push(`IDEB ${d.ideb.ano}`);
+    // #481: a etapa do IDEB/SAEB agrupada.
+    const etapa = etapaExecucao(execucao?.parametros);
+    if (d.ideb?.ano) partes.push(`IDEB ${d.ideb.ano}${etapa ? `, ${etapa}` : ""}`);
+    else if (etapa) partes.push(`IDEB, ${etapa}`);
     return partes.join(" · ");
   });
   const fmt = (n) => (n == null ? "–" : Number(n).toLocaleString("pt-BR"));

@@ -13,6 +13,16 @@ use constant {
 # aparecem no GET /api/cluster/columns. A ordem de @PRESET_IDS é a de exibição.
 my @PRESET_IDS = qw(infraestrutura docencia desempenho);
 
+# #481 (RO-01): as colunas do IDEB/SAEB em clean.school_indicators. A escala
+# do SAEB cresce com a série e o IDEB cai; misturar as etapas de uma escola
+# agrupa pela etapa oferecida. Agrupar por elas exige escolher a etapa.
+my @IDEB_FEATURES = qw(nota_media nota_matematica nota_portugues ideb_observado aprovacao_si_4);
+my @ETAPAS = (
+  { id => 'anos_iniciais', etapa => 'fundamental_i',  label => 'Anos iniciais do fundamental', frase => 'nos anos iniciais' },
+  { id => 'anos_finais',   etapa => 'fundamental_ii', label => 'Anos finais do fundamental',   frase => 'nos anos finais' },
+  { id => 'ensino_medio',  etapa => 'ensino_medio',   label => 'Ensino médio',                 frase => 'no ensino médio' },
+);
+
 # `concept` é a frase usada para descrever o cluster em linguagem natural
 # (ex.: "Alta qualidade de infraestrutura"); `gender` controla a concordância
 # do adjetivo ('f'/'m'); `directions` dá a polaridade de cada feature
@@ -21,8 +31,9 @@ my $PRESETS = {
   desempenho => {
     id          => 'desempenho',
     name        => 'Desempenho dos alunos',
-    description => 'Proficiências SAEB, IDEB observado e aprovação (escolha o ano)',
+    description => 'Proficiências SAEB, IDEB observado e aprovação de uma etapa (escolha o ano e a etapa)',
     year_filter => 1,
+    etapa_filter => 1,
     concept     => 'desempenho dos alunos',
     gender      => 'm',
     features    => [qw(
@@ -57,19 +68,21 @@ my $PRESETS = {
   infraestrutura => {
     id          => 'infraestrutura',
     name        => 'Infraestrutura escolar',
-    description => 'Água, energia, esgoto, banheiros, biblioteca, laboratórios, quadra, internet e acessibilidade',
+    description => 'Água potável, falta de energia e de esgoto, coleta de lixo, banheiro, biblioteca, laboratórios, quadra, internet e acessibilidade',
     year_filter => 0,
     concept     => 'qualidade de infraestrutura',
     gender      => 'f',
     features    => [qw(
-      in_agua_potavel in_energia_rede_publica in_esgoto_rede_publica in_lixo_servico_coleta
+      in_agua_potavel in_energia_inexistente in_esgoto_inexistente in_lixo_servico_coleta
       in_banheiro in_biblioteca in_laboratorio_ciencias in_laboratorio_informatica
       in_quadra_esportes in_internet in_acessibilidade_rampas
     )],
     directions  => {
       in_agua_potavel           => 1,
-      in_energia_rede_publica   => 1,
-      in_esgoto_rede_publica    => 1,
+      # #481 (RO-02): "rede pública = 0" não é falta (gerador, fossa); o
+      # que é falta é o "inexistente" (#452).
+      in_energia_inexistente    => -1,
+      in_esgoto_inexistente     => -1,
       in_lixo_servico_coleta    => 1,
       in_banheiro               => 1,
       in_biblioteca             => 1,
@@ -83,7 +96,24 @@ my $PRESETS = {
 };
 
 sub presets($cls) {
-  return [ map { { %{ $PRESETS->{$_} } } } @PRESET_IDS ];
+  return [ map {
+    my $p = { %{ $PRESETS->{$_} } };
+    $p->{etapas} = [ map { { id => $_->{id}, label => $_->{label} } } @ETAPAS ] if $p->{etapa_filter};
+    $p;
+  } @PRESET_IDS ];
+}
+
+# #481: etapas do IDEB para o agrupamento e colunas que as exigem.
+sub etapas($cls) { return [ map { { %$_ } } @ETAPAS ] }
+sub etapa($cls, $id) {
+  return unless defined $id;
+  my ($e) = grep { $_->{id} eq $id } @ETAPAS;
+  return $e ? { %$e } : undef;
+}
+sub ideb_features($cls) { return [@IDEB_FEATURES] }
+sub usa_ideb($cls, $features) {
+  my %i = map { $_ => 1 } @IDEB_FEATURES;
+  return scalar grep { !ref $_ && $i{$_} } @{ $features // [] };
 }
 
 sub get($cls, $id) {

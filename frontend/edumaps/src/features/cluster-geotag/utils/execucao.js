@@ -1,3 +1,4 @@
+import { ETAPAS_IDEB, usaIdeb } from "../constants/cluster.js";
 // src/features/cluster-geotag/utils/execucao.js
 //
 // Execuções guardadas do agrupamento (#427): leitura do universo e rótulo
@@ -68,4 +69,15 @@ export function formatarIndicador(coluna, valor) {
     return `${Math.round(v * 100).toLocaleString("pt-BR")}%`;
   }
   return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+/**
+ * Etapa do IDEB/SAEB de uma execução (#481): o rótulo da etapa escolhida;
+ * "etapas misturadas" na execução antiga que agrupou o IDEB sem etapa; null
+ * quando a execução não usa o IDEB.
+ */
+export function etapaExecucao(parametros = {}) {
+  const e = ETAPAS_IDEB.find((x) => x.id === parametros?.etapa);
+  if (e) return e.label;
+  return usaIdeb(parametros?.features ?? []) ? "etapas misturadas (média entre as etapas da escola)" : null;
 }

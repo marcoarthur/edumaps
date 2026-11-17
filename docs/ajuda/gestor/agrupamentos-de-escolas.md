@@ -6,7 +6,7 @@ nivel: avancado
 status: ativo
 relacionadas: [perfil-da-escola, escolas-semelhantes, rede-municipal]
 funcionalidade: ../../funcionalidades/analise/clusters.md
-ultima_revisao: 2026-11-06
+ultima_revisao: 2026-11-17
 ---
 
 # Agrupar escolas parecidas no mapa
@@ -29,7 +29,10 @@ em vez de tratar toda a rede do mesmo jeito.
 2. **Recorte:** em **Recorte**, escolha a **Região**; depois, se quiser,
    a **UF** e o **Município**. Cada campo só abre depois do anterior.
 3. **Indicadores:** escolha um conjunto pronto ou monte sua lista com
-   **Buscar indicador…**. Alguns conjuntos pedem o **Ano IDEB/SAEB**.
+   **Buscar indicador…**. Com indicadores do IDEB/SAEB (o conjunto
+   **Desempenho dos alunos**, ou uma lista sua com alguma nota), escolha o
+   **Ano IDEB/SAEB** e a **Etapa**: anos iniciais, anos finais ou ensino
+   médio.
 4. **Parâmetros:** escolha o **Algoritmo** (cada um com uma frase sobre como
    forma os grupos) e o **Nº de grupos** (de 2 a 10).
    Na dúvida, use **K-Means** com 4 ou 5 grupos.
@@ -41,9 +44,10 @@ em vez de tratar toda a rede do mesmo jeito.
 7. **Guardar e compartilhar:** a caixa **Universo** tem **Copiar link** (reabre
    este mesmo resultado, com o formulário preenchido, por 90 dias) e **Baixar
    CSV** (uma linha por escola: INEP, nome, município, rede, grupo e os
-   valores dos indicadores; separador `;`, abre direto no Excel). As duas
-   últimas colunas, `ano_censo` e `ano_ideb`, dizem a versão dos dados, que
-   também vai no nome do arquivo (`agrupamento-censo2025-ideb2023-….csv`):
+   valores dos indicadores; separador `;`, abre direto no Excel). As três
+   últimas colunas, `ano_censo`, `ano_ideb` e `etapa_ideb`, dizem a versão
+   dos dados e a etapa do IDEB/SAEB agrupada. Os anos também vão no nome do
+   arquivo (`agrupamento-censo2025-ideb2023-….csv`):
    guardado ou renomeado, o arquivo continua dizendo de que base veio.
 
 ## Entendendo os resultados
@@ -55,6 +59,18 @@ em vez de tratar toda a rede do mesmo jeito.
   dois). Escolas agrupadas **sem coordenada** não aparecem no mapa, mas estão
   no CSV.
 
+- **Desempenho é por etapa.** Só entram as escolas com nota na etapa
+  escolhida, e o rótulo diz a etapa (*"Alto desempenho dos alunos nos anos
+  iniciais"*). A escala do SAEB cresce com a série (no Brasil, em 2023,
+  matemática 217 nos anos iniciais e 268 no ensino médio), e o IDEB cai.
+  Até 17/11/2026, a nota da escola era a média entre as etapas dela, e os
+  grupos separavam sobretudo a etapa oferecida. Uma execução guardada
+  daquele tempo aparece com "etapas misturadas" e não serve para comparar
+  desempenho.
+- **Infraestrutura:** o conjunto conta como falta a escola **sem** energia ou
+  **sem** esgoto. Energia de gerador e esgoto em fossa não são falta. Até
+  17/11/2026, o conjunto usava "da rede pública", e cerca de 70 mil escolas
+  com fossa contavam como sem esgoto.
 - **Rótulo do grupo:** com um conjunto pronto, o grupo recebe uma gradação
   (*"Alta qualidade de infraestrutura"*). Grupo com menos de 5 escolas (ou
   menos de 2% das agrupadas) aparece como **Grupo pequeno (N escolas)**, sem

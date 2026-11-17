@@ -98,8 +98,14 @@ export const PRESETS_FIXTURE = [
   {
     id: "desempenho",
     name: "Desempenho dos alunos",
-    description: "Proficiências SAEB, IDEB observado e aprovação (escolha o ano)",
+    description: "Proficiências SAEB, IDEB observado e aprovação de uma etapa (escolha o ano e a etapa)",
     year_filter: 1,
+    etapa_filter: 1,
+    etapas: [
+      { id: "anos_iniciais", label: "Anos iniciais do fundamental" },
+      { id: "anos_finais", label: "Anos finais do fundamental" },
+      { id: "ensino_medio", label: "Ensino médio" },
+    ],
     features: ["nota_media", "nota_matematica", "nota_portugues", "ideb_observado", "aprovacao_si_4"],
   },
 ];

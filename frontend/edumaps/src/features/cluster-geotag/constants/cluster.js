@@ -69,3 +69,15 @@ export function clusterLabel(label, clusterId) {
   const text = (label ?? "").trim();
   return text || `Cluster ${clusterId}`;
 }
+// #481 (RO-01): o IDEB/SAEB só se agrupa dentro de uma etapa. A escala do
+// SAEB cresce com a série e o IDEB cai; a média entre as etapas da escola
+// agrupava pela etapa oferecida. Espelha EduMaps::Presets.
+export const IDEB_FEATURES = ["nota_media", "nota_matematica", "nota_portugues", "ideb_observado", "aprovacao_si_4"];
+
+export const ETAPAS_IDEB = [
+  { id: "anos_iniciais", label: "Anos iniciais do fundamental" },
+  { id: "anos_finais", label: "Anos finais do fundamental" },
+  { id: "ensino_medio", label: "Ensino médio" },
+];
+
+export const usaIdeb = (features = []) => features.some((f) => IDEB_FEATURES.includes(f));

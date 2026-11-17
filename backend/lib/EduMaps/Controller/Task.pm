@@ -119,6 +119,7 @@ sub request_cluster($self) {
   $v->optional('features');
   $v->optional('preset',     'trim')->like(qr/^[a-zA-Z_]+$/);
   $v->optional('ano_ideb',   'trim')->like(qr/^\d{4}$/);
+  $v->optional('etapa',      'trim')->in(map { $_->{id} } EduMaps::Presets->etapas->@*);
 
   # Filtro por geotag (opcional): região (1-5), UF (2 dígitos) e município
   # (7 dígitos). Convertidos em `filter` para o motor R.
@@ -176,6 +177,17 @@ sub request_cluster($self) {
   # features é um array de colunas no JSON; param('features') colapsaria para a
   # última coluna, então lemos direto do input e repassamos o array íntegro.
   $args{features} = $input->{features} if defined $input->{features};
+
+  # #481 (RO-01): IDEB/SAEB só se agrupa dentro de uma etapa. A média entre
+  # as etapas de uma escola mistura escalas (o SAEB cresce com a série e o
+  # IDEB cai) e agrupa pela etapa oferecida.
+  if (EduMaps::Presets->usa_ideb($args{features})) {
+    my $etapa = EduMaps::Presets->etapa($v->param('etapa'));
+    return $self->bad_req('escolha a etapa (anos_iniciais, anos_finais ou ensino_medio) para agrupar por IDEB/SAEB')
+      unless $etapa;
+    $args{etapa} = $etapa->{id};
+    $args{labeling}{concept} .= " $etapa->{frase}" if $args{labeling} && $args{labeling}{concept};
+  }
 
   # Mapeamento geotag -> colunas da clean.censo_escolas (fonte padrão do
   # pipeline). Só entra no filter se informado pelo usuário.

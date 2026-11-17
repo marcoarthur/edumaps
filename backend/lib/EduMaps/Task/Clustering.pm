@@ -295,7 +295,7 @@ sub _criar_execucao($job, $args, $algorithm) {
       dados     => \%dados,
       algorithm => $algorithm,
       features  => $args->{features} // [],
-      (map { defined $args->{$_} ? ($_ => $args->{$_}) : () } qw(clusters eps min_pts ano_ideb)),
+      (map { defined $args->{$_} ? ($_ => $args->{$_}) : () } qw(clusters eps min_pts ano_ideb etapa)),
       (defined $args->{preset_id} ? (preset => $args->{preset_id}) : ()),
     );
 
@@ -358,7 +358,11 @@ sub _rebuild_indicators($job, $args) {
 
   eval {
     $db->query('TRUNCATE TABLE clean.school_indicators');
-    $db->query(_indicators_build_sql(), $ano_ideb);
+    # #481: com etapa, só as notas daquela etapa; sem etapa (agrupamento
+    # sem colunas do IDEB), a média entre as etapas, que não é usada.
+    my $etapa = EduMaps::Presets->etapa($args->{etapa});
+    my $cod = $etapa ? $etapa->{etapa} : undef;
+    $db->query(_indicators_build_sql(), $ano_ideb, $cod, $cod);
     1;
   } or return "$@";
 
@@ -366,8 +370,9 @@ sub _rebuild_indicators($job, $args) {
 }
 
 # INSERT multicampo que materializa censo escolar + docentes (proporções por
-# qt_doc_bas) + IDEB/SAEB agregado ao nível de escola (média entre etapas).
-# O único bind é o ano IDEB (2023 etc.).
+# qt_doc_bas) + IDEB/SAEB da escola na etapa escolhida (#481). Binds: o ano
+# IDEB (2023 etc.) e duas vezes o código da etapa (fundamental_i…) ou undef,
+# que mantém a média entre as etapas (só quando o IDEB não é agrupado).
 sub _indicators_build_sql() {
   return <<~'EOSQL';
     INSERT INTO clean.school_indicators
@@ -396,7 +401,7 @@ sub _indicators_build_sql() {
              avg(ideb_observado)::numeric AS ideb_observado,
              avg(aprovacao_si_4)::numeric AS aprovacao_si_4
       FROM clean.ideb_notas_escolas
-      WHERE ano = ?
+      WHERE ano = ? AND (?::text IS NULL OR etapa = ?)
       GROUP BY id_escola, ano
     ) i
       ON i.id_escola = e.co_entidade
