@@ -209,7 +209,12 @@ subtest 'índices do EduMaps (#465)' => sub {
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{indice_diversidade_discente}[1], qr/educação especial em classe comum/, 'método do índice no dicionário';
   like $d{indice_sustentabilidade}[1], qr/Energia renovável, reciclagem/, '";" do método trocado por vírgula';
-  like $d{indice_infraestrutura}[3], qr/Índices do EduMaps \(EduMaps\)/, 'fonte: Índices do EduMaps';
+  is $d{indice_infraestrutura}[3], 'Índices do EduMaps', 'fonte sem o órgão repetido (#467, RZ-02)';
+  is $d{in_agua_inexistente}, undef, 'só os blocos pedidos';
+  unlike $d{indice_infraestrutura}[1], qr/use "Infraestrutura básica"/, 'sem apontar coluna que a base não tem (RZ-02)';
+  like $d{indice_infraestrutura}[1], qr/in_\*_inexistente e in_banheiro do bloco Infraestrutura/, 'aponta os itens da base';
+  like $d{indice_capacitacao_docente}[1], qr/fica sem o índice \(vazio, não 0\).*Vazio: escola sem docentes no Censo/, 'vazio sem registro (#467)';
+  like $d{indice_infraestrutura}[1], qr/Vazio: índices ainda não recalculados/, 'infraestrutura: só o vazio da carga nova';
   like $d{indice_infraestrutura}[5], qr{rankings\.md#o-que-cada}, 'link para o método';
   is $d{versao_indice}[4], $V, 'versão no dicionário';
 };

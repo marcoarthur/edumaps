@@ -3,8 +3,11 @@
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
-> **Versão da fórmula**: `ivet-v1.4` (histórico: `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-16
-> (`ivet-v1.4`: insumo corrigido, sem mudar a agregação. O `score_diversidade_discente`
+> **Versão da fórmula**: `ivet-v1.5` (histórico: `ivet-v1.4`, `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-17
+> (`ivet-v1.5`: insumo corrigido, sem mudar a agregação. Escola sem registro de
+> matrículas, docentes ou gestores fica sem o score do sistema B que depende dele
+> (`NULL`, antes 0), e o componente sai do denominador, #467 (`indices-v3`).
+> `ivet-v1.4`: insumo corrigido, sem mudar a agregação. O `score_diversidade_discente`
 > passou a medir a inclusão pela educação especial em classe comum, #459; antes
 > somava os turnos. `ivet-v1.3`: escala logarítmica nos dois acessos do bloco C, §4.5.5).
 > **Decisão de leitura**: **territorial (escola em contexto)** — ver §1.
@@ -120,6 +123,13 @@ agregação final** (os 6 scores vivem lado a lado). Base: escolas ativas
 | `score_diversidade_discente` | `0.35·racial + 0.25·gênero + 0.20·inclusão + 0.20·EJA` (cada bloco em 0–10). Inclusão = `qt_mat_esp_cc/qt_mat_bas` (educação especial em classe comum), desde `ivet-v1.4` (#459); até a `ivet-v1.3` somava `qt_mat_bas_d+dm+dv`, que são **turnos** (componente ≈ 9,8 em quase toda escola) |
 | `score_capacidade_gestora` | `0.3·qualificação + 0.2·especialização_gestão + 0.2·proporção_gestor_aluno + 0.2·colegiados + 0.1·acesso_meritocrático` |
 | `score_sustentabilidade` | `(energia_renovável?10:0 + resíduos?10:0 + média(área_verde, área_plantio)·10 + educação_ambiental?10:0) / 4` |
+
+Escola sem o registro de que um score depende fica **sem o score** (`NULL`),
+não com 0, desde `indices-v3` (#467): capacidade de atendimento e diversidade
+discente sem matrículas (`qt_mat_bas > 0`), capacitação docente sem docentes
+(`qt_doc_bas > 0`), capacidade gestora sem gestores (`qt_gest_bas > 0`).
+Infraestrutura e sustentabilidade vêm do cadastro da escola e estão sempre
+presentes. No IVET, o componente `NULL` sai do denominador (`ivet-v1.5`).
 
 Consumidores vivos:
 `analytics.ranking_escola` (job `bin/ranking.pl`), `Model::Rank::School`

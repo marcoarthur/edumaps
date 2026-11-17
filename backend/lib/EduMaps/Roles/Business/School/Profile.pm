@@ -183,11 +183,14 @@ sub panel_info($self, $params) {
   # sem trazer todas as escolas do município para o Perl. Se a tabela/embedding
   # não estiver disponível (deploy parcial), cai no método antigo em memória.
   my $mat = $self->schema->resultset('CensoMatriculas');
+  # Escola sem linha de matrículas no Censo (ex.: centro de atendimento
+  # especializado) fica sem o número, em vez de derrubar o painel (500).
   my $attach_matriculas = sub ($record) {
-    $record->{matriculas} = $mat->search_rs(
+    my $m = $mat->search_rs(
       { co_entidade => $record->{co_entidade} },
       { columns => [ {matriculas => \join('+', @fields)} ] },
-    )->as_hash->first->{matriculas};
+    )->as_hash->first;
+    $record->{matriculas} = $m ? $m->{matriculas} : undef;
     return $record;
   };
 

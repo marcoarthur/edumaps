@@ -82,11 +82,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP, e não dá para refazê-los só com as colunas da base (a
   fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
-  versão (`versao_indice`, ex.: `indices-v2`, que também vai no nome do
+  versão (`versao_indice`, ex.: `indices-v3`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
   uma carga nova do Censo, as células dos índices podem ficar vazias até o
-  recálculo. Para a **infraestrutura básica** (0 a 4) do ranking, some os
+  recálculo. A regra "vazio, nunca zero" vale também aqui: a escola sem
+  matrículas, docentes ou gestores no Censo fica com a célula vazia no
+  índice que depende desse registro (o dicionário diz qual). Para comparar
+  médias entre municípios, não troque o vazio por 0. Para a **infraestrutura básica** (0 a 4) do ranking, some os
   itens da base, no R:
   `with(base, (1 - in_agua_inexistente) + (1 - in_energia_inexistente) + (1 - in_esgoto_inexistente) + in_banheiro)`.
 - **Edição antiga do IDEB:** só o Censo Escolar mais recente está

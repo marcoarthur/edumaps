@@ -92,13 +92,25 @@ my @ETAPAS_OFERTA = (
 # método do ranking (%METODO; sem ';', que o dicionário dos testes separa).
 my @INDICES = qw(infraestrutura capacidade_atendimento capacitacao_docente
                  diversidade_discente capacidade_gestora sustentabilidade);
+# #467: o vazio também é a escola sem o registro de que o índice depende.
+my %SEM_REGISTRO = (
+  capacidade_atendimento => 'sem matrículas no Censo',
+  capacitacao_docente    => 'sem docentes no Censo',
+  diversidade_discente   => 'sem matrículas no Censo',
+  capacidade_gestora     => 'sem gestores no Censo',
+);
+# #467 (RZ-02): na base não há a coluna "Infraestrutura básica" do ranking.
+my $BASICA_NA_BASE = 'Para água, energia, esgoto e banheiro, use as colunas in_*_inexistente e in_banheiro do bloco Infraestrutura (a soma está na ajuda).';
 sub _indices_colunas {
   no warnings 'once';
   my $met = \%EduMaps::Model::Rank::School::METODO;
   return [ map {
     my $d = $met->{$_} =~ s/;\s*/, /gr;
-    ["indice_$_", "s.score_${_}::float8",
-     "$d Vazio: a escola não tem o índice no ano do Censo da base (índices ainda não recalculados depois de uma carga nova)", 1]
+    $d =~ s/Para água, energia, esgoto e banheiro, use "Infraestrutura básica"\./$BASICA_NA_BASE/;
+    my $vazio = 'Vazio: '
+      . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
+      . 'índices ainda não recalculados depois de uma carga nova do Censo';
+    ["indice_$_", "s.score_${_}::float8", "$d $vazio", 1]
   } @INDICES ];
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
@@ -304,6 +316,10 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
   return (\@cab, \@out, [ @num, map { $_->[0] eq 'versao_indice' ? 0 : 1 } @$versao ]);
 }
 
+# Nome da fonte no dicionário: "nome (órgão)"; base própria sem o órgão
+# repetido (#467, RZ-02: era "Índices do EduMaps (EduMaps)").
+sub _fonte_nome ($f) { $f->{proprio} ? $f->{nome} : "$f->{nome} ($f->{orgao})" }
+
 # Dicionário: uma linha por coluna da base, com a fonte e o link oficial.
 sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef) {
   my $anos = $class->anos($dbh);
@@ -314,12 +330,12 @@ sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef) {
   my @linhas;
   for my $b (@$bl) {
     my $f = $fonte{ $b->{fonte} };
-    push @linhas, [ $_->[0], $_->[2], $b->{label}, "$f->{nome} ($f->{orgao})", $ano{ $b->{fonte} }, $f->{url} ]
+    push @linhas, [ $_->[0], $_->[2], $b->{label}, _fonte_nome($f), $ano{ $b->{fonte} }, $f->{url} ]
       for @{ $b->{colunas} };
   }
   for my $v (@$versao) {
     my $f = $fonte{ $v->[3] };
-    push @linhas, [ $v->[0], $v->[2], 'Versão dos dados', "$f->{nome} ($f->{orgao})", $v->[1], $f->{url} ];
+    push @linhas, [ $v->[0], $v->[2], 'Versão dos dados', _fonte_nome($f), $v->[1], $f->{url} ];
   }
   return ([qw(coluna descricao bloco fonte ano url_fonte)], \@linhas);
 }

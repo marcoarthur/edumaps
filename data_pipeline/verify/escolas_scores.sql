@@ -62,21 +62,20 @@ BEGIN;
   --     END IF;
   -- END $$;
 
-  -- 5. Verificar se não há valores nulos nos scores (devem ser 0 no pior caso)
+  -- 5. Verificar se não há valores nulos nos scores que vêm do cadastro da
+  --    escola. Desde a change escolas_scores_sem_registro (#467, indices-v3),
+  --    atendimento, docente, diversidade e gestora ficam NULL quando falta o
+  --    registro (vazio ≠ zero, #154); o verify daquela change confere isso.
   DO $$
   DECLARE
       null_count integer;
   BEGIN
       SELECT COUNT(*) INTO null_count
       FROM clean.mv_escolas_scores
-      WHERE score_capacidade_atendimento IS NULL
-         OR score_infraestrutura IS NULL
-         OR score_capacitacao_docente IS NULL
-         OR score_diversidade_discente IS NULL
-         OR score_capacidade_gestora IS NULL
+      WHERE score_infraestrutura IS NULL
          OR score_sustentabilidade IS NULL;
       
-      ASSERT null_count = 0, 'ERRO: Existem scores nulos (deveriam ser 0).';
+      ASSERT null_count = 0, 'ERRO: infraestrutura ou sustentabilidade nula.';
   END $$;
 
   -- 6. Verificar consistência de chave primária (nu_ano_censo, co_entidade) – não deve haver duplicatas

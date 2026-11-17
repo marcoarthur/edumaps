@@ -43,8 +43,10 @@ has network_map => sub {
 # change. O teste t/02-models/indices_versao.t compara o COMMENT com
 # $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
 # deploy da fórmula. Correção de texto do %METODO não sobe a versão.
-our $INDICES_VERSAO = 'indices-v2';
+our $INDICES_VERSAO = 'indices-v3';
 our @INDICES_HISTORICO = (
+  { versao => 'indices-v3', data => '2026-11-17',
+    mudou  => 'Escola sem registro de matrículas, docentes ou gestores no Censo fica sem o índice que depende desse registro (vazio), não com 0: capacidade de atendimento e diversidade discente sem matrículas, capacitação docente sem docentes, capacidade gestora sem gestores. As notas das demais escolas não mudam.' },
   { versao => 'indices-v2', data => '2026-11-16',
     mudou  => 'Diversidade discente: a parte da inclusão passa a ser a proporção de alunos da educação especial em classe comum (antes somava os turnos, e quase toda escola tinha a nota máxima nessa parte).' },
   { versao => 'indices-v1', data => '2026-06-04',
@@ -54,7 +56,7 @@ our @INDICES_HISTORICO = (
 # Método dos índices do Censo (#457, VK-01), lido de
 # data_pipeline/deploy/escolas_scores.sql. Escala 0 a 10, maior é melhor;
 # no índice, item sem resposta no Censo conta como ausente, e escola sem o
-# registro (docentes, gestores, matrículas) fica com 0.
+# registro (docentes, gestores, matrículas) fica sem o índice (NULL, #467).
 my $SEM_DADO = 'Item sem resposta no Censo conta como ausente.';
 our %METODO = (
   infraestrutura => 'Índice de 0 a 10 (maior é melhor): média de quatro grupos de peso igual. '
@@ -67,19 +69,20 @@ our %METODO = (
   capacidade_atendimento => 'Índice de 0 a 10 (maior é melhor). 40%: alunos por sala (10 sem lotação, 0 com 50 ou mais por sala). '
     . '20%: etapas oferecidas, de 7 (creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional). '
     . '20%: proporção de matrículas em tempo integral. 20%: alimentação escolar. '
-    . 'Sem salas ou matrículas informadas, a parte correspondente conta 0. ' . $SEM_DADO,
+    . 'Sem salas informadas, a parte de alunos por sala conta 0. '
+    . 'Escola sem matrículas no Censo fica sem o índice (vazio, não 0). ' . $SEM_DADO,
   capacitacao_docente => 'Índice de 0 a 10 (maior é melhor). 30%: docentes com ensino superior. '
     . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados. '
     . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '
-    . 'Escola sem registro de docentes no Censo fica com 0.',
+    . 'Escola sem registro de docentes no Censo fica sem o índice (vazio, não 0).',
   diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas (1 menos a soma dos quadrados das proporções). '
     . '25%: equilíbrio entre meninas e meninos. 20%: inclusão (proporção de alunos da educação especial em classe comum). '
-    . '20%: proporção de matrículas na EJA. Escola sem matrículas informadas fica com 0. '
+    . '20%: proporção de matrículas na EJA. Escola sem matrículas no Censo fica sem o índice (vazio, não 0). '
     . 'A parte da inclusão foi corrigida na versão indices-v2, de 16/11/2026 (antes somava os turnos): notas da indices-v1 não são comparáveis.',
   capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
     . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
     . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
-    . '10%: acesso ao cargo por concurso, eleição ou processo seletivo. Escola sem registro de gestores no Censo fica com 0.',
+    . '10%: acesso ao cargo por concurso, eleição ou processo seletivo. Escola sem registro de gestores no Censo fica sem o índice (vazio, não 0).',
   sustentabilidade => 'Índice de 0 a 10 (maior é melhor): média de quatro partes de peso igual. '
     . 'Energia renovável; reciclagem ou reaproveitamento do lixo; área verde e área de plantio (meio ponto cada); educação ambiental. '
     . $SEM_DADO,

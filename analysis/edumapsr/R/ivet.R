@@ -48,7 +48,11 @@
 # ivet-v1.4 (#459): mesma agregação; o insumo score_diversidade_discente
 # (clean.mv_escolas_scores) passou a medir a inclusão pela educação especial
 # em classe comum, e os resultados mudam, por isso a versão sobe.
-ivet_versao <- function() "ivet-v1.4"
+# ivet-v1.5 (#467): mesma agregação; a escola sem registro de matrículas,
+# docentes ou gestores passou a ficar sem o score correspondente (NULL, antes
+# 0, a vulnerabilidade máxima no componente), e o componente sai do
+# denominador, por isso a versão sobe.
+ivet_versao <- function() "ivet-v1.5"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export
