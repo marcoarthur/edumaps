@@ -69,7 +69,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
   (2026-11-16, **adotaria**): RX-02 entregue (#463) e RX-01 entregue
   (#464). Sexta rodada (2026-11-16, **adotaria**): RY-01 (índices fora da
-  base) e RY-02 (versão no nome do CSV), aguardando o developer.
+  base) e RY-02 (versão no nome do CSV) → #465.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

@@ -82,7 +82,8 @@ Sexta rodada da P4 (academia), depois das duas entregas da quinta rodada:
 
 ## Encaminhamento
 
-Issues só com a aprovação do developer.
+Issue aberta com a aprovação do developer (2026-11-16): **#465** (RY-01 e
+RY-02 juntas).
 
 ### Proposta
 
