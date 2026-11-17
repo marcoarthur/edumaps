@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cf) — nona avaliação da P4, #471 (PR #472) mergeado
+
+- Nona rodada da P4 (SP, BA, RS, PA, GO; 72 mil escolas): **adotaria**
+  (mantido). RT-01: parte racial da diversidade media a cor não declarada
+  (ND fora da soma, dentro do denominador; correlação 0,78). RT-02 partes
+  da diversidade fora da base; RT-03 motivo do INSE vazio → #471.
+- Decisões do developer: mínimo de 50% declarada; abaixo, parte racial
+  NULL e peso redistribuído (/0,65).
+- PR #472 (c63cde5): change `escolas_scores_cor_declarada`, `indices-v4`,
+  `ivet-v1.6`; 5 partes no fim do bloco Índices; `$INSE_VAZIO`.
+  Correlação 0,78 → 0,04; partes refazem o índice 71.360/71.360.
+- O `sqitch verify` global antes do PR pegou: verify da #467 preso a
+  `indices-v3` (agora "v3 ou posterior") e `SELECT mm.*` na MV expandindo
+  colunas de turno que o verify da #459 proíbe.
+- Local: ranking.pl, embeddings, refresh_ivet (ivet-v1.6). Nota técnica
+  221, ciclo `2026-11-17-diversidade-cor-declarada.md`. Abertas: #454,
+  #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-17 (ce) — oitava avaliação da P4, #469 (PR #470) mergeado
 
 - Oitava rodada da P4: **adotaria** (mantido). #467 conferida (vazio = sem

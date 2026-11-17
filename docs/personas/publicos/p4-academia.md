@@ -60,6 +60,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p4--academia-pesquisadora): adotaria (mantido). RY-01 e RY-02 resolvidos; nenhum achado aberto da sexta avaliação.
 - [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p4--academia-pesquisadora): adotaria (mantido). RZ-01 e RZ-02 resolvidos; nenhum achado aberto da sétima avaliação.
 - [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p4--academia-pesquisadora): adotaria (mantido). RW-01 e RW-02 resolvidos; nenhum achado aberto da oitava avaliação.
+- [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p4--academia-pesquisadora): adotaria (mantido), com a diversidade. RT-01 a RT-03 resolvidos; nenhum achado aberto da nona avaliação.
 
 ## Pendências
 
@@ -81,7 +82,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #469, entregues (#470). Nona rodada (2026-11-17, **adotaria**, sem
   a diversidade): RT-01 (parte racial mede a cor não declarada), RT-02
   (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio)
-  → #471.
+  → #471, entregues (#472). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

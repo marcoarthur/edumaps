@@ -117,3 +117,13 @@ plano.
 2. **RT-02:** as partes na base, como na #469. Combina com a RT-01 no
    mesmo PR, porque a parte racial nova é que vai para a base.
 3. **RT-03:** texto do dicionário. Pode ir junto ou à parte.
+
+## Andamento
+
+- 2026-11-17: #471 (PR #472) mergeado: RT-01 a RT-03 resolvidos (parte
+  racial sobre as matrículas com cor declarada, vazia com menos de metade
+  declarada e peso redistribuído, `indices-v4` e `ivet-v1.6`; partes da
+  diversidade na base; motivo do INSE vazio no dicionário). Correlação entre
+  a parte racial e a não declarada: 0,78 → 0,04. Fechamento em
+  [`../ciclos/2026-11-17-diversidade-cor-declarada.md`](../ciclos/2026-11-17-diversidade-cor-declarada.md).
+  Nenhum achado aberto.
