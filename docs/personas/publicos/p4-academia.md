@@ -82,11 +82,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #469, entregues (#470). Nona rodada (2026-11-17, **adotaria**, sem
   a diversidade): RT-01 (parte racial mede a cor não declarada), RT-02
   (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio)
-  → #471, entregues (#472). Nenhum achado aberto.
+  → #471, entregues (#472). Décima rodada (2026-11-17, **adotaria**, sem o
+  atendimento): RS-01 (alunos por sala sem os turnos) e RS-02 (partes do
+  atendimento fora da base) → #473.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima rodada, oferta e turnos)
+
+**Veredito:** **adotaria** (mantido), sem o índice de capacidade de
+atendimento. Consolidação em
+[`avaliacoes/2026-11-17-p4-oferta-e-turnos.md`](avaliacoes/2026-11-17-p4-oferta-e-turnos.md).
+
+**O que tentou:**
+- "Municípios de porte semelhante têm oferta parecida?", com o índice de
+  capacidade de atendimento.
+- Abrir o método e recalcular a lotação por turno.
+
+**O que funciona para ela:**
+- a diversidade corrigida e as partes na base;
+- o porte na base e no ranking.
+
+**Barreiras:**
+- RS-01 (atrapalha): "alunos por sala" ignora os turnos. 14.673 das
+  16.220 escolas com 0 nessa parte têm menos de 35 alunos por turno.
+- RS-02 (atrapalha): as partes do índice de atendimento não estão na base.
 
 ### 2026-11-17 — Análises públicas (nona rodada, regiões e diversidade)
 
