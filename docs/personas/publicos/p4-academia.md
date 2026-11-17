@@ -97,11 +97,27 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação de redes): RP-01 (escolas fechadas contadas), RP-02 (n e etapa
   do perfil), RP-03 e RP-04 (detalhes) → #479, entregues (#480). Décima quarta rodada (2026-11-17, **adotaria**, sem o
   agrupamento por desempenho): RO-01 (etapas misturadas) e RO-02 (fossa
-  como falta) → #481 (modo autônomo), entregues (#482).
+  como falta) → #481 (modo autônomo), entregues (#482). Décima quinta rodada (2026-11-17, **adotaria**, sem o IDEB
+  do perfil): RN-01 (médias de etapas misturadas) e RN-02 (uma etapa só)
+  → #483 (modo autônomo).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima quinta rodada, IDEB do perfil)
+
+**Veredito:** **adotaria** (mantido), sem o IDEB do perfil. Consolidação em
+[`avaliacoes/2026-11-17-p4-perfil-ideb-etapa.md`](avaliacoes/2026-11-17-p4-perfil-ideb-etapa.md).
+
+**O que tentou:**
+- O perfil de uma escola como estudo de caso, comparando o IDEB com o do
+  Brasil, do município, da rede e do grupo.
+
+**Barreiras:**
+- RN-01 (atrapalha): as médias de comparação misturam etapas ("Brasil"
+  5,33 contra 4,74 nos anos finais).
+- RN-02 (detalhe): o perfil mostra só a etapa de maior nota.
 
 ### 2026-11-17 — Análises públicas (décima quarta rodada, agrupamento por desempenho)
 
