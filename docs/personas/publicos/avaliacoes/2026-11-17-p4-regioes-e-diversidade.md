@@ -103,7 +103,9 @@ Nona rodada da P4 (academia), depois da entrega da oitava rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir as issues.
+Issue aberta com a aprovação do developer (2026-11-17): **#471** (RT-01 a
+RT-03 juntas). O mínimo de declaração e o tratamento abaixo dele ficam para o
+plano.
 
 ### Proposta
 

@@ -80,8 +80,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   índice de capacitação fora da base) e RW-02 (pesos normativos não ditos),
   → #469, entregues (#470). Nona rodada (2026-11-17, **adotaria**, sem
   a diversidade): RT-01 (parte racial mede a cor não declarada), RT-02
-  (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio),
-  aguardando a aprovação do developer.
+  (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio)
+  → #471.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
