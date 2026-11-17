@@ -91,11 +91,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (2026-11-17, **adotaria**): RR-01 e RR-02, detalhes da capacidade gestora
   → #475 (fórmula, `indices-v6`), entregues (#476). Décima segunda rodada (2026-11-17, **adotaria**): RQ-01 (expressão R da
   ajuda errada para a capacidade gestora) e RQ-02 (infraestrutura e
-  sustentabilidade sem partes na base) → #477, entregues (#478).
+  sustentabilidade sem partes na base) → #477, entregues (#478). Décima terceira rodada (2026-11-17, **adotaria**, sem a
+  comparação de redes): RP-01 (escolas fechadas contadas), RP-02 (n e etapa
+  do perfil), RP-03 e RP-04 (detalhes) → aguardam a aprovação da issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima terceira rodada, comparação de redes)
+
+**Veredito:** **adotaria** (mantido), sem a comparação de redes.
+Consolidação em
+[`avaliacoes/2026-11-17-p4-comparar-redes.md`](avaliacoes/2026-11-17-p4-comparar-redes.md).
+
+**O que tentou:**
+- Comparar as redes de Salvador em `/municipio/compare` e
+  `/municipio/perfil`, conferindo com a base.
+
+**O que funciona para ela:**
+- docentes, proporções e IDEB por rede batem com a base.
+
+**Barreiras:**
+- RP-01 (atrapalha): a comparação conta escolas paralisadas e extintas
+  (+16% no Brasil; Formoso, MG: 56 contra 4).
+- RP-02 (atrapalha): o perfil não diz em quantas escolas cada média se
+  apoia, e o IDEB mistura etapas.
+- RP-03 e RP-04 (detalhes): n da linha do IDEB e ajuda antiga.
 
 ### 2026-11-17 — Análises públicas (décima segunda rodada, partes dos índices)
 
