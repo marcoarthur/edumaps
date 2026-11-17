@@ -84,7 +84,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP, e não dá para refazê-los só com as colunas da base (a
   fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
-  versão (`versao_indice`, ex.: `indices-v3`, que também vai no nome do
+  versão (`versao_indice`, ex.: `indices-v4`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
   uma carga nova do Censo, as células dos índices podem ficar vazias até o
@@ -115,6 +115,21 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Docência:** as proporções são sobre o total de docentes da escola
   (`qt_docentes`). Na contagem do Censo Escolar, quem dá aula em mais de uma
   escola conta em cada uma.
+- **As partes do índice de diversidade discente** (bloco Índices do
+  EduMaps):
+  - **as quatro partes:** `diversidade_racial` (35%), `equilibrio_genero`
+    (25%), `prop_educacao_especial_cc` (20%) e `prop_eja` (20%);
+  - **`prop_cor_nao_declarada`:** com metade ou mais das matrículas sem cor
+    declarada, `diversidade_racial` fica vazia e o peso dela vai para as
+    outras três;
+  - **para refazer o índice no R:**
+    `ifelse(is.na(diversidade_racial), 10 * (0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja) / 0.65, 10 * (0.35 * diversidade_racial + 0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja))`;
+  - **para modelar, use as partes:** a inclusão e a cor/raça podem ir em
+    sentidos opostos.
+- **INSE vazio:** o INSE só existe para as escolas com alunos avaliados no
+  SAEB. As privadas nunca têm, e as creches e pré-escolas quase nunca:
+  cerca de 60% das escolas de uma UF ficam sem. Entre as escolas com IDEB,
+  quase todas têm INSE.
 - **As partes do índice de capacitação docente:**
   - **as quatro partes:** `prop_superior` (30%), `prop_pos_graduacao` (30%),
     `prop_efetivos` (20%) e `prop_formacao_continuada` (20%);

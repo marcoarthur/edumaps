@@ -251,7 +251,8 @@ subtest 'infraestrutura básica (#457)' => sub {
   my $mv = EduMaps::Model::Rank::School->new(schema => $t->app->schema);
   ok !exists $mv->indicator_registry->{infraestrutura_basica}, 'fora do registro geral (job e painel não veem)';
   like $mv->indicator_registry->{infraestrutura}{metodo}, qr/Não é infraestrutura básica/, 'método do índice antigo';
-  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/educação especial em classe comum.*corrigida na versão indices-v2/, 'diversidade: inclusão corrigida (#459)';
+  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/educação especial em classe comum.*da inclusão na indices-v2/, 'diversidade: inclusão corrigida (#459)';
+  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/com cor declarada.*corrigida na versão indices-v4/, 'diversidade: cor/raça sobre os declarados (#471)';
   $limpa3->();
 };
 

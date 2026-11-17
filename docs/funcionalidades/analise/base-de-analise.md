@@ -46,6 +46,10 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   fórmula em toda linha e no nome do arquivo, e o método de cada índice no
   dicionário. A escola sem o registro de que um índice depende fica com a
   célula vazia, não com 0.
+- Sistema pode **entregar as partes do índice de diversidade discente**
+  (cor/raça sobre os declarados, proporção sem cor declarada, equilíbrio de
+  gênero, inclusão e EJA), que refazem o índice, e diz no dicionário por
+  que o nível socioeconômico fica vazio.
 - Sistema pode **entregar as partes do índice de capacitação docente**
   (ensino superior, pós-graduação, concursados e formação continuada), com as
   mesmas definições do índice, para refazê-lo e separar o efeito de cada

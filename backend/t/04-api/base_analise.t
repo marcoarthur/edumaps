@@ -248,6 +248,44 @@ subtest 'partes do índice de capacitação docente (#469)' => sub {
     for map {"indice_$_"} qw(infraestrutura capacitacao_docente sustentabilidade);
 };
 
+# #471 (RT-02): as partes do índice de diversidade refazem o índice, com e
+# sem a parte racial (menos de metade das matrículas com cor declarada).
+subtest 'partes do índice de diversidade (#471)' => sub {
+  my $DECL = '(COALESCE(m.qt_mat_bas_branca,0)+COALESCE(m.qt_mat_bas_preta,0)+COALESCE(m.qt_mat_bas_parda,0)+COALESCE(m.qt_mat_bas_amarela,0)+COALESCE(m.qt_mat_bas_indigena,0))';
+  for my $caso (['com a parte racial', ">= 0.5 * m.qt_mat_bas AND $DECL > 0"], ['sem a parte racial', '< 0.5 * m.qt_mat_bas']) {
+    my ($nome, $cond) = @$caso;
+    my $s = $dbh->selectrow_hashref(qq{
+      SELECT e.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun, s.score_diversidade_discente::float8 AS div
+        FROM clean.mv_escolas_scores s
+        JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+        JOIN clean.censo_matriculas m ON m.co_entidade = s.co_entidade AND m.nu_ano_censo = s.nu_ano_censo
+       WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ? AND m.qt_mat_bas > 0 AND $DECL $cond
+       ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+    SKIP: {
+      skip "nenhuma escola $nome na MV", 3 unless $s;
+      my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->tx);
+      my @cab = @{ $l->[0] };
+      my %i; @i{@cab} = 0 .. $#cab;
+      my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
+      my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; return undef if $x eq ''; $x =~ tr/,/./; 0 + $x };
+      my ($r, $g, $ee, $eja) = map { $v->($_) } qw(diversidade_racial equilibrio_genero prop_educacao_especial_cc prop_eja);
+      my $refeito = defined $r ? 10 * (0.35 * $r + 0.25 * $g + 0.2 * $ee + 0.2 * $eja)
+                               : 10 * (0.25 * $g + 0.2 * $ee + 0.2 * $eja) / 0.65;
+      ok abs($refeito - $s->{div}) < 0.01, "$nome: índice refeito ($refeito vs $s->{div})";
+      ok( (defined $r) == ($nome eq 'com a parte racial'), "$nome: diversidade_racial " . (defined $r ? 'preenchida' : 'vazia'));
+    }
+  }
+  my $l = ler_csv($t->get_ok('/api/base-analise/csv?uf=AC&codigo_ibge=' . $MUN . '&blocos=indices')->tx);
+  my @cab = @{ $l->[0] };
+  is [ @cab[ -7 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja)],
+    'partes no fim do bloco, antes de ano_censo e versao_indice';
+  my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices,inse')->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{diversidade_racial}[1], qr/sobre as matrículas com cor declarada.*Vazio: menos de metade/, 'parte racial no dicionário';
+  like $d{inse_media}[1], qr/Vazio: a escola não teve alunos avaliados no SAEB.*privadas nunca/, 'motivo do INSE vazio (RT-03)';
+  like $d{inse_classificacao}[1], qr/privadas nunca/, 'nível do INSE também';
+};
+
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {
   my $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=infraestrutura")->status_is(200)->tx);
   my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];

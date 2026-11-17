@@ -2,7 +2,7 @@
 # Legível por máquina; testado contra a implementação em
 # tests/testthat/test-ivet-card.R (o card não pode divergir do código).
 card: ivet
-formula: ivet-v1.5
+formula: ivet-v1.6
 leitura: territorial
 unidade: escola como ponto de observacao em contexto territorial
 direcao: maior = mais vulneravel
@@ -52,7 +52,7 @@ bloco_a:
       no_default: false
     diversidade_discente:
       fonte: score_diversidade_discente
-      nota: "desde ivet-v1.4 (#459) a inclusao e a educacao especial em classe comum (qt_mat_esp_cc); ate a v1.3 o score somava os turnos (qt_mat_bas_d+dm+dv)"
+      nota: "desde ivet-v1.6 (#471, indices-v4) a parte de cor/raca e sobre as matriculas com cor declarada (vazia com menos de metade declarada, peso redistribuido); desde ivet-v1.4 (#459) a inclusao e a educacao especial em classe comum (qt_mat_esp_cc); ate a v1.3 o score somava os turnos (qt_mat_bas_d+dm+dv)"
       sistema: B
       no_default: false
     capacidade_gestora:
