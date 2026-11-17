@@ -77,7 +77,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`),
   entregues (#468). Oitava rodada (2026-11-17, **adotaria**): RW-01 (partes do
   índice de capacitação fora da base) e RW-02 (pesos normativos não ditos),
-  aguardando a aprovação do developer.
+  → #469.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
