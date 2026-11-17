@@ -26,6 +26,29 @@ load_network_profile <- function(source, ...) {
   UseMethod("load_network_profile")
 }
 
+#' Contagem de escolas com valor em cada indicador (#479)
+#'
+#' A média do indicador ignora as escolas sem valor (`avg` pula `NULL`):
+#' o IDEB, por exemplo, só existe em parte das escolas. `n_<indicador>` diz
+#' em quantas escolas cada média se apoia.
+#'
+#' @keywords internal
+.network_count_cols <- function(alias = "p") {
+  inds <- PROFILE_INDICATORS
+  paste0(sprintf("count(%s.%s) AS n_%s", alias, inds, inds), collapse = ",\n      ")
+}
+
+#' Lê as contagens `n_<indicador>` de uma linha (NA se ausentes)
+#'
+#' @keywords internal
+.network_counts <- function(wide, i) {
+  inds <- PROFILE_INDICATORS
+  cols <- paste0("n_", inds)
+  vapply(cols, function(cl) {
+    if (cl %in% names(wide)) as.integer(wide[[cl]][i]) else NA_integer_
+  }, integer(1), USE.NAMES = FALSE)
+}
+
 #' Converte a agregação wide por cluster em formato longo
 #'
 #' @keywords internal
@@ -34,6 +57,7 @@ load_network_profile <- function(source, ...) {
   empty <- data.frame(
     cluster_id = integer(0), cluster_label = character(0), n = integer(0),
     indicador = character(0), label = character(0), media = numeric(0),
+    n_com_valor = integer(0),
     stringsAsFactors = FALSE
   )
   if (nrow(wide) == 0) {
@@ -61,6 +85,7 @@ load_network_profile <- function(source, ...) {
       indicador = inds,
       label = unname(PROFILE_LABELS[inds]),
       media = suppressWarnings(as.numeric(wide[i, inds])),
+      n_com_valor = .network_counts(wide, i),
       stringsAsFactors = FALSE
     )
   }))
@@ -81,6 +106,7 @@ load_network_profile <- function(source, ...) {
     rede = rede,
     brasil = brasil,
     variacao = rede - brasil,
+    n_com_valor = .network_counts(mean_row, 1),
     stringsAsFactors = FALSE
   )
 }
@@ -161,9 +187,9 @@ load_network_profile.postgres_source <- function(
 WITH pop AS MATERIALIZED (
 %s
 )
-SELECT count(*) AS n_escolas, %s FROM pop p
+SELECT count(*) AS n_escolas, %s, %s FROM pop p
 ",
-      pop_body, .profile_avg_cols_alias("p")
+      pop_body, .profile_avg_cols_alias("p"), .network_count_cols("p")
     ),
     params = params
   )
@@ -183,13 +209,13 @@ SELECT count(*) AS n_escolas, %s FROM pop p
 WITH pop AS MATERIALIZED (
 %s
 )
-SELECT si.cluster_id AS cluster_id, count(*) AS n, %s
+SELECT si.cluster_id AS cluster_id, count(*) AS n, %s, %s
   FROM pop p
   LEFT JOIN %s.school_indicators si ON si.co_entidade = p.co_entidade
  GROUP BY si.cluster_id
  ORDER BY si.cluster_id NULLS LAST
 ",
-        pop_body, .profile_avg_cols_alias("p"), schema_q
+        pop_body, .profile_avg_cols_alias("p"), .network_count_cols("p"), schema_q
       ),
       params = params
     )
@@ -232,6 +258,17 @@ SELECT si.cluster_id AS cluster_id, count(*) AS n, %s
     brasil <- live$valor
   }
 
+  # #479: as edições do IDEB/SAEB e do INSE usadas (as mais recentes, como
+  # em .profile_pop_body), para o rótulo da tela.
+  edicoes <- tryCatch(
+    DBI::dbGetQuery(con, sprintf(
+      "SELECT (SELECT max(ano) FROM %s.ideb_notas_escolas) AS ano_ideb,
+              (SELECT max(nu_ano_saeb) FROM %s.inse) AS ano_inse",
+      schema_q, schema_q
+    )),
+    error = function(e) data.frame(ano_ideb = NA_integer_, ano_inse = NA_integer_)
+  )
+
   clusters <- .network_clusters_long(clusters_wide, labels)
   indicadores <- .network_indicators_df(mean_row, brasil)
 
@@ -246,7 +283,9 @@ SELECT si.cluster_id AS cluster_id, count(*) AS n, %s
       nu_ano_censo = ano,
       n_escolas = as.integer(mean_row$n_escolas[1]),
       n_clusters = length(unique(clusters$cluster_id[!is.na(clusters$cluster_id)])),
-      n_brasil = if (!is.null(ref) && nrow(ref) > 0) as.integer(ref$n_escolas[1]) else NA_integer_
+      n_brasil = if (!is.null(ref) && nrow(ref) > 0) as.integer(ref$n_escolas[1]) else NA_integer_,
+      ano_ideb = as.integer(edicoes$ano_ideb[1]),
+      ano_inse = as.integer(edicoes$ano_inse[1])
     )
   )
 }

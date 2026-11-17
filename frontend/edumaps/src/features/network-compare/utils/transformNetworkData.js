@@ -149,6 +149,16 @@ const etapaLabel = (etapa) =>
   IDEB_ETAPA_LABELS[String(etapa).toLowerCase()] ?? String(etapa);
 
 /**
+ * Texto do tooltip de um ponto da linha do IDEB (#479): média e em quantas
+ * escolas ela se apoia.
+ */
+export function idebTooltipText({ group, key, value, escolas }) {
+  const media = Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const n = escolas == null ? "" : ` (${Number(escolas).toLocaleString("pt-BR")} ${Number(escolas) === 1 ? "escola" : "escolas"} com IDEB)`;
+  return `${group}, ${key}: ${media}${n}`;
+}
+
+/**
  * Linhas IDEB (por rede · etapa × ano). Ignora entradas sem ideb_medio.
  */
 export function buildIdedTimeline(performance) {
@@ -156,7 +166,9 @@ export function buildIdedTimeline(performance) {
   for (const p of performance ?? []) {
     if (p.ideb_medio == null) continue;
     const group = `${redeLabel(p.rede)} · ${etapaLabel(p.etapa)}`;
-    rows.push({ group, key: String(p.ano), value: toNumber(p.ideb_medio) });
+    // #479 (RP-03): escolas com IDEB naquele ponto, para o tooltip.
+    const escolas = p.numero_escolas == null ? null : toNumber(p.numero_escolas);
+    rows.push({ group, key: String(p.ano), value: toNumber(p.ideb_medio), escolas });
   }
   return rows;
 }

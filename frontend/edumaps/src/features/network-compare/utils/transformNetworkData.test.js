@@ -8,6 +8,7 @@ import {
   networkCompareUrl,
   networkProfileUrl,
   buildIdedTimeline,
+  idebTooltipText,
   buildShareDonut,
   buildShareRadarData,
   buildStageBars,
@@ -142,5 +143,15 @@ describe("URLs do perfil e da comparação de redes", () => {
     expect(networkCompareUrl("3551702")).toBe(
       "/municipio/compare?codigo_ibge=3551702",
     );
+  });
+});
+
+describe("linha do IDEB: escolas por ponto (#479)", () => {
+  it("leva numero_escolas para o ponto e o tooltip diz quantas", () => {
+    const rows = buildIdedTimeline([{ rede: "Estadual", etapa: "ensino_medio", ano: 2023, numero_escolas: 69, ideb_medio: 3.72 }]);
+    expect(rows[0]).toMatchObject({ key: "2023", value: 3.72, escolas: 69 });
+    expect(idebTooltipText(rows[0])).toBe("Estadual · Ensino Médio, 2023: 3,72 (69 escolas com IDEB)");
+    expect(idebTooltipText({ ...rows[0], escolas: 1 })).toContain("(1 escola com IDEB)");
+    expect(idebTooltipText({ ...rows[0], escolas: null })).toBe("Estadual · Ensino Médio, 2023: 3,72");
   });
 });

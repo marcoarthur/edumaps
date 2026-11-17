@@ -4,11 +4,13 @@
 #
 # Blocos:
 #   clusters    - data.frame longo, uma linha por (cluster, indicador):
-#                 cluster_id, cluster_label, n, indicador, label, media
+#                 cluster_id, cluster_label, n, indicador, label, media,
+#                 n_com_valor (escolas com valor no indicador, #479)
 #   indicadores - data.frame, uma linha por indicador:
-#                 indicador, label, rede, brasil, variacao
+#                 indicador, label, rede, brasil, variacao, n_com_valor
 #   metadata    - codigo_ibge, no_municipio, sg_uf, tp_dependencia,
-#                 nu_ano_censo, n_escolas, n_clusters, n_brasil
+#                 nu_ano_censo, n_escolas, n_clusters, n_brasil,
+#                 ano_ideb, ano_inse (#479)
 
 #' Constrói um `NetworkProfileModel`
 #'

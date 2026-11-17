@@ -4,6 +4,7 @@ import {
   transformNetworkProfileData,
   formatNetworkValue,
   formatNetworkVariacao,
+  rotuloIndicadorRede,
 } from "./transformNetworkProfileData.js";
 import { NETWORK_PROFILE_FIXTURE } from "../mocks/fixtures.js";
 
@@ -44,5 +45,36 @@ describe("transformNetworkProfileData", () => {
     expect(formatNetworkValue("prop_licenciatura", 0.8)).toBe("80.0%");
     expect(formatNetworkValue("ideb_observado", 5.12)).toBe("5.1");
     expect(formatNetworkValue("ideb_observado", null)).toBe("–");
+  });
+});
+
+describe("perfil da rede: escolas com dado e rótulos (#479)", () => {
+  it("leva n_com_valor dos indicadores e dos grupos", () => {
+    const p = transformNetworkProfileData({
+      tables: {
+        indicadores: [{ indicador: "ideb_observado", label: "IDEB observado", rede: 4.9, brasil: 5, variacao: -0.1, n_com_valor: 406 }],
+        clusters: [{ cluster_id: null, cluster_label: "Sem cluster", n: 1432, indicador: "ideb_observado", label: "IDEB observado", media: 4.9, n_com_valor: 406 }],
+      },
+      metadata: { ano_ideb: 2023, ano_inse: 2023 },
+    });
+    expect(p.indicadores[0].nComValor).toBe(406);
+    expect(p.clusters[0].indicadores[0].nComValor).toBe(406);
+    expect(p.metadata.anoIdeb).toBe(2023);
+  });
+
+  it("sem n_com_valor (cache antigo), fica null", () => {
+    const p = transformNetworkProfileData({ tables: { indicadores: [{ indicador: "inse", rede: 4.5 }], clusters: [] }, metadata: {} });
+    expect(p.indicadores[0].nComValor).toBeNull();
+  });
+
+  it("rotula o IDEB e o SAEB com a edição e a etapa", () => {
+    const meta = { anoIdeb: 2023, anoInse: 2023 };
+    expect(rotuloIndicadorRede({ indicador: "ideb_observado", label: "IDEB observado" }, meta))
+      .toBe("IDEB 2023 (etapa de maior nota de cada escola)");
+    expect(rotuloIndicadorRede({ indicador: "nota_media", label: "Nota média (SAEB)" }, meta))
+      .toBe("Nota média SAEB 2023 (mesma etapa do IDEB)");
+    expect(rotuloIndicadorRede({ indicador: "inse", label: "INSE" }, meta)).toBe("INSE 2023");
+    expect(rotuloIndicadorRede({ indicador: "prop_mestrado", label: "Docentes com mestrado" }, meta))
+      .toBe("Docentes com mestrado");
   });
 });

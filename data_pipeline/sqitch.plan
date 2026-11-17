@@ -178,3 +178,4 @@ escolas_scores_sem_registro [escolas_scores_versao] 2026-11-17T10:00:00Z Marco A
 escolas_scores_cor_declarada [escolas_scores_sem_registro] 2026-11-17T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #471: parte racial da diversidade sobre as matriculas com cor declarada; vazia com menos de metade declarada e peso redistribuido; indices-v4
 escolas_scores_turnos [escolas_scores_cor_declarada] 2026-11-17T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #473: alunos por sala e por turno na capacidade de atendimento; indices-v5
 escolas_scores_gestora [escolas_scores_turnos] 2026-11-17T23:00:00Z Marco Arthur <arthurpbs@gmail.com> # #475: capacidade gestora com gestores por aluno vazia sem matricula e acesso ao cargo vazio nas privadas, pesos redistribuidos; indices-v6
+rede_escolas_ativas [censo_labels_consumers] 2026-11-17T23:30:00Z Marco Arthur <arthurpbs@gmail.com> # #479: mv_rede_escolas so com escolas em funcionamento (sem paralisadas e extintas)
