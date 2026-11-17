@@ -71,6 +71,7 @@ já estar lá — o registry é quem diz):
 | `escolas_scores_cor_declarada` | #471 (recria `clean.mv_escolas_scores`: parte racial da diversidade sobre as matrículas com cor declarada, `VERSÃO indices-v4`; ver §6, passo 3) |
 | `escolas_scores_turnos` | #473 (recria `clean.mv_escolas_scores`: alunos por sala e por turno na capacidade de atendimento, `VERSÃO indices-v5`; ver §6, passo 3) |
 | `escolas_scores_gestora` | #475 (recria `clean.mv_escolas_scores`: capacidade gestora com partes vazias sem matrícula e nas privadas, `VERSÃO indices-v6`; ver §6, passo 3) |
+| `rede_escolas_ativas` | #479 (recria `analytics.mv_rede_escolas` só com as escolas em funcionamento; a comparação de redes soma ~180,5 mil escolas no Brasil) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -78,14 +79,15 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `escolas_scores_gestora` (#475; antes `escolas_scores_turnos`) e o `deploy_db_dev` não
+- [ ] A última change do registry é `rede_escolas_ativas` (#479; antes `escolas_scores_gestora`) e o `deploy_db_dev` não
       reportou erro. Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
       `psql edumaps_dev -f verify/escolas_scores_sem_registro.sql` (falha se houver 0 onde falta o registro ou sem `indices-v3` ou posterior) e
       `psql edumaps_dev -f verify/escolas_scores_cor_declarada.sql` (falha se a diversidade não bater com a fórmula da `indices-v4`) e
       `psql edumaps_dev -f verify/escolas_scores_turnos.sql` (falha se o atendimento não bater com a fórmula da `indices-v5`) e
-      `psql edumaps_dev -f verify/escolas_scores_gestora.sql` (falha se a capacidade gestora não bater com a fórmula da `indices-v6`).
+      `psql edumaps_dev -f verify/escolas_scores_gestora.sql` (falha se a capacidade gestora não bater com a fórmula da `indices-v6`) e
+      `psql edumaps_dev -f verify/rede_escolas_ativas.sql` (falha se a comparação de redes contar escola fora de funcionamento).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.

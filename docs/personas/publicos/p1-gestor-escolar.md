@@ -65,6 +65,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: escola de dois turnos sem lotação zerada.
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: escola municipal com matrícula sem mudança.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: grupos da infraestrutura na base.
+- [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: só as escolas que funcionam.
 
 ## Pendências
 

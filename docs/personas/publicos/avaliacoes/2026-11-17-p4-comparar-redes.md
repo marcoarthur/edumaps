@@ -110,3 +110,12 @@ RP-04 juntas).
 3. **RP-04:** reescrever a ajuda da comparação.
 4. Podem ir numa issue só, como as anteriores. A RP-01 é a que muda
    números publicados.
+
+## Andamento
+
+- 2026-11-17: #479 (PR #480) mergeado: RP-01 a RP-04 resolvidos (comparação
+  só com escolas em funcionamento, Brasil 214.192 → 180.540; escolas com dado
+  no perfil e no tooltip da linha do IDEB; IDEB do perfil rotulado com a
+  edição e a etapa; ajuda reescrita). Fechamento em
+  [`../ciclos/2026-11-17-comparacao-redes-ativas.md`](../ciclos/2026-11-17-comparacao-redes-ativas.md).
+  Nenhum achado aberto.

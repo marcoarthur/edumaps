@@ -64,6 +64,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: cidade grande não parece atender pior por usar mais turnos.
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: rede e privadas sem 1 ponto de vantagem por construção.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: saneamento separado de equipamento na base.
+- [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: alunos por escola sem escolas fechadas.
 
 ## Pendências
 

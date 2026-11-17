@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cj) — décima terceira avaliação da P4, #479 (PR #480) mergeado
+
+- Décima terceira rodada da P4 (comparação de redes, Salvador): adotaria,
+  sem a comparação. RP-01: `analytics.mv_rede_escolas` contava paralisadas
+  e extintas (214.192 vs 180.540; Formoso MG 56 vs 4). RP-02: perfil sem n
+  por indicador; o IDEB do perfil é a etapa de MAIOR nota de cada escola
+  (DISTINCT ON … ORDER BY nota_media DESC), não "média entre etapas".
+  RP-03 `numero_escolas` contava escolas sem nota; RP-04 ajuda velha → #479.
+- PR #480 (74a9dda): change `rede_escolas_ativas`; `numero_escolas` =
+  count(ideb_observado); edumapsr `n_com_valor` + `ano_ideb`/`ano_inse`;
+  cache do `network_profile` com `versao => 2`; tela com "Escolas com dado"
+  e tooltip; ajuda `comparar-redes.md` reescrita.
+- Fica como ideia (não aberta): IDEB por etapa no perfil, com a referência
+  do Brasil por etapa.
+- O developer delegou modo autônomo até 7h de 18/11 (decisões, issue, PR,
+  merge, aviso pelo Telegram).
+- Nota técnica 225, ciclo `2026-11-17-comparacao-redes-ativas.md`.
+
 ## Sessão 2026-11-17 (ci) — décima segunda avaliação da P4, #477 (PR #478) mergeado
 
 - Décima segunda rodada da P4 (refazer os índices pela base, BA e MG):
