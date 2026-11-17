@@ -57,6 +57,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   ressalvas), na própria tabela, com a **versão da fórmula** dos índices
   próprios; o CSV das escolas leva a versão em toda linha, para que arquivos
   de antes e de depois de uma mudança de fórmula não se confundam.
+- Sistema pode **deixar de fora quem não tem o dado**: a escola sem o
+  registro de que um índice depende (matrículas, docentes ou gestores no
+  Censo) não entra na lista daquele índice, em vez de aparecer no fim com 0.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

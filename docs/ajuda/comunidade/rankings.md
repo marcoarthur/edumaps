@@ -86,15 +86,21 @@ indicador. Não precisa de login.
 
 ## O que cada índice mede
 Os índices do Censo vão de 0 a 10, e maior é melhor. Em todos, item sem
-resposta no Censo conta como ausente, e a escola sem o registro (docentes,
-gestores, matrículas) fica com 0.
+resposta no Censo conta como ausente. A escola sem o registro de que o
+índice depende fica **sem o índice** e fora da lista daquele índice, não com
+0: sem matrículas no Censo, sem capacidade de atendimento e sem diversidade;
+sem docentes, sem capacitação docente; sem gestores, sem capacidade gestora.
+São sobretudo centros de atendimento especializado e outras escolas sem turma
+regular, que antes apareciam no fim da lista com 0.
 
 **Versão da fórmula:** os seis índices são calculados pelo EduMaps, e cada
-mudança de fórmula ganha uma versão nova. A atual é a **`indices-v2`**, de
-16/11/2026 (a `indices-v1`, de 04/06/2026, é a fórmula original). A tela
+mudança de fórmula ganha uma versão nova. A atual é a **`indices-v3`**, de
+17/11/2026: a escola sem registro fica sem o índice, não com 0. A
+`indices-v2`, de 16/11/2026, corrigiu a inclusão na diversidade, e a
+`indices-v1`, de 04/06/2026, é a fórmula original. A tela
 mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
 traz a coluna `versao_indice` em toda linha e a versão no nome do arquivo
-(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v2.csv`).
+(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v3.csv`).
 Para os índices de todas as escolas de uma UF de uma vez, use a
 [base de análise](base-de-analise.md), bloco "Índices do EduMaps". Para citar, informe a versão:
 notas de versões diferentes não são comparáveis. O histórico está em

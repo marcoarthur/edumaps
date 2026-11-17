@@ -2,7 +2,7 @@
 # Legível por máquina; testado contra a implementação em
 # tests/testthat/test-ivet-card.R (o card não pode divergir do código).
 card: ivet
-formula: ivet-v1.4
+formula: ivet-v1.5
 leitura: territorial
 unidade: escola como ponto de observacao em contexto territorial
 direcao: maior = mais vulneravel

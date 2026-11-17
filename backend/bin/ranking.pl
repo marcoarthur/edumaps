@@ -66,6 +66,15 @@ unless ($ok) {
 
 print "refresh_ranking_escola.pl concluído com sucesso.\n";
 
+# #467: o upsert só grava quem está no ranking; quem saiu (escola sem o
+# índice, fechada ou fora do ano) ficava com a linha antiga. Tudo roda numa
+# transação, e now() é o início dela: o que não foi gravado agora é antigo.
+sub _remover_antigas ($dbh, $indicator_id, $rede) {
+  $dbh->do(q{DELETE FROM analytics.ranking_escola
+              WHERE indicador_id = ? AND rede = ? AND data_atualizacao < now()},
+           undef, $indicator_id, $rede);
+}
+
 # ============================================================================
 # Privado: indicadores da fonte "mv" (clean.mv_escolas_scores)
 # ============================================================================
@@ -131,6 +140,7 @@ sub _refresh_mv_indicator ($dbh, $network_map, $indicator_id, $def) {
     };
 
     $dbh->do($sql, undef, $indicator_id, $rede, $year, $year, @network_bind);
+    _remover_antigas($dbh, $indicator_id, $rede);
     print "  [$indicator_id] rede=$rede ano=$year OK\n";
   }
 }
@@ -201,6 +211,7 @@ sub _refresh_ideb_indicator ($dbh, $network_map, $indicator_id, $def) {
     };
 
     $dbh->do($sql, undef, $indicator_id, $rede, $year, $year, $etapa, @network_bind);
+    _remover_antigas($dbh, $indicator_id, $rede);
     print "  [$indicator_id] rede=$rede ano=$year OK\n";
   }
 }
