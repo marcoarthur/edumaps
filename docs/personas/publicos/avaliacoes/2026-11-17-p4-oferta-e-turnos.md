@@ -99,3 +99,12 @@ avaliador e aviso ao developer pelo Telegram:
   noturno, no mínimo 1;
 - **a mesma régua** de 50 alunos por sala e turno;
 - **as partes no fim do bloco** Índices do EduMaps.
+
+## Andamento
+
+- 2026-11-17: #473 (PR #474) mergeado em modo autônomo: RS-01 e RS-02
+  resolvidos (alunos por sala e por turno, `indices-v5` e `ivet-v1.7`;
+  partes do atendimento na base). Índice por porte: 5,42 → 6,20 (menos de 20
+  mil) e 4,36 → 5,57 (mais de 500 mil). Fechamento em
+  [`../ciclos/2026-11-17-atendimento-por-turno.md`](../ciclos/2026-11-17-atendimento-por-turno.md).
+  Nenhum achado aberto.

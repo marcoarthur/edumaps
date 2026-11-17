@@ -62,6 +62,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: centros de atendimento fora do ranking, sem o 0.
 - [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: a diretora não usa a base da UF.
 - [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: diversidade sem o prêmio da cor não declarada.
+- [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: escola de dois turnos sem lotação zerada.
 
 ## Pendências
 

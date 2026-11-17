@@ -69,6 +69,7 @@ já estar lá — o registry é quem diz):
 | `escolas_scores_versao` | #462 (só o COMMENT da `clean.mv_escolas_scores`, com `VERSÃO indices-v2`; sem recálculo) |
 | `escolas_scores_sem_registro` | #467 (recria `clean.mv_escolas_scores`: índice `NULL` sem registro de matrículas/docentes/gestores, `VERSÃO indices-v3`; ver §6, passo 3) |
 | `escolas_scores_cor_declarada` | #471 (recria `clean.mv_escolas_scores`: parte racial da diversidade sobre as matrículas com cor declarada, `VERSÃO indices-v4`; ver §6, passo 3) |
+| `escolas_scores_turnos` | #473 (recria `clean.mv_escolas_scores`: alunos por sala e por turno na capacidade de atendimento, `VERSÃO indices-v5`; ver §6, passo 3) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -76,12 +77,13 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `escolas_scores_cor_declarada` (#471; antes `escolas_scores_sem_registro`) e o `deploy_db_dev` não
-      reportou erro. Conferir as quatro últimas pelos verifies:
+- [ ] A última change do registry é `escolas_scores_turnos` (#473; antes `escolas_scores_cor_declarada`) e o `deploy_db_dev` não
+      reportou erro. Conferir as cinco últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
       `psql edumaps_dev -f verify/escolas_scores_sem_registro.sql` (falha se houver 0 onde falta o registro ou sem `indices-v3` ou posterior) e
-      `psql edumaps_dev -f verify/escolas_scores_cor_declarada.sql` (falha se a diversidade não bater com a fórmula da `indices-v4`).
+      `psql edumaps_dev -f verify/escolas_scores_cor_declarada.sql` (falha se a diversidade não bater com a fórmula da `indices-v4`) e
+      `psql edumaps_dev -f verify/escolas_scores_turnos.sql` (falha se o atendimento não bater com a fórmula da `indices-v5`).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -135,7 +137,7 @@ Leva o template novo do nginx (só a SPA e `/api/`, PR #344), as travas de
 envio (#415/#416), planos, visão da rede e documento da rede, os totais das
 roscas e o "menor é melhor" (#421) e a ausência no financeiro e na folha
 (#422), os menus dos gráficos em PT-BR e a página de Análises sem jargão
-(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v4`, e `/api/fontes` termina na entrada `indices_edumaps`, #462 e #467; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v4.csv`, com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
+(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v5`, e `/api/fontes` termina na entrada `indices_edumaps`, #462 e #467; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v5.csv`, com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471, seguidas das do atendimento (`alunos_sala_turno` … `alimentacao`), #473; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
 template do Rexfile.
 
 - [ ] O bundle novo está no ar: a chave de envio está nele.
@@ -191,7 +193,7 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    ```
    Esperado: ~80% dos acidentes com município. Se faltar memória, rodar com
    `--arg apenas_marcos` depois de uma carga parcial (nota técnica 189).
-3. **Índices das escolas recalculados (#459, #467 e #471)**, nesta ordem, depois do
+3. **Índices das escolas recalculados (#459, #467, #471 e #473)**, nesta ordem, depois do
    `deploy_db_dev` e do `deploy_backend_dev` (a MV já sai recalculada da change;
    o `ranking.pl` precisa ser o da #467, que remove quem saiu do ranking):
    ```bash
@@ -199,11 +201,12 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    ./script/edumaps.pl eval 'app->build_controller->refresh_school_embeddings'   # escolas semelhantes
    ```
    Esperado: média do `score_diversidade_discente` perto de 3,7 (era 6,0 antes da #459 e 4,4 na `indices-v3`);
+   `score_capacidade_atendimento` das escolas públicas perto de 6,2 nos municípios com menos de 20 mil habitantes e de 5,6 nos com mais de 500 mil (#473);
    ~2.067 escolas com `score_capacitacao_docente` nulo e ~1.774 com a
    diversidade nula (Censo 2025); `analytics.ranking_escola` sem nenhuma linha
    de escola sem o índice (`capacitacao_docente`/`todas` com ~178,5 mil);
    `refresh_school_embeddings` termina com ~178 mil vetores. O IVET vem no
-   §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.6`).
+   §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.7`).
 
 ## 7. Isócrona ES/MG e IVET (#295)
 
@@ -227,7 +230,7 @@ mostra (esperado `2026-10-21`). A carga roda destacada no host do banco
 Depois, reprocessar o IVET pelo job `refresh_ivet` (fila `analytics`), como na
 validação de 2026-10-20, e conferir:
 
-- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.6` (#459 e #471: insumo de diversidade corrigido; #467: índice vazio sem registro).
+- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.7` (#459 e #471: insumo de diversidade corrigido; #467: índice vazio sem registro; #473: lotação por turno).
 - [ ] Publicáveis próximos dos 145 mil da última medição nacional.
 - [ ] Fechar a #295 e abrir a issue de Sul, Centro-Oeste e Norte (~47 mil
       escolas), condicionada a ampliar o disco do banco.

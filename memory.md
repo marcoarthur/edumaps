@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cg) — modo autônomo: décima avaliação da P4, #473 (PR #474) mergeado
+
+- O developer delegou por 4h (2026-11-17): avaliação, decisões, issue, PR e
+  merge, com aviso pelo Telegram a cada etapa.
+- Décima rodada da P4 ("porte semelhante, oferta parecida?"): **adotaria**
+  (mantido). RS-01: "alunos por sala" do atendimento ignorava os turnos
+  (16.220 escolas com 0 na parte, 14.673 com <35 por turno; ~40% da
+  diferença por porte). RS-02: partes fora da base → #473.
+- PR #474 (976e9a3): change `escolas_scores_turnos` (mat ÷ salas × turnos,
+  turnos = dm/dv/n > 0, mín. 1), `indices-v5`, `ivet-v1.7`; 5 partes do
+  atendimento no fim do bloco Índices. Por porte: 5,42→6,20 e 4,36→5,57.
+- Armadilhas: verify da #459 proibia dm/dv na definição inteira (agora
+  procura `qt_mat_bas_d\M`, a assinatura da soma antiga); `$MAT::float8`
+  de novo (usar `${MAT}`).
+- Nota técnica 222, ciclo `2026-11-17-atendimento-por-turno.md`. Abertas:
+  #454, #429, #295, #138, #368; deploy LXC (cinco changes de índices).
+
 ## Sessão 2026-11-17 (cf) — nona avaliação da P4, #471 (PR #472) mergeado
 
 - Nona rodada da P4 (SP, BA, RS, PA, GO; 72 mil escolas): **adotaria**
