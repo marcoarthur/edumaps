@@ -6,6 +6,7 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use List::Util ();
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 use Mojo::Util qw(decode);
@@ -277,10 +278,12 @@ subtest 'partes do índice de diversidade (#471)' => sub {
   }
   my $l = ler_csv($t->get_ok('/api/base-analise/csv?uf=AC&codigo_ibge=' . $MUN . '&blocos=indices')->tx);
   my @cab = @{ $l->[0] };
-  is [ @cab[ -17 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja
+  is [ @cab[ -25 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja
                                alunos_sala_turno turnos etapas_regulares prop_tempo_integral alimentacao
-                               gestores_formacao prop_gestores_espec_gestao alunos_por_gestor orgaos_colegiados prop_acesso_cargo_selecao)],
-    'partes da diversidade, do atendimento (#473) e da gestora (#475) no fim do bloco, antes de ano_censo e versao_indice';
+                               gestores_formacao prop_gestores_espec_gestao alunos_por_gestor orgaos_colegiados prop_acesso_cargo_selecao
+                               infra_basico infra_salas_equipamentos infra_acessibilidade infra_tecnologia
+                               energia_renovavel reciclagem_lixo area_verde_plantio educacao_ambiental)],
+    'partes da diversidade, do atendimento (#473), da gestora (#475), da infraestrutura e da sustentabilidade (#477) no fim do bloco, antes de ano_censo e versao_indice';
   my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices,inse')->tx);
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{diversidade_racial}[1], qr/sobre as matrículas com cor declarada.*Vazio: menos de metade/, 'parte racial no dicionário';
@@ -356,6 +359,39 @@ subtest 'partes do índice de capacidade gestora (#475)' => sub {
   like $d{prop_acesso_cargo_selecao}[1], qr/Vazio: escola privada/, 'acesso ao cargo vazio nas privadas no dicionário';
   like $d{alunos_por_gestor}[1], qr/Vazio: sem matrículas/, 'gestores por aluno vazio sem matrícula no dicionário';
   like $d{indice_capacidade_gestora}[1], qr/só na rede pública.*indices-v6/, 'método da gestora com a v6';
+};
+
+# #477 (RQ-02): as partes da infraestrutura e da sustentabilidade refazem os
+# dois índices, em todas as escolas de um município da MV.
+subtest 'partes da infraestrutura e da sustentabilidade (#477)' => sub {
+  my $s = $dbh->selectrow_hashref(q{
+    SELECT e.sg_uf, e.co_municipio::text AS mun
+      FROM clean.mv_escolas_scores s
+      JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+     WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ?
+     GROUP BY 1, 2 ORDER BY count(*) DESC LIMIT 1}, undef, $ANO);
+  SKIP: {
+    skip 'MV vazia', 3 unless $s;
+    my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->tx);
+    my %i; @i{ @{ $l->[0] } } = 0 .. $#{ $l->[0] };
+    my ($n, $infra, $sust) = (0, 0, 0);
+    for my $linha (@$l[1 .. $#$l]) {
+      my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; return undef if !defined $x || $x eq ''; $x =~ tr/,/./; 0 + $x };
+      next unless defined $v->('indice_infraestrutura');
+      $n++;
+      my $ri = 10 * (List::Util::sum(map { $v->($_) } qw(infra_basico infra_salas_equipamentos infra_acessibilidade infra_tecnologia)) / 4);
+      my $rs = 10 * (List::Util::sum(map { $v->($_) } qw(energia_renovavel reciclagem_lixo area_verde_plantio educacao_ambiental)) / 4);
+      $infra++ if abs($ri - $v->('indice_infraestrutura')) < 0.006;
+      $sust++  if abs($rs - $v->('indice_sustentabilidade')) < 0.006;
+    }
+    ok $n > 0, "$n escolas com o índice";
+    is $infra, $n, 'infraestrutura refeita pelos quatro grupos em todas';
+    is $sust, $n, 'sustentabilidade refeita pelas quatro partes em todas';
+  }
+  my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices')->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{infra_basico}[1], qr/esgoto da rede ou fossa séptica/, 'itens do básico no dicionário';
+  like $d{area_verde_plantio}[1], qr/meio ponto cada/, 'área verde e plantio no dicionário';
 };
 
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {

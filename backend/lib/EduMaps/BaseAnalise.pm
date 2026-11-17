@@ -143,6 +143,40 @@ my @GESTORA = (
    'Parte de 10% do índice de capacidade gestora: gestores que chegaram ao cargo por concurso, eleição ou processo seletivo ÷ gestores. Vazio: escola privada (o Censo não registra a escolha pela mantenedora, e a parte fica de fora do índice com o peso redistribuído) ou sem gestores', 1],
 );
 
+# #477 (RQ-02): as partes dos índices de infraestrutura e de
+# sustentabilidade, com as expressões de clean.mv_escolas_scores (lidas da
+# própria escola, e = censo_escolas). Como no índice, item sem resposta conta
+# como ausente (COALESCE 0), então as partes não ficam vazias.
+sub _itens (@c) { join(' + ', map { /^\(/ ? $_ : "COALESCE(e.$_,0)" } @c) }
+sub _ou (@c) { '(CASE WHEN ' . join(' OR ', map { "COALESCE(e.$_,0) = 1" } @c) . ' THEN 1 ELSE 0 END)' }
+my $FORMULA_INFRA = 'Índice = 10 × (infra_basico + infra_salas_equipamentos + infra_acessibilidade + infra_tecnologia) ÷ 4';
+my $FORMULA_SUST  = 'Índice = 10 × (energia_renovavel + reciclagem_lixo + area_verde_plantio + educacao_ambiental) ÷ 4';
+my $AUSENTE = 'Item sem resposta no Censo conta como ausente, como no índice';
+my @INFRA_PARTES = (
+  ['infra_basico', '(' . _itens(qw(in_agua_potavel in_energia_rede_publica), _ou(qw(in_esgoto_rede_publica in_esgoto_fossa_septica)),
+                                qw(in_lixo_servico_coleta in_banheiro)) . ')::float8 / 5',
+   "Parte de um quarto do índice de infraestrutura: água potável, energia da rede pública, esgoto da rede ou fossa séptica, coleta de lixo e banheiro, de 5 (0 a 1). $AUSENTE. $FORMULA_INFRA", 1],
+  ['infra_salas_equipamentos', '(' . _itens(_ou(qw(in_biblioteca in_biblioteca_sala_leitura)), qw(in_laboratorio_ciencias in_laboratorio_informatica
+                                in_quadra_esportes in_cozinha in_refeitorio in_sala_diretoria in_secretaria in_sala_professor)) . ')::float8 / 9',
+   "Parte de um quarto do índice de infraestrutura: biblioteca ou sala de leitura, laboratórios de ciências e de informática, quadra, cozinha, refeitório e salas da diretoria, da secretaria e dos professores, de 9 (0 a 1). $AUSENTE", 1],
+  ['infra_acessibilidade', '(' . _itens(qw(in_acessibilidade_rampas in_acessibilidade_corrimao in_acessibilidade_pisos_tateis
+                                in_acessibilidade_sinalizacao in_banheiro_pne)) . ')::float8 / 5',
+   "Parte de um quarto do índice de infraestrutura: rampas, corrimão, piso tátil, sinalização e banheiro adaptado, de 5 (0 a 1). $AUSENTE", 1],
+  ['infra_tecnologia', '(' . _itens(qw(in_computador in_internet in_equip_lousa_digital in_equip_multimidia),
+                                _ou(qw(in_equip_impressora in_equip_impressora_mult))) . ')::float8 / 5',
+   "Parte de um quarto do índice de infraestrutura: computador, internet, lousa digital, multimídia e impressora (ou multifuncional), de 5 (0 a 1). $AUSENTE", 1],
+);
+my @SUSTENTABILIDADE = (
+  ['energia_renovavel', _ou('in_energia_renovavel'),
+   "Parte de um quarto do índice de sustentabilidade: energia renovável (1 = sim, 0 = não). $AUSENTE. $FORMULA_SUST", 1],
+  ['reciclagem_lixo', _ou(qw(in_tratamento_lixo_reciclagem in_tratamento_lixo_reutiliza)),
+   "Parte de um quarto do índice de sustentabilidade: reciclagem ou reaproveitamento do lixo (1 = sim, 0 = não). $AUSENTE", 1],
+  ['area_verde_plantio', '(' . _ou('in_area_verde') . ' + ' . _ou('in_area_plantio') . ')::float8 / 2',
+   "Parte de um quarto do índice de sustentabilidade: área verde e área de plantio, meio ponto cada (0, 0,5 ou 1). $AUSENTE", 1],
+  ['educacao_ambiental', _ou(qw(in_educ_ambiental in_educ_amb_conteudo in_educ_amb_curricular in_educ_amb_eixo in_educ_amb_eventos in_educ_amb_projetos)),
+   "Parte de um quarto do índice de sustentabilidade: educação ambiental em qualquer forma do Censo (disciplina, conteúdo, currículo, eixo, eventos ou projetos), 1 = sim, 0 = não. $AUSENTE", 1],
+);
+
 my @DIVERSIDADE = (
   ['diversidade_racial',
    "CASE WHEN $MAT > 0 AND $DECL > 0 AND $DECL >= 0.5 * $MAT THEN 1 - ("
@@ -180,7 +214,7 @@ sub _indices_colunas {
       . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
       . 'índices ainda não recalculados depois de uma carga nova do Censo';
     ["indice_$_", "s.score_${_}::float8", "$d $vazio", 1]
-  } @INDICES ), @DIVERSIDADE, @ATENDIMENTO, @GESTORA ];
+  } @INDICES ), @DIVERSIDADE, @ATENDIMENTO, @GESTORA, @INFRA_PARTES, @SUSTENTABILIDADE ];
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
@@ -261,7 +295,7 @@ sub _blocos {
       colunas => \@ideb },
     # #465 (RY-01): os índices próprios, com a versão da fórmula.
     { id => 'indices', label => 'Índices do EduMaps', fonte => 'indices_edumaps',
-      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes dos índices de diversidade, de capacidade de atendimento e de capacidade gestora, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
+      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes dos índices de diversidade, de capacidade de atendimento, de capacidade gestora, de infraestrutura e de sustentabilidade (as da capacitação docente estão no bloco Docência), com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
       colunas => _indices_colunas() },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',

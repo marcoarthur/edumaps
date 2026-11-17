@@ -82,8 +82,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
-  não pelo INEP, e não dá para refazê-los só com as colunas da base (a
-  fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
+  não pelo INEP. Os seis se refazem com as partes que estão na base, pelo
+  [bloco R abaixo](#refazer-os-seis-índices-no-r). Cite com a
   versão (`versao_indice`, ex.: `indices-v6`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
@@ -122,8 +122,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **`prop_cor_nao_declarada`:** com metade ou mais das matrículas sem cor
     declarada, `diversidade_racial` fica vazia e o peso dela vai para as
     outras três;
-  - **para refazer o índice no R:**
-    `ifelse(is.na(diversidade_racial), 10 * (0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja) / 0.65, 10 * (0.35 * diversidade_racial + 0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc + 0.2 * prop_eja))`;
+  - **para refazer o índice no R:** `refeito_diversidade_discente`, no
+    [bloco R abaixo](#refazer-os-seis-índices-no-r);
   - **para modelar, use as partes:** a inclusão e a cor/raça podem ir em
     sentidos opostos.
 - **As partes do índice de capacidade de atendimento** (bloco Índices do
@@ -133,8 +133,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     e `alimentacao` (20%);
   - **as etapas:** `etapas_regulares` conta as etapas do ensino regular do
     Censo, que não são a soma das colunas `oferece_*`;
-  - **para refazer o índice no R:**
-    `10 * (0.4 * ifelse(is.na(alunos_sala_turno), 0, pmax(0, 1 - alunos_sala_turno / 50)) + 0.2 * etapas_regulares / 7 + 0.2 * prop_tempo_integral + 0.2 * ifelse(is.na(alimentacao), 0, alimentacao))`.
+  - **para refazer o índice no R:** `refeito_capacidade_atendimento`, no
+    [bloco R abaixo](#refazer-os-seis-índices-no-r).
 - **As partes do índice de capacidade gestora** (bloco Índices do
   EduMaps):
   - **as cinco partes:** `gestores_formacao` (30%, média entre superior e
@@ -146,8 +146,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `prop_acesso_cargo_selecao` nas privadas, onde o gestor é escolhido pela
     mantenedora. A parte vazia fica de fora, e o peso dela vai para as
     outras;
-  - **para refazer o índice no R:**
-    `{p3 <- pmin(1, 200 / alunos_por_gestor); 10 * (0.3 * gestores_formacao + 0.2 * prop_gestores_espec_gestao + 0.2 * ifelse(is.na(p3), 0, p3) + 0.2 * pmin(1, orgaos_colegiados / 5) + 0.1 * ifelse(is.na(prop_acesso_cargo_selecao), 0, prop_acesso_cargo_selecao)) / (0.7 + 0.2 * !is.na(p3) + 0.1 * !is.na(prop_acesso_cargo_selecao))}`;
+  - **para refazer o índice no R:** `refeito_capacidade_gestora`, no
+    [bloco R abaixo](#refazer-os-seis-índices-no-r);
   - **para comparar pública com privada,** deixe o acesso ao cargo de fora:
     ele só existe na rede pública.
 - **INSE vazio:** o INSE só existe para as escolas com alunos avaliados no
@@ -160,13 +160,71 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **o limite a 1:** a pós-graduação e a formação continuada são limitadas a
     1, como no índice. No Censo, quem tem mais de uma pós ou formação conta
     mais de uma vez;
-  - **para refazer o índice no R:**
-    `round(10 * (0.3 * prop_superior + 0.3 * prop_pos_graduacao + 0.2 * pmin(prop_efetivos, 1) + 0.2 * prop_formacao_continuada), 2)`;
+  - **para refazer o índice no R:** `refeito_capacitacao_docente`, no
+    [bloco R abaixo](#refazer-os-seis-índices-no-r);
   - **para modelar, use as partes:** elas podem se associar ao resultado em
     sentidos opostos, e o índice soma todas com peso positivo.
+- **As partes do índice de infraestrutura** (bloco Índices do EduMaps), de
+  0 a 1, com peso igual:
+  - **`infra_basico`:** água potável, energia da rede pública, esgoto da
+    rede ou fossa séptica, coleta de lixo e banheiro (de 5);
+  - **`infra_salas_equipamentos`:** biblioteca ou sala de leitura,
+    laboratórios de ciências e de informática, quadra, cozinha, refeitório e
+    salas da diretoria, da secretaria e dos professores (de 9);
+  - **`infra_acessibilidade`:** rampas, corrimão, piso tátil, sinalização e
+    banheiro adaptado (de 5);
+  - **`infra_tecnologia`:** computador, internet, lousa digital, multimídia
+    e impressora (de 5);
+  - **para separar o básico dos equipamentos,** use os grupos no modelo no
+    lugar do índice.
+- **As partes do índice de sustentabilidade** (bloco Índices do EduMaps),
+  com peso igual: `energia_renovavel` (1 = sim), `reciclagem_lixo`
+  (reciclagem ou reaproveitamento), `area_verde_plantio` (área verde e área
+  de plantio, meio ponto cada) e `educacao_ambiental` (em qualquer forma do
+  Censo).
+- Nas partes da infraestrutura e da sustentabilidade, como no índice, item
+  sem resposta no Censo conta como ausente.
 - O arquivo usa `;` como separador e vírgula decimal: abre direto no Excel.
   No R, `read.csv2()`; no Python, `pandas.read_csv(sep=";", decimal=",")`.
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.
+
+## Refazer os seis índices no R
+
+Com a base lida (`base <- read.csv2("base-analise-….csv")`), o bloco abaixo
+refaz os seis índices a partir das partes. Cada `refeito_*` bate com o
+`indice_*` da mesma escola, com diferença de até 0,01 (o índice é
+arredondado a duas casas). A parte vazia fica de fora, como no índice. Um
+teste automático roda este bloco contra uma amostra da base, então ele não
+fica diferente do índice sem aviso.
+
+```r
+base <- within(base, {
+  refeito_infraestrutura <- 10 * (infra_basico + infra_salas_equipamentos +
+    infra_acessibilidade + infra_tecnologia) / 4
+  refeito_sustentabilidade <- 10 * (energia_renovavel + reciclagem_lixo +
+    area_verde_plantio + educacao_ambiental) / 4
+  refeito_capacitacao_docente <- 10 * (0.3 * prop_superior +
+    0.3 * prop_pos_graduacao + 0.2 * pmin(prop_efetivos, 1) +
+    0.2 * prop_formacao_continuada)
+  refeito_diversidade_discente <- ifelse(is.na(diversidade_racial),
+    10 * (0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc +
+      0.2 * prop_eja) / 0.65,
+    10 * (0.35 * diversidade_racial + 0.25 * equilibrio_genero +
+      0.2 * prop_educacao_especial_cc + 0.2 * prop_eja))
+  refeito_capacidade_atendimento <- 10 * (
+    0.4 * ifelse(is.na(alunos_sala_turno), 0, pmax(0, 1 - alunos_sala_turno / 50)) +
+    0.2 * etapas_regulares / 7 + 0.2 * prop_tempo_integral +
+    0.2 * ifelse(is.na(alimentacao), 0, alimentacao))
+  tem_aluno_gestor <- !is.na(alunos_por_gestor)
+  tem_acesso <- !is.na(prop_acesso_cargo_selecao)
+  refeito_capacidade_gestora <- 10 * (0.3 * gestores_formacao +
+    0.2 * prop_gestores_espec_gestao +
+    0.2 * ifelse(tem_aluno_gestor, pmin(1, 200 / alunos_por_gestor), 0) +
+    0.2 * pmin(1, orgaos_colegiados / 5) +
+    0.1 * ifelse(tem_acesso, prop_acesso_cargo_selecao, 0)) /
+    (0.7 + 0.2 * tem_aluno_gestor + 0.1 * tem_acesso)
+})
+```
 
 ## Limitações conhecidas
 - Uma UF por vez. A base de uma região ou do Brasil inteiro, as séries de
