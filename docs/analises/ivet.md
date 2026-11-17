@@ -3,8 +3,10 @@
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
-> **Versão da fórmula**: `ivet-v1.6` (histórico: `ivet-v1.5`, `ivet-v1.4`, `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-17
-> (`ivet-v1.6`: insumo corrigido, sem mudar a agregação. A parte de cor/raça do
+> **Versão da fórmula**: `ivet-v1.7` (histórico: `ivet-v1.6`, `ivet-v1.5`, `ivet-v1.4`, `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-17
+> (`ivet-v1.7`: insumo corrigido, sem mudar a agregação. A parte de alunos por sala do
+> `score_capacidade_atendimento` passou a ser por sala e por turno, #473 (`indices-v5`).
+> `ivet-v1.6`: insumo corrigido, sem mudar a agregação. A parte de cor/raça do
 > `score_diversidade_discente` passou a ser sobre as matrículas com cor declarada,
 > vazia com menos de metade declarada e peso redistribuído, #471 (`indices-v4`).
 > `ivet-v1.5`: insumo corrigido, sem mudar a agregação. Escola sem registro de
@@ -120,7 +122,7 @@ agregação final** (os 6 scores vivem lado a lado). Base: escolas ativas
 
 | Score | Fórmula (resumo) |
 |-------|------------------|
-| `score_capacidade_atendimento` | `0.4·10·(1 − (qt_mat_bas/qt_salas_utilizadas)/50) + 0.2·(etapas/7·10) + 0.2·(qt_mat_bas_int/qt_mat_bas·10) + 0.2·(alimentação?10:0)` |
+| `score_capacidade_atendimento` | `0.4·10·(1 − (qt_mat_bas/(qt_salas_utilizadas·turnos))/50) + 0.2·(etapas/7·10) + 0.2·(qt_mat_bas_int/qt_mat_bas·10) + 0.2·(alimentação?10:0)`. Turnos = matutino, vespertino e noturno com matrícula (mín. 1), desde `indices-v5` (#473); antes, sem os turnos |
 | `score_infraestrutura` | `média( A,B,C,D )` onde A=5 colunas básicas, B=9 itens pedagógicos, C=5 de acessibilidade, D=5 de tecnologia (cada `÷N·10`) |
 | `score_capacitacao_docente` | `0.3·sup_grad/quadro·10 + 0.3·pós/quadro·10 + 0.2·concurso/quadro·10 + 0.2·especializações/quadro·10` |
 | `score_diversidade_discente` | `0.35·racial + 0.25·gênero + 0.20·inclusão + 0.20·EJA` (cada bloco em 0–10). Cor/raça = `1 − Σ(cor/declaradas)²` sobre as matrículas com cor declarada desde `indices-v4` (#471); com menos de metade declarada, fica de fora e o índice é `(0.25·gênero + 0.20·inclusão + 0.20·EJA)/0.65`. Inclusão = `qt_mat_esp_cc/qt_mat_bas` (educação especial em classe comum), desde `ivet-v1.4` (#459); até a `ivet-v1.3` somava `qt_mat_bas_d+dm+dv`, que são **turnos** (componente ≈ 9,8 em quase toda escola) |

@@ -253,6 +253,7 @@ subtest 'infraestrutura básica (#457)' => sub {
   like $mv->indicator_registry->{infraestrutura}{metodo}, qr/Não é infraestrutura básica/, 'método do índice antigo';
   like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/educação especial em classe comum.*da inclusão na indices-v2/, 'diversidade: inclusão corrigida (#459)';
   like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/com cor declarada.*corrigida na versão indices-v4/, 'diversidade: cor/raça sobre os declarados (#471)';
+  like $mv->indicator_registry->{capacidade_atendimento}{metodo}, qr/alunos por sala e por turno.*indices-v5/, 'atendimento: lotação por turno (#473)';
   $limpa3->();
 };
 

@@ -98,15 +98,16 @@ São sobretudo centros de atendimento especializado e outras escolas sem turma
 regular, que antes apareciam no fim da lista com 0.
 
 **Versão da fórmula:** os seis índices são calculados pelo EduMaps, e cada
-mudança de fórmula ganha uma versão nova. A atual é a **`indices-v4`**, de
-17/11/2026: a cor/raça da diversidade passa a ser sobre as matrículas com
-cor declarada. A `indices-v3`, do mesmo dia, deixou sem o índice a escola
+mudança de fórmula ganha uma versão nova. A atual é a **`indices-v5`**, de
+17/11/2026: a lotação da capacidade de atendimento passa a ser por turno.
+A `indices-v4`, do mesmo dia, mediu a cor/raça da diversidade só com quem
+declarou a cor. A `indices-v3`, também do mesmo dia, deixou sem o índice a escola
 sem registro, em vez de 0. A
 `indices-v2`, de 16/11/2026, corrigiu a inclusão na diversidade, e a
 `indices-v1`, de 04/06/2026, é a fórmula original. A tela
 mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
 traz a coluna `versao_indice` em toda linha e a versão no nome do arquivo
-(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v4.csv`).
+(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v5.csv`).
 Para os índices de todas as escolas de uma UF de uma vez, use a
 [base de análise](base-de-analise.md), bloco "Índices do EduMaps". Para citar, informe a versão:
 notas de versões diferentes não são comparáveis. O histórico está em
@@ -127,8 +128,12 @@ notas de versões diferentes não são comparáveis. O histórico está em
   falta. Uma escola sem água, energia e esgoto pode ficar no meio da
   lista, à frente de escolas que têm o básico mas poucas salas e
   equipamentos.
-- **Capacidade de atendimento:** alunos por sala (40%), etapas oferecidas
-  (20%), tempo integral (20%) e alimentação escolar (20%).
+- **Capacidade de atendimento:** alunos por sala e por turno (40%), etapas
+  oferecidas (20%), tempo integral (20%) e alimentação escolar (20%). A
+  lotação divide as matrículas pelas salas e pelos turnos com matrícula
+  (matutino, vespertino e noturno). Antes da `indices-v5` (17/11/2026), a
+  conta não considerava os turnos, e a escola de dois ou três turnos
+  parecia lotada.
 - **Capacitação docente:** ensino superior (30%), pós-graduação (30%),
   concursados (20%) e formação continuada (20%).
 - **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e

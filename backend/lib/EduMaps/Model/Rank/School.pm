@@ -43,8 +43,10 @@ has network_map => sub {
 # change. O teste t/02-models/indices_versao.t compara o COMMENT com
 # $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
 # deploy da fórmula. Correção de texto do %METODO não sobe a versão.
-our $INDICES_VERSAO = 'indices-v4';
+our $INDICES_VERSAO = 'indices-v5';
 our @INDICES_HISTORICO = (
+  { versao => 'indices-v5', data => '2026-11-17',
+    mudou  => 'Capacidade de atendimento: a parte de alunos por sala passa a ser por sala e por turno (antes, todas as matrículas sobre as salas, e a escola de dois ou três turnos parecia lotada).' },
   { versao => 'indices-v4', data => '2026-11-17',
     mudou  => 'Diversidade discente: a parte de cor/raça passa a ser calculada sobre as matrículas com cor declarada (antes, sobre o total, e a escola que não declarava parecia mais diversa). Com menos de metade das matrículas com cor declarada, a parte de cor/raça fica de fora e o peso dela vai para as outras três partes.' },
   { versao => 'indices-v3', data => '2026-11-17',
@@ -68,11 +70,12 @@ our %METODO = (
     . 'Tecnologia: computador, internet, lousa digital, multimídia e impressora. '
     . 'Não é infraestrutura básica: o básico pesa um quarto, e energia de gerador ou solar conta como falta. Para água, energia, esgoto e banheiro, use "Infraestrutura básica". '
     . $SEM_DADO,
-  capacidade_atendimento => 'Índice de 0 a 10 (maior é melhor). 40%: alunos por sala (10 sem lotação, 0 com 50 ou mais por sala). '
+  capacidade_atendimento => 'Índice de 0 a 10 (maior é melhor). 40%: alunos por sala e por turno (matrículas ÷ salas × turnos com matrícula, contando matutino, vespertino e noturno, 10 sem lotação, 0 com 50 ou mais). '
     . '20%: etapas oferecidas, de 7 (creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional). '
     . '20%: proporção de matrículas em tempo integral. 20%: alimentação escolar. '
     . 'Sem salas informadas, a parte de alunos por sala conta 0. '
-    . 'Escola sem matrículas no Censo fica sem o índice (vazio, não 0). ' . $SEM_DADO,
+    . 'Escola sem matrículas no Censo fica sem o índice (vazio, não 0). '
+    . 'A parte de alunos por sala passou a contar os turnos na versão indices-v5, de 17/11/2026 (antes, a escola de dois ou três turnos parecia lotada). ' . $SEM_DADO,
   capacitacao_docente => 'Índice de 0 a 10 (maior é melhor). 30%: docentes com ensino superior. '
     . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados. '
     . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '

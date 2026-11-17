@@ -176,3 +176,4 @@ escolas_scores_diversidade_esp [analytics_cluster_execucoes] 2026-11-16T20:00:00
 escolas_scores_versao [escolas_scores_diversidade_esp] 2026-11-16T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # #462: versao citavel dos indices (indices-v2) no comentario da MV
 escolas_scores_sem_registro [escolas_scores_versao] 2026-11-17T10:00:00Z Marco Arthur <arthurpbs@gmail.com> # #467: escola sem registro de matriculas, docentes ou gestores fica sem o indice (NULL), nao com 0; indices-v3
 escolas_scores_cor_declarada [escolas_scores_sem_registro] 2026-11-17T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #471: parte racial da diversidade sobre as matriculas com cor declarada; vazia com menos de metade declarada e peso redistribuido; indices-v4
+escolas_scores_turnos [escolas_scores_cor_declarada] 2026-11-17T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #473: alunos por sala e por turno na capacidade de atendimento; indices-v5

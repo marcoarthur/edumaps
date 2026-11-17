@@ -101,6 +101,25 @@ my $DECL = '(COALESCE(mt.qt_mat_bas_branca,0) + COALESCE(mt.qt_mat_bas_preta,0) 
 sub _sobre_mat ($num) { "CASE WHEN $MAT > 0 THEN LEAST(1, ($num)::float8 / $MAT) END" }
 my $FORMULA_DIV = 'Índice = 10 × (0,35 × diversidade_racial + 0,25 × equilibrio_genero + 0,20 × prop_educacao_especial_cc + 0,20 × prop_eja), '
                 . 'ou, com diversidade_racial vazia, 10 × (0,25 × equilibrio_genero + 0,20 × prop_educacao_especial_cc + 0,20 × prop_eja) ÷ 0,65';
+# #473 (RS-02): as partes do índice de capacidade de atendimento, com as
+# expressões de clean.mv_escolas_scores (escolas_scores_turnos).
+my $TURNOS = 'GREATEST(1, (COALESCE(mt.qt_mat_bas_dm,0) > 0)::int + (COALESCE(mt.qt_mat_bas_dv,0) > 0)::int + (COALESCE(mt.qt_mat_bas_n,0) > 0)::int)';
+my $FORMULA_ATEND = 'Índice = 10 × (0,40 × máximo(0, 1 − alunos_sala_turno ÷ 50) + 0,20 × etapas_regulares ÷ 7 + 0,20 × prop_tempo_integral + 0,20 × alimentacao), '
+                  . 'com alunos_sala_turno vazio contando 0 na primeira parte e alimentacao vazia contando 0';
+my @ATENDIMENTO = (
+  ['alunos_sala_turno', "CASE WHEN $MAT > 0 AND e.qt_salas_utilizadas > 0 THEN ${MAT}::float8 / (e.qt_salas_utilizadas * $TURNOS) END",
+   "Parte de 40% do índice de capacidade de atendimento: matrículas ÷ (salas utilizadas × turnos). Vazio: sem salas informadas (a parte conta 0) ou sem matrículas. $FORMULA_ATEND", 1],
+  ['turnos', "CASE WHEN $MAT > 0 THEN $TURNOS END",
+   'Turnos com matrícula na escola: matutino, vespertino e noturno (mínimo 1). Escola só de tempo integral conta 1', 1],
+  ['etapas_regulares', '(COALESCE(e.in_comum_creche,0) + COALESCE(e.in_comum_pre,0) + COALESCE(e.in_comum_fund_ai,0) + COALESCE(e.in_comum_fund_af,0)'
+     . ' + COALESCE(e.in_comum_medio_medio,0) + COALESCE(e.in_eja,0) + COALESCE(e.in_profissionalizante,0))',
+   'Parte de 20% do índice de capacidade de atendimento: etapas oferecidas no ensino regular, de 7 (creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional). Não é a soma das colunas oferece_*, que seguem outra definição do Censo', 1],
+  ['prop_tempo_integral', "CASE WHEN $MAT > 0 THEN COALESCE(mt.qt_mat_bas_int,0)::float8 / $MAT END",
+   'Parte de 20% do índice de capacidade de atendimento: matrículas em tempo integral ÷ matrículas', 1],
+  ['alimentacao', 'e.in_alimentacao',
+   'Parte de 20% do índice de capacidade de atendimento: oferece alimentação escolar (1 = sim, 0 = não). Vazio: sem resposta no Censo, que conta 0 no índice', 1],
+);
+
 my @DIVERSIDADE = (
   ['diversidade_racial',
    "CASE WHEN $MAT > 0 AND $DECL > 0 AND $DECL >= 0.5 * $MAT THEN 1 - ("
@@ -138,7 +157,7 @@ sub _indices_colunas {
       . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
       . 'índices ainda não recalculados depois de uma carga nova do Censo';
     ["indice_$_", "s.score_${_}::float8", "$d $vazio", 1]
-  } @INDICES ), @DIVERSIDADE ];
+  } @INDICES ), @DIVERSIDADE, @ATENDIMENTO ];
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
@@ -219,7 +238,7 @@ sub _blocos {
       colunas => \@ideb },
     # #465 (RY-01): os índices próprios, com a versão da fórmula.
     { id => 'indices', label => 'Índices do EduMaps', fonte => 'indices_edumaps',
-      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes do índice de diversidade, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
+      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes dos índices de diversidade e de capacidade de atendimento, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
       colunas => _indices_colunas() },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',
