@@ -220,7 +220,7 @@
       <h2 id="baixar" class="font-semibold text-gray-900">3. Baixar</h2>
       <p class="text-xs text-gray-600" data-testid="versao-dados">
         {nColunas} colunas, mais a versão dos dados no fim de cada linha:
-        Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}.
+        Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}{#if blocos.includes("indices") && catalogo.anos.indices}{" · "}índices {catalogo.anos.indices}{/if}.
         Separador ";" e vírgula decimal (abre direto no Excel). Ausência é célula vazia, nunca zero.
       </p>
       {#if idebAntigo}{@render avisoAnos("aviso-anos-baixar")}{/if}

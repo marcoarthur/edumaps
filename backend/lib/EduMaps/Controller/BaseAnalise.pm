@@ -55,6 +55,7 @@ sub _nome ($self, $prefixo, $v, $blocos, $anos, $ano_ideb) {
   push @p, "censo$anos->{censo}" if defined $anos->{censo};
   push @p, "ideb$ano_ideb" if $quer{desempenho} && defined $ano_ideb;
   push @p, "inse$anos->{inse}" if $quer{inse} && defined $anos->{inse};
+  push @p, $anos->{indices} if $quer{indices} && defined $anos->{indices};    # #465
   return join('-', @p) . '.csv';
 }
 

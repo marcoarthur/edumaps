@@ -35,6 +35,15 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("versao-dados")).toHaveTextContent("Censo Escolar 2025 · IDEB 2023.");
   });
 
+  it("índices do EduMaps: bloco no link e versão da fórmula na linha da versão (#465)", async () => {
+    abrir("?uf=ES");
+    await screen.findByTestId("total-recorte");
+    expect(screen.getByTestId("versao-dados")).not.toHaveTextContent("índices");
+    await fireEvent.click(screen.getByLabelText(/Índices do EduMaps/));
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toBe("/api/base-analise/csv?uf=ES&blocos=indices");
+    expect(screen.getByTestId("versao-dados")).toHaveTextContent("Censo Escolar 2025 · índices indices-v2.");
+  });
+
   it("edição do IDEB escolhida vai no link; sem o bloco, o ano some", async () => {
     abrir("?uf=ES&blocos=desempenho&ano_ideb=2021");
     const sel = await screen.findByLabelText("Edição do IDEB");

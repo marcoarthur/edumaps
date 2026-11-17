@@ -3,6 +3,7 @@ use Mojo::Base -strict, -signatures;
 use utf8;
 use Carp qw(croak);
 use EduMaps::Fontes;
+use EduMaps::Model::Rank::School ();
 use EduMaps::Porte;
 use EduMaps::Regiao;
 
@@ -87,6 +88,21 @@ my @ETAPAS_OFERTA = (
 # Docência: as mesmas fórmulas do agrupamento (Task::Clustering). A contagem
 # é a do Censo Escolar, por escola: quem dá aula em mais de uma escola conta
 # em cada uma (#444, BA-04).
+# #465 (RY-01): os seis índices do EduMaps (clean.mv_escolas_scores), com o
+# método do ranking (%METODO; sem ';', que o dicionário dos testes separa).
+my @INDICES = qw(infraestrutura capacidade_atendimento capacitacao_docente
+                 diversidade_discente capacidade_gestora sustentabilidade);
+sub _indices_colunas {
+  no warnings 'once';
+  my $met = \%EduMaps::Model::Rank::School::METODO;
+  return [ map {
+    my $d = $met->{$_} =~ s/;\s*/, /gr;
+    ["indice_$_", "s.score_${_}::float8",
+     "$d Vazio: a escola não tem o índice no ano do Censo da base (índices ainda não recalculados depois de uma carga nova)", 1]
+  } @INDICES ];
+}
+sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
+
 my $DENOM = 'docentes da escola (qt_docentes)';
 my @DOCENCIA = (
   [qt_docentes             => 'd.qt_doc_bas', 'Docentes da educação básica da escola. Quem dá aula em mais de uma escola conta em cada uma (contagem do Censo Escolar)'],
@@ -142,6 +158,10 @@ sub _blocos {
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
       descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida. O IDEB falta sobretudo nas escolas pequenas, rurais e sem infraestrutura: marque também as etapas oferecidas.',
       colunas => \@ideb },
+    # #465 (RY-01): os índices próprios, com a versão da fórmula.
+    { id => 'indices', label => 'Índices do EduMaps', fonte => 'indices_edumaps',
+      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
+      colunas => _indices_colunas() },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',
       colunas => [
@@ -182,6 +202,7 @@ sub anos ($class, $dbh) {
     inse  => defined $inse ? 0 + $inse : undef,
     ideb  => [ map { 0 + $_ } @$ideb ],
     populacao => $pop,
+    indices => $class->indices_versao,
   };
 }
 
@@ -229,6 +250,7 @@ sub colunas ($class, $blocos, $anos, $ano_ideb) {
   push @versao, ['ano_ideb', $ano_ideb, $class->descricao_ano_ideb($anos, $ano_ideb), 'ideb'] if $quer{desempenho};
   push @versao, ['ano_inse', $anos->{inse}, 'Edição do SAEB do INSE', 'inse'] if $quer{inse};
   push @versao, ['ano_populacao', $anos->{populacao}, 'Ano da estimativa de população', 'ibge_populacao'] if $quer{porte};
+  push @versao, ['versao_indice', $anos->{indices}, 'Versão da fórmula dos índices do EduMaps (o histórico está em Fontes e metodologia)', 'indices_edumaps'] if $quer{indices};
   return (\@b, \@versao);
 }
 
@@ -262,6 +284,9 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
     $joins .= ' LEFT JOIN clean.inse x ON x.id_escola = e.co_entidade AND x.nu_ano_saeb = ?';
     push @jb, $anos->{inse} // -1;
   }
+  if ($tem{indices}) {
+    $joins .= ' LEFT JOIN clean.mv_escolas_scores s ON s.co_entidade = e.co_entidade AND s.nu_ano_censo = e.nu_ano_censo';
+  }
   if ($tem{porte}) {
     $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text';
   }
@@ -276,7 +301,7 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
     my $r = $_;
     [ (map { $num[$_] && defined $r->[$_] ? 0 + $r->[$_] : $r->[$_] } 0 .. $#$r), @v ]
   } @$rows;
-  return (\@cab, \@out, [ @num, (1) x @$versao ]);
+  return (\@cab, \@out, [ @num, map { $_->[0] eq 'versao_indice' ? 0 : 1 } @$versao ]);
 }
 
 # Dicionário: uma linha por coluna da base, com a fonte e o link oficial.
@@ -284,7 +309,8 @@ sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef) {
   my $anos = $class->anos($dbh);
   my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb);
   my %fonte = map { $_->{id} => $_ } @EduMaps::Fontes::CATALOGO;
-  my %ano = (censo => $anos->{censo}, ideb => $ano_ideb, inse => $anos->{inse}, ibge_populacao => $anos->{populacao});
+  my %ano = (censo => $anos->{censo}, ideb => $ano_ideb, inse => $anos->{inse}, ibge_populacao => $anos->{populacao},
+             indices_edumaps => $anos->{censo});
   my @linhas;
   for my $b (@$bl) {
     my $f = $fonte{ $b->{fonte} };

@@ -17,7 +17,7 @@
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
   import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
-  import { tabelaRedes, tabelaEscolas } from "../utils/exportar.js";
+  import { tabelaRedes, tabelaEscolas, nomeCsvEscolas } from "../utils/exportar.js";
 
   const inicial = new URLSearchParams(window.location.search);
 
@@ -234,7 +234,7 @@
   function exportarEscolas() {
     const e = escolas;
     baixarCsv(
-      `ranking-escolas-${e.municipio.codigo_ibge}-${e.indicador.id}-${e.ano}.csv`,
+      nomeCsvEscolas(e),
       csvDe(tabelaEscolas(e, escolasOrdenadas)),
     );
   }

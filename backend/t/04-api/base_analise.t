@@ -9,6 +9,7 @@ use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 use Mojo::Util qw(decode);
+use EduMaps::Model::Rank::School;
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
@@ -71,11 +72,12 @@ sub ler_csv ($tx) {
 
 subtest 'catálogo e total do recorte' => sub {
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->status_is(200)->tx->res->json;
-  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho inse porte)], 'blocos (etapas depois da identificação, #461)';
+  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho indices inse porte)], 'blocos (etapas depois da identificação, #461; índices depois do IDEB, #465)';
   is $r->{total}, 2, 'só as escolas em funcionamento';
   is $r->{anos}{censo}, $ANO, 'ano do Censo';
   ok( (grep { $_ == $IDEB } @{ $r->{anos}{ideb} }), 'edições do IDEB');
   is $r->{anos}{populacao}, '2025', 'ano da população';
+  is $r->{anos}{indices}, $EduMaps::Model::Rank::School::INDICES_VERSAO, 'versão dos índices (#465)';
   ok !exists $r->{blocos}[1]{colunas}[0]{sql}, 'sem expressão SQL no catálogo';
   is $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN&rede=estadual")->tx->res->json->{total}, 1, 'filtro de rede';
 };
@@ -167,6 +169,49 @@ subtest 'dicionário' => sub {
   like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';
   like $d{latitude}[1], qr/como declarada ao Censo Escolar, sem verificação/, 'coordenada no dicionário (#452)';
   ok !$d{inse_media}, 'só os blocos pedidos';
+};
+
+# #465 (RY-01): os índices do EduMaps. A MV só se refaz com REFRESH (pesado
+# e global), então o teste usa uma escola que já está nela.
+subtest 'índices do EduMaps (#465)' => sub {
+  my $V = $EduMaps::Model::Rank::School::INDICES_VERSAO;
+  my $s = $dbh->selectrow_hashref(q{
+    SELECT e.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun, s.score_infraestrutura::float8 AS infra,
+           s.score_diversidade_discente::float8 AS div
+      FROM clean.mv_escolas_scores s
+      JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+     WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ?
+     ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+  SKIP: {
+    skip 'MV de índices vazia no ano do Censo', 8 unless $s;
+    my $tx = $t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->status_is(200)
+      ->header_like('Content-Disposition' => qr/-censo\Q$ANO\E-\Q$V\E\.csv"/)->tx;
+    my $l = ler_csv($tx);
+    my @cab = @{ $l->[0] };
+    my %i; @i{@cab} = 0 .. $#cab;
+    is [ grep { /^indice_/ } @cab ],
+      [map {"indice_$_"} qw(infraestrutura capacidade_atendimento capacitacao_docente diversidade_discente capacidade_gestora sustentabilidade)],
+      'as seis colunas, na ordem';
+    is [@cab[-2, -1]], [qw(ano_censo versao_indice)], 'versão da fórmula no fim';
+    my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
+    my $num = sub ($v) { defined $v ? (0 + $v == int $v ? sprintf('%d', $v) : sprintf('%.6g', $v) =~ s/\./,/r) : '' };
+    is [ @$linha[ @i{qw(indice_infraestrutura indice_diversidade_discente)} ] ], [ $num->($s->{infra}), $num->($s->{div}) ],
+      'valores iguais aos da MV';
+    is $linha->[-1], $V, 'versão em toda linha, como texto';
+  }
+
+  my $sem = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN")->tx);
+  ok !(grep { /^indice_|versao_indice/ } @{ $sem->[0] }), 'sem o bloco, sem índices nem versão';
+
+  my $tx = $t->get_ok('/api/base-analise/dicionario?blocos=indices')->status_is(200)
+    ->header_like('Content-Disposition' => qr/-\Q$V\E\.csv"/)->tx;
+  my $d = ler_csv($tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{indice_diversidade_discente}[1], qr/educação especial em classe comum/, 'método do índice no dicionário';
+  like $d{indice_sustentabilidade}[1], qr/Energia renovável, reciclagem/, '";" do método trocado por vírgula';
+  like $d{indice_infraestrutura}[3], qr/Índices do EduMaps \(EduMaps\)/, 'fonte: Índices do EduMaps';
+  like $d{indice_infraestrutura}[5], qr{rankings\.md#o-que-cada}, 'link para o método';
+  is $d{versao_indice}[4], $V, 'versão no dicionário';
 };
 
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {

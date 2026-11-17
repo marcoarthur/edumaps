@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rotuloRecorte, tabelaRedes, tabelaEscolas } from "./exportar.js";
+import { rotuloRecorte, tabelaRedes, tabelaEscolas, nomeCsvEscolas } from "./exportar.js";
 import { REDES_FIXTURE, ESCOLAS_FIXTURE } from "../mocks/fixtures.js";
 
 describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
@@ -54,5 +54,11 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     expect(t.cabecalho.at(-1)).toBe("versao_indice");
     for (const l of t.linhas) expect(l.at(-1)).toBe("indices-v2");
     expect(tabelaEscolas(ESCOLAS_FIXTURE, ESCOLAS_FIXTURE.escolas).cabecalho).not.toContain("versao_indice");
+  });
+
+  it("nome do CSV das escolas leva a versão só com índice do EduMaps (#465)", () => {
+    const e = { ...ESCOLAS_FIXTURE, indicador: { id: "diversidade_discente", versao: "indices-v2" } };
+    expect(nomeCsvEscolas(e)).toBe(`ranking-escolas-${e.municipio.codigo_ibge}-diversidade_discente-${e.ano}-indices-v2.csv`);
+    expect(nomeCsvEscolas(ESCOLAS_FIXTURE)).toBe(`ranking-escolas-${ESCOLAS_FIXTURE.municipio.codigo_ibge}-${ESCOLAS_FIXTURE.indicador.id}-${ESCOLAS_FIXTURE.ano}.csv`);
   });
 });
