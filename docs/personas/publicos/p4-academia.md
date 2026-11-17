@@ -90,7 +90,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (2026-11-17, **adotaria**): RR-01 e RR-02, detalhes da capacidade gestora
   → #475 (fórmula, `indices-v6`), entregues (#476). Décima segunda rodada (2026-11-17, **adotaria**): RQ-01 (expressão R da
   ajuda errada para a capacidade gestora) e RQ-02 (infraestrutura e
-  sustentabilidade sem partes na base) → aguardam a aprovação da issue.
+  sustentabilidade sem partes na base) → #477.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

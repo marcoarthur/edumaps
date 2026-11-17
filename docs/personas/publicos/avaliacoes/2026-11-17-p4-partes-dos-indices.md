@@ -97,7 +97,8 @@ rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue.
+Issue aberta com a aprovação do developer (2026-11-17): **#477** (RQ-01 e
+RQ-02 juntas).
 
 ### Proposta
 
