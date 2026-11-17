@@ -82,3 +82,13 @@ developer até 7h de 18/11), depois da entrega da décima terceira rodada:
 
 Modo autônomo: abri a issue **#481** (RO-01 e RO-02 juntas), decidi o plano
 e sigo para a implementação, com aviso pelo Telegram.
+
+## Andamento
+
+- 2026-11-17: #481 (PR #482) mergeado em modo autônomo: RO-01 e RO-02
+  resolvidos (agrupamento por IDEB/SAEB numa etapa, obrigatória; etapa no
+  rótulo, no link e no CSV; infraestrutura com os itens "inexistente"). ES,
+  anos iniciais: IDEB por grupo 5,25 / 5,63 / 6,13 / 7,02, em ordem.
+  Fechamento em
+  [`../ciclos/2026-11-17-agrupamento-etapa.md`](../ciclos/2026-11-17-agrupamento-etapa.md).
+  Nenhum achado aberto.

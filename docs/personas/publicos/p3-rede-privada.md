@@ -62,6 +62,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto direto, fora da dor central (#429): privada sem o 0 no acesso ao cargo.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
+- [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

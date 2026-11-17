@@ -65,6 +65,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p4--academia-pesquisadora): adotaria (mantido). RR-01 e RR-02 resolvidos; nenhum achado aberto da décima primeira avaliação.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p4--academia-pesquisadora): adotaria (mantido). RQ-01 e RQ-02 resolvidos; nenhum achado aberto da décima segunda avaliação.
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p4--academia-pesquisadora): adotaria (mantido), com a comparação de redes. RP-01 a RP-04 resolvidos; nenhum achado aberto da décima terceira avaliação.
+- [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o agrupamento por desempenho. RO-01 e RO-02 resolvidos; nenhum achado aberto da décima quarta avaliação.
 
 ## Pendências
 
@@ -96,7 +97,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação de redes): RP-01 (escolas fechadas contadas), RP-02 (n e etapa
   do perfil), RP-03 e RP-04 (detalhes) → #479, entregues (#480). Décima quarta rodada (2026-11-17, **adotaria**, sem o
   agrupamento por desempenho): RO-01 (etapas misturadas) e RO-02 (fossa
-  como falta) → #481 (modo autônomo).
+  como falta) → #481 (modo autônomo), entregues (#482).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

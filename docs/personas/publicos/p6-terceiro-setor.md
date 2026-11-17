@@ -59,6 +59,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: "privadas com gestão pior" sem a parte que só existe na pública.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a conta da ajuda é testada.
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: o número de escolas que funcionam.
+- [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "alto desempenho" não é só ensino médio.
 
 ## Pendências
 

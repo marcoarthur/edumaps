@@ -66,6 +66,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto: escola municipal com matrícula sem mudança.
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: grupos da infraestrutura na base.
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: só as escolas que funcionam.
+- [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: fossa não é falta no agrupamento.
 
 ## Pendências
 

@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (ck) — modo autônomo: décima quarta avaliação da P4, #481 (PR #482) mergeado
+
+- Décima quarta rodada da P4 (agrupamento por desempenho, ES): adotaria,
+  sem o agrupamento. RO-01: `school_indicators` tinha a MÉDIA ENTRE ETAPAS
+  da escola; SAEB cresce com a série, IDEB cai → "Alto" (IDEB 5,15) abaixo
+  de "Baixo" (5,50); grupos = etapa oferecida. RO-02: infra preset com
+  `*_rede_publica` (70.538 escolas com fossa como falta) → #481.
+- PR #482 (9a35991): `etapa` obrigatória quando as features usam IDEB
+  (`EduMaps::Presets->usa_ideb`); SQL filtra `etapa = ?`; etapa no rótulo,
+  em `parametros`, no CSV (`etapa_ideb`, "misturadas" nas antigas) e na
+  tela; infra com `in_energia_inexistente`/`in_esgoto_inexistente` (−1).
+  ES anos iniciais: grupos 5,25/5,63/6,13/7,02.
+- Três regras de IDEB no produto: base e comparação por etapa; agrupamento
+  por etapa (agora); perfil analítico = etapa de maior nota (rotulado).
+- Nota técnica 226, ciclo `2026-11-17-agrupamento-etapa.md`.
+
 ## Sessão 2026-11-17 (cj) — décima terceira avaliação da P4, #479 (PR #480) mergeado
 
 - Décima terceira rodada da P4 (comparação de redes, Salvador): adotaria,
