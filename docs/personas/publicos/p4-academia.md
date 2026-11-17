@@ -85,11 +85,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio)
   → #471, entregues (#472). Décima rodada (2026-11-17, **adotaria**, sem o
   atendimento): RS-01 (alunos por sala sem os turnos) e RS-02 (partes do
-  atendimento fora da base) → #473, entregues (#474). Nenhum achado aberto.
+  atendimento fora da base) → #473, entregues (#474). Décima primeira rodada
+  (2026-11-17, **adotaria**): RR-01 e RR-02, detalhes da capacidade gestora
+  → #475 (não implementada; decisão do developer).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima primeira rodada, capacidade gestora)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-17-p4-gestora.md`](avaliacoes/2026-11-17-p4-gestora.md).
+
+**O que tentou:**
+- Fechar a revisão dos seis índices, procurando dado ausente que vira valor.
+
+**O que funciona para ela:**
+- a lotação por turno e as partes do atendimento;
+- infraestrutura, sustentabilidade e colegiados sem resposta vazia.
+
+**Barreiras:**
+- RR-01 (detalhe): a escola sem matrícula conta 0 em "gestores por aluno"
+  (1.774 escolas).
+- RR-02 (detalhe): "acesso ao cargo" vale 0 em toda privada, por
+  construção.
 
 ### 2026-11-17 — Análises públicas (décima rodada, oferta e turnos)
 
