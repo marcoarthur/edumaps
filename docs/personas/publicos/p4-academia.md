@@ -78,11 +78,37 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`),
   entregues (#468). Oitava rodada (2026-11-17, **adotaria**): RW-01 (partes do
   índice de capacitação fora da base) e RW-02 (pesos normativos não ditos),
-  → #469, entregues (#470). Nenhum achado aberto.
+  → #469, entregues (#470). Nona rodada (2026-11-17, **adotaria**, sem
+  a diversidade): RT-01 (parte racial mede a cor não declarada), RT-02
+  (partes da diversidade fora da base) e RT-03 (motivo do INSE vazio),
+  aguardando a aprovação do developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (nona rodada, regiões e diversidade)
+
+**Veredito:** **adotaria** (mantido), sem o índice de diversidade.
+Consolidação em
+[`avaliacoes/2026-11-17-p4-regioes-e-diversidade.md`](avaliacoes/2026-11-17-p4-regioes-e-diversidade.md).
+
+**O que tentou:**
+- Perfil docente por região, com SP, BA, RS, PA e GO (72.151 escolas).
+- O modelo do IDEB com os seis índices e as partes da capacitação.
+- Entender por que a diversidade sai negativa.
+
+**O que funciona para ela:**
+- cinco UFs baixadas em segundos;
+- as partes da capacitação, que mostram o efeito dos efetivos mudando de
+  sinal entre regiões.
+
+**Barreiras:**
+- RT-01 (atrapalha): a parte racial do índice de diversidade mede a cor não
+  declarada (correlação 0,78; 0,99 com mais de 80% não declarada).
+- RT-02 (atrapalha): as partes do índice de diversidade não estão na base.
+- RT-03 (detalhe): o dicionário não diz por que o INSE é vazio (63% da
+  base).
 
 ### 2026-11-17 — Análises públicas (oitava rodada, índice vazio sem registro)
 
