@@ -88,7 +88,38 @@ our @CATALOGO = (
     periodo   => ['2025', '2025'],
     telas     => [qw(ranking base_analise)],
   },
+  # #462 (RX-01): os seis índices calculados pelo EduMaps a partir do Censo.
+  # Não é base de terceiros: a versão e o histórico vêm do registro em
+  # EduMaps::Model::Rank::School, e a "carga" é a última materialização.
+  {
+    id        => 'indices_edumaps',
+    nome      => 'Índices do EduMaps',
+    orgao     => 'EduMaps',
+    proprio   => 1,
+    descricao => 'Seis índices de 0 a 10 por escola, calculados pelo EduMaps a partir do Censo Escolar: '
+      . 'infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, '
+      . 'capacidade gestora e sustentabilidade. Cada um é uma média ponderada de itens do Censo; '
+      . 'item sem resposta conta como ausente. Para citar, use a versão abaixo.',
+    url       => 'https://github.com/marcoarthur/edumaps/blob/main/docs/ajuda/comunidade/rankings.md#o-que-cada-%C3%ADndice-mede',
+    metodologia => 'https://github.com/marcoarthur/edumaps/blob/main/docs/analises/ivet.md#22-sistema-b--cleanmv_escolas_scores-mv--can%C3%B4nico',
+    tabelas   => [],
+    periodo_sql => 'SELECT max(nu_ano_censo)::text, max(nu_ano_censo)::text FROM clean.mv_escolas_scores',
+    carga_sql => q{SELECT to_char(max(data_atualizacao) AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') FROM clean.mv_escolas_scores},
+    telas     => [qw(ranking perfil_escola agrupamento)],
+  },
 );
+
+# Versão e histórico dos índices próprios (#462). `require` aqui, e não `use`
+# no topo: o Model::Rank::School já usa este módulo.
+sub indices_versao ($class) {
+  require EduMaps::Model::Rank::School;
+  no warnings 'once';
+  return {
+    versao    => $EduMaps::Model::Rank::School::INDICES_VERSAO,
+    data      => $EduMaps::Model::Rank::School::INDICES_HISTORICO[0]{data},
+    historico => [ map { +{ %$_ } } @EduMaps::Model::Rank::School::INDICES_HISTORICO ],
+  };
+}
 
 # Licença que pode ir a público: preenchida e sem marca de pendência.
 sub licenca_publica ($texto) {
@@ -134,8 +165,15 @@ sub resolver ($class, $dbh) {
       $carga = $row if !$carga || ($row->{ts} // '') gt ($carga->{ts} // '');
     }
 
+    # Base própria (#462): a data da última materialização, sem arquivos.
+    if (!$carga && $f->{carga_sql}) {
+      my ($data) = eval { $dbh->selectrow_array($f->{carga_sql}) };
+      $carga = { data => $data } if $data;
+    }
+
     push @out, {
       (map { $_ => $f->{$_} } qw(id nome orgao descricao url metodologia telas)),
+      ($f->{proprio} ? (proprio => \1, %{ $class->indices_versao }) : ()),
       periodo => {
         inicio => $ini,
         fim    => $fim,

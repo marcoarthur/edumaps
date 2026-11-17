@@ -54,7 +54,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   município: quantos dos 4 itens (água, energia, esgoto, banheiro) cada uma
   tem e quais faltam, pelas respostas do Censo Escolar.
 - Sistema pode **dizer como cada índice é calculado** (escala, partes e
-  ressalvas), na própria tabela.
+  ressalvas), na própria tabela, com a **versão da fórmula** dos índices
+  próprios; o CSV das escolas leva a versão em toda linha, para que arquivos
+  de antes e de depois de uma mudança de fórmula não se confundam.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

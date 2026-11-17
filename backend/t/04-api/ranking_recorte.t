@@ -6,6 +6,7 @@ use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
 use EduMaps::Regiao;
+use EduMaps::Model::Rank::School;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -233,6 +234,7 @@ subtest 'infraestrutura básica (#457)' => sub {
   my $r = $t->get_ok("/api/ranking/escolas?codigo_ibge=$MUNB&indicador=infraestrutura_basica")->status_is(200)->tx->res->json;
   is $r->{total}, 3, 'só as em funcionamento e com os quatro itens respondidos';
   is $r->{indicador}{maximo}, 4, 'de 4 itens';
+  ok !exists $r->{indicador}{versao}, 'contagem de itens do Censo: sem versão de fórmula';
   like $r->{indicador}{metodo}, qr/Quantos dos 4 itens básicos.*poço, gerador/s, 'método';
   my %e = map { $_->{co_entidade} => $_ } @{ $r->{escolas} };
   is [ @{ $e{$IB[0]} }{qw(valor posicao)} ], [4, 1], 'completa: 4 de 4, primeira';
@@ -249,7 +251,7 @@ subtest 'infraestrutura básica (#457)' => sub {
   my $mv = EduMaps::Model::Rank::School->new(schema => $t->app->schema);
   ok !exists $mv->indicator_registry->{infraestrutura_basica}, 'fora do registro geral (job e painel não veem)';
   like $mv->indicator_registry->{infraestrutura}{metodo}, qr/Não é infraestrutura básica/, 'método do índice antigo';
-  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/educação especial em classe comum.*corrigida/, 'diversidade: inclusão corrigida (#459)';
+  like $mv->indicator_registry->{diversidade_discente}{metodo}, qr/educação especial em classe comum.*corrigida na versão indices-v2/, 'diversidade: inclusão corrigida (#459)';
   $limpa3->();
 };
 
@@ -268,6 +270,19 @@ subtest 'escolas de um município' => sub {
   is $r->{escolas}[0]{co_entidade}, '60003003', 'maior IDEB primeiro';
   is [map { $_->{posicao} } @{ $r->{escolas} }], [1, 2, 2, 4], 'empate divide a posição';
   is $r->{escolas}[0]{inse}, 5, 'INSE ao lado';
+  ok !exists $r->{indicador}{versao}, 'IDEB é do INEP: sem versão dos índices (#462)';
+
+  # #462: os índices do Censo dizem a versão da fórmula.
+  my ($mun_mv) = $dbh->selectrow_array(q{SELECT min(e.co_municipio) FROM clean.mv_escolas_scores s
+    JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo});
+  SKIP: {
+    skip 'MV de índices vazia', 2 unless $mun_mv;
+    my $mv = $t->get_ok("/api/ranking/escolas?codigo_ibge=$mun_mv&indicador=diversidade_discente")
+      ->status_is(200)->tx->res->json->{indicador};
+    is [ @$mv{qw(versao versao_data)} ],
+      [ $EduMaps::Model::Rank::School::INDICES_VERSAO, $EduMaps::Model::Rank::School::INDICES_HISTORICO[0]{data} ],
+      'índice do Censo: versão e data da fórmula';
+  }
 
   $t->get_ok('/api/ranking/escolas?codigo_ibge=6000399&indicador=ideb_anos_iniciais')->status_is(404);
   $t->get_ok('/api/ranking/escolas?codigo_ibge=123&indicador=ideb_anos_iniciais')->status_is(400);

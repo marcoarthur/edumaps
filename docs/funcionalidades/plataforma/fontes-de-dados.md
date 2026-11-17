@@ -129,6 +129,11 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   oficial, link da metodologia do órgão, e os arquivos da última carga com o
   SHA-256. Licença aparece só quando verificada; o que é interno (caminhos,
   notas de engenharia, situações jurídicas em aberto) não é publicado.
+- Sistema pode **publicar a versão citável dos índices próprios**: os seis
+  índices de escola calculados pela plataforma a partir do Censo aparecem no
+  catálogo como "Índices do EduMaps", com a versão da fórmula, a data, o
+  histórico do que mudou em cada versão, a data do último cálculo e o link
+  para o método. Toda mudança de fórmula ganha uma versão nova.
 - Sistema pode **dizer quando a carga não foi registrada**, em vez de inventar
   uma data para trás.
 - Sistema pode **guardar a versão dos dados junto de um resultado**: cada

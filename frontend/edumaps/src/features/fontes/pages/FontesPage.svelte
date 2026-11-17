@@ -53,6 +53,7 @@
       <li><strong>Perfil da escola:</strong> a escola é comparada com o seu grupo de escolas parecidas; um sinal de atenção só aparece quando ela está pior que a mediana do grupo, no sentido de cada indicador. O IDEB é o da etapa de maior nota da edição mais recente.</li>
       <li><strong>Agrupamento de escolas:</strong> cada resultado diz o seu universo (quantas escolas entraram e por que as outras ficaram de fora), tem link que o reabre por 90 dias e exportação em CSV com os parâmetros guardados.</li>
       <li><strong>Base de análise:</strong> a <a href="/base-analise" class="text-blue-700 hover:underline">base de análise</a> exporta os indicadores por escola de uma UF, com a versão dos dados em cada linha e um dicionário com a fonte de cada coluna.</li>
+      <li><strong>Índices do EduMaps:</strong> os seis índices de 0 a 10 do ranking de escolas são calculados por nós, a partir do Censo Escolar. Cada mudança de fórmula ganha uma versão nova (ex.: <code>indices-v2</code>), que vai no CSV do ranking; notas de versões diferentes não são comparáveis.</li>
       <li><strong>Folha de pagamento:</strong> cobre só os municípios já carregados e só a rede municipal; a tela diz quais são.</li>
     </ul>
   </section>
@@ -73,14 +74,22 @@
           </div>
           <p class="mt-1 text-sm text-gray-600">{f.descricao}</p>
           <dl class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            {#if f.proprio && f.versao}
+              <div class="sm:col-span-2">
+                <dt class="inline text-gray-500">Versão da fórmula:</dt>
+                <dd class="inline text-gray-800"><strong data-testid="versao-{f.id}">{f.versao}</strong>, de {dataBR(f.data)}</dd>
+              </div>
+            {/if}
             <div>
-              <dt class="inline text-gray-500">Última carga:</dt>
+              <dt class="inline text-gray-500">{f.proprio ? "Último cálculo:" : "Última carga:"}</dt>
               <dd class="inline text-gray-800">{f.carga?.data ? dataBR(f.carga.data) : "não registrada"}</dd>
             </div>
-            <div>
-              <dt class="inline text-gray-500">Licença:</dt>
-              <dd class="inline text-gray-800">{f.licenca ?? "consulte os termos do órgão"}</dd>
-            </div>
+            {#if !f.proprio}
+              <div>
+                <dt class="inline text-gray-500">Licença:</dt>
+                <dd class="inline text-gray-800">{f.licenca ?? "consulte os termos do órgão"}</dd>
+              </div>
+            {/if}
             {#if f.telas?.length}
               <div class="sm:col-span-2">
                 <dt class="inline text-gray-500">Usada em:</dt>
@@ -89,11 +98,21 @@
             {/if}
           </dl>
           <p class="mt-2 text-sm flex flex-wrap gap-x-4">
-            <a href={f.url} target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:underline">Página oficial</a>
+            <a href={f.url} target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:underline">{f.proprio ? "O que cada índice mede" : "Página oficial"}</a>
             {#if f.metodologia && f.metodologia !== f.url}
-              <a href={f.metodologia} target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:underline">Metodologia do órgão</a>
+              <a href={f.metodologia} target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:underline">{f.proprio ? "Fórmula completa" : "Metodologia do órgão"}</a>
             {/if}
           </p>
+          {#if f.proprio && f.historico?.length}
+            <details class="mt-2 text-xs text-gray-600" data-testid="historico-{f.id}">
+              <summary class="cursor-pointer">Histórico das versões ({f.historico.length}). Para citar, informe a versão.</summary>
+              <ul class="mt-1 space-y-1">
+                {#each f.historico as h (h.versao)}
+                  <li><strong class="text-gray-800">{h.versao}</strong> ({dataBR(h.data)}): {h.mudou}</li>
+                {/each}
+              </ul>
+            </details>
+          {/if}
           {#if f.carga?.arquivos?.length}
             <details class="mt-2 text-xs text-gray-600">
               <summary class="cursor-pointer">Arquivos da última carga ({f.carga.arquivos.length}), com SHA-256</summary>

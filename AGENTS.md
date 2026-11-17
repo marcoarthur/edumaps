@@ -375,6 +375,22 @@ portanto o gate **não** esbarra no erro histórico abaixo.
   CI não o reproduz (banco fresco, ordem de plano) e não é corrigível sem
   mentir ao registry.
 
+### Versão citável dos índices (`indices-vN`, #462)
+
+Os seis índices de `clean.mv_escolas_scores` têm versão citável, publicada em
+`/fontes`, na resposta do ranking de escolas (`indicador.versao`) e no CSV
+(`versao_indice`). **Change que mude a fórmula da MV sobe a versão**, nos
+dois lugares, no mesmo PR:
+
+1. `$INDICES_VERSAO` e uma linha nova no topo de `@INDICES_HISTORICO`
+   (`EduMaps::Model::Rank::School`), com a data e o que mudou;
+2. o `COMMENT ON MATERIALIZED VIEW clean.mv_escolas_scores` da própria change
+   (`VERSÃO indices-vN (…)`).
+
+`t/02-models/indices_versao.t` falha se os dois divergirem. Correção só de
+texto do método (`%METODO`) não sobe a versão. A versão do IVET
+(`ivet-vX.Y`) é outra e sobe pelas regras dela.
+
 ## Key conventions (Perl/Mojolicious)
 
 - ResultSets herdam de `EduMaps::Schema::ResultSet::Base` (compõe SearchHelpers, Geo, Aggregates, etc.)
