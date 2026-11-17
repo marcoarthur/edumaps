@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (ch) — décima primeira avaliação da P4, #475 (PR #476) mergeado
+
+- Décima primeira rodada da P4 (revisão dos seis índices, modo autônomo):
+  **adotaria**. RR-01: 1.774 escolas sem matrícula com 0 em "gestores por
+  aluno". RR-02: "acesso ao cargo" 0 em toda privada (42.454) → #475,
+  aberta sem implementar.
+- Decisão do developer: fórmula nas duas (parte vazia, peso redistribuído)
+  e as partes na base. PR #476 (ed2b4a0): change `escolas_scores_gestora`,
+  `indices-v6`, `ivet-v1.8`; 5 partes da gestora no fim do bloco Índices
+  (`alunos_por_gestor` bruto). Privadas 4,26→4,75; públicas 5,46→5,47;
+  sem matrícula 3,16→4,15.
+- Padrão firmado: parte que não se aplica ou falta → vazia com peso
+  redistribuído (diversidade #471, gestora #475).
+- Nota técnica 223, ciclo `2026-11-17-gestora-partes.md`. Abertas: #454,
+  #429, #295, #138, #368; deploy LXC (seis changes de índices).
+
 ## Sessão 2026-11-17 (cg) — modo autônomo: décima avaliação da P4, #473 (PR #474) mergeado
 
 - O developer delegou por 4h (2026-11-17): avaliação, decisões, issue, PR e

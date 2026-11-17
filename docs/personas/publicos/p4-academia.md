@@ -62,6 +62,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p4--academia-pesquisadora): adotaria (mantido). RW-01 e RW-02 resolvidos; nenhum achado aberto da oitava avaliação.
 - [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p4--academia-pesquisadora): adotaria (mantido), com a diversidade. RT-01 a RT-03 resolvidos; nenhum achado aberto da nona avaliação.
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p4--academia-pesquisadora): adotaria (mantido), com o atendimento. RS-01 e RS-02 resolvidos; nenhum achado aberto da décima avaliação.
+- [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p4--academia-pesquisadora): adotaria (mantido). RR-01 e RR-02 resolvidos; nenhum achado aberto da décima primeira avaliação.
 
 ## Pendências
 
@@ -87,7 +88,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   atendimento): RS-01 (alunos por sala sem os turnos) e RS-02 (partes do
   atendimento fora da base) → #473, entregues (#474). Décima primeira rodada
   (2026-11-17, **adotaria**): RR-01 e RR-02, detalhes da capacidade gestora
-  → #475 (não implementada; decisão do developer).
+  → #475 (fórmula, `indices-v6`), entregues (#476).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
