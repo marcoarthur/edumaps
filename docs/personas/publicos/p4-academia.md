@@ -75,11 +75,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#466). Sétima rodada
   (2026-11-17, **adotaria**): RZ-01 (índice 0 para escola sem registro) e
   RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`),
-  entregues (#468). Nenhum achado aberto.
+  entregues (#468). Oitava rodada (2026-11-17, **adotaria**): RW-01 (partes do
+  índice de capacitação fora da base) e RW-02 (pesos normativos não ditos),
+  aguardando a aprovação do developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (oitava rodada, índice vazio sem registro)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-17-p4-indices-v3.md`](avaliacoes/2026-11-17-p4-indices-v3.md).
+
+**O que tentou:**
+- Conferiu o vazio dos índices contra o registro de docentes e matrículas.
+- Refez a comparação das redes municipais e o modelo do IDEB.
+- Tentou decompor o índice de capacitação docente com a base.
+
+**O que funciona para ela:**
+- vazio só onde falta o registro, e o 0 de volta a ser nota;
+- `indices-v3` em `/fontes`, no arquivo e na coluna.
+
+**Barreiras:**
+- RW-01 (atrapalha): o índice de capacitação junta partes de sinais
+  opostos no modelo (licenciatura +0,34, efetivos −0,30), e a base não traz
+  as partes para separá-lo.
+- RW-02 (detalhe): a ajuda não diz que os pesos são uma escolha do EduMaps.
 
 ### 2026-11-17 — Análises públicas (sétima rodada, índices na base)
 
