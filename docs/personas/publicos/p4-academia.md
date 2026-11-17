@@ -67,12 +67,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#446). BA-02 entregue no ranking (#447); a base por região fica na
   assinatura (decisão de produto). Quarta rodada (2026-11-16, **adotaria**):
   RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
-  (2026-11-16, **adotaria**): RX-02 entregue (#463); pendente
-  #462 (RX-01).
+  (2026-11-16, **adotaria**): RX-02 entregue (#463) e RX-01 entregue
+  (#464). Sexta rodada (2026-11-16, **adotaria**): RY-01 (índices fora da
+  base) e RY-02 (versão no nome do CSV), aguardando o developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-16 — Análises públicas (sexta rodada, seleção do IDEB e versão dos índices)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-16-p4-versao-e-selecao.md`](avaliacoes/2026-11-16-p4-versao-e-selecao.md).
+
+**O que tentou:**
+- Refez a seleção do IDEB só com a base (BA e ES) e modelou "tem IDEB".
+- Citou o índice de diversidade com a versão.
+- Tentou pôr o índice de infraestrutura do EduMaps no modelo.
+
+**O que funciona para ela:**
+- as etapas oferecidas e o exemplo da ajuda, que se reproduz;
+- a versão `indices-v2` em `/fontes`, na tela e no CSV, com o histórico.
+
+**Barreiras:**
+- RY-01 (atrapalha): os índices não estão na base de análise, só no ranking
+  de um município por vez.
+- RY-02 (detalhe): o nome do CSV do ranking de escolas não traz a versão.
 
 ### 2026-11-16 — Análises públicas (quinta rodada, índices e cobertura do IDEB)
 
