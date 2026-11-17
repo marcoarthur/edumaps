@@ -93,7 +93,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   ajuda errada para a capacidade gestora) e RQ-02 (infraestrutura e
   sustentabilidade sem partes na base) → #477, entregues (#478). Décima terceira rodada (2026-11-17, **adotaria**, sem a
   comparação de redes): RP-01 (escolas fechadas contadas), RP-02 (n e etapa
-  do perfil), RP-03 e RP-04 (detalhes) → aguardam a aprovação da issue.
+  do perfil), RP-03 e RP-04 (detalhes) → #479.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
