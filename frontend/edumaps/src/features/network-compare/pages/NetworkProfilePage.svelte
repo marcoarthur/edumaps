@@ -12,6 +12,7 @@
     transformNetworkProfileData,
     formatNetworkValue,
     formatNetworkVariacao,
+    rotuloIndicadorRede,
   } from "../utils/transformNetworkProfileData.js";
   import { diferencaFavoravel, sentidoIndicador } from "@/shared/utils/sentidoIndicador.js";
 
@@ -102,8 +103,10 @@
           <h2 class="text-base font-bold text-gray-900">Rede vs. Brasil</h2>
           <InfoHint
             title="Como comparamos a rede"
-            text="Cada indicador é a média das escolas ativas do recorte (município e, se filtrado, a dependência), comparada à média do Brasil."
+            text="Cada indicador é a média simples das escolas ativas do recorte (município e, se filtrado, a dependência) que têm o dado, comparada à média do Brasil."
             items={[
+              'Escolas com dado: em quantas escolas a média se apoia. O IDEB, o SAEB e o INSE só existem em parte das escolas (as privadas não têm).',
+              'IDEB e SAEB: de cada escola, a etapa de maior nota na edição mais recente. Para comparar por etapa, use a linha do IDEB na comparação de redes.',
               'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
               'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola).',
               'Variação = rede − Brasil (positivo = acima da média nacional; proporções em pontos percentuais, p.p.).',
@@ -119,13 +122,14 @@
                 <th class="text-right font-semibold px-3 py-2">Rede</th>
                 <th class="text-right font-semibold px-3 py-2">Brasil</th>
                 <th class="text-right font-semibold px-3 py-2">Variação</th>
+                <th class="text-right font-semibold px-3 py-2">Escolas com dado</th>
               </tr>
             </thead>
             <tbody>
               {#each profile.indicadores as ind (ind.indicador)}
                 <tr class="bg-white">
                   <td class="text-left px-3 py-2 text-gray-800">
-                    {ind.label ?? ind.indicador}
+                    {rotuloIndicadorRede(ind, profile.metadata)}
                     {#if sentidoIndicador(ind.indicador) === "menor"}
                       <span class="block text-xs text-gray-500">menor é melhor</span>
                     {/if}
@@ -134,6 +138,9 @@
                   <td class="text-right px-3 py-2 font-mono text-gray-500">{formatNetworkValue(ind.indicador, ind.brasil)}</td>
                   <td class="text-right px-3 py-2 font-mono whitespace-nowrap {corVariacao(ind)}">
                     {formatNetworkVariacao(ind.indicador, ind.variacao)}
+                  </td>
+                  <td class="text-right px-3 py-2 font-mono text-gray-500">
+                    {ind.nComValor == null ? "–" : ind.nComValor.toLocaleString("pt-BR")}
                   </td>
                 </tr>
               {/each}
@@ -165,7 +172,10 @@
               <ul class="grid grid-cols-2 gap-x-4 gap-y-1">
                 {#each cluster.indicadores as ind (ind.indicador)}
                   <li class="flex justify-between gap-2 text-xs">
-                    <span class="text-gray-600 truncate">{ind.label}</span>
+                    <span class="text-gray-600 truncate" title={rotuloIndicadorRede(ind, profile.metadata)}>
+                      {ind.label}{#if ind.nComValor != null && ind.nComValor < cluster.n}
+                        <span class="text-gray-400"> ({ind.nComValor})</span>{/if}
+                    </span>
                     <span class="font-mono text-gray-700 whitespace-nowrap">
                       {formatNetworkValue(ind.indicador, ind.media)}
                     </span>
@@ -177,7 +187,8 @@
         </div>
 
         <p class="text-xs text-gray-500">
-          Cada grupo mostra o nº de escolas e a média do indicador entre elas.
+          Cada grupo mostra o nº de escolas e a média do indicador entre elas. Entre parênteses,
+          quando nem todas têm o dado, em quantas a média se apoia.
         </p>
       </section>
     </div>

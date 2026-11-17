@@ -32,7 +32,8 @@ Agregados de desempenho em exames (IDEB/SAEB) da rede de um município.
 
 =item * (ArrayRef[HashRef]) - Série agregada por (ano, rede, etapa):
   - rede/etapa/ano: Identificação
-  - numero_escolas: Escolas com resultado no ano
+  - numero_escolas: Escolas com IDEB no ano (as que estão na planilha do
+    INEP sem nota não contam, #479); é o número de escolas da média ideb_medio
   - ideb_medio, nota_matematica, nota_portugues, nota_media, aprovacao_media:
     Médias da rede
 
@@ -64,7 +65,9 @@ sub performance($self, $params = {}) {
   my $results = $rs->search_rs($search)
   ->columns([
     'rede', 'etapa', 'ano',
-    { numero_escolas => { count => 'id_escola' } },
+    # #479 (RP-03): só as escolas com IDEB; a planilha do INEP lista também
+    # as escolas sem nota, que não entram na média.
+    { numero_escolas => { count => 'ideb_observado' } },
     { ideb_medio => { avg => 'ideb_observado' } },
     { nota_matematica => { avg => 'nota_matematica' } },
     { nota_portugues => { avg => 'nota_portugues' } },

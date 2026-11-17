@@ -29,6 +29,11 @@ oferta educacional local.
 - Sistema pode abrir, a partir da comparação, o perfil analítico de cada rede
   (ou de todas juntas): a rede comparada com o Brasil e a distribuição das
   suas escolas por grupos de contexto parecido.
+- Sistema pode **contar só as escolas em funcionamento**, como o ranking, o
+  perfil e a base de análise, sem as paralisadas e extintas.
+- Sistema pode **dizer em quantas escolas cada média se apoia**, no perfil
+  analítico e em cada ponto da linha do IDEB, e qual edição e etapa do IDEB
+  o perfil usa.
 
 ## Valor
 

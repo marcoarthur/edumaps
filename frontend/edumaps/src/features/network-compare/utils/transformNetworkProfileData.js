@@ -59,9 +59,25 @@ export function groupClusters(clusters) {
       indicador: row.indicador,
       label: row.label ?? row.indicador,
       media: row.media === null || row.media === undefined ? null : Number(row.media),
+      // #479 (RP-02): escolas com valor no indicador (a média ignora as sem).
+      nComValor: row.n_com_valor == null ? null : Number(row.n_com_valor),
     });
   }
   return [...map.values()];
+}
+
+/**
+ * Rótulo do indicador com a edição e, no IDEB e no SAEB, a etapa (#479,
+ * RP-02): o perfil usa, de cada escola, a etapa de maior nota SAEB na edição
+ * mais recente do IDEB.
+ */
+export function rotuloIndicadorRede(ind, metadata = {}) {
+  const base = ind.label ?? ind.indicador;
+  const anoIdeb = metadata.anoIdeb ? ` ${metadata.anoIdeb}` : "";
+  if (ind.indicador === "ideb_observado") return `IDEB${anoIdeb} (etapa de maior nota de cada escola)`;
+  if (ind.indicador === "nota_media") return `Nota média SAEB${anoIdeb} (mesma etapa do IDEB)`;
+  if (ind.indicador === "inse" && metadata.anoInse) return `${base} ${metadata.anoInse}`;
+  return base;
 }
 
 /**
@@ -80,9 +96,14 @@ export function transformNetworkProfileData(raw) {
       dependencia: meta.tp_dependencia,
       dependenciaLabel: DEPENDENCIA_LABELS[meta.tp_dependencia] ?? null,
       anoCenso: meta.nu_ano_censo,
+      anoIdeb: meta.ano_ideb ?? null,
+      anoInse: meta.ano_inse ?? null,
     },
     metrics: raw?.metrics ?? {},
-    indicadores: asArray(raw?.tables?.indicadores),
+    indicadores: asArray(raw?.tables?.indicadores).map((ind) => ({
+      ...ind,
+      nComValor: ind.n_com_valor == null ? null : Number(ind.n_com_valor),
+    })),
     clusters: groupClusters(raw?.tables?.clusters),
   };
 }

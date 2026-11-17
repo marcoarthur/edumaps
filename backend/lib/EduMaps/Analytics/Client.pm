@@ -136,6 +136,9 @@ sub run_network_profile ($self, $args = {}) {
       codigo_ibge    => $args->{codigo_ibge},
       tp_dependencia => $args->{tp_dependencia},
       schema         => $args->{schema},
+      # #479: o perfil da rede passou a trazer n_com_valor e as edições;
+      # mudou o formato, muda a chave (o cache antigo deixa de ser servido).
+      versao         => 2,
     },
   });
 }

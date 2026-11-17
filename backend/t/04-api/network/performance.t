@@ -60,4 +60,17 @@ subtest '[API Network] markers - GeoJSON' => sub {
   ok(ref($json->{features}) eq 'ARRAY', 'Possui features');
 };
 
+# #479 (RP-03): numero_escolas conta só as escolas com IDEB, as da média.
+subtest '[API Network] performance - numero_escolas com IDEB (#479)' => sub {
+  my $dbh = $t->app->schema->storage->dbh;
+  my $json = $t->get_ok($path . '/performance')->status_is(200)->tx->res->json;
+  my ($p) = grep { defined $_->{ideb_medio} } $json->@*;
+  SKIP: {
+    skip 'sem IDEB no município', 1 unless $p;
+    my ($n) = $dbh->selectrow_array(q{SELECT count(ideb_observado) FROM clean.ideb_notas_escolas
+      WHERE co_municipio = 3550308 AND rede = ? AND etapa = ? AND ano = ?}, undef, @$p{qw(rede etapa ano)});
+    is $p->{numero_escolas}, $n, "$p->{rede} · $p->{etapa} · $p->{ano}: $n escolas com IDEB";
+  }
+};
+
 done_testing;

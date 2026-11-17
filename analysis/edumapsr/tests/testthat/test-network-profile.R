@@ -53,3 +53,29 @@ test_that("run_analysis despacha network_profile via o registry", {
   result <- run_analysis("network_profile", fixture_network_profile_model())
   expect_equal(result$analysis, "network_profile")
 })
+
+# #479 (RP-02): cada média diz em quantas escolas se apoia.
+test_that("n_com_valor sai das contagens n_<indicador> e fica NA sem elas", {
+  inds <- PROFILE_INDICATORS
+  wide <- as.data.frame(as.list(stats::setNames(rep(1, length(inds)), inds)))
+  wide$cluster_id <- NA_integer_
+  wide$n <- 10L
+  for (ind in inds) wide[[paste0("n_", ind)]] <- 10L
+  wide$n_ideb_observado <- 3L
+  long <- .network_clusters_long(wide, data.frame(cluster_id = integer(0), cluster_label = character(0)))
+  expect_equal(long$n_com_valor[long$indicador == "ideb_observado"], 3L)
+  expect_equal(long$n_com_valor[long$indicador == "prop_licenciatura"], 10L)
+
+  mean_row <- wide
+  ind_df <- .network_indicators_df(mean_row, stats::setNames(rep(1, length(inds)), inds))
+  expect_equal(ind_df$n_com_valor[ind_df$indicador == "ideb_observado"], 3L)
+
+  sem <- wide[, setdiff(names(wide), paste0("n_", inds))]
+  expect_true(all(is.na(.network_clusters_long(sem, data.frame(cluster_id = integer(0), cluster_label = character(0)))$n_com_valor)))
+})
+
+test_that("a consulta do perfil conta as escolas com valor por indicador", {
+  sql <- .network_count_cols("p")
+  expect_match(sql, "count(p.ideb_observado) AS n_ideb_observado", fixed = TRUE)
+  expect_equal(length(strsplit(sql, ",")[[1]]), length(PROFILE_INDICATORS))
+})
