@@ -71,11 +71,36 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (2026-11-16, **adotaria**): RX-02 entregue (#463) e RX-01 entregue
   (#464). Sexta rodada (2026-11-16, **adotaria**): RY-01 (índices fora da
   base) e RY-02 (versão no nome do CSV) → #465, entregues
-  (#466). Nenhum achado aberto.
+  (#466). Sétima rodada
+  (2026-11-17, **adotaria**): RZ-01 (índice 0 para escola sem registro) e
+  RZ-02 (dicionário da infraestrutura), aguardando a aprovação do developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (sétima rodada, índices na base)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-17-p4-indices-na-base.md`](avaliacoes/2026-11-17-p4-indices-na-base.md).
+
+**O que tentou:**
+- Baixou a BA e o ES com os seis índices e conferiu com o ranking.
+- Pôs os índices no modelo do IDEB.
+- Comparou as redes municipais pela capacitação docente.
+
+**O que funciona para ela:**
+- os índices no arquivo da UF, com a versão no nome e na linha;
+- a base igual ao ranking escola a escola;
+- o índice de infraestrutura associado ao IDEB (0,084 por ponto,
+  p < 0,001), onde a contagem básica não se associa.
+
+**Barreiras:**
+- RZ-01 (atrapalha): 312 escolas sem registro de docentes e matrículas
+  ficam com 0, não vazio. Elas baixam médias municipais em até 2 pontos e
+  ficam no fim do ranking de escolas.
+- RZ-02 (detalhe): o dicionário da infraestrutura aponta para uma coluna
+  que não está na base.
 
 ### 2026-11-16 — Análises públicas (sexta rodada, seleção do IDEB e versão dos índices)
 
