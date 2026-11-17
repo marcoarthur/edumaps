@@ -93,7 +93,8 @@ Sétima rodada da P4 (academia), depois da entrega da sexta rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir as issues.
+Issue aberta com a aprovação do developer (2026-11-17): **#467** (RZ-01 e
+RZ-02 juntas). Decisão: **opção A** (vazio na MV, `indices-v3`).
 
 ### Proposta
 

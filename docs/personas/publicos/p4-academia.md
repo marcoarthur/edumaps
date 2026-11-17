@@ -73,7 +73,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   base) e RY-02 (versão no nome do CSV) → #465, entregues
   (#466). Sétima rodada
   (2026-11-17, **adotaria**): RZ-01 (índice 0 para escola sem registro) e
-  RZ-02 (dicionário da infraestrutura), aguardando a aprovação do developer.
+  RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
