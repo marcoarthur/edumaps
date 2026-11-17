@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cc) — sexta avaliação da P4, #465 (PR #466) mergeado
+
+- Sexta rodada da P4: **adotaria** (mantido). RY-01 (índices fora da base) e
+  RY-02 (versão fora do nome do CSV do ranking) → #465.
+- PR #466 (48056d2): bloco `indices` na base (`indice_*` 0–10 de
+  `clean.mv_escolas_scores`, LEFT JOIN por escola **e ano do Censo**,
+  `versao_indice` no fim; infraestrutura básica fora, por decisão do
+  developer); `anos.indices` no catálogo, no nome do arquivo e na tela;
+  `nomeCsvEscolas` no frontend. Armadilha: `"s.score_$_::float8"` lê
+  `$_::float8`; usar `${_}`.
+- Nota técnica 218, ciclo `2026-11-16-indices-na-base.md`. Sexta avaliação
+  sem achado aberto. Abertas: #454, #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-16 (cb) — #462 (PR #464) mergeado
 
 - #462 (RX-01) → PR #464 (96e34e0). Decisões do developer: formato

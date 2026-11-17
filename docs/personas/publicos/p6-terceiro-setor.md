@@ -51,6 +51,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: ranking de diversidade sem premiar o turno. Fica #454.
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: quem ficou fora da avaliação.
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: citar o índice com a versão.
+- [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: matéria estadual a partir de um único CSV.
 
 ## Pendências
 

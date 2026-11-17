@@ -93,3 +93,12 @@ RY-02 juntas).
    dicionário, na tela (um bloco a mais) e na ajuda. A pesquisadora pediria
    junto a RY-02, que é uma linha no frontend.
 2. **RY-02:** pode ir no mesmo PR da RY-01, ou numa issue à parte.
+
+## Andamento
+
+- 2026-11-17: #465 (PR #466) mergeado: RY-01 e RY-02 resolvidos (bloco
+  "Índices do EduMaps" na base, com `versao_indice`, o método no dicionário e
+  a versão no nome do arquivo; versão no nome do CSV do ranking de escolas).
+  Fechamento em
+  [`../ciclos/2026-11-16-indices-na-base.md`](../ciclos/2026-11-16-indices-na-base.md).
+  Nenhum achado aberto.

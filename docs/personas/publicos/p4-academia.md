@@ -57,6 +57,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — diversidade discente com a educação especial](ciclos/2026-11-16-diversidade-especial.md#p4--academia-pesquisadora): adotaria (mantido). Impacto direto: índice sem componente constante; IVET ivet-v1.4.
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido). RX-02 resolvido; fica #462.
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p4--academia-pesquisadora): adotaria (mantido). RX-01 resolvido; nenhum achado aberto da quinta avaliação.
+- [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p4--academia-pesquisadora): adotaria (mantido). RY-01 e RY-02 resolvidos; nenhum achado aberto da sexta avaliação.
 
 ## Pendências
 
@@ -69,7 +70,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RG-01 a RG-03, detalhes, entregues (#450 e #451). Nenhum achado aberto. Quinta rodada
   (2026-11-16, **adotaria**): RX-02 entregue (#463) e RX-01 entregue
   (#464). Sexta rodada (2026-11-16, **adotaria**): RY-01 (índices fora da
-  base) e RY-02 (versão no nome do CSV) → #465.
+  base) e RY-02 (versão no nome do CSV) → #465, entregues
+  (#466). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
