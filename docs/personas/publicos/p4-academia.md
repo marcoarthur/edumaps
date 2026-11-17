@@ -94,11 +94,30 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   ajuda errada para a capacidade gestora) e RQ-02 (infraestrutura e
   sustentabilidade sem partes na base) → #477, entregues (#478). Décima terceira rodada (2026-11-17, **adotaria**, sem a
   comparação de redes): RP-01 (escolas fechadas contadas), RP-02 (n e etapa
-  do perfil), RP-03 e RP-04 (detalhes) → #479, entregues (#480).
+  do perfil), RP-03 e RP-04 (detalhes) → #479, entregues (#480). Décima quarta rodada (2026-11-17, **adotaria**, sem o
+  agrupamento por desempenho): RO-01 (etapas misturadas) e RO-02 (fossa
+  como falta) → #481 (modo autônomo).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima quarta rodada, agrupamento por desempenho)
+
+**Veredito:** **adotaria** (mantido), sem o agrupamento por desempenho.
+Consolidação em
+[`avaliacoes/2026-11-17-p4-agrupamento-desempenho.md`](avaliacoes/2026-11-17-p4-agrupamento-desempenho.md).
+
+**O que tentou:**
+- Usar o agrupamento por "Desempenho dos alunos" do ES como tipologia.
+
+**O que funciona para ela:**
+- a execução guardada, com CSV, que permitiu conferir os grupos.
+
+**Barreiras:**
+- RO-01 (atrapalha): o agrupamento mistura as etapas e separa a etapa
+  oferecida ("Alto" com IDEB menor que "Baixo").
+- RO-02 (detalhe): o agrupamento por infraestrutura conta fossa como falta.
 
 ### 2026-11-17 — Análises públicas (décima terceira rodada, comparação de redes)
 
