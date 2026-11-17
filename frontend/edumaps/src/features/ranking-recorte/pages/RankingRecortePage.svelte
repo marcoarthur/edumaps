@@ -13,6 +13,7 @@
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
+  import { dataBR } from "@/features/fontes/utils.js";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
   import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
@@ -518,7 +519,7 @@
             {escolas.total} escolas de {escolas.municipio.nome} ({escolas.municipio.uf}) com {escolas.indicador.label} em {escolas.ano}.
             Escolas empatadas dividem a posição.
             {#if escolas.indicador.metodo}
-              <span class="block mt-1" data-testid="metodo-indicador"><strong>Como se calcula:</strong> {escolas.indicador.metodo}
+              <span class="block mt-1" data-testid="metodo-indicador"><strong>Como se calcula{#if escolas.indicador.versao}{" "}(<span data-testid="versao-indicador">{escolas.indicador.versao}</span>, de {dataBR(escolas.indicador.versao_data)}){/if}:</strong> {escolas.indicador.metodo}
                 Veja <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a>.</span>
             {/if}
           </p>

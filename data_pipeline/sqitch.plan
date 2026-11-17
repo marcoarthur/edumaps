@@ -173,3 +173,4 @@ inep_rendimento_distorcao [planos_custo_executado] 2026-11-13T14:00:00Z Marco Ar
 idempotencia [inep_rendimento_distorcao] 2026-11-14T16:00:00Z Marco Arthur <arthurpbs@gmail.com> # #416: chaves de idempotencia dos POSTs autenticados (sem criacao repetida)
 analytics_cluster_execucoes [idempotencia] 2026-11-15T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # #427: execucoes do agrupamento guardadas (recorte, parametros, universo, atribuicoes; 90 dias)
 escolas_scores_diversidade_esp [analytics_cluster_execucoes] 2026-11-16T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #459: diversidade discente usa a educacao especial em classe comum (nao os turnos)
+escolas_scores_versao [escolas_scores_diversidade_esp] 2026-11-16T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # #462: versao citavel dos indices (indices-v2) no comentario da MV

@@ -8,6 +8,7 @@ use Test::Mojo;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 use EduMaps::Fontes;
+use EduMaps::Model::Rank::School;
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
@@ -17,7 +18,7 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   my $tx = $t->get_ok('/api/fontes')->status_is(200)
     ->header_like('Cache-Control' => qr/max-age=600/)->tx;
   my $r = $tx->res->json;
-  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao)], 'bases e ordem';
+  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao indices_edumaps)], 'bases e ordem';
 
   my ($censo) = grep { $_->{id} eq 'censo' } @$r;
   my ($ano) = $dbh->selectrow_array('SELECT max(nu_ano_censo)::text FROM clean.censo_escolas');
@@ -28,6 +29,23 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   my $corpo = $tx->res->body;
   unlike $corpo, qr{/srv/|/tmp/|/data/|"caminho"|"notes"|Loader}, 'nenhum caminho ou nota interna';
   unlike $corpo, qr/n[ãa]o verificad|pendente|DECIS/i, 'nenhuma situação de licença interna';
+};
+
+subtest 'índices do EduMaps (#462): versão citável' => sub {
+  my ($i) = grep { $_->{id} eq 'indices_edumaps' } @{ $t->get_ok('/api/fontes')->tx->res->json };
+  is $i->{orgao}, 'EduMaps', 'base própria';
+  ok $i->{proprio}, 'marcada como própria';
+  is $i->{versao}, $EduMaps::Model::Rank::School::INDICES_VERSAO, 'versão do registro';
+  like $i->{data}, qr/^\d{4}-\d{2}-\d{2}$/, 'data da versão';
+  is [ map { $_->{versao} } @{ $i->{historico} } ],
+    [ map { $_->{versao} } @EduMaps::Model::Rank::School::INDICES_HISTORICO ], 'histórico completo';
+  like $i->{url}, qr{rankings\.md#o-que-cada}, 'link para o método';
+  my ($ano) = $dbh->selectrow_array('SELECT max(nu_ano_censo)::text FROM clean.mv_escolas_scores');
+  is $i->{periodo}{fim}, $ano, 'ano do Censo dos índices';
+  my ($mat) = $dbh->selectrow_array(q{SELECT to_char(max(data_atualizacao) AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') FROM clean.mv_escolas_scores});
+  is $i->{carga} ? $i->{carga}{data} : undef, $mat, 'carga = última materialização';
+  my ($censo) = grep { $_->{id} eq 'censo' } @{ $t->get_ok('/api/fontes')->tx->res->json };
+  ok !exists $censo->{versao} && !exists $censo->{proprio}, 'base de terceiros sem versão própria';
 };
 
 subtest 'licença só quando verificada' => sub {
@@ -48,7 +66,7 @@ subtest 'arquivos do manifesto sem o caminho' => sub {
 
 subtest 'carga não registrada não é inventada' => sub {
   my $r = EduMaps::Fontes->resolver($dbh);
-  for my $f (@$r) {
+  for my $f (grep { !$_->{proprio} } @$r) {
     my $tem = 0;
     for my $tab (@{ (grep { $_->{id} eq $f->{id} } @EduMaps::Fontes::CATALOGO)[0]{tabelas} }) {
       $tem ||= $dbh->selectrow_array(

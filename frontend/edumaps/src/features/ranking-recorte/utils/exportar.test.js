@@ -47,4 +47,12 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     expect(t.linhas.map((l) => l[5])).toEqual(["água, energia, esgoto", ""]);
     expect(tabelaEscolas(ESCOLAS_FIXTURE, ESCOLAS_FIXTURE.escolas).cabecalho).not.toContain("faltam");
   });
+
+  it("escolas, índice do EduMaps: versao_indice em toda linha (#462)", () => {
+    const e = { ...ESCOLAS_FIXTURE, indicador: { id: "diversidade_discente", label: "Diversidade Discente", versao: "indices-v2" } };
+    const t = tabelaEscolas(e, ESCOLAS_FIXTURE.escolas);
+    expect(t.cabecalho.at(-1)).toBe("versao_indice");
+    for (const l of t.linhas) expect(l.at(-1)).toBe("indices-v2");
+    expect(tabelaEscolas(ESCOLAS_FIXTURE, ESCOLAS_FIXTURE.escolas).cabecalho).not.toContain("versao_indice");
+  });
 });

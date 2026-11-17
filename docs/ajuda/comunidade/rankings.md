@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/ranking.md
-ultima_revisao: 2026-11-15
+ultima_revisao: 2026-11-16
 ---
 
 # Rankings de redes e de escolas
@@ -88,6 +88,14 @@ indicador. Não precisa de login.
 Os índices do Censo vão de 0 a 10, e maior é melhor. Em todos, item sem
 resposta no Censo conta como ausente, e a escola sem o registro (docentes,
 gestores, matrículas) fica com 0.
+
+**Versão da fórmula:** os seis índices são calculados pelo EduMaps, e cada
+mudança de fórmula ganha uma versão nova. A atual é a **`indices-v2`**, de
+16/11/2026 (a `indices-v1`, de 04/06/2026, é a fórmula original). A tela
+mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
+traz a coluna `versao_indice` em toda linha. Para citar, informe a versão:
+notas de versões diferentes não são comparáveis. O histórico está em
+[Fontes e metodologia](fontes-e-metodologia.md).
 - **Infraestrutura básica** (não é índice): quantos dos 4 itens a escola
   tem, de 0 a 4. Os itens são água, energia elétrica, esgotamento sanitário
   e banheiro. "Sem" é a resposta "inexistente" do Censo: poço, gerador,
@@ -110,10 +118,11 @@ gestores, matrículas) fica com 0.
   concursados (20%) e formação continuada (20%).
 - **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e
   meninos (25%), inclusão (20%: a proporção de alunos da educação especial
-  em classe comum) e EJA (20%). A parte da inclusão foi corrigida em
-  16/11/2026: antes ela somava as matrículas dos turnos, que são quase
-  todas, e quase toda escola recebia esses pontos. Por isso as notas de
-  diversidade caíram, e as de antes dessa data não são comparáveis.
+  em classe comum) e EJA (20%). A parte da inclusão foi corrigida na
+  `indices-v2` (16/11/2026): antes ela somava as matrículas dos turnos,
+  que são quase todas, e quase toda escola recebia esses pontos. Por isso
+  as notas de diversidade caíram, e as da `indices-v1` não são
+  comparáveis.
 - **Capacidade gestora:** formação dos gestores (30%), formação em gestão
   (20%), gestores por aluno (20%), órgãos colegiados (20%) e acesso ao
   cargo por concurso, eleição ou seleção (10%).

@@ -22,4 +22,17 @@ describe("FontesPage (#428)", () => {
     expect(siope).toHaveTextContent("ab12cd34ef56");
     expect(screen.getByText("Como ler os números")).toBeInTheDocument();
   });
+
+  it("índices do EduMaps: versão, histórico e sem licença de órgão (#462)", async () => {
+    render(FontesPage);
+    const ind = await screen.findByTestId("fonte-indices_edumaps");
+    expect(screen.getByTestId("versao-indices_edumaps")).toHaveTextContent("indices-v2");
+    expect(ind).toHaveTextContent("Versão da fórmula: indices-v2, de 16/11/2026");
+    expect(ind).toHaveTextContent("Último cálculo: 16/11/2026");
+    expect(ind).not.toHaveTextContent("Licença");
+    const hist = screen.getByTestId("historico-indices_edumaps");
+    expect(hist).toHaveTextContent("indices-v1 (04/06/2026): Fórmula original");
+    expect(ind).toHaveTextContent("O que cada índice mede");
+    expect(screen.getByTestId("fonte-censo")).not.toHaveTextContent("Versão da fórmula");
+  });
 });

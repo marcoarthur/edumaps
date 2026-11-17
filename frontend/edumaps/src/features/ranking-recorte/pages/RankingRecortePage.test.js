@@ -391,15 +391,18 @@ describe("RankingRecortePage — infraestrutura básica e método (#457)", () =>
     expect(linhas[1]).toHaveTextContent("4 de 4");
     expect(screen.getAllByTestId("faltam")[1]).toHaveTextContent("–");
     expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("Quantos dos 4 itens básicos");
+    expect(screen.queryByTestId("versao-indicador")).toBeNull();
   });
 
   it("índice antigo: método na nota, sem a coluna Falta", async () => {
     server.use(http.get("*/api/ranking/escolas", () => HttpResponse.json({
-      ...ESCOLAS_FIXTURE, indicador: { id: "infraestrutura", label: "Infraestrutura", fonte: "censo", metodo: "Índice de 0 a 10. Não é infraestrutura básica." },
+      ...ESCOLAS_FIXTURE, indicador: { id: "infraestrutura", label: "Infraestrutura", fonte: "censo", metodo: "Índice de 0 a 10. Não é infraestrutura básica.",
+        versao: "indices-v2", versao_data: "2026-11-16" },
     })));
     abrir("?aba=escolas&indicador=infraestrutura&codigo_ibge=3205309");
     await screen.findByTestId("tabela-escolas");
     expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("Não é infraestrutura básica");
+    expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("Como se calcula (indices-v2, de 16/11/2026):");
     expect(screen.queryAllByTestId("faltam")).toHaveLength(0);
   });
 });

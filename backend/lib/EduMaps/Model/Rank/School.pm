@@ -37,6 +37,20 @@ has network_map => sub {
   };
 };
 
+# Versão citável dos seis índices do Censo (#462, RX-01). REGRA: mudança de
+# fórmula em clean.mv_escolas_scores (change nova no data_pipeline) sobe a
+# versão aqui, ganha uma linha no histórico e vai no COMMENT da MV, na mesma
+# change. O teste t/02-models/indices_versao.t compara o COMMENT com
+# $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
+# deploy da fórmula. Correção de texto do %METODO não sobe a versão.
+our $INDICES_VERSAO = 'indices-v2';
+our @INDICES_HISTORICO = (
+  { versao => 'indices-v2', data => '2026-11-16',
+    mudou  => 'Diversidade discente: a parte da inclusão passa a ser a proporção de alunos da educação especial em classe comum (antes somava os turnos, e quase toda escola tinha a nota máxima nessa parte).' },
+  { versao => 'indices-v1', data => '2026-06-04',
+    mudou  => 'Fórmula original dos seis índices.' },
+);
+
 # Método dos índices do Censo (#457, VK-01), lido de
 # data_pipeline/deploy/escolas_scores.sql. Escala 0 a 10, maior é melhor;
 # no índice, item sem resposta no Censo conta como ausente, e escola sem o
@@ -61,7 +75,7 @@ our %METODO = (
   diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas (1 menos a soma dos quadrados das proporções). '
     . '25%: equilíbrio entre meninas e meninos. 20%: inclusão (proporção de alunos da educação especial em classe comum). '
     . '20%: proporção de matrículas na EJA. Escola sem matrículas informadas fica com 0. '
-    . 'A parte da inclusão foi corrigida em 16/11/2026 (antes somava os turnos): notas de antes dessa data não são comparáveis.',
+    . 'A parte da inclusão foi corrigida na versão indices-v2, de 16/11/2026 (antes somava os turnos): notas da indices-v1 não são comparáveis.',
   capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
     . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
     . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
@@ -482,6 +496,7 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   return {
     indicador => { id => $indicator_id, label => $def->{label}, fonte => $def->{source} eq 'ideb' ? 'ideb' : 'censo',
                    (defined $def->{metodo} ? (metodo => $def->{metodo}) : ()),
+                   ($def->{source} eq 'mv' ? (versao => $INDICES_VERSAO, versao_data => $INDICES_HISTORICO[0]{data}) : ()),
                    ($basica ? (maximo => 0 + @BASICA_ORDEM) : ()) },
     ano       => 0 + $ano,
     municipio => { codigo_ibge => "$codigo_ibge", nome => $municipio, uf => $uf },

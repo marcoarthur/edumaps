@@ -33,4 +33,19 @@ export const FONTES_FIXTURE = [
     },
     licenca: "Domínio público",
   },
+  {
+    id: "indices_edumaps", nome: "Índices do EduMaps", orgao: "EduMaps", proprio: true,
+    descricao: "Seis índices de 0 a 10 por escola, calculados pelo EduMaps a partir do Censo Escolar.",
+    url: "https://github.com/marcoarthur/edumaps/blob/main/docs/ajuda/comunidade/rankings.md#o-que-cada-%C3%ADndice-mede",
+    metodologia: "https://github.com/marcoarthur/edumaps/blob/main/docs/analises/ivet.md",
+    telas: ["ranking", "perfil_escola", "agrupamento"],
+    periodo: { inicio: "2025", fim: "2025", texto: "2025" },
+    carga: { data: "2026-11-16" },
+    licenca: null,
+    versao: "indices-v2", data: "2026-11-16",
+    historico: [
+      { versao: "indices-v2", data: "2026-11-16", mudou: "Diversidade discente: inclusão pela educação especial em classe comum." },
+      { versao: "indices-v1", data: "2026-06-04", mudou: "Fórmula original dos seis índices." },
+    ],
+  },
 ];

@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, painel-publico-da-escola, privacidade]
 funcionalidade: ../../funcionalidades/plataforma/fontes-de-dados.md
-ultima_revisao: 2026-11-15
+ultima_revisao: 2026-11-16
 ---
 
 # Fontes e metodologia
@@ -30,6 +30,11 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 4. **Para citar uma análise:** use o ano do selo **Fonte** da própria tela. No
    agrupamento de escolas, a caixa **Universo** diz o ano do Censo e do IDEB
    usados, e o CSV baixado é aquele resultado.
+5. **Para citar um índice do EduMaps** (infraestrutura, docentes,
+   diversidade e os outros do ranking de escolas): o cartão **Índices do
+   EduMaps** diz a **versão da fórmula** (ex.: `indices-v2`) e abre o
+   histórico das versões. A versão também vai no CSV do ranking de escolas
+   (coluna `versao_indice`).
 
 ## Entendendo os números
 - **"Carga não registrada"**: a base foi carregada antes de o registro de
@@ -38,6 +43,10 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 - **"Consulte os termos do órgão"**: a licença ainda não foi confirmada por
   nós; vale o que o órgão publica.
 - **Ausência não é zero**: "–" ou "n/d" quer dizer que a fonte não tem o dado.
+- **Índices do EduMaps** não são de um órgão: são calculados por nós a
+  partir do Censo Escolar. No lugar da licença e da carga, o cartão traz a
+  versão da fórmula e a data do **último cálculo**. Notas de versões
+  diferentes não são comparáveis; o histórico diz o que mudou em cada uma.
 
 ## Limitações conhecidas
 - A página lista as bases das análises públicas. As do painel do gestor

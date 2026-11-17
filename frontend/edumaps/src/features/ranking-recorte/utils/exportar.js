@@ -41,14 +41,17 @@ export function tabelaRedes(r, redes) {
  */
 export function tabelaEscolas(e, escolas) {
   const comFaltas = escolas.some((x) => Array.isArray(x.faltam));
+  // #462: índice do EduMaps leva a versão da fórmula em toda linha, para um
+  // CSV de antes de uma mudança de fórmula não se confundir com um de depois.
+  const versao = e.indicador?.versao;
   return {
     cabecalho: [
       "posicao", "inep", "escola", "rede", `${e.indicador.id}_${e.ano}`, ...(comFaltas ? ["faltam"] : []),
-      "inse", "codigo_ibge", "municipio", "uf", "rede_filtro",
+      "inse", "codigo_ibge", "municipio", "uf", "rede_filtro", ...(versao ? ["versao_indice"] : []),
     ],
     linhas: escolas.map((x) => [
       x.posicao, x.co_entidade, x.no_entidade, x.rede, x.valor, ...(comFaltas ? [(x.faltam ?? []).join(", ")] : []),
-      x.inse, e.municipio?.codigo_ibge, e.municipio?.nome, e.municipio?.uf, e.rede ?? "",
+      x.inse, e.municipio?.codigo_ibge, e.municipio?.nome, e.municipio?.uf, e.rede ?? "", ...(versao ? [versao] : []),
     ]),
   };
 }

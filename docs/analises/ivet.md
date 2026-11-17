@@ -101,6 +101,12 @@ pesos sem justificativa registrada. **Sem consumidor**: só existem as classes
 
 ### 2.2 Sistema B — `clean.mv_escolas_scores` (MV) · **canônico**
 
+> **Versão citável dos seis scores** (#462): `indices-v2` (2026-11-16), separada
+> da versão do IVET. `indices-v1` (2026-06-04) é a fórmula original; a v2 é a
+> inclusão da diversidade pela educação especial em classe comum (#459). O
+> registro fica em `EduMaps::Model::Rank::School` (`$INDICES_VERSAO`,
+> `@INDICES_HISTORICO`) e no COMMENT da MV; mudança de fórmula sobe os dois.
+
 Definição: `data_pipeline/deploy/escolas_scores.sql`. Escala **0–10**,
 `ROUND(..., 2)`. Cada sub-score é uma soma ponderada de componentes; **não há
 agregação final** (os 6 scores vivem lado a lado). Base: escolas ativas
