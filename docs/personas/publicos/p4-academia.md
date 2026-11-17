@@ -63,6 +63,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p4--academia-pesquisadora): adotaria (mantido), com a diversidade. RT-01 a RT-03 resolvidos; nenhum achado aberto da nona avaliação.
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p4--academia-pesquisadora): adotaria (mantido), com o atendimento. RS-01 e RS-02 resolvidos; nenhum achado aberto da décima avaliação.
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p4--academia-pesquisadora): adotaria (mantido). RR-01 e RR-02 resolvidos; nenhum achado aberto da décima primeira avaliação.
+- [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p4--academia-pesquisadora): adotaria (mantido). RQ-01 e RQ-02 resolvidos; nenhum achado aberto da décima segunda avaliação.
 
 ## Pendências
 
@@ -90,7 +91,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (2026-11-17, **adotaria**): RR-01 e RR-02, detalhes da capacidade gestora
   → #475 (fórmula, `indices-v6`), entregues (#476). Décima segunda rodada (2026-11-17, **adotaria**): RQ-01 (expressão R da
   ajuda errada para a capacidade gestora) e RQ-02 (infraestrutura e
-  sustentabilidade sem partes na base) → #477.
+  sustentabilidade sem partes na base) → #477, entregues (#478).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

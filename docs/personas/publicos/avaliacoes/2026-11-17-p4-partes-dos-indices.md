@@ -117,3 +117,12 @@ RQ-02 juntas).
      versão não sobe.
 3. Podem ir juntas numa issue, como as anteriores, ou a RQ-01 sozinha
    antes, por ser um erro publicado.
+
+## Andamento
+
+- 2026-11-17: #477 (PR #478) mergeado: RQ-01 e RQ-02 resolvidos (bloco R
+  único "Refazer os seis índices no R" na ajuda, executado por um teste
+  contra uma amostra da base; partes da infraestrutura e da sustentabilidade
+  na base). Os seis índices refeitos em 32.016 de 32.016 escolas. Fechamento
+  em [`../ciclos/2026-11-17-ajuda-refaz-indices.md`](../ciclos/2026-11-17-ajuda-refaz-indices.md).
+  Nenhum achado aberto.

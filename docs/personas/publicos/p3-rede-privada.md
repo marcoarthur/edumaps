@@ -60,6 +60,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto direto, fora da dor central (#429): privada sem o 0 no acesso ao cargo.
+- [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

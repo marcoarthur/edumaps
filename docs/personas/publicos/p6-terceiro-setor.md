@@ -57,6 +57,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — cor/raça sobre os declarados](ciclos/2026-11-17-diversidade-cor-declarada.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "escolas mais diversas" sem as que não declaram.
 - [2026-11-17 — lotação por sala e por turno](ciclos/2026-11-17-atendimento-por-turno.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "superlotadas" sem as escolas de dois turnos.
 - [2026-11-17 — capacidade gestora sem o zero imposto](ciclos/2026-11-17-gestora-partes.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: "privadas com gestão pior" sem a parte que só existe na pública.
+- [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a conta da ajuda é testada.
 
 ## Pendências
 

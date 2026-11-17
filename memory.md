@@ -4,6 +4,22 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (ci) — décima segunda avaliação da P4, #477 (PR #478) mergeado
+
+- Décima segunda rodada da P4 (refazer os índices pela base, BA e MG):
+  **adotaria**. RQ-01: a expressão R da ajuda da gestora (da #476) errava
+  pela precedência do `!` em R (6.593/32.016 batiam). RQ-02: infraestrutura
+  e sustentabilidade sem partes na base → #477.
+- PR #478 (189be08): bloco R único "Refazer os seis índices no R" na ajuda
+  da base, executado por `test-ajuda-base-indices.R` contra
+  `fixtures/base-indices-amostra.csv` (176 escolas, `indices-v6`; regerar
+  quando a fórmula mudar); 8 partes novas (infra e sustentabilidade) no fim
+  do bloco Índices. Sem change, sem versão nova.
+- Lição: conta escrita na ajuda é código; o teste Perl da #476 estava verde
+  com a ajuda errada. Em R, `0.2 * !x + …` nega a soma inteira.
+- Nota técnica 224, ciclo `2026-11-17-ajuda-refaz-indices.md`. Abertas:
+  #454, #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-17 (ch) — décima primeira avaliação da P4, #475 (PR #476) mergeado
 
 - Décima primeira rodada da P4 (revisão dos seis índices, modo autônomo):
