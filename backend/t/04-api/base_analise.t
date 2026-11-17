@@ -277,9 +277,10 @@ subtest 'partes do índice de diversidade (#471)' => sub {
   }
   my $l = ler_csv($t->get_ok('/api/base-analise/csv?uf=AC&codigo_ibge=' . $MUN . '&blocos=indices')->tx);
   my @cab = @{ $l->[0] };
-  is [ @cab[ -12 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja
-                               alunos_sala_turno turnos etapas_regulares prop_tempo_integral alimentacao)],
-    'partes da diversidade e do atendimento (#473) no fim do bloco, antes de ano_censo e versao_indice';
+  is [ @cab[ -17 .. -3 ] ], [qw(diversidade_racial prop_cor_nao_declarada equilibrio_genero prop_educacao_especial_cc prop_eja
+                               alunos_sala_turno turnos etapas_regulares prop_tempo_integral alimentacao
+                               gestores_formacao prop_gestores_espec_gestao alunos_por_gestor orgaos_colegiados prop_acesso_cargo_selecao)],
+    'partes da diversidade, do atendimento (#473) e da gestora (#475) no fim do bloco, antes de ano_censo e versao_indice';
   my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices,inse')->tx);
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{diversidade_racial}[1], qr/sobre as matrículas com cor declarada.*Vazio: menos de metade/, 'parte racial no dicionário';
@@ -316,6 +317,45 @@ subtest 'partes do índice de capacidade de atendimento (#473)' => sub {
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{alunos_sala_turno}[1], qr/salas utilizadas × turnos/, 'parte de alunos por sala e turno no dicionário';
   like $d{indice_capacidade_atendimento}[1], qr/alunos por sala e por turno/, 'método com os turnos';
+};
+
+# #475: as partes do índice de capacidade gestora refazem o índice, com as
+# partes vazias fora da soma e dos pesos: escola pública com matrícula,
+# escola privada (sem o acesso ao cargo) e escola sem matrícula.
+subtest 'partes do índice de capacidade gestora (#475)' => sub {
+  my $M = 'EXISTS (SELECT 1 FROM clean.censo_matriculas m WHERE m.co_entidade = s.co_entidade AND m.nu_ano_censo = s.nu_ano_censo AND m.qt_mat_bas > 0)';
+  for my $caso (['pública com matrícula', "e.tp_dependencia <> 4 AND $M"], ['privada', "e.tp_dependencia = 4 AND $M"],
+                ['sem matrícula', "NOT $M"]) {
+    my ($nome, $cond) = @$caso;
+    my $s = $dbh->selectrow_hashref(qq{
+      SELECT e.co_entidade::text AS inep, e.sg_uf, e.co_municipio::text AS mun, s.score_capacidade_gestora::float8 AS ges, e.tp_dependencia AS dep
+        FROM clean.mv_escolas_scores s
+        JOIN clean.censo_escolas e ON e.co_entidade = s.co_entidade AND e.nu_ano_censo = s.nu_ano_censo
+       WHERE e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ? AND s.score_capacidade_gestora IS NOT NULL AND $cond
+       ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+    SKIP: {
+      skip "nenhuma escola $nome com gestor na MV", 3 unless $s;
+      my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=indices")->tx);
+      my %i; @i{ @{ $l->[0] } } = 0 .. $#{ $l->[0] };
+      my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
+      my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; return undef if $x eq ''; $x =~ tr/,/./; 0 + $x };
+      my ($apg, $ac) = map { $v->($_) } qw(alunos_por_gestor prop_acesso_cargo_selecao);
+      my $col = $v->('orgaos_colegiados') / 5; $col = 1 if $col > 1;
+      my ($soma, $pesos) = (0.3 * $v->('gestores_formacao') + 0.2 * $v->('prop_gestores_espec_gestao') + 0.2 * $col, 0.7);
+      if (defined $apg) { my $p = $apg > 0 ? 200 / $apg : 1; $p = 1 if $p > 1; $soma += 0.2 * $p; $pesos += 0.2 }
+      if (defined $ac)  { $soma += 0.1 * $ac; $pesos += 0.1 }
+      my $refeito = 10 * $soma / $pesos;
+      ok abs($refeito - $s->{ges}) < 0.01, "$nome: índice refeito ($refeito vs $s->{ges})";
+      ok( (defined $apg) == ($nome ne 'sem matrícula'), "$nome: alunos_por_gestor " . (defined $apg ? 'preenchido' : 'vazio'));
+      ok( (defined $ac) == ($s->{dep} != 4),
+          "$nome: prop_acesso_cargo_selecao " . (defined $ac ? 'preenchida' : 'vazia'));
+    }
+  }
+  my $d = ler_csv($t->get_ok('/api/base-analise/dicionario?blocos=indices')->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{prop_acesso_cargo_selecao}[1], qr/Vazio: escola privada/, 'acesso ao cargo vazio nas privadas no dicionário';
+  like $d{alunos_por_gestor}[1], qr/Vazio: sem matrículas/, 'gestores por aluno vazio sem matrícula no dicionário';
+  like $d{indice_capacidade_gestora}[1], qr/só na rede pública.*indices-v6/, 'método da gestora com a v6';
 };
 
 subtest 'dicionário: rede pública não é "sem" (#452)' => sub {

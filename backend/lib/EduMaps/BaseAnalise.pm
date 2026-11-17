@@ -120,6 +120,29 @@ my @ATENDIMENTO = (
    'Parte de 20% do índice de capacidade de atendimento: oferece alimentação escolar (1 = sim, 0 = não). Vazio: sem resposta no Censo, que conta 0 no índice', 1],
 );
 
+# #475: as partes do índice de capacidade gestora, com as expressões de
+# clean.mv_escolas_scores (escolas_scores_gestora). gs = censo_gestor.
+my $GB = 'gs.qt_gest_bas';
+my $FORMULA_GEST = 'Índice = 10 × (0,3 × gestores_formacao + 0,2 × prop_gestores_espec_gestao + 0,2 × mínimo(1, 200 ÷ alunos_por_gestor) '
+                 . '+ 0,2 × mínimo(1, orgaos_colegiados ÷ 5) + 0,1 × prop_acesso_cargo_selecao) ÷ (soma dos pesos das partes presentes), '
+                 . 'com alunos_por_gestor e prop_acesso_cargo_selecao vazios ficando de fora da soma e dos pesos';
+my @GESTORA = (
+  ['gestores_formacao', "CASE WHEN $GB > 0 THEN (LEAST(1, COALESCE(gs.qt_gest_bas_esco_sup_grad,0)::float8 / $GB)"
+     . " + LEAST(1, (COALESCE(gs.qt_gest_bas_esco_sup_pos_espec,0) + COALESCE(gs.qt_gest_bas_esco_sup_pos_mestra,0)"
+     . " + COALESCE(gs.qt_gest_bas_esco_sup_pos_douto,0))::float8 / $GB)) / 2 END",
+   "Parte de 30% do índice de capacidade gestora: média entre a proporção de gestores com ensino superior e a com pós-graduação (especialização, mestrado ou doutorado), de 0 a 1. Vazio: sem gestores no Censo. $FORMULA_GEST", 1],
+  ['prop_gestores_espec_gestao', "CASE WHEN $GB > 0 THEN LEAST(1, COALESCE(gs.qt_gest_bas_espec_gestao,0)::float8 / $GB) END",
+   'Parte de 20% do índice de capacidade gestora: gestores com formação em gestão ÷ gestores', 1],
+  ['alunos_por_gestor', "CASE WHEN $GB > 0 AND $MAT > 0 THEN ${MAT}::float8 / $GB END",
+   'Parte de 20% do índice de capacidade gestora: matrículas ÷ gestores (a parte vale 10 com 200 ou menos). Vazio: sem matrículas, e a parte fica de fora do índice com o peso redistribuído, ou sem gestores', 1],
+  ['orgaos_colegiados', '(COALESCE(e.in_orgao_ass_pais,0) + COALESCE(e.in_orgao_ass_pais_mestres,0) + COALESCE(e.in_orgao_conselho_escolar,0)'
+     . ' + COALESCE(e.in_orgao_gremio_estudantil,0) + COALESCE(e.in_orgao_outros,0))',
+   'Parte de 20% do índice de capacidade gestora: órgãos colegiados, de 5 (associação de pais, de pais e mestres, conselho escolar, grêmio e outros)', 1],
+  ['prop_acesso_cargo_selecao', "CASE WHEN $GB > 0 AND e.tp_dependencia <> 4 THEN LEAST(1, (COALESCE(gs.qt_gest_bas_acesso_cargo_conca,0)"
+     . " + COALESCE(gs.qt_gest_bas_acesso_cargo_eleic,0) + COALESCE(gs.qt_gest_bas_acesso_cargo_p_sel,0))::float8 / $GB) END",
+   'Parte de 10% do índice de capacidade gestora: gestores que chegaram ao cargo por concurso, eleição ou processo seletivo ÷ gestores. Vazio: escola privada (o Censo não registra a escolha pela mantenedora, e a parte fica de fora do índice com o peso redistribuído) ou sem gestores', 1],
+);
+
 my @DIVERSIDADE = (
   ['diversidade_racial',
    "CASE WHEN $MAT > 0 AND $DECL > 0 AND $DECL >= 0.5 * $MAT THEN 1 - ("
@@ -157,7 +180,7 @@ sub _indices_colunas {
       . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
       . 'índices ainda não recalculados depois de uma carga nova do Censo';
     ["indice_$_", "s.score_${_}::float8", "$d $vazio", 1]
-  } @INDICES ), @DIVERSIDADE, @ATENDIMENTO ];
+  } @INDICES ), @DIVERSIDADE, @ATENDIMENTO, @GESTORA ];
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
@@ -238,7 +261,7 @@ sub _blocos {
       colunas => \@ideb },
     # #465 (RY-01): os índices próprios, com a versão da fórmula.
     { id => 'indices', label => 'Índices do EduMaps', fonte => 'indices_edumaps',
-      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes dos índices de diversidade e de capacidade de atendimento, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
+      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes dos índices de diversidade, de capacidade de atendimento e de capacidade gestora, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
       colunas => _indices_colunas() },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',
@@ -364,7 +387,8 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
   }
   if ($tem{indices}) {
     $joins .= ' LEFT JOIN clean.mv_escolas_scores s ON s.co_entidade = e.co_entidade AND s.nu_ano_censo = e.nu_ano_censo'
-            . ' LEFT JOIN clean.censo_matriculas mt ON mt.co_entidade = e.co_entidade AND mt.nu_ano_censo = e.nu_ano_censo';
+            . ' LEFT JOIN clean.censo_matriculas mt ON mt.co_entidade = e.co_entidade AND mt.nu_ano_censo = e.nu_ano_censo'
+            . ' LEFT JOIN clean.censo_gestor gs ON gs.co_entidade = e.co_entidade AND gs.nu_ano_censo = e.nu_ano_censo';
   }
   if ($tem{porte}) {
     $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text';
