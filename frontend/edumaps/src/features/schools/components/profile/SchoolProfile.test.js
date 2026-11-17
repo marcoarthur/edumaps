@@ -120,3 +120,23 @@ describe("SchoolProfile", () => {
     ).toHaveAttribute("href", "/escola/financeiro?inep=35123456");
   });
 });
+
+describe("SchoolProfile: IDEB em cada etapa (#483)", () => {
+  it("mostra cada etapa da escola com município, rede e Brasil da mesma etapa", () => {
+    const raw = structuredClone(PROFILE_FIXTURE);
+    raw.tables.ideb_por_etapa = [
+      { etapa: "fundamental_ii", etapa_texto: "anos finais", ano: 2023, escola: 4.5, municipio: 4.05, rede: 4.94, brasil: 4.74, n_municipio: 153, n_rede: 13753, n_brasil: 30970, principal: true },
+      { etapa: "ensino_medio", etapa_texto: "ensino médio", ano: 2023, escola: 3.6, municipio: 3.77, rede: 4.25, brasil: 4.26, n_municipio: 70, n_rede: 14154, n_brasil: 14389, principal: false },
+    ];
+    render(SchoolProfile, { profile: transformProfileData(raw) });
+    expect(screen.getByRole("region", { name: "IDEB em cada etapa" })).toBeInTheDocument();
+    expect(screen.getByText(/Anos finais 2023/)).toBeInTheDocument();
+    expect(screen.getByText(/Ensino médio 2023/)).toBeInTheDocument();
+    expect(screen.getByText("usada na posição relativa")).toBeInTheDocument();
+  });
+
+  it("sem a tabela (perfil antigo), não mostra a seção", () => {
+    render(SchoolProfile, { profile: profileFixture() });
+    expect(screen.queryByRole("region", { name: "IDEB em cada etapa" })).toBeNull();
+  });
+});

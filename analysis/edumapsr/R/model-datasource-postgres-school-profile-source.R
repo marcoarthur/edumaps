@@ -65,8 +65,9 @@ PROFILE_DIRECAO <- c(
 # cache (read_school_profile_cache), e o backend usa o mesmo número na chave
 # do seu cache. 1: quartil inferior para todos (#105). 2: sentido do
 # indicador e só pior que a mediana (#421). 3: IDEB e nota SAEB rotulados
-# com a etapa e o ano da escola (#431).
-PROFILE_REGRA_SINAIS <- 3L
+# com a etapa e o ano da escola (#431). 4: IDEB e nota SAEB comparados na
+# mesma etapa da escola, e o IDEB de cada etapa (#483).
+PROFILE_REGRA_SINAIS <- 4L
 
 #' Expressões SQL (whitelist fechado) de cada indicador do perfil
 #'
@@ -139,8 +140,14 @@ load_school_profile <- function(source, ...) {
 #' com os 9 indicadores do perfil.
 #'
 #' @keywords internal
-.profile_pop_body <- function(schema_q, include_inactive, ano_expr = "$2", where_extra = "") {
+.profile_pop_body <- function(schema_q, include_inactive, ano_expr = "$2", where_extra = "",
+                              ideb_etapa = NULL) {
   inactive <- if (include_inactive) "" else "AND e.tp_situacao_funcionamento = 1"
+  # #483: com a etapa, o IDEB/SAEB de cada escola é o daquela etapa (vazio
+  # se a escola não tem nota nela); sem ela, a etapa de maior nota. A etapa
+  # vem de um whitelist fechado (.ideb_etapa_valida), por isso entra literal.
+  etapa <- .ideb_etapa_valida(ideb_etapa)
+  filtro_etapa <- if (is.null(etapa)) "" else sprintf("AND i.etapa = '%s'", etapa)
   exprs <- .profile_indicator_exprs()
   ind_sql <- paste0(
     sprintf("%s AS %s", unname(exprs), names(exprs)),
@@ -169,6 +176,7 @@ load_school_profile <- function(source, ...) {
         i.id_escola, i.ideb_observado, i.nota_media
       FROM %s.ideb_notas_escolas i
       WHERE i.ano = (SELECT max(ano) FROM %s.ideb_notas_escolas)
+        %s
       ORDER BY i.id_escola, i.nota_media DESC
     ) i ON i.id_escola = e.co_entidade
     LEFT JOIN %s.inse s
@@ -179,7 +187,7 @@ load_school_profile <- function(source, ...) {
       %s
   ",
     ind_sql,
-    schema_q, schema_q, ano_expr, schema_q, ano_expr, schema_q, schema_q, schema_q, schema_q, ano_expr,
+    schema_q, schema_q, ano_expr, schema_q, ano_expr, schema_q, schema_q, filtro_etapa, schema_q, schema_q, ano_expr,
     inactive,
     where_extra
   )
@@ -279,10 +287,11 @@ resolve_censo_ano <- function(con, schema = "clean") {
 #' Linha única da escola alvo (com seus indicadores)
 #'
 #' @keywords internal
-.school_profile_school_row <- function(con, schema_q, include_inactive, co_entidade, ano) {
+.school_profile_school_row <- function(con, schema_q, include_inactive, co_entidade, ano,
+                                       ideb_etapa = NULL) {
   pop_body <- .profile_pop_body(
     schema_q, include_inactive,
-    ano_expr = "$2", where_extra = "AND e.co_entidade = $1"
+    ano_expr = "$2", where_extra = "AND e.co_entidade = $1", ideb_etapa = ideb_etapa
   )
   sql <- sprintf(
     "
@@ -453,10 +462,14 @@ schema_q_plain <- function(con, schema_q) {
 #' município no Censo mais recente.
 #'
 #' @keywords internal
-.school_profile_municipio_frame <- function(con, schema_q, co_municipio, include_inactive, ano) {
+.school_profile_municipio_frame <- function(con, schema_q, co_municipio, include_inactive, ano,
+                                            ideb_etapa = NULL) {
+  # #483: com a etapa da escola, o IDEB das outras é o da mesma etapa; o
+  # grupo e as escolas semelhantes do fallback ficam entre escolas com nota
+  # nela.
   pop_body <- .profile_pop_body(
     schema_q, include_inactive,
-    ano_expr = "$2", where_extra = "AND e.co_municipio = $1"
+    ano_expr = "$2", where_extra = "AND e.co_municipio = $1", ideb_etapa = ideb_etapa
   )
   inds <- PROFILE_INDICATORS
 
@@ -752,9 +765,15 @@ load_school_profile.postgres_source <- function(
 
   inds <- PROFILE_INDICATORS
 
+  # #483: a etapa do IDEB da escola (a de maior nota) decide a etapa de
+  # todas as comparações do IDEB e do SAEB.
+  ideb <- .school_profile_ideb_etapa(con, schema_q, co_entidade)
+  etapa <- .ideb_etapa_valida(ideb$etapa)
+
   # Linha única da escola alvo. A população completa só é varrida nos
   # fallbacks live; com referências pré-computadas o request não varre.
-  first <- .school_profile_school_row(con, schema_q, include_inactive, co_entidade, ano)
+  first <- .school_profile_school_row(con, schema_q, include_inactive, co_entidade, ano,
+                                      ideb_etapa = etapa)
   if (nrow(first) == 0) {
     stop_invalid_dataset(sprintf("Escola não encontrada: %s", co_entidade))
   }
@@ -767,7 +786,6 @@ load_school_profile.postgres_source <- function(
     sg_uf = first$sg_uf,
     nu_ano_censo = ano
   )
-  ideb <- .school_profile_ideb_etapa(con, schema_q, co_entidade)
   school_meta$ideb_etapa <- ideb$etapa
   school_meta$ideb_ano <- ideb$ano
 
@@ -802,6 +820,22 @@ load_school_profile.postgres_source <- function(
     brasil = as.numeric(cmp_brasil$valor[inds]),
     stringsAsFactors = FALSE
   )
+
+  # #483 (RN-01): IDEB e nota SAEB do município, da rede e do Brasil na
+  # etapa da escola. A referência pré-computada mistura as etapas (a de
+  # maior nota de cada escola) e não vale para essas duas linhas. Escola sem
+  # IDEB: sem comparação (vazio), em vez de uma média de etapas misturadas.
+  ideb_rows <- long$indicador %in% c("ideb_observado", "nota_media")
+  ideb_scope <- function(scope, chave) {
+    .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, etapa, scope, chave)
+  }
+  s_mun <- ideb_scope("municipio", first$co_municipio)
+  s_rede <- ideb_scope("rede", first$tp_dependencia)
+  s_br <- ideb_scope("brasil", NULL)
+  por_ind <- function(s) c(ideb_observado = s$ideb$media, nota_media = s$nota$media)
+  long$municipio[ideb_rows] <- por_ind(s_mun)[long$indicador[ideb_rows]]
+  long$rede[ideb_rows] <- por_ind(s_rede)[long$indicador[ideb_rows]]
+  long$brasil[ideb_rows] <- por_ind(s_br)[long$indicador[ideb_rows]]
 
   n_municipio <- cmp_municipio$n
   n_rede <- cmp_rede$n
@@ -871,7 +905,7 @@ load_school_profile.postgres_source <- function(
     }
   } else {
     muni_frame <- .school_profile_municipio_frame(
-      con, schema_q, first$co_municipio, include_inactive, ano
+      con, schema_q, first$co_municipio, include_inactive, ano, ideb_etapa = etapa
     )
     fc <- .school_profile_fallback_cluster(muni_frame, co_entidade, clusters = clusters)
     long$cluster_p25 <- vapply(inds, function(i) fc$stats[[i]]$p25, numeric(1))
@@ -887,6 +921,21 @@ load_school_profile.postgres_source <- function(
       cluster_size = fc$cluster_size,
       cluster_run_id = NA_character_
     )
+  }
+
+  # #483: no grupo persistido, o IDEB e a nota SAEB da mesma etapa (o
+  # perfil do grupo pré-computado mistura as etapas). No fallback, o
+  # município já veio com a etapa da escola.
+  if (identical(cluster_block$cluster_source, "persisted") && !is.na(cluster_block$cluster_id)) {
+    s_cl <- ideb_scope("cluster", cluster_block$cluster_id)
+    for (k in c("ideb_observado", "nota_media")) {
+      s <- if (k == "ideb_observado") s_cl$ideb else s_cl$nota
+      i <- which(long$indicador == k)
+      long$cluster_p25[i] <- s$p25
+      long$cluster_p50[i] <- s$p50
+      long$cluster_p75[i] <- s$p75
+      long$cluster_media[i] <- s$media
+    }
   }
 
   long$cluster <- long$cluster_p50
@@ -922,6 +971,7 @@ load_school_profile.postgres_source <- function(
              SELECT i.ideb_observado
              FROM %s.ideb_notas_escolas i
              WHERE i.id_escola = CASE WHEN sp.entity_1 = $1 THEN sp.entity_2 ELSE sp.entity_1 END
+               AND ($4::text IS NULL OR i.etapa = $4)
              ORDER BY i.ano DESC, i.nota_media DESC
              LIMIT 1
            ) i ON TRUE
@@ -931,7 +981,8 @@ load_school_profile.postgres_source <- function(
            LIMIT 10",
           schema_q, schema_q
         ),
-        params = list(co_entidade, similarity_threshold, ano)
+        params = list(co_entidade, similarity_threshold, ano,
+                      if (is.null(etapa)) NA_character_ else etapa)
       ),
       error = function(e) data.frame()
     )
@@ -950,7 +1001,7 @@ load_school_profile.postgres_source <- function(
   if (!exists("peers") || nrow(peers) == 0) {
     if (!exists("muni_frame")) {
       muni_frame <- .school_profile_municipio_frame(
-        con, schema_q, first$co_municipio, include_inactive, ano
+        con, schema_q, first$co_municipio, include_inactive, ano, ideb_etapa = etapa
       )
     }
     peers <- .school_profile_fallback_peers(
@@ -959,6 +1010,38 @@ load_school_profile.postgres_source <- function(
       max_schools = fallback_peer_max
     )
     peers_source <- "gower_municipio"
+  }
+
+  # #483 (RN-02): o IDEB de cada etapa em que a escola tem nota, com o
+  # município, a rede e o Brasil da mesma etapa.
+  etapas_escola <- .school_profile_ideb_etapas(con, schema_q, co_entidade)
+  ideb_por_etapa <- do.call(rbind, lapply(seq_len(nrow(etapas_escola)), function(k) {
+    et <- etapas_escola$etapa[k]
+    sm <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "municipio", first$co_municipio)
+    sr <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "rede", first$tp_dependencia)
+    sb <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "brasil", NULL)
+    data.frame(
+      etapa = et,
+      etapa_texto = etapas_escola$etapa_texto[k],
+      ano = etapas_escola$ano[k],
+      escola = etapas_escola$ideb_observado[k],
+      municipio = sm$ideb$media,
+      rede = sr$ideb$media,
+      brasil = sb$ideb$media,
+      n_municipio = sm$ideb$n,
+      n_rede = sr$ideb$n,
+      n_brasil = sb$ideb$n,
+      principal = identical(et, etapa),
+      stringsAsFactors = FALSE
+    )
+  }))
+  if (is.null(ideb_por_etapa)) {
+    ideb_por_etapa <- data.frame(
+      etapa = character(0), etapa_texto = character(0), ano = integer(0),
+      escola = numeric(0), municipio = numeric(0), rede = numeric(0), brasil = numeric(0),
+      n_municipio = integer(0), n_rede = integer(0), n_brasil = integer(0),
+      principal = logical(0), stringsAsFactors = FALSE
+    )
   }
 
   metadata <- c(
@@ -977,14 +1060,20 @@ load_school_profile.postgres_source <- function(
       n_municipio = as.integer(n_municipio),
       n_rede = as.integer(n_rede),
       n_brasil = as.integer(n_brasil),
+      n_ideb_municipio = s_mun$ideb$n,
+      n_ideb_rede = s_rede$ideb$n,
+      n_ideb_brasil = s_br$ideb$n,
+      ideb_comparacao = "mesma_etapa",
       similarity_threshold = similarity_threshold
     )
   )
 
-  new_school_profile_model(
+  model <- new_school_profile_model(
     data = long,
     peers = peers,
     flags_meta = .school_profile_flags_meta(),
     metadata = metadata
   )
+  model$ideb_por_etapa <- ideb_por_etapa
+  model
 }

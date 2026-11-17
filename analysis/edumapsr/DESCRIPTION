@@ -68,6 +68,7 @@ Collate:
     'repository-postgres-city-summary.R'
     'model-datasource-postgres-similarity-source.R'
     'model-semantic-school-profile-model.R'
+    'model-datasource-postgres-profile-ideb-etapa.R'
     'model-datasource-postgres-school-profile-source.R'
     'repository-postgres-school-profile.R'
     'model-datasource-postgres-school-profile-reference-source.R'

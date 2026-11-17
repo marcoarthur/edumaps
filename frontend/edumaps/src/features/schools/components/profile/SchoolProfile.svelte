@@ -6,6 +6,7 @@
   // objeto já transformado por transformProfileData().
   import AttentionFlags from './AttentionFlags.svelte';
   import ProfileComparison from './ProfileComparison.svelte';
+  import IdebPorEtapa from './IdebPorEtapa.svelte';
   import ClusterSummary from './ClusterSummary.svelte';
   import ProfilePeers from './ProfilePeers.svelte';
   import EvolutionSection from './EvolutionSection.svelte';
@@ -66,6 +67,8 @@
   <AttentionFlags flags={profile.flags} />
 
   <ProfileComparison indicadores={profile.indicadores} />
+
+  <IdebPorEtapa etapas={profile.idebPorEtapa ?? []} />
 
   <EvolutionSection groups={evolutionGroups} />
 

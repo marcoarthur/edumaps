@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed);
 
 # Versão do perfil da escola: regra dos sinais (#421) e rótulos (#431). Espelha
 # PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
-our $PERFIL_REGRA_SINAIS = 3;
+our $PERFIL_REGRA_SINAIS = 4;  # 4: IDEB/SAEB comparados na mesma etapa (#483)
 
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {
@@ -137,8 +137,9 @@ sub run_network_profile ($self, $args = {}) {
       tp_dependencia => $args->{tp_dependencia},
       schema         => $args->{schema},
       # #479: o perfil da rede passou a trazer n_com_valor e as edições;
-      # mudou o formato, muda a chave (o cache antigo deixa de ser servido).
-      versao         => 2,
+      # #483: IDEB e SAEB por etapa. Mudou o formato, muda a chave (o cache
+      # antigo deixa de ser servido).
+      versao         => 3,
     },
   });
 }

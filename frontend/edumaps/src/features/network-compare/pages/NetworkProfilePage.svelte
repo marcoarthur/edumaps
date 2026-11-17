@@ -106,7 +106,7 @@
             text="Cada indicador é a média simples das escolas ativas do recorte (município e, se filtrado, a dependência) que têm o dado, comparada à média do Brasil."
             items={[
               'Escolas com dado: em quantas escolas a média se apoia. O IDEB, o SAEB e o INSE só existem em parte das escolas (as privadas não têm).',
-              'IDEB e SAEB: de cada escola, a etapa de maior nota na edição mais recente. Para comparar por etapa, use a linha do IDEB na comparação de redes.',
+              'IDEB e SAEB: uma linha por etapa (anos iniciais, anos finais, ensino médio), cada uma comparada com o Brasil na mesma etapa. A escala do SAEB cresce com a série e o IDEB cai: etapas diferentes não se comparam.',
               'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
               'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola).',
               'Variação = rede − Brasil (positivo = acima da média nacional; proporções em pontos percentuais, p.p.).',

@@ -81,9 +81,9 @@ test_that("IDEB e nota SAEB dizem a edição e a etapa da escola (#431)", {
   cmp <- analyze_school_profile(model)$tables$indicadores_comparados
   expect_equal(
     cmp$label[cmp$indicador == "ideb_observado"],
-    "IDEB observado 2023 (escola: anos iniciais)"
+    "IDEB observado 2023, anos iniciais"
   )
-  expect_match(cmp$label[cmp$indicador == "nota_media"], "2023 \\(escola: anos iniciais\\)$")
+  expect_match(cmp$label[cmp$indicador == "nota_media"], "2023, anos iniciais$")
   expect_equal(cmp$label[cmp$indicador == "inse"], unname(PROFILE_LABELS[["inse"]]))
 })
 

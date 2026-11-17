@@ -32,8 +32,8 @@ oferta educacional local.
 - Sistema pode **contar só as escolas em funcionamento**, como o ranking, o
   perfil e a base de análise, sem as paralisadas e extintas.
 - Sistema pode **dizer em quantas escolas cada média se apoia**, no perfil
-  analítico e em cada ponto da linha do IDEB, e qual edição e etapa do IDEB
-  o perfil usa.
+  analítico e em cada ponto da linha do IDEB, e mostrar no perfil o IDEB e a
+  nota SAEB por etapa, comparados com o Brasil na mesma etapa.
 
 ## Valor
 

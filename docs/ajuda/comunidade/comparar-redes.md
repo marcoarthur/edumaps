@@ -54,10 +54,10 @@ rede tem um perfil analítico, que a compara com a média do Brasil.
   - a coluna **Escolas com dado** diz em quantas escolas cada média se
     apoia. O IDEB, a nota do SAEB e o INSE só existem em parte das escolas:
     as privadas não têm, e as creches e pré-escolas quase nunca;
-  - o **IDEB do perfil** usa, de cada escola, a etapa de maior nota na
-    edição mais recente. Por isso ele não serve para comparar redes com
-    etapas diferentes (a municipal com anos iniciais, a estadual com ensino
-    médio). Para isso, use a linha do IDEB, que separa as etapas.
+  - o **IDEB e a nota do SAEB do perfil** vêm por etapa (anos iniciais,
+    anos finais e ensino médio), cada linha comparada com o Brasil na mesma
+    etapa. A escala do SAEB cresce com a série e o IDEB cai, então etapas
+    diferentes não se comparam.
 - **n/d ou –** = não disponível (#154). Ausência nunca é zero.
 
 ## Limitações conhecidas

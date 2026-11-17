@@ -26,7 +26,7 @@
         'Quartil = posição do valor da escola dentro do cluster (Q1 = menores valores … Q4 = maiores).',
         'Sinal de atenção: a escola está pior que a mediana do cluster no quartil do lado ruim (Q1 quando maior é melhor; Q4 quando menor é melhor).',
         'Cluster = mediana do indicador entre as escolas do grupo de referência.',
-        'IDEB e nota SAEB: a escola aparece na etapa de maior nota da edição mais recente (indicada no nome da linha); as médias de comparação usam a etapa principal de cada escola.',
+        'IDEB e nota SAEB: a etapa de maior nota da escola na edição mais recente (indicada no nome da linha), e município, rede, Brasil e cluster na mesma etapa, só com as escolas que têm nota nela. As outras etapas da escola estão em "IDEB em cada etapa".',
       ]}
     />
   </div>
