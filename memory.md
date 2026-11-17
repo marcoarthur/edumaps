@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cd) — sétima avaliação da P4, #467 (PR #468) mergeado
+
+- Sétima rodada da P4: **adotaria** (mantido). RZ-01 (índice 0 para escola
+  sem registro: 312 na BA+ES, centros de atendimento) e RZ-02 (dicionário da
+  infraestrutura) → #467. Decisão do developer: opção A (NULL na MV).
+- PR #468 (a778553): change `escolas_scores_sem_registro` (WHERE
+  qt_mat_bas/qt_doc_bas/qt_gest_bas > 0 nas CTEs, sem o COALESCE final dos
+  quatro); `indices-v3`; `ivet-v1.5`. Nacional: 2.067 sem docente, 1.774 sem
+  matrícula, 0 sem gestor.
+- Achados na validação: `bin/ranking.pl` só fazia upsert (agora apaga
+  `data_atualizacao < now()` por indicador/rede, numa transação); painel da
+  escola dava 500 com vizinha sem matrícula no método antigo (corrigido).
+  Painel de escola sem matrícula segue 404 (fora do escopo).
+- O `verify/escolas_scores.sql` antigo exigia "nenhum score nulo" e quebrou o
+  gate global do CI: check trocada (verify não entra no change_id; precedente
+  ea22561). Lição: mudar a semântica de uma MV → rodar o `sqitch verify`
+  global local antes do PR.
+- Local: ranking.pl, embeddings (178.467) e refresh_ivet (ivet-v1.5) rodados.
+  Nota técnica 219, ciclo `2026-11-17-indices-sem-registro.md`. Abertas:
+  #454, #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-17 (cc) — sexta avaliação da P4, #465 (PR #466) mergeado
 
 - Sexta rodada da P4: **adotaria** (mantido). RY-01 (índices fora da base) e

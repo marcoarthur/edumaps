@@ -58,6 +58,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido). RX-02 resolvido; fica #462.
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p4--academia-pesquisadora): adotaria (mantido). RX-01 resolvido; nenhum achado aberto da quinta avaliação.
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p4--academia-pesquisadora): adotaria (mantido). RY-01 e RY-02 resolvidos; nenhum achado aberto da sexta avaliação.
+- [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p4--academia-pesquisadora): adotaria (mantido). RZ-01 e RZ-02 resolvidos; nenhum achado aberto da sétima avaliação.
 
 ## Pendências
 
@@ -73,7 +74,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   base) e RY-02 (versão no nome do CSV) → #465, entregues
   (#466). Sétima rodada
   (2026-11-17, **adotaria**): RZ-01 (índice 0 para escola sem registro) e
-  RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`).
+  RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`),
+  entregues (#468). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

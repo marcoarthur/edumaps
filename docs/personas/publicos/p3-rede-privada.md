@@ -55,6 +55,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — etapas oferecidas e cobertura do IDEB](ciclos/2026-11-16-etapas-cobertura.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
+- [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 
 ## Pendências
 

@@ -110,3 +110,13 @@ RZ-02 juntas). Decisão: **opção A** (vazio na MV, `indices-v3`).
    - A pesquisadora prefere a A: o número citado e o arquivo dizem a mesma
      coisa.
 2. **RZ-02:** texto do dicionário. Pode ir no mesmo PR da RZ-01.
+
+## Andamento
+
+- 2026-11-17: #467 (PR #468) mergeado: RZ-01 e RZ-02 resolvidos (índice
+  `NULL` na MV para a escola sem registro de matrículas, docentes ou
+  gestores, `indices-v3` e `ivet-v1.5`; ranking pré-calculado sem as linhas
+  antigas; dicionário da base sem a coluna inexistente e sem a fonte
+  repetida). Fechamento em
+  [`../ciclos/2026-11-17-indices-sem-registro.md`](../ciclos/2026-11-17-indices-sem-registro.md).
+  Nenhum achado aberto.
