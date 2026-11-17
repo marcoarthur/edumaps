@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (ce) — oitava avaliação da P4, #469 (PR #470) mergeado
+
+- Oitava rodada da P4: **adotaria** (mantido). #467 conferida (vazio = sem
+  registro; 441 zeros reais). RW-01 (índice de capacitação esconde sinais
+  opostos: licenciatura +0,34, efetivos −0,30; partes fora da base) e RW-02
+  (pesos normativos não ditos) → #469.
+- PR #470 (6302a35): `prop_superior`, `prop_pos_graduacao`,
+  `prop_formacao_continuada` no fim do bloco Docência (expressões da MV,
+  limite a 1); refazem o índice em 18.837/18.837 escolas BA+ES. Frase dos
+  pesos no dicionário dos `indice_*` e em `rankings.md`. Sem change, sem R.
+- Armadilha: `LEAST(1, NULL)` = 1 no Postgres; sem docentes saía 100%.
+  Guarda `CASE WHEN qt_doc_bas > 0` (`_ate_um`).
+- Nota técnica 220, ciclo `2026-11-17-partes-capacitacao.md`. Abertas:
+  #454, #429, #295, #138, #368; deploy LXC.
+
 ## Sessão 2026-11-17 (cd) — sétima avaliação da P4, #467 (PR #468) mergeado
 
 - Sétima rodada da P4: **adotaria** (mantido). RZ-01 (índice 0 para escola

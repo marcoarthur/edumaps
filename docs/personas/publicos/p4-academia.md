@@ -59,6 +59,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p4--academia-pesquisadora): adotaria (mantido). RX-01 resolvido; nenhum achado aberto da quinta avaliação.
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p4--academia-pesquisadora): adotaria (mantido). RY-01 e RY-02 resolvidos; nenhum achado aberto da sexta avaliação.
 - [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p4--academia-pesquisadora): adotaria (mantido). RZ-01 e RZ-02 resolvidos; nenhum achado aberto da sétima avaliação.
+- [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p4--academia-pesquisadora): adotaria (mantido). RW-01 e RW-02 resolvidos; nenhum achado aberto da oitava avaliação.
 
 ## Pendências
 
@@ -77,7 +78,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RZ-02 (dicionário da infraestrutura) → #467 (opção A, `indices-v3`),
   entregues (#468). Oitava rodada (2026-11-17, **adotaria**): RW-01 (partes do
   índice de capacitação fora da base) e RW-02 (pesos normativos não ditos),
-  → #469.
+  → #469, entregues (#470). Nenhum achado aberto.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

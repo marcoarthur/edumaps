@@ -56,6 +56,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: número rastreável à fórmula.
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: índices da UF num arquivo citável.
 - [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: média sem misturar ausência e nota baixa.
+- [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: pesos ditos normativos.
 
 ## Pendências
 

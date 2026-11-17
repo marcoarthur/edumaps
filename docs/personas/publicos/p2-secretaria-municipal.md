@@ -59,6 +59,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-16 — versão citável dos índices](ciclos/2026-11-16-versao-indices.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: saber se dois CSVs são comparáveis.
 - [2026-11-16 — índices do EduMaps na base de análise](ciclos/2026-11-16-indices-na-base.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: os índices da rede num arquivo só.
 - [2026-11-17 — índice vazio, não 0, sem registro](ciclos/2026-11-17-indices-sem-registro.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: média da rede sem o 0 de quem não tem registro.
+- [2026-11-17 — partes do índice de capacitação docente](ciclos/2026-11-17-partes-capacitacao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: qual parte puxa a capacitação da rede.
 
 ## Pendências
 
