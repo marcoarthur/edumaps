@@ -52,7 +52,10 @@
 # docentes ou gestores passou a ficar sem o score correspondente (NULL, antes
 # 0, a vulnerabilidade máxima no componente), e o componente sai do
 # denominador, por isso a versão sobe.
-ivet_versao <- function() "ivet-v1.5"
+# ivet-v1.6 (#471): mesma agregação; o insumo score_diversidade_discente
+# (indices-v4) passou a calcular a parte de cor/raça sobre as matrículas com
+# cor declarada, e os resultados mudam, por isso a versão sobe.
+ivet_versao <- function() "ivet-v1.6"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export

@@ -98,13 +98,15 @@ São sobretudo centros de atendimento especializado e outras escolas sem turma
 regular, que antes apareciam no fim da lista com 0.
 
 **Versão da fórmula:** os seis índices são calculados pelo EduMaps, e cada
-mudança de fórmula ganha uma versão nova. A atual é a **`indices-v3`**, de
-17/11/2026: a escola sem registro fica sem o índice, não com 0. A
+mudança de fórmula ganha uma versão nova. A atual é a **`indices-v4`**, de
+17/11/2026: a cor/raça da diversidade passa a ser sobre as matrículas com
+cor declarada. A `indices-v3`, do mesmo dia, deixou sem o índice a escola
+sem registro, em vez de 0. A
 `indices-v2`, de 16/11/2026, corrigiu a inclusão na diversidade, e a
 `indices-v1`, de 04/06/2026, é a fórmula original. A tela
 mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
 traz a coluna `versao_indice` em toda linha e a versão no nome do arquivo
-(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v3.csv`).
+(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v4.csv`).
 Para os índices de todas as escolas de uma UF de uma vez, use a
 [base de análise](base-de-analise.md), bloco "Índices do EduMaps". Para citar, informe a versão:
 notas de versões diferentes não são comparáveis. O histórico está em
@@ -131,7 +133,11 @@ notas de versões diferentes não são comparáveis. O histórico está em
   concursados (20%) e formação continuada (20%).
 - **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e
   meninos (25%), inclusão (20%: a proporção de alunos da educação especial
-  em classe comum) e EJA (20%). A parte da inclusão foi corrigida na
+  em classe comum) e EJA (20%). A cor/raça é calculada sobre as matrículas
+  com cor declarada. Com menos de metade declarada, ela fica de fora e o
+  peso dela vai para as outras três partes. Antes da `indices-v4`
+  (17/11/2026), era sobre o total de matrículas, e a escola que não
+  declarava a cor parecia mais diversa. A parte da inclusão foi corrigida na
   `indices-v2` (16/11/2026): antes ela somava as matrículas dos turnos,
   que são quase todas, e quase toda escola recebia esses pontos. Por isso
   as notas de diversidade caíram, e as da `indices-v1` não são

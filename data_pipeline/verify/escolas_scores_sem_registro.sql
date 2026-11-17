@@ -21,8 +21,8 @@ BEGIN;
                                 AND d.qt_doc_bas > 0)) THEN
           RAISE EXCEPTION 'escola sem docente com score_capacitacao_docente (#467)';
       END IF;
-      IF coalesce(obj_description('clean.mv_escolas_scores'::regclass, 'pg_class'), '') !~ 'VERSÃO indices-v3 ' THEN
-          RAISE EXCEPTION 'comentário de clean.mv_escolas_scores sem indices-v3';
+      IF coalesce(obj_description('clean.mv_escolas_scores'::regclass, 'pg_class'), '') !~ 'VERSÃO indices-v([3-9]|[1-9][0-9]+) ' THEN   -- v3 ou posterior (#471)
+          RAISE EXCEPTION 'comentário de clean.mv_escolas_scores sem indices-v3 ou posterior';
       END IF;
       IF NOT has_table_privilege('edumaps_leitor', 'clean.mv_escolas_scores', 'SELECT') THEN
           RAISE EXCEPTION 'edumaps_leitor sem SELECT em clean.mv_escolas_scores';

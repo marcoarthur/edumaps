@@ -32,7 +32,7 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
    usados, e o CSV baixado é aquele resultado.
 5. **Para citar um índice do EduMaps** (infraestrutura, docentes,
    diversidade e os outros do ranking de escolas): o cartão **Índices do
-   EduMaps** diz a **versão da fórmula** (ex.: `indices-v3`) e abre o
+   EduMaps** diz a **versão da fórmula** (ex.: `indices-v4`) e abre o
    histórico das versões. A versão também vai no CSV do ranking de escolas
    (coluna `versao_indice`).
 

@@ -92,6 +92,31 @@ my @ETAPAS_OFERTA = (
 # método do ranking (%METODO; sem ';', que o dicionário dos testes separa).
 my @INDICES = qw(infraestrutura capacidade_atendimento capacitacao_docente
                  diversidade_discente capacidade_gestora sustentabilidade);
+# #471 (RT-02): as partes do índice de diversidade discente, no fim do bloco
+# (as colunas antigas não mudam de posição), com as expressões de
+# clean.mv_escolas_scores (escolas_scores_cor_declarada). mt = censo_matriculas.
+my $MAT  = 'mt.qt_mat_bas';
+my $DECL = '(COALESCE(mt.qt_mat_bas_branca,0) + COALESCE(mt.qt_mat_bas_preta,0) + COALESCE(mt.qt_mat_bas_parda,0)'
+         . ' + COALESCE(mt.qt_mat_bas_amarela,0) + COALESCE(mt.qt_mat_bas_indigena,0))::float8';
+sub _sobre_mat ($num) { "CASE WHEN $MAT > 0 THEN LEAST(1, ($num)::float8 / $MAT) END" }
+my $FORMULA_DIV = 'Índice = 10 × (0,35 × diversidade_racial + 0,25 × equilibrio_genero + 0,20 × prop_educacao_especial_cc + 0,20 × prop_eja), '
+                . 'ou, com diversidade_racial vazia, 10 × (0,25 × equilibrio_genero + 0,20 × prop_educacao_especial_cc + 0,20 × prop_eja) ÷ 0,65';
+my @DIVERSIDADE = (
+  ['diversidade_racial',
+   "CASE WHEN $MAT > 0 AND $DECL > 0 AND $DECL >= 0.5 * $MAT THEN 1 - ("
+     . join(' + ', map { "power(COALESCE(mt.qt_mat_bas_$_,0)::float8 / $DECL, 2)" } qw(branca preta parda amarela indigena))
+     . ') END',
+   "Parte de 35% do índice de diversidade discente: 1 menos a soma dos quadrados das proporções de branca, preta, parda, amarela e indígena, sobre as matrículas com cor declarada (0 a 1). Vazio: menos de metade das matrículas com cor declarada (o peso vai para as outras partes) ou escola sem matrículas. $FORMULA_DIV", 1],
+  ['prop_cor_nao_declarada', "CASE WHEN $MAT > 0 THEN COALESCE(mt.qt_mat_bas_nd,0)::float8 / $MAT END",
+   'Matrículas sem cor/raça declarada ÷ matrículas da educação básica. Com metade ou mais, diversidade_racial fica vazia', 1],
+  ['equilibrio_genero', _sobre_mat('2 * LEAST(COALESCE(mt.qt_mat_bas_fem,0), COALESCE(mt.qt_mat_bas_masc,0))'),
+   'Parte de 25% do índice de diversidade discente: 2 × o menor entre meninas e meninos ÷ matrículas (1 = metade de cada)', 1],
+  ['prop_educacao_especial_cc', _sobre_mat('COALESCE(mt.qt_mat_esp_cc,0)'),
+   'Parte de 20% do índice de diversidade discente: alunos da educação especial em classe comum ÷ matrículas, limitada a 1', 1],
+  ['prop_eja', _sobre_mat('COALESCE(mt.qt_mat_eja,0)'),
+   'Parte de 20% do índice de diversidade discente: matrículas na EJA ÷ matrículas, limitada a 1', 1],
+);
+
 # #467: o vazio também é a escola sem o registro de que o índice depende.
 my %SEM_REGISTRO = (
   capacidade_atendimento => 'sem matrículas no Censo',
@@ -104,7 +129,7 @@ my $BASICA_NA_BASE = 'Para água, energia, esgoto e banheiro, use as colunas in_
 sub _indices_colunas {
   no warnings 'once';
   my $met = \%EduMaps::Model::Rank::School::METODO;
-  return [ map {
+  return [ ( map {
     my $d = $met->{$_} =~ s/;\s*/, /gr;
     $d =~ s/Para água, energia, esgoto e banheiro, use "Infraestrutura básica"\./$BASICA_NA_BASE/;
     # #469 (RW-02): os pesos são normativos.
@@ -113,7 +138,7 @@ sub _indices_colunas {
       . ($SEM_REGISTRO{$_} ? "escola $SEM_REGISTRO{$_}, ou " : '')
       . 'índices ainda não recalculados depois de uma carga nova do Censo';
     ["indice_$_", "s.score_${_}::float8", "$d $vazio", 1]
-  } @INDICES ];
+  } @INDICES ), @DIVERSIDADE ];
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
@@ -143,6 +168,9 @@ my @DOCENCIA = (
           ambiental dir_humanos div_sexual dir_adolesc afro gestao educ_tic outros)),
    "Formações continuadas dos docentes (soma das formações específicas do Censo) ÷ $DENOM, limitada a 1. Parte de 20% do índice de capacitação docente"],
 );
+
+# #471 (RT-03): o INSE só existe para escolas com alunos no SAEB.
+my $INSE_VAZIO = 'Vazio: a escola não teve alunos avaliados no SAEB daquela edição. As privadas nunca têm INSE, e as creches e pré-escolas quase nunca';
 
 # Cada bloco: colunas [nome, expressão SQL, descrição, numérica?] e a fonte.
 sub _blocos {
@@ -191,13 +219,13 @@ sub _blocos {
       colunas => \@ideb },
     # #465 (RY-01): os índices próprios, com a versão da fórmula.
     { id => 'indices', label => 'Índices do EduMaps', fonte => 'indices_edumaps',
-      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
+      descricao => 'Os seis índices de 0 a 10 do EduMaps (infraestrutura, capacidade de atendimento, capacitação docente, diversidade discente, capacidade gestora e sustentabilidade), calculados a partir do Censo Escolar, e as partes do índice de diversidade, com a versão da fórmula em versao_indice. Notas de versões diferentes não são comparáveis.',
       colunas => _indices_colunas() },
     { id => 'inse', label => 'Nível socioeconômico (INSE)', fonte => 'inse',
       descricao => 'INSE médio dos alunos e o nível (I a VIII), na edição mais recente do SAEB.',
       colunas => [
-        ['inse_media',         'x.media_inse', 'INSE médio dos alunos da escola', 1],
-        ['inse_classificacao', 'x.inse_classificacao', 'Nível do INSE (I a VIII)', 0],
+        ['inse_media',         'x.media_inse', "INSE médio dos alunos da escola. $INSE_VAZIO", 1],
+        ['inse_classificacao', 'x.inse_classificacao', "Nível do INSE (I a VIII). $INSE_VAZIO", 0],
       ] },
     { id => 'porte', label => 'Porte do município', fonte => 'ibge_populacao',
       descricao => 'População estimada do município e a classe de tamanho do IBGE.',
@@ -316,7 +344,8 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
     push @jb, $anos->{inse} // -1;
   }
   if ($tem{indices}) {
-    $joins .= ' LEFT JOIN clean.mv_escolas_scores s ON s.co_entidade = e.co_entidade AND s.nu_ano_censo = e.nu_ano_censo';
+    $joins .= ' LEFT JOIN clean.mv_escolas_scores s ON s.co_entidade = e.co_entidade AND s.nu_ano_censo = e.nu_ano_censo'
+            . ' LEFT JOIN clean.censo_matriculas mt ON mt.co_entidade = e.co_entidade AND mt.nu_ano_censo = e.nu_ano_censo';
   }
   if ($tem{porte}) {
     $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text';

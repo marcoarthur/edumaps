@@ -43,8 +43,10 @@ has network_map => sub {
 # change. O teste t/02-models/indices_versao.t compara o COMMENT com
 # $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
 # deploy da fórmula. Correção de texto do %METODO não sobe a versão.
-our $INDICES_VERSAO = 'indices-v3';
+our $INDICES_VERSAO = 'indices-v4';
 our @INDICES_HISTORICO = (
+  { versao => 'indices-v4', data => '2026-11-17',
+    mudou  => 'Diversidade discente: a parte de cor/raça passa a ser calculada sobre as matrículas com cor declarada (antes, sobre o total, e a escola que não declarava parecia mais diversa). Com menos de metade das matrículas com cor declarada, a parte de cor/raça fica de fora e o peso dela vai para as outras três partes.' },
   { versao => 'indices-v3', data => '2026-11-17',
     mudou  => 'Escola sem registro de matrículas, docentes ou gestores no Censo fica sem o índice que depende desse registro (vazio), não com 0: capacidade de atendimento e diversidade discente sem matrículas, capacitação docente sem docentes, capacidade gestora sem gestores. As notas das demais escolas não mudam.' },
   { versao => 'indices-v2', data => '2026-11-16',
@@ -75,10 +77,12 @@ our %METODO = (
     . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados. '
     . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '
     . 'Escola sem registro de docentes no Censo fica sem o índice (vazio, não 0).',
-  diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas (1 menos a soma dos quadrados das proporções). '
+  diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas com cor declarada (1 menos a soma dos quadrados das proporções). '
     . '25%: equilíbrio entre meninas e meninos. 20%: inclusão (proporção de alunos da educação especial em classe comum). '
     . '20%: proporção de matrículas na EJA. Escola sem matrículas no Censo fica sem o índice (vazio, não 0). '
-    . 'A parte da inclusão foi corrigida na versão indices-v2, de 16/11/2026 (antes somava os turnos): notas da indices-v1 não são comparáveis.',
+    . 'Com menos de metade das matrículas com cor declarada, a parte de cor/raça fica de fora e o peso dela vai para as outras três. '
+    . 'A parte de cor/raça foi corrigida na versão indices-v4, de 17/11/2026 (antes era sobre o total de matrículas, e quem não declarava a cor parecia mais diverso), '
+    . 'e a da inclusão na indices-v2, de 16/11/2026: notas de versões anteriores não são comparáveis.',
   capacidade_gestora => 'Índice de 0 a 10 (maior é melhor). 30%: formação dos gestores (superior e pós-graduação). '
     . '20%: gestores com formação em gestão. 20%: gestores por aluno (10 com um gestor para cada 200 alunos ou menos). '
     . '20%: órgãos colegiados (associação de pais, de pais e mestres, conselho escolar, grêmio e outros, de 5). '
