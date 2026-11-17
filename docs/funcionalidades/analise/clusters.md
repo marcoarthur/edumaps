@@ -37,6 +37,11 @@ investidores que segmentam redes.
 - Sistema pode guardar cada agrupamento por 90 dias, com um link que reabre o
   mesmo resultado e a exportação em CSV das escolas com o grupo e os valores
   dos indicadores, para citar e reproduzir.
+- Sistema pode **agrupar por desempenho dentro de uma etapa** (anos
+  iniciais, anos finais ou ensino médio), sem misturar notas de etapas cuja
+  escala não se compara, e dizer a etapa no rótulo, no link e no CSV.
+- Sistema pode agrupar por infraestrutura contando como falta só a escola
+  sem o serviço, não a que usa gerador, poço ou fossa.
 - Sistema pode apoiar decisões de rede a partir dos agrupamentos.
 
 ## Valor

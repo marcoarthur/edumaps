@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rotuloIndicador, resumoUniverso, dataBR } from "./execucao.js";
+import { rotuloIndicador, resumoUniverso, dataBR, etapaExecucao } from "./execucao.js";
 
 const COLS = [
   { column_name: "in_agua_potavel", comment: "Há água potável na escola?" },
@@ -47,4 +47,16 @@ it("formatarIndicador: 0/1 e proporção em %, o resto em número (#427)", () =>
   expect(formatarIndicador("prop_licenciatura", 0.5)).toBe("50%");
   expect(formatarIndicador("nota_media", 251.456)).toBe("251,46");
   expect(formatarIndicador("qt_doc_bas", null)).toBe("–");
+});
+
+describe("etapaExecucao (#481)", () => {
+  it("diz a etapa escolhida", () => {
+    expect(etapaExecucao({ etapa: "ensino_medio", features: ["nota_media"] })).toBe("Ensino médio");
+  });
+  it("marca a execução antiga que misturou as etapas", () => {
+    expect(etapaExecucao({ features: ["ideb_observado"] })).toMatch(/etapas misturadas/);
+  });
+  it("sem IDEB, sem etapa", () => {
+    expect(etapaExecucao({ features: ["in_biblioteca"] })).toBeNull();
+  });
 });

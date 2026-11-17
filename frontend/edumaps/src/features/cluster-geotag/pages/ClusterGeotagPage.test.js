@@ -182,7 +182,7 @@ describe("ClusterGeotagPage", () => {
     });
   });
 
-  it("preset desempenho exige ano e envia ano_ideb no payload", async () => {
+  it("preset desempenho exige ano e etapa e envia os dois no payload (#481)", async () => {
     getRegions.mockResolvedValue(REGIONS_FIXTURE);
     getUfs.mockResolvedValue(UFS_FIXTURE);
     getMunicipalities.mockResolvedValue(MUNICIPALITIES_FIXTURE);
@@ -217,10 +217,17 @@ describe("ClusterGeotagPage", () => {
       expect(requestCluster).not.toHaveBeenCalled();
     });
 
-    // Seleciona ano 2023 e gera com sucesso.
+    // Seleciona ano 2023; sem a etapa, ainda não agrupa (#481).
     const anoSelect = screen.getByLabelText(/Ano IDEB\/SAEB/);
     await fireEvent.change(anoSelect, { target: { value: "2023" } });
+    await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Escolha a etapa do IDEB\/SAEB/i)).toBeInTheDocument();
+      expect(requestCluster).not.toHaveBeenCalled();
+    });
 
+    const etapaSelect = screen.getByLabelText(/Etapa do IDEB\/SAEB/);
+    await fireEvent.change(etapaSelect, { target: { value: "anos_iniciais" } });
     await fireEvent.click(screen.getByRole("button", { name: /Agrupar escolas/i }));
 
     await waitFor(() => {
@@ -228,6 +235,7 @@ describe("ClusterGeotagPage", () => {
         expect.objectContaining({
           preset: "desempenho",
           ano_ideb: 2023,
+          etapa: "anos_iniciais",
           table_name: "school_indicators",
           id_column: "co_entidade",
           schema: "clean",

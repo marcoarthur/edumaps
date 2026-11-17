@@ -23,7 +23,7 @@
   import ClusterSummaryTable from "../components/ClusterSummaryTable.svelte";
   import PresetSelector from "../components/PresetSelector.svelte";
   import FeatureSelect from "../components/FeatureSelect.svelte";
-  import { ALGORITHMS } from "../constants/cluster.js";
+  import { ALGORITHMS, ETAPAS_IDEB, usaIdeb } from "../constants/cluster.js";
 
   // ---- cascata de geotag ------------------------------------------------
   let regions = $state([]);
@@ -40,12 +40,16 @@
   let years = $state([]);
   let selectedPreset = $state("infraestrutura");
   let anoIdeb = $state("");
+  let etapaIdeb = $state("");
   let selectedFeatures = $state([]);
 
   const currentPreset = $derived(
     presets.find((p) => p.id === selectedPreset) ?? null,
   );
-  const needsYear = $derived(Boolean(currentPreset?.year_filter));
+  // #481: com qualquer coluna do IDEB/SAEB, escolher o ano e a etapa.
+  const temIdeb = $derived(usaIdeb(selectedFeatures));
+  const needsYear = $derived(Boolean(currentPreset?.year_filter) || temIdeb);
+  const needsEtapa = $derived(Boolean(currentPreset?.etapa_filter) || temIdeb);
 
   // ---- parâmetros da clusterização --------------------------------------
   let algorithm = $state("kmeans");
@@ -141,6 +145,10 @@
       error = `O conjunto "${currentPreset?.name}" exige escolher o ano IDEB/SAEB.`;
       return;
     }
+    if (needsEtapa && !etapaIdeb) {
+      error = "Escolha a etapa do IDEB/SAEB: as notas de etapas diferentes não se comparam.";
+      return;
+    }
     if (selectedFeatures.length === 0) {
       error = "Selecione ao menos um indicador para agrupar as escolas.";
       return;
@@ -160,6 +168,7 @@
       algorithm,
       preset: selectedPreset,
       ano_ideb: needsYear ? Number(anoIdeb) : undefined,
+      etapa: needsEtapa ? etapaIdeb : undefined,
       features: selectedFeatures,
       codigo_regiao: codigoRegiao || undefined,
       codigo_uf: codigoUf || undefined,
@@ -236,6 +245,7 @@
       if (p.preset) selectedPreset = p.preset;
       if (Array.isArray(p.features) && p.features.length) selectedFeatures = [...p.features];
       if (p.ano_ideb != null) anoIdeb = String(p.ano_ideb);
+      if (p.etapa) etapaIdeb = p.etapa;
       // O valor tem de ser o da própria opção (número), senão o <select>
       // não marca nada.
       const opcao = (lista, campo, valor) =>
@@ -449,6 +459,27 @@
                 <option value={y.ano}>{y.ano}</option>
               {/each}
             </select>
+          </div>
+        {/if}
+        {#if needsEtapa}
+          <div class="mt-3">
+            <label for="etapa_ideb" class="block text-sm text-gray-600 mb-1">
+              Etapa do IDEB/SAEB <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="etapa_ideb"
+              bind:value={etapaIdeb}
+              class="w-full md:w-64 border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">Selecione a etapa…</option>
+              {#each ETAPAS_IDEB as e}
+                <option value={e.id}>{e.label}</option>
+              {/each}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Só entram as escolas com nota nessa etapa. A escala do SAEB cresce com a série
+              e o IDEB cai: misturar etapas agruparia as escolas pela etapa que oferecem.
+            </p>
           </div>
         {/if}
       </div>

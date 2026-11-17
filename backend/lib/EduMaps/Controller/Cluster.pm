@@ -98,15 +98,21 @@ sub execucao_csv($self) {
     $_ => (defined $v && "$v" =~ /^\d{4}$/ ? "$v" : undef);
   } qw(censo ideb);
 
+  # #481: a etapa do IDEB/SAEB agrupada. Execução antiga com colunas do IDEB
+  # e sem etapa: "misturadas" (a média entre as etapas da escola).
+  my $etapa = EduMaps::Presets->etapa($exec->{parametros}{etapa});
+  my $etapa_ideb = $etapa ? $etapa->{id}
+                 : EduMaps::Presets->usa_ideb($features) ? 'misturadas' : undef;
+
   # Separador ';' e BOM: abre direto no Excel em PT-BR (vírgula é decimal).
-  my @cab = (qw(inep escola municipio uf rede grupo rotulo), @$features, qw(ano_censo ano_ideb));
+  my @cab = (qw(inep escola municipio uf rede grupo rotulo), @$features, qw(ano_censo ano_ideb etapa_ideb));
   my @out = (join ';', map { $q->($_) } @cab);
   for my $r (@$linhas) {
     push @out, join ';', map { $q->($_) } (
       $r->{co_entidade}, $r->{no_entidade}, $r->{no_municipio}, $r->{sg_uf}, $r->{rede},
       $r->{cluster_id}, $r->{cluster_label},
       (map { defined $_ ? (sprintf('%.6g', $_) =~ s/\./,/r) : undef } @{ $r->{valores} }),
-      $ano{censo}, $ano{ideb},
+      $ano{censo}, $ano{ideb}, $etapa_ideb,
     );
   }
 

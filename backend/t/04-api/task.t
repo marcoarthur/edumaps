@@ -161,12 +161,30 @@ subtest 'request_cluster: preset docencia (sem year_filter) -> 202' => sub {
   $t->app->minion->backend->remove_job($json->{job_id});
 };
 
-subtest 'request_cluster: preset desempenho + ano_ideb -> 202 com args' => sub {
+# #481 (RO-01): IDEB/SAEB só se agrupa dentro de uma etapa.
+subtest 'request_cluster: desempenho sem etapa -> 400 (#481)' => sub {
+  $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators', id_column => 'co_entidade',
+    preset => 'desempenho', ano_ideb => 2023,
+  })->status_is(400)->content_like(qr/etapa/);
+  $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators', id_column => 'co_entidade',
+    preset => 'desempenho', ano_ideb => 2023, etapa => 'quarta_serie',
+  })->status_is(400);
+  # lista própria com uma coluna do IDEB também exige a etapa
+  $t->post_ok('/api/task/cluster' => json => {
+    table_name => 'school_indicators', id_column => 'co_entidade',
+    preset => 'docencia', features => ['prop_licenciatura', 'ideb_observado'],
+  })->status_is(400)->content_like(qr/etapa/);
+};
+
+subtest 'request_cluster: preset desempenho + ano_ideb + etapa -> 202 com args' => sub {
   my $tx = $t->post_ok('/api/task/cluster' => json => {
     table_name => 'school_indicators',
     id_column  => 'co_entidade',
     preset     => 'desempenho',
     ano_ideb   => 2023,
+    etapa      => 'anos_iniciais',
   })->status_is(202)->tx;
   my $json = $tx->res->json;
   my $args = $t->app->minion->job($json->{job_id})->args->[0];
@@ -175,6 +193,9 @@ subtest 'request_cluster: preset desempenho + ano_ideb -> 202 com args' => sub {
   is $args->{ano_ideb},   2023,          'ano_ideb passado ao job';
   is $args->{schema},     'clean',       'schema forçado clean';
   is $args->{features}->[0], 'nota_media', 'features do preset';
+  is $args->{etapa}, 'anos_iniciais', 'etapa passada ao job (#481)';
+  is $args->{labeling}{concept}, 'desempenho dos alunos nos anos iniciais', 'rótulo com a etapa';
+  is EduMaps::Presets->get('desempenho')->{concept}, 'desempenho dos alunos', 'o preset não muda';
 
   $t->app->minion->backend->remove_job($json->{job_id});
 };

@@ -79,6 +79,18 @@ subtest 'GET /api/cluster/presets: lista os 3 presets curados' => sub {
   is $by_id{desempenho}->{gender}, 'm', 'desempenho masculino';
 };
 
+# #481: o desempenho pede a etapa; a infraestrutura usa os "inexistente".
+subtest 'GET /api/cluster/presets: etapa no desempenho, infraestrutura sem "rede pública" (#481)' => sub {
+  my %by_id = map { $_->{id} => $_ } @{ $t->get_ok('/api/cluster/presets')->status_is(200)->tx->res->json };
+  ok $by_id{desempenho}{etapa_filter}, 'desempenho com etapa_filter';
+  is [ map { $_->{id} } @{ $by_id{desempenho}{etapas} } ], [qw(anos_iniciais anos_finais ensino_medio)], 'três etapas';
+  ok !$by_id{docencia}{etapas}, 'docência sem etapas';
+  my %f = map { $_ => 1 } @{ $by_id{infraestrutura}{features} };
+  ok !$f{in_esgoto_rede_publica} && !$f{in_energia_rede_publica}, 'sem os itens da rede pública';
+  ok $f{in_esgoto_inexistente} && $f{in_energia_inexistente}, 'com os inexistentes';
+  is $by_id{infraestrutura}{directions}{in_esgoto_inexistente}, -1, 'sem esgoto é pior';
+};
+
 subtest 'GET /api/cluster/columns: cataloga colunas de school_indicators' => sub {
   my $tx = $t->get_ok('/api/cluster/columns')->status_is(200)->tx;
   my $json = $tx->res->json;

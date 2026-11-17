@@ -78,12 +78,12 @@ subtest 'CSV: uma linha por escola, indicadores na ordem dos parâmetros' => sub
   my $txt = decode('UTF-8', $tx->res->body);
   $txt =~ s/^\x{FEFF}//;
   my @l = split /\r\n/, $txt;
-  is $l[0], 'inep;escola;municipio;uf;rede;grupo;rotulo;in_agua_potavel;qt_salas;ano_censo;ano_ideb',
+  is $l[0], 'inep;escola;municipio;uf;rede;grupo;rotulo;in_agua_potavel;qt_salas;ano_censo;ano_ideb;etapa_ideb',
     'cabeçalho com a versão dos dados no fim';
   is scalar @l, 4, 'cabeçalho + 3 escolas';
-  is $l[1], qq{$INEP_A;"Escola Alfa; Teste";Cidade Teste;XX;Municipal;1;Alta infraestrutura;1;12,5;2025;2023},
+  is $l[1], qq{$INEP_A;"Escola Alfa; Teste";Cidade Teste;XX;Municipal;1;Alta infraestrutura;1;12,5;2025;2023;},
     'grupo 1 primeiro, ";" entre aspas, decimal com vírgula';
-  like $l[3], qr/^\Q$INEP_SEM\E;.*;0;;2025;2023$/, 'indicador sem valor fica vazio; versão em toda linha';
+  like $l[3], qr/^\Q$INEP_SEM\E;.*;0;;2025;2023;$/, 'indicador sem valor fica vazio; versão em toda linha';
 };
 
 subtest 'CSV de execução antiga, sem a versão dos dados' => sub {
@@ -92,8 +92,8 @@ subtest 'CSV de execução antiga, sem a versão dos dados' => sub {
   my $txt = decode('UTF-8', $tx->res->body);
   $txt =~ s/^\x{FEFF}//;
   my @l = split /\r\n/, $txt;
-  is $l[0], 'inep;escola;municipio;uf;rede;grupo;rotulo;qt_salas;ano_censo;ano_ideb', 'mesmas colunas';
-  is $l[1], qq{$INEP_A;"Escola Alfa; Teste";Cidade Teste;XX;Municipal;1;Grupo 1;12;;}, 'anos vazios';
+  is $l[0], 'inep;escola;municipio;uf;rede;grupo;rotulo;qt_salas;ano_censo;ano_ideb;etapa_ideb', 'mesmas colunas';
+  is $l[1], qq{$INEP_A;"Escola Alfa; Teste";Cidade Teste;XX;Municipal;1;Grupo 1;12;;;}, 'anos vazios';
 };
 
 subtest 'inexistente, inválida e vencida dão 404' => sub {
