@@ -120,5 +120,20 @@ export function transformProfileData(raw) {
     clusterResumo: asArray(tables.cluster_resumo),
     peers: asArray(tables.peers),
     flags: asArray(tables.flags),
+    // #483 (RN-02): o IDEB de cada etapa da escola, com as comparações da
+    // mesma etapa. Perfil em cache antigo: lista vazia.
+    idebPorEtapa: asArray(tables.ideb_por_etapa).map((e) => ({
+      etapa: e.etapa,
+      etapaTexto: e.etapa_texto ?? e.etapa,
+      ano: e.ano ?? null,
+      escola: e.escola ?? null,
+      municipio: e.municipio ?? null,
+      rede: e.rede ?? null,
+      brasil: e.brasil ?? null,
+      nMunicipio: e.n_municipio ?? null,
+      nRede: e.n_rede ?? null,
+      nBrasil: e.n_brasil ?? null,
+      principal: e.principal === true,
+    })),
   };
 }

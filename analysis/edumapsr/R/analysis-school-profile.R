@@ -70,9 +70,10 @@
 #'
 #' IDEB e nota SAEB da escola vêm da edição mais recente e, com mais de uma
 #' etapa, da de maior nota (`.profile_pop_body`). O rótulo diz qual:
-#' "IDEB observado 2023 (escola: anos iniciais)". As médias de comparação
-#' usam a etapa principal de cada escola, por isso a etapa fica atribuída
-#' só à escola. Sem a etapa no metadata, fica o rótulo simples.
+#' "IDEB observado 2023, anos iniciais". Desde a #483, as médias de
+#' comparação (município, rede, Brasil, grupo) são da mesma etapa, por isso
+#' a etapa vale para a linha inteira. Sem a etapa no metadata, fica o
+#' rótulo simples.
 #'
 #' @keywords internal
 .profile_labels <- function(indicador, metadata = list()) {
@@ -87,7 +88,7 @@
     etapa
   )
   ideb <- indicador %in% c("ideb_observado", "nota_media")
-  labels[ideb] <- sprintf("%s %d (escola: %s)", labels[ideb], as.integer(ano), etapa_txt)
+  labels[ideb] <- sprintf("%s %d, %s", labels[ideb], as.integer(ano), etapa_txt)
   labels
 }
 
@@ -196,7 +197,10 @@ analyze_school_profile <- function(model, parameters = list()) {
       indicadores_comparados = comparados,
       cluster_resumo = cluster_resumo,
       peers = peers,
-      flags = flags
+      flags = flags,
+      # #483 (RN-02): o IDEB de cada etapa da escola, com as comparações da
+      # mesma etapa. Modelo sem a tabela (fixtures antigas): vazia.
+      ideb_por_etapa = if (is.data.frame(model$ideb_por_etapa)) model$ideb_por_etapa else data.frame()
     ),
     metadata = c(model$metadata, list(regra_sinais = PROFILE_REGRA_SINAIS))
   )

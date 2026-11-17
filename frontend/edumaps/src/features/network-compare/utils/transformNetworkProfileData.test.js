@@ -67,12 +67,12 @@ describe("perfil da rede: escolas com dado e rótulos (#479)", () => {
     expect(p.indicadores[0].nComValor).toBeNull();
   });
 
-  it("rotula o IDEB e o SAEB com a edição e a etapa", () => {
+  it("usa o rótulo por etapa e marca o IDEB antigo de etapas misturadas (#483)", () => {
     const meta = { anoIdeb: 2023, anoInse: 2023 };
     expect(rotuloIndicadorRede({ indicador: "ideb_observado", label: "IDEB observado" }, meta))
-      .toBe("IDEB 2023 (etapa de maior nota de cada escola)");
-    expect(rotuloIndicadorRede({ indicador: "nota_media", label: "Nota média (SAEB)" }, meta))
-      .toBe("Nota média SAEB 2023 (mesma etapa do IDEB)");
+      .toBe("IDEB 2023 (etapas misturadas)");
+    expect(rotuloIndicadorRede({ indicador: "ideb_anos_finais", label: "IDEB 2023, anos finais" }, meta))
+      .toBe("IDEB 2023, anos finais");
     expect(rotuloIndicadorRede({ indicador: "inse", label: "INSE" }, meta)).toBe("INSE 2023");
     expect(rotuloIndicadorRede({ indicador: "prop_mestrado", label: "Docentes com mestrado" }, meta))
       .toBe("Docentes com mestrado");

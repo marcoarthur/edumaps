@@ -111,6 +111,108 @@ load_network_profile <- function(source, ...) {
   )
 }
 
+#' IDEB e nota SAEB da rede por etapa (#483, RN-01)
+#'
+#' Troca as linhas `ideb_observado` e `nota_media` (etapa de maior nota de
+#' cada escola, etapas misturadas) por seis linhas, uma por etapa e medida
+#' (`ideb_anos_iniciais` … `nota_ensino_medio`), com o Brasil da mesma etapa
+#' e o número de escolas com valor. Nos grupos, a média de cada etapa.
+#'
+#' @keywords internal
+.network_ideb_por_etapa <- function(con, schema_q, include_inactive, ano, codigo_ibge, tp_dep,
+                                    indicadores, clusters, has_cluster) {
+  ano_ideb <- NA_integer_
+  linhas <- list()
+  for (et in names(IDEB_ETAPAS)) {
+    sr <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et,
+                                    "municipio_rede", codigo_ibge, tp_dep)
+    sb <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "brasil", NULL)
+    if (!is.na(sb$ano)) ano_ideb <- sb$ano
+    linhas[[et]] <- list(rede = sr, brasil = sb)
+  }
+  ano_txt <- if (is.na(ano_ideb)) "" else sprintf(" %d", ano_ideb)
+
+  novas <- function(medida) {
+    do.call(rbind, lapply(names(IDEB_ETAPAS), function(et) {
+      r <- linhas[[et]]$rede[[medida]]
+      b <- linhas[[et]]$brasil[[medida]]
+      data.frame(
+        indicador = sprintf("%s_%s", if (medida == "ideb") "ideb" else "nota", IDEB_ETAPAS[[et]]),
+        label = sprintf("%s%s, %s", if (medida == "ideb") "IDEB" else "Nota média SAEB",
+                        ano_txt, IDEB_ETAPA_TEXTO[[et]]),
+        rede = r$media,
+        brasil = b$media,
+        variacao = r$media - b$media,
+        n_com_valor = r$n,
+        stringsAsFactors = FALSE
+      )
+    }))
+  }
+  pos <- function(df, ind) which(df$indicador == ind)
+  i_ideb <- pos(indicadores, "ideb_observado")
+  i_nota <- pos(indicadores, "nota_media")
+  antes <- indicadores[seq_len(min(i_ideb, i_nota) - 1), , drop = FALSE]
+  depois <- indicadores[!(indicadores$indicador %in% c("ideb_observado", "nota_media")) &
+                          seq_len(nrow(indicadores)) > max(i_ideb, i_nota), , drop = FALSE]
+  indicadores <- rbind(antes, novas("ideb"), novas("nota"), depois)
+
+  # Grupos: a média de cada etapa entre as escolas do grupo.
+  if (nrow(clusters) > 0) {
+    inactive <- if (isTRUE(include_inactive)) "" else "AND e.tp_situacao_funcionamento = 1"
+    dep <- if (is.na(tp_dep)) "" else "AND e.tp_dependencia = $3"
+    cl_col <- if (isTRUE(has_cluster)) "si.cluster_id" else "NULL::int"
+    cl_join <- if (isTRUE(has_cluster)) {
+      sprintf("LEFT JOIN %s.school_indicators si ON si.co_entidade = e.co_entidade", schema_q)
+    } else ""
+    sql <- sprintf(
+      "
+WITH pop AS (
+  SELECT DISTINCT ON (i.id_escola, i.etapa) i.id_escola, i.etapa, i.ideb_observado, i.nota_media,
+         %1$s AS cluster_id
+    FROM %2$s.ideb_notas_escolas i
+    JOIN %2$s.censo_escolas e ON e.co_entidade = i.id_escola AND e.nu_ano_censo = $1 %3$s
+    %4$s
+   WHERE i.ano = (SELECT max(ano) FROM %2$s.ideb_notas_escolas)
+     AND e.co_municipio = $2 %5$s
+   ORDER BY i.id_escola, i.etapa, i.nota_media DESC NULLS LAST
+)
+SELECT cluster_id, etapa, avg(ideb_observado) AS ideb, count(ideb_observado) AS n_ideb,
+       avg(nota_media) AS nota, count(nota_media) AS n_nota
+  FROM pop GROUP BY cluster_id, etapa
+",
+      cl_col, schema_q, inactive, cl_join, dep
+    )
+    params <- list(as.integer(ano), as.integer(codigo_ibge))
+    if (!is.na(tp_dep)) params <- c(params, list(as.integer(tp_dep)))
+    g <- tryCatch(DBI::dbGetQuery(con, sql, params = params), error = function(e) data.frame())
+
+    grupos <- unique(clusters[, c("cluster_id", "cluster_label", "n"), drop = FALSE])
+    extra <- do.call(rbind, lapply(seq_len(nrow(grupos)), function(k) {
+      cid <- grupos$cluster_id[k]
+      do.call(rbind, lapply(c("ideb", "nota"), function(medida) {
+        do.call(rbind, lapply(names(IDEB_ETAPAS), function(et) {
+          sel <- if (nrow(g) == 0) logical(0) else
+            (g$etapa == et) & (if (is.na(cid)) is.na(g$cluster_id) else (!is.na(g$cluster_id) & g$cluster_id == cid))
+          linha <- if (length(sel) && any(sel)) g[which(sel)[1], ] else NULL
+          data.frame(
+            cluster_id = cid, cluster_label = grupos$cluster_label[k], n = grupos$n[k],
+            indicador = sprintf("%s_%s", medida, IDEB_ETAPAS[[et]]),
+            label = sprintf("%s%s, %s", if (medida == "ideb") "IDEB" else "Nota média SAEB",
+                            ano_txt, IDEB_ETAPA_TEXTO[[et]]),
+            media = if (is.null(linha)) NA_real_ else as.numeric(linha[[medida]]),
+            n_com_valor = if (is.null(linha)) 0L else as.integer(linha[[paste0("n_", medida)]]),
+            stringsAsFactors = FALSE
+          )
+        }))
+      }))
+    }))
+    clusters <- rbind(clusters[!(clusters$indicador %in% c("ideb_observado", "nota_media")), , drop = FALSE], extra)
+  }
+  rownames(indicadores) <- NULL
+  rownames(clusters) <- NULL
+  list(indicadores = indicadores, clusters = clusters, ano_ideb = ano_ideb)
+}
+
 #' Carrega o perfil da rede a partir do Postgres
 #'
 #' @param source objeto da classe `postgres_source`.
@@ -271,6 +373,14 @@ SELECT si.cluster_id AS cluster_id, count(*) AS n, %s, %s
 
   clusters <- .network_clusters_long(clusters_wide, labels)
   indicadores <- .network_indicators_df(mean_row, brasil)
+
+  # #483: IDEB e nota SAEB por etapa, com o Brasil da mesma etapa.
+  por_etapa <- .network_ideb_por_etapa(
+    con, schema_q, include_inactive, ano, codigo_ibge, tp_dep,
+    indicadores, clusters, .school_indicators_has_cluster_id(con, schema_q)
+  )
+  indicadores <- por_etapa$indicadores
+  clusters <- por_etapa$clusters
 
   new_network_profile_model(
     clusters = clusters,

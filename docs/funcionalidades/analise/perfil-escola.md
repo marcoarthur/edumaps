@@ -30,7 +30,8 @@ que avaliam a escola no contexto da rede e do país.
   está dentro da distribuição desse grupo, evitando comparações injustas com
   realidades distantes.
 - Sistema pode dizer de que edição e etapa vêm o IDEB e a nota SAEB da
-  escola.
+  escola e compará-los com o município, a rede, o Brasil e o grupo **na
+  mesma etapa**, e mostrar o IDEB de cada etapa em que a escola tem nota.
 - Sistema pode apontar sinais de atenção: indicadores em que a escola está pior
   que o seu grupo de referência, respeitando o sentido de cada indicador (em
   "docentes sem especialização" e "alunos por docente", menor é melhor).

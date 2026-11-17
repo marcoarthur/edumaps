@@ -67,15 +67,16 @@ export function groupClusters(clusters) {
 }
 
 /**
- * Rótulo do indicador com a edição e, no IDEB e no SAEB, a etapa (#479,
- * RP-02): o perfil usa, de cada escola, a etapa de maior nota SAEB na edição
- * mais recente do IDEB.
+ * Rótulo do indicador com a edição (#479). Desde a #483, o IDEB e o SAEB
+ * vêm por etapa (`ideb_anos_iniciais` …), com o rótulo pronto ("IDEB 2023,
+ * anos iniciais"). Perfil em cache antigo (`ideb_observado`, etapas
+ * misturadas) fica marcado.
  */
 export function rotuloIndicadorRede(ind, metadata = {}) {
   const base = ind.label ?? ind.indicador;
   const anoIdeb = metadata.anoIdeb ? ` ${metadata.anoIdeb}` : "";
-  if (ind.indicador === "ideb_observado") return `IDEB${anoIdeb} (etapa de maior nota de cada escola)`;
-  if (ind.indicador === "nota_media") return `Nota média SAEB${anoIdeb} (mesma etapa do IDEB)`;
+  if (ind.indicador === "ideb_observado") return `IDEB${anoIdeb} (etapas misturadas)`;
+  if (ind.indicador === "nota_media") return `Nota média SAEB${anoIdeb} (etapas misturadas)`;
   if (ind.indicador === "inse" && metadata.anoInse) return `${base} ${metadata.anoInse}`;
   return base;
 }
