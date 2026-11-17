@@ -18,6 +18,9 @@ export const BASE_ANALISE_FIXTURE = {
     { id: "desempenho", label: "IDEB e SAEB por etapa", fixo: false, fonte: "ideb",
       descricao: "IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida.",
       colunas: [col("ideb_ai", "IDEB observado, anos iniciais do fundamental"), col("ideb_af", "IDEB observado, anos finais do fundamental")] },
+    { id: "indices", label: "Índices do EduMaps", fixo: false, fonte: "indices_edumaps",
+      descricao: "Os seis índices de 0 a 10 do EduMaps, com a versão da fórmula em versao_indice.",
+      colunas: [col("indice_infraestrutura", "Índice de infraestrutura (0 a 10)"), col("indice_diversidade_discente", "Índice de diversidade discente (0 a 10)")] },
     { id: "inse", label: "Nível socioeconômico (INSE)", fixo: false, fonte: "inse",
       descricao: "INSE médio dos alunos e o nível.", colunas: [col("inse_media", "INSE médio dos alunos da escola")] },
     { id: "porte", label: "Porte do município", fixo: false, fonte: "ibge_populacao",
@@ -32,6 +35,6 @@ export const BASE_ANALISE_FIXTURE = {
     { id: "privada", label: "Privada" },
   ],
   ufs: ["AC", "ES", "MG", "SP"],
-  anos: { censo: 2025, inse: 2023, ideb: [2023, 2021, 2019], populacao: "2025" },
+  anos: { censo: 2025, inse: 2023, ideb: [2023, 2021, 2019], populacao: "2025", indices: "indices-v2" },
   total: null,
 };

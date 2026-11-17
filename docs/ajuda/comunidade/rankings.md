@@ -93,7 +93,10 @@ gestores, matrículas) fica com 0.
 mudança de fórmula ganha uma versão nova. A atual é a **`indices-v2`**, de
 16/11/2026 (a `indices-v1`, de 04/06/2026, é a fórmula original). A tela
 mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
-traz a coluna `versao_indice` em toda linha. Para citar, informe a versão:
+traz a coluna `versao_indice` em toda linha e a versão no nome do arquivo
+(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v2.csv`).
+Para os índices de todas as escolas de uma UF de uma vez, use a
+[base de análise](base-de-analise.md), bloco "Índices do EduMaps". Para citar, informe a versão:
 notas de versões diferentes não são comparáveis. O histórico está em
 [Fontes e metodologia](fontes-e-metodologia.md).
 - **Infraestrutura básica** (não é índice): quantos dos 4 itens a escola

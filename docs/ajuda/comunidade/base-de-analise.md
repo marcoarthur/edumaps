@@ -40,6 +40,12 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
    - **IDEB e SAEB por etapa:** IDEB, notas e aprovação nos anos iniciais
      (`_ai`), nos anos finais (`_af`) e no ensino médio (`_em`), na edição que
      você escolher;
+   - **Índices do EduMaps:** os seis índices de 0 a 10 do ranking de
+     escolas (`indice_infraestrutura`, `indice_capacidade_atendimento`,
+     `indice_capacitacao_docente`, `indice_diversidade_discente`,
+     `indice_capacidade_gestora` e `indice_sustentabilidade`), com a versão
+     da fórmula na coluna `versao_indice`. O dicionário traz o método de
+     cada um;
    - **Nível socioeconômico (INSE):** a média e o nível, da edição mais
      recente do SAEB;
    - **Porte do município:** a população estimada pelo IBGE e a classe de
@@ -73,6 +79,16 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   nome do arquivo também leva os anos (ex.:
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
+- **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
+  não pelo INEP, e não dá para refazê-los só com as colunas da base (a
+  fórmula usa itens como salas, cozinha e órgãos colegiados). Cite com a
+  versão (`versao_indice`, ex.: `indices-v2`, que também vai no nome do
+  arquivo): notas de versões diferentes não são comparáveis, e o histórico
+  está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
+  uma carga nova do Censo, as células dos índices podem ficar vazias até o
+  recálculo. Para a **infraestrutura básica** (0 a 4) do ranking, some os
+  itens da base, no R:
+  `with(base, (1 - in_agua_inexistente) + (1 - in_energia_inexistente) + (1 - in_esgoto_inexistente) + in_banheiro)`.
 - **Edição antiga do IDEB:** só o Censo Escolar mais recente está
   carregado. Com uma edição antiga (ex.: 2019), o IDEB é cruzado com a lista
   de escolas, a infraestrutura e a docência do Censo mais recente, e as

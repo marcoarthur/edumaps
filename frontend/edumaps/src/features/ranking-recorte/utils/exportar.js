@@ -39,6 +39,12 @@ export function tabelaRedes(r, redes) {
  * Escolas de um município: o município e a rede filtrada em cada linha.
  * #457: na infraestrutura básica, a coluna `faltam` lista os itens ausentes.
  */
+/** Nome do CSV das escolas; com a versão da fórmula quando o índice é do EduMaps (#465, RY-02). */
+export function nomeCsvEscolas(e) {
+  const v = e.indicador?.versao;
+  return `ranking-escolas-${e.municipio.codigo_ibge}-${e.indicador.id}-${e.ano}${v ? `-${v}` : ""}.csv`;
+}
+
 export function tabelaEscolas(e, escolas) {
   const comFaltas = escolas.some((x) => Array.isArray(x.faltam));
   // #462: índice do EduMaps leva a versão da fórmula em toda linha, para um

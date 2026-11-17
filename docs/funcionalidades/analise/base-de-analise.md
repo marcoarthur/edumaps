@@ -40,6 +40,11 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   "não oferece a etapa" de "não teve IDEB", e avisa, no dicionário e na
   ajuda, que a falta do IDEB se concentra nas escolas pequenas, rurais e sem
   infraestrutura.
+- Sistema pode **incluir os seis índices do EduMaps** (infraestrutura,
+  capacidade de atendimento, capacitação docente, diversidade discente,
+  capacidade gestora e sustentabilidade, de 0 a 10), com a versão da
+  fórmula em toda linha e no nome do arquivo, e o método de cada índice no
+  dicionário.
 - Sistema pode **localizar cada escola** (latitude e longitude declaradas ao
   Censo Escolar), para mapas.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a
