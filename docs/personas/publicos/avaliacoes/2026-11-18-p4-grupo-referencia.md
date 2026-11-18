@@ -94,4 +94,5 @@ da décima nona rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#493** (RI-01, RI-02 e RI-03 juntas), aberta com a aprovação do
+developer.

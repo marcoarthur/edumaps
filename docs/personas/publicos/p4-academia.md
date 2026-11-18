@@ -121,8 +121,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   baixar) → #491, entregues (#492).
   Vigésima rodada (2026-11-18, **adotaria**, sem o grupo de referência do
   perfil): RI-01 (grupo formado com o próprio IDEB), RI-02 (INSE como sinal
-  de atenção) e RI-03 (N do grupo no lugar do N com dado) → aguardando
-  aprovação para a issue.
+  de atenção) e RI-03 (N do grupo no lugar do N com dado) → #493.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
