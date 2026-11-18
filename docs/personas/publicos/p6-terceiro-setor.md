@@ -63,6 +63,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: diferença para o Brasil na mesma etapa.
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: nota da etapa certa.
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: pares do mesmo patamar.
+- [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: versão citável e motivo certo.
 
 ## Pendências
 

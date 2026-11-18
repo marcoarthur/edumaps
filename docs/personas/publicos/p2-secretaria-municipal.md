@@ -69,6 +69,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: perfil da rede por etapa.
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: série do SAEB por etapa.
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: pares comparáveis.
+- [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: falta de acesso, e não sigilo.
 
 ## Pendências
 

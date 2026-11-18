@@ -69,6 +69,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o IDEB do perfil. RN-01 e RN-02 resolvidos; nenhum achado aberto da décima quinta avaliação.
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com a série do SAEB. RM-01 e RM-02 resolvidos; nenhum achado aberto da décima sexta avaliação.
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas semelhantes. RL-01 e RL-02 resolvidos; nenhum achado aberto da décima sétima avaliação.
+- [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p4--academia-pesquisadora): adotaria (mantido), com o IVET citável. RK-01 e RK-02 resolvidos; fica a régua da `ivet-v1.8` (medição no LXC).
 
 ## Pendências
 
@@ -111,7 +112,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Décima oitava rodada (2026-11-18, **adotaria**, sem o IVET): RK-01
   (privacidade dada como motivo do IVET sem os blocos de território) e RK-02
   (ajuda na `ivet-v1.2`, régua de antes da escala log, IVET fora de
-  `/fontes`) → #489.
+  `/fontes`) → #489, entregues (#490); a régua da `ivet-v1.8` volta depois
+  da medição no LXC.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

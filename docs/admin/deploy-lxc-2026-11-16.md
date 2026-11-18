@@ -109,6 +109,8 @@ planos de gestão, visão da rede, INEP, idempotência (#416), embeddings diári
 chave de cache do perfil com a regra dos sinais (#421), e o financeiro com
 `ausencia`/`cobertura` sem o vazamento da folha da secretaria (#422).
 A busca por município com código IBGE e a ordem das sugestões (#431).
+O IVET com o motivo de ficar sem número (`blocos_faltando`) e a versão
+citável em `/fontes` (#489).
 
 O `cpanfile` não pede mais o PDL (#419). O PDL já instalado no host pode
 ficar: nada mais o carrega, e não é preciso desinstalar.
@@ -132,6 +134,8 @@ ficar: nada mais o carrega, e não é preciso desinstalar.
       task, com `delayed` na próxima janela.
 - [ ] API responde: `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/api/school/11000023/ivet'`
       → 200 (o backend do LXC escuta na **3000**, não na 3010 do Docker).
+- [ ] A mesma resposta traz `blocos_faltando` (lista vazia se a escola tem C,
+      D e E), #489.
 
 ## 4. Frontend
 
@@ -143,7 +147,7 @@ Leva o template novo do nginx (só a SPA e `/api/`, PR #344), as travas de
 envio (#415/#416), planos, visão da rede e documento da rede, os totais das
 roscas e o "menor é melhor" (#421) e a ausência no financeiro e na folha
 (#422), os menus dos gráficos em PT-BR e a página de Análises sem jargão
-(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v6`; `GET /api/cluster/presets` traz `etapa_filter` e `etapas` no `desempenho`, e `POST /api/task/cluster` com `preset=desempenho` sem `etapa` responde 400, #481; `/api/school/<inep>/profile` traz `metadata.regra_sinais = 4`, `ideb_comparacao = mesma_etapa` e a tabela `ideb_por_etapa`, e `/api/network/<ibge>/profile` traz `ideb_anos_iniciais` … `nota_ensino_medio` no lugar de `ideb_observado`, #483; `/api/school/<inep>/evolution` traz o SAEB com `etapa` e `variacao` nula nas séries de uma edição, #485, `/api/school/29445906/panel/info` traz em `similar_schools` a `distancia` em pontos e as seis `notas` de cada vizinha, com a 29398037 em primeiro (a 1,56 ponto), #487, e `/api/fontes` termina na entrada `indices_edumaps`, #462 e #467; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v6.csv`, com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471, seguidas das do atendimento (`alunos_sala_turno` … `alimentacao`), #473, e das da capacidade gestora (`gestores_formacao` … `prop_acesso_cargo_selecao`, vazia nas privadas), #475, e das da infraestrutura e da sustentabilidade (`infra_basico` … `educacao_ambiental`), #477; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
+(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v6`; `GET /api/cluster/presets` traz `etapa_filter` e `etapas` no `desempenho`, e `POST /api/task/cluster` com `preset=desempenho` sem `etapa` responde 400, #481; `/api/school/<inep>/profile` traz `metadata.regra_sinais = 4`, `ideb_comparacao = mesma_etapa` e a tabela `ideb_por_etapa`, e `/api/network/<ibge>/profile` traz `ideb_anos_iniciais` … `nota_ensino_medio` no lugar de `ideb_observado`, #483; `/api/school/<inep>/evolution` traz o SAEB com `etapa` e `variacao` nula nas séries de uma edição, #485, `/api/school/29445906/panel/info` traz em `similar_schools` a `distancia` em pontos e as seis `notas` de cada vizinha, com a 29398037 em primeiro (a 1,56 ponto), #487, e `/api/fontes` termina nas entradas `indices_edumaps` (#462 e #467) e `ivet_edumaps`, com `versao = ivet-v1.8` e nove versões no histórico (#489); no painel de uma escola sem isócrona (Sul, Centro-Oeste ou Norte) o IVET diz "ainda não pode ser calculado: faltam os blocos C (acesso)…" e mostra os blocos medidos, e os rótulos de D a G são Saúde, Segurança, Meio ambiente e Recursos, #489; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v6.csv`, com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471, seguidas das do atendimento (`alunos_sala_turno` … `alimentacao`), #473, e das da capacidade gestora (`gestores_formacao` … `prop_acesso_cargo_selecao`, vazia nas privadas), #475, e das da infraestrutura e da sustentabilidade (`infra_basico` … `educacao_ambiental`), #477; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
 template do Rexfile.
 
 - [ ] O bundle novo está no ar: a chave de envio está nele.
@@ -239,6 +243,15 @@ validação de 2026-10-20, e conferir:
 
 - [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.8` (#459 e #471: insumo de diversidade corrigido; #467: índice vazio sem registro; #473: lotação por turno; #475: partes da capacidade gestora).
 - [ ] Publicáveis próximos dos 145 mil da última medição nacional.
+- [ ] **Medir a régua da versão vigente (#489, RK-02).** As medições
+      publicadas (§4.8 de `docs/analises/ivet.md`) são da `ivet-v1.2`, de antes
+      da escala log do bloco C, e a ajuda do gestor deixou de citá-las:
+      ```bash
+      ssh root@analytic.edumaps 'cd /opt/edumaps/analysis/edumapsr && Rscript inst/scripts/medir-ivet-nacional.R'
+      ```
+      Registrar a distribuição (p25, p50, p75, p90, publicáveis) da `ivet-v1.8`
+      no §4.8 e repor a régua na §4.1 da ajuda `docs/ajuda/gestor/ivet.md`
+      (commit só de documentação).
 - [ ] Fechar a #295 e abrir a issue de Sul, Centro-Oeste e Norte (~47 mil
       escolas), condicionada a ampliar o disco do banco.
 

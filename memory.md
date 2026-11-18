@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-18 (co) — décima oitava avaliação da P4, #489 (PR #490) mergeado
+
+- Décima oitava rodada da P4 (IVET): adotaria, sem o IVET. RK-01: o card
+  dava "não é publicável (amostra insuficiente ou dado sensível)", mas
+  `publicavel` no R é só C+D+E presentes. RK-02: ajuda na `ivet-v1.2`, com
+  a régua de antes da escala log; IVET fora de `/fontes` → #489.
+- PR #490 (d3753a9):
+  - API do IVET com `blocos_faltando`;
+  - painel mostra o motivo e os blocos medidos, sem selo;
+  - rótulos D–G corrigidos (estavam trocados desde a #296);
+  - `EduMaps::Model::Ivet::Versao` (`$VERSAO`, `@HISTORICO`,
+    `@BLOCOS_TERRITORIAIS`), com `t/02-models/ivet_versao.t` exigindo a
+    mesma versão no R, no card, no doc e no registro (regra no AGENTS.md);
+  - `/fontes` com a entrada `ivet_edumaps` (`versao_de` no catálogo).
+- Pendente: medir a `ivet-v1.8` no LXC (`medir-ivet-nacional.R`) e repor a
+  régua na ajuda §4.1 (roteiro do LXC, §7).
+- Nota técnica 230, ciclo `2026-11-18-ivet-motivo-versao.md`.
+
 ## Sessão 2026-11-18 (cn) — décima sétima avaliação da P4, #487 (PR #488) mergeado
 
 - Décima sétima rodada da P4 (escolas semelhantes do painel): adotaria, sem
