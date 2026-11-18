@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-18 (cp) — décima nona avaliação da P4, #491 (PR #492) mergeado
+
+- Décima nona rodada da P4 (folha de pagamento): adotaria, sem a folha.
+  - RJ-01: profissionais contados por `DISTINCT cpf`, mas o CPF do SIOPE é
+    mascarado (6 dígitos, um é a região fiscal); Cuiabá 2025 tinha 10.120
+    em vez de 10.557.
+  - RJ-02: os totais somavam todos os anos sem dizer o período.
+  - RJ-03: a folha não tinha saída para análise → #491.
+- PR #492 (29949a1):
+  - `$PESSOA = '(cpf, nome_profissional)'` em `Finance.pm`;
+  - `/finance?ano=` com `ano`, `anos` e `periodo` (400 para ano sem folha);
+    tela com "Ano da folha" e o aviso do 13º;
+  - bloco `remuneracao` na base de análise (`$SQL_FOLHA`, pessoa-mês →
+    escola, médias sem dezembro, valores inteiros); `ano_siope` com padrão
+    no último ano completo e `-siope<ano>` no nome do arquivo.
+- Descrição do dicionário da base sem `;`: o teste lê o CSV sem parser de
+  aspas.
+- Nota técnica 231, ciclo `2026-11-18-folha-pessoa-ano.md`.
+
 ## Sessão 2026-11-18 (co) — décima oitava avaliação da P4, #489 (PR #490) mergeado
 
 - Décima oitava rodada da P4 (IVET): adotaria, sem o IVET. RK-01: o card

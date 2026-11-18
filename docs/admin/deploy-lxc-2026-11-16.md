@@ -111,6 +111,8 @@ chave de cache do perfil com a regra dos sinais (#421), e o financeiro com
 A busca por município com código IBGE e a ordem das sugestões (#431).
 O IVET com o motivo de ficar sem número (`blocos_faltando`) e a versão
 citável em `/fontes` (#489).
+A folha contada pela pessoa e um ano por vez no painel financeiro, e o bloco
+de remuneração da base de análise (#491).
 
 O `cpanfile` não pede mais o PDL (#419). O PDL já instalado no host pode
 ficar: nada mais o carrega, e não é preciso desinstalar.
@@ -136,6 +138,10 @@ ficar: nada mais o carrega, e não é preciso desinstalar.
       → 200 (o backend do LXC escuta na **3000**, não na 3010 do Docker).
 - [ ] A mesma resposta traz `blocos_faltando` (lista vazia se a escola tem C,
       D e E), #489.
+- [ ] Folha (#491): `curl -s http://127.0.0.1:3000/api/school/51037343/finance?ano=2025`
+      traz `ano`, `anos` e `periodo` (12 meses, se o LXC tiver a folha de
+      Cuiabá), e `/api/base-analise/csv?uf=MT&codigo_ibge=5103403&blocos=remuneracao`
+      sai como `…-siope<ano>.csv`, com `prof_magisterio` … `meses_folha`.
 
 ## 4. Frontend
 

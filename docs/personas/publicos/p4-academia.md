@@ -70,6 +70,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com a série do SAEB. RM-01 e RM-02 resolvidos; nenhum achado aberto da décima sexta avaliação.
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas semelhantes. RL-01 e RL-02 resolvidos; nenhum achado aberto da décima sétima avaliação.
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p4--academia-pesquisadora): adotaria (mantido), com o IVET citável. RK-01 e RK-02 resolvidos; fica a régua da `ivet-v1.8` (medição no LXC).
+- [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p4--academia-pesquisadora): adotaria (mantido), com a folha. RJ-01, RJ-02 e RJ-03 resolvidos; fica a cobertura do SIOPE.
 
 ## Pendências
 
@@ -117,7 +118,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Décima nona rodada (2026-11-18, **adotaria**, sem a folha): RJ-01
   (profissionais contados pelo CPF mascarado), RJ-02 (totais de anos
   diferentes sem o período) e RJ-03 (folha por escola sem saída para
-  baixar) → #491.
+  baixar) → #491, entregues (#492).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

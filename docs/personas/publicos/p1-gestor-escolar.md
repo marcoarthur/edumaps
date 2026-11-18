@@ -71,6 +71,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: série do SAEB da escola de anos finais.
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: pares do mesmo patamar.
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: o motivo certo do IVET sem número e os blocos com o nome certo.
+- [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: quadro certo e custo do ano.
 
 ## Pendências
 
