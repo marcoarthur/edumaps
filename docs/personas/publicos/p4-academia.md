@@ -111,7 +111,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Décima oitava rodada (2026-11-18, **adotaria**, sem o IVET): RK-01
   (privacidade dada como motivo do IVET sem os blocos de território) e RK-02
   (ajuda na `ivet-v1.2`, régua de antes da escala log, IVET fora de
-  `/fontes`) → aguardam aprovação para a issue.
+  `/fontes`) → #489.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
