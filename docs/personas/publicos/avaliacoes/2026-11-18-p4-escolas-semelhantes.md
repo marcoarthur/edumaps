@@ -95,5 +95,5 @@ entrega da décima sexta rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue (RL-01 e RL-02 juntas,
-como nas rodadas anteriores).
+Issue **#487** (RL-01 e RL-02 juntas, como nas rodadas anteriores), aberta
+com a aprovação do developer.

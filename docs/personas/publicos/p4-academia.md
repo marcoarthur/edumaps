@@ -106,7 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (modo autônomo), entregues (#486).
   Décima sétima rodada (2026-11-18, **adotaria**, sem as escolas
   semelhantes do painel): RL-01 (cosseno ignora o nível das notas) e RL-02
-  (cartão sem o quanto se parece; ajuda) → aguardam aprovação para a issue.
+  (cartão sem o quanto se parece; ajuda) → #487.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
