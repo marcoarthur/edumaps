@@ -104,10 +104,26 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #483 (modo autônomo), entregues (#484). Décima sexta rodada (2026-11-17, **adotaria**, sem a série
   do SAEB): RM-01 (SAEB só dos anos iniciais) e RM-02 (▲ 0.0) → #485
   (modo autônomo), entregues (#486).
+  Décima sétima rodada (2026-11-18, **adotaria**, sem as escolas
+  semelhantes do painel): RL-01 (cosseno ignora o nível das notas) e RL-02
+  (cartão sem o quanto se parece; ajuda) → aguardam aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-18 — Análises públicas (décima sétima rodada, escolas semelhantes)
+
+**Veredito:** **adotaria** (mantido), sem as escolas semelhantes do painel.
+Consolidação em
+[`avaliacoes/2026-11-18-p4-escolas-semelhantes.md`](avaliacoes/2026-11-18-p4-escolas-semelhantes.md).
+
+**Barreiras:**
+- RL-01 (atrapalha): o cosseno das seis notas junta escolas de níveis
+  diferentes (CEIFAR, de Salvador, tem como "mais parecida" uma escola 2 a
+  3 pontos abaixo em todas as notas).
+- RL-02 (detalhe): o cartão não diz o quanto a vizinha se parece, e a ajuda
+  descreve outro critério.
 
 ### 2026-11-17 — Análises públicas (décima sexta rodada, evolução da escola)
 
