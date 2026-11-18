@@ -7,8 +7,9 @@ EduMaps::Schema::Result::SchoolEmbedding
 
 =head1 DESCRIPTION
 
-Embedding de 6 dimensões por escola (pgvector), usado para busca de
-similaridade por cosseno. Derivado de C<clean.mv_escolas_scores>.
+Embedding de 6 dimensões por escola (pgvector), usado para a
+busca de escolas semelhantes pela distância euclidiana entre as notas
+(#487). Derivado de C<clean.mv_escolas_scores>.
 
 =cut
 

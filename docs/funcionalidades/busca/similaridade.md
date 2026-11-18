@@ -26,7 +26,12 @@ escolas e investidores que avaliam redes.
 - Sistema pode, a partir de uma escola, sugerir escolas semelhantes por perfil e
   contexto: da mesma cidade, com ao menos uma etapa de ensino em comum (uma
   creche não é sugerida para uma escola de ensino fundamental) e com as notas
-  do painel mais parecidas, explicando esse critério na tela.
+  do painel mais próximas, explicando esse critério na tela.
+- Sistema compara as notas **nota a nota, no mesmo patamar**: uma escola com
+  o mesmo perfil de notas, mas bem acima ou bem abaixo, não é sugerida como
+  parecida.
+- Sistema mostra **o quanto cada sugestão se parece**: a distância em pontos
+  e as notas da escola sugerida ao lado das notas da escola de referência.
 - Sistema pode levar a comparação para o painel da escola e para os agrupamentos
   (clusters).
 - Sistema mantém a comparação do painel da escola em dia sozinho, todo dia,

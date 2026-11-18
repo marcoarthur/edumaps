@@ -30,13 +30,35 @@ describe("SimilarSchools", () => {
     expect(screen.queryByText(/Sem dado para comparar/)).toBeNull();
   });
 
-  it("sem distância sem escala; explica o critério (#421)", () => {
+  it("sem distância (caminho de reserva): sem número; explica o critério (#421)", () => {
     render(SimilarSchools, {
       schools: [
-        { id_escola: 1, nome: "Escola Vizinha", rede: "municipal", matriculas: 100, etapas: {}, indicador_principal: null },
+        { id_escola: 1, nome: "Escola Vizinha", rede: "municipal", matriculas: 100, etapas: {}, distancia: null, notas: [] },
       ],
     });
-    expect(screen.queryByText(/Distância/)).toBeNull();
+    expect(screen.queryByText(/^a [0-9]/)).toBeNull();
     expect(screen.getByText(/ao menos uma etapa de ensino em comum/)).toBeTruthy();
+    expect(screen.getByText(/distância euclidiana, em\s+pontos/)).toBeTruthy();
+  });
+
+  it("mostra a distância em pontos e as notas ao lado das da escola (#487)", () => {
+    render(SimilarSchools, {
+      schools: [
+        {
+          id_escola: 1, nome: "Escola Vizinha", rede: "municipal", matriculas: 100, etapas: {},
+          distancia: 1.56,
+          notas: [
+            { id: "score_infraestrutura", rotulo: "Infraestrutura", valor: 7.39, escola: 8.22 },
+            { id: "score_capacidade_gestora", rotulo: "Gestão", valor: 7, escola: 7.07 },
+          ],
+        },
+        { id_escola: 2, nome: "Outra", rede: "municipal", matriculas: 10, etapas: {}, distancia: 6.31, notas: [] },
+      ],
+    });
+    expect(screen.getByText("a 1,6 ponto")).toBeTruthy();
+    expect(screen.getByText("a 6,3 pontos")).toBeTruthy();
+    expect(screen.getByText("Infraestrutura")).toBeTruthy();
+    expect(screen.getByText("7,4")).toBeTruthy();
+    expect(screen.getByText("8,2")).toBeTruthy();
   });
 });

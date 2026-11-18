@@ -179,9 +179,11 @@ sub panel_info($self, $params) {
     }
   );
 
-  # Similaridade via pgvector (índice HNSW, cosseno): top-k calculado no banco,
-  # sem trazer todas as escolas do município para o Perl. Se a tabela/embedding
-  # não estiver disponível (deploy parcial), cai no método antigo em memória.
+  # Similaridade via pgvector (índice HNSW, distância euclidiana entre as seis
+  # notas, #487): top-k calculado no banco, sem trazer todas as escolas do
+  # município para o Perl. Se a tabela/embedding não estiver disponível
+  # (deploy parcial), cai no método antigo em memória, que não manda a
+  # distância (é outra métrica).
   my $mat = $self->schema->resultset('CensoMatriculas');
   # Escola sem linha de matrículas no Censo (ex.: centro de atendimento
   # especializado) fica sem o número, em vez de derrubar o painel (500).
@@ -214,7 +216,7 @@ sub panel_info($self, $params) {
     $similars_motivo = 'sem_dado';
   }
   elsif ($neighbors && @$neighbors) {
-    my %distance = map { $_->{co_entidade} => $_->{distance} } @$neighbors;
+    my %vizinha = map { $_->{co_entidade} => $_ } @$neighbors;
     my @ids = map { $_->{co_entidade} } @$neighbors;
 
     my $records = $self->schema->resultset('CensoEscolas')
@@ -227,7 +229,14 @@ sub panel_info($self, $params) {
         my $record = $by_id{$_};
         next unless $record;
         $attach_matriculas->($record);
-        +{ record => $record, distance => $distance{$_} };
+        my $n = $vizinha{$_};
+        +{
+          record    => $record,
+          distance  => $n->{distance},
+          # #487 (RL-02): quanto a vizinha se parece, em pontos, e nota a nota
+          distancia => _arred($n->{distance}, 2),
+          notas     => _notas_comparadas($n->{notas}, $n->{notas_alvo}),
+        };
       } @ids
     );
   }
@@ -299,6 +308,36 @@ sub _infraestrutura($self, $censo) {
 
   my @infra = grep { $censo->{$fields{$_}} } keys %fields;
   return \@infra;
+}
+
+# #487: rótulos curtos das seis notas do embedding, na ordem de
+# EduMaps::Task::SchoolEmbedding::@NOTAS.
+our %NOTA_ROTULO = (
+  score_capacidade_atendimento => 'Atendimento',
+  score_infraestrutura         => 'Infraestrutura',
+  score_capacitacao_docente    => 'Docência',
+  score_diversidade_discente   => 'Diversidade',
+  score_capacidade_gestora     => 'Gestão',
+  score_sustentabilidade       => 'Sustentabilidade',
+);
+
+sub _arred ($v, $casas) {
+  return undef unless defined $v;
+  return 0 + sprintf("%.${casas}f", $v);
+}
+
+# Notas da vizinha ao lado das da escola: [{ id, rotulo, valor, escola }].
+sub _notas_comparadas ($vizinha, $alvo) {
+  return [] unless ref $vizinha eq 'ARRAY' && ref $alvo eq 'ARRAY';
+  my @ids = @EduMaps::Task::SchoolEmbedding::NOTAS;
+  return [ map {
+    +{
+      id     => $ids[$_],
+      rotulo => $NOTA_ROTULO{ $ids[$_] },
+      valor  => _arred($vizinha->[$_], 2),
+      escola => _arred($alvo->[$_], 2),
+    }
+  } 0 .. $#ids ];
 }
 
 1;
