@@ -108,10 +108,25 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Décima sétima rodada (2026-11-18, **adotaria**, sem as escolas
   semelhantes do painel): RL-01 (cosseno ignora o nível das notas) e RL-02
   (cartão sem o quanto se parece; ajuda) → #487, entregues (#488).
+  Décima oitava rodada (2026-11-18, **adotaria**, sem o IVET): RK-01
+  (privacidade dada como motivo do IVET sem os blocos de território) e RK-02
+  (ajuda na `ivet-v1.2`, régua de antes da escala log, IVET fora de
+  `/fontes`) → aguardam aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-18 — Análises públicas (décima oitava rodada, IVET)
+
+**Veredito:** **adotaria** (mantido), sem o IVET. Consolidação em
+[`avaliacoes/2026-11-18-p4-ivet.md`](avaliacoes/2026-11-18-p4-ivet.md).
+
+**Barreiras:**
+- RK-01 (atrapalha): o painel diz "não é publicável (amostra insuficiente ou
+  dado sensível)" quando só falta o bloco C, D ou E; esconde o bloco A.
+- RK-02 (atrapalha): a ajuda está na `ivet-v1.2`, com a régua de leitura de
+  antes da escala logarítmica; o IVET não está em `/fontes`.
 
 ### 2026-11-18 — Análises públicas (décima sétima rodada, escolas semelhantes)
 
