@@ -100,11 +100,23 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   agrupamento por desempenho): RO-01 (etapas misturadas) e RO-02 (fossa
   como falta) → #481 (modo autônomo), entregues (#482). Décima quinta rodada (2026-11-17, **adotaria**, sem o IDEB
   do perfil): RN-01 (médias de etapas misturadas) e RN-02 (uma etapa só)
-  → #483 (modo autônomo), entregues (#484).
+  → #483 (modo autônomo), entregues (#484). Décima sexta rodada (2026-11-17, **adotaria**, sem a série
+  do SAEB): RM-01 (SAEB só dos anos iniciais) e RM-02 (▲ 0.0) → #485
+  (modo autônomo).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-17 — Análises públicas (décima sexta rodada, evolução da escola)
+
+**Veredito:** **adotaria** (mantido), sem a série do SAEB. Consolidação em
+[`avaliacoes/2026-11-17-p4-evolucao-saeb.md`](avaliacoes/2026-11-17-p4-evolucao-saeb.md).
+
+**Barreiras:**
+- RM-01 (atrapalha): a série do SAEB é só dos anos iniciais, sem dizer, e
+  falta para 18.533 escolas.
+- RM-02 (detalhe): série de uma edição mostra "▲ 0.0".
 
 ### 2026-11-17 — Análises públicas (décima quinta rodada, IDEB do perfil)
 
