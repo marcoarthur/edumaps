@@ -114,10 +114,27 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (ajuda na `ivet-v1.2`, régua de antes da escala log, IVET fora de
   `/fontes`) → #489, entregues (#490); a régua da `ivet-v1.8` volta depois
   da medição no LXC.
+  Décima nona rodada (2026-11-18, **adotaria**, sem a folha): RJ-01
+  (profissionais contados pelo CPF mascarado), RJ-02 (totais de anos
+  diferentes sem o período) e RJ-03 (folha por escola sem saída para
+  baixar) → aguardando aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-18 — Análises públicas (décima nona rodada, folha de pagamento)
+
+**Veredito:** **adotaria** (mantido), sem a folha. Consolidação em
+[`avaliacoes/2026-11-18-p4-folha.md`](avaliacoes/2026-11-18-p4-folha.md).
+
+**Barreiras:**
+- RJ-01 (atrapalha): "Profissionais (total)" conta pelo CPF mascarado, que
+  junta pessoas diferentes (Cuiabá 2025: −4,1%; Alta Floresta 2024: −11,4%).
+- RJ-02 (atrapalha): o custo total e por categoria somam 2025 e dois meses
+  de 2026, com o 13º, sem dizer o período.
+- RJ-03 (atrapalha): a folha por escola não se baixa; "salário docente ×
+  IDEB" só sai por SQL (r = 0,23 em 50 escolas de Cuiabá).
 
 ### 2026-11-18 — Análises públicas (décima oitava rodada, IVET)
 
