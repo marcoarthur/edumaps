@@ -47,8 +47,11 @@ developer até 7h de 18/11), com aviso pelo Telegram.
 
 ## O que fica
 
-- `clean.inep_notas_desagregadas` não tem mais leitor conhecido na evolução.
-  Vale conferir os outros usos antes de propor a remoção.
+- `clean.inep_notas_desagregadas` (só anos iniciais) sai da evolução. O
+  único leitor que sobra é `grades` em `EduMaps::Roles::Business::School::Profile`,
+  marcado como deprecated em favor de `info_grades` (que já lê
+  `ideb_notas_escolas`). Remover a tabela e o `grades` fica para uma issue
+  de limpeza.
 
 ## LXC
 
