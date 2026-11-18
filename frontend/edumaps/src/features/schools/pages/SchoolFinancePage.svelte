@@ -25,6 +25,10 @@
   // #422: por que não há folha e onde há (vêm do /finance)
   let ausencia = $state(null);
   let cobertura = $state(null);
+  // #491 (RJ-02): o ano (exercício) mostrado e os anos com folha.
+  let ano = $state(null);
+  let anos = $state([]);
+  let periodo = $state(null);
   let loading = $state(true);
   let error = $state(null);
 
@@ -49,11 +53,14 @@
     return out;
   });
 
-  async function loadFinance(codInep) {
+  async function loadFinance(codInep, anoPedido = null) {
     loading = true;
     error = null;
     try {
-      const data = await getSchoolFinance(codInep);
+      const data = await getSchoolFinance(codInep, anoPedido);
+      ano = data.ano ?? null;
+      anos = data.anos ?? [];
+      periodo = data.periodo ?? null;
       escola = data.escola ?? null;
       series = data.series ?? [];
       categorias = data.categorias ?? [];
@@ -237,7 +244,21 @@
         {gestorDaEscola}
       />
     {:else}
-      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} />
+      {#if anos.length > 0}
+        <div class="flex items-center gap-2">
+          <label for="ano-folha" class="text-sm text-gray-600">Ano da folha</label>
+          <select
+            id="ano-folha"
+            value={ano}
+            onchange={(e) => loadFinance(inep, Number(e.currentTarget.value))}
+            class="h-9 px-2 rounded-md border border-gray-300 text-sm bg-white"
+          >
+            {#each anos as a (a)}<option value={a}>{a}</option>{/each}
+          </select>
+          <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
+        </div>
+      {/if}
+      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

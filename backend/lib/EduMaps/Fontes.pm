@@ -62,7 +62,7 @@ our @CATALOGO = (
     metodologia => 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/siope',
     tabelas   => [qw(clean.remuneracao_municipal)],
     periodo_sql => 'SELECT min(ano)::text, max(ano)::text FROM clean.remuneracao_municipal',
-    telas     => [qw(financeiro folha)],
+    telas     => [qw(financeiro folha base_analise)],
   },
   {
     id        => 'ibge_malha',

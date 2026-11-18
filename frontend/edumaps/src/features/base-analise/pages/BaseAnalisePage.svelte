@@ -21,11 +21,12 @@
   let rede = $state(inicial.get("rede") ?? "");
   let blocos = $state((inicial.get("blocos") ?? "").split(",").filter(Boolean));
   let anoIdeb = $state(Number(inicial.get("ano_ideb")) || null);
+  let anoSiope = $state(Number(inicial.get("ano_siope")) || null);
   let total = $state(null);
   let contando = $state(false);
   let error = $state(null);
 
-  const filtros = $derived({ uf, codigoIbge, rede, blocos, anoIdeb });
+  const filtros = $derived({ uf, codigoIbge, rede, blocos, anoIdeb, anoSiope });
   const escolhidos = $derived(catalogo ? catalogo.blocos.filter((b) => b.fixo || blocos.includes(b.id)) : []);
   const nColunas = $derived(escolhidos.reduce((n, b) => n + b.colunas.length, 0));
   const temEtapas = $derived(!!catalogo && catalogo.blocos.some((b) => b.id === "etapas"));
@@ -41,6 +42,7 @@
     if (rede) p.set("rede", rede);
     if (blocos.length) p.set("blocos", blocos.join(","));
     if (anoIdeb && blocos.includes("desempenho")) p.set("ano_ideb", String(anoIdeb));
+    if (anoSiope && blocos.includes("remuneracao")) p.set("ano_siope", String(anoSiope));
     window.history.replaceState({}, "", `/base-analise${p.size ? `?${p}` : ""}`);
   }
 
@@ -97,6 +99,8 @@
       blocos = blocos.filter((b) => ok.has(b));
       if (!catalogo.redes.some((r) => r.id === rede)) rede = "";
       if (!catalogo.anos.ideb.includes(anoIdeb)) anoIdeb = catalogo.anos.ideb[0] ?? null;
+      // #491: sem ano pedido (ou inexistente), o ano completo mais recente.
+      if (!(catalogo.anos.siope ?? []).includes(anoSiope)) anoSiope = catalogo.anos.siope_padrao ?? null;
     } catch (err) {
       error = err instanceof ApiError ? err.message : "Não foi possível carregar a base de análise.";
     }
@@ -211,6 +215,22 @@
                 {/if}
               </div>
             {/if}
+            {#if b.id === "remuneracao" && blocos.includes("remuneracao")}
+              <div class="ml-6 mt-2">
+                {#if (catalogo.anos.siope ?? []).length}
+                  <label for="ano-siope" class="text-sm text-gray-600 mr-2">Ano da folha (SIOPE)</label>
+                  <select id="ano-siope" bind:value={anoSiope} onchange={definirUrl}
+                    class="border border-gray-300 rounded-md px-2 py-1 text-sm">
+                    {#each catalogo.anos.siope as a}<option value={a}>{a}</option>{/each}
+                  </select>
+                {/if}
+                <!-- #491 (RJ-03): a cobertura é pequena e não aleatória. -->
+                <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="aviso-siope">
+                  Só a rede municipal, e só os municípios em que o SIOPE separa a folha por escola: nas demais escolas a coluna fica vazia.
+                  A lista dos municípios com folha está em <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a> e no painel financeiro de cada escola.
+                </p>
+              </div>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -220,7 +240,7 @@
       <h2 id="baixar" class="font-semibold text-gray-900">3. Baixar</h2>
       <p class="text-xs text-gray-600" data-testid="versao-dados">
         {nColunas} colunas, mais a versão dos dados no fim de cada linha:
-        Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}{#if blocos.includes("indices") && catalogo.anos.indices}{" · "}índices {catalogo.anos.indices}{/if}.
+        Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}{#if blocos.includes("indices") && catalogo.anos.indices}{" · "}índices {catalogo.anos.indices}{/if}{#if blocos.includes("remuneracao") && anoSiope}{" · "}folha {anoSiope}{/if}.
         Separador ";" e vírgula decimal (abre direto no Excel). Ausência é célula vazia, nunca zero.
       </p>
       {#if idebAntigo}{@render avisoAnos("aviso-anos-baixar")}{/if}

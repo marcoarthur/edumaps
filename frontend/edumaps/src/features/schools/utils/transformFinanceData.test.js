@@ -62,3 +62,14 @@ describe("transformFinanceData", () => {
     expect(formatBRLCompact(8_895_579.41)).toBe("R$ 8,9 mi");
   });
 });
+
+describe("periodoTexto (#491)", () => {
+  it("ano inteiro, um mês, meses seguidos e meses com buraco", async () => {
+    const { periodoTexto } = await import("./transformFinanceData.js");
+    expect(periodoTexto({ mes_inicial: 1, mes_final: 12, meses: 12 })).toBe("jan a dez");
+    expect(periodoTexto({ mes_inicial: 1, mes_final: 1, meses: 1 })).toBe("jan");
+    expect(periodoTexto({ mes_inicial: 1, mes_final: 2, meses: 2 })).toBe("jan a fev (2 meses)");
+    expect(periodoTexto({ mes_inicial: 1, mes_final: 12, meses: 3 })).toBe("jan a dez (3 meses com folha)");
+    expect(periodoTexto(null)).toBe("");
+  });
+});

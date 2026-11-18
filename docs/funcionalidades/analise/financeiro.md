@@ -22,7 +22,12 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 ## O que o sistema permite
 
 - Sistema pode apresentar o resumo financeiro da educação por escola/município
-  (custo por competência, total de profissionais distintos e custo por categoria).
+  (custo por competência, total de profissionais distintos e custo por categoria),
+  **um ano por vez**, com o período escrito (os meses com folha) e o aviso do
+  13º em dezembro.
+- Sistema pode **contar cada profissional uma vez**, pela pessoa (CPF mascarado
+  e nome), sem juntar pessoas diferentes que o SIOPE publica com o mesmo CPF
+  mascarado.
 - Quando o SIOPE de um município não detalha a folha por escola, o sistema pode
   apresentar o **agregado da Secretaria municipal**, claramente **escopado como
   rede municipal** (não como se fosse da unidade), com aviso de que os números

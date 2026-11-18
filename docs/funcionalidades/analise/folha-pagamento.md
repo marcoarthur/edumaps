@@ -23,7 +23,10 @@ Gestão pública, pesquisadores e investidores que avaliam o quadro profissional
 
 - Sistema pode listar profissionais e suas categorias por escola.
 - Sistema pode apoiar a leitura do vínculo e da carga horária.
-- Sistema pode alimentar análises sobre o corpo docente e de apoio.
+- Sistema pode alimentar análises sobre o corpo docente e de apoio: a
+  **base de análise** traz a folha somada por escola e por ano
+  (profissionais do magistério, salário médio, carga horária, salário para
+  40 horas e gasto com pessoal), sem nomes nem CPF.
 
 ## Valor
 

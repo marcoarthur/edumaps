@@ -2,13 +2,14 @@
 // Base de análise (#439): catálogo, total do recorte e os links de download.
 import { apiClient } from "@/shared/api/client.js";
 
-function params({ uf, codigoIbge, rede, blocos, anoIdeb }) {
+function params({ uf, codigoIbge, rede, blocos, anoIdeb, anoSiope }) {
   const p = new URLSearchParams();
   if (uf) p.set("uf", uf);
   if (codigoIbge) p.set("codigo_ibge", codigoIbge);
   if (rede) p.set("rede", rede);
   if (blocos?.length) p.set("blocos", blocos.join(","));
   if (anoIdeb && blocos?.includes("desempenho")) p.set("ano_ideb", String(anoIdeb));
+  if (anoSiope && blocos?.includes("remuneracao")) p.set("ano_siope", String(anoSiope)); // #491
   return p;
 }
 
@@ -27,6 +28,6 @@ export function baseCsvUrl(filtros) {
 }
 
 /** URL do dicionário das colunas dos blocos escolhidos. */
-export function dicionarioUrl({ blocos, anoIdeb }) {
-  return `/api/base-analise/dicionario?${params({ blocos, anoIdeb })}`;
+export function dicionarioUrl({ blocos, anoIdeb, anoSiope }) {
+  return `/api/base-analise/dicionario?${params({ blocos, anoIdeb, anoSiope })}`;
 }

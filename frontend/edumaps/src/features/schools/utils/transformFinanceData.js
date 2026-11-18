@@ -7,6 +7,7 @@ import {
   periodKey,
   periodLabel,
   MONTH_FULL,
+  MONTH_ABBR,
 } from "../constants/finance.js";
 
 /** Série de custo total mensal — usado no LineChart. */
@@ -60,6 +61,21 @@ export function buildPeriodOptions(series = []) {
 }
 
 /** Totais do período + competência mais recente. */
+/**
+ * Período do ano (#491): "jan a dez", "jan" ou "jan a fev (2 meses)".
+ * @param {{ mes_inicial: number, mes_final: number, meses: number }|null} periodo
+ */
+export function periodoTexto(periodo) {
+  if (!periodo) return "";
+  const ini = MONTH_ABBR[periodo.mes_inicial]?.toLowerCase() ?? "";
+  const fim = MONTH_ABBR[periodo.mes_final]?.toLowerCase() ?? "";
+  if (periodo.mes_inicial === periodo.mes_final) return ini;
+  const span = periodo.mes_final - periodo.mes_inicial + 1;
+  const base = `${ini} a ${fim}`;
+  if (periodo.meses === 12) return base;
+  return periodo.meses === span ? `${base} (${periodo.meses} meses)` : `${base} (${periodo.meses} meses com folha)`;
+}
+
 export function summarize(series = []) {
   const totalCusto = series.reduce(
     (acc, s) => acc + (Number(s.total_salario) || 0),
