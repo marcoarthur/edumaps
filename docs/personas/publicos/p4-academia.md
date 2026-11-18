@@ -119,10 +119,28 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (profissionais contados pelo CPF mascarado), RJ-02 (totais de anos
   diferentes sem o período) e RJ-03 (folha por escola sem saída para
   baixar) → #491, entregues (#492).
+  Vigésima rodada (2026-11-18, **adotaria**, sem o grupo de referência do
+  perfil): RI-01 (grupo formado com o próprio IDEB), RI-02 (INSE como sinal
+  de atenção) e RI-03 (N do grupo no lugar do N com dado) → aguardando
+  aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-18 — Análises públicas (vigésima rodada, grupo de referência do perfil)
+
+**Veredito:** **adotaria** (mantido), sem o grupo de referência do perfil.
+Consolidação em
+[`avaliacoes/2026-11-18-p4-grupo-referencia.md`](avaliacoes/2026-11-18-p4-grupo-referencia.md).
+
+**Barreiras:**
+- RI-01 (atrapalha): o grupo "de contexto parecido" é um k-means sobre os
+  indicadores comparados, inclusive IDEB, nota e INSE; correlação 0,83 entre
+  o IDEB da escola e a mediana do grupo (37 escolas de Salvador).
+- RI-02 (atrapalha): o INSE vira sinal de atenção (13 de 38 escolas).
+- RI-03 (detalhe): o N da distribuição é o tamanho do grupo (IDEB N = 436
+  num município com 417 escolas com IDEB).
 
 ### 2026-11-18 — Análises públicas (décima nona rodada, folha de pagamento)
 
