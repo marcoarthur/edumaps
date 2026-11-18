@@ -182,3 +182,38 @@ describe("SchoolFinancePage — ausência e cobertura (#422)", () => {
     expect(await screen.findByText(/não traz profissionais desta escola/)).toBeInTheDocument();
   });
 });
+
+describe("SchoolFinancePage — ano da folha (#491)", () => {
+  const COM_ANOS = {
+    ...FINANCE_MUNICIPAL,
+    ano: 2025,
+    anos: [2026, 2025],
+    periodo: { mes_inicial: 1, mes_final: 12, meses: 12 },
+    series: [
+      { ano: 2025, mes: "Janeiro", mes_num: 1, total_profissionais: 3, total_salario: 1000 },
+      { ano: 2025, mes: "Dezembro", mes_num: 12, total_profissionais: 3, total_salario: 2000 },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.restaurarSessao.mockReturnValue(true);
+    mocks.fetchMe.mockRejectedValue(new Error("sem sessão"));
+    mocks.getSchoolFinance.mockResolvedValue(COM_ANOS);
+    window.history.replaceState({}, "", `/escola/financeiro?inep=${INEP}`);
+  });
+
+  it("diz o ano e os meses no total e avisa do 13º", async () => {
+    render(SchoolFinancePage);
+    expect(await screen.findByText(/Custo total em 2025 \(jan a dez\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Profissionais em 2025/)).toBeInTheDocument();
+    expect(screen.getByTestId("nota-13")).toHaveTextContent("13º");
+  });
+
+  it("trocar o ano busca o painel daquele ano", async () => {
+    render(SchoolFinancePage);
+    const sel = await screen.findByLabelText("Ano da folha");
+    await fireEvent.change(sel, { target: { value: "2026" } });
+    await waitFor(() => expect(mocks.getSchoolFinance).toHaveBeenLastCalledWith(INEP, 2026));
+  });
+});

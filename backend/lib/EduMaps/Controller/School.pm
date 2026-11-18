@@ -257,8 +257,20 @@ sub payroll_last($self) {
 }
 
 sub finance($self) {
+  my $v = $self->validation;
+  $v->optional('ano', 'trim')->like(qr/^\d{4}$/);
+  return $self->bad_req if $self->any_error;
+
   my $model = $self->instantiate_model(model => 'School');
-  my $result = $model->financial_summary({ cod_inep => $self->param('cod_inep') });
+  my $result = $model->financial_summary({
+    cod_inep => $self->param('cod_inep'),
+    (defined $v->param('ano') ? (ano => 0 + $v->param('ano')) : ()),
+  });
+
+  # #491: ano pedido sem folha desta escola → 400, com os anos que há.
+  return $self->render(json => {
+    error => 'Sem folha neste ano', anos => $result->{anos},
+  }, status => 400) if ($result->{error} // '') eq 'ano_sem_folha';
 
   # Sem histórico financeiro é um estado válido (a página mostra "sem dados").
   $self->render(json => $result);

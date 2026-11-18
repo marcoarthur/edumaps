@@ -17,6 +17,13 @@ has parser => sub {
   );
 };
 
+# #491 (RJ-01): a pessoa é o CPF mascarado E o nome. O SIOPE publica o CPF
+# como `xxx.NNN.NNN-xx`; dos seis dígitos, o último é a região fiscal, quase
+# sempre a mesma no município. Sobram ~100 mil combinações, e contar só pelo
+# CPF juntava pessoas diferentes (Cuiabá 2025: 10.120 em vez de 10.557).
+# Mesma chave do perfil da cidade (City::Profile).
+our $PESSOA = '(cpf, nome_profissional)';
+
 sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
   my $rs = $self->schema->resultset('Escolas');
 
@@ -37,7 +44,7 @@ sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
   ),
   totais_gerais AS (
       SELECT 
-          COUNT(DISTINCT r.cpf) AS total_profissionais,
+          COUNT(DISTINCT (r.cpf, r.nome_profissional)) AS total_profissionais,
           COUNT(*) AS total_registros,
           SUM(r.salario_total) AS total_salario_geral,
           ROUND(AVG(r.salario_total), 2) AS media_salario
@@ -82,7 +89,7 @@ sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
       FROM (
           SELECT 
               categoria,
-              COUNT(DISTINCT cpf) AS profissionais,
+              COUNT(DISTINCT (cpf, nome_profissional)) AS profissionais,
               SUM(salario_total) AS total_salarios
           FROM clean.remuneracao_municipal
           WHERE cod_inep = :cod_inep
@@ -104,7 +111,7 @@ sub payroll($self, $cod_inep, $dt = DateTime->now(locale => 'pt')) {
       FROM (
           SELECT 
               segmento_ensino,
-              COUNT(DISTINCT cpf) AS profissionais,
+              COUNT(DISTINCT (cpf, nome_profissional)) AS profissionais,
               SUM(salario_total) AS total_salarios
           FROM clean.remuneracao_municipal
           WHERE cod_inep = :cod_inep
@@ -412,13 +419,30 @@ sub financial_summary($self, $params) {
     $origem = 'secretaria';
   }
 
+  # #491 (RJ-02): tudo é de um ano (exercício). Sem o ano pedido, o mais
+  # recente; ano sem folha é erro do pedido (o controller dá 400).
+  my $anos = $dbh->selectcol_arrayref(
+    "SELECT DISTINCT ano FROM clean.remuneracao_municipal WHERE $where ORDER BY ano DESC",
+    undef, @bind,
+  );
+  $anos = [ map { 0 + $_ } @$anos ];
+  my $ano = $params->{ano};
+  if (defined $ano && @$anos && !grep { $_ == $ano } @$anos) {
+    return { error => 'ano_sem_folha', anos => $anos };
+  }
+  $ano //= $anos->[0];
+  if (defined $ano) {
+    $where .= ' AND ano = ?';
+    push @bind, $ano;
+  }
+
   my $series = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, @bind);
     SELECT
       ano,
       mes,
       $month_case AS mes_num,
       COALESCE(SUM(salario_total), 0)::float AS total_salario,
-      COUNT(DISTINCT cpf)::int               AS total_profissionais
+      COUNT(DISTINCT $PESSOA)::int               AS total_profissionais
     FROM clean.remuneracao_municipal
     WHERE $where
     GROUP BY ano, mes
@@ -430,18 +454,18 @@ sub financial_summary($self, $params) {
       categoria,
       tipo,
       COALESCE(SUM(salario_total), 0)::float AS total_salario,
-      COUNT(DISTINCT cpf)::int               AS total_profissionais
+      COUNT(DISTINCT $PESSOA)::int               AS total_profissionais
     FROM clean.remuneracao_municipal
     WHERE $where
     GROUP BY categoria, tipo
     ORDER BY total_salario DESC
   SQL
 
-  # Total de profissionais distintos (todos os meses/anos) — o card do painel
-  # usa este total; a competência mais recente pode ter 1 servidor e parecer
-  # que a escola só tem 1.
+  # Total de profissionais distintos no ano — o card do painel usa este
+  # total; a competência mais recente pode ter 1 servidor e parecer que a
+  # escola só tem 1.
   my ($total_profissionais) = $dbh->selectrow_array(
-    "SELECT COUNT(DISTINCT cpf)::int FROM clean.remuneracao_municipal WHERE $where",
+    "SELECT COUNT(DISTINCT $PESSOA)::int FROM clean.remuneracao_municipal WHERE $where",
     undef, @bind,
   );
 
@@ -477,6 +501,10 @@ sub financial_summary($self, $params) {
     # Onde há folha carregada: municípios, anos e se o SIOPE detalha por
     # escola ou só pelo agregado da secretaria.
     cobertura  => $self->folha_cobertura,
+    # #491 (RJ-02): o ano mostrado, os anos com folha e o período do ano.
+    ano        => $ano,
+    anos       => $anos,
+    periodo    => _periodo($series),
     series     => $series     // [],
     categorias => $categorias // [],
     siope      => {
@@ -487,6 +515,13 @@ sub financial_summary($self, $params) {
       anos_presentes => $siope->{anos_presentes},
     },
   };
+}
+
+# Período coberto pela série de um ano: primeiro e último mês e quantos meses.
+sub _periodo ($series) {
+  my @m = sort { $a <=> $b } grep { $_ } map { $_->{mes_num} } @{ $series // [] };
+  return undef unless @m;
+  return { mes_inicial => 0 + $m[0], mes_final => 0 + $m[-1], meses => scalar @m };
 }
 
 sub last_payroll_available($self, $params) {

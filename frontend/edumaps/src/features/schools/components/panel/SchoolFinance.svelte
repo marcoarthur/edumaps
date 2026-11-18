@@ -12,6 +12,7 @@
     buildCategoryRows,
     buildPeriodOptions,
     summarize,
+    periodoTexto,
     formatBRL,
     formatBRLCompact,
     formatInt,
@@ -21,13 +22,19 @@
    * @typedef {Object} Props
    * @property {string|number} inep
    * @property {{ nome?: string }|null} [escola]
-   * @property {number} [totalProfissionais] total de profissionais distintos (todos os meses)
+   * @property {number} [totalProfissionais] profissionais distintos no ano (pessoa = CPF mascarado + nome, #491)
+   * @property {number|null} [ano] ano (exercício) mostrado (#491)
+   * @property {{ mes_inicial, mes_final, meses }|null} [periodo] meses do ano com folha
    * @property {Array<{ ano, mes, mes_num, total_salario, total_profissionais }>} [series]
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [] } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null } = $props();
+
+  // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
+  const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
+  const temDezembro = $derived(series.some((s) => Number(s.mes_num) === 12));
 
   // Quando o SIOPE não detalha a folha por escola (origem='secretaria'), todo o
   // painel é escopado como REDE MUNICIPAL — nunca como se fosse da unidade.
@@ -109,15 +116,18 @@
   <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
       <p class="text-xs text-gray-500">
-        Custo total (período){#if ehRede} · {escopoTitulo}{/if}
+        Custo total{noAno}{#if ehRede} · {escopoTitulo}{/if}
       </p>
       <p class="text-xl font-bold text-gray-900 mt-1">
         {formatBRL(stats.totalCusto)}
       </p>
+      {#if temDezembro}
+        <p class="text-xs text-gray-400 mt-0.5" data-testid="nota-13">Dezembro inclui o 13º salário.</p>
+      {/if}
     </div>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
       <p class="text-xs text-gray-500">
-        Profissionais (total){#if ehRede} · {escopoTitulo}{/if}
+        Profissionais{ano ? ` em ${ano}` : " (total)"}{#if ehRede} · {escopoTitulo}{/if}
       </p>
       <p class="text-xl font-bold text-gray-900 mt-1">
         {formatInt(totalProfissionais)}

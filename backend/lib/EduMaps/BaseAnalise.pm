@@ -249,6 +249,30 @@ my @DOCENCIA = (
 my $INSE_VAZIO = 'Vazio: a escola não teve alunos avaliados no SAEB daquela edição. As privadas nunca têm INSE, e as creches e pré-escolas quase nunca';
 
 # Cada bloco: colunas [nome, expressão SQL, descrição, numérica?] e a fonte.
+my $SIOPE_VAZIO = 'Vazio: escola fora da rede municipal, município sem folha carregada nesse ano, ou município em que o SIOPE só traz o total da Secretaria, sem separar as escolas (veja a ajuda e a lista de municípios em Fontes e metodologia)';
+my $MAGISTERIO = 'Profissionais do magistério';
+
+# Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
+# pessoa pode ter mais de um vínculo na escola no mesmo mês), depois por
+# escola. O mês vem em texto, com um caso conhecido de latin1 ("Março"): as
+# três primeiras letras bastam. O agregado da Secretaria (99999999) fica de
+# fora: não é escola.
+my $SQL_FOLHA = <<~"SQL";
+  SELECT cod_inep,
+         (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE tipo = '$MAGISTERIO'))::int AS prof_magisterio,
+         round(avg(s) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::float8 AS salario_medio,
+         round((avg(ch) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::numeric, 1)::float8 AS carga_media,
+         round(avg(s / ch * 40) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0))::float8 AS salario_40h,
+         round(sum(s))::float8 AS gasto_ano,
+         count(DISTINCT m)::int AS meses
+    FROM (SELECT cod_inep, left(mes, 3) AS m, cpf, nome_profissional, tipo,
+                 sum(salario_total) AS s, sum(carga_horaria) AS ch
+            FROM clean.remuneracao_municipal
+           WHERE ano = ? AND cod_inep <> 99999999
+           GROUP BY 1, 2, 3, 4, 5) pm
+   GROUP BY cod_inep
+  SQL
+
 sub _blocos {
   my @ideb;
   for my $e (@ETAPAS) {
@@ -303,6 +327,24 @@ sub _blocos {
         ['inse_media',         'x.media_inse', "INSE médio dos alunos da escola. $INSE_VAZIO", 1],
         ['inse_classificacao', 'x.inse_classificacao', "Nível do INSE (I a VIII). $INSE_VAZIO", 0],
       ] },
+    # #491 (RJ-03): a folha do SIOPE agregada por escola, sem nomes nem CPF.
+    { id => 'remuneracao', label => 'Remuneração (SIOPE)', fonte => 'siope', usa_ano_siope => 1,
+      descricao => 'Profissionais do magistério, salário médio mensal, carga horária média, salário para 40 horas e gasto com pessoal da escola no ano escolhido, '
+        . 'da folha que o município declara ao SIOPE. Só a rede municipal e só os municípios em que o SIOPE detalha a folha por escola; sem nomes nem CPF.',
+      colunas => [
+        ['prof_magisterio', 'f.prof_magisterio',
+          "Profissionais do magistério pagos no ano, contados pela pessoa (CPF mascarado e nome: o CPF mascarado sozinho junta pessoas diferentes). $SIOPE_VAZIO", 1],
+        ['salario_medio_magisterio', 'f.salario_medio',
+          "Salário total médio por mês de um profissional do magistério, em reais, sem dezembro (que traz o 13º). Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
+        ['carga_horaria_media_magisterio', 'f.carga_media',
+          "Carga horária semanal média de um profissional do magistério por mês, em horas, sem dezembro. Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
+        ['salario_40h_magisterio', 'f.salario_40h',
+          "Salário médio do magistério convertido para 40 horas semanais (salário ÷ carga × 40), em reais, sem dezembro e sem os meses sem carga horária. $SIOPE_VAZIO", 1],
+        ['gasto_pessoal_ano', 'f.gasto_ano',
+          "Soma do salário total de todos os profissionais da escola no ano (magistério e demais), em reais, com o 13º. Com menos de 12 meses (veja meses_folha), é só o gasto desses meses. $SIOPE_VAZIO", 1],
+        ['meses_folha', 'f.meses',
+          "Meses do ano com folha da escola no SIOPE (de 1 a 12). $SIOPE_VAZIO", 1],
+      ] },
     { id => 'porte', label => 'Porte do município', fonte => 'ibge_populacao',
       descricao => 'População estimada do município e a classe de tamanho do IBGE.',
       colunas => [
@@ -338,7 +380,26 @@ sub anos ($class, $dbh) {
     ideb  => [ map { 0 + $_ } @$ideb ],
     populacao => $pop,
     indices => $class->indices_versao,
+    %{ $class->anos_siope($dbh) },
   };
+}
+
+# Anos da folha do SIOPE com dado por escola (#491) e o padrão: o ano
+# completo mais recente (12 meses em algum município); sem ano completo, o
+# mais recente.
+sub anos_siope ($class, $dbh) {
+  my $rows = eval {
+    $dbh->selectall_arrayref(q{
+      SELECT ano, max(meses) AS meses FROM (
+        SELECT ano, cod_municipio, count(DISTINCT left(mes, 3)) AS meses
+          FROM clean.remuneracao_municipal WHERE cod_inep <> 99999999
+         GROUP BY 1, 2) x
+       GROUP BY ano ORDER BY ano DESC
+    });
+  } // [];
+  my @anos = map { 0 + $_->[0] } @$rows;
+  my ($completo) = map { 0 + $_->[0] } grep { $_->[1] >= 12 } @$rows;
+  return { siope => \@anos, siope_padrao => $completo // $anos[0] };
 }
 
 # Recorte: { uf (obrigatória), codigo_ibge?, rede? } → (sql, binds) do WHERE.
@@ -378,7 +439,7 @@ sub descricao_ano_ideb ($class, $anos, $ano_ideb) {
 }
 
 # Colunas e blocos efetivos, na ordem do catálogo, mais as colunas de versão.
-sub colunas ($class, $blocos, $anos, $ano_ideb) {
+sub colunas ($class, $blocos, $anos, $ano_ideb, $ano_siope = undef) {
   my %quer = map { $_ => 1 } @$blocos;
   my @b = grep { $_->{fixo} || $quer{ $_->{id} } } @{ _blocos() };
   my @versao = (['ano_censo', $anos->{censo}, 'Ano do Censo Escolar', 'censo']);
@@ -386,14 +447,15 @@ sub colunas ($class, $blocos, $anos, $ano_ideb) {
   push @versao, ['ano_inse', $anos->{inse}, 'Edição do SAEB do INSE', 'inse'] if $quer{inse};
   push @versao, ['ano_populacao', $anos->{populacao}, 'Ano da estimativa de população', 'ibge_populacao'] if $quer{porte};
   push @versao, ['versao_indice', $anos->{indices}, 'Versão da fórmula dos índices do EduMaps (o histórico está em Fontes e metodologia)', 'indices_edumaps'] if $quer{indices};
+  push @versao, ['ano_siope', $ano_siope, 'Ano (exercício) da folha do SIOPE', 'siope'] if $quer{remuneracao};
   return (\@b, \@versao);
 }
 
 # Linhas da base: (cabeçalho, linhas como arrays, números como números).
-sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
+sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = undef) {
   my $anos = $class->anos($dbh);
   return ([], []) unless defined $anos->{censo};
-  my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb);
+  my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb, $ano_siope);
   my %tem = map { $_->{id} => 1 } @$bl;
 
   my ($where, @wb) = _where($recorte, $anos->{censo});
@@ -424,6 +486,10 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
             . ' LEFT JOIN clean.censo_matriculas mt ON mt.co_entidade = e.co_entidade AND mt.nu_ano_censo = e.nu_ano_censo'
             . ' LEFT JOIN clean.censo_gestor gs ON gs.co_entidade = e.co_entidade AND gs.nu_ano_censo = e.nu_ano_censo';
   }
+  if ($tem{remuneracao}) {
+    $joins .= " LEFT JOIN ($SQL_FOLHA) f ON f.cod_inep = e.co_entidade";
+    push @jb, $ano_siope // -1;
+  }
   if ($tem{porte}) {
     $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text';
   }
@@ -446,12 +512,12 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef) {
 sub _fonte_nome ($f) { $f->{proprio} ? $f->{nome} : "$f->{nome} ($f->{orgao})" }
 
 # Dicionário: uma linha por coluna da base, com a fonte e o link oficial.
-sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef) {
+sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef, $ano_siope = undef) {
   my $anos = $class->anos($dbh);
-  my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb);
+  my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb, $ano_siope);
   my %fonte = map { $_->{id} => $_ } @EduMaps::Fontes::CATALOGO;
   my %ano = (censo => $anos->{censo}, ideb => $ano_ideb, inse => $anos->{inse}, ibge_populacao => $anos->{populacao},
-             indices_edumaps => $anos->{censo});
+             indices_edumaps => $anos->{censo}, siope => $ano_siope);
   my @linhas;
   for my $b (@$bl) {
     my $f = $fonte{ $b->{fonte} };

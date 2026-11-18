@@ -42,8 +42,10 @@ export function getSchoolPanelData(codInep) {
  *   series: Array<{ ano, mes, mes_num, total_salario, total_profissionais }>,
  *   categorias: Array<{ categoria, tipo, total_salario, total_profissionais }> }>}
  */
-export function getSchoolFinance(codInep) {
-  return apiClient.get(`${BASE}/${codInep}/finance`);
+export function getSchoolFinance(codInep, ano = null) {
+  // #491: um ano (exercício) por vez; sem o ano, o mais recente.
+  const q = ano ? `?ano=${encodeURIComponent(ano)}` : "";
+  return apiClient.get(`${BASE}/${codInep}/finance${q}`);
 }
 
 // ---------------------------------------------------------------------------

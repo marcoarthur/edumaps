@@ -70,6 +70,12 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   mesmas definições do índice, para refazê-lo e separar o efeito de cada
   parte. O dicionário diz que os pesos dos índices são uma escolha da
   plataforma, não estimados contra o IDEB.
+- Sistema pode **entregar a remuneração por escola**, da folha que o
+  município declara ao SIOPE, no ano escolhido: profissionais do magistério
+  (cada pessoa uma vez), salário médio mensal e carga horária média sem o
+  13º, salário para 40 horas e gasto com pessoal do ano. Sem nomes nem CPF;
+  vazio fora da rede municipal e onde o SIOPE não separa as escolas, com o
+  ano no arquivo.
 - Sistema pode **localizar cada escola** (latitude e longitude declaradas ao
   Censo Escolar), para mapas.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a

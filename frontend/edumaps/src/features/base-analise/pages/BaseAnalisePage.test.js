@@ -54,6 +54,20 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("baixar-base").getAttribute("href")).toBe("/api/base-analise/csv?uf=ES");
   });
 
+  it("remuneração: ano completo por padrão, no link, na versão e com o aviso de cobertura (#491)", async () => {
+    abrir("?uf=ES");
+    await screen.findByTestId("total-recorte");
+    expect(screen.queryByLabelText("Ano da folha (SIOPE)")).toBeNull();
+    await fireEvent.click(screen.getByLabelText(/Remuneração \(SIOPE\)/));
+    const sel = screen.getByLabelText("Ano da folha (SIOPE)");
+    expect(sel.value).toBe("2025");
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toBe("/api/base-analise/csv?uf=ES&blocos=remuneracao&ano_siope=2025");
+    expect(screen.getByTestId("versao-dados")).toHaveTextContent("Censo Escolar 2025 · folha 2025.");
+    expect(screen.getByTestId("aviso-siope")).toHaveTextContent("Só a rede municipal");
+    await fireEvent.change(sel, { target: { value: "2026" } });
+    expect(window.location.search).toContain("ano_siope=2026");
+  });
+
   it("rede filtra a contagem e entra no link", async () => {
     abrir("?uf=ES");
     await screen.findByText(/3\.010/);

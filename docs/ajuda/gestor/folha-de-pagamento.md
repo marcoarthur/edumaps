@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [financeiro-e-folha, painel-da-escola]
 funcionalidade: ../../funcionalidades/analise/folha-pagamento.md
-ultima_revisao: 2026-11-06
+ultima_revisao: 2026-11-18
 ---
 
 # Folha de pagamento por escola
@@ -40,6 +40,8 @@ números da rede.
   pagos no mês.
 - **Categoria** e **Situação** vêm como o município declarou ao SIOPE.
 - Um valor vazio aparece como **—**: não informado, nunca zero.
+- **Profissionais** são contados pela pessoa (CPF mascarado e nome), como no
+  Painel financeiro.
 - O mês exibido é o escolhido no Painel financeiro; meses diferentes podem ter
   quadros diferentes (contratações, afastamentos).
 

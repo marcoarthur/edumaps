@@ -29,6 +29,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano = 2001)', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -73,7 +74,7 @@ sub ler_csv ($tx) {
 
 subtest 'catálogo e total do recorte' => sub {
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->status_is(200)->tx->res->json;
-  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho indices inse porte)], 'blocos (etapas depois da identificação, #461; índices depois do IDEB, #465)';
+  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho indices inse remuneracao porte)], 'blocos (etapas depois da identificação, #461; índices depois do IDEB, #465; remuneração, #491)';
   is $r->{total}, 2, 'só as escolas em funcionamento';
   is $r->{anos}{censo}, $ANO, 'ano do Censo';
   ok( (grep { $_ == $IDEB } @{ $r->{anos}{ideb} }), 'edições do IDEB');
@@ -423,6 +424,50 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
   like $d{ano_ideb}[1], qr/\(2021\), cruzada com o Censo Escolar \Q$ANO\E/, 'edição antiga: cruzamento dito';
   like $d{ano_ideb}[1], qr/fechadas depois de 2021 não entram/, 'escolas fechadas';
+};
+
+subtest 'remuneração do SIOPE por escola (#491)' => sub {
+  my $SIOPE = 2001;
+  my $f = $dbh->prepare('INSERT INTO clean.remuneracao_municipal
+     (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, carga_horaria, salario_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  my $mag = 'Profissionais do magistério';
+  my @l = (
+    # duas pessoas com o MESMO CPF mascarado; Bruno com dois vínculos em janeiro
+    ['Janeiro',   'ANA',   30, 3000, $mag], ['Fevereiro', 'ANA',   30, 3000, $mag], ['Dezembro', 'ANA',   30, 6000, $mag],
+    ['Janeiro',   'BRUNO', 40, 4000, $mag], ['Janeiro',   'BRUNO', 20, 1000, $mag],
+    ['Fevereiro', 'BRUNO', 40, 4000, $mag], ['Dezembro',  'BRUNO', 40, 4000, $mag],
+  );
+  $f->execute($SIOPE, $_->[0], $_->[1], 'xxx.111.221-xx', $A, '600039', 'Municipal', 'Docente', $_->[4], $_->[2], $_->[3]) for @l;
+  $f->execute($SIOPE, $_, 'CAIO', 'xxx.999.881-xx', $A, '600039', 'Municipal', 'Apoio', 'Outros profissionais da educação', 40, 2000)
+    for qw(Janeiro Fevereiro Dezembro);
+  # agregado da Secretaria: não é escola, fica fora
+  $f->execute($SIOPE, 'Janeiro', 'DORA', 'xxx.555.551-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 9999);
+
+  my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
+  ok( (grep { $_ == $SIOPE } @{ $r->{anos}{siope} }), 'ano da folha no catálogo');
+
+  my $tx = $t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$SIOPE")->status_is(200)
+    ->header_like('Content-Disposition' => qr/censo\Q$ANO\E-siope$SIOPE\.csv/)->tx;
+  my $c = ler_csv($tx);
+  my @cab = @{ $c->[0] };
+  my %i; @i{@cab} = 0 .. $#cab;
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  my ($b) = grep { $_->[0] eq $B } @$c;
+  is [ @$a[ @i{qw(prof_magisterio salario_medio_magisterio carga_horaria_media_magisterio salario_40h_magisterio gasto_pessoal_ano meses_folha)} ] ],
+     ['2', '3750', '40', '3833', '31000', '3'],
+     'pessoa = CPF mascarado + nome; média por pessoa e mês sem dezembro; gasto do ano com o 13º; sem a Secretaria';
+  is [ @$b[ @i{qw(prof_magisterio salario_medio_magisterio gasto_pessoal_ano meses_folha)} ] ], ['', '', '', ''],
+     'escola estadual sem folha: vazio, não zero';
+  ok !(grep { /nome|cpf/ } @cab), 'sem nome nem CPF';
+  is $cab[-1], 'ano_siope', 'ano da folha no fim';
+  is $a->[-1], "$SIOPE", 'ano da folha em toda linha';
+
+  my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?uf=AC&blocos=remuneracao&ano_siope=$SIOPE")->tx);
+  my ($linha) = grep { $_->[0] eq 'prof_magisterio' } @$d;
+  like $linha->[3], qr/SIOPE/, 'fonte no dicionário';
+  is $linha->[4], "$SIOPE", 'ano no dicionário';
+  $t->get_ok("/api/base-analise/csv?uf=AC&blocos=remuneracao&ano_siope=1990")->status_is(400);
 };
 
 subtest 'erros' => sub {

@@ -23,6 +23,9 @@ export const BASE_ANALISE_FIXTURE = {
       colunas: [col("indice_infraestrutura", "Índice de infraestrutura (0 a 10)"), col("indice_diversidade_discente", "Índice de diversidade discente (0 a 10)")] },
     { id: "inse", label: "Nível socioeconômico (INSE)", fixo: false, fonte: "inse",
       descricao: "INSE médio dos alunos e o nível.", colunas: [col("inse_media", "INSE médio dos alunos da escola")] },
+    { id: "remuneracao", label: "Remuneração (SIOPE)", fixo: false, fonte: "siope",
+      descricao: "Profissionais do magistério, salário médio e gasto com pessoal da escola no ano, da folha do SIOPE.",
+      colunas: [col("prof_magisterio", "Profissionais do magistério"), col("salario_medio_magisterio", "Salário médio")] },
     { id: "porte", label: "Porte do município", fixo: false, fonte: "ibge_populacao",
       descricao: "População estimada do município e a classe de tamanho do IBGE.",
       colunas: [col("populacao_municipio", "População estimada do município")] },
@@ -35,6 +38,6 @@ export const BASE_ANALISE_FIXTURE = {
     { id: "privada", label: "Privada" },
   ],
   ufs: ["AC", "ES", "MG", "SP"],
-  anos: { censo: 2025, inse: 2023, ideb: [2023, 2021, 2019], populacao: "2025", indices: "indices-v2" },
+  anos: { censo: 2025, inse: 2023, ideb: [2023, 2021, 2019], populacao: "2025", indices: "indices-v2", siope: [2026, 2025, 2024], siope_padrao: 2025 },
   total: null,
 };

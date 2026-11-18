@@ -18,6 +18,7 @@ sub _validar ($self, %o) {
   $v->optional('rede', 'trim')->in(map { $_->{id} } @EduMaps::BaseAnalise::REDES);
   $v->optional('blocos', 'trim')->like(qr/^[a-z_]+(,[a-z_]+)*$/);
   $v->optional('ano_ideb', 'trim')->like(qr/^\d{4}$/);
+  $v->optional('ano_siope', 'trim')->like(qr/^\d{4}$/);
   return if $v->has_error;
   return { v => $v };
 }
@@ -43,10 +44,18 @@ sub _blocos_ano ($self, $v, $anos) {
   } else {
     $ano = $anos->{ideb}[0];
   }
-  return (\@blocos, $ano);
+  # #491: o ano da folha do SIOPE (bloco remuneracao); sem ele, o ano
+  # completo mais recente.
+  my $ano_siope = $v->param('ano_siope');
+  if (defined $ano_siope) {
+    return (undef, undef, "Sem folha do SIOPE em $ano_siope") unless grep { $_ == $ano_siope } @{ $anos->{siope} };
+  } else {
+    $ano_siope = $anos->{siope_padrao};
+  }
+  return (\@blocos, $ano, undef, $ano_siope);
 }
 
-sub _nome ($self, $prefixo, $v, $blocos, $anos, $ano_ideb) {
+sub _nome ($self, $prefixo, $v, $blocos, $anos, $ano_ideb, $ano_siope = undef) {
   my %quer = map { $_ => 1 } @$blocos;
   my @p = ($prefixo);
   push @p, $v->param('uf') if defined $v->param('uf');
@@ -56,6 +65,7 @@ sub _nome ($self, $prefixo, $v, $blocos, $anos, $ano_ideb) {
   push @p, "ideb$ano_ideb" if $quer{desempenho} && defined $ano_ideb;
   push @p, "inse$anos->{inse}" if $quer{inse} && defined $anos->{inse};
   push @p, $anos->{indices} if $quer{indices} && defined $anos->{indices};    # #465
+  push @p, "siope$ano_siope" if $quer{remuneracao} && defined $ano_siope;     # #491
   return join('-', @p) . '.csv';
 }
 
@@ -87,10 +97,10 @@ sub csv ($self) {
   return $self->render(json => { error => 'Informe a UF: a base sai uma UF por vez.' }, status => 400) unless defined $v->param('uf');
   my $dbh = $self->app->schema->storage->dbh;
   my $anos = $B->anos($dbh);
-  my ($blocos, $ano_ideb, $erro) = $self->_blocos_ano($v, $anos);
+  my ($blocos, $ano_ideb, $erro, $ano_siope) = $self->_blocos_ano($v, $anos);
   return $self->render(json => { error => $erro }, status => 400) if $erro;
-  my ($cab, $linhas, $num) = $B->linhas($dbh, $self->_recorte($v), $blocos, $ano_ideb);
-  $self->_enviar_csv($self->_nome('base-analise', $v, $blocos, $anos, $ano_ideb), $B->csv($cab, $linhas, $num));
+  my ($cab, $linhas, $num) = $B->linhas($dbh, $self->_recorte($v), $blocos, $ano_ideb, $ano_siope);
+  $self->_enviar_csv($self->_nome('base-analise', $v, $blocos, $anos, $ano_ideb, $ano_siope), $B->csv($cab, $linhas, $num));
 }
 
 sub dicionario ($self) {
@@ -98,10 +108,10 @@ sub dicionario ($self) {
   my $v = $ok->{v};
   my $dbh = $self->app->schema->storage->dbh;
   my $anos = $B->anos($dbh);
-  my ($blocos, $ano_ideb, $erro) = $self->_blocos_ano($v, $anos);
+  my ($blocos, $ano_ideb, $erro, $ano_siope) = $self->_blocos_ano($v, $anos);
   return $self->render(json => { error => $erro }, status => 400) if $erro;
-  my ($cab, $linhas) = $B->dicionario($dbh, $blocos, $ano_ideb);
-  $self->_enviar_csv($self->_nome('base-analise-dicionario', $v, $blocos, $anos, $ano_ideb), $B->csv($cab, $linhas));
+  my ($cab, $linhas) = $B->dicionario($dbh, $blocos, $ano_ideb, $ano_siope);
+  $self->_enviar_csv($self->_nome('base-analise-dicionario', $v, $blocos, $anos, $ano_ideb, $ano_siope), $B->csv($cab, $linhas));
 }
 
 1;

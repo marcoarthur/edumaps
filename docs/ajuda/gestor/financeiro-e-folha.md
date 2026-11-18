@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [painel-da-escola]
 funcionalidade: ../../funcionalidades/analise/financeiro.md
-ultima_revisao: 2026-10-25
+ultima_revisao: 2026-11-18
 ---
 
 # Financeiro e Folha (SIOPE)
@@ -24,6 +24,16 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
 4. **Como saber que deu certo:** Valores aparecem ou "n/d"
 
 ## Entendendo os números
+- **Um ano por vez.** Em **Ano da folha**, escolha o ano (o padrão é o mais
+  recente). O custo total, os profissionais, as categorias e os gráficos são
+  desse ano, e o cartão diz os meses ("Custo total em 2025 (jan a dez)"). Um
+  ano com poucos meses (ex.: "jan a fev (2 meses)") ainda está chegando.
+- **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
+  outros meses.
+- **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF
+  mascarado **e** pelo nome. O SIOPE publica só seis dígitos do CPF, e
+  pessoas diferentes podem ter o mesmo CPF mascarado; contar só por ele
+  deixava o total abaixo do real.
 - **Agregado da Secretaria ≠ escola.** Em muitos casos os valores são consolidados por rede/município/Secretaria, não por unidade escolar individual (#70/#91).
 - **"n/d"** = não disponível. Ausência nunca é zero (#154).
 - **Ano de referência** — sempre verifique qual exercício está sendo exibido.

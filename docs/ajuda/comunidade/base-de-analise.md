@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/base-de-analise.md
-ultima_revisao: 2026-11-17
+ultima_revisao: 2026-11-18
 ---
 
 # Base de análise: indicadores por escola para baixar
@@ -51,7 +51,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
    - **Nível socioeconômico (INSE):** a média e o nível, da edição mais
      recente do SAEB;
    - **Porte do município:** a população estimada pelo IBGE e a classe de
-     tamanho.
+     tamanho;
+   - **Remuneração (SIOPE):** a folha que o município declara ao SIOPE,
+     somada por escola no ano escolhido (só a rede municipal; veja abaixo).
 3. **Baixar:** **Baixar base (CSV)** gera a planilha; **Baixar dicionário das
    colunas** gera a lista das colunas com a descrição, a fonte, o ano e o
    link oficial. O endereço da página guarda as escolhas, então o link
@@ -81,6 +83,27 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   nome do arquivo também leva os anos (ex.:
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
+- **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
+  escolhido em **Ano da folha (SIOPE)** (o padrão é o último ano completo).
+  O ano vai na coluna `ano_siope` e no nome do arquivo (`-siope2025`).
+  - `prof_magisterio`: os profissionais do magistério pagos no ano. Cada
+    pessoa conta uma vez: a chave é o CPF mascarado **e** o nome, porque o
+    SIOPE publica só seis dígitos do CPF e pessoas diferentes caem no mesmo
+    CPF mascarado.
+  - `salario_medio_magisterio`, `carga_horaria_media_magisterio` e
+    `salario_40h_magisterio`: médias por pessoa e por mês, **sem dezembro**
+    (que traz o 13º). Quem tem dois vínculos na escola no mesmo mês tem os
+    salários e as cargas somados. O salário para 40 horas é salário ÷ carga
+    × 40, para comparar escolas com jornadas diferentes.
+  - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
+    e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
+    12, é o gasto só desses meses.
+  - **Vazio:** escola fora da rede municipal, município sem folha nesse ano,
+    ou município em que o SIOPE só traz o total da Secretaria, sem separar as
+    escolas. A cobertura é pequena (poucos municípios carregados) e não é uma
+    amostra: a lista está em [Fontes e metodologia](fontes-e-metodologia.md)
+    e no painel financeiro de cada escola. No R:
+    `base[!is.na(base$prof_magisterio), ]` antes de modelar.
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP. Os seis se refazem com as partes que estão na base, pelo
   [bloco R abaixo](#refazer-os-seis-índices-no-r). Cite com a
@@ -233,6 +256,8 @@ base <- within(base, {
   em cada linha) e junte os arquivos. O
   [ranking das redes](rankings.md) já aceita a região.
 - O INSE vem só da edição mais recente do SAEB.
+- A remuneração cobre só os municípios com a folha do SIOPE carregada e
+  separada por escola.
 
 ## Veja também
 - [Rankings de redes e de escolas](rankings.md)
