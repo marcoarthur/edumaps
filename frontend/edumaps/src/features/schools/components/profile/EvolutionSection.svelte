@@ -29,9 +29,9 @@
       text="Séries por indicador e etapa, nos anos em que há avaliação."
       items={[
         'IDEB observado por etapa (edições do IDEB).',
-        'Notas SAEB de matemática, português e média, por ano.',
+        'Notas SAEB de matemática, português e média, por etapa e por ano (a escala do SAEB cresce com a série: compare só dentro da etapa).',
         'Só anos de aplicação (ímpares); não interpolamos nem projetamos valores.',
-        'A barra é proporcional entre os anos da própria série; ▲/▼ mostra a variação total.',
+        'A barra é proporcional entre os anos da própria série; ▲/▼ mostra a variação entre a primeira e a última edição (sem variação quando há uma edição só).',
       ]}
     />
   </div>

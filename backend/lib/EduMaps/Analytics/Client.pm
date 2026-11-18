@@ -120,6 +120,8 @@ sub run_school_evolution ($self, $args = {}) {
     cache_params => {
       co_entidade => $args->{co_entidade},
       schema      => $args->{schema},
+      # #485: SAEB por etapa e sem variação com uma edição; muda a chave.
+      versao      => 2,
     },
   });
 }

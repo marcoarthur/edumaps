@@ -47,7 +47,8 @@
       ano_max = max(d$ano),
       primeiro_valor = d$valor[1],
       ultimo_valor = d$valor[nrow(d)],
-      variacao = d$valor[nrow(d)] - d$valor[1],
+      # #485 (RM-02): com uma edição só não há variação para medir.
+      variacao = if (nrow(d) > 1) d$valor[nrow(d)] - d$valor[1] else NA_real_,
       stringsAsFactors = FALSE
     )
   }))

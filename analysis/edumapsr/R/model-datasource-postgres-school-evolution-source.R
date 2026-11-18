@@ -71,7 +71,7 @@ load_school_evolution.postgres_source <- function(
   ideb <- DBI::dbGetQuery(
     con,
     sprintf(
-      "SELECT ano, etapa, ideb_observado
+      "SELECT ano, etapa, ideb_observado, nota_media, nota_matematica, nota_portugues
          FROM %s.ideb_notas_escolas
         WHERE id_escola = $1
         ORDER BY ano, etapa",
@@ -80,17 +80,11 @@ load_school_evolution.postgres_source <- function(
     params = list(co_entidade)
   )
 
-  saeb <- DBI::dbGetQuery(
-    con,
-    sprintf(
-      "SELECT ano, nota_mat, nota_por, nota_media
-         FROM %s.inep_notas_desagregadas
-        WHERE id_escola = $1
-        ORDER BY ano",
-      schema_q
-    ),
-    params = list(co_entidade)
-  )
+  # #485 (RM-01): o SAEB por etapa, da mesma planilha do IDEB. A tabela
+  # clean.inep_notas_desagregadas (uma linha por escola e ano, sem etapa) é
+  # só dos anos iniciais e deixava sem série as escolas de anos finais e de
+  # ensino médio.
+  saeb <- ideb[, intersect(c("ano", "etapa", "nota_media", "nota_matematica", "nota_portugues"), names(ideb)), drop = FALSE]
 
   long <- .school_evolution_bind(ideb, saeb)
 
@@ -127,18 +121,22 @@ load_school_evolution.postgres_source <- function(
   }
 
   if (nrow(saeb) > 0) {
+    # #485: colunas da planilha do IDEB (nota_matematica…), com o nome antigo
+    # (nota_mat…) como alternativa; a etapa vem junto quando existe.
     saeb_defs <- list(
-      saeb_media = "nota_media",
-      saeb_matematica = "nota_mat",
-      saeb_portugues = "nota_por"
+      saeb_media = c("nota_media"),
+      saeb_matematica = c("nota_matematica", "nota_mat"),
+      saeb_portugues = c("nota_portugues", "nota_por")
     )
+    etapa_saeb <- if ("etapa" %in% names(saeb)) as.character(saeb$etapa) else NA_character_
     for (ind in names(saeb_defs)) {
-      col <- saeb_defs[[ind]]
+      col <- intersect(saeb_defs[[ind]], names(saeb))[1]
+      if (is.na(col)) next
       parts[[length(parts) + 1]] <- data.frame(
         indicador = ind,
         label = unname(EVOLUTION_LABELS[[ind]]),
         ano = as.integer(saeb$ano),
-        etapa = NA_character_,
+        etapa = etapa_saeb,
         valor = suppressWarnings(as.numeric(saeb[[col]])),
         stringsAsFactors = FALSE
       )
