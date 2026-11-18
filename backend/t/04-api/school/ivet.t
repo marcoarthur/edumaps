@@ -11,7 +11,8 @@
 # Regras verificadas aqui:
 #   - snapshot mais recente vence (regra da view nacional, max(dt_snapshot));
 #   - ausência vira JSON null, nunca 0 (#154);
-#   - escola sem medição -> 404.
+#   - escola sem medição -> 404;
+#   - blocos_faltando: os blocos C, D e E sem valor (#489).
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
@@ -119,6 +120,23 @@ subtest 'ausência vira JSON null, nunca 0 (#154)' => sub {
   like $res->text, qr/"F":null/,               'bloco F null (não calculado)';
   like $res->text, qr/"dataset_version":null/, 'proveniência ausente null';
   is $json->{blocos}{C}, 0.30, 'bloco C calculado continua valorado';
+  is $json->{blocos_faltando}, [], 'C, D e E presentes: nenhum bloco territorial faltando';
+};
+
+subtest 'não publicável diz os blocos territoriais que faltam (#489)' => sub {
+  _limpar();
+  _inserir(
+    99999997,
+    ivet       => undef,
+    publicavel => 0,
+    bloco_c    => undef,
+    bloco_e    => undef,
+    bloco_f    => undef,
+  );
+
+  my $json = $t->get_ok('/api/school/99999997/ivet')->status_is(200)->tx->res->json;
+  is $json->{blocos_faltando}, ['C', 'E'], 'faltam C e E (F não é territorial mínimo)';
+  is $json->{blocos}{A}, 0.10, 'o bloco A calculado continua na resposta';
 };
 
 subtest 'escola sem medição -> 404' => sub {

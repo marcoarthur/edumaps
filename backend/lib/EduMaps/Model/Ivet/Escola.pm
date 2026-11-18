@@ -2,6 +2,7 @@ package EduMaps::Model::Ivet::Escola;
 use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
 use Mojo::JSON ();   # Mojo::JSON::true/false (uso qualificado)
+use EduMaps::Model::Ivet::Versao;
 use utf8;
 
 # Leitura de analytics.ivet_escola (#296): o painel do IVET materializado
@@ -51,6 +52,14 @@ sub latest ($self, $co_entidade) {
     map { $rotulo{$_} => $row->{"bloco_$_"} } keys %rotulo
   };
   delete $row->{$_} for grep { /^bloco_/ } keys %$row;
+
+  # #489 (RK-01): o IVET só vira número com os blocos territoriais (C, D e
+  # E). A lista dos que faltam é o motivo de `publicavel` ser false; não há
+  # regra de privacidade no cálculo.
+  $row->{blocos_faltando} = [
+    grep { !defined $row->{blocos}{$_} }
+      @EduMaps::Model::Ivet::Versao::BLOCOS_TERRITORIAIS
+  ];
 
   # DBD::Pg devolve boolean como 1/0; o JSON precisa de true/false.
   $row->{publicavel} = $row->{publicavel} ? Mojo::JSON::true : Mojo::JSON::false;

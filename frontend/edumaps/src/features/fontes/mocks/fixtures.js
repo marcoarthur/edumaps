@@ -48,4 +48,19 @@ export const FONTES_FIXTURE = [
       { versao: "indices-v1", data: "2026-06-04", mudou: "Fórmula original dos seis índices." },
     ],
   },
+  {
+    id: "ivet_edumaps", nome: "IVET do EduMaps", orgao: "EduMaps", proprio: true,
+    descricao: "Índice de vulnerabilidade de acesso de 0 a 1 por escola.",
+    url: "https://github.com/marcoarthur/edumaps/blob/main/docs/ajuda/gestor/ivet.md",
+    metodologia: "https://github.com/marcoarthur/edumaps/blob/main/docs/analises/ivet.md",
+    telas: ["painel_escola"],
+    periodo: { inicio: "2025", fim: "2025", texto: "2025" },
+    carga: { data: "2026-11-17" },
+    licenca: null,
+    versao: "ivet-v1.8", data: "2026-11-17",
+    historico: [
+      { versao: "ivet-v1.8", data: "2026-11-17", mudou: "Bloco A: capacidade gestora sem zero imposto (indices-v6)." },
+      { versao: "ivet-v1.3", data: "2026-11-10", mudou: "Bloco C: escala logarítmica nos dois acessos." },
+    ],
+  },
 ];

@@ -134,6 +134,8 @@ Toda a plataforma; e quem precisa saber de onde vêm os números.
   catálogo como "Índices do EduMaps", com a versão da fórmula, a data, o
   histórico do que mudou em cada versão, a data do último cálculo e o link
   para o método. Toda mudança de fórmula ganha uma versão nova.
+  O **IVET** (índice de vulnerabilidade de acesso) aparece do mesmo jeito,
+  como "IVET do EduMaps", com a versão da fórmula e o histórico.
 - Sistema pode **dizer quando a carga não foi registrada**, em vez de inventar
   uma data para trás.
 - Sistema pode **guardar a versão dos dados junto de um resultado**: cada

@@ -855,6 +855,12 @@ os componentes em **direções opostas** — o fogo cai (teto maior) e o carbono
 publicação exige C+D+E — os blocos de cobertura quase total. A **vegetação
 natural** do F segue só no **ES**, logo o F nacional é lido como **fogo+solo**.
 
+**As duas medições são da `ivet-v1.2`** (#489, RK-02). A `ivet-v1.3` baixou o
+bloco C (escala logarítmica, §4.5.5), então a mediana e as faixas acima **não
+valem** para a versão vigente, e a ajuda do gestor deixou de citá-las. Medição
+da versão vigente: pendente, no LXC depois do deploy (roteiro em
+`docs/admin/deploy-lxc-2026-11-16.md`); com ela, a régua volta à ajuda.
+
 
 ---
 

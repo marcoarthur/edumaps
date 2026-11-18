@@ -9,6 +9,7 @@ use utf8;
 use open ':std', ':encoding(UTF-8)';
 use EduMaps::Fontes;
 use EduMaps::Model::Rank::School;
+use EduMaps::Model::Ivet::Versao;
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
@@ -18,7 +19,7 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   my $tx = $t->get_ok('/api/fontes')->status_is(200)
     ->header_like('Cache-Control' => qr/max-age=600/)->tx;
   my $r = $tx->res->json;
-  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao indices_edumaps)], 'bases e ordem';
+  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao indices_edumaps ivet_edumaps)], 'bases e ordem';
 
   my ($censo) = grep { $_->{id} eq 'censo' } @$r;
   my ($ano) = $dbh->selectrow_array('SELECT max(nu_ano_censo)::text FROM clean.censo_escolas');
@@ -46,6 +47,19 @@ subtest 'índices do EduMaps (#462): versão citável' => sub {
   is $i->{carga} ? $i->{carga}{data} : undef, $mat, 'carga = última materialização';
   my ($censo) = grep { $_->{id} eq 'censo' } @{ $t->get_ok('/api/fontes')->tx->res->json };
   ok !exists $censo->{versao} && !exists $censo->{proprio}, 'base de terceiros sem versão própria';
+};
+
+subtest 'IVET do EduMaps (#489): versão citável' => sub {
+  my ($i) = grep { $_->{id} eq 'ivet_edumaps' } @{ $t->get_ok('/api/fontes')->tx->res->json };
+  ok $i->{proprio}, 'marcada como própria';
+  is $i->{versao}, $EduMaps::Model::Ivet::Versao::VERSAO, 'versão do registro do IVET';
+  is [ map { $_->{versao} } @{ $i->{historico} } ],
+    [ map { $_->{versao} } @EduMaps::Model::Ivet::Versao::HISTORICO ], 'histórico completo';
+  like $i->{url}, qr{ajuda/gestor/ivet\.md}, 'link para a ajuda do IVET';
+  is $i->{telas}, ['painel_escola'], 'usado no painel da escola';
+  my ($calc) = $dbh->selectrow_array(q{SELECT to_char(max(calculado_em) AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') FROM analytics.ivet_escola});
+  is $i->{carga} ? $i->{carga}{data} : undef, $calc, 'carga = último cálculo do painel';
+  ok !exists $i->{versao_de}, 'campo interno não vaza';
 };
 
 subtest 'licença só quando verificada' => sub {

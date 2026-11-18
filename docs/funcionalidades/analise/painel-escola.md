@@ -32,15 +32,17 @@ uma escola.
   comparação.
 - Sistema pode exibir o **índice de vulnerabilidade de acesso (IVET)** da
   escola — de 0 (sem barreira) a 1 (barreira máxima) — com a decomposição por
-  **bloco temático** (porte, contexto socioeconômico, acesso, segurança,
-  recursos, saúde e mobilidade).
+  **bloco temático** (a própria escola, contexto socioeconômico, acesso,
+  saúde, segurança, meio ambiente e recursos do município), com a versão da
+  fórmula para citar.
 - Sistema pode **desenhar a área de influência** da escola no mapa (o quanto se
   chega a pé em 15 min e de carro em 45 min), com legenda que liga e desliga
   cada faixa.
 - Sistema pode distinguir **"ainda não medido"** de um valor baixo: quando o
   índice ou uma de suas partes não foi calculado, informa isso, sem exibir zero.
-- Sistema pode **resguardar índices não publicáveis** (amostra insuficiente ou
-  dado sensível): informa que a medição existe, mas não exibe os valores.
+- Sistema pode **dizer por que o IVET ficou sem número**: quando a região ainda
+  não tem os blocos de território (acesso, saúde ou segurança), informa quais
+  faltam e mostra os blocos já medidos.
 
 ## Valor
 

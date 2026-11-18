@@ -7,9 +7,11 @@
   //
   // Regras de exibição:
   // - Ausência ≠ 0 (#154): `ivet`/bloco nulo vira "não calculado", nunca 0.
-  // - LGPD: quando `publicavel` é false, os valores não são exibidos — só o
-  //   aviso de que a medição existe mas não é publicável para esta escola.
-  import { IVET_BLOCOS } from "../../constants/ivet.js";
+  // - Sem número (#489): `publicavel` false quer dizer que a região ainda não
+  //   tem algum bloco territorial (C, D ou E; `blocos_faltando`). Não é regra
+  //   de privacidade: o painel diz quais faltam e mostra os blocos medidos,
+  //   sem o selo.
+  import { IVET_BLOCOS, ivetBlocosTexto } from "../../constants/ivet.js";
 
   /**
    * @typedef {Object} Props
@@ -29,6 +31,8 @@
 
   let semMedicao = $derived(!loading && ivet == null);
   let naoPublicavel = $derived(ivet != null && ivet.publicavel === false);
+  let faltando = $derived(ivetBlocosTexto(ivet?.blocos_faltando ?? []));
+  let algumBloco = $derived(blocos.some((b) => b.valor != null));
 </script>
 
 <section
@@ -57,35 +61,43 @@
     <p class="text-sm text-gray-500 m-0">
       Esta escola ainda não teve o índice de acesso calculado.
     </p>
-  {:else if naoPublicavel}
-    <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-md p-3">
-      <span class="text-amber-600 text-lg leading-none" aria-hidden="true">⚠</span>
-      <p class="m-0 text-sm text-amber-800">
-        O índice foi medido, mas <strong>não é publicável</strong> para esta escola
-        (amostra insuficiente ou dado sensível). Os valores não são exibidos.
-      </p>
-    </div>
   {:else}
-    <!-- Selo do índice geral — elemento de assinatura do painel -->
-    <div class="flex items-center gap-4">
-      <div
-        class="flex-none w-20 h-20 rounded-full border-2 border-amber-500 flex flex-col items-center justify-center font-display text-amber-600"
-        title="IVET: quanto maior, mais vulnerável o acesso"
-      >
-        <span class="text-2xl font-bold leading-none">{fmt(ivet.ivet) ?? "—"}</span>
-        <span class="text-[9px] font-mono mt-0.5">IVET</span>
+    {#if naoPublicavel}
+      <div class="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-md p-3" data-testid="ivet-motivo">
+        <span class="text-gray-500 text-lg leading-none" aria-hidden="true">ⓘ</span>
+        <p class="m-0 text-sm text-gray-700">
+          O IVET desta escola <strong>ainda não pode ser calculado</strong>:
+          {#if faltando}
+            faltam os blocos {faltando} desta região.
+          {:else}
+            faltam blocos de território desta região.
+          {/if}
+          O índice só vira número quando a região tem os blocos de acesso, saúde e segurança.
+          {algumBloco ? "Os blocos já medidos estão abaixo." : ""}
+        </p>
       </div>
-      <p class="m-0 text-sm text-gray-600">
-        Índice de <strong>0</strong> (sem barreira) a <strong>1</strong> (barreira máxima).
-        {
-          ivet.raio_m
-            ? `Composto pela área de influência de ${ivet.raio_m} m.`
-            : ""
-        }
-      </p>
-    </div>
+    {:else}
+      <!-- Selo do índice geral — elemento de assinatura do painel -->
+      <div class="flex items-center gap-4">
+        <div
+          class="flex-none w-20 h-20 rounded-full border-2 border-amber-500 flex flex-col items-center justify-center font-display text-amber-600"
+          title="IVET: quanto maior, mais vulnerável o acesso"
+        >
+          <span class="text-2xl font-bold leading-none">{fmt(ivet.ivet) ?? "—"}</span>
+          <span class="text-[9px] font-mono mt-0.5">IVET</span>
+        </div>
+        <p class="m-0 text-sm text-gray-600">
+          Índice de <strong>0</strong> (sem barreira) a <strong>1</strong> (barreira máxima).
+          {
+            ivet.raio_m
+              ? `Composto pela área de influência de ${ivet.raio_m} m.`
+              : ""
+          }
+        </p>
+      </div>
+    {/if}
 
-    <!-- Blocos A–G -->
+    <!-- Blocos A–G (também sem o número: os medidos ficam à mostra, #489) -->
     <ul class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 m-0 p-0 list-none">
       {#each blocos as b (b.chave)}
         <li class="flex items-center justify-between gap-2 bg-gray-50 border border-gray-100 rounded px-3 py-2">
