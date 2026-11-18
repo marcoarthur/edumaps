@@ -54,3 +54,11 @@ developer até 7h de 18/11), depois da entrega da décima quinta rodada:
 
 Modo autônomo: abri a issue **#485** (RM-01 e RM-02 juntas) e sigo para a
 implementação, com aviso pelo Telegram.
+
+## Andamento
+
+- 2026-11-17: #485 (PR #486) mergeado em modo autônomo: RM-01 e RM-02
+  resolvidos (SAEB da evolução por etapa, da planilha do IDEB; sem variação
+  com uma edição). Fechamento em
+  [`../ciclos/2026-11-17-evolucao-saeb-etapa.md`](../ciclos/2026-11-17-evolucao-saeb-etapa.md).
+  Nenhum achado aberto.

@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cm) — modo autônomo: décima sexta avaliação da P4, #485 (PR #486) mergeado
+
+- Décima sexta rodada da P4 (evolução da escola): adotaria, sem a série do
+  SAEB. RM-01: o SAEB da evolução vinha de `clean.inep_notas_desagregadas`
+  (sem etapa = só anos iniciais; 18.533 escolas sem série). RM-02: ▲0.0
+  com uma edição → #485.
+- PR #486 (3d58db2): SAEB da mesma consulta do IDEB (`ideb_notas_escolas`,
+  por etapa); `variacao` NA com uma edição; cache da evolução `versao => 2`.
+- `inep_notas_desagregadas` sem leitor na evolução (conferir outros usos).
+- Nota técnica 228, ciclo `2026-11-17-evolucao-saeb-etapa.md`.
+
 ## Sessão 2026-11-17 (cl) — modo autônomo: décima quinta avaliação da P4, #483 (PR #484) mergeado
 
 - Décima quinta rodada da P4 (perfil da escola como estudo de caso):

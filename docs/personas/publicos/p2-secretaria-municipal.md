@@ -67,6 +67,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: alunos por escola sem escolas fechadas.
 - [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: desempenho comparado na mesma etapa.
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: perfil da rede por etapa.
+- [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: série do SAEB por etapa.
 
 ## Pendências
 
