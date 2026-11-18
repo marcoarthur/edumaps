@@ -117,7 +117,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Décima nona rodada (2026-11-18, **adotaria**, sem a folha): RJ-01
   (profissionais contados pelo CPF mascarado), RJ-02 (totais de anos
   diferentes sem o período) e RJ-03 (folha por escola sem saída para
-  baixar) → aguardando aprovação para a issue.
+  baixar) → #491.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
