@@ -75,10 +75,20 @@ export function transformPanelData(apiData) {
       profissionalizante: !!record.in_profissionalizante,
     };
 
-    // #421 (AN-03): a distância de cosseno (0,0006…0,002) saía "0.00" para
-    // todas e não tem escala que se leia. O cartão não mostra número; o
-    // critério da comparação fica escrito abaixo da lista.
-    const mainIndicator = null;
+    // #487 (RL-02): a distância agora é a euclidiana entre as seis notas, em
+    // pontos da escala de 0 a 10, e se lê. Vem com as notas da vizinha ao
+    // lado das da escola. O caminho de reserva do backend não manda a
+    // distância (outra métrica): aí o cartão fica sem número.
+    const distancia =
+      item.distancia === null || item.distancia === undefined
+        ? null
+        : Number(item.distancia);
+    const notas = (item.notas || []).map((n) => ({
+      id: n.id,
+      rotulo: n.rotulo,
+      valor: n.valor === null || n.valor === undefined ? null : Number(n.valor),
+      escola: n.escola === null || n.escola === undefined ? null : Number(n.escola),
+    }));
 
     return {
       id_escola: record.co_entidade,
@@ -86,7 +96,8 @@ export function transformPanelData(apiData) {
       rede,
       matriculas: record.qt_matriculas || record.matriculas || 0, // pode não existir no censo
       etapas,
-      indicador_principal: mainIndicator,
+      distancia,
+      notas,
       latitude: record.latitude,
       longitude: record.longitude,
     };

@@ -5,7 +5,7 @@ use DateTime;
 use EduMaps::Util::MinionFila qw(minion_fila);
 
 # ============================================================================
-# EMBEDDING DAS ESCOLAS (similaridade por cosseno no pgvector) — #413
+# EMBEDDING DAS ESCOLAS (vizinhas pela distância euclidiana no pgvector) — #413, #487
 # ============================================================================
 #
 # analytics.school_embedding guarda, por escola, o vetor das 6 notas de
@@ -21,8 +21,8 @@ use EduMaps::Util::MinionFila qw(minion_fila);
 #   - insere as escolas novas, atualiza só as que mudaram e REMOVE as que
 #     saíram das notas;
 #   - ausência não é 0 (#154): escola com alguma nota nula fica FORA do
-#     embedding (sem vizinhas, em vez de vizinhas erradas). No cosseno, um 0
-#     muda a direção do vetor e aproxima a escola das que vão mal naquela nota;
+#     embedding (sem vizinhas, em vez de vizinhas erradas). Um 0 no lugar da
+#     nota ausente aproximaria a escola das que vão mal naquela nota;
 #   - lock Minion — uma execução por vez;
 #   - início: boot do worker Minion (evento `wait`) e helper
 #     `refresh_school_embeddings_start`. O helper `refresh_school_embeddings`

@@ -6,6 +6,12 @@ use Mojo::Util  qw(gunzip);
 has 'cache';
 has ttl => 3600*24*7; # 1 semana
 
+# Versão da chave: sobe quando a resposta de uma rota cacheada muda de forma
+# ou de critério, para que o deploy não sirva a resposta antiga por até uma
+# semana. v2 (#487): escolas semelhantes do painel pela distância entre as
+# notas, com a distância e as notas de cada vizinha.
+our $VERSAO_CHAVE = 2;
+
 # Conjunto de nomes de rotas (Mojo Route Names) que representam buscas/consultas cacheáveis
 my %CACHEABLE_ROUTE_NAMES = map { $_ => 1 } qw(
   school_search
@@ -99,7 +105,7 @@ sub _build_cache_key ($self, $c) {
   my $path  = $c->req->url->path->to_string;
   my $query = $c->req->url->query->to_string // '';
 
-  return "edumaps:cache:search:" . sha256_hex("${path}?${query}");
+  return "edumaps:cache:search:v$VERSAO_CHAVE:" . sha256_hex("${path}?${query}");
 }
 
 1;

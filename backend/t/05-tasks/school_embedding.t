@@ -113,6 +113,21 @@ subtest 'painel: escola sem notas diz sem_dado; com notas, traz vizinhas' => sub
     ->json_is('/similar_schools_motivo' => undef, 'com notas: sem motivo');
   ok scalar @{ $t->tx->res->json('/similar_schools') // [] }, 'com notas: tem vizinhas';
 
+  # #487 (RL-02): cada vizinha diz o quanto se parece, em pontos, e nota a nota
+  my $viz = $t->tx->res->json('/similar_schools');
+  my $prev = -1;
+  for my $v (@$viz) {
+    ok defined $v->{distancia} && $v->{distancia} >= 0, "vizinha $v->{record}{co_entidade}: distância em pontos";
+    cmp_ok $v->{distancia}, '>=', $prev, 'ordem pela distância';
+    $prev = $v->{distancia};
+    is scalar @{ $v->{notas} }, 6, 'seis notas da vizinha';
+    is [ map { $_->{id} } @{ $v->{notas} } ], [@EduMaps::Task::SchoolEmbedding::NOTAS], 'na ordem do embedding';
+    ok !(grep { !defined $_->{rotulo} || !defined $_->{valor} || !defined $_->{escola} } @{ $v->{notas} }),
+      'cada nota com rótulo, valor da vizinha e da escola';
+    my $l2 = sqrt(eval { my $s = 0; $s += ($_->{valor} - $_->{escola})**2 for @{ $v->{notas} }; $s });
+    ok abs($l2 - $v->{distancia}) < 0.05, 'distância = euclidiana entre as notas';
+  }
+
   my $SEM = 77777781;
   my $ano = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
   $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ?', {}, $SEM);

@@ -2,15 +2,17 @@ package EduMaps::Schema::ResultSet::SchoolEmbedding;
 use Mojo::Base 'EduMaps::Schema::ResultSet::Base', -signatures;
 use utf8;
 
-# Busca de vizinhos mais próximos por similaridade de cosseno (pgvector).
+# Busca de vizinhos mais próximos pela distância euclidiana entre as seis
+# notas (pgvector, operador <->, índice HNSW com vector_l2_ops).
 #
-# Substitui o cálculo O(n²) em memória (EduMaps::Model::Role::FindSimilar,
-# métrica _manhattan_distance) por uma única query com índice ANN (HNSW):
-#   distance   = embedding <=> embedding_alvo   (distância de cosseno)
-#   similarity = 1 - distance                   (no intervalo [0, 1])
+# #487 (RL-01): até então a busca era pelo cosseno, que mede o ângulo entre
+# os vetores e ignora o nível: uma escola com todas as notas em 2 e outra com
+# todas em 8 ficavam idênticas. A distância euclidiana está em pontos da
+# escala das notas (0 a 10), e por isso se lê.
 #
 # A comparação é feita no banco (sem transferir todas as escolas para o Perl)
-# e devolve apenas top-k.
+# e devolve apenas top-k, com as notas da vizinha e as da escola (`notas`,
+# `notas_alvo`, na ordem de EduMaps::Task::SchoolEmbedding::@NOTAS).
 
 # Etapas comparadas no filtro de "ao menos uma etapa em comum" (#421).
 our @ETAPAS = qw(
@@ -35,8 +37,9 @@ sub similar_to ($self, $co_entidade, $limit = 10, $co_municipio = undef) {
 
   my $sql = <<~"SQL";
     SELECT s.co_entidade,
-           1 - (s.embedding <=> q.embedding) AS similarity,
-           s.embedding <=> q.embedding        AS distance
+           s.embedding <-> q.embedding AS distance,
+           s.embedding::real[]         AS notas,
+           q.embedding::real[]         AS notas_alvo
     FROM analytics.school_embedding s
     JOIN clean.censo_escolas ce
       ON ce.co_entidade = s.co_entidade
@@ -50,7 +53,7 @@ sub similar_to ($self, $co_entidade, $limit = 10, $co_municipio = undef) {
     WHERE s.co_entidade <> ?
     $muni_clause
       AND (NOT ($tem_etapa) OR $etapas)
-    ORDER BY s.embedding <=> q.embedding
+    ORDER BY s.embedding <-> q.embedding
     LIMIT ?
   SQL
 
