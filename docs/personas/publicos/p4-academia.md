@@ -66,6 +66,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — a ajuda refaz os seis índices](ciclos/2026-11-17-ajuda-refaz-indices.md#p4--academia-pesquisadora): adotaria (mantido). RQ-01 e RQ-02 resolvidos; nenhum achado aberto da décima segunda avaliação.
 - [2026-11-17 — comparação de redes só com escolas em funcionamento](ciclos/2026-11-17-comparacao-redes-ativas.md#p4--academia-pesquisadora): adotaria (mantido), com a comparação de redes. RP-01 a RP-04 resolvidos; nenhum achado aberto da décima terceira avaliação.
 - [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o agrupamento por desempenho. RO-01 e RO-02 resolvidos; nenhum achado aberto da décima quarta avaliação.
+- [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o IDEB do perfil. RN-01 e RN-02 resolvidos; nenhum achado aberto da décima quinta avaliação.
 
 ## Pendências
 
@@ -99,7 +100,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   agrupamento por desempenho): RO-01 (etapas misturadas) e RO-02 (fossa
   como falta) → #481 (modo autônomo), entregues (#482). Décima quinta rodada (2026-11-17, **adotaria**, sem o IDEB
   do perfil): RN-01 (médias de etapas misturadas) e RN-02 (uma etapa só)
-  → #483 (modo autônomo).
+  → #483 (modo autônomo), entregues (#484).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

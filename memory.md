@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-17 (cl) — modo autônomo: décima quinta avaliação da P4, #483 (PR #484) mergeado
+
+- Décima quinta rodada da P4 (perfil da escola como estudo de caso):
+  adotaria, sem o IDEB do perfil. RN-01: comparações do perfil (Brasil,
+  município, rede, grupo) com a etapa de MAIOR nota de cada escola
+  ("Brasil" 5,33 vs 4,74 anos finais; EM na média aparece 1,07 abaixo).
+  RN-02: perfil mostra uma etapa só → #483.
+- PR #484 (02d0666): `.profile_ideb_etapa_stats` (consulta leve por etapa
+  e escopo) + `.profile_pop_body(ideb_etapa=)`; override das linhas
+  IDEB/SAEB (referência e grupo persistidos misturam etapas); tabela
+  `ideb_por_etapa`; perfil da rede com 6 linhas por etapa;
+  PROFILE_REGRA_SINAIS 4 / $PERFIL_REGRA_SINAIS 4; rede `versao => 3`.
+- Agora o produto inteiro compara IDEB dentro da etapa.
+- Nota técnica 227, ciclo `2026-11-17-perfil-ideb-etapa.md`.
+
 ## Sessão 2026-11-17 (ck) — modo autônomo: décima quarta avaliação da P4, #481 (PR #482) mergeado
 
 - Décima quarta rodada da P4 (agrupamento por desempenho, ES): adotaria,

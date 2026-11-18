@@ -79,3 +79,12 @@ developer até 7h de 18/11), depois da entrega da décima quarta rodada:
 
 Modo autônomo: abri a issue **#483** (RN-01 e RN-02 juntas) e sigo para o
 plano e a implementação, com aviso pelo Telegram.
+
+## Andamento
+
+- 2026-11-17: #483 (PR #484) mergeado em modo autônomo: RN-01 e RN-02
+  resolvidos (comparações do IDEB e do SAEB na mesma etapa no perfil da
+  escola e no da rede; IDEB de cada etapa da escola). Colégio de Salvador,
+  anos finais: Brasil 5,33 → 4,74. Fechamento em
+  [`../ciclos/2026-11-17-perfil-ideb-etapa.md`](../ciclos/2026-11-17-perfil-ideb-etapa.md).
+  Nenhum achado aberto.
