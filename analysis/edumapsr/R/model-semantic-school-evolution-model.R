@@ -4,10 +4,12 @@
 #
 # Uma linha de `data` é uma observação de série histórica:
 #
-#   indicador (id canônico), label (PT-BR), ano, etapa (NA p/ SAEB), valor
+#   indicador (id canônico), label (PT-BR), ano, etapa, valor (IDEB e SAEB
+#   por etapa desde a #485)
 #
 # Fontes: `clean.ideb_notas_escolas` (IDEB por ano/etapa) e
-# `clean.inep_notas_desagregadas` (notas SAEB por ano). A análise pura só
+# `clean.ideb_notas_escolas` (notas SAEB por etapa e ano, #485; antes
+# `clean.inep_notas_desagregadas`, só dos anos iniciais). A análise pura só
 # reorganiza e resume; quem lê o banco é o DataSource.
 
 EVOLUTION_LABELS <- c(

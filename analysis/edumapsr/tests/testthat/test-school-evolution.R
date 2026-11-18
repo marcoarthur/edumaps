@@ -76,3 +76,35 @@ test_that("run_analysis despacha school_evolution via o registry", {
   result <- run_analysis("school_evolution", fixture_school_evolution_model())
   expect_equal(result$analysis, "school_evolution")
 })
+
+# #485 (RM-01): o SAEB por etapa, da planilha do IDEB.
+test_that(".school_evolution_bind leva a etapa do SAEB (#485)", {
+  ideb <- data.frame(
+    ano = c(2021, 2023, 2023), etapa = c("fundamental_ii", "fundamental_ii", "ensino_medio"),
+    ideb_observado = c(4.8, 4.6, 3.6), nota_media = c(4.8, 4.6, 3.8),
+    nota_matematica = c(238, 237, 242), nota_portugues = c(249, 240, 246),
+    stringsAsFactors = FALSE
+  )
+  saeb <- ideb[, c("ano", "etapa", "nota_media", "nota_matematica", "nota_portugues")]
+  long <- .school_evolution_bind(ideb, saeb)
+  mat <- long[long$indicador == "saeb_matematica", ]
+  expect_equal(nrow(mat), 3)
+  expect_setequal(unique(mat$etapa), c("fundamental_ii", "ensino_medio"))
+  expect_equal(mat$valor[mat$etapa == "ensino_medio"], 242)
+})
+
+# #485 (RM-02): sem variação com uma edição só.
+test_that("série de uma edição fica sem variação (#485)", {
+  model <- new_school_evolution_model(
+    data = data.frame(
+      indicador = c("ideb_observado", "ideb_observado", "ideb_observado"),
+      label = "IDEB observado", ano = c(2021L, 2023L, 2023L),
+      etapa = c("fundamental_ii", "fundamental_ii", "ensino_medio"),
+      valor = c(4.0, 4.5, 3.6), stringsAsFactors = FALSE
+    ),
+    metadata = list(co_entidade = "29192013")
+  )
+  r <- analyze_school_evolution(model)$tables$resumo
+  expect_equal(r$variacao[r$etapa == "fundamental_ii"], 0.5)
+  expect_true(is.na(r$variacao[r$etapa == "ensino_medio"]))
+})

@@ -59,9 +59,13 @@ trocar experiências.
 - **IDEB em cada etapa:** a escola com nota em mais de uma etapa vê cada uma
   numa tabela, com o município, a rede e o Brasil da mesma etapa. A linha
   destacada é a usada na posição relativa.
-- **Evolução:** IDEB por etapa e notas do SAEB ao longo das edições, com ▲/▼
-  para a variação. Só aparecem anos em que a prova foi aplicada; nada é
-  interpolado nem projetado.
+- **Evolução:** IDEB e notas do SAEB (média, matemática e português) **por
+  etapa** ao longo das edições, com ▲/▼ para a variação entre a primeira e
+  a última edição da série. Série de uma edição só não tem variação. Só
+  aparecem anos em que a prova foi aplicada; nada é interpolado nem
+  projetado. Até 17/11/2026, as notas do SAEB eram só as dos anos iniciais,
+  sem dizer, e as escolas só de anos finais ou de ensino médio ficavam sem
+  elas.
 - **Distribuição no cluster:** média, p25, p50 (mediana), p75 e número de
   escolas (N) do grupo, para você ver onde a escola cai.
 - **–** quer dizer *dado não disponível*. Ausência nunca é zero.

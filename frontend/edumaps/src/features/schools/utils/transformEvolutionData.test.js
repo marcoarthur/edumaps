@@ -39,3 +39,21 @@ describe("transformEvolutionData", () => {
     expect(formatEvolutionValue(null)).toBe("–");
   });
 });
+
+describe("evolução: SAEB por etapa e sem variação com uma edição (#485)", () => {
+  it("agrupa o SAEB por etapa e deixa a variação nula quando o resumo não a tem", () => {
+    const series = [
+      { indicador: "saeb_matematica", label: "Matemática (SAEB)", ano: 2021, etapa: "fundamental_ii", valor: 238 },
+      { indicador: "saeb_matematica", label: "Matemática (SAEB)", ano: 2023, etapa: "fundamental_ii", valor: 237 },
+      { indicador: "saeb_matematica", label: "Matemática (SAEB)", ano: 2023, etapa: "ensino_medio", valor: 242 },
+    ];
+    const resumo = [
+      { indicador: "saeb_matematica", etapa: "fundamental_ii", variacao: -1 },
+      { indicador: "saeb_matematica", etapa: "ensino_medio", variacao: null },
+    ];
+    const g = groupEvolution(series, resumo);
+    expect(g.map((x) => x.etapaLabel)).toEqual(["Ensino Médio", "Anos Finais"]);
+    expect(g.find((x) => x.etapa === "ensino_medio").variacao).toBeNull();
+    expect(g.find((x) => x.etapa === "fundamental_ii").variacao).toBe(-1);
+  });
+});
