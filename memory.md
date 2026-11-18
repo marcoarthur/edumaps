@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-18 (cn) — décima sétima avaliação da P4, #487 (PR #488) mergeado
+
+- Décima sétima rodada da P4 (escolas semelhantes do painel): adotaria, sem
+  elas. RL-01: `similar_to` usava cosseno (`<=>`) nas 6 notas — ignora o
+  nível (CEIFAR 29445906 com vizinha 2–3 pontos abaixo em tudo). RL-02:
+  cartão sem medida; ajuda com "porcentagem" e "contexto" → #487.
+- PR #488 (23bdc87): change `school_embedding_l2` (HNSW `vector_l2_ops`),
+  `similar_to` com `<->` + `notas`/`notas_alvo`; painel com `distancia` e
+  `notas` por vizinha; `Cache::SchoolSearch` com `$VERSAO_CHAVE = 2`
+  (subir quando mudar resposta de rota cacheada, TTL 1 semana).
+- A consulta do painel filtra o município e faz busca exata (o HNSW não
+  entra), sem perder vizinhas.
+- Fica: painel do gestor ainda usa cosseno (10 dims, porte/loc/INSE/etapas).
+- Nota técnica 229, ciclo `2026-11-18-semelhantes-distancia-notas.md`.
+
 ## Sessão 2026-11-17 (cm) — modo autônomo: décima sexta avaliação da P4, #485 (PR #486) mergeado
 
 - Décima sexta rodada da P4 (evolução da escola): adotaria, sem a série do

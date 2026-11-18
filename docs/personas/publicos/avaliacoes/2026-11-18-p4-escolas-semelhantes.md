@@ -97,3 +97,12 @@ entrega da décima sexta rodada:
 
 Issue **#487** (RL-01 e RL-02 juntas, como nas rodadas anteriores), aberta
 com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-18: #487 (PR #488) mergeado: RL-01 e RL-02 resolvidos (vizinhas
+  pela distância euclidiana entre as seis notas; distância em pontos e
+  notas no cartão; ajuda com os três critérios). O CEIFAR passa a ter a
+  29398037 em primeiro (1,56 ponto). Fechamento em
+  [`../ciclos/2026-11-18-semelhantes-distancia-notas.md`](../ciclos/2026-11-18-semelhantes-distancia-notas.md).
+  Nenhum achado aberto.

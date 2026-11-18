@@ -69,6 +69,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: fossa não é falta no agrupamento.
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: o IDEB do perfil comparado na mesma etapa.
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: série do SAEB da escola de anos finais.
+- [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: pares do mesmo patamar.
 
 ## Pendências
 

@@ -68,6 +68,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-17 — agrupamento por desempenho numa etapa](ciclos/2026-11-17-agrupamento-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o agrupamento por desempenho. RO-01 e RO-02 resolvidos; nenhum achado aberto da décima quarta avaliação.
 - [2026-11-17 — IDEB do perfil na mesma etapa](ciclos/2026-11-17-perfil-ideb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com o IDEB do perfil. RN-01 e RN-02 resolvidos; nenhum achado aberto da décima quinta avaliação.
 - [2026-11-17 — evolução com o SAEB por etapa](ciclos/2026-11-17-evolucao-saeb-etapa.md#p4--academia-pesquisadora): adotaria (mantido), com a série do SAEB. RM-01 e RM-02 resolvidos; nenhum achado aberto da décima sexta avaliação.
+- [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas semelhantes. RL-01 e RL-02 resolvidos; nenhum achado aberto da décima sétima avaliação.
 
 ## Pendências
 
@@ -106,7 +107,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (modo autônomo), entregues (#486).
   Décima sétima rodada (2026-11-18, **adotaria**, sem as escolas
   semelhantes do painel): RL-01 (cosseno ignora o nível das notas) e RL-02
-  (cartão sem o quanto se parece; ajuda) → #487.
+  (cartão sem o quanto se parece; ajuda) → #487, entregues (#488).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
