@@ -35,6 +35,9 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
    EduMaps** diz a **versão da fórmula** (ex.: `indices-v6`) e abre o
    histórico das versões. A versão também vai no CSV do ranking de escolas
    (coluna `versao_indice`).
+6. **Para citar o IVET** (vulnerabilidade de acesso, no painel da escola): o
+   cartão **IVET do EduMaps** diz a versão da fórmula (ex.: `ivet-v1.8`) e o
+   histórico. A mesma versão aparece no painel, ao lado da data da medição.
 
 ## Entendendo os números
 - **"Carga não registrada"**: a base foi carregada antes de o registro de
@@ -47,6 +50,8 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
   partir do Censo Escolar. No lugar da licença e da carga, o cartão traz a
   versão da fórmula e a data do **último cálculo**. Notas de versões
   diferentes não são comparáveis; o histórico diz o que mudou em cada uma.
+  O mesmo vale para o **IVET do EduMaps**: no lugar da carga, a data do
+  último cálculo do painel.
 
 ## Limitações conhecidas
 - A página lista as bases das análises públicas. As do painel do gestor

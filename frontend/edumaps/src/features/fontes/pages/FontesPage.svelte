@@ -20,6 +20,8 @@
     busca: "busca",
     financeiro: "financeiro da escola",
     folha: "folha de pagamento",
+    painel_escola: "painel da escola",
+    base_analise: "base para análise",
   };
 
   const tamanho = (b) =>

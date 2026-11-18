@@ -106,8 +106,48 @@ our @CATALOGO = (
     periodo_sql => 'SELECT max(nu_ano_censo)::text, max(nu_ano_censo)::text FROM clean.mv_escolas_scores',
     carga_sql => q{SELECT to_char(max(data_atualizacao) AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') FROM clean.mv_escolas_scores},
     telas     => [qw(ranking perfil_escola agrupamento)],
+    versao_de => 'indices',
+  },
+  # #489 (RK-02): o IVET, índice próprio de vulnerabilidade de acesso. A
+  # versão e o histórico vêm de EduMaps::Model::Ivet::Versao (espelho do
+  # `ivet_versao()` do pacote R); a "carga" é o último cálculo do painel.
+  {
+    id        => 'ivet_edumaps',
+    nome      => 'IVET do EduMaps',
+    orgao     => 'EduMaps',
+    proprio   => 1,
+    descricao => 'Índice de vulnerabilidade de acesso de 0 a 1 por escola (maior = mais barreira), '
+      . 'calculado pelo EduMaps como a média de sete blocos: a própria escola, o entorno socioeconômico, '
+      . 'o acesso, a saúde, a segurança, o meio ambiente e os recursos do município. '
+      . 'Só vira número quando a região tem os blocos de acesso, saúde e segurança; '
+      . 'bloco sem dado fica fora da média. Para citar, use a versão abaixo.',
+    url       => 'https://github.com/marcoarthur/edumaps/blob/main/docs/ajuda/gestor/ivet.md',
+    metodologia => 'https://github.com/marcoarthur/edumaps/blob/main/docs/analises/ivet.md',
+    tabelas   => [],
+    periodo_sql => 'SELECT min(nu_ano_censo)::text, max(nu_ano_censo)::text FROM analytics.ivet_escola',
+    carga_sql => q{SELECT to_char(max(calculado_em) AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') FROM analytics.ivet_escola},
+    telas     => [qw(painel_escola)],
+    versao_de => 'ivet',
   },
 );
+
+# Versão e histórico de uma base própria: `indices` (#462) ou `ivet` (#489).
+sub versao_propria ($class, $de) {
+  return $class->ivet_versao if ($de // '') eq 'ivet';
+  return $class->indices_versao;
+}
+
+# Versão e histórico do IVET (#489).
+sub ivet_versao ($class) {
+  require EduMaps::Model::Ivet::Versao;
+  no warnings 'once';
+  my @hist = @EduMaps::Model::Ivet::Versao::HISTORICO;
+  return {
+    versao    => $EduMaps::Model::Ivet::Versao::VERSAO,
+    data      => $hist[0]{data},
+    historico => [ map { +{ %$_ } } @hist ],
+  };
+}
 
 # Versão e histórico dos índices próprios (#462). `require` aqui, e não `use`
 # no topo: o Model::Rank::School já usa este módulo.
@@ -173,7 +213,7 @@ sub resolver ($class, $dbh) {
 
     push @out, {
       (map { $_ => $f->{$_} } qw(id nome orgao descricao url metodologia telas)),
-      ($f->{proprio} ? (proprio => \1, %{ $class->indices_versao }) : ()),
+      ($f->{proprio} ? (proprio => \1, %{ $class->versao_propria($f->{versao_de}) }) : ()),
       periodo => {
         inicio => $ini,
         fim    => $fim,

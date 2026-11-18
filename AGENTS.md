@@ -388,8 +388,15 @@ dois lugares, no mesmo PR:
    (`VERSÃO indices-vN (…)`).
 
 `t/02-models/indices_versao.t` falha se os dois divergirem. Correção só de
-texto do método (`%METODO`) não sobe a versão. A versão do IVET
-(`ivet-vX.Y`) é outra e sobe pelas regras dela.
+texto do método (`%METODO`) não sobe a versão.
+
+A versão do IVET (`ivet-vX.Y`, #489) é outra e também é publicada em
+`/fontes` (cartão "IVET do EduMaps") e no painel da escola. Mudou a versão do
+IVET → no mesmo PR, os **quatro** lugares: `ivet_versao()`
+(`analysis/edumapsr/R/ivet.R`), `formula` do `inst/ivet-card.yml`, o cabeçalho
+de `docs/analises/ivet.md` e uma linha nova no topo de `@HISTORICO`
+(`EduMaps::Model::Ivet::Versao`). `t/02-models/ivet_versao.t` falha se
+divergirem.
 
 ## Key conventions (Perl/Mojolicious)
 

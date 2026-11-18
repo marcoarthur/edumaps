@@ -240,22 +240,25 @@ export const IVET_FIXTURE = {
   ivet: 0.412,
   publicavel: true,
   blocos: { A: 0.398, B: 0.069, C: 0.39, D: 0.48, E: 0.306, F: 0.519, G: 0.555 },
-  formula: "ivet-v1.2",
+  blocos_faltando: [],
+  formula: "ivet-v1.8",
   dataset_version: null,
   transform_version: null,
   dt_snapshot: "2026-10-20",
   calculado_em: "2026-10-20 21:17:14+00",
 };
 
-// IVET medido mas NÃO publicável (LGPD): valores nulos, aviso na UI.
+// IVET sem número (#489): a região não tem os blocos territoriais (C, D e
+// E). O bloco A calculado continua na resposta e na tela.
 export const IVET_NAO_PUBLICAVEL_FIXTURE = {
   co_entidade: 35123456,
   nu_ano_censo: 2025,
   raio_m: 1000,
   ivet: null,
   publicavel: false,
-  blocos: { A: null, B: null, C: null, D: null, E: null, F: null, G: null },
-  formula: "ivet-v1.2",
+  blocos: { A: 0.437, B: null, C: null, D: null, E: null, F: null, G: 0.512 },
+  blocos_faltando: ["C", "D", "E"],
+  formula: "ivet-v1.8",
   dataset_version: null,
   transform_version: null,
   dt_snapshot: "2026-10-20",

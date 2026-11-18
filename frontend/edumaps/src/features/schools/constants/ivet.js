@@ -10,16 +10,31 @@
 /**
  * Blocos do IVET, na ordem do contrato da API. `chave` casa com
  * `blocos` do GET /api/school/:cod_inep/ivet.
+ *
+ * O tema de cada letra é o de `ivet_blocos()` do pacote R e do
+ * inst/ivet-card.yml (A escola, B socioeconômico, C mobilidade, D saúde,
+ * E segurança, F meio ambiente, G recursos). Até a #489 os rótulos de D a G
+ * estavam trocados.
  */
 export const IVET_BLOCOS = [
   { chave: "A", sigla: "A", rotulo: "Porte / oferta" },
   { chave: "B", sigla: "B", rotulo: "Contexto socioeconômico" },
   { chave: "C", sigla: "C", rotulo: "Acesso (isócrona)" },
-  { chave: "D", sigla: "D", rotulo: "Segurança" },
-  { chave: "E", sigla: "E", rotulo: "Recursos" },
-  { chave: "F", sigla: "F", rotulo: "Saúde" },
-  { chave: "G", sigla: "G", rotulo: "Mobilidade" },
+  { chave: "D", sigla: "D", rotulo: "Saúde" },
+  { chave: "E", sigla: "E", rotulo: "Segurança" },
+  { chave: "F", sigla: "F", rotulo: "Meio ambiente" },
+  { chave: "G", sigla: "G", rotulo: "Recursos" },
 ];
+
+/** Nome curto do bloco no texto do motivo (#489): "C (acesso)". */
+export const IVET_TEMA = { C: "acesso", D: "saúde", E: "segurança" };
+
+/** "C (acesso), D (saúde) e E (segurança)". */
+export function ivetBlocosTexto(letras = []) {
+  const itens = letras.map((l) => (IVET_TEMA[l] ? `${l} (${IVET_TEMA[l]})` : l));
+  if (itens.length <= 1) return itens.join("");
+  return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+}
 
 /**
  * Faixas da isócrona: 15 min a pé (H3 r9) e 45 min de carro (H3 r7),
