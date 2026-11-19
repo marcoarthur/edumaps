@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-19 (cv) — vigésima quinta avaliação da P4, #503 (PR #504) mergeado
+
+- Vigésima quinta rodada da P4 (ranking de escolas pelo IDEB): adotaria,
+  sem a lista para descrever o município.
+  - RD-01: a lista não dizia a cobertura (Brasil: 52% das públicas que
+    oferecem os anos iniciais têm IDEB 2023; 24% das rurais).
+  - RD-02: escolas fora de funcionamento na lista → #503.
+  - Descartados: linha do IDEB por rede, taxa de aprovação; Assistente do
+    Censo é só de gestor.
+- PR #504 (92b6936): ramo do IDEB de `escolas_do_municipio` com `JOIN`
+  no Censo em funcionamento; `cobertura` (`_cobertura_ideb`, `%ETAPA_IDEB`)
+  e `indicador.metodo` do IDEB/SAEB (`_metodo_ideb`); nota da tela.
+- A avaliação foi escrita numa worktree do main
+  (`scratchpad/wt-main`) enquanto o PR #502 esperava o CI.
+- Pendente: `_rank_from_ideb` (posição no painel) sem o filtro de situação.
+- Nota técnica 237, ciclo `2026-11-19-ranking-escolas-cobertura.md`.
+
 ## Sessão 2026-11-19 (cu) — vigésima quarta avaliação da P4, #501 (PR #502) mergeado
 
 - Vigésima quarta rodada da P4 (citar os índices): adotaria.

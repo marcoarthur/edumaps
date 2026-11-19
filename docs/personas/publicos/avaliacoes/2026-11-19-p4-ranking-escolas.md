@@ -73,3 +73,13 @@ entrega da vigésima quarta rodada:
 
 Issue **#503** (RD-01 e RD-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-19: #503 (PR #504) mergeado: RD-01 e RD-02 resolvidos. A lista de
+  escolas pelo IDEB/SAEB tem só escolas em funcionamento e diz, na nota,
+  quantas oferecem a etapa e quantas têm o dado (públicas e privadas), com o
+  método e o aviso de que a falta não é aleatória. Salvador, anos iniciais:
+  de 257 para 247 escolas; 794 oferecem a etapa (282 públicas, 512
+  privadas). Fechamento em
+  [`../ciclos/2026-11-19-ranking-escolas-cobertura.md`](../ciclos/2026-11-19-ranking-escolas-cobertura.md).

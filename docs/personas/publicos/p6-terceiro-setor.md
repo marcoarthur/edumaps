@@ -70,6 +70,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: "acima do Brasil" sem a mistura com as privadas.
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "as que mais melhoraram" sem falsos campeões.
 - [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: cita a versão certa.
+- [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a lista diz quantas ficaram de fora.
 
 ## Pendências
 
