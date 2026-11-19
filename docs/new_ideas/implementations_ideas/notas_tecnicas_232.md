@@ -71,7 +71,7 @@ Um PR: #494 (merge `dbaee89`).
     (a média do município dá 0,47);
   - todos os grupos têm 30 escolas;
   - os sinais de INSE caíram de 13 para 0;
-  - o N do IDEB fica entre 16 e 29 por grupo.
+  - o N do IDEB fica entre 13 e 29 por grupo.
 - O CEIFAR (privada) tem um grupo de 30 escolas, com IDEB N = 0.
 - **Testes:**
   - R com e sem o banco de fixtures, com o arquivo novo
