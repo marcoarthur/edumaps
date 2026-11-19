@@ -76,4 +76,5 @@ entrega da vigésima terceira rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#501** (RE-01 e RE-02 juntas), aberta com a aprovação do
+developer.

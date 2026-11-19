@@ -138,7 +138,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregue (#500).
   Vigésima quarta rodada (2026-11-19, **adotaria**): RE-01 (versão citável
   dos índices diverge entre os textos) e RE-02 (arquivos da carga
-  prometidos e ausentes) → aguardando aprovação para a issue.
+  prometidos e ausentes) → #501.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
