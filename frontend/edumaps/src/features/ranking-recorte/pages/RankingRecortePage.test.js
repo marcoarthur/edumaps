@@ -339,7 +339,18 @@ describe("RankingRecortePage — variação vazia com motivo (#453)", () => {
   it("conta as redes sem variação e diz o motivo com o mínimo", async () => {
     abrir("?aba=redes&uf=ES");
     const s = await screen.findByTestId("sem-variacao");
-    expect(s).toHaveTextContent("1 rede sem variação: tinham menos de 3 escolas com dado em 2021 (o mesmo mínimo do ranking).");
+    expect(s).toHaveTextContent("1 rede sem variação: tinham menos de 3 escolas com dado em 2021 e em 2023 (o mesmo mínimo do ranking).");
+  });
+
+  it("variação nas mesmas escolas: a regra na nota e quantas entre parênteses (#499)", async () => {
+    abrir("?aba=redes&uf=ES");
+    await screen.findByTestId("tabela-redes");
+    expect(screen.getByTestId("regra-variacao")).toHaveTextContent("nas mesmas escolas, as que têm dado nas duas edições");
+    const n = screen.getAllByTestId("escolas-variacao");
+    // Vitória: 51 escolas, 40 nas duas edições; Mantenópolis: todas (sem parênteses); Itarana: sem variação
+    expect(n).toHaveLength(1);
+    expect(n[0]).toHaveTextContent("(40)");
+    expect(n[0].closest("tr")).toHaveTextContent("Vitória");
   });
 
   it("sem edição anterior: diz que não há com o que comparar", async () => {

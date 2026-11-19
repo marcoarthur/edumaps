@@ -389,12 +389,14 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-redes">
             Valor da rede = <strong>média simples das escolas municipais</strong> com {redes.indicador.label} em {redes.ano}
-            (não é o IDEB oficial da rede, calculado pelo INEP). Variação: diferença para {redes.ano_anterior ?? "a edição anterior"}.
+            (não é o IDEB oficial da rede, calculado pelo INEP).
+            <span data-testid="regra-variacao">Variação: diferença para {redes.ano_anterior ?? "a edição anterior"}
+              <strong>nas mesmas escolas</strong>, as que têm dado nas duas edições; entre parênteses, quantas, quando não são todas.</span>
             {#if semVariacao > 0}
               <span data-testid="sem-variacao">
                 <strong>{semVariacao.toLocaleString("pt-BR")} {semVariacao === 1 ? "rede sem variação" : "redes sem variação"}</strong>:
                 {#if redes.ano_anterior}
-                  tinham menos de {redes.minimo_escolas} escolas com dado em {redes.ano_anterior} (o mesmo mínimo do ranking).
+                  tinham menos de {redes.minimo_escolas} escolas com dado em {redes.ano_anterior} e em {redes.ano} (o mesmo mínimo do ranking).
                 {:else}
                   sem edição anterior para comparar.
                 {/if}
@@ -413,7 +415,7 @@
             {#if redes.atipico?.limite_superior != null}
               <strong>Salto atípico</strong>: variação a mais de {redes.atipico.desvios} desvios padrão da média do recorte
               (fora de {variacao(redes.atipico.limite_inferior)} a {variacao(redes.atipico.limite_superior)});
-              {redes.atipico.marcadas} {redes.atipico.marcadas === 1 ? "rede marcada" : "redes marcadas"}. É o dado publicado; confira os dados da rede antes de citar.
+              {redes.atipico.marcadas} {redes.atipico.marcadas === 1 ? "rede marcada" : "redes marcadas"}. É a mudança nas mesmas escolas; confira os dados da rede antes de citar.
             {/if}
           </p>
           <button type="button" onclick={exportarRedes}
@@ -448,9 +450,13 @@
                   <td class="px-2 py-1.5 text-right font-medium">{num(r.media)}</td>
                   <td class="px-2 py-1.5 text-right whitespace-nowrap">
                     {variacao(r.variacao)}
+                    {#if r.variacao != null && r.escolas_variacao != null && r.escolas_variacao < r.escolas}
+                      <span class="text-xs text-gray-400" data-testid="escolas-variacao"
+                        title="Escolas com dado nas duas edições: a variação é calculada só nelas.">({r.escolas_variacao})</span>
+                    {/if}
                     {#if r.atipico}
                       <span class="ml-1 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 text-[11px] font-medium" data-testid="salto-atipico"
-                        title="Variação muito acima ou abaixo das outras redes do recorte. É o dado publicado pelo INEP; confira os dados da rede antes de citar.">
+                        title="Variação muito acima ou abaixo das outras redes do recorte, nas mesmas escolas. Confira os dados da rede antes de citar.">
                         salto atípico
                       </span>
                     {/if}

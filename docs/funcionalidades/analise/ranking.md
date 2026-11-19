@@ -32,7 +32,8 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   posição só vale dentro dele.
 - Sistema pode **comparar as redes municipais** dos municípios de um estado
   (ou de uma região, ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
-  (média das escolas da rede), quanto mudou desde a edição anterior e o
+  (média das escolas da rede), quanto mudou desde a edição anterior **nas
+  mesmas escolas** (as que têm o dado nas duas edições, com quantas são) e o
   contexto socioeconômico — a média dos municípios de INSE parecido —, para
   responder "quais redes mais melhoraram?" e "este município entrega parecido
   com os semelhantes?" sem leitura punitiva. Redes com poucas escolas com dado
