@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-19 (cu) — vigésima quarta avaliação da P4, #501 (PR #502) mergeado
+
+- Vigésima quarta rodada da P4 (citar os índices): adotaria.
+  - RE-01: versão citável divergia (rankings.md v5, ivet.md §2.2 v2,
+    /fontes v6).
+  - RE-02: ajuda prometia arquivos da carga com SHA-256 que nenhuma base
+    pública tem → #501.
+- PR #502 (b2fd8f3): textos com `indices-v6`; `indices_versao.t` confere
+  rankings.md, ivet.md §2.2 e os exemplos das ajudas de fontes e da base;
+  AGENTS.md (passo 3 da regra da versão); ajuda de fontes sobre os
+  arquivos.
+- O CI do backend do PR levou ~9 min (cpanfile sem cache).
+- Vigésima quinta rodada (ranking de escolas pelo IDEB) já registrada:
+  RD-01/RD-02 → #503.
+- Pendente: manifesto (SHA-256) nas próximas cargas das bases públicas.
+- Nota técnica 236, ciclo `2026-11-19-versao-indices-textos.md`.
+
 ## Sessão 2026-11-19 (ct) — vigésima terceira avaliação da P4, #499 (PR #500) mergeado
 
 - Vigésima terceira rodada da P4 (variação do ranking de redes): adotaria,

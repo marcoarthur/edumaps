@@ -78,3 +78,12 @@ entrega da vigésima terceira rodada:
 
 Issue **#501** (RE-01 e RE-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-19: #501 (PR #502) mergeado: RE-01 e RE-02 resolvidos. A ajuda de
+  rankings e a fórmula completa dizem `indices-v6`, com o histórico; o
+  `indices_versao.t` confere esses textos e os exemplos das ajudas; a ajuda
+  de fontes diz que os arquivos da carga só aparecem quando a carga os
+  registra. Fechamento em
+  [`../ciclos/2026-11-19-versao-indices-textos.md`](../ciclos/2026-11-19-versao-indices-textos.md).

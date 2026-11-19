@@ -76,6 +76,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: similares de contexto parecido, com a diferença de IDEB.
 - [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
+- [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto.
 
 ## Pendências
 

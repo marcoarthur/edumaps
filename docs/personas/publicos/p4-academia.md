@@ -75,6 +75,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas similares. RH-01 e RH-02 resolvidos; nenhum achado aberto da vigésima primeira avaliação.
 - [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p4--academia-pesquisadora): adotaria (mantido), com o perfil da rede. RG-01 e RG-02 resolvidos; nenhum achado aberto da vigésima segunda avaliação.
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p4--academia-pesquisadora): adotaria (mantido), com a variação do ranking de redes. RF-01 resolvido; nenhum achado aberto da vigésima terceira avaliação.
+- [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p4--academia-pesquisadora): adotaria (mantido). RE-01 e RE-02 resolvidos; nenhum achado aberto da vigésima quarta avaliação.
 
 ## Pendências
 
@@ -138,7 +139,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregue (#500).
   Vigésima quarta rodada (2026-11-19, **adotaria**): RE-01 (versão citável
   dos índices diverge entre os textos) e RE-02 (arquivos da carga
-  prometidos e ausentes) → #501.
+  prometidos e ausentes) → #501, entregues (#502).
   Vigésima quinta rodada (2026-11-19, **adotaria**, sem a lista de escolas
   pelo IDEB para descrever o município): RD-01 (cobertura do IDEB não dita)
   e RD-02 (escolas fora de funcionamento na lista) → #503.

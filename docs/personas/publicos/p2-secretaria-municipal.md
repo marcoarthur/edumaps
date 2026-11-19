@@ -75,6 +75,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: pares do município inteiro.
 - [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: rede municipal contra as redes municipais; níveis do INSE.
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: melhora da rede nas mesmas escolas.
+- [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Sem impacto relevante.
 
 ## Pendências
 
