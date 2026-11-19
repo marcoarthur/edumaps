@@ -67,6 +67,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: salário por escola na base.
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: grupo não escolhido pelo resultado.
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: contexto parecido, resultado diferente, pronto na tela.
+- [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: "acima do Brasil" sem a mistura com as privadas.
 
 ## Pendências
 

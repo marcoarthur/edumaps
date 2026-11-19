@@ -192,6 +192,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Similares do perfil pelo contexto (#495): no mesmo perfil,
       `metadata.peers_source = contexto_municipio` e até 10 `tables.peers`
       com `similarity` ≥ 0,7.
+- [ ] Perfil da rede (#497): `curl -s 'http://127.0.0.1:3000/api/network/2927408/profile?tp_dependencia=3'`
+      no backend traz `metadata.referencia_rotulo = "Brasil, redes municipais"`, `n_brasil`
+      preenchido e grupos `INSE Nível …`/`Sem INSE` em `tables.clusters` (nenhum
+      "Sem cluster"); o cache antigo cai sozinho (chave `versao = 4`).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

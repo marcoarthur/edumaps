@@ -80,3 +80,13 @@ entrega da vigésima primeira rodada:
 
 Issue **#497** (RG-01 e RG-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-19: #497 (PR #498) mergeado: RG-01 e RG-02 resolvidos. Com a rede
+  filtrada, o perfil da rede compara com a mesma rede no Brasil e diz qual
+  ("Brasil, redes municipais", com o número de escolas); os grupos são os
+  níveis do INSE do INEP e "Sem INSE". Salvador, rede municipal: docentes
+  efetivos de +17,6 para +3,9 p.p.; IDEB dos anos finais de −0,50 para
+  −0,34. Fechamento em
+  [`../ciclos/2026-11-19-perfil-rede-referencia.md`](../ciclos/2026-11-19-perfil-rede-referencia.md).

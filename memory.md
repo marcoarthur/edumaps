@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-19 (cs) — vigésima segunda avaliação da P4, #497 (PR #498) mergeado
+
+- Vigésima segunda rodada da P4 (perfil da rede): adotaria, sem o perfil
+  da rede.
+  - RG-01: rede filtrada comparada com o Brasil de todas as redes
+    (Salvador municipal: efetivos +17,6 p.p. em vez de +3,9).
+  - RG-02: grupos = `cluster_id` do último agrupamento gravado (só ES,
+    infraestrutura) → #497.
+- PR #498 (414389f):
+  - referência `rede` (`.profile_reference_rows`/`.profile_scope_live`) e
+    `.profile_ideb_etapa_stats(..., "rede", tp)` com a rede filtrada;
+    metadata `referencia_escopo`, `referencia_rotulo`, `n_brasil`;
+  - grupos pelos níveis do INSE (`inse_classificacao` → `inse_nivel`,
+    `.inse_nivel_sql`, `INSE_NIVEIS`), `grupo_criterio`;
+  - removidos `.school_indicators_has_cluster_id` e o escopo `cluster`;
+  - chave de cache do perfil da rede `versao = 4`.
+- CI do PR caiu no `apt` (security.ubuntu.com fora); `gh run rerun --failed`
+  resolveu.
+- Pendente: issue de limpeza do batch `apply_school_profile` modo
+  `cluster` (`analytics.school_cluster_profile`, sem leitor).
+- Nota técnica 234, ciclo `2026-11-19-perfil-rede-referencia.md`.
+
 ## Sessão 2026-11-19 (cr) — vigésima primeira avaliação da P4, #495 (PR #496) mergeado
 
 - Vigésima primeira rodada da P4 (escolas similares do perfil): adotaria,

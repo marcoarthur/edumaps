@@ -73,6 +73,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p4--academia-pesquisadora): adotaria (mantido), com a folha. RJ-01, RJ-02 e RJ-03 resolvidos; fica a cobertura do SIOPE.
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p4--academia-pesquisadora): adotaria (mantido), com o grupo de referência. RI-01 a RI-03 resolvidos; ficam as similares do Perfil.
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas similares. RH-01 e RH-02 resolvidos; nenhum achado aberto da vigésima primeira avaliação.
+- [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p4--academia-pesquisadora): adotaria (mantido), com o perfil da rede. RG-01 e RG-02 resolvidos; nenhum achado aberto da vigésima segunda avaliação.
 
 ## Pendências
 
@@ -130,7 +131,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   as primeiras 299 escolas do município) → #495, entregues (#496).
   Vigésima segunda rodada (2026-11-19, **adotaria**, sem o perfil da rede):
   RG-01 (rede comparada com o Brasil de todas as redes) e RG-02 (grupos da
-  rede = último agrupamento gravado) → #497.
+  rede = último agrupamento gravado) → #497, entregues (#498).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
