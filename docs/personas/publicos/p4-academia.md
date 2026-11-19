@@ -124,10 +124,27 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   perfil): RI-01 (grupo formado com o próprio IDEB), RI-02 (INSE como sinal
   de atenção) e RI-03 (N do grupo no lugar do N com dado) → #493,
   entregues (#494); ficam as escolas similares do Perfil (usam o IDEB).
+  Vigésima primeira rodada (2026-11-18, **adotaria**, sem as escolas
+  similares do perfil): RH-01 (similares escolhidas pelo IDEB) e RH-02 (só
+  as primeiras 299 escolas do município) → aguardando aprovação para a
+  issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-18 — Análises públicas (vigésima primeira rodada, escolas similares do perfil)
+
+**Veredito:** **adotaria** (mantido), sem as escolas similares do perfil.
+Consolidação em
+[`avaliacoes/2026-11-18-p4-similares-perfil.md`](avaliacoes/2026-11-18-p4-similares-perfil.md).
+
+**Barreiras:**
+- RH-01 (atrapalha): as similares são escolhidas pelos indicadores do perfil,
+  inclusive o IDEB (correlação 0,97 entre o IDEB da escola e a mediana das
+  similares, 37 escolas de Salvador).
+- RH-02 (atrapalha): só as primeiras 299 escolas do município entram (São
+  Paulo: similares só entre os INEPs 35000243 e 35044428).
 
 ### 2026-11-18 — Análises públicas (vigésima rodada, grupo de referência do perfil)
 
