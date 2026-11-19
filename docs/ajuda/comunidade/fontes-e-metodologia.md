@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, painel-publico-da-escola, privacidade]
 funcionalidade: ../../funcionalidades/plataforma/fontes-de-dados.md
-ultima_revisao: 2026-11-16
+ultima_revisao: 2026-11-19
 ---
 
 # Fontes e metodologia
@@ -24,9 +24,12 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
    endereço `/fontes`). Não precisa de login.
 2. **Leia o cartão da base:** órgão, **ano do dado**, **última carga**,
    licença e as telas que usam a base.
-3. **Para conferir o arquivo:** abra **Arquivos da última carga**. Cada
-   arquivo traz o endereço oficial e o SHA-256, que permite verificar que é o
-   mesmo arquivo publicado pelo órgão.
+3. **Para conferir o arquivo:** quando a carga registra os arquivos baixados,
+   o cartão traz **Arquivos da última carga**, cada um com o endereço oficial
+   e o SHA-256, que permite verificar que é o mesmo arquivo publicado pelo
+   órgão. As bases desta página foram carregadas antes desse registro: hoje
+   nenhum cartão traz os arquivos, e eles aparecem a partir da próxima carga
+   de cada base.
 4. **Para citar uma análise:** use o ano do selo **Fonte** da própria tela. No
    agrupamento de escolas, a caixa **Universo** diz o ano do Censo e do IDEB
    usados, e o CSV baixado é aquele resultado.
@@ -43,6 +46,10 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 - **"Carga não registrada"**: a base foi carregada antes de o registro de
   cargas existir. O ano do dado continua certo (vem da própria base); só a
   data da carga não é conhecida.
+- **Sem "Arquivos da última carga"**: a carga não registrou os arquivos
+  baixados (o caso de todas as bases desta página até a próxima carga). O
+  ano do dado e a data da carga continuam valendo; só não dá para conferir o
+  SHA-256 por aqui.
 - **"Consulte os termos do órgão"**: a licença ainda não foi confirmada por
   nós; vale o que o órgão publica.
 - **Ausência não é zero**: "–" ou "n/d" quer dizer que a fonte não tem o dado.

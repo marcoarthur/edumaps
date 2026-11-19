@@ -385,9 +385,15 @@ dois lugares, no mesmo PR:
 1. `$INDICES_VERSAO` e uma linha nova no topo de `@INDICES_HISTORICO`
    (`EduMaps::Model::Rank::School`), com a data e o que mudou;
 2. o `COMMENT ON MATERIALIZED VIEW clean.mv_escolas_scores` da própria change
-   (`VERSÃO indices-vN (…)`).
+   (`VERSÃO indices-vN (…)`);
+3. os textos que dizem qual é a versão atual (#501): em
+   `docs/ajuda/comunidade/rankings.md`, a frase "A atual é a **`indices-vN`**"
+   (com o que mudou) e o exemplo do nome do arquivo; o cabeçalho da §2.2 de
+   `docs/analises/ivet.md` ("Versão citável dos seis scores", com o
+   histórico); e os exemplos "ex.: `indices-vN`" de
+   `fontes-e-metodologia.md` e `base-de-analise.md`.
 
-`t/02-models/indices_versao.t` falha se os dois divergirem. Correção só de
+`t/02-models/indices_versao.t` falha se algum deles divergir. Correção só de
 texto do método (`%METODO`) não sobe a versão.
 
 A versão do IVET (`ivet-vX.Y`, #489) é outra e também é publicada em
