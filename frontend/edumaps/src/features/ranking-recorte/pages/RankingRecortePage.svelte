@@ -522,7 +522,15 @@
       {:else if escolas}
         <div class="flex flex-wrap items-start justify-between gap-3">
           <p class="text-xs text-gray-600" data-testid="nota-escolas">
-            {escolas.total} escolas de {escolas.municipio.nome} ({escolas.municipio.uf}) com {escolas.indicador.label} em {escolas.ano}.
+            {escolas.total} escolas{escolas.cobertura ? " em funcionamento" : ""} de {escolas.municipio.nome} ({escolas.municipio.uf}) com {escolas.indicador.label} em {escolas.ano}.
+            {#if escolas.cobertura}
+              <!-- #503 (RD-01): quantas oferecem a etapa, para a lista não parecer o município inteiro -->
+              <span data-testid="cobertura-escolas">
+                No Censo {escolas.cobertura.ano_censo}, <strong>{escolas.cobertura.oferecem.toLocaleString("pt-BR")}</strong>
+                {escolas.cobertura.oferecem === 1 ? "escola oferece" : "escolas oferecem"} {escolas.cobertura.etapa_texto}{#if !escolas.rede}{" "}({escolas.cobertura.publicas.oferecem.toLocaleString("pt-BR")} públicas, {escolas.cobertura.publicas.com_indicador.toLocaleString("pt-BR")} com o dado;
+                  {escolas.cobertura.privadas.oferecem.toLocaleString("pt-BR")} privadas, {escolas.cobertura.privadas.com_indicador.toLocaleString("pt-BR")} com o dado){/if}.
+              </span>
+            {/if}
             Escolas empatadas dividem a posição.
             {#if escolas.indicador.metodo}
               <span class="block mt-1" data-testid="metodo-indicador"><strong>Como se calcula{#if escolas.indicador.versao}{" "}(<span data-testid="versao-indicador">{escolas.indicador.versao}</span>, de {dataBR(escolas.indicador.versao_data)}){/if}:</strong> {escolas.indicador.metodo}

@@ -39,8 +39,10 @@ Brasil.
 ## Entendendo os números
 - **Só escolas em funcionamento.** As escolas paralisadas ou extintas no
   Censo Escolar não entram: não têm aluno, e contá-las inflava o número de
-  escolas e baixava os alunos por escola. É a mesma contagem do perfil, do
-  ranking e da [base de análise](base-de-analise.md).
+  escolas e baixava os alunos por escola. É a mesma contagem do perfil, da
+  lista de escolas do ranking e da [base de análise](base-de-analise.md). O
+  ranking de redes é outra conta: a média das escolas com IDEB naquela
+  edição, inclusive as que fecharam depois.
 - **Matrículas e docentes** são do Censo Escolar mais recente. Quem dá aula
   em mais de uma escola conta em cada uma.
 - **Médias simples.** "Alunos por docente" e "% docentes com superior" são

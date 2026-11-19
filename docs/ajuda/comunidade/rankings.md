@@ -41,7 +41,10 @@ indicador. Não precisa de login.
    mostra o fim da lista. Para "escolas sem infraestrutura básica", use o
    indicador **Infraestrutura básica**: ele mostra "2 de 4" e, na coluna
    **Falta**, quais itens faltam (água, energia, esgoto, banheiro). A nota
-   da tabela diz como cada indicador é calculado.
+   da tabela diz como cada indicador é calculado. Nos indicadores do
+   IDEB/SAEB, a nota diz também quantas escolas do município oferecem a
+   etapa no Censo, públicas e privadas, e quantas têm o dado: a lista não é
+   o município inteiro.
 3. **Para levar a outro lugar:** **Baixar CSV** exporta a tabela (separador
    `;`, abre no Excel); o endereço da página guarda os filtros, então o link
    reabre a mesma consulta. O arquivo de redes traz as duas posições,
@@ -55,6 +58,14 @@ indicador. Não precisa de login.
    rankings.
 
 ## Entendendo os números
+- **Escolas de um município, IDEB e SAEB:** só entram as escolas em
+  funcionamento no Censo mais recente que têm o indicador na edição. O IDEB
+  e o SAEB faltam sobretudo nas escolas pequenas, rurais e sem
+  infraestrutura, e as privadas quase nunca têm: no Brasil, só cerca de
+  metade das escolas públicas que oferecem os anos iniciais tem IDEB 2023,
+  e entre as rurais, cerca de um quarto. A falta não é aleatória, então a
+  lista não representa todas as escolas da etapa. Até 18/11/2026 a lista
+  incluía também escolas paralisadas, extintas ou fora do Censo.
 - **Valor da rede** é a **média simples das escolas municipais** com o
   indicador naquela edição. Não é o IDEB oficial da rede calculado pelo INEP.
 - **Variação** é a diferença para a edição anterior **nas mesmas escolas**:

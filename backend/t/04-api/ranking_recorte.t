@@ -320,6 +320,21 @@ subtest 'validações das redes' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_ensino_medio&uf=XX')->status_is(404);
 };
 
+# #503: a lista do IDEB só tem escolas em funcionamento no Censo mais
+# recente; as quatro de Alfa entram no Censo, em funcionamento, com os anos
+# iniciais.
+my ($ANO_CENSO) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
+$ANO_CENSO //= 2025;
+my $limpa_censo = sub { $dbh->do("DELETE FROM clean.censo_escolas WHERE co_entidade IN ($ph)", {}, @INEPS) };
+$limpa_censo->();
+END { $limpa_censo->() }
+my $ins_censo = $dbh->prepare(q{INSERT INTO clean.censo_escolas
+  (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio, no_municipio, sg_uf,
+   tp_situacao_funcionamento, in_comum_fund_ai)
+  VALUES (?, ?, ?, ?, ?, ?, 'XX', ?, ?)});
+$ins_censo->execute($ANO_CENSO, $_, "Escola $_", 3, 6000301, 'Alfa do Teste', 1, 1)
+  for qw(60003001 60003002 60003003 60003004);
+
 subtest 'escolas de um município' => sub {
   my $r = $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais')
     ->status_is(200)->tx->res->json;
@@ -341,6 +356,42 @@ subtest 'escolas de um município' => sub {
       [ $EduMaps::Model::Rank::School::INDICES_VERSAO, $EduMaps::Model::Rank::School::INDICES_HISTORICO[0]{data} ],
       'índice do Censo: versão e data da fórmula';
   }
+
+  # #503 (RD-01): cobertura e método do IDEB
+  is $r->{cobertura}{oferecem}, 4, 'quatro oferecem os anos iniciais no Censo';
+  is $r->{cobertura}{com_indicador}, 4, 'as quatro têm IDEB';
+  is $r->{cobertura}{ano_censo}, $ANO_CENSO, 'ano do Censo';
+  like $r->{indicador}{metodo}, qr/IDEB observado.*INEP.*edição 2023.*anos iniciais.*em funcionamento.*não é aleatória/s,
+    'método do IDEB com edição, etapa e o aviso';
+
+  # #503 (RD-02 e RD-01): uma escola extinta com IDEB sai da lista; uma que
+  # oferece a etapa sem IDEB e uma privada contam na cobertura.
+  my @EXTRA = (['60005031', 3, 3, 1, 6.8], ['60005032', 3, 1, 1, undef], ['60005033', 4, 1, 1, undef]);
+  my $phx = join ',', ('?') x @EXTRA;
+  my @ix = map { $_->[0] } @EXTRA;
+  my $limpa_x = sub {
+    $dbh->do("DELETE FROM clean.censo_escolas WHERE co_entidade IN ($phx)", {}, @ix);
+    $dbh->do("DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN ($phx)", {}, @ix);
+  };
+  $limpa_x->();
+  for my $x (@EXTRA) {
+    my ($inep, $dep, $sit, $ai, $ideb) = @$x;
+    $ins_censo->execute($ANO_CENSO, $inep, "Escola $inep", $dep, 6000301, 'Alfa do Teste', $sit, $ai);
+    $ins->execute($inep, 6000301, 'Alfa do Teste', "Escola $inep", 2023, $ideb) if defined $ideb;
+  }
+  $r = $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais')->status_is(200)->tx->res->json;
+  is $r->{total}, 4, 'a extinta com IDEB 6,8 fica fora da lista';
+  ok !(grep { $_->{co_entidade} eq '60005031' } @{ $r->{escolas} }), 'extinta ausente';
+  is $r->{cobertura}{oferecem}, 6, 'seis em funcionamento oferecem a etapa (a extinta não conta)';
+  is $r->{cobertura}{publicas}, { oferecem => 5, com_indicador => 4 }, 'públicas: 5 oferecem, 4 com IDEB';
+  is $r->{cobertura}{privadas}, { oferecem => 1, com_indicador => 0 }, 'privadas: 1 oferece, nenhuma com IDEB';
+
+  $r = $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais&rede=municipal')->tx->res->json;
+  is $r->{cobertura}{oferecem}, 5, 'rede municipal: cobertura só dela';
+  is $r->{cobertura}{privadas}{oferecem}, 0, 'sem privadas no filtro municipal';
+  $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais&rede=privada')
+    ->status_is(404, 'rede privada sem IDEB: lista vazia, como antes');
+  $limpa_x->();
 
   $t->get_ok('/api/ranking/escolas?codigo_ibge=6000399&indicador=ideb_anos_iniciais')->status_is(404);
   $t->get_ok('/api/ranking/escolas?codigo_ibge=123&indicador=ideb_anos_iniciais')->status_is(400);
