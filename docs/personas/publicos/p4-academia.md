@@ -141,8 +141,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   prometidos e ausentes) → #501.
   Vigésima quinta rodada (2026-11-19, **adotaria**, sem a lista de escolas
   pelo IDEB para descrever o município): RD-01 (cobertura do IDEB não dita)
-  e RD-02 (escolas fora de funcionamento na lista) → aguardando aprovação
-  para a issue.
+  e RD-02 (escolas fora de funcionamento na lista) → #503.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

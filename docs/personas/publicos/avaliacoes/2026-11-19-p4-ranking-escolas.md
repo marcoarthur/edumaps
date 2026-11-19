@@ -71,4 +71,5 @@ entrega da vigésima quarta rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#503** (RD-01 e RD-02 juntas), aberta com a aprovação do
+developer.
