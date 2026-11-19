@@ -145,10 +145,26 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   pelo IDEB para descrever o município): RD-01 (cobertura do IDEB não dita)
   e RD-02 (escolas fora de funcionamento na lista) → #503, entregues
   (#504).
+  Vigésima sexta rodada (2026-11-19, **adotaria**, sem a posição da escola):
+  RC-01 ("acima de X%" conta os empates como abaixo) e RC-02 (posição do
+  IDEB com escolas fora de funcionamento, sem ajuda) → aguardando aprovação
+  para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-19 — Análises públicas (vigésima sexta rodada, posição da escola)
+
+**Veredito:** **adotaria** (mantido), sem a posição da escola. Consolidação
+em [`avaliacoes/2026-11-19-p4-posicao-escola.md`](avaliacoes/2026-11-19-p4-posicao-escola.md).
+
+**Barreiras:**
+- RC-01 (atrapalha): "acima de X% das escolas" conta as empatadas como
+  abaixo (sustentabilidade 0: "acima de 29%" no Brasil; aprovação 100%:
+  14.508 escolas "1º, acima de 100%").
+- RC-02 (detalhe): a posição do IDEB conta escolas fora de funcionamento
+  ("1º de 257" contra 247 na lista) e nenhuma ajuda explica a posição.
 
 ### 2026-11-19 — Análises públicas (vigésima quinta rodada, ranking de escolas pelo IDEB)
 
