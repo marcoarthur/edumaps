@@ -24,6 +24,14 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     expect(t.linhas[0].slice(0, 2)).toEqual([1, null]);
   });
 
+  it("redes: escolas_variacao depois da variação (#499)", () => {
+    const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
+    const i = t.cabecalho.indexOf("escolas_variacao");
+    expect(t.cabecalho[i - 1]).toBe("variacao_2021_2023");
+    expect(t.linhas[2][i]).toBe(40);
+    expect(t.linhas[2][i - 1]).toBe(-0.3);
+  });
+
   it("redes de uma UF sem porte: porte_filtro vazio", () => {
     const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
     expect(t.linhas[0].slice(-3)).toEqual(["UF:ES", "", 3]);

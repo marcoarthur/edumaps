@@ -544,6 +544,8 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   # só restringe as UFs, antes da posição, do INSE e do salto atípico.
   my $uf_sql = $uf ? 'AND sg_uf = ?' : $regiao ? 'AND sg_uf = ANY(?)' : '';
   my @uf_bind = $uf ? ($uf) : $regiao ? (EduMaps::Regiao->ufs($regiao)) : ();
+  # o mesmo filtro com o alias, para a junção das duas edições (#499)
+  my $uf_sql_i = $uf_sql =~ s/\bsg_uf\b/i.sg_uf/r;
   my $porte = $opts->{porte};
   croak "Porte desconhecido: $porte" if defined $porte && !EduMaps::Porte->valido($porte);
   my $porte_case = EduMaps::Porte->case_sql('pm.populacao_estimada');
@@ -577,20 +579,28 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
        WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL $uf_sql
        GROUP BY i.co_municipio
     ),
-    anterior AS (
-      SELECT co_municipio, count(*) AS n, avg($column)::float8 AS media
-        FROM clean.ideb_notas_escolas
-       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql
-       GROUP BY co_municipio
+    -- #499 (RF-01): a variação nas MESMAS escolas, as que têm o indicador
+    -- nas duas edições. Antes era a média de uma edição menos a da outra,
+    -- com escolas diferentes (em 2021 muitas ficaram sem IDEB); em 129 de
+    -- 2.476 redes o sinal trocava.
+    pares AS (
+      SELECT i.co_municipio, count(*) AS n, avg(i.$column - p.$column)::float8 AS variacao
+        FROM clean.ideb_notas_escolas i
+        JOIN clean.ideb_notas_escolas p
+          ON p.id_escola = i.id_escola AND p.ano = ? AND p.etapa = i.etapa
+         AND p.rede = 'Municipal' AND p.$column IS NOT NULL
+       WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL $uf_sql_i
+       GROUP BY i.co_municipio
     ),
     -- O filtro de porte entra aqui, antes da posição, dos quintos de INSE e
     -- do salto atípico: o ranking é entre as redes do mesmo porte.
     elegiveis AS (
       SELECT a.co_municipio, a.no_municipio, a.sg_uf, a.n, a.media,
-             CASE WHEN p.n >= $min THEN a.media - p.media END AS variacao,
+             CASE WHEN p.n >= $min THEN p.variacao END AS variacao,
+             COALESCE(p.n, 0) AS n_variacao,
              a.inse, po.populacao, po.porte
         FROM atual a
-        LEFT JOIN anterior p USING (co_municipio)
+        LEFT JOIN pares p USING (co_municipio)
         LEFT JOIN pop po ON po.codigo_ibge = a.co_municipio::text
        WHERE a.n >= $min @{[ defined $porte ? 'AND po.porte = ?' : '' ]}
     ),
@@ -606,7 +616,7 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
      ORDER BY q.media DESC, q.no_municipio
   }, { Slice => {} },
     $ano, $def->{etapa}, @uf_bind,
-    (defined $ano_ant ? $ano_ant : -1), $def->{etapa}, @uf_bind,
+    (defined $ano_ant ? $ano_ant : -1), $ano, $def->{etapa}, @uf_bind,
     (defined $porte ? ($porte) : ()));
 
   my $porte_fora = defined $porte
@@ -671,6 +681,8 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     regioes => EduMaps::Regiao->lista,
     populacao_fonte => { ano => $pop_ano, descricao => 'Estimativa da população do IBGE' },
     minimo_escolas => $min,
+    # #499: a variação é nas escolas com o indicador nas duas edições
+    variacao_regra => 'mesmas_escolas',
     total => scalar @$rows,
     fora_por_poucas_escolas => 0 + ($fora // 0),
     redes => [ map { +{
@@ -678,6 +690,7 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       municipio   => $_->{no_municipio},
       uf          => $_->{sg_uf},
       escolas     => 0 + $_->{n},
+      escolas_variacao => 0 + $_->{n_variacao},
       media       => $num->($_->{media}),
       variacao    => $num->($_->{variacao}),
       inse        => $num->($_->{inse}),

@@ -139,6 +139,62 @@ subtest 'salto atípico e mínimo ajustável (#437)' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX&minimo=3.5')->status_is(400);
 };
 
+# #499 (RF-01): a variação é nas MESMAS escolas. Rede Delta (UF "XZ"):
+# três escolas nas duas edições, que caem 0,5 cada; em 2023 entram três
+# escolas novas de IDEB alto e em 2021 havia uma escola fraca que saiu. A
+# diferença das médias (2023 − 2021) seria positiva; nas mesmas escolas, −0,5.
+# Rede Épsilon: só duas escolas nas duas edições (abaixo do mínimo 3).
+my @PAR = (
+  # inep,       mun,     2023,  2021
+  ['60004991', 6000491, 5.0,  5.5],
+  ['60004992', 6000491, 5.0,  5.5],
+  ['60004993', 6000491, 5.0,  5.5],
+  ['60004994', 6000491, 8.0,  undef],
+  ['60004995', 6000491, 8.0,  undef],
+  ['60004996', 6000491, 8.0,  undef],
+  ['60004997', 6000491, undef, 2.0],
+  ['60004998', 6000492, 6.0,  5.0],
+  ['60004999', 6000492, 6.0,  5.0],
+  ['60004990', 6000492, 6.0,  undef],
+);
+my @INEPS_PAR = map { $_->[0] } @PAR;
+my $ph3 = join ',', ('?') x @INEPS_PAR;
+my $limpa3 = sub { $dbh->do("DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN ($ph3)", {}, @INEPS_PAR) };
+$limpa3->();
+END { $limpa3->() }
+my $ins4 = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
+  (id_escola, sg_uf, co_municipio, no_municipio, no_escola, rede, ano, etapa, ideb_observado)
+  VALUES (?, 'XZ', ?, ?, 'Escola', 'Municipal', ?, 'fundamental_i', ?)});
+my %NOME_PAR = (6000491 => 'Delta do Teste', 6000492 => 'Épsilon do Teste');
+for my $e (@PAR) {
+  my ($inep, $mun, $v23, $v21) = @$e;
+  $ins4->execute($inep, $mun, $NOME_PAR{$mun}, 2023, $v23) if defined $v23;
+  $ins4->execute($inep, $mun, $NOME_PAR{$mun}, 2021, $v21) if defined $v21;
+}
+
+subtest 'variação nas mesmas escolas (#499)' => sub {
+  my $r = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XZ')->status_is(200)->tx->res->json;
+  is $r->{variacao_regra}, 'mesmas_escolas', 'regra no payload';
+  my %rede = map { $_->{municipio} => $_ } @{ $r->{redes} };
+  my $d = $rede{'Delta do Teste'};
+  is $d->{escolas}, 6, 'seis escolas em 2023';
+  is $d->{media}, 6.5, 'valor da edição: todas as escolas de 2023';
+  is $d->{escolas_variacao}, 3, 'três escolas nas duas edições';
+  is $d->{variacao}, -0.5, 'variação nas mesmas escolas: −0,5 (a diferença das médias daria +1,875)';
+
+  my $e = $rede{'Épsilon do Teste'};
+  is $e->{escolas}, 3, 'Épsilon entra no ranking (3 escolas em 2023)';
+  is $e->{escolas_variacao}, 2, 'duas nas duas edições';
+  is $e->{variacao}, undef, 'abaixo do mínimo nas duas edições: sem variação';
+  is $e->{posicao_variacao}, undef, 'sem posição pela variação';
+  is $d->{posicao_variacao}, 1, 'Delta é a única com variação';
+
+  my $alfa = $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XX')->tx->res->json;
+  my ($a) = grep { $_->{municipio} eq 'Alfa do Teste' } @{ $alfa->{redes} };
+  is $a->{escolas_variacao}, 4, 'Alfa: as quatro escolas nas duas edições';
+  is $a->{variacao}, 1, 'mesma variação de antes quando as escolas são as mesmas';
+};
+
 # Região (#445): uma região fictícia "TT" com as UFs de teste XX e XY. A
 # região só restringe as UFs; posição, INSE e salto atípico são dela.
 subtest 'região (#445)' => sub {

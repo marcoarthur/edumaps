@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/ranking.md
-ultima_revisao: 2026-11-16
+ultima_revisao: 2026-11-19
 ---
 
 # Rankings de redes e de escolas
@@ -57,19 +57,27 @@ indicador. Não precisa de login.
 ## Entendendo os números
 - **Valor da rede** é a **média simples das escolas municipais** com o
   indicador naquela edição. Não é o IDEB oficial da rede calculado pelo INEP.
-- **Variação** é a diferença para a edição anterior ("–" quando a rede não
-  tinha escolas suficientes com dado nela). A nota da tabela conta essas
-  redes e diz o mínimo. Em 2021, por exemplo, muitas escolas ficaram sem
-  IDEB, e redes grandes podem aparecer sem variação.
+- **Variação** é a diferença para a edição anterior **nas mesmas escolas**:
+  só as que têm o indicador nas duas edições. Quando nem todas as escolas da
+  rede estão nas duas, o número delas aparece entre parênteses ao lado da
+  variação, e o CSV traz a coluna `escolas_variacao`. A variação fica "–"
+  quando a rede tem menos escolas nas duas edições que o mínimo do ranking;
+  a nota da tabela conta essas redes. Em 2021, por exemplo, muitas escolas
+  ficaram sem IDEB, e redes grandes podem aparecer sem variação.
+  Comparar só as mesmas escolas evita que a troca de escolas entre as
+  edições pareça melhora ou piora: até 18/11/2026 a variação era a média de
+  uma edição menos a da outra, com escolas diferentes, e em 129 das 2.476
+  redes com IDEB dos anos iniciais o sinal saía trocado.
 - **INSE médio** é o nível socioeconômico médio dos alunos das escolas da
   rede. **Contexto** compara a rede com a média dos municípios do **mesmo
   quinto de INSE** no recorte: uma rede abaixo da média do estado pode estar
   acima das de contexto parecido.
 - Entram só redes com **pelo menos 3 escolas** com dado (ou o mínimo que
   você escolher); as demais ficam de fora e a página diz quantas.
-- **Salto atípico**: a variação da rede ficou a mais de 2 desvios padrão da
-  média das redes do recorte (para cima ou para baixo). O número é o publicado
-  pelo INEP, não um erro, mas costuma vir de rede pequena ou de mudança fora
+- **Salto atípico**: a variação da rede (nas mesmas escolas) ficou a mais de
+  2 desvios padrão da média das redes do recorte (para cima ou para baixo).
+  O IDEB de cada escola é o publicado pelo INEP, não um erro, mas o salto
+  costuma vir de rede com poucas escolas nas duas edições ou de mudança fora
   do comum: confira os dados da rede antes de citar.
 - **População** é a estimativa do IBGE para o município (o ano aparece na
   nota da tabela). O **porte** usa as classes de tamanho do IBGE: até 5 mil,
@@ -163,6 +171,14 @@ notas de versões diferentes não são comparáveis. O histórico está em
 - Por ora, só redes **municipais** entram no ranking de redes.
 - Indicadores do Censo (infraestrutura, docentes…) entram no ranking de
   escolas, não no de redes.
+
+## Perguntas frequentes
+- **Por que a variação da minha rede mudou?** Desde 19/11/2026 ela é medida
+  nas mesmas escolas das duas edições. Antes, uma rede que ganhou escolas
+  novas com IDEB alto, ou perdeu escolas fracas, parecia ter melhorado sem
+  que nenhuma escola tivesse mudado. Em São Sebastião da Boa Vista/PA, por
+  exemplo, a variação dos anos iniciais de 2021 para 2023 era +1,15; nas 4
+  escolas com IDEB nas duas edições, é +0,03.
 
 ## Veja também
 - [Comparar redes](comparar-redes.md)

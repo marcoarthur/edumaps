@@ -1,14 +1,14 @@
 // src/features/ranking-recorte/mocks/fixtures.js
 export const REDES_FIXTURE = {
   indicador: { id: "ideb_anos_iniciais", label: "IDEB – Anos Iniciais" },
-  ano: 2023, ano_anterior: 2021, recorte: { uf: "ES" }, minimo_escolas: 3,
+  ano: 2023, ano_anterior: 2021, recorte: { uf: "ES" }, minimo_escolas: 3, variacao_regra: "mesmas_escolas",
   populacao_fonte: { ano: "2025", descricao: "Estimativa da população do IBGE" },
   total: 3, fora_por_poucas_escolas: 2,
   atipico: { desvios: 2, media_variacao: 0.27, desvio_variacao: 0.3, limite_inferior: -0.33, limite_superior: 0.8, marcadas: 1 },
   redes: [
-    { codigo_ibge: "3202900", municipio: "Itarana", uf: "ES", escolas: 3, media: 7.8, variacao: null, atipico: false, inse: 5.2, quinto_inse: 5, media_quinto_inse: 6.6, posicao: 1, posicao_variacao: null, populacao: 11500, porte: "10_20mil" },
-    { codigo_ibge: "3203304", municipio: "Mantenópolis", uf: "ES", escolas: 5, media: 7.64, variacao: 0.84, atipico: true, inse: 4.87, quinto_inse: 2, media_quinto_inse: 6.1, posicao: 2, posicao_variacao: 1, populacao: 11800, porte: "10_20mil" },
-    { codigo_ibge: "3205309", municipio: "Vitória", uf: "ES", escolas: 51, media: 6.2, variacao: -0.3, atipico: false, inse: 5.4, quinto_inse: 5, media_quinto_inse: 6.6, posicao: 3, posicao_variacao: 2, populacao: 368000, porte: "100_500mil" },
+    { codigo_ibge: "3202900", municipio: "Itarana", uf: "ES", escolas: 3, escolas_variacao: 1, media: 7.8, variacao: null, atipico: false, inse: 5.2, quinto_inse: 5, media_quinto_inse: 6.6, posicao: 1, posicao_variacao: null, populacao: 11500, porte: "10_20mil" },
+    { codigo_ibge: "3203304", municipio: "Mantenópolis", uf: "ES", escolas: 5, escolas_variacao: 5, media: 7.64, variacao: 0.84, atipico: true, inse: 4.87, quinto_inse: 2, media_quinto_inse: 6.1, posicao: 2, posicao_variacao: 1, populacao: 11800, porte: "10_20mil" },
+    { codigo_ibge: "3205309", municipio: "Vitória", uf: "ES", escolas: 51, escolas_variacao: 40, media: 6.2, variacao: -0.3, atipico: false, inse: 5.4, quinto_inse: 5, media_quinto_inse: 6.6, posicao: 3, posicao_variacao: 2, populacao: 368000, porte: "100_500mil" },
   ],
 };
 
