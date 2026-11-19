@@ -136,10 +136,25 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima terceira rodada (2026-11-19, **adotaria**, sem a variação do
   ranking de redes): RF-01 (variação compara escolas diferentes) → #499,
   entregue (#500).
+  Vigésima quarta rodada (2026-11-19, **adotaria**): RE-01 (versão citável
+  dos índices diverge entre os textos) e RE-02 (arquivos da carga
+  prometidos e ausentes) → aguardando aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-19 — Análises públicas (vigésima quarta rodada, citação dos índices)
+
+**Veredito:** **adotaria** (mantido). Consolidação em
+[`avaliacoes/2026-11-19-p4-citar-indices.md`](avaliacoes/2026-11-19-p4-citar-indices.md).
+
+**Barreiras:**
+- RE-01 (atrapalha): a versão citável dos índices é `indices-v6` em
+  `/fontes` e no CSV, `indices-v5` na ajuda de rankings e `indices-v2` na
+  fórmula completa.
+- RE-02 (detalhe): a ajuda manda conferir o SHA-256 dos "arquivos da última
+  carga", e nenhuma base pública tem arquivos registrados.
 
 ### 2026-11-19 — Análises públicas (vigésima terceira rodada, variação do ranking de redes)
 
