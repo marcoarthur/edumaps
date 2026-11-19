@@ -130,7 +130,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   as primeiras 299 escolas do município) → #495, entregues (#496).
   Vigésima segunda rodada (2026-11-19, **adotaria**, sem o perfil da rede):
   RG-01 (rede comparada com o Brasil de todas as redes) e RG-02 (grupos da
-  rede = último agrupamento gravado) → aguardando aprovação para a issue.
+  rede = último agrupamento gravado) → #497.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

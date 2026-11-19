@@ -78,4 +78,5 @@ entrega da vigésima primeira rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#497** (RG-01 e RG-02 juntas), aberta com a aprovação do
+developer.
