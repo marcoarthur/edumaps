@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [painel-da-escola, escolas-semelhantes, agrupamentos-de-escolas]
 funcionalidade: ../../funcionalidades/analise/perfil-escola.md
-ultima_revisao: 2026-11-18
+ultima_revisao: 2026-11-19
 ---
 
 # Perfil da escola: diagnóstico e comparação justa
@@ -20,7 +20,8 @@ O **Perfil da Escola** reúne num só lugar os indicadores da escola lado a lado
 com o município, a rede de ensino, o Brasil e o **grupo de referência**: as
 30 escolas do município de contexto mais parecido. Ele aponta os **sinais de atenção** — indicadores em que a escola
 está entre as mais baixas do seu grupo — e sugere **escolas similares** para
-trocar experiências.
+trocar experiências: as mais próximas do grupo, de contexto parecido e
+resultado que pode ser bem diferente.
 
 ## Passo a passo
 
@@ -101,6 +102,12 @@ escolas de IDEB baixo e pareceria normal. Até 18/11/2026 era assim: o grupo
 saía de um agrupamento sobre os próprios indicadores comparados.
 
 Município com até 30 outras escolas: o grupo é o município inteiro.
+
+**Escolas similares:** são as 10 primeiras escolas dessa mesma ordem, dentro
+de um limite de distância, comparadas com **todas** as escolas do município.
+Cada cartão mostra o IDEB da similar e a diferença para o da sua escola. Até
+18/11/2026 as similares saíam dos indicadores do perfil, IDEB inclusive, e
+só das primeiras 299 escolas do município.
 
 ## Limitações conhecidas
 

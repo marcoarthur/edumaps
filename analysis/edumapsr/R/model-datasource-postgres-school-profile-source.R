@@ -16,9 +16,12 @@
 # ele. Até a regra 4 o grupo era um k-means sobre os próprios indicadores
 # comparados (o IDEB escolhia o grupo; correlação 0,83 entre o IDEB da
 # escola e a mediana do grupo em Salvador) ou o `cluster_id` do último
-# agrupamento rodado na plataforma. Os peers: se
-# `analytics.similarity_pairs` não tiver pares para a escola, eles são
-# calculados por Gower dentro do município (`peers_source = "gower_municipio"`).
+# agrupamento rodado na plataforma. As escolas similares (#495, regra 6) são
+# as 10 primeiras da mesma ordem do grupo, no município inteiro, dentro do
+# limiar de distância (`peers_source = "contexto_municipio"`). Até a regra 5
+# eram um Gower sobre os indicadores comparados, IDEB e nota inclusive, só
+# entre as primeiras 299 escolas do município, ou os pares de
+# `analytics.similarity_pairs`.
 #
 # `co_entidade` e todos os parâmetros de usuário entram SEMPRE como binds
 # ($1/$2/$3) — nunca interpolados. Os nomes de indicador vêm de um
@@ -71,8 +74,13 @@ PROFILE_DIRECAO <- c(
 # com a etapa e o ano da escola (#431). 4: IDEB e nota SAEB comparados na
 # mesma etapa da escola, e o IDEB de cada etapa (#483). 5: grupo de
 # referência pelo contexto (as 30 escolas do município mais parecidas), o
-# INSE sem sinal de atenção e o N de cada indicador (#493).
-PROFILE_REGRA_SINAIS <- 5L
+# INSE sem sinal de atenção e o N de cada indicador (#493). 6: escolas
+# similares pelo mesmo contexto do grupo, no município inteiro (#495).
+PROFILE_REGRA_SINAIS <- 6L
+
+# Quantas escolas similares o perfil mostra (#495): as primeiras da ordem
+# do grupo de referência, dentro do limiar de distância.
+PROFILE_SIMILARES_N <- 10L
 
 # Tamanho do grupo de referência (#493): as K escolas de contexto mais
 # parecido no município (o município inteiro, se tiver menos).
@@ -574,6 +582,14 @@ WHERE p.co_municipio = $1
   )
   ordem <- order(dist, as.character(outros$co_entidade), na.last = TRUE)
   membros <- outros[utils::head(ordem, k), , drop = FALSE]
+  # #495: a ordem do município inteiro, para as escolas similares
+  vizinhas <- data.frame(
+    co_entidade = as.character(outros$co_entidade[ordem]),
+    no_entidade = as.character(outros$no_entidade[ordem]),
+    distance = as.numeric(dist[ordem]),
+    ideb_observado = suppressWarnings(as.numeric(outros$ideb_observado[ordem])),
+    stringsAsFactors = FALSE
+  )
 
   stats <- lapply(inds, function(col) {
     v <- suppressWarnings(as.numeric(membros[[col]]))
@@ -597,123 +613,34 @@ WHERE p.co_municipio = $1
     cluster_source = "contexto_municipio",
     cluster_scope = "municipio",
     cluster_size = nrow(membros),
-    stats = stats
+    stats = stats,
+    vizinhas = vizinhas
   )
 }
 
-#' Indicadores que a própria escola tem preenchidos (features do fallback)
+#' Escolas similares do perfil (#495, regra 6)
 #'
-#' Usa apenas as dimensões não-NA da escola alvo: assim ela nunca é
-#' excluída do Gower dos peers por faltar um indicador (ex.: IDEB de escola
-#' nova), e os peers ficam no subespaço em que há dado.
+#' As primeiras `n` escolas da ordem do grupo de referência
+#' (`.school_profile_context_group`): o mesmo contexto (rede, localização,
+#' porte, etapas, INSE), no município inteiro, sem o IDEB e a nota SAEB.
+#' Só entram as que estão dentro do limiar de distância. Similaridade =
+#' 1 − distância de Gower.
 #'
+#' @param grupo resultado de `.school_profile_context_group`.
+#' @param similarity_threshold distância máxima.
+#' @param n quantas escolas.
 #' @keywords internal
-.profile_target_features <- function(frame, co_entidade) {
-  inds <- PROFILE_INDICATORS
-  srow <- frame[as.character(frame$co_entidade) == as.character(co_entidade), , drop = FALSE]
-  if (nrow(srow) == 0) {
-    return(inds)
-  }
-  vals <- suppressWarnings(as.numeric(srow[1, inds]))
-  feats <- inds[!is.na(vals)]
-  if (length(feats) == 0) inds else feats
-}
-
-#' Remove features sem variância (evitam NaN no scale()/daisy)
-#'
-#' `scale()` de uma coluna constante devolve NaN (0/0) e o kmeans/daisy
-#' estoura com "NA/NaN/Inf". Escolas pequenas têm indicadores inteiros
-#' constantes (ex.: nenhum docente com mestrado) — não servem como
-#' dimensão de comparação.
-#'
-#' @keywords internal
-.profile_drop_constant_features <- function(data, feats) {
-  keep <- vapply(feats, function(f) {
-    v <- suppressWarnings(as.numeric(data[[f]]))
-    v <- v[!is.na(v)]
-    length(v) > 1 && stats::sd(v) > 0
-  }, logical(1))
-  feats[keep]
-}
-
-#' Peers fallback (Gower restrito ao município)
-#'
-#' Quando `analytics.similarity_pairs` não tem pares para a escola,
-#' calcula a distância de Gower sobre o município (reusando
-#' `analyze_gower_similarity`) e devolve os top-N vizinhos dentro do
-#' threshold de `distance`.
-#'
-#' @keywords internal
-.school_profile_fallback_peers <- function(
-  frame,
-  co_entidade,
-  similarity_threshold = 0.3,
-  max_schools = 300
-) {
-  inds <- PROFILE_INDICATORS
-  feats <- .profile_target_features(frame, co_entidade)
-  valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
-  feats <- .profile_drop_constant_features(valid, feats)
-  if (length(feats) == 0 || nrow(valid) < 2) {
-    return(data.frame(
-      co_entidade = character(0), no_entidade = character(0),
-      similarity = numeric(0), ideb_observado = numeric(0),
-      stringsAsFactors = FALSE
-    ))
-  }
-
-  school_idx <- which(as.character(valid$co_entidade) == as.character(co_entidade))
-  if (length(school_idx) == 0) {
-    return(data.frame(
-      co_entidade = character(0), no_entidade = character(0),
-      similarity = numeric(0), ideb_observado = numeric(0),
-      stringsAsFactors = FALSE
-    ))
-  }
-
-  # Pool limitado (escola garantidamente presente) para manter o
-  # custo do daisy controlado mesmo em municípios grandes.
-  others <- setdiff(seq_len(nrow(valid)), school_idx)
-  others <- head(others, max_schools - 1L)
-  pool <- valid[c(school_idx, others), , drop = FALSE]
-
-  m <- new_school_similarity_model(
-    data = pool,
-    entity_id = "co_entidade",
-    features = feats
-  )
-  res <- analyze_gower_similarity(m, list())
-  pairs <- res$data
-
-  sub <- pairs[
-    pairs$entity_id_a == as.character(co_entidade) |
-      pairs$entity_id_b == as.character(co_entidade),
-    ,
-    drop = FALSE
-  ]
-  sub$co_entidade <- ifelse(
-    sub$entity_id_a == as.character(co_entidade),
-    sub$entity_id_b,
-    sub$entity_id_a
-  )
-  sub <- sub[!is.na(sub$distance) & sub$distance <= similarity_threshold, , drop = FALSE]
-  sub <- sub[order(sub$similarity, decreasing = TRUE), , drop = FALSE]
-  sub <- utils::head(sub, 10L)
-
-  if (nrow(sub) == 0) {
-    return(data.frame(
-      co_entidade = character(0), no_entidade = character(0),
-      similarity = numeric(0), ideb_observado = numeric(0),
-      stringsAsFactors = FALSE
-    ))
-  }
-
-  info <- pool[match(sub$co_entidade, pool$co_entidade), , drop = FALSE]
+.school_profile_context_peers <- function(grupo, similarity_threshold = 0.3,
+                                          n = PROFILE_SIMILARES_N) {
+  v <- grupo$vizinhas
+  if (is.null(v)) v <- data.frame(co_entidade = character(0), distance = numeric(0))
+  v <- v[!is.na(v$distance) & v$distance <= similarity_threshold, , drop = FALSE]
+  v <- utils::head(v, n)
   data.frame(
-    co_entidade = sub$co_entidade,
-    no_entidade = as.character(info$no_entidade),
-    similarity = round(as.numeric(sub$similarity), 4),
-    ideb_observado = as.numeric(info$ideb_observado),
+    co_entidade = as.character(v$co_entidade),
+    no_entidade = as.character(v$no_entidade),
+    similarity = round(1 - as.numeric(v$distance), 4),
+    ideb_observado = as.numeric(v$ideb_observado),
     stringsAsFactors = FALSE
   )
 }
@@ -731,8 +658,6 @@ WHERE p.co_municipio = $1
 #'   (default: 4).
 #' @param similarity_threshold distância máxima (Gower) para considerar
 #'   um par similar (default: 0.3).
-#' @param fallback_peer_max limite de escolas do município usadas no
-#'   fallback de peers (default: 300).
 #' @param prefer_reference quando `TRUE` (default), lê as referências
 #'   comparativas e os percentis de cluster pré-computados
 #'   (`analytics.school_profile_reference` / `school_cluster_profile`);
@@ -751,7 +676,6 @@ load_school_profile.postgres_source <- function(
   include_inactive = FALSE,
   clusters = 4,
   similarity_threshold = 0.3,
-  fallback_peer_max = 300,
   prefer_reference = TRUE,
   output_schema = "analytics",
   ...
@@ -879,77 +803,12 @@ load_school_profile.postgres_source <- function(
 
   long$cluster <- long$cluster_p50
 
-  # --- Peers: similarity_pairs persistido ou Gower no município ----
-  peers_source <- "gower_municipio"
-  table_ok <- tryCatch(
-    DBI::dbGetQuery(
-      con,
-      "SELECT count(*) AS n FROM information_schema.tables
-        WHERE table_schema = $1 AND table_name = $2",
-      params = list("analytics", "similarity_pairs")
-    )$n,
-    error = function(e) 0
-  )
-
-  if (isTRUE(table_ok > 0)) {
-    peers_rows <- tryCatch(
-      DBI::dbGetQuery(
-        con,
-        sprintf(
-          "SELECT
-             CASE WHEN sp.entity_1 = $1 THEN sp.entity_2 ELSE sp.entity_1 END AS co_entidade,
-             e.no_entidade,
-             sp.distance,
-             sp.similarity,
-             i.ideb_observado
-           FROM analytics.similarity_pairs sp
-           LEFT JOIN %s.censo_escolas e
-             ON e.co_entidade = CASE WHEN sp.entity_1 = $1 THEN sp.entity_2 ELSE sp.entity_1 END
-            AND e.nu_ano_censo = $3
-           LEFT JOIN LATERAL (
-             SELECT i.ideb_observado
-             FROM %s.ideb_notas_escolas i
-             WHERE i.id_escola = CASE WHEN sp.entity_1 = $1 THEN sp.entity_2 ELSE sp.entity_1 END
-               AND ($4::text IS NULL OR i.etapa = $4)
-             ORDER BY i.ano DESC, i.nota_media DESC
-             LIMIT 1
-           ) i ON TRUE
-           WHERE (sp.entity_1 = $1 OR sp.entity_2 = $1)
-             AND sp.distance <= $2
-           ORDER BY sp.similarity DESC
-           LIMIT 10",
-          schema_q, schema_q
-        ),
-        params = list(co_entidade, similarity_threshold, ano,
-                      if (is.null(etapa)) NA_character_ else etapa)
-      ),
-      error = function(e) data.frame()
-    )
-    if (nrow(peers_rows) > 0) {
-      peers <- data.frame(
-        co_entidade = as.character(peers_rows$co_entidade),
-        no_entidade = as.character(peers_rows$no_entidade),
-        similarity = round(as.numeric(peers_rows$similarity), 4),
-        ideb_observado = as.numeric(peers_rows$ideb_observado),
-        stringsAsFactors = FALSE
-      )
-      peers_source <- "similarity_pairs"
-    }
-  }
-
-  if (!exists("peers") || nrow(peers) == 0) {
-    if (!exists("muni_frame")) {
-      muni_frame <- .school_profile_municipio_frame(
-        con, schema_q, first$co_municipio, include_inactive, ano, ideb_etapa = etapa
-      )
-    }
-    peers <- .school_profile_fallback_peers(
-      muni_frame, co_entidade,
-      similarity_threshold = similarity_threshold,
-      max_schools = fallback_peer_max
-    )
-    peers_source <- "gower_municipio"
-  }
+  # --- Escolas similares: as primeiras da ordem do grupo (#495) -----
+  # O mesmo contexto do grupo, no município inteiro. Os pares de
+  # analytics.similarity_pairs (último job de similaridade, com os
+  # indicadores que ele escolheu) deixaram de ser lidos aqui.
+  peers <- .school_profile_context_peers(fc, similarity_threshold)
+  peers_source <- "contexto_municipio"
 
   # #483 (RN-02): o IDEB de cada etapa em que a escola tem nota, com o
   # município, a rede e o Brasil da mesma etapa.
@@ -1005,6 +864,8 @@ load_school_profile.postgres_source <- function(
       ideb_comparacao = "mesma_etapa",
       grupo_criterio = PROFILE_GRUPO_CRITERIO,
       grupo_k = PROFILE_GRUPO_K,
+      peers_criterio = PROFILE_GRUPO_CRITERIO,
+      peers_n = PROFILE_SIMILARES_N,
       similarity_threshold = similarity_threshold
     )
   )

@@ -32,6 +32,11 @@ escolas e investidores que avaliam redes.
   parecida.
 - Sistema mostra **o quanto cada sugestão se parece**: a distância em pontos
   e as notas da escola sugerida ao lado das notas da escola de referência.
+- Sistema pode, no perfil da escola, sugerir as escolas de **contexto** mais
+  parecido no município inteiro (o mesmo critério do grupo de referência,
+  sem o IDEB e a nota), com o IDEB de cada uma e a diferença para a escola
+  de referência, para achar escolas de contexto parecido e resultado
+  diferente.
 - Sistema pode levar a comparação para o painel da escola e para os agrupamentos
   (clusters).
 - Sistema mantém a comparação do painel da escola em dia sozinho, todo dia,

@@ -88,7 +88,7 @@ fixture_school_profile_model <- function() {
     cluster_source = "persisted",
     cluster_scope = "tabela_school_indicators",
     cluster_size = 42L,
-    peers_source = "similarity_pairs",
+    peers_source = "contexto_municipio",
     n_municipio = 10L,
     n_rede = 20L,
     n_brasil = 100L,

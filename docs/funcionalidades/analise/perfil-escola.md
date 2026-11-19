@@ -41,8 +41,9 @@ que avaliam a escola no contexto da rede e do país.
 - Sistema pode comparar a rede de um município com o Brasil e dizer, pela cor,
   se a diferença é favorável conforme o sentido do indicador; proporções são
   comparadas em pontos percentuais.
-- Sistema pode sugerir escolas semelhantes (por perfil e contexto) para troca de
-  experiências e benchmarking.
+- Sistema pode sugerir escolas semelhantes para troca de experiências e
+  benchmarking: as mais próximas do grupo de referência, pelo contexto, no
+  município inteiro, com a diferença de IDEB de cada uma para a escola.
 
 ## Valor
 
