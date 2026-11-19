@@ -23,6 +23,7 @@ comunidade escolar.
 | ver os dados de uma escola | [Painel público da escola](painel-publico-da-escola.md) |
 | comparar a rede do meu município com outras | [Comparar redes](comparar-redes.md) |
 | ver as redes de um estado ou as escolas de um município em ordem | [Rankings de redes e de escolas](rankings.md) |
+| saber em que posição uma escola está no município e no estado | [Posição da escola](posicao-da-escola.md) |
 | baixar os indicadores por escola para analisar numa planilha | [Base de análise](base-de-analise.md) |
 | responder a uma pesquisa que a escola enviou | [Responder pesquisa pública](responder-pesquisa.md) |
 | saber de onde vêm os números e de que ano são | [Fontes e metodologia](fontes-e-metodologia.md) |

@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { getAvailableIndicators, getSchoolRanking } from '../api/rankingApi.js';
   import { ApiError } from '@/shared/api/client.js';
+  import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
   // ============================================================
   // PROPS (Svelte 5: $props())
@@ -140,41 +141,48 @@
       </p>
     </div>
     <!-- Rankings -->
+    {#snippet escopo(titulo, e)}
+      <div class="bg-gray-50 rounded-md p-4" data-testid="escopo-posicao">
+        <p class="text-xs font-medium text-gray-500 uppercase">{titulo}</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">
+          {e.posicao}º
+          <span class="text-sm font-normal text-gray-500">
+            de {e.total.toLocaleString('pt-BR')}
+          </span>
+        </p>
+        {#if e.empate > 1}
+          <!-- #506 (RC-01): o empate visível; as empatadas dividem a posição -->
+          <p class="text-xs text-gray-600 mt-1" data-testid="empate">
+            empatada com {(e.empate - 1).toLocaleString('pt-BR')} {e.empate - 1 === 1 ? 'escola' : 'escolas'}
+          </p>
+        {/if}
+        <p class="text-xs text-gray-600 mt-1">
+          Acima de {e.percentil}% das outras escolas
+          {#if ranking.rede}
+            da rede {ranking.rede}
+          {/if}
+        </p>
+      </div>
+    {/snippet}
+
+    <div class="flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-gray-700">Posição</h3>
+      <InfoHint
+        title="Como lemos a posição"
+        text="A posição compara a escola com as escolas que têm o indicador, no município e no estado."
+        items={[
+          'O total ("de N") são as escolas com o indicador na mesma edição, não todas as escolas. No IDEB e no SAEB, só as escolas em funcionamento no Censo mais recente que têm a nota; muitas escolas, sobretudo as pequenas, rurais e privadas, não têm.',
+          'Escolas com o mesmo valor dividem a posição: "1º, empatada com 10 escolas" quer dizer que 11 escolas têm o maior valor.',
+          '"Acima de X% das outras escolas" conta só as escolas com valor menor; as empatadas não contam como abaixo.',
+        ]}
+      />
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {#if ranking.ranking.municipio}
-        <div class="bg-gray-50 rounded-md p-4">
-          <p class="text-xs font-medium text-gray-500 uppercase">Ranking Municipal</p>
-          <p class="text-2xl font-bold text-gray-900 mt-1">
-            {ranking.ranking.municipio.posicao}º
-            <span class="text-sm font-normal text-gray-500">
-              de {ranking.ranking.municipio.total}
-            </span>
-          </p>
-          <p class="text-xs text-gray-600 mt-1">
-            Acima de {ranking.ranking.municipio.percentil}% das escolas
-            {#if ranking.rede}
-              da rede {ranking.rede}
-            {/if}
-          </p>
-        </div>
+        {@render escopo('Ranking Municipal', ranking.ranking.municipio)}
       {/if}
-
       {#if ranking.ranking.estado}
-        <div class="bg-gray-50 rounded-md p-4">
-          <p class="text-xs font-medium text-gray-500 uppercase">Ranking Estadual</p>
-          <p class="text-2xl font-bold text-gray-900 mt-1">
-            {ranking.ranking.estado.posicao}º
-            <span class="text-sm font-normal text-gray-500">
-              de {ranking.ranking.estado.total}
-            </span>
-          </p>
-          <p class="text-xs text-gray-600 mt-1">
-            Acima de {ranking.ranking.estado.percentil}% das escolas
-            {#if ranking.rede}
-              da rede {ranking.rede}
-            {/if}
-          </p>
-        </div>
+        {@render escopo('Ranking Estadual', ranking.ranking.estado)}
       {/if}
     </div>
 

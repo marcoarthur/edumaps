@@ -225,12 +225,31 @@ sub rank ($self, $cod_inep, $indicator_id, $opts = {}) {
 # ============================================================================
 # Privado: formata uma linha de analytics.ranking_escola
 # ============================================================================
-sub _format_result_from_ranking_escola ($self, $indicator_id, $def, $row, $network, $opts) {
-  my $scope = sub ($rank, $total) {
-    return undef unless defined $rank;
-    my $percentile = $total > 1 ? int((($total - $rank) / ($total - 1)) * 100 + 0.5) : 100;
-    return { posicao => 0 + $rank, total => 0 + $total, percentil => $percentile };
+# Um escopo da posição (#506, RC-01). A posição é um RANK(): as empatadas
+# recebem a melhor posição do empate. `empate` = escolas com o mesmo valor,
+# contando a própria; `abaixo` = escolas com valor menor; o percentil ("acima
+# de X% das outras escolas") conta só essas. Antes era (total − posição) /
+# (total − 1), que punha as empatadas abaixo: as 52.164 escolas com
+# sustentabilidade 0 apareciam "acima de 29%". Sem o empate (linha antiga),
+# vale 1.
+sub _escopo_posicao ($rank, $total, $empate) {
+  return undef unless defined $rank;
+  $empate = 1 unless defined $empate && $empate >= 1;
+  my $abaixo = $total - $rank - $empate + 1;
+  $abaixo = 0 if $abaixo < 0;
+  my $percentil = $total > 1 ? int(($abaixo / ($total - 1)) * 100 + 0.5) : 100;
+  return {
+    posicao   => 0 + $rank,
+    total     => 0 + $total,
+    empate    => 0 + $empate,
+    abaixo    => 0 + $abaixo,
+    percentil => $percentil,
   };
+}
+
+sub _format_result_from_ranking_escola ($self, $indicator_id, $def, $row, $network, $opts) {
+  my %emp = map { $_ => ($row->can("empate_$_") ? $row->get_column("empate_$_") : undef) } qw(municipio estado nacional);
+  my $scope = sub ($rank, $total, $esc) { _escopo_posicao($rank, $total, $emp{$esc}) };
 
   return {
     indicador => {
@@ -241,13 +260,13 @@ sub _format_result_from_ranking_escola ($self, $indicator_id, $def, $row, $netwo
     ano => 0 + $row->ano,
     rede => $network,
     ranking => {
-      municipio => $scope->($row->rank_municipio, $row->total_municipio),
-      estado    => $scope->($row->rank_estado, $row->total_estado),
+      municipio => $scope->($row->rank_municipio, $row->total_municipio, 'municipio'),
+      estado    => $scope->($row->rank_estado, $row->total_estado, 'estado'),
       # rank_nacional/total_nacional sempre existem na linha (o refresh
         # job calcula os três escopos de uma vez), mas só expomos quando
       # opts.national foi pedido — mantém o mesmo contrato da API
       # anterior, em que o cálculo nacional era opcional.
-      nacional  => $opts->{national} ? $scope->($row->rank_nacional, $row->total_nacional) : undef,
+      nacional  => $opts->{national} ? $scope->($row->rank_nacional, $row->total_nacional, 'nacional') : undef,
     },
   };
 }
@@ -274,7 +293,7 @@ sub _rank_from_mv ($self, $cod_inep, $indicator_id, $def, $include_national, $ne
   );
   return undef unless $year;
 
-  my $national_sql = $self->_national_window_sql($column, $include_national);
+  my $national_sql = $self->_national_window_sql("me.$column", $include_national);
   my $sql = qq{
     SELECT * FROM (
       SELECT
@@ -283,7 +302,9 @@ sub _rank_from_mv ($self, $cod_inep, $indicator_id, $def, $include_national, $ne
       RANK()  OVER (PARTITION BY esc.co_municipio ORDER BY me.$column DESC) AS rank_municipio,
       COUNT(*) OVER (PARTITION BY esc.co_municipio) AS total_municipio,
       RANK()  OVER (PARTITION BY esc.co_uf ORDER BY me.$column DESC) AS rank_estado,
-      COUNT(*) OVER (PARTITION BY esc.co_uf) AS total_estado
+      COUNT(*) OVER (PARTITION BY esc.co_uf) AS total_estado,
+      COUNT(*) OVER (PARTITION BY esc.co_municipio, me.$column) AS empate_municipio,
+      COUNT(*) OVER (PARTITION BY esc.co_uf, me.$column) AS empate_estado
       $national_sql
       FROM clean.mv_escolas_scores me
       JOIN clean.censo_escolas esc
@@ -314,7 +335,7 @@ sub _rank_from_ideb ($self, $cod_inep, $indicator_id, $def, $include_national, $
   my @network_bind;
   if (defined $network) {
     my $rede = $self->network_map->{ideb}{$network};
-    $network_filter_sql = 'AND rede = ?';
+    $network_filter_sql = 'AND i.rede = ?';
     @network_bind = ($rede);
   }
 
@@ -325,20 +346,27 @@ sub _rank_from_ideb ($self, $cod_inep, $indicator_id, $def, $include_national, $
   );
   return undef unless $year;
 
-  my $national_sql = $self->_national_window_sql($column, $include_national);
+  my $national_sql = $self->_national_window_sql("i.$column", $include_national);
   my $sql = qq{
     SELECT * FROM (
-      SELECT id_escola AS co_entidade,
-      $column AS value,
-      RANK()  OVER (PARTITION BY co_municipio ORDER BY $column DESC) AS rank_municipio,
-      COUNT(*) OVER (PARTITION BY co_municipio) AS total_municipio,
-      RANK()  OVER (PARTITION BY sg_uf ORDER BY $column DESC) AS rank_estado,
-      COUNT(*) OVER (PARTITION BY sg_uf) AS total_estado
+      SELECT i.id_escola AS co_entidade,
+      i.$column AS value,
+      RANK()  OVER (PARTITION BY esc.co_municipio ORDER BY i.$column DESC) AS rank_municipio,
+      COUNT(*) OVER (PARTITION BY esc.co_municipio) AS total_municipio,
+      RANK()  OVER (PARTITION BY esc.co_uf ORDER BY i.$column DESC) AS rank_estado,
+      COUNT(*) OVER (PARTITION BY esc.co_uf) AS total_estado,
+      COUNT(*) OVER (PARTITION BY esc.co_municipio, i.$column) AS empate_municipio,
+      COUNT(*) OVER (PARTITION BY esc.co_uf, i.$column) AS empate_estado
       $national_sql
-      FROM clean.ideb_notas_escolas
-      WHERE ano = ?
-      AND etapa = ?
-      AND $column IS NOT NULL
+      FROM clean.ideb_notas_escolas i
+      -- #506 (RC-02): só escolas em funcionamento no Censo mais recente
+      JOIN clean.censo_escolas esc
+        ON esc.co_entidade = i.id_escola
+       AND esc.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+       AND esc.tp_situacao_funcionamento = 1
+      WHERE i.ano = ?
+      AND i.etapa = ?
+      AND i.$column IS NOT NULL
       $network_filter_sql
     ) ranked
     WHERE co_entidade = ?
@@ -364,6 +392,7 @@ sub _national_window_sql ($self, $column, $include_national) {
   return qq{
     , RANK() OVER (ORDER BY $column DESC) AS rank_nacional
     , COUNT(*) OVER () AS total_nacional
+    , COUNT(*) OVER (PARTITION BY $column) AS empate_nacional
   };
 }
 
@@ -371,11 +400,7 @@ sub _national_window_sql ($self, $column, $include_national) {
 # _format_result_from_ranking_escola porque a origem dos dados é diferente
 # (hashref cru do dbh vs. Result row do DBIC).
 sub _format_result_live ($self, $indicator_id, $def, $year, $row, $network) {
-  my $scope = sub ($rank, $total) {
-    return undef unless defined $rank;
-    my $percentile = $total > 1 ? int((($total - $rank) / ($total - 1)) * 100 + 0.5) : 100;
-    return { posicao => 0 + $rank, total => 0 + $total, percentil => $percentile };
-  };
+  my $scope = sub ($rank, $total, $empate) { _escopo_posicao($rank, $total, $empate) };
 
   return {
     indicador => {
@@ -386,9 +411,9 @@ sub _format_result_live ($self, $indicator_id, $def, $year, $row, $network) {
     ano => 0 + $year,
     rede => $network,
     ranking => {
-      municipio => $scope->($row->{rank_municipio}, $row->{total_municipio}),
-      estado    => $scope->($row->{rank_estado}, $row->{total_estado}),
-      nacional  => $scope->($row->{rank_nacional}, $row->{total_nacional}),
+      municipio => $scope->($row->{rank_municipio}, $row->{total_municipio}, $row->{empate_municipio}),
+      estado    => $scope->($row->{rank_estado}, $row->{total_estado}, $row->{empate_estado}),
+      nacional  => $scope->($row->{rank_nacional}, $row->{total_nacional}, $row->{empate_nacional}),
     },
   };
 }

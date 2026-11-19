@@ -180,3 +180,4 @@ escolas_scores_turnos [escolas_scores_cor_declarada] 2026-11-17T20:00:00Z Marco 
 escolas_scores_gestora [escolas_scores_turnos] 2026-11-17T23:00:00Z Marco Arthur <arthurpbs@gmail.com> # #475: capacidade gestora com gestores por aluno vazia sem matricula e acesso ao cargo vazio nas privadas, pesos redistribuidos; indices-v6
 rede_escolas_ativas [censo_labels_consumers] 2026-11-17T23:30:00Z Marco Arthur <arthurpbs@gmail.com> # #479: mv_rede_escolas so com escolas em funcionamento (sem paralisadas e extintas)
 school_embedding_l2 [school_embedding] 2026-11-18T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #487: escolas semelhantes pela distancia euclidiana entre as notas (indice HNSW vector_l2_ops)
+ranking_escola_empates [ranking_escolas] 2026-11-19T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #506: tamanho do empate por escopo em analytics.ranking_escola, para o percentil contar so as escolas de valor menor
