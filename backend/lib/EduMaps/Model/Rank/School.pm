@@ -437,7 +437,7 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   my $column = $basica ? undef : $self->_assert_known_column($def->{column});
   my $dbh = $self->schema->storage->dbh;
 
-  my ($sql, @bind, $ano);
+  my ($sql, @bind, $ano, $ano_censo);
   if ($basica) {
     # #457: itens básicos presentes (0 a 4) e os que faltam, do último Censo.
     ($ano) = $dbh->selectrow_array(
@@ -477,15 +477,19 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
       undef, $codigo_ibge, $def->{etapa});
     return undef unless $ano;
     my $rede_sql = defined $network ? 'AND i.rede = ?' : '';
+    # #503 (RD-02): só escolas em funcionamento no Censo mais recente, como
+    # os índices; antes entravam as paralisadas, as extintas e as que
+    # saíram do Censo (10 de 257 em Salvador, anos iniciais).
+    ($ano_censo) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
     $sql = qq{
       SELECT i.id_escola AS co_entidade, COALESCE(e.no_entidade, i.no_escola) AS no_entidade,
              e.tp_dependencia, i.${column}::float8 AS valor
         FROM clean.ideb_notas_escolas i
-        LEFT JOIN clean.censo_escolas e
-          ON e.co_entidade = i.id_escola AND e.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+        JOIN clean.censo_escolas e
+          ON e.co_entidade = i.id_escola AND e.nu_ano_censo = ? AND e.tp_situacao_funcionamento = 1
        WHERE i.ano = ? AND i.co_municipio = ? AND i.etapa = ? AND i.$column IS NOT NULL $rede_sql
     };
-    @bind = ($ano, $codigo_ibge, $def->{etapa}, (defined $network ? ($self->network_map->{ideb}{$network}) : ()));
+    @bind = ($ano_censo, $ano, $codigo_ibge, $def->{etapa}, (defined $network ? ($self->network_map->{ideb}{$network}) : ()));
   }
 
   # INSE da edição mais recente do SAEB (mesma regra do perfil da escola),
@@ -507,15 +511,25 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
   my ($municipio, $uf) = $dbh->selectrow_array(
     'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio = ? LIMIT 1', undef, $codigo_ibge);
 
+  # #503 (RD-01): no IDEB/SAEB, quantas escolas em funcionamento oferecem a
+  # etapa e quantas têm o indicador, públicas e privadas, e o método.
+  my ($cobertura, $metodo_ideb);
+  if ($def->{source} eq 'ideb') {
+    $cobertura = $self->_cobertura_ideb($codigo_ibge, $def->{etapa}, $ano_censo, $rows,
+      defined $network ? $self->network_map->{mv}{$network} : undef);
+    $metodo_ideb = $self->_metodo_ideb($def, $ano, $ano_censo);
+  }
+
   return {
     indicador => { id => $indicator_id, label => $def->{label}, fonte => $def->{source} eq 'ideb' ? 'ideb' : 'censo',
-                   (defined $def->{metodo} ? (metodo => $def->{metodo}) : ()),
+                   (defined $def->{metodo} ? (metodo => $def->{metodo}) : defined $metodo_ideb ? (metodo => $metodo_ideb) : ()),
                    ($def->{source} eq 'mv' ? (versao => $INDICES_VERSAO, versao_data => $INDICES_HISTORICO[0]{data}) : ()),
                    ($basica ? (maximo => 0 + @BASICA_ORDEM) : ()) },
     ano       => 0 + $ano,
     municipio => { codigo_ibge => "$codigo_ibge", nome => $municipio, uf => $uf },
     rede      => $network,
     total     => scalar @$rows,
+    (defined $cobertura ? (cobertura => $cobertura) : ()),
     escolas   => [ map { +{
       co_entidade => "$_->{co_entidade}",
       no_entidade => $_->{no_entidade},
@@ -526,6 +540,55 @@ sub escolas_do_municipio ($self, $codigo_ibge, $indicator_id, $opts = {}) {
       ($basica ? (faltam => $_->{faltam} // []) : ()),
     } } @$rows ],
   };
+}
+
+# Etapa do IDEB -> oferta no Censo e texto (#503).
+my %ETAPA_IDEB = (
+  fundamental_i  => ['e.in_comum_fund_ai = 1', 'os anos iniciais do fundamental'],
+  fundamental_ii => ['e.in_comum_fund_af = 1', 'os anos finais do fundamental'],
+  ensino_medio   => ['(e.in_comum_medio_medio = 1 OR e.in_comum_medio_integrado = 1 OR e.in_comum_medio_normal = 1)', 'o ensino médio'],
+);
+
+# Cobertura da lista do IDEB/SAEB (#503, RD-01): escolas em funcionamento que
+# oferecem a etapa no Censo e as que têm o indicador (as da lista), no total
+# e por públicas/privadas. Com rede filtrada, só ela.
+sub _cobertura_ideb ($self, $codigo_ibge, $etapa, $ano_censo, $rows, $tp_rede) {
+  my $oferta = $ETAPA_IDEB{$etapa} or return undef;
+  return undef unless $ano_censo;
+  my $dbh = $self->schema->storage->dbh;
+  my $rede_sql = defined $tp_rede ? 'AND e.tp_dependencia = ?' : '';
+  my ($total, $pub, $priv) = $dbh->selectrow_array(qq{
+    SELECT count(*), count(*) FILTER (WHERE e.tp_dependencia <> 4), count(*) FILTER (WHERE e.tp_dependencia = 4)
+      FROM clean.censo_escolas e
+     WHERE e.nu_ano_censo = ? AND e.co_municipio = ? AND e.tp_situacao_funcionamento = 1
+       AND $oferta->[0] $rede_sql
+  }, undef, $ano_censo, $codigo_ibge, (defined $tp_rede ? ($tp_rede) : ()));
+  my $com_pub  = grep { defined $_->{tp_dependencia} && $_->{tp_dependencia} != 4 } @$rows;
+  my $com_priv = grep { defined $_->{tp_dependencia} && $_->{tp_dependencia} == 4 } @$rows;
+  return {
+    ano_censo     => 0 + $ano_censo,
+    etapa_texto   => $oferta->[1],
+    oferecem      => 0 + ($total // 0),
+    com_indicador => scalar @$rows,
+    publicas      => { oferecem => 0 + ($pub // 0),  com_indicador => 0 + $com_pub },
+    privadas      => { oferecem => 0 + ($priv // 0), com_indicador => 0 + $com_priv },
+  };
+}
+
+# Método dos indicadores do IDEB/SAEB na lista de escolas (#503, RD-01).
+sub _metodo_ideb ($self, $def, $ano, $ano_censo) {
+  my $etapa = ($ETAPA_IDEB{ $def->{etapa} } // [undef, $def->{etapa}])->[1];
+  my %o_que = (
+    ideb_observado  => 'IDEB observado da escola (de 0 a 10; combina a nota do SAEB e a aprovação)',
+    nota_matematica => 'proficiência média da escola no SAEB em Matemática',
+    nota_portugues  => 'proficiência média da escola no SAEB em Língua Portuguesa',
+    aprovacao_si_4  => 'taxa de aprovação da escola na etapa (%)',
+  );
+  my $o = $o_que{ $def->{column} } // $def->{label};
+  return ucfirst($o) . ". Dado do INEP, publicado com o IDEB, na edição $ano, para $etapa. "
+    . (defined $ano_censo ? "Só escolas em funcionamento no Censo $ano_censo. " : '')
+    . 'O IDEB e o SAEB faltam sobretudo nas escolas pequenas, rurais e sem infraestrutura, e as privadas '
+    . 'quase nunca têm: a falta não é aleatória, e a lista não representa todas as escolas que oferecem a etapa.';
 }
 
 sub redes_municipais ($self, $indicator_id, $opts = {}) {

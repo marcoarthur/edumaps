@@ -417,3 +417,49 @@ describe("RankingRecortePage — infraestrutura básica e método (#457)", () =>
     expect(screen.queryAllByTestId("faltam")).toHaveLength(0);
   });
 });
+
+describe("RankingRecortePage — cobertura do IDEB na lista de escolas (#503)", () => {
+  beforeEach(() => _resetFontes());
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  const COM_COBERTURA = {
+    ...ESCOLAS_FIXTURE,
+    rede: null,
+    indicador: { ...ESCOLAS_FIXTURE.indicador, metodo: "IDEB observado da escola. Dado do INEP, publicado com o IDEB, na edição 2023, para os anos iniciais do fundamental. Só escolas em funcionamento no Censo 2025. A falta não é aleatória." },
+    cobertura: {
+      ano_censo: 2025, etapa_texto: "os anos iniciais do fundamental", oferecem: 794, com_indicador: 2,
+      publicas: { oferecem: 282, com_indicador: 2 }, privadas: { oferecem: 512, com_indicador: 0 },
+    },
+  };
+
+  it("diz quantas oferecem a etapa, públicas e privadas, e o método", async () => {
+    server.use(http.get("*/api/ranking/escolas", () => HttpResponse.json(COM_COBERTURA)));
+    abrir("?aba=escolas&codigo_ibge=3205309");
+    await screen.findByTestId("tabela-escolas");
+    const nota = screen.getByTestId("nota-escolas");
+    expect(nota).toHaveTextContent("2 escolas em funcionamento de Vitória (ES)");
+    expect(screen.getByTestId("cobertura-escolas")).toHaveTextContent(
+      "No Censo 2025, 794 escolas oferecem os anos iniciais do fundamental (282 públicas, 2 com o dado; 512 privadas, 0 com o dado).",
+    );
+    expect(screen.getByTestId("metodo-indicador")).toHaveTextContent("A falta não é aleatória");
+  });
+
+  it("com rede filtrada, só o total da rede", async () => {
+    server.use(http.get("*/api/ranking/escolas", () => HttpResponse.json({
+      ...COM_COBERTURA, rede: "municipal",
+      cobertura: { ...COM_COBERTURA.cobertura, oferecem: 282 },
+    })));
+    abrir("?aba=escolas&codigo_ibge=3205309&rede=municipal");
+    await screen.findByTestId("tabela-escolas");
+    const c = screen.getByTestId("cobertura-escolas");
+    expect(c).toHaveTextContent("No Censo 2025, 282 escolas oferecem os anos iniciais do fundamental.");
+    expect(c).not.toHaveTextContent("privadas");
+  });
+
+  it("resposta antiga sem cobertura: nota como antes", async () => {
+    abrir("?aba=escolas&codigo_ibge=3205309&rede=municipal");
+    await screen.findByTestId("tabela-escolas");
+    expect(screen.queryByTestId("cobertura-escolas")).toBeNull();
+    expect(screen.getByTestId("nota-escolas")).toHaveTextContent("2 escolas de Vitória (ES)");
+  });
+});
