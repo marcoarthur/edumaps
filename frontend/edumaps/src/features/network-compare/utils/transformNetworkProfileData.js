@@ -50,7 +50,7 @@ export function groupClusters(clusters) {
     if (!map.has(key)) {
       map.set(key, {
         cluster_id: row.cluster_id ?? null,
-        cluster_label: row.cluster_label ?? "Sem cluster",
+        cluster_label: row.cluster_label ?? "Sem INSE",
         n: Number(row.n) || 0,
         indicadores: [],
       });
@@ -99,6 +99,12 @@ export function transformNetworkProfileData(raw) {
       anoCenso: meta.nu_ano_censo,
       anoIdeb: meta.ano_ideb ?? null,
       anoInse: meta.ano_inse ?? null,
+      // #497: qual Brasil é a referência (com a rede filtrada, a mesma rede)
+      referenciaEscopo: meta.referencia_escopo ?? "brasil",
+      referenciaRotulo: meta.referencia_rotulo ?? "Brasil",
+      nBrasil: meta.n_brasil == null ? null : Number(meta.n_brasil),
+      // #497: critério dos grupos (níveis do INSE do INEP)
+      grupoCriterio: meta.grupo_criterio ?? null,
     },
     metrics: raw?.metrics ?? {},
     indicadores: asArray(raw?.tables?.indicadores).map((ind) => ({

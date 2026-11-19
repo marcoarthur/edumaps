@@ -16,9 +16,9 @@ describe("NetworkProfilePage", () => {
 
     await screen.findByText(/Sertãozinho/);
     expect(screen.getByText("Rede vs. Brasil")).toBeInTheDocument();
-    expect(screen.getByText("Distribuição por grupo")).toBeInTheDocument();
-    expect(screen.getByText("Alta perfil escolar")).toBeInTheDocument();
-    expect(screen.getByText("Baixa perfil escolar")).toBeInTheDocument();
+    expect(screen.getByText("Distribuição por nível socioeconômico (INSE)")).toBeInTheDocument();
+    expect(screen.getByText("INSE Nível IV")).toBeInTheDocument();
+    expect(screen.getByText("Sem INSE")).toBeInTheDocument();
     expect(
       screen.getAllByText("Docentes com licenciatura").length,
     ).toBeGreaterThan(0);
@@ -53,6 +53,18 @@ describe("NetworkProfilePage", () => {
       screen.getAllByRole("button", { name: "Detalhes sobre este dado" }).length,
     ).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/Cada grupo mostra/)).toBeInTheDocument();
+  });
+
+  it("diz com qual Brasil compara e o critério dos grupos (#497)", async () => {
+    renderWithQuery("?codigo_ibge=3551702");
+    await screen.findByText(/Sertãozinho/);
+
+    expect(screen.getByTestId("referencia-rotulo")).toHaveTextContent(
+      "Comparada com: Brasil, todas as redes (180.540 escolas)",
+    );
+    expect(screen.getByRole("columnheader", { name: "Brasil, todas as redes" })).toBeInTheDocument();
+    expect(screen.getByTestId("grupo-criterio")).toHaveTextContent(/classificação publicada pelo INEP/);
+    expect(screen.queryByText(/Sem cluster/)).not.toBeInTheDocument();
   });
 
   it("exibe erro quando o município não é encontrado (404)", async () => {

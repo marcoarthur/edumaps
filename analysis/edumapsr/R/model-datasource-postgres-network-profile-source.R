@@ -4,8 +4,11 @@
 #
 # Dado um `codigo_ibge` (e, opcionalmente, `tp_dependencia`), agrega as
 # escolas ativas do recorte:
-#   - distribuição por cluster (nº de escolas + médias dos indicadores);
-#   - média da rede por indicador vs. a referência do Brasil (#107).
+#   - distribuição pelos níveis do INSE do INEP (#497; nº de escolas +
+#     médias dos indicadores). Até a #497 eram os grupos do último
+#     agrupamento gravado em clean.school_indicators (só onde alguém rodou);
+#   - média da rede por indicador vs. a referência do Brasil (#107): com a
+#     rede filtrada, a mesma rede no Brasil (#497); sem filtro, todas.
 #
 # Reusa a população/whitelist de indicadores do perfil da escola
 # (`.profile_pop_body`, `.profile_avg_cols_alias`) e a referência
@@ -49,10 +52,30 @@ load_network_profile <- function(source, ...) {
   }, integer(1), USE.NAMES = FALSE)
 }
 
-#' Converte a agregação wide por cluster em formato longo
+# Critério dos grupos da rede, em texto, para o payload e a tela (#497).
+NETWORK_GRUPO_CRITERIO <- paste(
+  "As escolas da rede divididas pelo nível socioeconômico (INSE) na classificação",
+  "publicada pelo INEP (Nível I, o mais baixo, a Nível VIII), na edição mais recente.",
+  "Escolas sem INSE (as privadas e a maior parte das creches e pré-escolas) ficam em \"Sem INSE\"."
+)
+
+#' Rótulo do grupo da rede (#497): o nível do INSE, ou "Sem INSE"
 #'
 #' @keywords internal
-.network_clusters_long <- function(wide, labels) {
+.network_grupo_label <- function(nivel) {
+  nivel <- suppressWarnings(as.integer(nivel))
+  ok <- !is.na(nivel) & nivel >= 1L & nivel <= length(INSE_NIVEIS)
+  out <- rep("Sem INSE", length(nivel))
+  out[ok] <- sprintf("INSE Nível %s", INSE_NIVEIS[nivel[ok]])
+  out
+}
+
+#' Converte a agregação wide por grupo em formato longo
+#'
+#' `wide$cluster_id` é o nível do INSE (1 a 8) ou NA (sem INSE).
+#'
+#' @keywords internal
+.network_clusters_long <- function(wide) {
   inds <- PROFILE_INDICATORS
   empty <- data.frame(
     cluster_id = integer(0), cluster_label = character(0), n = integer(0),
@@ -66,17 +89,7 @@ load_network_profile <- function(source, ...) {
 
   do.call(rbind, lapply(seq_len(nrow(wide)), function(i) {
     cid <- wide$cluster_id[i]
-    lab <- NA_character_
-    if (nrow(labels) > 0 && !is.na(cid)) {
-      lab <- labels$cluster_label[match(cid, labels$cluster_id)]
-    }
-    cluster_label <- if (is.na(cid)) {
-      "Sem cluster"
-    } else if (is.na(lab)) {
-      sprintf("Cluster %d", cid)
-    } else {
-      lab
-    }
+    cluster_label <- .network_grupo_label(cid)
 
     data.frame(
       cluster_id = as.integer(cid),
@@ -89,6 +102,22 @@ load_network_profile <- function(source, ...) {
       stringsAsFactors = FALSE
     )
   }))
+}
+
+# Nome da rede no plural, para o rótulo do Brasil (#497).
+NETWORK_DEPENDENCIA_PLURAL <- c(
+  "1" = "redes federais", "2" = "redes estaduais",
+  "3" = "redes municipais", "4" = "escolas privadas"
+)
+
+#' Rótulo da referência do Brasil (#497)
+#'
+#' @keywords internal
+.network_referencia_rotulo <- function(tp_dep) {
+  if (is.null(tp_dep) || is.na(tp_dep)) return("Brasil, todas as redes")
+  nome <- NETWORK_DEPENDENCIA_PLURAL[as.character(tp_dep)]
+  if (is.na(nome)) return("Brasil, mesma rede")
+  paste0("Brasil, ", unname(nome))
 }
 
 #' Monta o quadro de indicadores da rede vs. Brasil
@@ -120,13 +149,18 @@ load_network_profile <- function(source, ...) {
 #'
 #' @keywords internal
 .network_ideb_por_etapa <- function(con, schema_q, include_inactive, ano, codigo_ibge, tp_dep,
-                                    indicadores, clusters, has_cluster) {
+                                    indicadores, clusters) {
   ano_ideb <- NA_integer_
   linhas <- list()
   for (et in names(IDEB_ETAPAS)) {
     sr <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et,
                                     "municipio_rede", codigo_ibge, tp_dep)
-    sb <- .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "brasil", NULL)
+    # #497: com a rede filtrada, a mesma rede no Brasil
+    sb <- if (is.na(tp_dep)) {
+      .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "brasil", NULL)
+    } else {
+      .profile_ideb_etapa_stats(con, schema_q, include_inactive, ano, et, "rede", tp_dep)
+    }
     if (!is.na(sb$ano)) ano_ideb <- sb$ano
     linhas[[et]] <- list(rede = sr, brasil = sb)
   }
@@ -160,10 +194,13 @@ load_network_profile <- function(source, ...) {
   if (nrow(clusters) > 0) {
     inactive <- if (isTRUE(include_inactive)) "" else "AND e.tp_situacao_funcionamento = 1"
     dep <- if (is.na(tp_dep)) "" else "AND e.tp_dependencia = $3"
-    cl_col <- if (isTRUE(has_cluster)) "si.cluster_id" else "NULL::int"
-    cl_join <- if (isTRUE(has_cluster)) {
-      sprintf("LEFT JOIN %s.school_indicators si ON si.co_entidade = e.co_entidade", schema_q)
-    } else ""
+    # #497: o grupo é o nível do INSE do INEP (a mesma edição do perfil)
+    cl_col <- .inse_nivel_sql("s.inse_classificacao")
+    cl_join <- sprintf(
+      "LEFT JOIN %1$s.inse s ON s.id_escola = e.co_entidade
+         AND s.nu_ano_saeb = (SELECT max(nu_ano_saeb) FROM %1$s.inse)",
+      schema_q
+    )
     sql <- sprintf(
       "
 WITH pop AS (
@@ -303,62 +340,44 @@ SELECT count(*) AS n_escolas, %s, %s FROM pop p
     ))
   }
 
-  if (.school_indicators_has_cluster_id(con, schema_q)) {
-    clusters_wide <- DBI::dbGetQuery(
-      con,
-      sprintf(
-        "
+  # #497: os grupos são os níveis do INSE do INEP, iguais em todo o país;
+  # o `cluster_id` do último agrupamento gravado deixou de ser lido aqui.
+  clusters_wide <- DBI::dbGetQuery(
+    con,
+    sprintf(
+      "
 WITH pop AS MATERIALIZED (
 %s
 )
-SELECT si.cluster_id AS cluster_id, count(*) AS n, %s, %s
+SELECT p.inse_nivel AS cluster_id, count(*) AS n, %s, %s
   FROM pop p
-  LEFT JOIN %s.school_indicators si ON si.co_entidade = p.co_entidade
- GROUP BY si.cluster_id
- ORDER BY si.cluster_id NULLS LAST
+ GROUP BY p.inse_nivel
+ ORDER BY p.inse_nivel NULLS LAST
 ",
-        pop_body, .profile_avg_cols_alias("p"), .network_count_cols("p"), schema_q
-      ),
-      params = params
-    )
-  } else {
-    # Sem clusterização no banco: um único grupo "Sem cluster" com a rede
-    # inteira (a análise/rota continuam válidas).
-    clusters_wide <- mean_row
-    clusters_wide$n <- clusters_wide$n_escolas
-    clusters_wide$cluster_id <- NA_integer_
-  }
-
-  labels <- tryCatch(
-    DBI::dbGetQuery(
-      con,
-      sprintf(
-        "SELECT DISTINCT cluster_id, cluster_label
-           FROM %s.school_indicators
-          WHERE cluster_id IS NOT NULL AND cluster_label IS NOT NULL",
-        schema_q
-      )
+      pop_body, .profile_avg_cols_alias("p"), .network_count_cols("p")
     ),
-    error = function(e) data.frame(cluster_id = integer(0), cluster_label = character(0))
+    params = params
   )
 
-  # Referência do Brasil (pré-computada no #107; fallback live).
+  # Referência do Brasil (pré-computada no #107; fallback live). #497: com
+  # a rede filtrada, a mesma rede no Brasil (escopo "rede"), como a coluna
+  # "Rede" do perfil da escola; sem filtro, todas as redes.
+  ref_scope <- if (is.na(tp_dep)) "brasil" else "rede"
+  ref_chave <- if (is.na(tp_dep)) "todas" else as.character(tp_dep)
   ref <- tryCatch(
     read_school_profile_reference(
       postgres_school_profile_reference_repository(con),
       ano,
-      scopes = "brasil",
+      scopes = ref_scope,
       output_schema = output_schema
     ),
     error = function(e) NULL
   )
-  brasil <- NULL
-  if (is.data.frame(ref) && nrow(ref) > 0) {
-    brasil <- stats::setNames(as.numeric(ref$valor), ref$indicador)
-  } else {
-    live <- .profile_scope_live(con, schema_q, include_inactive, ano, "brasil", "todas")
-    brasil <- live$valor
+  ref_rows <- .profile_reference_rows(ref, ref_scope, ref_chave)
+  if (is.null(ref_rows)) {
+    ref_rows <- .profile_scope_live(con, schema_q, include_inactive, ano, ref_scope, ref_chave)
   }
+  brasil <- ref_rows$valor
 
   # #479: as edições do IDEB/SAEB e do INSE usadas (as mais recentes, como
   # em .profile_pop_body), para o rótulo da tela.
@@ -371,13 +390,13 @@ SELECT si.cluster_id AS cluster_id, count(*) AS n, %s, %s
     error = function(e) data.frame(ano_ideb = NA_integer_, ano_inse = NA_integer_)
   )
 
-  clusters <- .network_clusters_long(clusters_wide, labels)
+  clusters <- .network_clusters_long(clusters_wide)
   indicadores <- .network_indicators_df(mean_row, brasil)
 
   # #483: IDEB e nota SAEB por etapa, com o Brasil da mesma etapa.
   por_etapa <- .network_ideb_por_etapa(
     con, schema_q, include_inactive, ano, codigo_ibge, tp_dep,
-    indicadores, clusters, .school_indicators_has_cluster_id(con, schema_q)
+    indicadores, clusters
   )
   indicadores <- por_etapa$indicadores
   clusters <- por_etapa$clusters
@@ -393,7 +412,10 @@ SELECT si.cluster_id AS cluster_id, count(*) AS n, %s, %s
       nu_ano_censo = ano,
       n_escolas = as.integer(mean_row$n_escolas[1]),
       n_clusters = length(unique(clusters$cluster_id[!is.na(clusters$cluster_id)])),
-      n_brasil = if (!is.null(ref) && nrow(ref) > 0) as.integer(ref$n_escolas[1]) else NA_integer_,
+      n_brasil = as.integer(ref_rows$n),
+      referencia_escopo = ref_scope,
+      referencia_rotulo = .network_referencia_rotulo(tp_dep),
+      grupo_criterio = NETWORK_GRUPO_CRITERIO,
       ano_ideb = as.integer(edicoes$ano_ideb[1]),
       ano_inse = as.integer(edicoes$ano_inse[1])
     )

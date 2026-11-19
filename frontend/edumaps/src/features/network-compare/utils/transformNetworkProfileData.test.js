@@ -15,7 +15,7 @@ describe("transformNetworkProfileData", () => {
     expect(clusters).toHaveLength(2);
     expect(clusters[0].n).toBe(12);
     expect(clusters[0].indicadores).toHaveLength(2);
-    expect(clusters[1].cluster_label).toBe("Baixa perfil escolar");
+    expect(clusters[1].cluster_label).toBe("Sem INSE");
   });
 
   it("mapeia metadata e indicadores da rede", () => {
@@ -76,5 +76,21 @@ describe("perfil da rede: escolas com dado e rótulos (#479)", () => {
     expect(rotuloIndicadorRede({ indicador: "inse", label: "INSE" }, meta)).toBe("INSE 2023");
     expect(rotuloIndicadorRede({ indicador: "prop_mestrado", label: "Docentes com mestrado" }, meta))
       .toBe("Docentes com mestrado");
+  });
+
+  it("leva a referência do Brasil e o critério dos grupos (#497)", () => {
+    const p = transformNetworkProfileData({
+      tables: { indicadores: [], clusters: [] },
+      metadata: { tp_dependencia: 3, referencia_escopo: "rede", referencia_rotulo: "Brasil, redes municipais", n_brasil: 106368, grupo_criterio: "x" },
+    });
+    expect(p.metadata.referenciaEscopo).toBe("rede");
+    expect(p.metadata.referenciaRotulo).toBe("Brasil, redes municipais");
+    expect(p.metadata.nBrasil).toBe(106368);
+    expect(p.metadata.grupoCriterio).toBe("x");
+
+    const antigo = transformNetworkProfileData({ tables: {}, metadata: {} });
+    expect(antigo.metadata.referenciaRotulo).toBe("Brasil");
+    expect(antigo.metadata.grupoCriterio).toBeNull();
+    expect(groupClusters([{ cluster_id: null, n: 1, indicador: "inse" }])[0].cluster_label).toBe("Sem INSE");
   });
 });

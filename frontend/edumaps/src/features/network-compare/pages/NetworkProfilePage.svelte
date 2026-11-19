@@ -103,24 +103,28 @@
           <h2 class="text-base font-bold text-gray-900">Rede vs. Brasil</h2>
           <InfoHint
             title="Como comparamos a rede"
-            text="Cada indicador é a média simples das escolas ativas do recorte (município e, se filtrado, a dependência) que têm o dado, comparada à média do Brasil."
+            text="Cada indicador é a média simples das escolas ativas do recorte (município e, se filtrado, a dependência) que têm o dado, comparada à média do Brasil da mesma rede."
             items={[
+              'Com uma rede escolhida, o Brasil é o da mesma rede (por exemplo, só as redes municipais do país); sem filtro, todas as redes. A coluna diz qual.',
               'Escolas com dado: em quantas escolas a média se apoia. O IDEB, o SAEB e o INSE só existem em parte das escolas (as privadas não têm).',
               'IDEB e SAEB: uma linha por etapa (anos iniciais, anos finais, ensino médio), cada uma comparada com o Brasil na mesma etapa. A escala do SAEB cresce com a série e o IDEB cai: etapas diferentes não se comparam.',
               'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
-              'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola).',
+              'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola) ou é calculada na hora.',
               'Variação = rede − Brasil (positivo = acima da média nacional; proporções em pontos percentuais, p.p.).',
               'Verde = melhor que o Brasil, vermelho = pior, conforme o sentido do indicador: em "sem especialização" e "aluno/docente", menor é melhor.',
             ]}
           />
         </div>
+        <p class="text-xs text-gray-600" data-testid="referencia-rotulo">
+          Comparada com: <strong>{profile.metadata.referenciaRotulo}</strong>{#if profile.metadata.nBrasil}{" "}({profile.metadata.nBrasil.toLocaleString("pt-BR")} escolas){/if}
+        </p>
         <div class="overflow-x-auto border border-gray-200 rounded-md">
           <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
               <tr>
                 <th class="text-left font-semibold px-3 py-2">Indicador</th>
                 <th class="text-right font-semibold px-3 py-2">Rede</th>
-                <th class="text-right font-semibold px-3 py-2">Brasil</th>
+                <th class="text-right font-semibold px-3 py-2">{profile.metadata.referenciaRotulo}</th>
                 <th class="text-right font-semibold px-3 py-2">Variação</th>
                 <th class="text-right font-semibold px-3 py-2">Escolas com dado</th>
               </tr>
@@ -149,19 +153,22 @@
         </div>
       </section>
 
-      <section aria-label="Distribuição por grupo" class="flex flex-col gap-2">
+      <section aria-label="Distribuição por nível socioeconômico" class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
-          <h2 class="text-base font-bold text-gray-900">Distribuição por grupo</h2>
+          <h2 class="text-base font-bold text-gray-900">Distribuição por nível socioeconômico (INSE)</h2>
           <InfoHint
             title="Como os grupos dividem a rede"
-            text="Juntamos as escolas do recorte em grupos de contexto parecido e mostramos a média de cada indicador por grupo."
+            text="As escolas do recorte divididas pelo nível socioeconômico dos alunos (INSE), na classificação publicada pelo INEP, com a média de cada indicador por nível."
             items={[
-              'Grupo = escolas parecidas entre si (método estatístico de agrupamento, Gower/k-means); "Sem cluster" reúne as escolas ainda não agrupadas.',
-              'Médias por indicador calculadas sobre as escolas do grupo.',
-              'Se o município ainda não foi agrupado, todas as escolas aparecem em "Sem cluster".',
+              'Nível I é o mais baixo, Nível VIII o mais alto. As faixas são do INEP e valem para todo o país: o mesmo nível quer dizer o mesmo contexto em qualquer município.',
+              '"Sem INSE" reúne as escolas sem o indicador: as privadas e a maior parte das creches e pré-escolas.',
+              'Médias por indicador calculadas sobre as escolas do nível que têm o dado.',
             ]}
           />
         </div>
+        {#if profile.metadata.grupoCriterio}
+          <p class="text-xs text-gray-600" data-testid="grupo-criterio">{profile.metadata.grupoCriterio}</p>
+        {/if}
         <div class="flex flex-col gap-4">
           {#each profile.clusters as cluster (cluster.cluster_label + '::' + (cluster.cluster_id ?? 'sem'))}
             <article class="bg-white border border-gray-200 rounded-md p-3 flex flex-col gap-2">
