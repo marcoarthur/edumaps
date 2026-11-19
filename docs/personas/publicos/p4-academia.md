@@ -132,10 +132,25 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima segunda rodada (2026-11-19, **adotaria**, sem o perfil da rede):
   RG-01 (rede comparada com o Brasil de todas as redes) e RG-02 (grupos da
   rede = último agrupamento gravado) → #497, entregues (#498).
+  Vigésima terceira rodada (2026-11-19, **adotaria**, sem a variação do
+  ranking de redes): RF-01 (variação compara escolas diferentes) →
+  aguardando aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-19 — Análises públicas (vigésima terceira rodada, variação do ranking de redes)
+
+**Veredito:** **adotaria** (mantido), sem a variação do ranking de redes.
+Consolidação em
+[`avaliacoes/2026-11-19-p4-variacao-redes.md`](avaliacoes/2026-11-19-p4-variacao-redes.md).
+
+**Barreiras:**
+- RF-01 (atrapalha): a variação é a média das escolas com IDEB em 2023
+  menos a das escolas com IDEB em 2021, conjuntos diferentes (129 de 2.476
+  redes com o sinal trocado; São Sebastião da Boa Vista/PA +1,15 na tela,
+  +0,03 nas mesmas escolas).
 
 ### 2026-11-19 — Análises públicas (vigésima segunda rodada, perfil da rede)
 
