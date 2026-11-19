@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [buscar-escola, rankings, base-de-analise, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/rede-municipal.md
-ultima_revisao: 2026-11-17
+ultima_revisao: 2026-11-19
 ---
 
 # Comparar redes
@@ -18,7 +18,8 @@ ultima_revisao: 2026-11-17
 ## Em 30 segundos
 Escolha um município e veja, lado a lado, as redes que atendem a educação
 ali: escolas, matrículas, docentes, etapas e o IDEB ao longo dos anos. Cada
-rede tem um perfil analítico, que a compara com a média do Brasil.
+rede tem um perfil analítico, que a compara com a média da mesma rede no
+Brasil.
 
 ## Passo a passo
 1. **Onde ir:** na busca de escolas, escolha o município e clique em
@@ -32,8 +33,8 @@ rede tem um perfil analítico, que a compara com a média do Brasil.
    - a **linha do IDEB** por rede e etapa, de 2005 até a edição mais recente;
    - o mapa com as escolas.
 3. **Perfil analítico:** acima da tabela, **Ver perfil analítico** abre uma
-   rede (ou todas juntas) comparada com o Brasil, com os grupos de escolas de
-   contexto parecido.
+   rede (ou todas juntas) comparada com o Brasil, e as escolas divididas pelo
+   nível socioeconômico dos alunos (INSE).
 
 ## Entendendo os números
 - **Só escolas em funcionamento.** As escolas paralisadas ou extintas no
@@ -51,6 +52,20 @@ rede tem um perfil analítico, que a compara com a média do Brasil.
   a média se apoia. Uma escola que fechou depois continua na edição em que
   teve nota.
 - **Perfil analítico:**
+  - **com qual Brasil:** com uma rede escolhida, a comparação é com a
+    **mesma rede no país** (a rede municipal com as redes municipais do
+    Brasil, por exemplo); sem filtro, com todas as redes. A linha
+    "Comparada com" e o título da coluna dizem qual, com o número de escolas.
+    Até 18/11/2026 a comparação era sempre com todas as redes, privadas
+    inclusive: na rede municipal de Salvador, os docentes efetivos apareciam
+    17,6 pontos acima do Brasil; contra as redes municipais, são 3,9;
+  - **os níveis do INSE:** as escolas da rede ficam divididas pelo nível
+    socioeconômico na classificação do INEP (Nível I, o mais baixo, a
+    Nível VIII), com a média de cada indicador em cada nível. As faixas são
+    do INEP e valem para o país todo. **Sem INSE** junta as escolas sem o
+    indicador: as privadas e a maior parte das creches e pré-escolas. Até
+    18/11/2026 essa seção mostrava os grupos do último agrupamento rodado na
+    plataforma, que só existiam em alguns municípios;
   - a coluna **Escolas com dado** diz em quantas escolas cada média se
     apoia. O IDEB, a nota do SAEB e o INSE só existem em parte das escolas:
     as privadas não têm, e as creches e pré-escolas quase nunca;
@@ -78,6 +93,14 @@ Somente dados públicos e agregados.
   escolas públicas, mas só uma amostra das privadas, e o IDEB por escola
   quase não sai para elas. Quando a rede não tem nenhuma escola com nota
   numa etapa, a linha dela não aparece.
+- **Por que a diferença para o Brasil mudou?** Desde 19/11/2026, uma rede
+  escolhida é comparada com a mesma rede no Brasil. Antes, a média do Brasil
+  juntava todas as redes; as privadas, sem docentes efetivos e com menos
+  docentes licenciados, puxavam essa média para baixo.
+- **Por que os grupos viraram níveis do INSE?** Os grupos antigos vinham de
+  um agrupamento rodado na plataforma: mudavam quando alguém rodava outro e
+  só existiam em parte dos municípios. Os níveis do INSE são públicos, do
+  INEP, e iguais em todo lugar.
 
 ## Veja também
 - [Rankings](rankings.md)

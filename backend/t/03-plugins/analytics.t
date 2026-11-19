@@ -373,6 +373,20 @@ subtest 'chave do cache do perfil inclui a versão da regra dos sinais (#421)' =
   }
 };
 
+subtest 'chave do cache do perfil da rede: referência da mesma rede e grupos do INSE (#497)' => sub {
+  my $params;
+  no warnings 'redefine';
+  local *EduMaps::Analytics::Client::_cache_read = sub ($self, $analysis, $p) {
+    $params = $p if $analysis eq 'network_profile';
+    return undef;
+  };
+  local *EduMaps::Analytics::Client::_cache_write = sub { 1 };
+
+  $make_client->({ cache_enabled => 1 })->run_network_profile({ codigo_ibge => '2927408', tp_dependencia => 3 });
+  is $params->{versao}, 4, 'versão 4 na chave (cache de antes da #497 não vale)';
+  is $params->{tp_dependencia}, 3, 'rede na chave';
+};
+
 subtest 'com cache habilitado mas sem app/pg, o ciclo HTTP segue intacto' => sub {
   my $result = $make_client->({ cache_enabled => 1 })->run_cluster({
     schema     => 'staging',

@@ -27,8 +27,9 @@ oferta educacional local.
 - Sistema pode mostrar como cada rede contribui para a oferta do município.
 - Sistema pode apoiar leitura de políticas e de investimento por rede.
 - Sistema pode abrir, a partir da comparação, o perfil analítico de cada rede
-  (ou de todas juntas): a rede comparada com o Brasil e a distribuição das
-  suas escolas por grupos de contexto parecido.
+  (ou de todas juntas): a rede comparada com a **mesma rede no Brasil**
+  (dizendo qual Brasil é e com quantas escolas) e a distribuição das suas
+  escolas pelos **níveis do INSE** da classificação do INEP.
 - Sistema pode **contar só as escolas em funcionamento**, como o ranking, o
   perfil e a base de análise, sem as paralisadas e extintas.
 - Sistema pode **dizer em quantas escolas cada média se apoia**, no perfil

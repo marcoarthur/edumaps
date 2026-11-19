@@ -140,8 +140,9 @@ sub run_network_profile ($self, $args = {}) {
       schema         => $args->{schema},
       # #479: o perfil da rede passou a trazer n_com_valor e as edições;
       # #483: IDEB e SAEB por etapa. Mudou o formato, muda a chave (o cache
-      # antigo deixa de ser servido).
-      versao         => 3,
+      # antigo deixa de ser servido). #497: a rede filtrada contra a mesma
+      # rede no Brasil e os grupos pelos níveis do INSE do INEP.
+      versao         => 4,
     },
   });
 }

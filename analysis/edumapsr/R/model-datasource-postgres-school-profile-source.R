@@ -167,6 +167,20 @@ load_school_profile <- function(source, ...) {
   UseMethod("load_school_profile")
 }
 
+# Níveis do INSE na classificação do INEP (#497): o texto "Nível I" ...
+# "Nível VIII" da coluna `inse_classificacao` vira o número 1 a 8.
+INSE_NIVEIS <- c("I", "II", "III", "IV", "V", "VI", "VII", "VIII")
+
+#' Expressão SQL do nível do INSE (1 a 8) a partir do texto do INEP
+#'
+#' @param col coluna com o texto ("Nível III").
+#' @keywords internal
+.inse_nivel_sql <- function(col) {
+  casos <- paste(sprintf("WHEN 'Nível %s' THEN %d", INSE_NIVEIS, seq_along(INSE_NIVEIS)),
+                 collapse = " ")
+  sprintf("(CASE %s %s END)::int", col, casos)
+}
+
 #' Corpo da CTE `pop`: uma linha por escola ativa do Censo mais recente,
 #' com os 9 indicadores do perfil.
 #'
@@ -204,6 +218,8 @@ load_school_profile <- function(source, ...) {
       (COALESCE(e.in_comum_medio_medio, 0) = 1 OR COALESCE(e.in_comum_medio_integrado, 0) = 1
         OR COALESCE(e.in_comum_medio_normal, 0) = 1)::int AS ctx_medio,
       (COALESCE(e.in_comum_eja_fund, 0) = 1 OR COALESCE(e.in_comum_eja_medio, 0) = 1)::int AS ctx_eja,
+      -- #497: nível do INSE na classificação do INEP (1 a 8), grupos da rede
+      %s AS inse_nivel,
       %s
     FROM %s.censo_escolas e
     LEFT JOIN %s.censo_docentes d
@@ -225,6 +241,7 @@ load_school_profile <- function(source, ...) {
       %s
       %s
   ",
+    .inse_nivel_sql("s.inse_classificacao"),
     ind_sql,
     schema_q, schema_q, ano_expr, schema_q, ano_expr, schema_q, schema_q, filtro_etapa, schema_q, schema_q, ano_expr,
     inactive,
@@ -426,26 +443,6 @@ SELECT count(*) AS n, %s
     n = as.integer(r$n_escolas[1]),
     source = "reference"
   )
-}
-
-#' A coluna `cluster_id` existe em `clean.school_indicators`?
-#'
-#' A coluna é criada dinamicamente pelo job de clustering (ALTER TABLE);
-#' enquanto ele não roda, a tabela/campo pode não existir. Quem consulta
-#' precisa degradar (fallback) em vez de errar.
-#'
-#' @keywords internal
-.school_indicators_has_cluster_id <- function(con, schema_q) {
-  col_ok <- tryCatch(
-    DBI::dbGetQuery(
-      con,
-      "SELECT count(*) AS n FROM information_schema.columns
-        WHERE table_schema = $1 AND table_name = $2 AND column_name = $3",
-      params = list(schema_q_plain(con, schema_q), "school_indicators", "cluster_id")
-    )$n,
-    error = function(e) 0
-  )
-  isTRUE(col_ok > 0)
 }
 
 #' Nome do schema sem aspas, para a consulta ao information_schema

@@ -6,8 +6,9 @@
 # nos anos iniciais, 4,74 nos finais, 4,26 no ensino médio). Até a #483, as
 # médias de comparação do perfil pegavam, de cada escola, a etapa de maior
 # nota, e o "Brasil" (5,33) misturava as três. Aqui as médias de uma etapa,
-# com o escopo pedido: Brasil, município, rede (dependência), município e
-# rede, ou grupo (cluster_id de clean.school_indicators).
+# com o escopo pedido: Brasil, município, rede (dependência) ou município e
+# rede. O escopo "cluster" (cluster_id de clean.school_indicators) saiu na
+# #497: nenhum perfil lê mais o último agrupamento gravado.
 #
 # A consulta lê só o IDEB e a lista de escolas do Censo (sem docentes nem
 # INSE), então é leve o bastante para o request.
@@ -37,9 +38,9 @@ IDEB_ETAPA_TEXTO <- c(
 #'
 #' @param etapa código da etapa no IDEB (`fundamental_i`, `fundamental_ii`,
 #'   `ensino_medio`).
-#' @param scope "brasil", "municipio", "rede", "municipio_rede" ou "cluster".
-#' @param chave código do município (municipio, municipio_rede), da
-#'   dependência (rede) ou o `cluster_id` (cluster).
+#' @param scope "brasil", "municipio", "rede" ou "municipio_rede".
+#' @param chave código do município (municipio, municipio_rede) ou da
+#'   dependência (rede).
 #' @param tp_dependencia dependência, só em "municipio_rede" (NULL = todas).
 #'
 #' @return lista com `ideb` e `nota`, cada uma com `media`, `p25`, `p50`,
@@ -55,7 +56,6 @@ IDEB_ETAPA_TEXTO <- c(
 
   inactive <- if (isTRUE(include_inactive)) "" else "AND e.tp_situacao_funcionamento = 1"
   params <- list(as.integer(ano), etapa)
-  join_si <- ""
   where <- ""
   if (identical(scope, "municipio")) {
     where <- "AND e.co_municipio = $3"
@@ -70,10 +70,6 @@ IDEB_ETAPA_TEXTO <- c(
       where <- paste(where, "AND e.tp_dependencia = $4")
       params <- c(params, list(as.integer(tp_dependencia)))
     }
-  } else if (identical(scope, "cluster")) {
-    join_si <- sprintf("JOIN %s.school_indicators si ON si.co_entidade = e.co_entidade", schema_q)
-    where <- "AND si.cluster_id = $3"
-    params <- c(params, list(as.integer(chave)))
   }
 
   stat_cols <- function(col) {
@@ -93,15 +89,14 @@ WITH pop AS (
     FROM %1$s.ideb_notas_escolas i
     JOIN %1$s.censo_escolas e
       ON e.co_entidade = i.id_escola AND e.nu_ano_censo = $1 %2$s
-    %3$s
    WHERE i.ano = (SELECT max(ano) FROM %1$s.ideb_notas_escolas)
      AND i.etapa = $2
-     %4$s
+     %3$s
    ORDER BY i.id_escola, i.nota_media DESC NULLS LAST
 )
-SELECT max(ano) AS ano, %5$s, %6$s FROM pop
+SELECT max(ano) AS ano, %4$s, %5$s FROM pop
 ",
-    schema_q, inactive, join_si, where, stat_cols("ideb_observado"), stat_cols("nota_media")
+    schema_q, inactive, where, stat_cols("ideb_observado"), stat_cols("nota_media")
   )
   row <- tryCatch(DBI::dbGetQuery(con, sql, params = params), error = function(e) NULL)
   if (is.null(row) || nrow(row) == 0) return(list(ideb = vazio, nota = vazio, ano = NA_integer_))

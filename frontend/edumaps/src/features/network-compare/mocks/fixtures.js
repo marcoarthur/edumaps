@@ -171,6 +171,10 @@ export const NETWORK_PROFILE_FIXTURE = {
     n_escolas: 30,
     n_clusters: 2,
     n_brasil: 180540,
+    // #497
+    referencia_escopo: "brasil",
+    referencia_rotulo: "Brasil, todas as redes",
+    grupo_criterio: "As escolas da rede divididas pelo nível socioeconômico (INSE) na classificação publicada pelo INEP.",
   },
   tables: {
     indicadores: [
@@ -180,10 +184,10 @@ export const NETWORK_PROFILE_FIXTURE = {
       { indicador: "prop_sem_especializacao", label: "Docentes sem especialização", rede: 0.102, brasil: 0.538, variacao: -0.436 },
     ],
     clusters: [
-      { cluster_id: 1, cluster_label: "Alta perfil escolar", n: 12, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.85 },
-      { cluster_id: 1, cluster_label: "Alta perfil escolar", n: 12, indicador: "ideb_observado", label: "IDEB observado", media: 5.5 },
-      { cluster_id: 2, cluster_label: "Baixa perfil escolar", n: 18, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.72 },
-      { cluster_id: 2, cluster_label: "Baixa perfil escolar", n: 18, indicador: "ideb_observado", label: "IDEB observado", media: 4.6 },
+      { cluster_id: 4, cluster_label: "INSE Nível IV", n: 12, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.85 },
+      { cluster_id: 4, cluster_label: "INSE Nível IV", n: 12, indicador: "ideb_observado", label: "IDEB observado", media: 5.5 },
+      { cluster_id: null, cluster_label: "Sem INSE", n: 18, indicador: "prop_licenciatura", label: "Docentes com licenciatura", media: 0.72 },
+      { cluster_id: null, cluster_label: "Sem INSE", n: 18, indicador: "ideb_observado", label: "IDEB observado", media: 4.6 },
     ],
   },
 };
