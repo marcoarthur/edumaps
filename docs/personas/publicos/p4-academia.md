@@ -139,10 +139,27 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima quarta rodada (2026-11-19, **adotaria**): RE-01 (versão citável
   dos índices diverge entre os textos) e RE-02 (arquivos da carga
   prometidos e ausentes) → #501.
+  Vigésima quinta rodada (2026-11-19, **adotaria**, sem a lista de escolas
+  pelo IDEB para descrever o município): RD-01 (cobertura do IDEB não dita)
+  e RD-02 (escolas fora de funcionamento na lista) → aguardando aprovação
+  para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-19 — Análises públicas (vigésima quinta rodada, ranking de escolas pelo IDEB)
+
+**Veredito:** **adotaria** (mantido), sem a lista de escolas pelo IDEB para
+descrever o município. Consolidação em
+[`avaliacoes/2026-11-19-p4-ranking-escolas.md`](avaliacoes/2026-11-19-p4-ranking-escolas.md).
+
+**Barreiras:**
+- RD-01 (atrapalha): a lista não diz a cobertura do IDEB (Salvador: 794
+  escolas oferecem os anos iniciais, 243 com IDEB; Brasil: 52% das públicas,
+  24% das rurais) nem que a falta não é aleatória.
+- RD-02 (detalhe): entram escolas paralisadas, extintas ou fora do Censo
+  2025 (10 de 257 em Salvador).
 
 ### 2026-11-19 — Análises públicas (vigésima quarta rodada, citação dos índices)
 
