@@ -1,27 +1,31 @@
 <script>
   // src/features/schools/components/profile/ClusterSummary.svelte
   //
-  // Distribuição do indicador dentro do cluster da escola (média, p25,
-  // p50, p75 e tamanho). Dá contexto ao "quartil inferior".
+  // Distribuição do indicador dentro do grupo de referência da escola
+  // (média, p25, p50, p75 e quantas escolas do grupo têm o dado). Dá
+  // contexto ao "quartil inferior". #493: o grupo é formado pelo contexto
+  // (rede, localização, porte, etapas, INSE), nunca pelo IDEB.
   import { formatIndicator } from '../../utils/transformProfileData.js';
   import InfoHint from '@/shared/ui/components/InfoHint.svelte';
 
-  let { resumo = [] } = $props();
+  let { resumo = [], criterio = null } = $props();
 </script>
 
-<section class="flex flex-col gap-2" aria-label="Resumo do cluster">
+<section class="flex flex-col gap-2" aria-label="Distribuição no grupo de referência">
   <div class="flex items-center gap-2">
-    <h2 class="text-base font-bold text-gray-900">Distribuição no cluster</h2>
+    <h2 class="text-base font-bold text-gray-900">Distribuição no grupo de referência</h2>
     <InfoHint
-      title="Como o cluster é formado"
-      text="Agrupamos escolas de contexto parecido por similaridade (Gower/k-means) para comparar a escola com pares justos."
+      title="Como o grupo é formado"
+      text={criterio ?? "As escolas do mesmo município de contexto mais parecido (rede, localização, porte, etapas oferecidas e INSE). O IDEB e a nota não entram: são o que se compara."}
       items={[
-        'Se a escola ainda não tem cluster persistido, estimamos o grupo no próprio município.',
-        'p25/p50/p75 = percentis do indicador entre as escolas do cluster; N = nº de escolas.',
-        'A mediana (p50) é a referência do cluster usada nas comparações.',
+        'p25/p50/p75 = percentis do indicador entre as escolas do grupo que têm o dado; N = quantas são.',
+        'A mediana (p50) é a referência do grupo usada nas comparações.',
       ]}
     />
   </div>
+  {#if criterio}
+    <p class="text-xs text-gray-600" data-testid="grupo-criterio">{criterio}</p>
+  {/if}
 
   <div class="overflow-x-auto border border-gray-200 rounded-md">
     <table class="min-w-full text-sm">
@@ -53,6 +57,6 @@
   </div>
 
   <p class="text-xs text-gray-500">
-    p25/p50/p75 = percentis do indicador entre as escolas do cluster; N = nº de escolas do cluster.
+    p25/p50/p75 = percentis do indicador entre as escolas do grupo; N = escolas do grupo com o dado.
   </p>
 </section>

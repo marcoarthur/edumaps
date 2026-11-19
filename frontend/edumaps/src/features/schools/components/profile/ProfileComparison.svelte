@@ -2,7 +2,7 @@
   // src/features/schools/components/profile/ProfileComparison.svelte
   //
   // Posição relativa da escola: cada indicador comparado com o município,
-  // a rede, o Brasil e o cluster (mediana). Linhas com sinal de atenção
+  // a rede, o Brasil e o grupo de referência (mediana). Linhas com sinal de atenção
   // (pior que o grupo no sentido do indicador, #421) ficam destacadas.
   import { formatIndicator, formatQuartil } from '../../utils/transformProfileData.js';
   import { sentidoIndicador } from '@/shared/utils/sentidoIndicador.js';
@@ -10,7 +10,7 @@
 
   let { indicadores = [] } = $props();
 
-  const COLS = ['Escola', 'Município', 'Rede', 'Brasil', 'Cluster'];
+  const COLS = ['Escola', 'Município', 'Rede', 'Brasil', 'Grupo'];
   const KEYS = ['escola', 'municipio', 'rede', 'brasil', 'cluster'];
 </script>
 
@@ -19,14 +19,14 @@
     <h2 class="text-base font-bold text-gray-900">Posição relativa</h2>
     <InfoHint
       title="Como calculamos a posição relativa"
-      text="Cada indicador da escola ao lado da média do município, da rede (dependência) e do Brasil, e da mediana do cluster a que a escola pertence."
+      text="Cada indicador da escola ao lado da média do município, da rede (dependência) e do Brasil, e da mediana do grupo de referência (escolas do município de contexto parecido)."
       items={[
         'Fonte: Censo Escolar (docentes e matrículas), IDEB/SAEB e INSE — edição mais recente.',
         'Os comparativos vêm de referências pré-computadas quando disponíveis; senão são calculados na hora.',
-        'Quartil = posição do valor da escola dentro do cluster (Q1 = menores valores … Q4 = maiores).',
-        'Sinal de atenção: a escola está pior que a mediana do cluster no quartil do lado ruim (Q1 quando maior é melhor; Q4 quando menor é melhor).',
-        'Cluster = mediana do indicador entre as escolas do grupo de referência.',
-        'IDEB e nota SAEB: a etapa de maior nota da escola na edição mais recente (indicada no nome da linha), e município, rede, Brasil e cluster na mesma etapa, só com as escolas que têm nota nela. As outras etapas da escola estão em "IDEB em cada etapa".',
+        'Quartil = posição do valor da escola dentro do grupo (Q1 = menores valores … Q4 = maiores).',
+        'Sinal de atenção: a escola está pior que a mediana do grupo no quartil do lado ruim (Q1 quando maior é melhor; Q4 quando menor é melhor). O INSE é contexto e não gera sinal.',
+        'Grupo = mediana do indicador entre as escolas do grupo de referência.',
+        'IDEB e nota SAEB: a etapa de maior nota da escola na edição mais recente (indicada no nome da linha), e município, rede, Brasil e grupo na mesma etapa, só com as escolas que têm nota nela. As outras etapas da escola estão em "IDEB em cada etapa".',
       ]}
     />
   </div>
@@ -75,7 +75,7 @@
   </div>
 
   <p class="text-xs text-gray-500">
-    Cluster = mediana do indicador no cluster da escola. Sinal de atenção
+    Grupo = mediana do indicador no grupo de referência da escola. Sinal de atenção
     (⚠) quando a escola está pior que o grupo: no Q1 se maior é melhor, no
     Q4 se menor é melhor.
   </p>
