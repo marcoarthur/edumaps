@@ -96,3 +96,15 @@ da décima nona rodada:
 
 Issue **#493** (RI-01, RI-02 e RI-03 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-18: #493 (PR #494) mergeado: RI-01, RI-02 e RI-03 resolvidos. O
+  grupo de referência são as 30 escolas do município de contexto mais
+  parecido (rede, localização, porte, etapas, INSE), sem o IDEB, a nota e
+  os docentes; o INSE não gera sinal; o N é o de escolas com o dado. Nas
+  mesmas 38 escolas de Salvador, a correlação entre o IDEB da escola e a
+  mediana do grupo caiu de 0,83 para 0,30, e os sinais de INSE, de 13 para
+  0. Fica, fora do escopo: as escolas similares do Perfil ainda usam o
+  IDEB. Fechamento em
+  [`../ciclos/2026-11-18-perfil-grupo-contexto.md`](../ciclos/2026-11-18-perfil-grupo-contexto.md).

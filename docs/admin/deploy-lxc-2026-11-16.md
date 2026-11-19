@@ -175,7 +175,8 @@ Leva `ivet-v1.3` (acesso em log, #295/PR #362) e a instalação completa das
 dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
-(`regra_sinais` diferente; agora 3, com o rótulo do IDEB com a etapa, #431).
+(`regra_sinais` diferente; agora 5: o grupo de referência pelo contexto, as
+30 escolas do município mais parecidas, e o INSE sem sinal, #493).
 O agrupamento passa a guardar cada execução (#427): o motor grava em
 `analytics.cluster_atribuicoes` com o mesmo usuário do banco que já grava
 `analytics.clustering_metadata`; conferir com um agrupamento de teste na tela
@@ -184,6 +185,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 `ano_ideb`, #438).
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
+- [ ] Perfil com o grupo pelo contexto (#493): `curl -s http://127.0.0.1:3000/api/school/29445906/profile`
+      no backend traz `metadata.regra_sinais = 5`, `cluster_source = contexto_municipio`,
+      `cluster_size = 30` e nenhum sinal `inse`.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

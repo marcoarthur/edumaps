@@ -68,6 +68,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — escolas semelhantes pela distância entre as notas](ciclos/2026-11-18-semelhantes-distancia-notas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto na dor central (#429).
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto (#429).
+- [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: privada comparada com privadas parecidas.
 
 ## Pendências
 

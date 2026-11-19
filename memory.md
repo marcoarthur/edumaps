@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-18 (cq) — vigésima avaliação da P4, #493 (PR #494) mergeado
+
+- Vigésima rodada da P4 (grupo de referência do perfil): adotaria, sem o
+  grupo.
+  - RI-01: o grupo era um k-means sobre os próprios indicadores comparados
+    (IDEB, nota, INSE) ou o `cluster_id` do último agrupamento; correlação
+    de 0,83 entre o IDEB da escola e a mediana do grupo.
+  - RI-02: INSE como sinal.
+  - RI-03: N do grupo no lugar do N com dado → #493.
+- PR #494 (dbaee89):
+  - `.school_profile_context_group`: as 30 escolas do município mais
+    próximas pela distância de Gower (`.profile_gower_um`, uma escola contra
+    todas) sobre rede, localização, log das matrículas, etapas (peso
+    dividido) e INSE;
+  - `PROFILE_SEM_SINAL = inse`; `cluster_n` por indicador;
+  - regra do perfil 5 (R e `$PERFIL_REGRA_SINAIS`); critério no
+    `metadata.grupo_criterio`;
+  - removidos o k-means de fallback e o persisted cluster do perfil.
+- Pendente: as similares do Perfil (peers) ainda usam o IDEB e as primeiras
+  300 escolas; o perfil da rede ainda lê o `cluster_id`.
+- Nota técnica 232, ciclo `2026-11-18-perfil-grupo-contexto.md`.
+
 ## Sessão 2026-11-18 (cp) — décima nona avaliação da P4, #491 (PR #492) mergeado
 
 - Décima nona rodada da P4 (folha de pagamento): adotaria, sem a folha.
