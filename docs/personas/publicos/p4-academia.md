@@ -72,6 +72,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p4--academia-pesquisadora): adotaria (mantido), com o IVET citável. RK-01 e RK-02 resolvidos; fica a régua da `ivet-v1.8` (medição no LXC).
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p4--academia-pesquisadora): adotaria (mantido), com a folha. RJ-01, RJ-02 e RJ-03 resolvidos; fica a cobertura do SIOPE.
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p4--academia-pesquisadora): adotaria (mantido), com o grupo de referência. RI-01 a RI-03 resolvidos; ficam as similares do Perfil.
+- [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p4--academia-pesquisadora): adotaria (mantido), com as escolas similares. RH-01 e RH-02 resolvidos; nenhum achado aberto da vigésima primeira avaliação.
 
 ## Pendências
 
@@ -126,7 +127,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregues (#494); ficam as escolas similares do Perfil (usam o IDEB).
   Vigésima primeira rodada (2026-11-18, **adotaria**, sem as escolas
   similares do perfil): RH-01 (similares escolhidas pelo IDEB) e RH-02 (só
-  as primeiras 299 escolas do município) → #495.
+  as primeiras 299 escolas do município) → #495, entregues (#496).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-19 (cr) — vigésima primeira avaliação da P4, #495 (PR #496) mergeado
+
+- Vigésima primeira rodada da P4 (escolas similares do perfil): adotaria,
+  sem as similares.
+  - RH-01: as similares eram escolhidas pelos indicadores do perfil, IDEB
+    inclusive (correlação de 0,97 em Salvador).
+  - RH-02: pool `head(others, 299)` sem ORDER BY → #495.
+- PR #496 (f218c94):
+  - `.school_profile_context_group` devolve `vizinhas` (a ordem do
+    município inteiro); `.school_profile_context_peers` pega as
+    `PROFILE_SIMILARES_N = 10` primeiras dentro do limiar 0,3;
+  - o perfil deixa de ler `analytics.similarity_pairs`; removidos
+    `.school_profile_fallback_peers`, `.profile_target_features`,
+    `.profile_drop_constant_features` e `fallback_peer_max`;
+  - `peers_source = contexto_municipio`, `peers_criterio`, `peers_n`;
+  - regra do perfil 6 (R e `$PERFIL_REGRA_SINAIS`);
+  - cartão com a diferença de IDEB (`idebDiferencaTexto`).
+- Validação: Salvador 0,97 → 0,10; São Paulo 52 de 110 fora da faixa antiga.
+- O job R do CI levou 43 min (instalação das dependências sem cache).
+- Pendente: o perfil da rede ainda lê o `cluster_id`.
+- Nota técnica 233, ciclo `2026-11-19-perfil-similares-contexto.md`.
+
 ## Sessão 2026-11-18 (cq) — vigésima avaliação da P4, #493 (PR #494) mergeado
 
 - Vigésima rodada da P4 (grupo de referência do perfil): adotaria, sem o

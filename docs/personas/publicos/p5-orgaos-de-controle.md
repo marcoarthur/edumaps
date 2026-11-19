@@ -69,6 +69,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto.
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: contagem certa.
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: régua defensável.
+- [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto.
 
 ## Pendências
 

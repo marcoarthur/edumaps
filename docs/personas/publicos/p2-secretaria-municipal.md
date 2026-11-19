@@ -72,6 +72,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — IVET com o motivo certo e a versão citável](ciclos/2026-11-18-ivet-motivo-versao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: falta de acesso, e não sigilo.
 - [2026-11-18 — folha pela pessoa, por ano e na base](ciclos/2026-11-18-folha-pessoa-ano.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: folha da rede por escola na base.
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: escolas abaixo do grupo passam a aparecer.
+- [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: pares do município inteiro.
 
 ## Pendências
 

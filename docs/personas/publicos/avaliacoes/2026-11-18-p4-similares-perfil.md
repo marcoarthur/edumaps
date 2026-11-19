@@ -72,3 +72,14 @@ entrega da vigésima rodada:
 
 Issue **#495** (RH-01 e RH-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-19: #495 (PR #496) mergeado: RH-01 e RH-02 resolvidos. As escolas
+  similares do perfil são as 10 primeiras da ordem do grupo de referência
+  (o mesmo contexto, no município inteiro, sem o IDEB e a nota), com a
+  diferença de IDEB de cada uma para a escola. Nas mesmas 37 escolas de
+  Salvador, a correlação entre o IDEB da escola e a mediana das similares
+  caiu de 0,97 para 0,10; em São Paulo, 52 das 110 similares ficam fora da
+  faixa de INEPs de antes. Fechamento em
+  [`../ciclos/2026-11-19-perfil-similares-contexto.md`](../ciclos/2026-11-19-perfil-similares-contexto.md).
