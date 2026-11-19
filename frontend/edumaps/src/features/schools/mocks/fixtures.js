@@ -79,7 +79,7 @@ export const PROFILE_FIXTURE = {
     cluster_source: "fallback_kmeans",
     cluster_scope: "municipio",
     cluster_size: 42,
-    peers_source: "gower_municipio",
+    peers_source: "contexto_municipio",
     n_municipio: 10,
     n_rede: 20,
     n_brasil: 100,

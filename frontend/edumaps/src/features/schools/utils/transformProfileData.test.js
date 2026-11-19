@@ -4,6 +4,7 @@ import {
   formatIndicator,
   formatSimilarity,
   formatQuartil,
+  idebDiferencaTexto,
   transformProfileData,
 } from "./transformProfileData.js";
 import { PROFILE_FIXTURE } from "../mocks/fixtures.js";
@@ -37,7 +38,9 @@ describe("transformProfileData", () => {
     expect(p.school.co_entidade).toBe("35123456");
     expect(p.cluster.source).toBe("fallback_kmeans");
     expect(p.cluster.sourceLabel).toBe("cluster estimado (município)");
-    expect(p.peersSourceLabel).toBe("Gower calculado no município");
+    expect(p.peersSourceLabel).toBe("contexto, no município inteiro");
+    expect(p.escolaIdeb).toBe(4.7);
+    expect(p.peersCriterio).toBeNull();
     expect(p.indicadores).toHaveLength(3);
     expect(p.clusterResumo).toHaveLength(3);
     expect(p.peers).toHaveLength(2);
@@ -59,5 +62,22 @@ describe("transformProfileData", () => {
     });
     expect(p.peers).toHaveLength(1);
     expect(p.flags).toEqual([]);
+  });
+
+  it("idebDiferencaTexto: sinal, vírgula e ausência (#495)", () => {
+    expect(idebDiferencaTexto(6.1, 4.7)).toBe("+1,4");
+    expect(idebDiferencaTexto(4.3, 4.7)).toBe("−0,4");
+    expect(idebDiferencaTexto(4.7, 4.7)).toBe("0,0");
+    expect(idebDiferencaTexto(null, 4.7)).toBeNull();
+    expect(idebDiferencaTexto(5, null)).toBeNull();
+  });
+
+  it("perfil em cache antigo mantém o rótulo da fonte antiga", () => {
+    const p = transformProfileData({
+      ...PROFILE_FIXTURE,
+      metadata: { ...PROFILE_FIXTURE.metadata, peers_source: "gower_municipio", peers_criterio: "x" },
+    });
+    expect(p.peersSourceLabel).toBe("Gower calculado no município");
+    expect(p.peersCriterio).toBe("x");
   });
 });

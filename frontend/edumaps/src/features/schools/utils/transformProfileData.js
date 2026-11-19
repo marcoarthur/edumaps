@@ -22,9 +22,27 @@ export const CLUSTER_SOURCE_LABELS = {
 };
 
 export const PEERS_SOURCE_LABELS = {
+  // #495: o mesmo contexto do grupo de referência, no município inteiro
+  contexto_municipio: "contexto, no município inteiro",
+  // perfis em cache antigo (até a regra 5)
   similarity_pairs: "pares da base (Gower)",
   gower_municipio: "Gower calculado no município",
 };
+
+/**
+ * Diferença de IDEB entre uma escola similar e a escola do perfil (#495),
+ * com sinal e uma casa: "+1,2", "−0,4", "0,0". `null` se faltar um dos dois.
+ */
+export function idebDiferencaTexto(peerIdeb, escolaIdeb) {
+  if (peerIdeb === null || peerIdeb === undefined || peerIdeb === "") return null;
+  if (escolaIdeb === null || escolaIdeb === undefined || escolaIdeb === "") return null;
+  const d = Math.round((Number(peerIdeb) - Number(escolaIdeb)) * 10) / 10;
+  if (!Number.isFinite(d)) return null;
+  const abs = Math.abs(d).toFixed(1).replace(".", ",");
+  if (d > 0) return `+${abs}`;
+  if (d < 0) return `−${abs}`;
+  return abs;
+}
 
 export const SEVERIDADE_LABELS = {
   alta: "Alta",
@@ -82,6 +100,8 @@ export function formatQuartil(quartil) {
  *   cluster: object,
  *   peersSource: string,
  *   peersSourceLabel: string,
+ *   peersCriterio: string|null,
+ *   escolaIdeb: number|null,
  *   metrics: object,
  *   indicadores: Array<object>,
  *   clusterResumo: Array<object>,
@@ -113,6 +133,11 @@ export function transformProfileData(raw) {
     },
     peersSource: meta.peers_source,
     peersSourceLabel: PEERS_SOURCE_LABELS[meta.peers_source] ?? meta.peers_source,
+    peersCriterio: meta.peers_criterio ?? null,
+    // IDEB da escola (mesma etapa das similares), para a diferença (#495)
+    escolaIdeb:
+      asArray(tables.indicadores_comparados).find((i) => i.indicador === "ideb_observado")
+        ?.escola ?? null,
     cached: meta.cached === true,
     computedAt: meta.computed_at ?? null,
     computedAtLabel: formatComputedAt(meta.computed_at),

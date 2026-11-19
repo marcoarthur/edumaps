@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [perfil-da-escola, agrupamentos-de-escolas, painel-do-gestor]
 funcionalidade: ../../funcionalidades/busca/similaridade.md
-ultima_revisao: 2026-11-18
+ultima_revisao: 2026-11-19
 ---
 
 # Encontrar escolas semelhantes
@@ -25,8 +25,9 @@ lugar da plataforma usa um critério; a seção "Entendendo os números" diz qua
 As sugestões aparecem em três lugares:
 
 1. **Perfil da Escola**, seção **Escolas similares** (carrega sozinha): cartões
-   com nome, INEP, **Similaridade NN%** e IDEB. Clique num cartão para abrir o
-   perfil daquela escola. Mostra até 10 escolas.
+   com nome, INEP, **Similaridade NN%**, o IDEB e, entre parênteses, a
+   diferença para o IDEB da sua escola ("IDEB 5,8 (+1,1)"). Clique num cartão
+   para abrir o perfil daquela escola. Mostra até 10 escolas.
 2. **Painel da Escola**, seção **Escolas semelhantes** (carrega sozinha):
    até 3 escolas do mesmo município, com ao menos uma etapa em comum,
    comparadas pelas seis notas da escola (atendimento, infraestrutura,
@@ -50,7 +51,7 @@ Cada lugar usa um critério:
 
 | Onde | O que compara | Medida |
 |---|---|---|
-| Perfil da Escola | indicadores da escola, numéricos e categóricos (distância de Gower) | similaridade em %, quanto mais perto de 100%, mais parecida |
+| Perfil da Escola | o contexto, com o mesmo critério do grupo de referência: rede, localização, porte, etapas e INSE, no município inteiro (distância de Gower) | similaridade em %, quanto mais perto de 100%, mais parecida |
 | Painel da Escola | as seis notas do painel, nota a nota (distância euclidiana) | distância em pontos, quanto menor, mais parecida |
 | Painel do Gestor | porte, localização, nível socioeconômico (INSE) e etapas | similaridade em % |
 
@@ -69,8 +70,14 @@ Cada lugar usa um critério:
 - No Painel da Escola, se falta alguma das seis notas da escola, a seção diz
   **"Sem dado para comparar"**: a escola fica fora da comparação em vez de ser
   comparada como se tivesse nota zero.
-- No Perfil da Escola, o rótulo **fonte** diz se os pares vieram da base já
-  calculada ou de um cálculo feito na hora dentro do município.
+- No Perfil da Escola, as similares são as escolas mais próximas do
+  **grupo de referência** (ver [Perfil da escola](perfil-da-escola.md)),
+  comparadas com **todas** as escolas do município. O IDEB e a nota SAEB não
+  entram na escolha: escolas de contexto igual podem ter IDEB bem diferente,
+  e a diferença entre parênteses mostra quanto. Até 18/11/2026 as similares
+  do Perfil eram escolhidas pelos indicadores do perfil, IDEB inclusive, e só
+  entre as primeiras 299 escolas do município: as sugeridas tinham quase
+  sempre o mesmo IDEB da escola.
 
 ## Limitações conhecidas
 
@@ -85,12 +92,11 @@ Cada lugar usa um critério:
 - **Por que a escola mais parecida tem IDEB bem diferente?** O Painel do
   Gestor olha o contexto da escola, e o Painel da Escola olha as seis notas
   do painel, que medem condições da escola (atendimento, infraestrutura,
-  docência, diversidade, gestão e sustentabilidade); nenhum dos dois usa o
-  IDEB, e essa diferença é justamente o que vale investigar. As escolas
-  similares do **Perfil** ainda usam os indicadores do perfil, **inclusive o
-  IDEB e a nota SAEB** quando a escola os tem. O **grupo de referência** do
-  Perfil (a régua dos sinais de atenção) é outra coisa: é formado só pelo
-  contexto (ver [Perfil da escola](perfil-da-escola.md)).
+  docência, diversidade, gestão e sustentabilidade). As similares do
+  **Perfil** usam o mesmo contexto do grupo de referência. Nenhum dos três
+  usa o IDEB, e essa diferença é justamente o que vale investigar: uma escola
+  de contexto parecido e IDEB mais alto é um bom ponto de partida para trocar
+  experiências.
 - **Posso entrar em contato com a escola sugerida?** O EduMaps mostra dados
   públicos da escola; o contato é feito pelos canais oficiais dela.
 

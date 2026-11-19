@@ -95,9 +95,19 @@ describe("SchoolProfile", () => {
 
     expect(screen.getByText("EMEF Vizinha")).toBeInTheDocument();
     expect(
-      screen.getByText(/fonte: Gower calculado no município/),
+      screen.getByText(/fonte: contexto, no município inteiro/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Similaridade 94%/)).toBeInTheDocument();
+  });
+
+  it("mostra a diferença de IDEB de cada similar para a escola (#495)", () => {
+    render(SchoolProfile, { profile: profileFixture() });
+
+    // escola 4,7; similares 6,1 e 5,8
+    const diffs = screen.getAllByTestId("peer-ideb-diferenca").map((n) => n.textContent);
+    expect(diffs).toEqual(["(+1,4)", "(+1,1)"]);
+    expect(screen.getByText(/IDEB 6,1/)).toBeInTheDocument();
+    expect(screen.getByText(/diferença de IDEB para esta escola \(4,7\)/)).toBeInTheDocument();
   });
 
   it("chama onSelectPeer com o co_entidade ao clicar numa similar", async () => {

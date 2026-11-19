@@ -77,6 +77,8 @@
   <ProfilePeers
     peers={profile.peers}
     sourceLabel={profile.peersSourceLabel}
+    criterio={profile.peersCriterio}
+    escolaIdeb={profile.escolaIdeb}
     onSelect={onSelectPeer}
   />
 </div>

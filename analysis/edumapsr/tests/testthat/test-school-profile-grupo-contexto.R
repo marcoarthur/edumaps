@@ -94,3 +94,63 @@ test_that("regra 5 invalida o cache da regra 4 (#493)", {
   expect_gte(PROFILE_REGRA_SINAIS, 5L)
   expect_false(.profile_cache_regra_atual(list(metadata = list(regra_sinais = 4L))))
 })
+
+# ---- #495 (RH-01, RH-02): as escolas similares -----------------------
+
+test_that("similares são as primeiras do grupo, pelo contexto (RH-01)", {
+  f <- municipio_ficticio()
+  g <- .school_profile_context_group(f, "60049301", k = 3)
+  p <- .school_profile_context_peers(g, similarity_threshold = 1)
+  expect_equal(p$co_entidade[1:3], g$vizinhas$co_entidade[1:3])
+  expect_true(all(diff(p$similarity) <= 0))
+  # as municipais urbanas de ~300 matrículas vêm primeiro, com IDEB 6,5 e 5,0
+  expect_setequal(p$co_entidade[1:3], c("60049302", "60049303", "60049304"))
+  expect_true(6.5 %in% p$ideb_observado)
+
+  # trocar o IDEB de todo mundo não muda as similares nem a similaridade
+  f2 <- f
+  f2$ideb_observado <- rev(f2$ideb_observado)
+  f2$nota_media <- f2$ideb_observado
+  p2 <- .school_profile_context_peers(.school_profile_context_group(f2, "60049301", k = 3),
+                                      similarity_threshold = 1)
+  expect_equal(p2$co_entidade, p$co_entidade)
+  expect_equal(p2$similarity, p$similarity)
+})
+
+test_that("similares respeitam o limiar e o máximo de 10", {
+  f <- municipio_ficticio()
+  g <- .school_profile_context_group(f, "60049301", k = 30)
+  perto <- .school_profile_context_peers(g, similarity_threshold = 0.05)
+  expect_true(all(perto$similarity >= 0.95))
+  expect_lt(nrow(perto), nrow(f) - 1L)
+  expect_lte(nrow(.school_profile_context_peers(g, 1, n = 2)), 2L)
+  vazio <- .school_profile_context_peers(.school_profile_context_group(f, "99999990"))
+  expect_equal(nrow(vazio), 0L)
+  expect_named(vazio, c("co_entidade", "no_entidade", "similarity", "ideb_observado"))
+})
+
+test_that("o município inteiro entra, não só as primeiras 299 (RH-02)", {
+  n <- 1000
+  f <- data.frame(
+    co_entidade = sprintf("6004%04d", seq_len(n)),
+    no_entidade = paste("Escola", seq_len(n)),
+    tp_dependencia = 3, tp_localizacao = 1,
+    ctx_matriculas = 2000, ctx_infantil = 1, ctx_ai = 1, ctx_af = 1,
+    ctx_medio = 1, ctx_eja = 1, inse = 6,
+    stringsAsFactors = FALSE
+  )
+  for (col in setdiff(PROFILE_INDICATORS, "inse")) f[[col]] <- 0.5
+  # a escola alvo é pequena e rural; as gêmeas dela estão no fim da lista
+  alvo <- "60040001"
+  gemeas <- sprintf("6004%04d", 991:1000)
+  linhas <- f$co_entidade %in% c(alvo, gemeas)
+  f$tp_localizacao[linhas] <- 2
+  f$ctx_matriculas[linhas] <- 50
+  f$ctx_af[linhas] <- 0
+  f$ctx_medio[linhas] <- 0
+  f$ctx_eja[linhas] <- 0
+  f$inse[linhas] <- 4
+  p <- .school_profile_context_peers(.school_profile_context_group(f, alvo))
+  expect_setequal(p$co_entidade, gemeas)
+  expect_true(all(p$similarity == 1))
+})
