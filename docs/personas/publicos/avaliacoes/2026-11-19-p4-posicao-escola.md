@@ -68,4 +68,5 @@ entrega da vigésima quinta rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#506** (RC-01 e RC-02 juntas), aberta com a aprovação do
+developer.

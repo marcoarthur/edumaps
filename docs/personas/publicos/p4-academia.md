@@ -147,8 +147,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#504).
   Vigésima sexta rodada (2026-11-19, **adotaria**, sem a posição da escola):
   RC-01 ("acima de X%" conta os empates como abaixo) e RC-02 (posição do
-  IDEB com escolas fora de funcionamento, sem ajuda) → aguardando aprovação
-  para a issue.
+  IDEB com escolas fora de funcionamento, sem ajuda) → #506.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
