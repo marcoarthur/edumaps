@@ -70,4 +70,4 @@ entrega da vigésima segunda rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#499** (RF-01), aberta com a aprovação do developer.

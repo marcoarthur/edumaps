@@ -133,8 +133,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RG-01 (rede comparada com o Brasil de todas as redes) e RG-02 (grupos da
   rede = último agrupamento gravado) → #497, entregues (#498).
   Vigésima terceira rodada (2026-11-19, **adotaria**, sem a variação do
-  ranking de redes): RF-01 (variação compara escolas diferentes) →
-  aguardando aprovação para a issue.
+  ranking de redes): RF-01 (variação compara escolas diferentes) → #499.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
