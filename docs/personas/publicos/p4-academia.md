@@ -128,10 +128,26 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima primeira rodada (2026-11-18, **adotaria**, sem as escolas
   similares do perfil): RH-01 (similares escolhidas pelo IDEB) e RH-02 (só
   as primeiras 299 escolas do município) → #495, entregues (#496).
+  Vigésima segunda rodada (2026-11-19, **adotaria**, sem o perfil da rede):
+  RG-01 (rede comparada com o Brasil de todas as redes) e RG-02 (grupos da
+  rede = último agrupamento gravado) → aguardando aprovação para a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-19 — Análises públicas (vigésima segunda rodada, perfil da rede)
+
+**Veredito:** **adotaria** (mantido), sem o perfil da rede. Consolidação em
+[`avaliacoes/2026-11-19-p4-perfil-rede.md`](avaliacoes/2026-11-19-p4-perfil-rede.md).
+
+**Barreiras:**
+- RG-01 (atrapalha): a rede filtrada é comparada com o Brasil de todas as
+  redes (Salvador, municipal: efetivos +17,6 p.p. na tela, +3,9 p.p. contra
+  as redes municipais).
+- RG-02 (atrapalha): os "grupos de contexto parecido" são o último
+  agrupamento gravado (k-means de infraestrutura, só no ES; Salvador inteira
+  em "Sem cluster").
 
 ### 2026-11-18 — Análises públicas (vigésima primeira rodada, escolas similares do perfil)
 
