@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed);
 
 # Versão do perfil da escola: regra dos sinais (#421) e rótulos (#431). Espelha
 # PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
-our $PERFIL_REGRA_SINAIS = 4;  # 4: IDEB/SAEB comparados na mesma etapa (#483)
+our $PERFIL_REGRA_SINAIS = 5;  # 5: grupo de referência pelo contexto, INSE sem sinal (#493)
 
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {

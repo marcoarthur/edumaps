@@ -143,6 +143,8 @@ analyze_school_profile <- function(model, parameters = list()) {
   )
   direcao <- .profile_direcao(indicators$indicador)
   atencao <- .profile_atencao(quartil, indicators$escola, indicators$cluster_p50, direcao)
+  # #493 (RI-02): o INSE é contexto, não sinal.
+  atencao[indicators$indicador %in% PROFILE_SEM_SINAL] <- FALSE
 
   labels <- .profile_labels(indicators$indicador, model$metadata)
 

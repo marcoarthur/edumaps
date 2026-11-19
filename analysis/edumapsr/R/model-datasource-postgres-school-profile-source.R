@@ -9,11 +9,14 @@
 # a escola pertence. Com isso a análise pura não faz I/O e a payload fica
 # pronta para o frontend.
 #
-# Quando a escola NÃO tem `cluster_id` persistido em
-# `clean.school_indicators` (coluna criada dinamicamente pelo job de
-# clustering), o perfil cai num cluster calculado on-the-fly, RESTRITO AO
-# MUNICÍPIO (decisão de escopo do ciclo), marcando
-# `cluster_source = "fallback_kmeans"`. O mesmo vale para os peers: se
+# O grupo de referência (#493, regra 5) são as 30 escolas do município de
+# CONTEXTO mais parecido (Gower sobre rede, localização, porte, etapas
+# oferecidas e INSE), marcando `cluster_source = "contexto_municipio"`. O
+# IDEB, a nota e os docentes NÃO formam o grupo: são o que se compara com
+# ele. Até a regra 4 o grupo era um k-means sobre os próprios indicadores
+# comparados (o IDEB escolhia o grupo; correlação 0,83 entre o IDEB da
+# escola e a mediana do grupo em Salvador) ou o `cluster_id` do último
+# agrupamento rodado na plataforma. Os peers: se
 # `analytics.similarity_pairs` não tiver pares para a escola, eles são
 # calculados por Gower dentro do município (`peers_source = "gower_municipio"`).
 #
@@ -66,8 +69,26 @@ PROFILE_DIRECAO <- c(
 # do seu cache. 1: quartil inferior para todos (#105). 2: sentido do
 # indicador e só pior que a mediana (#421). 3: IDEB e nota SAEB rotulados
 # com a etapa e o ano da escola (#431). 4: IDEB e nota SAEB comparados na
-# mesma etapa da escola, e o IDEB de cada etapa (#483).
-PROFILE_REGRA_SINAIS <- 4L
+# mesma etapa da escola, e o IDEB de cada etapa (#483). 5: grupo de
+# referência pelo contexto (as 30 escolas do município mais parecidas), o
+# INSE sem sinal de atenção e o N de cada indicador (#493).
+PROFILE_REGRA_SINAIS <- 5L
+
+# Tamanho do grupo de referência (#493): as K escolas de contexto mais
+# parecido no município (o município inteiro, se tiver menos).
+PROFILE_GRUPO_K <- 30L
+
+# Indicadores que não geram sinal de atenção (#493, RI-02): o INSE é o
+# contexto dos alunos, não algo em que a escola possa agir.
+PROFILE_SEM_SINAL <- c("inse")
+
+# Critério do grupo, em texto, para o payload e a tela (#493).
+PROFILE_GRUPO_CRITERIO <- paste(
+  "As escolas do mesmo município de contexto mais parecido, pela distância de Gower",
+  "com o mesmo peso para rede, localização (urbana ou rural), porte (matrículas, em log),",
+  "etapas oferecidas (infantil, anos iniciais, anos finais, médio e EJA) e INSE.",
+  "O IDEB, a nota SAEB e os indicadores de docentes não entram: são o que se compara."
+)
 
 #' Expressões SQL (whitelist fechado) de cada indicador do perfil
 #'
@@ -102,24 +123,26 @@ PROFILE_REGRA_SINAIS <- 4L
     "ratio_aluno_docente_alta", "ideb_observado_baixo", "nota_media_baixo",
     "inse_baixo"
   )
+  # #493: o INSE (contexto) não gera sinal; a linha fica fora dos modelos.
   msg <- c(
-    "Proporção de docentes com licenciatura no quartil inferior do cluster",
-    "Proporção de docentes com mestrado no quartil inferior do cluster",
-    "Proporção de docentes com doutorado no quartil inferior do cluster",
-    "Proporção de docentes efetivos no quartil inferior do cluster",
-    "Proporção de docentes sem especialização no quartil superior do cluster",
-    "Relação aluno/docente no quartil superior do cluster",
-    "IDEB observado no quartil inferior do cluster",
-    "Nota média (SAEB) no quartil inferior do cluster",
-    "INSE no quartil inferior do cluster"
+    "Proporção de docentes com licenciatura no quartil inferior do grupo de referência",
+    "Proporção de docentes com mestrado no quartil inferior do grupo de referência",
+    "Proporção de docentes com doutorado no quartil inferior do grupo de referência",
+    "Proporção de docentes efetivos no quartil inferior do grupo de referência",
+    "Proporção de docentes sem especialização no quartil superior do grupo de referência",
+    "Relação aluno/docente no quartil superior do grupo de referência",
+    "IDEB observado no quartil inferior do grupo de referência",
+    "Nota média (SAEB) no quartil inferior do grupo de referência",
+    "INSE no quartil inferior do grupo de referência"
   )
-  data.frame(
+  out <- data.frame(
     indicador = inds,
     codigo = code,
     severidade = "media",
     mensagem = msg,
     stringsAsFactors = FALSE
   )
+  out[!out$indicador %in% PROFILE_SEM_SINAL, , drop = FALSE]
 }
 
 #' Carrega um `SchoolProfileModel` a partir de uma fonte
@@ -165,6 +188,14 @@ load_school_profile <- function(source, ...) {
       e.co_uf,
       e.tp_dependencia,
       e.tp_localizacao,
+      -- #493: contexto para o grupo de referência
+      m.qt_mat_bas::float8 AS ctx_matriculas,
+      (COALESCE(e.in_comum_creche, 0) = 1 OR COALESCE(e.in_comum_pre, 0) = 1)::int AS ctx_infantil,
+      (COALESCE(e.in_comum_fund_ai, 0) = 1)::int AS ctx_ai,
+      (COALESCE(e.in_comum_fund_af, 0) = 1)::int AS ctx_af,
+      (COALESCE(e.in_comum_medio_medio, 0) = 1 OR COALESCE(e.in_comum_medio_integrado, 0) = 1
+        OR COALESCE(e.in_comum_medio_normal, 0) = 1)::int AS ctx_medio,
+      (COALESCE(e.in_comum_eja_fund, 0) = 1 OR COALESCE(e.in_comum_eja_medio, 0) = 1)::int AS ctx_eja,
       %s
     FROM %s.censo_escolas e
     LEFT JOIN %s.censo_docentes d
@@ -225,45 +256,6 @@ load_school_profile <- function(source, ...) {
     )
   }
   paste0(parts, collapse = ",\n      ")
-}
-
-#' Verifica se a escola tem `cluster_id` persistido em
-#' `clean.school_indicators` (coluna dinâmica do job de clustering).
-#'
-#' Retorna `NULL` quando não há coluna/tabela/linha — o perfil então
-#' cai no fallback.
-#'
-#' @keywords internal
-.school_profile_persisted_cluster <- function(con, schema_q, co_entidade) {
-  if (!.school_indicators_has_cluster_id(con, schema_q)) {
-    return(NULL)
-  }
-
-  rows <- tryCatch(
-    DBI::dbGetQuery(
-      con,
-      sprintf(
-        "SELECT cluster_id, cluster_label, nu_ano_censo
-           FROM %s.school_indicators
-          WHERE co_entidade = $1
-          ORDER BY nu_ano_censo DESC
-          LIMIT 1",
-        schema_q
-      ),
-      params = list(co_entidade)
-    ),
-    error = function(e) data.frame()
-  )
-
-  if (nrow(rows) == 0 || is.na(rows$cluster_id[1])) {
-    return(NULL)
-  }
-
-  list(
-    cluster_id = rows$cluster_id[1],
-    cluster_label = rows$cluster_label[1],
-    nu_ano_censo = rows$nu_ano_censo[1]
-  )
 }
 
 #' Resolve o ano do censo mais recente com um scan de índice
@@ -480,6 +472,8 @@ WITH pop AS MATERIALIZED (
 )
 SELECT p.co_entidade::text AS co_entidade, p.no_entidade,
        p.ideb_observado,
+       p.tp_dependencia, p.tp_localizacao, p.ctx_matriculas,
+       p.ctx_infantil, p.ctx_ai, p.ctx_af, p.ctx_medio, p.ctx_eja,
        %s
 FROM pop p
 WHERE p.co_municipio = $1
@@ -491,19 +485,127 @@ WHERE p.co_municipio = $1
   DBI::dbGetQuery(con, sql, params = list(co_municipio, ano))
 }
 
-#' Cluster fallback (kmeans restrito ao município)
+#' Distância de Gower de uma escola contra todas as outras (#493)
 #'
-#' Quando a escola não tem `cluster_id` persistido, roda kmeans
-#' on-the-fly sobre as escolas do MESMO município (decisão de escopo:
-#' não clusterizar as 214k escolas do Brasil por chamada). Segue a
-#' convenção legada (set.seed(42), nstart=25, scale()).
+#' Sem montar a matriz inteira (São Paulo tem ~7,3 mil escolas): só a linha
+#' da escola alvo. Numéricas: |x − y| ÷ amplitude da variável no município.
+#' Categóricas: 0 se igual, 1 se diferente. Variável ausente em um dos dois
+#' sai da conta daquele par, e o peso é redistribuído.
 #'
+#' @param alvo data.frame de 1 linha.
+#' @param outros data.frame com as mesmas colunas.
+#' @param numericas,categoricas nomes das colunas.
+#' @param pesos vetor nomeado (default 1 para cada coluna).
+#' @return vetor numérico de distâncias em [0, 1] (NA se nada comparável).
 #' @keywords internal
+.profile_gower_um <- function(alvo, outros, numericas = character(0),
+                              categoricas = character(0), pesos = NULL) {
+  cols <- c(numericas, categoricas)
+  if (is.null(pesos)) pesos <- stats::setNames(rep(1, length(cols)), cols)
+  n <- nrow(outros)
+  soma <- numeric(n)
+  peso <- numeric(n)
+  for (col in numericas) {
+    todos <- suppressWarnings(as.numeric(c(alvo[[col]], outros[[col]])))
+    amp <- diff(range(todos, na.rm = TRUE))
+    a <- todos[1]
+    o <- todos[-1]
+    d <- if (!is.finite(amp) || amp == 0) ifelse(is.na(o), NA_real_, 0) else abs(o - a) / amp
+    ok <- !is.na(d) & !is.na(a)
+    soma[ok] <- soma[ok] + pesos[[col]] * d[ok]
+    peso[ok] <- peso[ok] + pesos[[col]]
+  }
+  for (col in categoricas) {
+    a <- as.character(alvo[[col]])
+    o <- as.character(outros[[col]])
+    ok <- !is.na(o) & !is.na(a)
+    d <- as.numeric(o != a)
+    soma[ok] <- soma[ok] + pesos[[col]] * d[ok]
+    peso[ok] <- peso[ok] + pesos[[col]]
+  }
+  out <- soma / peso
+  out[peso == 0] <- NA_real_
+  out
+}
+
+#' Grupo de referência pelo contexto (#493, regra 5)
+#'
+#' As `k` escolas do município de contexto mais parecido com a escola
+#' (`.profile_gower_um`): rede, localização, porte (log das matrículas),
+#' etapas oferecidas e INSE, cada dimensão com o mesmo peso (as cinco etapas
+#' dividem o peso de uma). O IDEB, a nota SAEB e os docentes não entram.
+#' Município com até `k` outras escolas: todas. Os quartis de cada
+#' indicador são das escolas do grupo com o dado, e o `n` de cada um também.
+#'
+#' @param frame data.frame do município (`.school_profile_municipio_frame`).
+#' @param co_entidade INEP da escola.
+#' @param k tamanho do grupo.
+#' @keywords internal
+.school_profile_context_group <- function(frame, co_entidade, k = PROFILE_GRUPO_K) {
+  inds <- PROFILE_INDICATORS
+  frame <- frame[!duplicated(as.character(frame$co_entidade)), , drop = FALSE]
+  eh_alvo <- as.character(frame$co_entidade) == as.character(co_entidade)
+  vazio <- function(label) {
+    stats <- lapply(inds, function(i) list(p25 = NA_real_, p50 = NA_real_, p75 = NA_real_,
+                                           media = NA_real_, n = 0L))
+    names(stats) <- inds
+    list(cluster_id = NA_integer_, cluster_label = label,
+         cluster_source = "contexto_municipio", cluster_scope = "municipio",
+         cluster_size = 0L, stats = stats)
+  }
+  if (!any(eh_alvo)) return(vazio("Sem grupo (escola fora do Censo do município)"))
+  outros <- frame[!eh_alvo, , drop = FALSE]
+  if (nrow(outros) == 0) return(vazio("Sem grupo (única escola do município)"))
+
+  ctx <- function(d) {
+    d$ctx_porte <- log1p(suppressWarnings(as.numeric(d$ctx_matriculas)))
+    d
+  }
+  alvo <- ctx(frame[eh_alvo, , drop = FALSE][1, , drop = FALSE])
+  outros <- ctx(outros)
+  etapas <- c("ctx_infantil", "ctx_ai", "ctx_af", "ctx_medio", "ctx_eja")
+  pesos <- c(ctx_porte = 1, inse = 1, tp_dependencia = 1, tp_localizacao = 1,
+             stats::setNames(rep(1 / length(etapas), length(etapas)), etapas))
+  dist <- .profile_gower_um(
+    alvo, outros,
+    numericas = c("ctx_porte", "inse"),
+    categoricas = c("tp_dependencia", "tp_localizacao", etapas),
+    pesos = pesos
+  )
+  ordem <- order(dist, as.character(outros$co_entidade), na.last = TRUE)
+  membros <- outros[utils::head(ordem, k), , drop = FALSE]
+
+  stats <- lapply(inds, function(col) {
+    v <- suppressWarnings(as.numeric(membros[[col]]))
+    v <- v[!is.na(v)]
+    if (length(v) == 0) {
+      return(list(p25 = NA_real_, p50 = NA_real_, p75 = NA_real_, media = NA_real_, n = 0L))
+    }
+    list(
+      p25 = as.numeric(stats::quantile(v, 0.25)),
+      p50 = as.numeric(stats::quantile(v, 0.50)),
+      p75 = as.numeric(stats::quantile(v, 0.75)),
+      media = mean(v),
+      n = length(v)
+    )
+  })
+  names(stats) <- inds
+
+  list(
+    cluster_id = NA_integer_,
+    cluster_label = sprintf("%d escolas de contexto mais parecido no município", nrow(membros)),
+    cluster_source = "contexto_municipio",
+    cluster_scope = "municipio",
+    cluster_size = nrow(membros),
+    stats = stats
+  )
+}
+
 #' Indicadores que a própria escola tem preenchidos (features do fallback)
 #'
 #' Usa apenas as dimensões não-NA da escola alvo: assim ela nunca é
-#' excluída do kmeans/Gower por faltar um indicador (ex.: IDEB de escola
-#' nova), e o cluster/peers ficam no subespaço em que há dado.
+#' excluída do Gower dos peers por faltar um indicador (ex.: IDEB de escola
+#' nova), e os peers ficam no subespaço em que há dado.
 #'
 #' @keywords internal
 .profile_target_features <- function(frame, co_entidade) {
@@ -532,97 +634,6 @@ WHERE p.co_municipio = $1
     length(v) > 1 && stats::sd(v) > 0
   }, logical(1))
   feats[keep]
-}
-
-.school_profile_fallback_cluster <- function(
-  frame,
-  co_entidade,
-  clusters = 4
-) {
-  inds <- PROFILE_INDICATORS
-  feats <- .profile_target_features(frame, co_entidade)
-  valid <- frame[stats::complete.cases(frame[feats]), , drop = FALSE]
-  feats <- .profile_drop_constant_features(valid, feats)
-  school_row <- valid[as.character(valid$co_entidade) == as.character(co_entidade), , drop = FALSE]
-
-  if (length(feats) == 0 || nrow(valid) < 2 || nrow(school_row) == 0) {
-    warning(sprintf(
-      "[school_profile] fallback kmeans degradado: município sem dados suficientes (n=%d) para a escola %s",
-      nrow(valid), co_entidade
-    ))
-    srow_any <- frame[as.character(frame$co_entidade) == as.character(co_entidade), , drop = FALSE]
-    school_val <- if (nrow(srow_any) == 0) {
-      rep(NA_real_, length(inds))
-    } else {
-      suppressWarnings(as.numeric(srow_any[1, inds]))
-    }
-    stats <- lapply(seq_along(inds), function(k) {
-      list(
-        p25 = school_val[k], p50 = school_val[k],
-        p75 = school_val[k], media = school_val[k]
-      )
-    })
-    names(stats) <- inds
-    return(list(
-      cluster_id = NA_integer_,
-      cluster_label = "Sem cluster (dados insuficientes)",
-      cluster_source = "fallback_kmeans",
-      cluster_scope = "municipio",
-      cluster_size = max(1L, nrow(srow_any)),
-      cluster_n = max(1L, nrow(srow_any)),
-      stats = stats
-    ))
-  }
-
-  k_eff <- max(2L, min(as.integer(clusters), floor(nrow(valid) / 2)))
-  x <- as.matrix(valid[feats])
-  x_scaled <- scale(x)
-
-  set.seed(42)
-  fit <- stats::kmeans(x_scaled, centers = k_eff, nstart = 25)
-
-  valid$cluster_id <- as.integer(fit$cluster)
-  sid <- valid$cluster_id[as.character(valid$co_entidade) == as.character(co_entidade)][1]
-
-  members <- valid[valid$cluster_id == sid, , drop = FALSE]
-
-  stats <- lapply(inds, function(col) {
-    v <- suppressWarnings(as.numeric(members[[col]]))
-    if (all(is.na(v))) {
-      return(list(p25 = NA_real_, p50 = NA_real_, p75 = NA_real_, media = NA_real_))
-    }
-    list(
-      p25 = as.numeric(stats::quantile(v, 0.25, na.rm = TRUE)),
-      p50 = as.numeric(stats::quantile(v, 0.50, na.rm = TRUE)),
-      p75 = as.numeric(stats::quantile(v, 0.75, na.rm = TRUE)),
-      media = mean(v, na.rm = TRUE)
-    )
-  })
-  names(stats) <- inds
-
-  means <- do.call(rbind, lapply(sort(unique(fit$cluster)), function(ci) {
-    colMeans(valid[fit$cluster == ci, feats, drop = FALSE], na.rm = TRUE)
-  }))
-  rownames(means) <- as.character(sort(unique(fit$cluster)))
-  scores <- .cluster_scores(means, feats)
-  labels <- .cluster_labels(fit$cluster, scores, concept = "perfil escolar", gender = "f")
-
-  label <- unique(labels$cluster_label[labels$cluster_id == sid])
-  if (length(label) == 0 || is.na(label[1])) {
-    label <- sprintf("Cluster %d", sid)
-  } else {
-    label <- label[1]
-  }
-
-  list(
-    cluster_id = sid,
-    cluster_label = label,
-    cluster_source = "fallback_kmeans",
-    cluster_scope = "municipio",
-    cluster_size = nrow(members),
-    cluster_n = nrow(members),
-    stats = stats
-  )
 }
 
 #' Peers fallback (Gower restrito ao município)
@@ -844,99 +855,27 @@ load_school_profile.postgres_source <- function(
   reference_source_rede <- cmp_rede$source
   reference_source_brasil <- cmp_brasil$source
 
-  # --- Cluster: perfil pré-computado, live, ou fallback kmeans -------
+  # --- Grupo de referência pelo contexto (#493, regra 5) -------------
+  # Sempre o do município: o `cluster_id` do último agrupamento rodado na
+  # plataforma (clean.school_indicators) não é critério citável e deixou de
+  # ser usado aqui. O município vem com o IDEB da etapa da escola (#483).
+  muni_frame <- .school_profile_municipio_frame(
+    con, schema_q, first$co_municipio, include_inactive, ano, ideb_etapa = etapa
+  )
+  fc <- .school_profile_context_group(muni_frame, co_entidade)
+  long$cluster_p25 <- vapply(inds, function(i) fc$stats[[i]]$p25, numeric(1))
+  long$cluster_p50 <- vapply(inds, function(i) fc$stats[[i]]$p50, numeric(1))
+  long$cluster_p75 <- vapply(inds, function(i) fc$stats[[i]]$p75, numeric(1))
+  long$cluster_media <- vapply(inds, function(i) fc$stats[[i]]$media, numeric(1))
+  long$cluster_n <- vapply(inds, function(i) as.integer(fc$stats[[i]]$n), integer(1))
   cluster_block <- list(
-    cluster_id = NA_integer_,
-    cluster_label = NA_character_,
-    cluster_source = "none",
-    cluster_scope = NA_character_,
-    cluster_size = NA_integer_,
+    cluster_id = fc$cluster_id,
+    cluster_label = fc$cluster_label,
+    cluster_source = fc$cluster_source,
+    cluster_scope = fc$cluster_scope,
+    cluster_size = fc$cluster_size,
     cluster_run_id = NA_character_
   )
-
-  persisted <- .school_profile_persisted_cluster(con, schema_q, co_entidade)
-
-  if (!is.null(persisted)) {
-    cprof <- NULL
-    if (isTRUE(prefer_reference)) {
-      cprof <- tryCatch(
-        read_school_cluster_profile(
-          postgres_school_cluster_profile_repository(con),
-          persisted$cluster_id,
-          ano,
-          output_schema = output_schema
-        ),
-        error = function(e) NULL
-      )
-    }
-
-    if (is.data.frame(cprof) && nrow(cprof) > 0) {
-      cp <- cprof[match(inds, cprof$indicador), , drop = FALSE]
-      long$cluster_p25 <- as.numeric(cp$p25)
-      long$cluster_p50 <- as.numeric(cp$p50)
-      long$cluster_p75 <- as.numeric(cp$p75)
-      long$cluster_media <- as.numeric(cp$media)
-      long$cluster_n <- as.integer(cp$n)
-      cluster_block <- list(
-        cluster_id = as.integer(persisted$cluster_id),
-        cluster_label = as.character(persisted$cluster_label),
-        cluster_source = "persisted",
-        cluster_scope = "cluster_profile",
-        cluster_size = as.integer(cp$n[1]),
-        cluster_run_id = as.character(cp$run_id[1])
-      )
-    } else {
-      cs <- .profile_cluster_stats_live(
-        con, schema_q, include_inactive, ano, persisted$cluster_id
-      )
-      long$cluster_p25 <- vapply(inds, function(i) cs$stats[[i]]$p25, numeric(1))
-      long$cluster_p50 <- vapply(inds, function(i) cs$stats[[i]]$p50, numeric(1))
-      long$cluster_p75 <- vapply(inds, function(i) cs$stats[[i]]$p75, numeric(1))
-      long$cluster_media <- vapply(inds, function(i) cs$stats[[i]]$media, numeric(1))
-      long$cluster_n <- cs$n
-      cluster_block <- list(
-        cluster_id = as.integer(persisted$cluster_id),
-        cluster_label = as.character(persisted$cluster_label),
-        cluster_source = "persisted",
-        cluster_scope = "tabela_school_indicators",
-        cluster_size = cs$n,
-        cluster_run_id = NA_character_
-      )
-    }
-  } else {
-    muni_frame <- .school_profile_municipio_frame(
-      con, schema_q, first$co_municipio, include_inactive, ano, ideb_etapa = etapa
-    )
-    fc <- .school_profile_fallback_cluster(muni_frame, co_entidade, clusters = clusters)
-    long$cluster_p25 <- vapply(inds, function(i) fc$stats[[i]]$p25, numeric(1))
-    long$cluster_p50 <- vapply(inds, function(i) fc$stats[[i]]$p50, numeric(1))
-    long$cluster_p75 <- vapply(inds, function(i) fc$stats[[i]]$p75, numeric(1))
-    long$cluster_media <- vapply(inds, function(i) fc$stats[[i]]$media, numeric(1))
-    long$cluster_n <- fc$cluster_n
-    cluster_block <- list(
-      cluster_id = fc$cluster_id,
-      cluster_label = fc$cluster_label,
-      cluster_source = fc$cluster_source,
-      cluster_scope = fc$cluster_scope,
-      cluster_size = fc$cluster_size,
-      cluster_run_id = NA_character_
-    )
-  }
-
-  # #483: no grupo persistido, o IDEB e a nota SAEB da mesma etapa (o
-  # perfil do grupo pré-computado mistura as etapas). No fallback, o
-  # município já veio com a etapa da escola.
-  if (identical(cluster_block$cluster_source, "persisted") && !is.na(cluster_block$cluster_id)) {
-    s_cl <- ideb_scope("cluster", cluster_block$cluster_id)
-    for (k in c("ideb_observado", "nota_media")) {
-      s <- if (k == "ideb_observado") s_cl$ideb else s_cl$nota
-      i <- which(long$indicador == k)
-      long$cluster_p25[i] <- s$p25
-      long$cluster_p50[i] <- s$p50
-      long$cluster_p75[i] <- s$p75
-      long$cluster_media[i] <- s$media
-    }
-  }
 
   long$cluster <- long$cluster_p50
 
@@ -1064,6 +1003,8 @@ load_school_profile.postgres_source <- function(
       n_ideb_rede = s_rede$ideb$n,
       n_ideb_brasil = s_br$ideb$n,
       ideb_comparacao = "mesma_etapa",
+      grupo_criterio = PROFILE_GRUPO_CRITERIO,
+      grupo_k = PROFILE_GRUPO_K,
       similarity_threshold = similarity_threshold
     )
   )

@@ -17,6 +17,7 @@ export function asArray(value) {
 export const CLUSTER_SOURCE_LABELS = {
   persisted: "cluster da base",
   fallback_kmeans: "cluster estimado (município)",
+  contexto_municipio: "grupo de contexto (município)",
   none: "sem cluster",
 };
 
@@ -108,6 +109,7 @@ export function transformProfileData(raw) {
       sourceLabel: CLUSTER_SOURCE_LABELS[meta.cluster_source] ?? meta.cluster_source,
       scope: meta.cluster_scope,
       size: meta.cluster_size,
+      criterio: meta.grupo_criterio ?? null,
     },
     peersSource: meta.peers_source,
     peersSourceLabel: PEERS_SOURCE_LABELS[meta.peers_source] ?? meta.peers_source,

@@ -42,7 +42,7 @@ describe("SchoolProfile", () => {
     render(SchoolProfile, { profile });
 
     expect(
-      screen.getByText(/Nenhum indicador pior que o cluster/i),
+      screen.getByText(/Nenhum indicador pior que o grupo de referência/i),
     ).toBeInTheDocument();
   });
 
@@ -58,10 +58,10 @@ describe("SchoolProfile", () => {
     expect(screen.getAllByText("25.1").length).toBeGreaterThan(0);
   });
 
-  it("renderiza a distribuição no cluster", () => {
+  it("renderiza a distribuição no grupo de referência (#493)", () => {
     render(SchoolProfile, { profile: profileFixture() });
 
-    expect(screen.getByText("Distribuição no cluster")).toBeInTheDocument();
+    expect(screen.getByText("Distribuição no grupo de referência")).toBeInTheDocument();
     expect(screen.getByText("p25")).toBeInTheDocument();
     expect(screen.getByText("p75")).toBeInTheDocument();
   });
@@ -138,5 +138,12 @@ describe("SchoolProfile: IDEB em cada etapa (#483)", () => {
   it("sem a tabela (perfil antigo), não mostra a seção", () => {
     render(SchoolProfile, { profile: profileFixture() });
     expect(screen.queryByRole("region", { name: "IDEB em cada etapa" })).toBeNull();
+  });
+
+  it("mostra o critério do grupo vindo do perfil (#493)", () => {
+    const p = profileFixture();
+    p.cluster = { ...p.cluster, criterio: "As escolas do mesmo município de contexto mais parecido." };
+    render(SchoolProfile, { profile: p });
+    expect(screen.getByTestId("grupo-criterio")).toHaveTextContent("contexto mais parecido");
   });
 });

@@ -82,12 +82,15 @@ Cada lugar usa um critério:
 
 ## Perguntas frequentes
 
-- **Por que a escola mais parecida tem IDEB bem diferente?** Nenhum dos três
-  critérios usa o IDEB: o Perfil e o Painel do Gestor olham o contexto da
-  escola, e o Painel da Escola olha as seis notas do painel, que medem
-  condições da escola (atendimento, infraestrutura, docência, diversidade,
-  gestão e sustentabilidade). Essa diferença é justamente o que vale
-  investigar.
+- **Por que a escola mais parecida tem IDEB bem diferente?** O Painel do
+  Gestor olha o contexto da escola, e o Painel da Escola olha as seis notas
+  do painel, que medem condições da escola (atendimento, infraestrutura,
+  docência, diversidade, gestão e sustentabilidade); nenhum dos dois usa o
+  IDEB, e essa diferença é justamente o que vale investigar. As escolas
+  similares do **Perfil** ainda usam os indicadores do perfil, **inclusive o
+  IDEB e a nota SAEB** quando a escola os tem. O **grupo de referência** do
+  Perfil (a régua dos sinais de atenção) é outra coisa: é formado só pelo
+  contexto (ver [Perfil da escola](perfil-da-escola.md)).
 - **Posso entrar em contato com a escola sugerida?** O EduMaps mostra dados
   públicos da escola; o contato é feito pelos canais oficiais dela.
 

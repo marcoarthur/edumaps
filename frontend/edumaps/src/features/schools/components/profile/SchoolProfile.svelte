@@ -72,7 +72,7 @@
 
   <EvolutionSection groups={evolutionGroups} />
 
-  <ClusterSummary resumo={profile.clusterResumo} />
+  <ClusterSummary resumo={profile.clusterResumo} criterio={profile.cluster.criterio ?? null} />
 
   <ProfilePeers
     peers={profile.peers}
