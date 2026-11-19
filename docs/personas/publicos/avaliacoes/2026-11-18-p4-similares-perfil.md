@@ -70,4 +70,5 @@ entrega da vigésima rodada:
 
 ## Encaminhamento
 
-Aguardando a aprovação do developer para abrir a issue.
+Issue **#495** (RH-01 e RH-02 juntas), aberta com a aprovação do
+developer.

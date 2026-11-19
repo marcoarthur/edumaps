@@ -126,8 +126,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregues (#494); ficam as escolas similares do Perfil (usam o IDEB).
   Vigésima primeira rodada (2026-11-18, **adotaria**, sem as escolas
   similares do perfil): RH-01 (similares escolhidas pelo IDEB) e RH-02 (só
-  as primeiras 299 escolas do município) → aguardando aprovação para a
-  issue.
+  as primeiras 299 escolas do município) → #495.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
