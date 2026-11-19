@@ -71,3 +71,13 @@ entrega da vigésima segunda rodada:
 ## Encaminhamento
 
 Issue **#499** (RF-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-19: #499 (PR #500) mergeado: RF-01 resolvido. A variação do
+  ranking de redes é medida nas mesmas escolas (as que têm o dado nas duas
+  edições), com o número delas na tela e no CSV; o mínimo, a posição pela
+  variação e o salto atípico valem sobre ela. São Sebastião da Boa Vista/PA:
+  de +1,15 (salto atípico) para +0,03 (4 escolas); Santa Maria/RS: de 0,00
+  para +0,46; saltos atípicos no Brasil de 113 para 103. Fechamento em
+  [`../ciclos/2026-11-19-ranking-variacao-pareada.md`](../ciclos/2026-11-19-ranking-variacao-pareada.md).

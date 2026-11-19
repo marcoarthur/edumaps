@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-19 (ct) — vigésima terceira avaliação da P4, #499 (PR #500) mergeado
+
+- Vigésima terceira rodada da P4 (variação do ranking de redes): adotaria,
+  sem a variação.
+  - RF-01: variação = média das escolas de 2023 − média das de 2021,
+    conjuntos diferentes (129 de 2.476 redes com sinal trocado) → #499.
+- PR #500 (af99120):
+  - CTE `pares` em `redes_municipais` (junção por `id_escola`, média das
+    diferenças), mínimo sobre `n` pareado; `$uf_sql_i` com alias;
+  - `escolas_variacao` por rede e `variacao_regra = mesmas_escolas`;
+  - tela: regra na nota, "(n)" ao lado da variação; CSV `escolas_variacao`.
+- Validação: São Sebastião da Boa Vista/PA +1,15 → +0,03; atípicas BR
+  113 → 103; redes com variação 2.476 → 2.279.
+- Nota técnica 235, ciclo `2026-11-19-ranking-variacao-pareada.md`.
+
 ## Sessão 2026-11-19 (cs) — vigésima segunda avaliação da P4, #497 (PR #498) mergeado
 
 - Vigésima segunda rodada da P4 (perfil da rede): adotaria, sem o perfil

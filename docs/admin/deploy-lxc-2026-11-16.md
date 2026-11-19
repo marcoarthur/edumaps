@@ -196,6 +196,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       no backend traz `metadata.referencia_rotulo = "Brasil, redes municipais"`, `n_brasil`
       preenchido e grupos `INSE Nível …`/`Sem INSE` em `tables.clusters` (nenhum
       "Sem cluster"); o cache antigo cai sozinho (chave `versao = 4`).
+- [ ] Ranking de redes (#499): `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=ideb_anos_iniciais&uf=PA'`
+      traz `variacao_regra = "mesmas_escolas"` e `escolas_variacao` em cada rede;
+      São Sebastião da Boa Vista (1507706) com variação perto de +0,03 e sem salto atípico.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

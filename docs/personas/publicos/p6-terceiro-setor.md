@@ -68,6 +68,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-18 — grupo de referência do perfil pelo contexto](ciclos/2026-11-18-perfil-grupo-contexto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: grupo não escolhido pelo resultado.
 - [2026-11-19 — escolas similares do perfil pelo contexto](ciclos/2026-11-19-perfil-similares-contexto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: contexto parecido, resultado diferente, pronto na tela.
 - [2026-11-19 — perfil da rede contra a mesma rede](ciclos/2026-11-19-perfil-rede-referencia.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: "acima do Brasil" sem a mistura com as privadas.
+- [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "as que mais melhoraram" sem falsos campeões.
 
 ## Pendências
 
