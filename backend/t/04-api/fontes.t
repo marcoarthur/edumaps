@@ -32,6 +32,18 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   unlike $corpo, qr/n[ãa]o verificad|pendente|DECIS/i, 'nenhuma situação de licença interna';
 };
 
+subtest 'SIOPE (#512): a lista de municípios com folha' => sub {
+  my ($s) = grep { $_->{id} eq 'siope' } @{ $t->get_ok('/api/fontes')->tx->res->json };
+  is ref $s->{cobertura}, 'ARRAY', 'cobertura no cartão do SIOPE';
+  like $s->{descricao}, qr/listados abaixo/, 'a descrição aponta a lista';
+  for my $m (@{ $s->{cobertura} }) {
+    like $m->{codigo_ibge}, qr/^\d{7}$/, "código IBGE ($m->{municipio})";
+    ok @{ $m->{anos} }, 'com os anos';
+  }
+  my ($censo) = grep { $_->{id} eq 'censo' } @{ $t->get_ok('/api/fontes')->tx->res->json };
+  ok !exists $censo->{cobertura}, 'só o SIOPE tem a lista';
+};
+
 subtest 'índices do EduMaps (#462): versão citável' => sub {
   my ($i) = grep { $_->{id} eq 'indices_edumaps' } @{ $t->get_ok('/api/fontes')->tx->res->json };
   is $i->{orgao}, 'EduMaps', 'base própria';

@@ -68,6 +68,28 @@ describe("BaseAnalisePage (#439)", () => {
     expect(window.location.search).toContain("ano_siope=2026");
   });
 
+  it("#512: o ano da folha segue a UF, com a cobertura e o aviso de recorte vazio", async () => {
+    abrir("?uf=SP");
+    await screen.findByTestId("total-recorte");
+    await fireEvent.click(screen.getByLabelText(/Remuneração \(SIOPE\)/));
+    const sel = screen.getByLabelText("Ano da folha (SIOPE)");
+    expect(sel.value).toBe("2026");
+    expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Ubatuba (2026: 8 meses, 48 escolas)");
+    expect(screen.getByTestId("folha-recorte")).toHaveTextContent("48 escolas deste recorte têm folha em 2026");
+    expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_siope=2026");
+
+    // escolher outro ano: vale a escolha, com o aviso de que sai vazio
+    await fireEvent.change(sel, { target: { value: "2025" } });
+    expect(screen.getByTestId("aviso-folha-vazia")).toHaveTextContent("Nenhuma escola deste recorte tem folha em 2025");
+    expect(screen.getByTestId("aviso-folha-vazia")).toHaveTextContent("Anos com folha em SP: 2026");
+  });
+
+  it("#512: UF sem folha diz que o bloco sai vazio e fica no padrão do Brasil", async () => {
+    abrir("?uf=ES&blocos=remuneracao");
+    expect(await screen.findByTestId("cobertura-siope")).toHaveTextContent("Nenhum município de ES");
+    expect(screen.getByLabelText("Ano da folha (SIOPE)").value).toBe("2025");
+  });
+
   it("rede filtra a contagem e entra no link", async () => {
     abrir("?uf=ES");
     await screen.findByText(/3\.010/);

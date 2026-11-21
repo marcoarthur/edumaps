@@ -11,6 +11,7 @@ use utf8;
 use open ':std', ':encoding(UTF-8)';
 use Mojo::Util qw(decode);
 use EduMaps::Model::Rank::School;
+use EduMaps::BaseAnalise;
 
 my $t = Test::Mojo->new('EduMaps');
 $t->app->log->level('fatal');
@@ -29,7 +30,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
-  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano = 2001)', {}, @INEPS, '600039');
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002))', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -443,6 +444,14 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
     for qw(Janeiro Fevereiro Dezembro);
   # agregado da Secretaria: não é escola, fica fora
   $f->execute($SIOPE, 'Janeiro', 'DORA', 'xxx.555.551-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 9999);
+  # #512 (QZ-02): uma auxiliar educacional (outros profissionais)
+  my $aux = $EduMaps::BaseAnalise::AUX_EDUCACIONAL;
+  $f->execute($SIOPE, $_->[0], 'EVA', 'xxx.777.771-xx', $A, '600039', 'Municipal', $aux, 'Outros profissionais da educação', 30, $_->[1])
+    for ['Janeiro', 1500], ['Fevereiro', 1500], ['Dezembro', 3000];
+  # 2002: a escola só com a auxiliar (como as creches de Cuiabá)
+  my $SIOPE2 = 2002;
+  $f->execute($SIOPE2, $_, 'EVA', 'xxx.777.771-xx', $A, '600039', 'Municipal', $aux, 'Outros profissionais da educação', 30, 1600)
+    for qw(Janeiro Fevereiro);
 
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
   ok( (grep { $_ == $SIOPE } @{ $r->{anos}{siope} }), 'ano da folha no catálogo');
@@ -455,8 +464,15 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   my ($a) = grep { $_->[0] eq $A } @$c;
   my ($b) = grep { $_->[0] eq $B } @$c;
   is [ @$a[ @i{qw(prof_magisterio salario_medio_magisterio carga_horaria_media_magisterio salario_40h_magisterio gasto_pessoal_ano meses_folha)} ] ],
-     ['2', '3750', '40', '3833', '31000', '3'],
-     'pessoa = CPF mascarado + nome; média por pessoa e mês sem dezembro; gasto do ano com o 13º; sem a Secretaria';
+     ['2', '3750', '40', '3833', '37000', '3'],
+     'pessoa = CPF mascarado + nome; média por pessoa e mês sem dezembro; gasto do ano com o 13º (e a auxiliar); sem a Secretaria';
+  # #512 (QZ-03): pessoas por mês (ANA e BRUNO nos três meses)
+  is $a->[ $i{prof_magisterio_mes} ], '2', 'magistério por mês';
+  # #512 (QZ-02): a auxiliar, no ano, por mês e o salário sem dezembro
+  is [ @$a[ @i{qw(aux_educacional aux_educacional_mes salario_medio_aux_educacional)} ] ], ['1', '1', '1500'],
+     'auxiliares e assistentes educacionais';
+  ok $i{prof_magisterio_mes} < $i{salario_medio_magisterio} && $i{salario_medio_aux_educacional} < $i{gasto_pessoal_ano},
+     'colunas novas entre as do magistério e o gasto';
   is [ @$b[ @i{qw(prof_magisterio salario_medio_magisterio gasto_pessoal_ano meses_folha)} ] ], ['', '', '', ''],
      'escola estadual sem folha: vazio, não zero';
   ok !(grep { /nome|cpf/ } @cab), 'sem nome nem CPF';
@@ -468,6 +484,39 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   like $linha->[3], qr/SIOPE/, 'fonte no dicionário';
   is $linha->[4], "$SIOPE", 'ano no dicionário';
   $t->get_ok("/api/base-analise/csv?uf=AC&blocos=remuneracao&ano_siope=1990")->status_is(400);
+
+  # #512 (QZ-02): só a auxiliar no ano: 0 no magistério, salário vazio
+  my $c2 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$SIOPE2")->tx);
+  my ($a2) = grep { $_->[0] eq $A } @$c2;
+  is [ @$a2[ @i{qw(prof_magisterio prof_magisterio_mes salario_medio_magisterio aux_educacional salario_medio_aux_educacional)} ] ],
+     ['0', '0', '', '1', '1600'], 'escola sem magistério: 0 pessoas, salário vazio, auxiliar presente';
+  my ($sm) = grep { $_->[0] eq 'salario_medio_magisterio' } @$d;
+  like $sm->[1], qr/prof_magisterio = 0/, 'dicionário diz o motivo do salário vazio com 0 no magistério';
+  my ($pm) = grep { $_->[0] eq 'prof_magisterio' } @$d;
+  like $pm->[1], qr/Não é o número de docentes/, 'dicionário: prof_magisterio não é o número de docentes';
+
+  # #512 (QZ-01): a folha da UF no catálogo e o padrão da UF
+  my $cat = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
+  my ($cid) = grep { $_->{codigo_ibge} eq "$MUN" } @{ $cat->{folha}{municipios} };
+  ok $cid, 'município do teste na cobertura da UF';
+  is $cid->{uf}, 'AC', 'UF do município';
+  is [ map { [ @$_{qw(ano meses escolas)} ] } @{ $cid->{anos} } ], [[2002, 2, 1], [2001, 3, 1]],
+    'anos (mais recente primeiro), meses e escolas';
+  is $cat->{folha}{escolas}{2001}, 1, 'escolas do recorte com folha em 2001';
+  is $cat->{folha}{escolas}{2002}, 1, 'e em 2002';
+  if (!grep { $_->{codigo_ibge} ne "$MUN" } @{ $cat->{folha}{municipios} }) {
+    is $cat->{folha}{padrao}, 2002, 'sem ano completo na UF: o mais recente da UF';
+    $t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao")->status_is(200)
+      ->header_like('Content-Disposition' => qr/-siope2002\.csv/, 'CSV sem ano_siope: o padrão da UF');
+  }
+  is $t->get_ok('/api/base-analise')->tx->res->json->{folha}, undef, 'sem UF: sem a folha da UF';
+
+  my $padrao = EduMaps::BaseAnalise->siope_padrao_uf([
+    { anos => [ { ano => 2026, meses => 8, escolas => 48 }, { ano => 2025, meses => 12, escolas => 0 } ] },
+    { anos => [ { ano => 2024, meses => 12, escolas => 10 } ] },
+  ]);
+  is $padrao, 2024, 'padrão da UF: último ano completo com escolas (o só-Secretaria não conta)';
+  is(EduMaps::BaseAnalise->siope_padrao_uf([]), undef, 'UF sem folha: sem padrão');
 };
 
 subtest 'erros' => sub {

@@ -32,6 +32,10 @@ export const FONTES_FIXTURE = [
       arquivos: [{ url: "https://exemplo/siope.csv", sha256: "ab12cd34ef56", bytes: 1048576, baixado_em: "2026-11-01T10:00:00+0000" }],
     },
     licenca: "Domínio público",
+    cobertura: [
+      { codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", anos: [{ ano: 2026, meses: 6, escolas: 168 }, { ano: 2025, meses: 12, escolas: 167 }] },
+      { codigo_ibge: "3554102", municipio: "Taubaté", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 0 }] },
+    ],
   },
   {
     id: "indices_edumaps", nome: "Índices do EduMaps", orgao: "EduMaps", proprio: true,

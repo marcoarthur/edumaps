@@ -250,7 +250,10 @@ my $INSE_VAZIO = 'Vazio: a escola não teve alunos avaliados no SAEB daquela edi
 
 # Cada bloco: colunas [nome, expressão SQL, descrição, numérica?] e a fonte.
 my $SIOPE_VAZIO = 'Vazio: escola fora da rede municipal, município sem folha carregada nesse ano, ou município em que o SIOPE só traz o total da Secretaria, sem separar as escolas (veja a ajuda e a lista de municípios em Fontes e metodologia)';
+# #512 (QZ-02): o quarto motivo do salário do magistério vazio.
+my $SEM_MAGISTERIO = 'Com prof_magisterio = 0, a escola tem folha, mas ninguém no magistério: é o caso de creches em que a folha só traz auxiliares e assistentes educacionais (veja aux_educacional)';
 my $MAGISTERIO = 'Profissionais do magistério';
+our $AUX_EDUCACIONAL = 'Auxiliar/Assistente Educacional';
 
 # Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
 # pessoa pode ter mais de um vínculo na escola no mesmo mês), depois por
@@ -260,16 +263,21 @@ my $MAGISTERIO = 'Profissionais do magistério';
 my $SQL_FOLHA = <<~"SQL";
   SELECT cod_inep,
          (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE tipo = '$MAGISTERIO'))::int AS prof_magisterio,
+         round((count(*) FILTER (WHERE tipo = '$MAGISTERIO'))::numeric / count(DISTINCT m), 1)::float8 AS prof_magisterio_mes,
+         (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE aux))::int AS aux_educacional,
+         round((count(*) FILTER (WHERE aux))::numeric / count(DISTINCT m), 1)::float8 AS aux_educacional_mes,
+         round(avg(s) FILTER (WHERE aux AND m <> 'Dez'))::float8 AS salario_aux,
          round(avg(s) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::float8 AS salario_medio,
          round((avg(ch) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::numeric, 1)::float8 AS carga_media,
          round(avg(s / ch * 40) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0))::float8 AS salario_40h,
          round(sum(s))::float8 AS gasto_ano,
          count(DISTINCT m)::int AS meses
     FROM (SELECT cod_inep, left(mes, 3) AS m, cpf, nome_profissional, tipo,
+                 categoria = '$AUX_EDUCACIONAL' AS aux,
                  sum(salario_total) AS s, sum(carga_horaria) AS ch
             FROM clean.remuneracao_municipal
            WHERE ano = ? AND cod_inep <> 99999999
-           GROUP BY 1, 2, 3, 4, 5) pm
+           GROUP BY 1, 2, 3, 4, 5, 6) pm
    GROUP BY cod_inep
   SQL
 
@@ -333,13 +341,27 @@ sub _blocos {
         . 'da folha que o município declara ao SIOPE. Só a rede municipal e só os municípios em que o SIOPE detalha a folha por escola; sem nomes nem CPF.',
       colunas => [
         ['prof_magisterio', 'f.prof_magisterio',
-          "Profissionais do magistério pagos no ano, contados pela pessoa (CPF mascarado e nome: o CPF mascarado sozinho junta pessoas diferentes). $SIOPE_VAZIO", 1],
+          "Profissionais do magistério pagos no ano, contados pela pessoa (CPF mascarado e nome: o CPF mascarado sozinho junta pessoas diferentes). "
+          . 'Não é o número de docentes: conta todo mundo que recebeu no ano, inclusive quem esteve na escola só parte dele (compare com prof_magisterio_mes e qt_docentes). '
+          . $SIOPE_VAZIO, 1],
+        # #512 (QZ-03): pessoas por mês, comparável aos docentes do Censo.
+        ['prof_magisterio_mes', 'f.prof_magisterio_mes',
+          "Média de profissionais do magistério por mês com folha (pessoas pagas em cada mês, somadas e divididas pelos meses de meses_folha). É o número mais perto dos docentes do Censo (qt_docentes), mas ainda inclui quem está na escola sem dar aula (coordenação, apoio). $SIOPE_VAZIO", 1],
         ['salario_medio_magisterio', 'f.salario_medio',
-          "Salário total médio por mês de um profissional do magistério, em reais, sem dezembro (que traz o 13º). Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
+          "Salário total médio por mês de um profissional do magistério, em reais, sem dezembro (que traz o 13º). Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
         ['carga_horaria_media_magisterio', 'f.carga_media',
           "Carga horária semanal média de um profissional do magistério por mês, em horas, sem dezembro. Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
         ['salario_40h_magisterio', 'f.salario_40h',
-          "Salário médio do magistério convertido para 40 horas semanais (salário ÷ carga × 40), em reais, sem dezembro e sem os meses sem carga horária. $SIOPE_VAZIO", 1],
+          "Salário médio do magistério convertido para 40 horas semanais (salário ÷ carga × 40), em reais, sem dezembro e sem os meses sem carga horária. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
+        # #512 (QZ-02): na educação infantil, quem está com as crianças pode
+        # estar na folha como auxiliar ou assistente educacional, não no
+        # magistério.
+        ['aux_educacional', 'f.aux_educacional',
+          "Auxiliares e assistentes educacionais pagos no ano (categoria \"$AUX_EDUCACIONAL\" do SIOPE, entre os outros profissionais da educação), contados pela pessoa. Em creches, pode ser quem trabalha com as crianças quando a folha não tem ninguém no magistério. $SIOPE_VAZIO", 1],
+        ['aux_educacional_mes', 'f.aux_educacional_mes',
+          "Média de auxiliares e assistentes educacionais por mês com folha. $SIOPE_VAZIO", 1],
+        ['salario_medio_aux_educacional', 'f.salario_aux',
+          "Salário total médio por mês de um auxiliar ou assistente educacional, em reais, sem dezembro. Soma os vínculos da pessoa na escola no mês. Vazio também quando a escola não tem auxiliares na folha. $SIOPE_VAZIO", 1],
         ['gasto_pessoal_ano', 'f.gasto_ano',
           "Soma do salário total de todos os profissionais da escola no ano (magistério e demais), em reais, com o 13º. Com menos de 12 meses (veja meses_folha), é só o gasto desses meses. $SIOPE_VAZIO", 1],
         ['meses_folha', 'f.meses',
@@ -400,6 +422,69 @@ sub anos_siope ($class, $dbh) {
   my @anos = map { 0 + $_->[0] } @$rows;
   my ($completo) = map { 0 + $_->[0] } grep { $_->[1] >= 12 } @$rows;
   return { siope => \@anos, siope_padrao => $completo // $anos[0] };
+}
+
+# #512 (QZ-01): cobertura da folha por município, para a tela da base e
+# para /fontes. Um item por município com folha separada por escola, com o
+# código IBGE, o nome e a UF (do Censo) e, por ano, os meses e as escolas.
+# Município em que o SIOPE só traz o total da Secretaria fica com 0 escolas.
+sub cobertura_siope ($class, $dbh, $uf = undef) {
+  my $rows = eval {
+    $dbh->selectall_arrayref(q{
+      SELECT m.co_municipio::text AS codigo_ibge, m.no_municipio AS municipio, m.sg_uf AS uf,
+             r.ano::int AS ano,
+             count(DISTINCT left(r.mes, 3))::int AS meses,
+             (count(DISTINCT r.cod_inep) FILTER (WHERE r.cod_inep <> 99999999))::int AS escolas
+        FROM clean.remuneracao_municipal r
+        JOIN (SELECT DISTINCT co_municipio, no_municipio, sg_uf FROM clean.censo_escolas) m
+          ON left(m.co_municipio::text, 6) = r.cod_municipio::text
+       WHERE (?::text IS NULL OR m.sg_uf = ?)
+       GROUP BY 1, 2, 3, 4
+       ORDER BY 3, 2, 4 DESC
+    }, { Slice => {} }, $uf, $uf);
+  } // [];
+  my (@lista, %por);
+  for my $r (@$rows) {
+    my $m = $por{ $r->{codigo_ibge} } //= do {
+      push @lista, { map { $_ => $r->{$_} } qw(codigo_ibge municipio uf) };
+      $lista[-1]{anos} = [];
+      $lista[-1];
+    };
+    push @{ $m->{anos} }, { map { $_ => $r->{$_} } qw(ano meses escolas) };
+  }
+  return \@lista;
+}
+
+# #512 (QZ-01): o ano padrão da folha para a UF: o último ano com 12 meses
+# em algum município da UF com escolas; sem ano completo, o mais recente com
+# escolas; UF sem folha por escola: undef.
+sub siope_padrao_uf ($class, $cobertura) {
+  my %meses;
+  for my $m (@$cobertura) {
+    for my $a (grep { $_->{escolas} > 0 } @{ $m->{anos} }) {
+      $meses{ $a->{ano} } = $a->{meses} if ($meses{ $a->{ano} } // 0) < $a->{meses};
+    }
+  }
+  my @anos = sort { $b <=> $a } keys %meses;
+  my ($completo) = grep { $meses{$_} >= 12 } @anos;
+  return defined $completo ? 0 + $completo : @anos ? 0 + $anos[0] : undef;
+}
+
+# #512 (QZ-01): escolas do recorte com folha, por ano.
+sub contar_folha ($class, $dbh, $recorte) {
+  my $anos = $class->anos($dbh);
+  return {} unless defined $anos->{censo};
+  my ($where, @b) = _where($recorte, $anos->{censo});
+  my $rows = eval {
+    $dbh->selectall_arrayref(qq{
+      SELECT r.ano, count(DISTINCT e.co_entidade)
+        FROM clean.censo_escolas e
+        JOIN clean.remuneracao_municipal r ON r.cod_inep = e.co_entidade
+       WHERE $where
+       GROUP BY 1
+    }, undef, @b);
+  } // [];
+  return { map { ($_->[0] => 0 + $_->[1]) } @$rows };
 }
 
 # Recorte: { uf (obrigatória), codigo_ibge?, rede? } → (sql, binds) do WHERE.

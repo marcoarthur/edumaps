@@ -115,6 +115,22 @@
               </ul>
             </details>
           {/if}
+          {#if f.cobertura?.length}
+            <!-- #512 (QZ-01): a folha do SIOPE cobre poucos municípios: a lista, com os anos -->
+            <details class="mt-2 text-xs text-gray-600" data-testid="cobertura-{f.id}" open>
+              <summary class="cursor-pointer">Municípios com a folha carregada ({f.cobertura.length})</summary>
+              <ul class="mt-1 space-y-1">
+                {#each f.cobertura as m (m.codigo_ibge)}
+                  <li>
+                    <strong class="text-gray-800">{m.municipio}/{m.uf}</strong>:
+                    {m.anos.map((a) => a.escolas
+                      ? `${a.ano} (${a.meses} ${a.meses === 1 ? "mês" : "meses"}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"})`
+                      : `${a.ano} (só o total da Secretaria)`).join("; ")}
+                  </li>
+                {/each}
+              </ul>
+            </details>
+          {/if}
           {#if f.carga?.arquivos?.length}
             <details class="mt-2 text-xs text-gray-600">
               <summary class="cursor-pointer">Arquivos da última carga ({f.carga.arquivos.length}), com SHA-256</summary>

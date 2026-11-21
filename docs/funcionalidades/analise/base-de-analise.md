@@ -76,6 +76,13 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   13º, salário para 40 horas e gasto com pessoal do ano. Sem nomes nem CPF;
   vazio fora da rede municipal e onde o SIOPE não separa as escolas, com o
   ano no arquivo.
+- Sistema pode **dizer quem tem a folha**: os municípios da UF com folha,
+  os anos e os meses de cada um, e quantas escolas do recorte têm folha no
+  ano escolhido, que por padrão é o último ano completo da própria UF; e
+  avisar quando o recorte sai vazio.
+- Sistema pode **separar pessoas pagas no ano e por mês**, e entregar os
+  **auxiliares e assistentes educacionais**, que na educação infantil podem
+  ser quem trabalha com as crianças quando a folha não tem magistério.
 - Sistema pode **localizar cada escola** (latitude e longitude declaradas ao
   Censo Escolar), para mapas.
 - Sistema pode **entregar o dicionário das colunas**, com a descrição, a
