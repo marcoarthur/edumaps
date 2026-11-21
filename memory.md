@@ -4,6 +4,32 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-21 (cz) — vigésima nona avaliação da P4, #512 (PR #513) mergeado
+
+- Vigésima nona rodada da P4 (remuneração na base de análise, Cuiabá 2025):
+  adotaria, com a remuneração só para Cuiabá. QZ-01: ano da folha único
+  para o Brasil (SP e RO vazios no padrão), sem a lista de municípios;
+  QZ-02: creches sem magistério no SIOPE (auxiliares/assistentes
+  educacionais); QZ-03: `prof_magisterio` = pessoas pagas no ano → #512.
+- PR #513 (dbd9edc):
+  - `BaseAnalise::cobertura_siope` (município e UF via Censo; meses só das
+    linhas de escola), `siope_padrao_uf` e `contar_folha`;
+  - catálogo com `folha` quando há UF; CSV e dicionário sem `ano_siope`
+    usam o padrão da UF;
+  - colunas `prof_magisterio_mes`, `aux_educacional`, `aux_educacional_mes`
+    e `salario_medio_aux_educacional` (`$AUX_EDUCACIONAL`);
+  - `/fontes` com `cobertura` no SIOPE.
+- Dados locais de SIOPE:
+  - Cuiabá 2025 (12 meses) e 2026 (6 meses de escolas; julho e agosto só
+    com a Secretaria);
+  - Ubatuba 2026;
+  - Alta Floresta d'Oeste 2024;
+  - Taubaté 2026, só com a Secretaria.
+- Fora do escopo: `/fontes` ainda dá `indices-v2` de exemplo em "Como ler os
+  números".
+- Pendente no LXC: `deploy_backend_dev` + `deploy_frontend_dev`.
+- Nota técnica 241, ciclo `2026-11-21-base-folha-uf.md`.
+
 ## Sessão 2026-11-21 (cy) — vigésima oitava avaliação da P4, #510 (PR #511) mergeado
 
 - Vigésima oitava rodada da P4 (painel público da escola, Amai Pro

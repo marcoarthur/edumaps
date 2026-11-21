@@ -91,3 +91,17 @@ entrega da vigésima oitava rodada:
 
 Issue **#512** (QZ-01 a QZ-03 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-21: #512 (PR #513) mergeado: QZ-01 a QZ-03 resolvidos.
+  - O ano da folha segue a UF (SP 2026, MT 2025, RO 2024).
+  - A tela diz os municípios da UF com folha, os anos, os meses e as escolas
+    do recorte com folha, e avisa quando sai vazio; `/fontes` lista os
+    municípios.
+  - Colunas `prof_magisterio_mes`, `aux_educacional`, `aux_educacional_mes`
+    e `salario_medio_aux_educacional`; o dicionário diz que
+    `prof_magisterio` não é o número de docentes e o motivo do salário vazio
+    com 0 no magistério.
+  - Correção: Cuiabá tem 2026 de janeiro a agosto, mas julho e agosto só com
+    o total da Secretaria. Para as escolas, são 6 meses, como estava dito.

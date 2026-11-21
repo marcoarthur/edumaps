@@ -80,6 +80,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p4--academia-pesquisadora): adotaria (mantido), agora também com a posição da escola. RC-01 e RC-02 resolvidos; nenhum achado aberto da vigésima sexta avaliação.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p4--academia-pesquisadora): adotaria (mantido), agora citando o ranking de redes. RB-01 resolvido; nenhum achado aberto da vigésima sétima avaliação.
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p4--academia-pesquisadora): adotaria (mantido), agora também descrevendo a escola pelo painel público. RA-01 a RA-03 resolvidos; nenhum achado aberto da vigésima oitava avaliação.
+- [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p4--academia-pesquisadora): adotaria (mantido), agora com a remuneração em todos os municípios carregados. QZ-01 a QZ-03 resolvidos; nenhum achado aberto da vigésima nona avaliação.
 
 ## Pendências
 
@@ -163,7 +164,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima nona rodada (2026-11-21, **adotaria**, com a remuneração só para
   Cuiabá): QZ-01 (ano da folha único para o Brasil, sem dizer quem tem
   folha), QZ-02 (educação infantil sem magistério, motivo não dito) e QZ-03
-  (`prof_magisterio` não é o número de professores) → #512.
+  (`prof_magisterio` não é o número de professores) → #512, entregues
+  (#513).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

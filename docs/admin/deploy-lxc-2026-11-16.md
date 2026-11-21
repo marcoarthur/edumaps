@@ -217,6 +217,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       = 285, `ano_censo`, `etapas.pre_escola` = 1 e `infraestrutura` como objeto (com `detalhe`);
       a 29211999 (Abaíra) com `esgoto` = 1 e `detalhe.esgoto` = "outra_solucao",
       `quadra_esportes` e `acessibilidade` = 1.
+- [ ] Folha da base por UF (#512):
+      `curl -s 'http://127.0.0.1:3000/api/base-analise?uf=SP'` traz `folha.padrao` = o último ano
+      completo da UF e `folha.municipios` com os anos e os meses; o CSV de uma UF com folha traz
+      `prof_magisterio_mes` e `aux_educacional`; `/api/fontes` traz `cobertura` no SIOPE.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
