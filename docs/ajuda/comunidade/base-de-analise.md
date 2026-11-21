@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/base-de-analise.md
-ultima_revisao: 2026-11-18
+ultima_revisao: 2026-11-21
 ---
 
 # Base de análise: indicadores por escola para baixar
@@ -54,6 +54,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      tamanho;
    - **Remuneração (SIOPE):** a folha que o município declara ao SIOPE,
      somada por escola no ano escolhido (só a rede municipal; veja abaixo).
+     Com o bloco marcado, a tela diz que municípios da UF têm a folha, em que
+     anos e com quantos meses, e quantas escolas do recorte têm folha no ano
+     escolhido; se nenhuma tiver, avisa e diz os anos que têm.
 3. **Baixar:** **Baixar base (CSV)** gera a planilha; **Baixar dicionário das
    colunas** gera a lista das colunas com a descrição, a fonte, o ano e o
    link oficial. O endereço da página guarda as escolhas, então o link
@@ -84,12 +87,26 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
 - **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
-  escolhido em **Ano da folha (SIOPE)** (o padrão é o último ano completo).
+  escolhido em **Ano da folha (SIOPE)**. O padrão é o último ano completo
+  (12 meses) **da UF escolhida**; sem ano completo, o mais recente da UF. Cada
+  município carregou anos diferentes: em SP, por exemplo, a folha é só de
+  2026, e a base de SP sai com 2026.
   O ano vai na coluna `ano_siope` e no nome do arquivo (`-siope2025`).
   - `prof_magisterio`: os profissionais do magistério pagos no ano. Cada
     pessoa conta uma vez: a chave é o CPF mascarado **e** o nome, porque o
     SIOPE publica só seis dígitos do CPF e pessoas diferentes caem no mesmo
-    CPF mascarado.
+    CPF mascarado. **Não é o número de docentes:** conta todo mundo que
+    recebeu no ano, inclusive quem esteve na escola só parte dele. Em Cuiabá
+    (2025), a mediana é 1,6 vez os docentes do Censo (`qt_docentes`).
+  - `prof_magisterio_mes`: a média de profissionais do magistério por mês com
+    folha. É o número mais perto dos docentes do Censo, mas ainda inclui quem
+    está na escola sem dar aula (coordenação, apoio).
+  - `aux_educacional`, `aux_educacional_mes` e
+    `salario_medio_aux_educacional`: os auxiliares e assistentes educacionais
+    (categoria "Auxiliar/Assistente Educacional" do SIOPE), no ano, por mês e
+    o salário médio mensal sem dezembro. Na educação infantil, podem ser
+    quem trabalha com as crianças: em Cuiabá, as creches não têm ninguém no
+    magistério na folha, só auxiliares.
   - `salario_medio_magisterio`, `carga_horaria_media_magisterio` e
     `salario_40h_magisterio`: médias por pessoa e por mês, **sem dezembro**
     (que traz o 13º). Quem tem dois vínculos na escola no mesmo mês tem os
@@ -101,9 +118,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **Vazio:** escola fora da rede municipal, município sem folha nesse ano,
     ou município em que o SIOPE só traz o total da Secretaria, sem separar as
     escolas. A cobertura é pequena (poucos municípios carregados) e não é uma
-    amostra: a lista está em [Fontes e metodologia](fontes-e-metodologia.md)
-    e no painel financeiro de cada escola. No R:
+    amostra: a lista, com os anos de cada município, está em
+    [Fontes e metodologia](fontes-e-metodologia.md). No R:
     `base[!is.na(base$prof_magisterio), ]` antes de modelar.
+  - **`prof_magisterio` = 0 e o salário vazio:** a escola tem folha, mas
+    ninguém no magistério. É o caso das creches em que a folha só traz
+    auxiliares e assistentes educacionais (veja `aux_educacional`); o Censo
+    costuma dar 0 docentes a essas escolas também. Não é falta de dado: tire
+    essas escolas antes de modelar o salário do magistério.
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP. Os seis se refazem com as partes que estão na base, pelo
   [bloco R abaixo](#refazer-os-seis-índices-no-r). Cite com a
@@ -257,7 +279,8 @@ base <- within(base, {
   [ranking das redes](rankings.md) já aceita a região.
 - O INSE vem só da edição mais recente do SAEB.
 - A remuneração cobre só os municípios com a folha do SIOPE carregada e
-  separada por escola.
+  separada por escola, cada um com os seus anos (a lista está em Fontes e
+  metodologia).
 
 ## Veja também
 - [Rankings de redes e de escolas](rankings.md)

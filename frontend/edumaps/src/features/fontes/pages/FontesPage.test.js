@@ -23,6 +23,15 @@ describe("FontesPage (#428)", () => {
     expect(screen.getByText("Como ler os números")).toBeInTheDocument();
   });
 
+  it("SIOPE: a lista dos municípios com folha, com os anos (#512)", async () => {
+    render(FontesPage);
+    const lista = await screen.findByTestId("cobertura-siope");
+    expect(lista).toHaveTextContent("Municípios com a folha carregada (2)");
+    expect(lista).toHaveTextContent("Cuiabá/MT: 2026 (6 meses, 168 escolas); 2025 (12 meses, 167 escolas)");
+    expect(lista).toHaveTextContent("Taubaté/SP: 2026 (só o total da Secretaria)");
+    expect(screen.queryByTestId("cobertura-censo")).toBeNull();
+  });
+
   it("índices do EduMaps: versão, histórico e sem licença de órgão (#462)", async () => {
     render(FontesPage);
     const ind = await screen.findByTestId("fonte-indices_edumaps");

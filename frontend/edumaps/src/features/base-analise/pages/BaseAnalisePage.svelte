@@ -22,6 +22,11 @@
   let blocos = $state((inicial.get("blocos") ?? "").split(",").filter(Boolean));
   let anoIdeb = $state(Number(inicial.get("ano_ideb")) || null);
   let anoSiope = $state(Number(inicial.get("ano_siope")) || null);
+  // #512 (QZ-01): a folha da UF (municípios, anos, meses e escolas) e as
+  // escolas do recorte com folha em cada ano. O ano segue o padrão da UF até
+  // a pessoa escolher um no seletor (ou vir na URL).
+  let folha = $state(null);
+  let anoSiopeEscolhido = $state(!!Number(inicial.get("ano_siope")));
   let total = $state(null);
   let contando = $state(false);
   let error = $state(null);
@@ -31,6 +36,10 @@
   const nColunas = $derived(escolhidos.reduce((n, b) => n + b.colunas.length, 0));
   const temEtapas = $derived(!!catalogo && catalogo.blocos.some((b) => b.id === "etapas"));
   // #444 (BA-01): edição antiga do IDEB cruzada com o Censo mais recente.
+  const folhaRecorte = $derived(folha && anoSiope ? (folha.escolas?.[anoSiope] ?? 0) : null);
+  const anosFolhaUf = $derived(
+    folha ? [...new Set(folha.municipios.flatMap((m) => m.anos.filter((a) => a.escolas > 0).map((a) => a.ano)))].sort((a, b) => b - a) : [],
+  );
   const idebAntigo = $derived(
     !!catalogo && blocos.includes("desempenho") && anoIdeb != null && anoIdeb !== catalogo.anos.ideb[0],
   );
@@ -56,12 +65,26 @@
     try {
       const r = await getBaseAnalise({ uf, codigoIbge, rede });
       total = r.total;
+      aplicarFolha(r.folha);
     } catch (err) {
       total = null;
       error = err instanceof ApiError ? err.message : "Não foi possível contar as escolas do recorte.";
     } finally {
       contando = false;
     }
+  }
+
+  function aplicarFolha(f) {
+    folha = f ?? null;
+    if (!anoSiopeEscolhido && folha?.padrao && (catalogo?.anos.siope ?? []).includes(folha.padrao)) {
+      anoSiope = folha.padrao;
+      definirUrl();
+    }
+  }
+
+  function escolherAnoSiope() {
+    anoSiopeEscolhido = true;
+    definirUrl();
   }
 
   function trocarUf() {
@@ -100,7 +123,11 @@
       if (!catalogo.redes.some((r) => r.id === rede)) rede = "";
       if (!catalogo.anos.ideb.includes(anoIdeb)) anoIdeb = catalogo.anos.ideb[0] ?? null;
       // #491: sem ano pedido (ou inexistente), o ano completo mais recente.
-      if (!(catalogo.anos.siope ?? []).includes(anoSiope)) anoSiope = catalogo.anos.siope_padrao ?? null;
+      if (!(catalogo.anos.siope ?? []).includes(anoSiope)) {
+        anoSiope = catalogo.anos.siope_padrao ?? null;
+        anoSiopeEscolhido = false;
+      }
+      aplicarFolha(catalogo.folha);
     } catch (err) {
       error = err instanceof ApiError ? err.message : "Não foi possível carregar a base de análise.";
     }
@@ -219,15 +246,41 @@
               <div class="ml-6 mt-2">
                 {#if (catalogo.anos.siope ?? []).length}
                   <label for="ano-siope" class="text-sm text-gray-600 mr-2">Ano da folha (SIOPE)</label>
-                  <select id="ano-siope" bind:value={anoSiope} onchange={definirUrl}
+                  <select id="ano-siope" bind:value={anoSiope} onchange={escolherAnoSiope}
                     class="border border-gray-300 rounded-md px-2 py-1 text-sm">
                     {#each catalogo.anos.siope as a}<option value={a}>{a}</option>{/each}
                   </select>
                 {/if}
+                {#if folha}
+                  <!-- #512 (QZ-01): quem tem folha nesta UF, e quantas escolas do recorte no ano -->
+                  <p class="mt-2 text-xs text-gray-700" data-testid="cobertura-siope">
+                    {#if folha.municipios.length}
+                      Folha por escola em {uf}:
+                      {#each folha.municipios as m, i}{i ? "; " : ""}<strong>{m.municipio}</strong> ({m.anos.map((a) => a.escolas
+                        ? `${a.ano}: ${a.meses} ${a.meses === 1 ? "mês" : "meses"}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`
+                        : `${a.ano}: só o total da Secretaria`).join("; ")}){/each}.
+                    {:else}
+                      Nenhum município de {uf} tem a folha do SIOPE separada por escola: o bloco sai vazio.
+                    {/if}
+                  </p>
+                  {#if folha.municipios.length && folhaRecorte != null}
+                    {#if folhaRecorte > 0}
+                      <p class="mt-1 text-xs text-gray-700" data-testid="folha-recorte">
+                        {folhaRecorte.toLocaleString("pt-BR")} {folhaRecorte === 1 ? "escola" : "escolas"} deste recorte {folhaRecorte === 1 ? "tem" : "têm"} folha em {anoSiope}.
+                      </p>
+                    {:else}
+                      <p class="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2" role="note" data-testid="aviso-folha-vazia">
+                        Nenhuma escola deste recorte tem folha em {anoSiope}: a remuneração sai vazia.
+                        {#if anosFolhaUf.length}Anos com folha em {uf}: {anosFolhaUf.join(", ")}.{/if}
+                      </p>
+                    {/if}
+                  {/if}
+                {/if}
                 <!-- #491 (RJ-03): a cobertura é pequena e não aleatória. -->
                 <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="aviso-siope">
                   Só a rede municipal, e só os municípios em que o SIOPE separa a folha por escola: nas demais escolas a coluna fica vazia.
-                  A lista dos municípios com folha está em <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a> e no painel financeiro de cada escola.
+                  A lista de todos os municípios com folha está em <a href="/fontes" class="text-blue-700 hover:underline">Fontes e metodologia</a>.
+                  Na educação infantil, quem está com as crianças pode estar na folha como auxiliar ou assistente educacional, não no magistério: veja as colunas <code>aux_educacional</code>.
                 </p>
               </div>
             {/if}

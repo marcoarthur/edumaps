@@ -44,15 +44,26 @@ sub _blocos_ano ($self, $v, $anos) {
   } else {
     $ano = $anos->{ideb}[0];
   }
-  # #491: o ano da folha do SIOPE (bloco remuneracao); sem ele, o ano
-  # completo mais recente.
+  # #491: o ano da folha do SIOPE (bloco remuneracao). #512 (QZ-01): sem
+  # ele, o padrão da UF (último ano completo num município dela), e só sem
+  # folha na UF o padrão do Brasil.
   my $ano_siope = $v->param('ano_siope');
   if (defined $ano_siope) {
     return (undef, undef, "Sem folha do SIOPE em $ano_siope") unless grep { $_ == $ano_siope } @{ $anos->{siope} };
   } else {
-    $ano_siope = $anos->{siope_padrao};
+    $ano_siope = $self->_siope_uf($v)->{padrao} // $anos->{siope_padrao};
   }
   return (\@blocos, $ano, undef, $ano_siope);
+}
+
+# #512 (QZ-01): a folha da UF do recorte: os municípios com os anos e o
+# ano padrão da UF.
+sub _siope_uf ($self, $v) {
+  my $uf = $v->param('uf');
+  return { municipios => [], padrao => undef } unless defined $uf;
+  my $dbh = $self->app->schema->storage->dbh;
+  my $cob = $B->cobertura_siope($dbh, $uf);
+  return { municipios => $cob, padrao => $B->siope_padrao_uf($cob) };
 }
 
 sub _nome ($self, $prefixo, $v, $blocos, $anos, $ano_ideb, $ano_siope = undef) {
@@ -81,6 +92,11 @@ sub index ($self) {
   my $dbh = $self->app->schema->storage->dbh;
   my $anos = $B->anos($dbh);
   my $total = defined $ok->{v}->param('uf') ? $B->contar($dbh, $self->_recorte($ok->{v})) : undef;
+  # #512 (QZ-01): com a UF, a folha dela e as escolas do recorte com folha
+  # em cada ano.
+  my $folha = defined $ok->{v}->param('uf')
+    ? { %{ $self->_siope_uf($ok->{v}) }, escolas => $B->contar_folha($dbh, $self->_recorte($ok->{v})) }
+    : undef;
   $self->res->headers->cache_control('public, max-age=600');
   $self->render(json => {
     blocos => $B->catalogo,
@@ -88,6 +104,7 @@ sub index ($self) {
     ufs    => \@EduMaps::BaseAnalise::UFS,
     anos   => $anos,
     total  => $total,
+    folha  => $folha,
   });
 }
 

@@ -57,7 +57,7 @@ our @CATALOGO = (
     id        => 'siope',
     nome      => 'Folha de pagamento da educação (SIOPE)',
     orgao     => 'FNDE',
-    descricao => 'Remuneração dos profissionais da educação declarada pelos municípios ao SIOPE. Cobertura parcial: só os municípios já carregados.',
+    descricao => 'Remuneração dos profissionais da educação declarada pelos municípios ao SIOPE. Cobertura parcial: só os municípios já carregados, listados abaixo com os anos.',
     url       => 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/siope',
     metodologia => 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/siope',
     tabelas   => [qw(clean.remuneracao_municipal)],
@@ -224,6 +224,12 @@ sub resolver ($class, $dbh) {
         arquivos => arquivos_publicos($carga->{manifesto}),
       } : undef,
       licenca => $carga ? licenca_publica($carga->{source_license}) : undef,
+      # #512 (QZ-01): a folha do SIOPE cobre poucos municípios; a lista,
+      # com os anos, os meses e as escolas de cada um, fica no cartão.
+      ($f->{id} eq 'siope' ? (cobertura => do {
+        require EduMaps::BaseAnalise;
+        EduMaps::BaseAnalise->cobertura_siope($dbh);
+      }) : ()),
     };
   }
   return \@out;

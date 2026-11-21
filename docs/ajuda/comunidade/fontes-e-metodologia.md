@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, painel-publico-da-escola, privacidade]
 funcionalidade: ../../funcionalidades/plataforma/fontes-de-dados.md
-ultima_revisao: 2026-11-19
+ultima_revisao: 2026-11-21
 ---
 
 # Fontes e metodologia
@@ -63,7 +63,10 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 ## Limitações conhecidas
 - A página lista as bases das análises públicas. As do painel do gestor
   (saúde, trânsito, cobertura do solo, contas municipais) entram depois.
-- A folha de pagamento cobre só os municípios já carregados.
+- A folha de pagamento cobre só os municípios já carregados. O cartão do
+  SIOPE lista esses municípios, com os anos, os meses e as escolas de cada
+  um; município em que o SIOPE só traz o total da Secretaria aparece como
+  tal.
 
 ## Veja também
 - [Comparar redes](comparar-redes.md)
