@@ -83,6 +83,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: o painel da escola sem etapas e itens apagados por erro e com as matrículas do Censo.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base de análise não é a tela dela.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base de análise não é a tela dela.
+- [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base e a comparação de redes não são as telas dela.
 
 ## Pendências
 

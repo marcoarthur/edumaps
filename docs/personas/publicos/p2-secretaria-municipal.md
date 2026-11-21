@@ -82,6 +82,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o retrato público das escolas da rede bate com o Censo.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: a folha da rede pelo ano carregado e os auxiliares das creches.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o ano de cada número dito ao cruzar o IDEB da rede.
+- [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: creche e pré-escola separadas na rede, como nas metas do PNE, e as matrículas por escola para baixar.
 
 ## Pendências
 

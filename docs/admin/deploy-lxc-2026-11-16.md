@@ -74,6 +74,7 @@ já estar lá — o registry é quem diz):
 | `rede_escolas_ativas` | #479 (recria `analytics.mv_rede_escolas` só com as escolas em funcionamento; a comparação de redes soma ~180,5 mil escolas no Brasil) |
 | `school_embedding_l2` | #487 (troca o índice HNSW de `analytics.school_embedding` do cosseno para `vector_l2_ops`; leva alguns minutos com ~178 mil vetores; os vetores não mudam) |
 | `ranking_escola_empates` | #506 (colunas `empate_municipio/estado/nacional` em `analytics.ranking_escola`; vazias até o `ranking.pl` do §6) |
+| `rede_escolas_creche_pre` | #516 (recria `analytics.mv_rede_escolas` com `matriculas_creche` e `matriculas_pre`; a coluna da infantil fica) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -81,7 +82,7 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `ranking_escola_empates` (#506; antes `school_embedding_l2`) e o `deploy_db_dev` não
+- [ ] A última change do registry é `rede_escolas_creche_pre` (#516; antes `ranking_escola_empates`) e o `deploy_db_dev` não
       reportou erro. Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
@@ -91,7 +92,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
       `psql edumaps_dev -f verify/escolas_scores_gestora.sql` (falha se a capacidade gestora não bater com a fórmula da `indices-v6`) e
       `psql edumaps_dev -f verify/rede_escolas_ativas.sql` (falha se a comparação de redes contar escola fora de funcionamento) e
       `psql edumaps_dev -f verify/school_embedding_l2.sql` (falha se o índice das escolas semelhantes não for `vector_l2_ops`) e
-      `psql edumaps_dev -f verify/ranking_escola_empates.sql` (falha se faltar alguma das três colunas de empate).
+      `psql edumaps_dev -f verify/ranking_escola_empates.sql` (falha se faltar alguma das três colunas de empate) e
+      `psql edumaps_dev -f verify/rede_escolas_creche_pre.sql` (falha se faltar creche ou pré-escola, ou se as duas não somarem a infantil).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -225,6 +227,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=BA&blocos=desempenho,inse'`
       traz em `ano_ideb` "cruzada com o Censo Escolar 2025 (dois anos depois)" e em `ano_inse`
       "a mesma do IDEB".
+- [ ] Matrículas na base e creche/pré nas redes (#516):
+      o CSV de `curl -s 'http://127.0.0.1:3000/api/base-analise/csv?uf=BA&blocos=matriculas'` traz
+      `mat_basica` a `mat_integral`; `curl -s 'http://127.0.0.1:3000/api/network/2927408/summary'`
+      traz `matriculas_creche` e `matriculas_pre` na rede municipal de Salvador (~8,3 mil e ~14,3 mil).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

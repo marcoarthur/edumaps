@@ -77,3 +77,15 @@ da entrega da trigésima rodada:
 
 Issue **#516** (QX-01 e QX-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-21: #516 (PR #517) mergeado: QX-01 e QX-02 resolvidos.
+  - A base tem o bloco "Matrículas", com 10 colunas do mesmo Censo (total,
+    creche, pré-escola, anos iniciais e finais, médio, profissional, EJA,
+    especial e tempo integral); o dicionário diz que as etapas não somam o
+    total.
+  - A comparação de redes separa creche e pré-escola e tem o link para a
+    base do município com as etapas e as matrículas.
+  - A ajuda mostra a soma por município no R e diz que a taxa de
+    atendimento pede a população por idade, que não está carregada.

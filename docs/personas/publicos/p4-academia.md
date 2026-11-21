@@ -82,6 +82,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p4--academia-pesquisadora): adotaria (mantido), agora também descrevendo a escola pelo painel público. RA-01 a RA-03 resolvidos; nenhum achado aberto da vigésima oitava avaliação.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p4--academia-pesquisadora): adotaria (mantido), agora com a remuneração em todos os municípios carregados. QZ-01 a QZ-03 resolvidos; nenhum achado aberto da vigésima nona avaliação.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p4--academia-pesquisadora): adotaria (mantido), com a base para a pergunta do perfil. QY-01 resolvido; nenhum achado aberto da trigésima avaliação.
+- [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p4--academia-pesquisadora): adotaria (mantido), agora com a base para medir a oferta. QX-01 e QX-02 resolvidos; nenhum achado aberto da trigésima primeira avaliação.
 
 ## Pendências
 
@@ -172,7 +173,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #514, entregue (#515).
   Trigésima primeira rodada (2026-11-21, **adotaria**, sem a base para
   medir a oferta): QX-01 (a base não traz o número de matrículas) e QX-02
-  (comparação de redes junta creche e pré-escola e não exporta) → #516.
+  (comparação de redes junta creche e pré-escola e não exporta) → #516,
+  entregues (#517).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

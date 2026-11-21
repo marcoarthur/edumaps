@@ -79,6 +79,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: o painel das privadas também sai certo, sem mudar o veredito.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto: folha só da rede municipal.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
+- [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: as matrículas das privadas também saem na base, sem mudar o veredito.
 
 ## Pendências
 

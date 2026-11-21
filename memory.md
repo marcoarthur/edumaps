@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-21 (db) — trigésima primeira avaliação da P4, #516 (PR #517) mergeado
+
+- Trigésima primeira rodada da P4 (oferta de educação infantil em
+  municípios de 10 a 20 mil habitantes da BA): adotaria, sem a base para
+  medir a oferta.
+  - QX-01: a base não trazia matrículas (contar escolas com creche: postos
+    0,36 com as matrículas);
+  - QX-02: comparação de redes junta creche e pré e não exporta → #516.
+- PR #517 (f90fa5b):
+  - bloco `matriculas` na base (`@MATRICULAS`, 10 colunas de
+    `clean.censo_matriculas`, mesmo `nu_ano_censo`), com "não somam o total";
+  - change `rede_escolas_creche_pre` (recria `analytics.mv_rede_escolas` com
+    `matriculas_creche`/`matriculas_pre`; verify creche + pré = infantil);
+  - comparação de redes com Creche e Pré-escola e link para a base do
+    município (`blocos=etapas,matriculas`).
+- Pendente no LXC: `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_frontend_dev`.
+- Nota técnica 243, ciclo `2026-11-21-base-matriculas.md`.
+
 ## Sessão 2026-11-21 (da) — trigésima avaliação da P4, #514 (PR #515) mergeado
 
 - Trigésima rodada da P4 (IDEB × infraestrutura pela base, BA pública):

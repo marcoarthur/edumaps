@@ -79,6 +79,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: fossa não aparece mais como falta de esgoto.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a lista dos municípios com folha em /fontes.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: creche separada da pré-escola para acompanhar a meta 1 do PNE.
 
 ## Pendências
 
