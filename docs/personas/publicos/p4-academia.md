@@ -160,10 +160,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   escola tem), RA-02 (matrículas contadas duas vezes, porte sem fonte) e
   RA-03 (cartões sem o empate, ajuda do painel vazia) → #510, entregues
   (#511).
+  Vigésima nona rodada (2026-11-21, **adotaria**, com a remuneração só para
+  Cuiabá): QZ-01 (ano da folha único para o Brasil, sem dizer quem tem
+  folha), QZ-02 (educação infantil sem magistério, motivo não dito) e QZ-03
+  (`prof_magisterio` não é o número de professores) → aguarda aprovação.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (vigésima nona rodada, remuneração na base de análise)
+
+**Veredito:** **adotaria** (mantido), com a remuneração só para Cuiabá.
+Consolidação em
+[`avaliacoes/2026-11-21-p4-remuneracao-base.md`](avaliacoes/2026-11-21-p4-remuneracao-base.md).
+
+**Barreiras:**
+- QZ-01 (atrapalha): o Ano da folha (SIOPE) é um só para o Brasil (2025),
+  e a tela não diz quais municípios da UF têm folha em cada ano. SP
+  (Ubatuba, só 2026) e RO (Alta Floresta d'Oeste, só 2024) saem vazios no
+  padrão; `/fontes` não tem a lista que a ajuda promete.
+- QZ-02 (detalhe): 53 das 167 escolas de Cuiabá com folha são só de
+  educação infantil e não têm magistério no SIOPE (auxiliares/assistentes
+  educacionais); `prof_magisterio` = 0, salário vazio, motivo não dito.
+- QZ-03 (detalhe): `prof_magisterio` conta as pessoas pagas no ano (mediana
+  1,59 vez os docentes do Censo; EMEB Ranulpho: 89 no ano, 75 por mês, 37
+  docentes).
 
 ### 2026-11-21 — Análises públicas (vigésima oitava rodada, painel público da escola)
 
