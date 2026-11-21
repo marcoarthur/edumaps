@@ -75,5 +75,5 @@ da entrega da trigésima rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue (QX-01 e QX-02
-juntas).
+Issue **#516** (QX-01 e QX-02 juntas), aberta com a aprovação do
+developer.

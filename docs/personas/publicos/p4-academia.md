@@ -172,8 +172,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #514, entregue (#515).
   Trigésima primeira rodada (2026-11-21, **adotaria**, sem a base para
   medir a oferta): QX-01 (a base não traz o número de matrículas) e QX-02
-  (comparação de redes junta creche e pré-escola e não exporta) → aguarda
-  aprovação.
+  (comparação de redes junta creche e pré-escola e não exporta) → #516.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
