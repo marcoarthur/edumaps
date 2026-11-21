@@ -154,10 +154,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima sétima rodada (2026-11-20, **adotaria**, sem citar o ranking
   de redes): RB-01 (o ranking de redes conta escolas fora de
   funcionamento e não se refaz pela base) → #508, entregue (#509).
+  Vigésima oitava rodada (2026-11-21, **adotaria**, sem o painel público
+  para descrever a escola): RA-01 (etapas e infraestrutura apagadas que a
+  escola tem), RA-02 (matrículas contadas duas vezes, porte sem fonte) e
+  RA-03 (cartões sem o empate, ajuda do painel vazia) → aguarda aprovação.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (vigésima oitava rodada, painel público da escola)
+
+**Veredito:** **adotaria** (mantido), sem o painel público para descrever a
+escola. Consolidação em
+[`avaliacoes/2026-11-21-p4-painel-publico.md`](avaliacoes/2026-11-21-p4-painel-publico.md).
+
+**Barreiras:**
+- RA-01 (atrapalha): o painel apaga o que a escola tem. Pré-escola (98.010
+  escolas) e quadra (72.800) por nomes diferentes entre a resposta e a tela;
+  acessibilidade sempre apagada; esgoto por fossa (70.538) e energia de outra
+  fonte (3.857) como falta. Amai Pro (29190231): pré-escola na base, apagada
+  no painel.
+- RA-02 (atrapalha): as matrículas somam a infantil, a EJA e o médio ao
+  total que já as contém (Amai Pro: 357 contra 285; 148.190 escolas,
+  36.034 mudam de porte); faixas de porte sem fonte; ano do Censo não dito.
+- RA-03 (detalhe): os cartões do painel não dizem o empate (#507), e a ajuda
+  do painel público não explica blocos, fonte, ano nem ícone apagado.
 
 ### 2026-11-20 — Análises públicas (vigésima sétima rodada, refazer o ranking de redes)
 
