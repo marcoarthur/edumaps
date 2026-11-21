@@ -12,8 +12,13 @@ const API = {
     matriculas: 100,
     latitude: null,
     longitude: null,
-    etapas: ["fundamental_ii"],
-    infraestrutura: ["internet"],
+    ano_censo: 2025,
+    etapas: { creche: 0, pre_escola: 1, fundamental_i: 1, fundamental_ii: 0, ensino_medio: 0, eja: null, profissionalizante: 0 },
+    infraestrutura: {
+      agua_potavel: 1, energia: 0, esgoto: 1, coleta_lixo: 1, internet: null, biblioteca: 0,
+      laboratorio_ciencias: 0, laboratorio_informatica: 0, quadra_esportes: 1, acessibilidade: 1,
+      alimentacao: 1, detalhe: { esgoto: "outra_solucao" },
+    },
   },
   indicators: {},
   similar_schools: [],
@@ -34,6 +39,20 @@ const API = {
 };
 
 describe("transformPanelData", () => {
+  it("#510: etapas e infraestrutura com o estado de cada item (n/d como null)", () => {
+    const { school } = transformPanelData(API);
+    expect(school.etapas.pre_escola).toBe(true);
+    expect(school.etapas.creche).toBe(false);
+    expect(school.etapas.eja).toBeNull();
+    expect(school.infraestrutura.quadra_esportes).toBe(true);
+    expect(school.infraestrutura.acessibilidade).toBe(true);
+    expect(school.infraestrutura.energia).toBe(false);
+    expect(school.infraestrutura.internet).toBeNull();
+    expect(school.infraDetalhe).toEqual({ esgoto: "outra_solucao" });
+    expect(school.matriculas).toBe(100);
+    expect(school.anoCenso).toBe(2025);
+  });
+
   it("escolas semelhantes: distância em pontos e notas comparadas (#487)", () => {
     const { similarSchools } = transformPanelData({
       ...API,

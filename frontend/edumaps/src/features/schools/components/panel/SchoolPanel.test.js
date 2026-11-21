@@ -76,8 +76,58 @@ describe("SchoolPanel", () => {
     expect(screen.getByText("Infraestrutura")).toBeInTheDocument();
     expect(screen.getByLabelText("Água potável")).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Energia da rede pública"),
+      screen.getByLabelText("Energia elétrica"),
     ).toBeInTheDocument();
+  });
+
+  it("#510: estados tem/não tem/sem dado, detalhe do esgoto e matrículas com o ano", () => {
+    render(SchoolPanel, {
+      school: {
+        ...mockSchool,
+        matriculas: 285,
+        anoCenso: 2025,
+        etapas: { ...mockSchool.etapas, eja: null },
+        infraestrutura: { ...mockSchool.infraestrutura, energia: false, internet: null },
+        infraDetalhe: { esgoto: "outra_solucao" },
+      },
+      indicators: [],
+      similarSchools: [],
+    });
+
+    // pré-escola oferecida: acesa, sem × nem n/d
+    expect(screen.queryByTestId("nd-pre_escola")).not.toBeInTheDocument();
+    // sem dado: n/d, não ×
+    expect(screen.getByTestId("nd-eja")).toBeInTheDocument();
+    expect(screen.getByTestId("nd-internet")).toBeInTheDocument();
+    // esgoto por fossa: aceso, com o detalhe
+    expect(screen.getByTestId("detalhe-esgoto")).toHaveTextContent("outra solução");
+    expect(screen.getByTitle("Energia elétrica · não tem")).toBeInTheDocument();
+    expect(screen.getByTitle("Esgoto · outra solução")).toBeInTheDocument();
+
+    expect(screen.getByText("285")).toBeInTheDocument();
+    expect(screen.getByTestId("matriculas-ano")).toHaveTextContent("(Censo 2025)");
+    expect(screen.queryByText(/porte (pequena|média|grande)/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("fonte-censo")).toHaveTextContent("Censo Escolar 2025");
+  });
+
+  it("#510: o cartão diz o empate e leva à posição da escola", () => {
+    const indicators = [
+      {
+        indicador: { id: "sustentabilidade", label: "Sustentabilidade", valor: 0 },
+        ano: 2025,
+        ranking: {
+          municipio: { posicao: 767, total: 1432, percentil: 0, abaixo: 0, empate: 666 },
+        },
+      },
+    ];
+    render(SchoolPanel, { school: mockSchool, indicators, similarSchools: [] });
+
+    expect(screen.getByTestId("empate-sustentabilidade")).toHaveTextContent("empatada com 665 escolas");
+    expect(screen.getByText(/Acima de 0% das outras escolas no município/)).toBeInTheDocument();
+    expect(screen.getByText("ver a posição →")).toHaveAttribute(
+      "href",
+      "/escola/ranking?inep=12345678",
+    );
   });
 
   it("não deve renderizar a seção de indicadores se indicators estiver vazio", () => {

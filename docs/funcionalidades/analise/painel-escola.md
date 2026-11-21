@@ -28,6 +28,13 @@ uma escola.
   perfil dos alunos.
 - Sistema pode descrever infraestrutura, equipamentos e acessibilidade em
   linguagem simples.
+- Sistema pode dizer, item a item, se a escola **tem, não tem ou não informou**
+  cada etapa e cada item de infraestrutura, com as mesmas regras da base de
+  análise: esgoto e energia contam a fossa e o gerador como "outra solução",
+  não como falta, e o que o Censo não traz fica como "sem dado".
+- Sistema pode mostrar as **matrículas** da escola pelo total da educação
+  básica do Censo, com o ano, e a **posição** em cada indicador com o empate
+  dito e o caminho para a posição completa.
 - Sistema pode apresentar o desempenho (IDEB/SAEB) e escolas semelhantes para
   comparação.
 - Sistema pode exibir o **índice de vulnerabilidade de acesso (IVET)** da

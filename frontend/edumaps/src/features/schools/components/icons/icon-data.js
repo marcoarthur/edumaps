@@ -61,12 +61,12 @@ export const ICONS = {
   },
   energia: {
     category: "infra",
-    label: "Energia da rede pública",
+    label: "Energia elétrica",
     svg: `<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/>`,
   },
   esgoto: {
     category: "infra",
-    label: "Esgoto (rede pública ou fossa séptica)",
+    label: "Esgoto",
     svg: `<path d="M3 9c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0"/><path d="M3 15c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0"/>`,
   },
   coleta_lixo: {
@@ -101,7 +101,7 @@ export const ICONS = {
   },
   acessibilidade: {
     category: "infra",
-    label: "Acessibilidade (rampas, sinalização, banheiro PNE)",
+    label: "Rampas de acessibilidade",
     svg: `<circle cx="17" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M17 9v4l4 3"/><path d="M13 13a4 4 0 1 0 4 4"/><path d="M11 9h6l-2 4h-4z"/>`,
   },
   alimentacao: {

@@ -7,7 +7,7 @@
    *     indicador: { id, label, valor },
    *     ano,
    *     ranking: {
-   *       municipio: { posicao, total, percentil } | null,
+   *       municipio: { posicao, total, percentil, abaixo, empate } | null,
    *       estado:    { posicao, total, percentil } | null,
    *       nacional:  { posicao, total, percentil } | null,
    *     }
@@ -18,7 +18,7 @@
    */
 
   /** @type {Props} */
-  let { indicators = [], primaryScope = "municipio" } = $props();
+  let { indicators = [], primaryScope = "municipio", inep = null } = $props();
 
   const scopeLabel = { municipio: "no município", estado: "no estado", nacional: "no Brasil" };
 </script>
@@ -49,9 +49,22 @@
           <span class="text-[11px] text-gray-500">({item.ano})</span>
         </p>
         {#if rank}
+          <!-- #510 (RA-03): como a página da posição (#506): o empate dito, e
+               "acima de" só conta as escolas com valor menor -->
+          {#if rank.empate > 1}
+            <p class="mt-0.5 text-xs text-gray-600" data-testid="empate-{item.indicador.id}">
+              empatada com {(rank.empate - 1).toLocaleString('pt-BR')} {rank.empate - 1 === 1 ? 'escola' : 'escolas'}
+            </p>
+          {/if}
           <p class="mt-0.5 text-xs text-green-600">
-            Acima de {rank.percentil}% {scopeLabel[primaryScope]}
+            Acima de {rank.percentil}% das outras escolas {scopeLabel[primaryScope]}
           </p>
+        {/if}
+        {#if inep}
+          <a
+            class="mt-0.5 text-xs text-blue-700 hover:underline"
+            href={`/escola/ranking?inep=${inep}`}
+          >ver a posição →</a>
         {/if}
       </div>
     </article>
