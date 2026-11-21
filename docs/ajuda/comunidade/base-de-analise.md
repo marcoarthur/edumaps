@@ -139,11 +139,22 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   médias entre municípios, não troque o vazio por 0. Para a **infraestrutura básica** (0 a 4) do ranking, some os
   itens da base, no R:
   `with(base, (1 - in_agua_inexistente) + (1 - in_energia_inexistente) + (1 - in_esgoto_inexistente) + in_banheiro)`.
-- **Edição antiga do IDEB:** só o Censo Escolar mais recente está
-  carregado. Com uma edição antiga (ex.: 2019), o IDEB é cruzado com a lista
-  de escolas, a infraestrutura e a docência do Censo mais recente, e as
-  escolas fechadas depois daquela edição não entram. A página e o dicionário
-  avisam; para uma série de anos, cada ano precisaria do seu Censo.
+- **IDEB e Censo de anos diferentes:** só o Censo Escolar mais recente está
+  carregado (hoje, 2025), e o IDEB sai a cada dois anos (o mais recente é
+  2023). Então o IDEB é **sempre** cruzado com uma lista de escolas, uma
+  infraestrutura e uma docência de outro ano, inclusive na edição mais
+  recente, que é a padrão. A página e o dicionário (`ano_ideb`) avisam e
+  dizem a distância em anos. Para quem modela:
+  - **o preditor vem depois do resultado:** explicar o IDEB de 2023 pela
+    infraestrutura de 2025 usa uma medida tirada dois anos depois da prova.
+    Diga isso no texto e, se puder, teste a robustez (por exemplo, só com
+    itens que mudam pouco, como água, energia e esgoto);
+  - **as escolas fechadas depois da edição não entram:** no Brasil, 254 das
+    41.295 escolas com IDEB dos anos iniciais em 2023 não estão em
+    funcionamento no Censo 2025 (0,6%); com uma edição antiga, são mais;
+  - **o INSE é da mesma edição do SAEB** do IDEB mais recente (2023), e o
+    dicionário (`ano_inse`) diz quando não é;
+  - para uma série de anos, cada ano precisaria do seu Censo.
 - **"Rede pública = 0" não quer dizer "sem".** `in_energia_rede_publica = 0`
   pode ser gerador ou energia renovável; `in_esgoto_rede_publica = 0` pode
   ser fossa; `in_agua_potavel = 0` pode ser água não potável. Para contar as

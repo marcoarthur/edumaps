@@ -100,20 +100,31 @@ describe("BaseAnalisePage (#439)", () => {
     expect(window.location.search).toBe("?uf=ES&rede=municipal");
   });
 
-  it("edição antiga do IDEB: avisa o cruzamento com o Censo (#444)", async () => {
+  it("IDEB e Censo de anos diferentes: avisa o cruzamento, inclusive na edição mais recente (#444, #514)", async () => {
     abrir("?uf=ES&blocos=desempenho");
     await screen.findByLabelText("Edição do IDEB");
-    expect(screen.queryByTestId("aviso-anos")).toBeNull();
+    // edição mais recente (2023) contra o Censo 2025: também avisa (#514)
+    const recente = await screen.findByTestId("aviso-anos");
+    expect(recente).toHaveTextContent("são do Censo 2025; o IDEB é de 2023 (dois anos antes)");
+    expect(recente).toHaveTextContent("Escolas fechadas depois de 2023 não entram");
+    expect(recente).toHaveTextContent("medido depois do IDEB");
+    expect(screen.getByTestId("aviso-anos-baixar")).toBeInTheDocument();
 
     await fireEvent.change(screen.getByLabelText("Edição do IDEB"), { target: { value: "2021" } });
     const aviso = await screen.findByTestId("aviso-anos");
-    expect(aviso).toHaveTextContent("são do Censo 2025; o IDEB é de 2021");
+    expect(aviso).toHaveTextContent("são do Censo 2025; o IDEB é de 2021 (quatro anos antes)");
     expect(aviso).toHaveTextContent("Escolas fechadas depois de 2021 não entram");
-    expect(screen.getByTestId("aviso-anos-baixar")).toBeInTheDocument();
 
     await fireEvent.click(screen.getByLabelText(/IDEB e SAEB por etapa/));
     expect(screen.queryByTestId("aviso-anos")).toBeNull();
     expect(screen.queryByTestId("aviso-anos-baixar")).toBeNull();
+  });
+
+  it("com o INSE marcado, o aviso diz a edição do SAEB (#514)", async () => {
+    abrir("?uf=ES&blocos=desempenho,inse");
+    expect(await screen.findByTestId("aviso-anos")).toHaveTextContent("O INSE é da edição 2023 do SAEB, a mesma do IDEB");
+    await fireEvent.change(screen.getByLabelText("Edição do IDEB"), { target: { value: "2021" } });
+    expect(await screen.findByTestId("aviso-anos")).toHaveTextContent("diferente da do IDEB (2021)");
   });
 
   it("diz que o link traz a carga mais recente e que o arquivo é o que se cita (#444)", async () => {

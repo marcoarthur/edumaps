@@ -516,15 +516,36 @@ sub contar ($class, $dbh, $recorte) {
   return 0 + $n;
 }
 
-# Descrição de ano_ideb (#444, BA-01): com uma edição antiga, o IDEB é
-# cruzado com o Censo mais recente (o único carregado), e o dicionário diz.
+# Descrição de ano_ideb (#444, BA-01): o IDEB é cruzado com o Censo mais
+# recente (o único carregado), e o dicionário diz. #514 (QY-01): a ressalva
+# vale sempre que os anos forem diferentes, inclusive na edição mais recente
+# do IDEB (2023 contra o Censo 2025), não só numa edição antiga.
+sub _anos_por_extenso ($n) {
+  my %ext = (1 => 'um ano', 2 => 'dois anos', 3 => 'três anos', 4 => 'quatro anos');
+  return $ext{$n} // "$n anos";
+}
+
 sub descricao_ano_ideb ($class, $anos, $ano_ideb) {
-  my $ultimo = $anos->{ideb}[0];
+  my $censo = $anos->{censo};
   return 'Edição do IDEB/SAEB'
-    if !defined $ano_ideb || !defined $ultimo || $ano_ideb >= $ultimo || !defined $anos->{censo};
-  return "Edição do IDEB/SAEB ($ano_ideb), cruzada com o Censo Escolar $anos->{censo}: "
-       . "a lista de escolas, a infraestrutura e a docência são de $anos->{censo}, "
-       . "e as escolas fechadas depois de $ano_ideb não entram";
+    if !defined $ano_ideb || !defined $censo || $ano_ideb == $censo;
+  my $dist = abs($censo - $ano_ideb);
+  my $quando = $censo > $ano_ideb ? 'depois' : 'antes';
+  my $texto = "Edição do IDEB/SAEB ($ano_ideb), cruzada com o Censo Escolar $censo ("
+    . _anos_por_extenso($dist) . " $quando): a lista de escolas, a infraestrutura e a docência são de $censo";
+  return $texto . ', e as escolas fechadas depois de ' . $ano_ideb . ' não entram. '
+    . "Num modelo, o que vem do Censo foi medido depois do IDEB" if $censo > $ano_ideb;
+  return $texto;
+}
+
+# #514 (QY-01): o INSE sai do questionário do SAEB; com o IDEB na base, diz
+# se a edição é a mesma.
+sub descricao_ano_inse ($class, $anos, $ano_ideb, $com_ideb) {
+  my $inse = $anos->{inse};
+  return 'Edição do SAEB do INSE' unless $com_ideb && defined $inse && defined $ano_ideb;
+  return "Edição do SAEB do INSE ($inse), a mesma do IDEB" if $inse == $ano_ideb;
+  return "Edição do SAEB do INSE ($inse), diferente da edição do IDEB ($ano_ideb): "
+    . 'o INSE só existe na edição mais recente carregada';
 }
 
 # Colunas e blocos efetivos, na ordem do catálogo, mais as colunas de versão.
@@ -533,7 +554,7 @@ sub colunas ($class, $blocos, $anos, $ano_ideb, $ano_siope = undef) {
   my @b = grep { $_->{fixo} || $quer{ $_->{id} } } @{ _blocos() };
   my @versao = (['ano_censo', $anos->{censo}, 'Ano do Censo Escolar', 'censo']);
   push @versao, ['ano_ideb', $ano_ideb, $class->descricao_ano_ideb($anos, $ano_ideb), 'ideb'] if $quer{desempenho};
-  push @versao, ['ano_inse', $anos->{inse}, 'Edição do SAEB do INSE', 'inse'] if $quer{inse};
+  push @versao, ['ano_inse', $anos->{inse}, $class->descricao_ano_inse($anos, $ano_ideb, $quer{desempenho}), 'inse'] if $quer{inse};
   push @versao, ['ano_populacao', $anos->{populacao}, 'Ano da estimativa de população', 'ibge_populacao'] if $quer{porte};
   push @versao, ['versao_indice', $anos->{indices}, 'Versão da fórmula dos índices do EduMaps (o histórico está em Fontes e metodologia)', 'indices_edumaps'] if $quer{indices};
   push @versao, ['ano_siope', $ano_siope, 'Ano (exercício) da folha do SIOPE', 'siope'] if $quer{remuneracao};

@@ -411,7 +411,15 @@ subtest 'dicionário: rede pública não é "sem" (#452)' => sub {
 subtest 'dicionário: ressalvas (#444)' => sub {
   my $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=docencia,desempenho")->status_is(200)->tx);
   my %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
-  is $d{ano_ideb}[1], 'Edição do IDEB/SAEB', 'edição mais recente: sem ressalva';
+  # #514 (QY-01): a edição mais recente também é cruzada com o Censo (a
+  # ressalva só some quando os anos são iguais)
+  my $cat = $t->get_ok('/api/base-analise')->tx->res->json->{anos};
+  if (defined $cat->{ideb}[0] && $cat->{ideb}[0] != $ANO) {
+    like $d{ano_ideb}[1], qr/\($cat->{ideb}[0]\), cruzada com o Censo Escolar \Q$ANO\E/,
+      'edição mais recente: cruzamento dito (#514)';
+  } else {
+    is $d{ano_ideb}[1], 'Edição do IDEB/SAEB', 'IDEB do mesmo ano do Censo: sem ressalva';
+  }
   like $d{qt_docentes}[1], qr/mais de uma escola conta em cada uma/, 'contagem por escola';
   like $d{$_}[1], qr/÷ docentes da escola \(qt_docentes\)/, "$_: denominador"
     for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao
@@ -425,6 +433,24 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
   like $d{ano_ideb}[1], qr/\(2021\), cruzada com o Censo Escolar \Q$ANO\E/, 'edição antiga: cruzamento dito';
   like $d{ano_ideb}[1], qr/fechadas depois de 2021 não entram/, 'escolas fechadas';
+
+  # #514 (QY-01): a regra, com anos fixos
+  my $anos = { censo => 2025, inse => 2023, ideb => [2023, 2021] };
+  my $B = 'EduMaps::BaseAnalise';
+  is $B->descricao_ano_ideb({ %$anos, censo => 2023 }, 2023), 'Edição do IDEB/SAEB', 'mesmo ano: sem ressalva';
+  my $mais_recente = $B->descricao_ano_ideb($anos, 2023);
+  like $mais_recente, qr/\(2023\), cruzada com o Censo Escolar 2025 \(dois anos depois\)/, 'edição mais recente: distância dita';
+  like $mais_recente, qr/fechadas depois de 2023 não entram/, 'escolas fechadas';
+  like $mais_recente, qr/medido depois do IDEB/, 'consequência para modelos';
+  like $B->descricao_ano_ideb($anos, 2021), qr/quatro anos depois/, 'edição antiga: quatro anos';
+  is $B->descricao_ano_inse($anos, 2023, 1), 'Edição do SAEB do INSE (2023), a mesma do IDEB', 'INSE da mesma edição';
+  like $B->descricao_ano_inse($anos, 2021, 1), qr/diferente da edição do IDEB \(2021\)/, 'INSE de outra edição';
+  is $B->descricao_ano_inse($anos, 2023, 0), 'Edição do SAEB do INSE', 'sem o IDEB na base: texto curto';
+
+  $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=desempenho,inse&ano_ideb=2021")->status_is(200)->tx);
+  %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
+  like $d{ano_inse}[1], qr/diferente da edição do IDEB \(2021\)/, 'dicionário: INSE de outra edição do IDEB'
+    if defined $cat->{inse} && $cat->{inse} != 2021;
 };
 
 subtest 'remuneração do SIOPE por escola (#491)' => sub {

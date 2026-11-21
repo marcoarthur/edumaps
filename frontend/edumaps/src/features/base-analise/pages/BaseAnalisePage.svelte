@@ -40,9 +40,14 @@
   const anosFolhaUf = $derived(
     folha ? [...new Set(folha.municipios.flatMap((m) => m.anos.filter((a) => a.escolas > 0).map((a) => a.ano)))].sort((a, b) => b - a) : [],
   );
-  const idebAntigo = $derived(
-    !!catalogo && blocos.includes("desempenho") && anoIdeb != null && anoIdeb !== catalogo.anos.ideb[0],
+  // #514 (QY-01): o aviso vale sempre que o IDEB e o Censo forem de anos
+  // diferentes, inclusive na edição mais recente (2023 contra o Censo 2025).
+  const anosDiferentes = $derived(
+    !!catalogo && blocos.includes("desempenho") && anoIdeb != null && catalogo.anos.censo != null
+      && anoIdeb !== catalogo.anos.censo,
   );
+  const distanciaAnos = $derived(catalogo && anoIdeb ? Math.abs(catalogo.anos.censo - anoIdeb) : 0);
+  const EXTENSO = { 1: "um ano", 2: "dois anos", 3: "três anos", 4: "quatro anos" };
 
   function definirUrl() {
     const p = new URLSearchParams();
@@ -136,8 +141,14 @@
 
 {#snippet avisoAnos(testid)}
   <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2" role="note" data-testid={testid}>
-    A lista de escolas, a infraestrutura e a docência são do Censo {catalogo.anos.censo}; o IDEB é de {anoIdeb}.
-    Escolas fechadas depois de {anoIdeb} não entram, e o cruzamento é entre anos diferentes.
+    A lista de escolas, a infraestrutura e a docência são do Censo {catalogo.anos.censo}; o IDEB é de {anoIdeb}
+    ({EXTENSO[distanciaAnos] ?? `${distanciaAnos} anos`} {catalogo.anos.censo > anoIdeb ? "antes" : "depois"}).
+    {#if catalogo.anos.censo > anoIdeb}
+      Escolas fechadas depois de {anoIdeb} não entram, e num modelo o que vem do Censo foi medido depois do IDEB.
+    {/if}
+    {#if blocos.includes("inse") && catalogo.anos.inse}
+      O INSE é da edição {catalogo.anos.inse} do SAEB{catalogo.anos.inse === anoIdeb ? ", a mesma do IDEB" : `, diferente da do IDEB (${anoIdeb})`}.
+    {/if}
   </p>
 {/snippet}
 
@@ -232,7 +243,7 @@
                   class="border border-gray-300 rounded-md px-2 py-1 text-sm">
                   {#each catalogo.anos.ideb as a}<option value={a}>{a}</option>{/each}
                 </select>
-                {#if idebAntigo}<div class="mt-2">{@render avisoAnos("aviso-anos")}</div>{/if}
+                {#if anosDiferentes}<div class="mt-2">{@render avisoAnos("aviso-anos")}</div>{/if}
                 {#if temEtapas && !blocos.includes("etapas")}
                   <!-- #461 (RX-02): o vazio do IDEB mistura "não oferece" e "não teve nota". -->
                   <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="dica-etapas">
@@ -296,7 +307,7 @@
         Censo Escolar {catalogo.anos.censo}{#if blocos.includes("desempenho")}{" · "}IDEB {anoIdeb}{/if}{#if blocos.includes("inse")}{" · "}INSE {catalogo.anos.inse}{/if}{#if blocos.includes("porte") && catalogo.anos.populacao}{" · "}população {catalogo.anos.populacao}{/if}{#if blocos.includes("indices") && catalogo.anos.indices}{" · "}índices {catalogo.anos.indices}{/if}{#if blocos.includes("remuneracao") && anoSiope}{" · "}folha {anoSiope}{/if}.
         Separador ";" e vírgula decimal (abre direto no Excel). Ausência é célula vazia, nunca zero.
       </p>
-      {#if idebAntigo}{@render avisoAnos("aviso-anos-baixar")}{/if}
+      {#if anosDiferentes}{@render avisoAnos("aviso-anos-baixar")}{/if}
       <div class="flex flex-wrap gap-2">
         {#if uf}
           <a href={baseCsvUrl(filtros)} download data-testid="baixar-base"
