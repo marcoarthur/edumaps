@@ -4,6 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-21 (da) — trigésima avaliação da P4, #514 (PR #515) mergeado
+
+- Trigésima rodada da P4 (IDEB × infraestrutura pela base, BA pública):
+  adotaria, com a base para a pergunta do perfil. A base serviu de ponta a
+  ponta:
+  - `read.csv2` no R;
+  - IDEB = nota média × rendimento;
+  - bloco R da ajuda refaz os 6 índices com 0 diferenças;
+  - `lm` nos anos finais com 2.271 escolas.
+
+  QY-01: aviso do cruzamento IDEB × Censo só com edição antiga → #514.
+- PR #515 (9431005):
+  - `descricao_ano_ideb` com ressalva sempre que ano IDEB ≠ ano Censo
+    (distância por extenso, consequência para modelos);
+  - `descricao_ano_inse` (mesma edição do SAEB ou não);
+  - na tela, `idebAntigo` → `anosDiferentes`, com o INSE no aviso;
+  - ajuda "IDEB e Censo de anos diferentes".
+- Lição de processo: esperar o CI de PR recém-aberto exige aguardar os
+  checks **aparecerem** (`until gh pr checks N | grep -q .`); senão a espera
+  termina com "no checks reported" e avisa sem conferir.
+- Pendente no LXC: `deploy_backend_dev` + `deploy_frontend_dev`.
+- Nota técnica 242, ciclo `2026-11-21-base-aviso-anos.md`.
+
 ## Sessão 2026-11-21 (cz) — vigésima nona avaliação da P4, #512 (PR #513) mergeado
 
 - Vigésima nona rodada da P4 (remuneração na base de análise, Cuiabá 2025):

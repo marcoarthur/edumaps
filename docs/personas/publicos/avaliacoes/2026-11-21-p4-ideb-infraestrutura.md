@@ -77,3 +77,12 @@ da vigésima nona rodada:
 ## Encaminhamento
 
 Issue **#514** (QY-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-21: #514 (PR #515) mergeado: QY-01 resolvido.
+  - A tela e o dicionário avisam o cruzamento entre o IDEB e o Censo sempre
+    que os anos forem diferentes, inclusive na edição padrão (2023 contra
+    2025), com a distância em anos e a consequência para modelos.
+  - `ano_inse` e o aviso dizem se o INSE é da mesma edição do SAEB.
+  - A ajuda virou "IDEB e Censo de anos diferentes".

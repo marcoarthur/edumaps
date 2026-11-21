@@ -75,6 +75,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: ranking de redes sem escola paralisada puxando a média.
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: contagens de "escolas sem quadra/esgoto" não saem mais de ícones apagados por erro.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: salário dos professores sem vazio pelo ano errado; prof_magisterio não vira "professores por escola".
+- [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: cruzamento IDEB × infraestrutura com os anos ditos.
 
 ## Pendências
 

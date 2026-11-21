@@ -81,6 +81,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p4--academia-pesquisadora): adotaria (mantido), agora citando o ranking de redes. RB-01 resolvido; nenhum achado aberto da vigésima sétima avaliação.
 - [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p4--academia-pesquisadora): adotaria (mantido), agora também descrevendo a escola pelo painel público. RA-01 a RA-03 resolvidos; nenhum achado aberto da vigésima oitava avaliação.
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p4--academia-pesquisadora): adotaria (mantido), agora com a remuneração em todos os municípios carregados. QZ-01 a QZ-03 resolvidos; nenhum achado aberto da vigésima nona avaliação.
+- [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p4--academia-pesquisadora): adotaria (mantido), com a base para a pergunta do perfil. QY-01 resolvido; nenhum achado aberto da trigésima avaliação.
 
 ## Pendências
 
@@ -168,7 +169,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#513).
   Trigésima rodada (2026-11-21, **adotaria**, com a base para a pergunta
   do perfil): QY-01 (cruzamento de anos só dito com edição antiga do IDEB)
-  → #514.
+  → #514, entregue (#515).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
