@@ -111,8 +111,8 @@ Somente dados públicos e agregados.
   escola pela dependência administrativa: a conveniada é privada, mesmo
   quando a prefeitura custeia as vagas. Para a oferta pública de creche,
   some as conveniadas da nota às matrículas da rede municipal. Em Franca
-  (SP), a rede municipal tem 0 matrícula em creche, e as 78 conveniadas com
-  a prefeitura têm 7.758.
+  (SP), a rede municipal tem 0 matrícula em creche, e as 82 escolas
+  conveniadas com a prefeitura têm 7.758 (78 delas oferecem creche).
 
 ## Para baixar
 
