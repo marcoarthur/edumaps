@@ -106,6 +106,13 @@ Posição da escola nacionalmente. Sempre computado no refresh, independente do 
 
 Total de escolas comparadas nacionalmente.
 
+=head2 empate_municipio, empate_estado, empate_nacional
+
+  data_type: 'integer'
+  is_nullable: 1
+
+Escolas com o mesmo valor no escopo, contando a própria (#506).
+
 =head2 data_atualizacao
 
   data_type: 'timestamp with time zone'
@@ -143,6 +150,13 @@ __PACKAGE__->add_columns(
   "rank_nacional",
   { data_type => "integer", is_nullable => 1 },
   "total_nacional",
+  { data_type => "integer", is_nullable => 1 },
+  # #506: escolas com o mesmo valor em cada escopo (o empate)
+  "empate_municipio",
+  { data_type => "integer", is_nullable => 1 },
+  "empate_estado",
+  { data_type => "integer", is_nullable => 1 },
+  "empate_nacional",
   { data_type => "integer", is_nullable => 1 },
   "data_atualizacao",
   {

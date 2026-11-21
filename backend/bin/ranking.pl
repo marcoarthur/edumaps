@@ -101,12 +101,14 @@ sub _refresh_mv_indicator ($dbh, $network_map, $indicator_id, $def) {
         rank_municipio, total_municipio,
         rank_estado, total_estado,
         rank_nacional, total_nacional,
+        empate_municipio, empate_estado, empate_nacional,
         data_atualizacao)
       SELECT
       ?, ?, co_entidade, ?, value,
       rank_municipio, total_municipio,
       rank_estado, total_estado,
       rank_nacional, total_nacional,
+      empate_municipio, empate_estado, empate_nacional,
       now()
       FROM (
         SELECT
@@ -117,7 +119,11 @@ sub _refresh_mv_indicator ($dbh, $network_map, $indicator_id, $def) {
         RANK()  OVER (PARTITION BY esc.co_uf ORDER BY me.$column DESC)         AS rank_estado,
         COUNT(*) OVER (PARTITION BY esc.co_uf)                                 AS total_estado,
         RANK()  OVER (ORDER BY me.$column DESC)                                AS rank_nacional,
-        COUNT(*) OVER ()                                                       AS total_nacional
+        COUNT(*) OVER ()                                                       AS total_nacional,
+        -- #506: escolas com o mesmo valor em cada escopo (o empate)
+        COUNT(*) OVER (PARTITION BY esc.co_municipio, me.$column)              AS empate_municipio,
+        COUNT(*) OVER (PARTITION BY esc.co_uf, me.$column)                     AS empate_estado,
+        COUNT(*) OVER (PARTITION BY me.$column)                                AS empate_nacional
         FROM clean.mv_escolas_scores me
         JOIN clean.censo_escolas esc
         ON esc.co_entidade = me.co_entidade
@@ -136,6 +142,9 @@ sub _refresh_mv_indicator ($dbh, $network_map, $indicator_id, $def) {
       total_estado     = EXCLUDED.total_estado,
       rank_nacional    = EXCLUDED.rank_nacional,
       total_nacional   = EXCLUDED.total_nacional,
+      empate_municipio = EXCLUDED.empate_municipio,
+      empate_estado    = EXCLUDED.empate_estado,
+      empate_nacional  = EXCLUDED.empate_nacional,
       data_atualizacao = EXCLUDED.data_atualizacao
     };
 
@@ -158,7 +167,7 @@ sub _refresh_ideb_indicator ($dbh, $network_map, $indicator_id, $def) {
     my $network_filter_sql = '';
     my @network_bind;
     if ($rede ne 'todas') {
-      $network_filter_sql = 'AND rede = ?';
+      $network_filter_sql = 'AND i.rede = ?';
       @network_bind = ($network_map->{ideb}{$rede});
     }
 
@@ -175,27 +184,38 @@ sub _refresh_ideb_indicator ($dbh, $network_map, $indicator_id, $def) {
         rank_municipio, total_municipio,
         rank_estado, total_estado,
         rank_nacional, total_nacional,
+        empate_municipio, empate_estado, empate_nacional,
         data_atualizacao)
       SELECT
       ?, ?, id_escola, ?, value,
       rank_municipio, total_municipio,
       rank_estado, total_estado,
       rank_nacional, total_nacional,
+      empate_municipio, empate_estado, empate_nacional,
       now()
       FROM (
         SELECT
-        id_escola,
-        $column AS value,
-        RANK()  OVER (PARTITION BY co_municipio ORDER BY $column DESC) AS rank_municipio,
-        COUNT(*) OVER (PARTITION BY co_municipio)                       AS total_municipio,
-        RANK()  OVER (PARTITION BY sg_uf ORDER BY $column DESC)         AS rank_estado,
-        COUNT(*) OVER (PARTITION BY sg_uf)                              AS total_estado,
-        RANK()  OVER (ORDER BY $column DESC)                            AS rank_nacional,
-        COUNT(*) OVER ()                                                AS total_nacional
-        FROM clean.ideb_notas_escolas
-        WHERE ano = ?
-        AND etapa = ?
-        AND $column IS NOT NULL
+        i.id_escola,
+        i.$column AS value,
+        RANK()  OVER (PARTITION BY esc.co_municipio ORDER BY i.$column DESC) AS rank_municipio,
+        COUNT(*) OVER (PARTITION BY esc.co_municipio)                         AS total_municipio,
+        RANK()  OVER (PARTITION BY esc.co_uf ORDER BY i.$column DESC)         AS rank_estado,
+        COUNT(*) OVER (PARTITION BY esc.co_uf)                                AS total_estado,
+        RANK()  OVER (ORDER BY i.$column DESC)                                AS rank_nacional,
+        COUNT(*) OVER ()                                                      AS total_nacional,
+        COUNT(*) OVER (PARTITION BY esc.co_municipio, i.$column)              AS empate_municipio,
+        COUNT(*) OVER (PARTITION BY esc.co_uf, i.$column)                     AS empate_estado,
+        COUNT(*) OVER (PARTITION BY i.$column)                                AS empate_nacional
+        FROM clean.ideb_notas_escolas i
+        -- #506 (RC-02): só escolas em funcionamento no Censo mais recente,
+        -- como a lista do município (#504)
+        JOIN clean.censo_escolas esc
+          ON esc.co_entidade = i.id_escola
+         AND esc.nu_ano_censo = (SELECT max(nu_ano_censo) FROM clean.censo_escolas)
+         AND esc.tp_situacao_funcionamento = 1
+        WHERE i.ano = ?
+        AND i.etapa = ?
+        AND i.$column IS NOT NULL
         $network_filter_sql
       ) ranked
       ON CONFLICT (indicador_id, rede, id_escola) DO UPDATE SET
@@ -207,6 +227,9 @@ sub _refresh_ideb_indicator ($dbh, $network_map, $indicator_id, $def) {
       total_estado     = EXCLUDED.total_estado,
       rank_nacional    = EXCLUDED.rank_nacional,
       total_nacional   = EXCLUDED.total_nacional,
+      empate_municipio = EXCLUDED.empate_municipio,
+      empate_estado    = EXCLUDED.empate_estado,
+      empate_nacional  = EXCLUDED.empate_nacional,
       data_atualizacao = EXCLUDED.data_atualizacao
     };
 

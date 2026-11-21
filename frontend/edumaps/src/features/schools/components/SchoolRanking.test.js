@@ -3,6 +3,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import { describe, it, expect, vi } from "vitest";
 import SchoolRanking from "./SchoolRanking.svelte";
 import { DEMO_SCHOOL_COD_INEP } from "../mocks/fixtures.js";
+import { http, HttpResponse } from "msw";
+import { server } from "../../../mocks/server.js";
 
 describe("SchoolRanking", () => {
   async function waitForRankingLoad() {
@@ -46,7 +48,7 @@ describe("SchoolRanking", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/de 10/)).toBeInTheDocument();
-      expect(screen.getByText(/Acima de 90% das escolas/)).toBeInTheDocument();
+      expect(screen.getByText(/Acima de 90% das outras escolas/)).toBeInTheDocument();
     });
   });
 
@@ -84,5 +86,26 @@ describe("SchoolRanking", () => {
         ranking: expect.any(Object),
       }),
     );
+  });
+
+  it("mostra o empate e explica a posição (#506)", async () => {
+    server.use(http.get(`*/api/school/${DEMO_SCHOOL_COD_INEP}/ranking`, () => HttpResponse.json({
+      indicador: { id: "sustentabilidade", label: "Sustentabilidade", valor: 0 },
+      ano: 2025, rede: null,
+      ranking: {
+        municipio: { posicao: 767, total: 1432, empate: 666, abaixo: 0, percentil: 0 },
+        estado: { posicao: 1, total: 16106, empate: 1, abaixo: 16105, percentil: 100 },
+        nacional: null,
+      },
+    })));
+    render(SchoolRanking, { codInep: DEMO_SCHOOL_COD_INEP });
+    await waitForRankingLoad();
+    const escopos = await screen.findAllByTestId("escopo-posicao");
+    expect(escopos[0]).toHaveTextContent("767º de 1.432");
+    expect(escopos[0]).toHaveTextContent("empatada com 665 escolas");
+    expect(escopos[0]).toHaveTextContent("Acima de 0% das outras escolas");
+    // sem empate: sem a linha
+    expect(escopos[1]).not.toHaveTextContent("empatada");
+    expect(screen.getAllByRole("button", { name: "Detalhes sobre este dado" }).length).toBeGreaterThan(0);
   });
 });

@@ -32,6 +32,10 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   que a falta não é aleatória. Os arquivos exportados dizem o recorte em cada linha
   (UF, região ou Brasil, porte e mínimo; ou o município e a rede), porque a
   posição só vale dentro dele.
+- Sistema pode **mostrar a posição de uma escola** no município e no estado
+  num indicador, com o empate visível ("empatada com N escolas") e o "acima
+  de X% das outras escolas" contando só as de valor menor; no IDEB, só entre
+  as escolas em funcionamento.
 - Sistema pode **comparar as redes municipais** dos municípios de um estado
   (ou de uma região, ou do Brasil) por um indicador do IDEB/SAEB: valor da edição mais recente
   (média das escolas da rede), quanto mudou desde a edição anterior **nas
