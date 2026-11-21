@@ -31,6 +31,10 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   edição escolhida), nível socioeconômico (INSE) e porte do município.
 - Sistema pode **dizer a versão dos dados** em cada linha e no nome do
   arquivo (ano do Censo, edição do IDEB e do INSE, ano da população).
+- Sistema pode **avisar quando o IDEB e o Censo são de anos diferentes**,
+  com a distância em anos e o que isso muda num modelo (escolas fechadas
+  fora, infraestrutura medida depois da prova), inclusive na edição mais
+  recente do IDEB, e dizer se o INSE é da mesma edição do SAEB.
 - Sistema pode **identificar a região** de cada escola, para juntar as bases
   de várias UFs e comparar regiões sem tabela auxiliar.
 - Sistema pode **dizer se a escola não tem água, energia ou esgoto**, além
