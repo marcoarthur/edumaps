@@ -4,19 +4,15 @@
   import { NETWORK_LABELS } from '../icons/icon-data.js';
 
   /**
-   * @param {'municipal'|'state'|'private'} network - rede de ensino
-   * @param {number} enrollments - total de matrículas (censo_matriculas.qt_mat_bas)
+   * @param {'municipal'|'estadual'|'privada'} network - rede de ensino
+   * @param {number|null} enrollments - total de matrículas da educação básica
+   *   (censo_matriculas.qt_mat_bas, #510)
+   * @param {number|null} anoCenso - ano do Censo das matrículas
+   *
+   * #510 (RA-02): sem o "porte" da escola. As faixas (200/700) tinham sido
+   * assumidas, sem fonte; não há classificação oficial de porte da escola.
    */
-  let { network, enrollments } = $props();
-
-  // Faixas de porte — assumidas a partir de convenção comum de porte
-  // escolar; ajustar com o time pedagógico se houver definição oficial.
-  let size = $derived(
-    enrollments == null ? null 
-      : enrollments < 200 ? 'small'
-      : enrollments < 700 ? 'medium'
-      : 'large'
-  );
+  let { network, enrollments, anoCenso = null } = $props();
 
   // Mapeamento de cores (ajuste conforme tema)
   const networkColorMap = {
@@ -42,9 +38,9 @@
       <Icon name="matriculas" size={30} active={true} />
       <span>
         <strong class="font-mono">{enrollments.toLocaleString('pt-BR')}</strong> matrículas
-        <em class="not-italic text-gray-500">
-          · porte {size === 'small' ? 'pequena' : size === 'medium' ? 'média' : 'grande'}
-        </em>
+        {#if anoCenso}
+          <em class="not-italic text-gray-500" data-testid="matriculas-ano">(Censo {anoCenso})</em>
+        {/if}
       </span>
     </span>
   {/if}

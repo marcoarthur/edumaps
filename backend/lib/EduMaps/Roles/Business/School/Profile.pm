@@ -153,15 +153,15 @@ sub info_enrollment($self, $params = {}) {
 
 sub panel_info($self, $params) {
   my $rs = $self->schema->resultset('CensoEscolas');
-  my $m = 'matricula'; #alias
-  my @fields = qw/qt_mat_bas qt_mat_inf qt_mat_eja qt_mat_med/;
-  my $school = $rs->join('matricula')->search_rs(
-    { 'me.co_entidade' => $params->{cod_inep} },
-    { '+columns' => 
-      [
-        {matriculas => \join('+', map {"$m.$_"} @fields)}
-      ]
-    },
+  # #510 (RA-02): as matrículas são o total da educação básica do Censo
+  # (qt_mat_bas), que já contém a infantil, a EJA e o médio. Antes o painel
+  # somava as três de novo (Amai Pro: 357 no lugar de 285). Sempre o Censo
+  # mais recente, dito na resposta (ano_censo).
+  my ($ano_censo) = $self->schema->storage->dbh->selectrow_array(
+    'SELECT max(nu_ano_censo) FROM clean.censo_escolas');
+  my $school = $rs->search_rs(
+    { 'me.co_entidade' => $params->{cod_inep},
+      (defined $ano_censo ? ('me.nu_ano_censo' => $ano_censo) : ()) },
   )->as_hash->first;
 
   return unless $school;
@@ -189,12 +189,14 @@ sub panel_info($self, $params) {
   # especializado) fica sem o número, em vez de derrubar o painel (500).
   my $attach_matriculas = sub ($record) {
     my $m = $mat->search_rs(
-      { co_entidade => $record->{co_entidade} },
-      { columns => [ {matriculas => \join('+', @fields)} ] },
+      { co_entidade => $record->{co_entidade},
+        (defined $ano_censo ? (nu_ano_censo => $ano_censo) : ()) },
+      { columns => [ {matriculas => 'qt_mat_bas'} ] },
     )->as_hash->first;
     $record->{matriculas} = $m ? $m->{matriculas} : undef;
     return $record;
   };
+  $attach_matriculas->($school);
 
   my $neighbors = eval {
     $self->schema->resultset('SchoolEmbedding')
@@ -262,9 +264,10 @@ sub panel_info($self, $params) {
       municipio => $school->{no_municipio},
       uf => $school->{no_uf},
       rede => $self->censo_labels->rede_label($school->{tp_dependencia}),
-      etapas => $self->_etapas($school),
-      infraestrutura => $self->_infraestrutura($school),
+      etapas => panel_etapas($school),
+      infraestrutura => panel_infraestrutura($school),
       matriculas => $school->{matriculas},
+      ano_censo => $school->{nu_ano_censo},
       latitude => $school->{latitude},
       longitude => $school->{longitude},
     },
@@ -275,39 +278,64 @@ sub panel_info($self, $params) {
   };
 }
 
-sub _etapas($self, $censo) {
-  my %fields = (
-    creche => 'in_comum_creche',
-    pre_infantil => 'in_comum_pre',
-    fundamental_i => 'in_comum_fund_ai',
-    fundamental_ii => 'in_comum_fund_af',
-    ensino_medio => 'in_comum_medio_medio',
-    profissionalizante => 'in_profissionalizante',
-    eja_fundamental => 'in_comum_eja_fund',
-    eja_medio => 'in_comum_eja_medio',
-    eja => 'in_eja',
-  );
+# #510 (RA-01): etapas e infraestrutura do painel, com as MESMAS chaves da
+# tela (ETAPAS_ORDER e INFRA_ORDER de frontend/.../icons/icon-data.js;
+# t/06-tools/painel_chaves.t confere) e o estado de cada item:
+#   1 = tem/oferece, 0 = não tem, undef = sem dado no Censo (n/d, #154).
+# Antes a resposta era a lista do que estava aceso, com nomes que a tela não
+# conhecia (pre_infantil, quadra_esporte) e sem a acessibilidade: o painel
+# apagava a pré-escola, a quadra e as rampas de toda escola.
+our @PANEL_ETAPAS = (
+  [creche             => 'in_comum_creche'],
+  [pre_escola         => 'in_comum_pre'],
+  [fundamental_i      => 'in_comum_fund_ai'],
+  [fundamental_ii     => 'in_comum_fund_af'],
+  [ensino_medio       => 'in_comum_medio_medio'],
+  [eja                => 'in_eja'],
+  [profissionalizante => 'in_profissionalizante'],
+);
 
-  my @etapas = grep { $censo->{$fields{$_}} } keys %fields;
-  return \@etapas;
+# Itens de presença simples (1 = tem). Esgoto e energia ficam à parte.
+our @PANEL_INFRA = (
+  [agua_potavel            => 'in_agua_potavel'],
+  [coleta_lixo             => 'in_lixo_servico_coleta'],
+  [internet                => 'in_internet'],
+  [biblioteca              => 'in_biblioteca'],
+  [laboratorio_ciencias    => 'in_laboratorio_ciencias'],
+  [laboratorio_informatica => 'in_laboratorio_informatica'],
+  [quadra_esportes         => 'in_quadra_esportes'],
+  # mesma coluna da base de análise (in_acessibilidade_rampas)
+  [acessibilidade          => 'in_acessibilidade_rampas'],
+  [alimentacao             => 'in_alimentacao'],
+);
+
+sub _flag ($v) { defined $v ? ($v ? 1 : 0) : undef }
+
+sub panel_etapas ($censo) {
+  return { map { $_->[0] => _flag($censo->{ $_->[1] }) } @PANEL_ETAPAS };
 }
 
-sub _infraestrutura($self, $censo) {
-  my %fields = (
-    internet => 'in_internet',
-    agua_potavel => 'in_agua_potavel',
-    energia => 'in_energia_rede_publica',
-    alimentacao => 'in_alimentacao',
-    biblioteca => 'in_biblioteca',
-    laboratorio_ciencias => 'in_laboratorio_ciencias',
-    esgoto => 'in_esgoto_rede_publica',
-    coleta_lixo => 'in_lixo_servico_coleta',
-    laboratorio_informatica => 'in_laboratorio_informatica',
-    quadra_esporte => 'in_quadra_esportes',
-  );
+# Esgoto e energia (#510, RA-01): tem quando não é "inexistente", como na base
+# de análise e no ranking de escolas; a fossa ou o gerador não são falta. O
+# detalhe diz se é a rede pública ou outra solução.
+sub _servico ($censo, $rede, $inexistente) {
+  my $nao_tem = $censo->{$inexistente};
+  return { tem => undef, detalhe => undef } unless defined $nao_tem;
+  return { tem => 0, detalhe => undef } if $nao_tem;
+  return { tem => 1, detalhe => ($censo->{$rede} ? 'rede_publica' : 'outra_solucao') };
+}
 
-  my @infra = grep { $censo->{$fields{$_}} } keys %fields;
-  return \@infra;
+sub panel_infraestrutura ($censo) {
+  my %infra = map { $_->[0] => _flag($censo->{ $_->[1] }) } @PANEL_INFRA;
+  my %detalhe;
+  for my $s ([energia => 'in_energia_rede_publica', 'in_energia_inexistente'],
+             [esgoto  => 'in_esgoto_rede_publica',  'in_esgoto_inexistente']) {
+    my $r = _servico($censo, $s->[1], $s->[2]);
+    $infra{ $s->[0] } = $r->{tem};
+    $detalhe{ $s->[0] } = $r->{detalhe} if $r->{detalhe};
+  }
+  $infra{detalhe} = \%detalhe;
+  return \%infra;
 }
 
 # #487: rótulos curtos das seis notas do embedding, na ordem de

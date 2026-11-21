@@ -56,7 +56,7 @@
       </p>
     </div>
     <div class="flex items-center gap-3">
-      <SchoolSummary network={school.rede} enrollments={school.matriculas} />
+      <SchoolSummary network={school.rede} enrollments={school.matriculas} anoCenso={school.anoCenso} />
       <a
         href={`/escola/perfil?inep=${school.id_escola}`}
         class="px-3 py-2 text-sm font-medium rounded-md border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors whitespace-nowrap"
@@ -74,18 +74,22 @@
 
   <section class="flex flex-col gap-2">
     <h2 class="text-base font-bold text-gray-900 mb-2">Etapas de ensino</h2>
+    <p class="text-xs text-gray-500 -mt-2" data-testid="fonte-censo">
+      Censo Escolar{school.anoCenso ? ` ${school.anoCenso}` : ''}, como a infraestrutura e as matrículas.
+      × = não oferece/não tem; n/d = sem dado no Censo.
+    </p>
     <SchoolStages stages={school.etapas} />
   </section>
 
   <section class="flex flex-col gap-2">
     <h2 class="text-base font-bold text-gray-900 mb-2">Infraestrutura</h2>
-    <SchoolInfrastructure infrastructure={school.infraestrutura} />
+    <SchoolInfrastructure infrastructure={school.infraestrutura} detail={school.infraDetalhe} />
   </section>
 
   {#if indicators.length > 0}
     <section class="flex flex-col gap-2">
       <h2 class="text-base font-bold text-gray-900 mb-2">Indicadores</h2>
-      <SchoolIndicators {indicators} primaryScope="municipio" />
+      <SchoolIndicators {indicators} primaryScope="municipio" inep={school.id_escola} />
     </section>
   {/if}
 

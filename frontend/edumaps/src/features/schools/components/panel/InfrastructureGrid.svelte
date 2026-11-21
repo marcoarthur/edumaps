@@ -4,9 +4,13 @@
   import { INFRA_ORDER } from '../icons/icon-data.js';
 
   /**
-   * infrastructure: { potable_water: bool, power: bool, ... }
+   * infrastructure: { agua_potavel: bool|null, energia: bool|null, ... } —
+   * mesmas chaves de INFRA_ORDER; null/ausente = sem dado (n/d, #510).
+   * detail: { esgoto?: 'rede_publica'|'outra_solucao', energia?: ... }.
    */
-  let { infrastructure = {} } = $props();
+  let { infrastructure = {}, detail = {} } = $props();
+
+  const DETALHE = { rede_publica: 'rede pública', outra_solucao: 'outra solução' };
 </script>
 
 <section
@@ -15,7 +19,8 @@
 >
   {#each INFRA_ORDER as itemId}
     <div class="flex justify-center">
-      <Icon name={itemId} size={30} active={!!infrastructure[itemId]} showLabel />
+      <Icon name={itemId} size={30} active={infrastructure[itemId] ?? null}
+        detail={DETALHE[detail?.[itemId]] ?? null} showLabel />
     </div>
   {/each}
 </section>

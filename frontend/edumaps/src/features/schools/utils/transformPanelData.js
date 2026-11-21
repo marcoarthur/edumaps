@@ -28,24 +28,34 @@ export function transformPanelData(apiData) {
     "alimentacao",
   ];
 
+  // #510 (RA-01): a API manda cada etapa/item com o estado (1 tem, 0 não
+  // tem, null sem dado), com as chaves de ETAPAS_ORDER/INFRA_ORDER
+  // (t/06-tools/painel_chaves.t confere no backend). Sem dado fica null
+  // (n/d), nunca false (#154).
+  const estado = (obj, key) => {
+    const v = obj?.[key];
+    return v === null || v === undefined ? null : Boolean(Number(v));
+  };
+  const infraApi = apiData.escola.infraestrutura || {};
+
   const school = {
     id_escola: apiData.escola.id_escola,
     nome: apiData.escola.nome || apiData.escola.no_entidade, // fallback
     municipio: apiData.escola.municipio,
     uf: apiData.escola.uf,
     rede: apiData.escola.rede?.toLowerCase() || "municipal",
-    matriculas: apiData.escola.matriculas,
+    matriculas: apiData.escola.matriculas ?? null,
+    anoCenso: apiData.escola.ano_censo ?? null,
     latitude: apiData.escola.latitude ?? null,
     longitude: apiData.escola.longitude ?? null,
     etapas: Object.fromEntries(
-      etapasKeys.map((key) => [key, apiData.escola.etapas.includes(key)]),
+      etapasKeys.map((key) => [key, estado(apiData.escola.etapas, key)]),
     ),
     infraestrutura: Object.fromEntries(
-      infraKeys.map((key) => [
-        key,
-        apiData.escola.infraestrutura.includes(key),
-      ]),
+      infraKeys.map((key) => [key, estado(infraApi, key)]),
     ),
+    // esgoto/energia: "rede_publica" ou "outra_solucao" (fossa, gerador…)
+    infraDetalhe: { ...(infraApi.detalhe || {}) },
   };
 
   // 2. Transformar indicadores (objeto -> array)
