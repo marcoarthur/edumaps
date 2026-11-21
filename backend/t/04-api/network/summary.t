@@ -47,6 +47,15 @@ subtest '[API Network] summary - contrato' => sub {
   }
 };
 
+subtest '[API Network] summary - creche e pré-escola separadas (#516)' => sub {
+  my $json = $t->get_ok($path . '/summary')->status_is(200)->tx->res->json;
+  for my $rede ($json->@*) {
+    ok(exists $rede->{matriculas_creche} && exists $rede->{matriculas_pre}, "$rede->{rede}: creche e pré-escola");
+    is(($rede->{matriculas_creche} // 0) + ($rede->{matriculas_pre} // 0), $rede->{matriculas_infantil} // 0,
+      "$rede->{rede}: creche + pré-escola = infantil");
+  }
+};
+
 subtest '[API Network] summary - inclui rede federal' => sub {
   my $tx = $t->get_ok($path . '/summary')->tx;
   my $json = $tx->res->json;

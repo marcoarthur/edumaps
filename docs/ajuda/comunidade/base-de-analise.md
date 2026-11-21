@@ -31,6 +31,11 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      iniciais (`oferece_ai`), anos finais (`oferece_af`), ensino médio
      (`oferece_em`, inclusive integrado e normal), EJA e educação
      profissional, e se tem classe especial exclusiva (1 = sim, 0 = não);
+   - **Matrículas:** quantos alunos a escola tem na educação básica
+     (`mat_basica`) e em cada etapa (`mat_creche`, `mat_pre`, `mat_ai`,
+     `mat_af`, `mat_medio`, `mat_profissional`, `mat_eja`), na educação
+     especial (`mat_especial`) e em tempo integral (`mat_integral`), do mesmo
+     Censo;
    - **Infraestrutura:** água, energia, esgoto, lixo, banheiro, biblioteca,
      laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem), e se a
      escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
@@ -86,6 +91,20 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   nome do arquivo também leva os anos (ex.:
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
+- **Matrículas:** use o número, e não as etapas oferecidas, para medir a
+  oferta. Contar as escolas que oferecem a etapa engana: em Mirante e em
+  São José do Jacuípe (BA, cerca de 10.500 habitantes cada), 3 escolas
+  municipais oferecem creche, com 106 e 329 matrículas em creche.
+  - **As etapas não somam o total:** a educação profissional repete
+    matrículas que também estão no médio (o médio integrado), e a educação
+    especial atravessa as etapas. Para o total, use `mat_basica`.
+  - **0 é 0;** vazio é a escola sem linha de matrículas no Censo.
+  - **Para somar por município** (no R), junto com o porte e a região:
+    `aggregate(cbind(mat_creche, mat_pre) ~ codigo_ibge + municipio + porte_municipio + regiao, data = base, FUN = sum)`
+    (marque também o bloco **Porte do município**).
+  - **Taxa de atendimento:** pede a população por idade (0 a 3 anos, 4 a
+    5), que não está carregada. Com a população total (bloco Porte), dá
+    para comparar matrículas por habitante, que é uma aproximação.
 - **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
   escolhido em **Ano da folha (SIOPE)**. O padrão é o último ano completo
   (12 meses) **da UF escolhida**; sem ano completo, o mais recente da UF. Cada

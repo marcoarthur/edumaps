@@ -27,6 +27,7 @@ my $IDEB = 2023;
 my $limpa = sub {
   $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.censo_docentes WHERE co_entidade IN (?, ?, ?)', {}, @INEPS);
+  $dbh->do('DELETE FROM clean.censo_matriculas WHERE co_entidade IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
@@ -75,7 +76,7 @@ sub ler_csv ($tx) {
 
 subtest 'catálogo e total do recorte' => sub {
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->status_is(200)->tx->res->json;
-  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas infraestrutura docencia desempenho indices inse remuneracao porte)], 'blocos (etapas depois da identificação, #461; índices depois do IDEB, #465; remuneração, #491)';
+  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas matriculas infraestrutura docencia desempenho indices inse remuneracao porte)], 'blocos (etapas depois da identificação, #461; matrículas depois das etapas, #516; índices depois do IDEB, #465; remuneração, #491)';
   is $r->{total}, 2, 'só as escolas em funcionamento';
   is $r->{anos}{censo}, $ANO, 'ano do Censo';
   ok( (grep { $_ == $IDEB } @{ $r->{anos}{ideb} }), 'edições do IDEB');
@@ -451,6 +452,29 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   %d = map { $_->[0] => $_ } @$l[1 .. $#$l];
   like $d{ano_inse}[1], qr/diferente da edição do IDEB \(2021\)/, 'dicionário: INSE de outra edição do IDEB'
     if defined $cat->{inse} && $cat->{inse} != 2021;
+};
+
+subtest 'matrículas da escola (#516)' => sub {
+  # A com matrículas (B sem linha: vazio, não 0)
+  $dbh->do(q{INSERT INTO clean.censo_matriculas
+    (nu_ano_censo, co_entidade, qt_mat_bas, qt_mat_inf_cre, qt_mat_inf_pre, qt_mat_fund_ai, qt_mat_fund_af,
+     qt_mat_med, qt_mat_prof, qt_mat_eja, qt_mat_esp, qt_mat_bas_int)
+    VALUES (?, ?, 300, 40, 60, 200, 0, 0, 0, 0, 12, 25)}, {}, $ANO, $A);
+  my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=matriculas,indices")->status_is(200)->tx);
+  my @cab = @{ $c->[0] };
+  my %i; @i{@cab} = 0 .. $#cab;
+  my @col = qw(mat_basica mat_creche mat_pre mat_ai mat_af mat_medio mat_profissional mat_eja mat_especial mat_integral);
+  ok( (!grep { !defined $i{$_} } @col), 'as dez colunas');
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  my ($b) = grep { $_->[0] eq $B } @$c;
+  is [ @$a[ @i{@col} ] ], [qw(300 40 60 200 0 0 0 0 12 25)], 'matrículas da escola; 0 é 0';
+  is [ @$b[ @i{@col} ] ], [ ('') x 10 ], 'escola sem linha de matrículas: vazio';
+
+  my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=matriculas")->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{mat_creche}[1], qr/não somam o total.*mat_basica/, 'dicionário: as etapas não somam o total';
+  like $d{mat_basica}[1], qr/0 é 0 matrículas/, 'dicionário: vazio e 0';
+  like $d{mat_creche}[3], qr/Censo Escolar/, 'fonte';
 };
 
 subtest 'remuneração do SIOPE por escola (#491)' => sub {

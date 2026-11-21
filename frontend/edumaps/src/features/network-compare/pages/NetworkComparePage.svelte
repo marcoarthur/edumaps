@@ -154,6 +154,9 @@
       <a href="/ranking?aba=escolas&codigo_ibge={codigoIbge}" class="text-blue-700 hover:underline">Ranking das escolas deste município</a>
       {#if ufDoMunicipio(codigoIbge)}
         <a href="/ranking?aba=redes&uf={ufDoMunicipio(codigoIbge)}" class="text-blue-700 hover:underline">Ranking das redes municipais de {ufDoMunicipio(codigoIbge)}</a>
+        <!-- #516 (QX-02): as matrículas por escola, para baixar -->
+        <a href="/base-analise?uf={ufDoMunicipio(codigoIbge)}&codigo_ibge={codigoIbge}&blocos=etapas%2Cmatriculas"
+          class="text-blue-700 hover:underline" data-testid="link-base">Baixar as escolas deste município (base de análise)</a>
       {/if}
     </p>
   {/if}

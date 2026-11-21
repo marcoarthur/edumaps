@@ -79,6 +79,12 @@ describe("NetworkComparePage", () => {
 
     // Acessório: SP · Sudeste
     expect(screen.getByText(/SP · Sudeste/)).toBeInTheDocument();
+
+    // #516 (QX-02): as escolas do município na base de análise, com as matrículas
+    expect(screen.getByTestId("link-base")).toHaveAttribute(
+      "href",
+      "/base-analise?uf=SP&codigo_ibge=3551702&blocos=etapas%2Cmatriculas",
+    );
   });
 
   it("liga cada rede ao seu perfil analítico", async () => {

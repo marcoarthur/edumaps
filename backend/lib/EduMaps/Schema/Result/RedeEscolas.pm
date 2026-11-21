@@ -56,6 +56,11 @@ __PACKAGE__->add_columns(
   { data_type => "bigint", is_nullable => 1 },
   "matriculas_infantil",
   { data_type => "bigint", is_nullable => 1 },
+  # #516 (QX-02): creche e pré-escola separadas (change rede_escolas_creche_pre)
+  "matriculas_creche",
+  { data_type => "bigint", is_nullable => 1 },
+  "matriculas_pre",
+  { data_type => "bigint", is_nullable => 1 },
   "matriculas_fundamental",
   { data_type => "bigint", is_nullable => 1 },
   "matriculas_fundamental_ai",
