@@ -175,10 +175,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   medir a oferta): QX-01 (a base não traz o número de matrículas) e QX-02
   (comparação de redes junta creche e pré-escola e não exporta) → #516,
   entregues (#517).
+  Trigésima segunda rodada (2026-11-21, **adotaria**, com as matrículas,
+  sem as conveniadas): QW-01 (creches conveniadas com o poder público na
+  rede privada, sem a parceria na base) → #518.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (trigésima segunda rodada, creche conveniada)
+
+**Veredito:** **adotaria** (mantido), com as matrículas, sem as
+conveniadas. Consolidação em
+[`avaliacoes/2026-11-21-p4-creche-conveniada.md`](avaliacoes/2026-11-21-p4-creche-conveniada.md).
+
+**O que funcionou:** o bloco Matrículas lê no R e soma por município com a
+linha da ajuda; o total de creche da rede municipal de SP bate com o Censo
+(579.970).
+
+**Barreiras:**
+- QW-01 (atrapalha): a oferta de creche das prefeituras feita por convênio
+  fica na rede privada, e a base não traz a parceria com o poder público.
+  Em SP, 41% das matrículas em creche custeadas pelas prefeituras estão em
+  conveniadas; Franca tem 0 na rede municipal e 7.758 em 78 conveniadas, e
+  vai da 71ª para a 21ª posição entre os 71 municípios de 100 a 500 mil
+  habitantes.
 
 ### 2026-11-21 — Análises públicas (trigésima primeira rodada, oferta de municípios parecidos)
 
