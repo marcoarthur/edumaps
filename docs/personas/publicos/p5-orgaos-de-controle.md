@@ -74,6 +74,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: variação sem efeito de composição.
 - [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a mesma versão em todo lugar.
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 
 ## Pendências
 

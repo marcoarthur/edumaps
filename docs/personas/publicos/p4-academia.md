@@ -77,6 +77,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — variação do ranking de redes nas mesmas escolas](ciclos/2026-11-19-ranking-variacao-pareada.md#p4--academia-pesquisadora): adotaria (mantido), com a variação do ranking de redes. RF-01 resolvido; nenhum achado aberto da vigésima terceira avaliação.
 - [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p4--academia-pesquisadora): adotaria (mantido). RE-01 e RE-02 resolvidos; nenhum achado aberto da vigésima quarta avaliação.
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido), com a lista de escolas pelo IDEB. RD-01 e RD-02 resolvidos; nenhum achado aberto da vigésima quinta avaliação.
+- [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p4--academia-pesquisadora): adotaria (mantido), agora também com a posição da escola. RC-01 e RC-02 resolvidos; nenhum achado aberto da vigésima sexta avaliação.
 
 ## Pendências
 
@@ -147,7 +148,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#504).
   Vigésima sexta rodada (2026-11-19, **adotaria**, sem a posição da escola):
   RC-01 ("acima de X%" conta os empates como abaixo) e RC-02 (posição do
-  IDEB com escolas fora de funcionamento, sem ajuda) → #506.
+  IDEB com escolas fora de funcionamento, sem ajuda) → #506, entregues
+  (#507).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

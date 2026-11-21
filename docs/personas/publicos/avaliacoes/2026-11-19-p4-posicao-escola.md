@@ -70,3 +70,14 @@ entrega da vigésima quinta rodada:
 
 Issue **#506** (RC-01 e RC-02 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-20: #506 (PR #507) mergeado: RC-01 e RC-02 resolvidos. A posição
+  da escola diz o empate ("empatada com N escolas") e "acima de X% das
+  outras escolas" conta só as de valor menor. A posição do IDEB conta só
+  escolas em funcionamento e passou a ser pré-calculada como os índices.
+  Uma ajuda nova (`posicao-da-escola.md`) explica o total, o empate e o
+  "acima de". Sustentabilidade 0 (29422620): de "acima de 29%" para 0%,
+  empatada com 52.164 no Brasil; IDEB anos iniciais (29190231): "1º de 257"
+  para "1º de 247" no município.

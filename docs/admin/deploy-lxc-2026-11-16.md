@@ -73,6 +73,7 @@ já estar lá — o registry é quem diz):
 | `escolas_scores_gestora` | #475 (recria `clean.mv_escolas_scores`: capacidade gestora com partes vazias sem matrícula e nas privadas, `VERSÃO indices-v6`; ver §6, passo 3) |
 | `rede_escolas_ativas` | #479 (recria `analytics.mv_rede_escolas` só com as escolas em funcionamento; a comparação de redes soma ~180,5 mil escolas no Brasil) |
 | `school_embedding_l2` | #487 (troca o índice HNSW de `analytics.school_embedding` do cosseno para `vector_l2_ops`; leva alguns minutos com ~178 mil vetores; os vetores não mudam) |
+| `ranking_escola_empates` | #506 (colunas `empate_municipio/estado/nacional` em `analytics.ranking_escola`; vazias até o `ranking.pl` do §6) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -80,7 +81,7 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `school_embedding_l2` (#487; antes `rede_escolas_ativas`) e o `deploy_db_dev` não
+- [ ] A última change do registry é `ranking_escola_empates` (#506; antes `school_embedding_l2`) e o `deploy_db_dev` não
       reportou erro. Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
@@ -89,7 +90,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
       `psql edumaps_dev -f verify/escolas_scores_turnos.sql` (falha se o atendimento não bater com a fórmula da `indices-v5`) e
       `psql edumaps_dev -f verify/escolas_scores_gestora.sql` (falha se a capacidade gestora não bater com a fórmula da `indices-v6`) e
       `psql edumaps_dev -f verify/rede_escolas_ativas.sql` (falha se a comparação de redes contar escola fora de funcionamento) e
-      `psql edumaps_dev -f verify/school_embedding_l2.sql` (falha se o índice das escolas semelhantes não for `vector_l2_ops`).
+      `psql edumaps_dev -f verify/school_embedding_l2.sql` (falha se o índice das escolas semelhantes não for `vector_l2_ops`) e
+      `psql edumaps_dev -f verify/ranking_escola_empates.sql` (falha se faltar alguma das três colunas de empate).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -202,6 +204,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Lista de escolas pelo IDEB (#503): `curl -s 'http://127.0.0.1:3000/api/ranking/escolas?indicador=ideb_anos_iniciais&codigo_ibge=2927408'`
       traz `cobertura` (oferecem ~794, públicas ~282, privadas ~512) e `indicador.metodo`
       com "não é aleatória"; `total` sem escolas fora de funcionamento (~247).
+- [ ] Posição da escola com empate (#506), depois do `ranking.pl` do §6:
+      `curl -s 'http://127.0.0.1:3000/api/school/29422620/ranking?indicador=sustentabilidade&national=1'`
+      traz `empate` (~52.164 no nacional) e `percentil` 0 nos três escopos; o IDEB anos
+      iniciais da 29190231 dá "1º de ~247" no município, sem escolas fora de funcionamento.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
@@ -231,7 +237,7 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    `deploy_db_dev` e do `deploy_backend_dev` (a MV já sai recalculada da change;
    o `ranking.pl` precisa ser o da #467, que remove quem saiu do ranking):
    ```bash
-   perl -Ilib bin/ranking.pl --source mv          # ranking pré-calculado (~1 min)
+   perl -Ilib bin/ranking.pl                      # ranking pré-calculado, índices e IDEB (#506; ~1 min)
    ./script/edumaps.pl eval 'app->build_controller->refresh_school_embeddings'   # escolas semelhantes
    ```
    Esperado: média do `score_diversidade_discente` perto de 3,7 (era 6,0 antes da #459 e 4,4 na `indices-v3`);

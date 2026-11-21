@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-20 (cw) — vigésima sexta avaliação da P4, #506 (PR #507) mergeado
+
+- Vigésima sexta rodada da P4 (posição da escola): adotaria, sem a posição.
+  - RC-01: "acima de X%" contava os empates como abaixo (sustentabilidade 0:
+    52.164 escolas "acima de 29%").
+  - RC-02: posição do IDEB com escolas fora de funcionamento, sem ajuda → #506.
+- PR #507 (5f9a4bc): change `ranking_escola_empates` (colunas
+  `empate_*` em `analytics.ranking_escola`); `ranking.pl` com as janelas de
+  empate e o IDEB com `JOIN` no Censo em funcionamento; `_escopo_posicao`
+  em `Model::Rank::School` (empate, abaixo, percentil); tela com o empate e
+  ajuda `posicao-da-escola.md`.
+- Implementado em modo autônomo (developer fora ~5 h); o merge esperou a
+  permissão explícita.
+- Teste com UF fictícia própria (`XW`): a `XX` do `ranking_recorte.t`
+  colidia com `-j4`.
+- `ranking.pl` no contêiner precisa de
+  `PERL5LIB=/opt/edumaps/backend/local/lib/perl5`.
+- Pendente no LXC: `deploy_db_dev` + `ranking.pl` (sem `--source`).
+- Nota técnica 238, ciclo `2026-11-20-posicao-escola-empate.md`.
+
 ## Sessão 2026-11-19 (cv) — vigésima quinta avaliação da P4, #503 (PR #504) mergeado
 
 - Vigésima quinta rodada da P4 (ranking de escolas pelo IDEB): adotaria,
