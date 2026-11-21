@@ -170,10 +170,29 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima rodada (2026-11-21, **adotaria**, com a base para a pergunta
   do perfil): QY-01 (cruzamento de anos só dito com edição antiga do IDEB)
   → #514, entregue (#515).
+  Trigésima primeira rodada (2026-11-21, **adotaria**, sem a base para
+  medir a oferta): QX-01 (a base não traz o número de matrículas) e QX-02
+  (comparação de redes junta creche e pré-escola e não exporta) → aguarda
+  aprovação.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (trigésima primeira rodada, oferta de municípios parecidos)
+
+**Veredito:** **adotaria** (mantido), sem a base para medir a oferta.
+Consolidação em
+[`avaliacoes/2026-11-21-p4-oferta-municipios.md`](avaliacoes/2026-11-21-p4-oferta-municipios.md).
+
+**Barreiras:**
+- QX-01 (atrapalha): a base não traz o número de matrículas, só as etapas
+  oferecidas (0 ou 1). Nos 182 municípios da BA de 10 a 20 mil habitantes,
+  contar escolas com creche tem correlação de postos de 0,36 com as
+  matrículas em creche; Mirante e São José do Jacuípe têm 3 escolas cada e
+  106 contra 329 matrículas.
+- QX-02 (detalhe): a comparação de redes junta creche e pré-escola na
+  "Infantil", um município por vez, sem arquivo.
 
 ### 2026-11-21 — Análises públicas (trigésima rodada, IDEB e infraestrutura pela base)
 
