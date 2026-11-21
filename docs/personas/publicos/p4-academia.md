@@ -150,10 +150,25 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   RC-01 ("acima de X%" conta os empates como abaixo) e RC-02 (posição do
   IDEB com escolas fora de funcionamento, sem ajuda) → #506, entregues
   (#507).
+  Vigésima sétima rodada (2026-11-20, **adotaria**, sem citar o ranking
+  de redes): RB-01 (o ranking de redes conta escolas fora de
+  funcionamento e não se refaz pela base) → aguarda aprovação.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-20 — Análises públicas (vigésima sétima rodada, refazer o ranking de redes)
+
+**Veredito:** **adotaria** (mantido), sem citar o ranking de redes.
+Consolidação em
+[`avaliacoes/2026-11-20-p4-refazer-ranking-redes.md`](avaliacoes/2026-11-20-p4-refazer-ranking-redes.md).
+
+**Barreiras:**
+- RB-01 (atrapalha): o valor da rede conta escolas paralisadas, extintas ou
+  fora do Censo, que a base de análise não traz; 17 das 348 redes da BA não
+  se refazem. Mário Campos (MG) fica em 216º de 302 por uma escola
+  paralisada com IDEB 3,0 (69º sem ela). A ajuda de rankings não diz.
 
 ### 2026-11-19 — Análises públicas (vigésima sexta rodada, posição da escola)
 
