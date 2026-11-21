@@ -76,7 +76,7 @@ sub ler_csv ($tx) {
 
 subtest 'catálogo e total do recorte' => sub {
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->status_is(200)->tx->res->json;
-  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas matriculas infraestrutura docencia desempenho indices inse remuneracao porte)], 'blocos (etapas depois da identificação, #461; matrículas depois das etapas, #516; índices depois do IDEB, #465; remuneração, #491)';
+  is [map { $_->{id} } @{ $r->{blocos} }], [qw(identificacao etapas matriculas parceria infraestrutura docencia desempenho indices inse remuneracao porte)], 'blocos (etapas depois da identificação, #461; matrículas depois das etapas, #516; parceria depois das matrículas, #518; índices depois do IDEB, #465; remuneração, #491)';
   is $r->{total}, 2, 'só as escolas em funcionamento';
   is $r->{anos}{censo}, $ANO, 'ano do Censo';
   ok( (grep { $_ == $IDEB } @{ $r->{anos}{ideb} }), 'edições do IDEB');
@@ -475,6 +475,39 @@ subtest 'matrículas da escola (#516)' => sub {
   like $d{mat_creche}[1], qr/não somam o total.*mat_basica/, 'dicionário: as etapas não somam o total';
   like $d{mat_basica}[1], qr/0 é 0 matrículas/, 'dicionário: vazio e 0';
   like $d{mat_creche}[3], qr/Censo Escolar/, 'fonte';
+};
+
+subtest 'parceria com o poder público (#518)' => sub {
+  # A: municipal com parceria estadual; B vira, só neste subtest, uma privada
+  # filantrópica conveniada com a prefeitura e o estado.
+  $dbh->do('UPDATE clean.censo_escolas SET in_poder_publico_parceria = 1, tp_poder_publico_parceria = 2
+            WHERE co_entidade = ?', {}, $A);
+  $dbh->do('UPDATE clean.censo_escolas SET tp_dependencia = 4, in_poder_publico_parceria = 1,
+            tp_poder_publico_parceria = 3, tp_categoria_escola_privada = 4 WHERE co_entidade = ?', {}, $B);
+  my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=matriculas,parceria")->status_is(200)->tx);
+  my @cab = @{ $c->[0] };
+  my %i; @i{@cab} = 0 .. $#cab;
+  my @col = qw(parceria_poder_publico parceria_esfera categoria_privada);
+  is [ @cab[ map { $i{$_} } @col ] ], \@col, 'as três colunas';
+  ok $i{parceria_poder_publico} > $i{mat_integral}, 'depois das matrículas';
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  my ($b) = grep { $_->[0] eq $B } @$c;
+  is [ @$a[ @i{@col} ] ], [1, 'Estadual', ''], 'pública com parceria: sem categoria';
+  is [ @$b[ @i{@col} ] ], [1, 'Estadual e municipal', 'Filantrópica'], 'privada conveniada';
+
+  $dbh->do('UPDATE clean.censo_escolas SET in_poder_publico_parceria = 0, tp_poder_publico_parceria = NULL
+            WHERE co_entidade = ?', {}, $A);
+  ($a) = grep { $_->[0] eq $A } @{ ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=parceria")->tx) };
+  is [ @$a[ 10 .. 12 ] ], [0, '', ''], 'sem parceria: 0 e vazio';
+
+  my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=parceria")->tx);
+  my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
+  like $d{parceria_poder_publico}[1], qr/filtre a rede privada/, 'dicionário: públicas com parceria';
+  like $d{parceria_esfera}[1], qr/oferta da prefeitura/, 'dicionário: a esfera da prefeitura';
+
+  $dbh->do('UPDATE clean.censo_escolas SET in_poder_publico_parceria = NULL, tp_poder_publico_parceria = NULL WHERE co_entidade = ?', {}, $A);
+  $dbh->do('UPDATE clean.censo_escolas SET tp_dependencia = 2, in_poder_publico_parceria = NULL,
+            tp_poder_publico_parceria = NULL, tp_categoria_escola_privada = NULL WHERE co_entidade = ?', {}, $B);
 };
 
 subtest 'remuneração do SIOPE por escola (#491)' => sub {

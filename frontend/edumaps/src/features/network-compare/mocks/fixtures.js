@@ -101,6 +101,10 @@ export const NETWORK_SUMMARY_FIXTURE = [
     matriculas_infantil: 988,
     matriculas_creche: 400,
     matriculas_pre: 588,
+    // #518: privadas conveniadas com a prefeitura
+    escolas_conveniadas: 3,
+    matriculas_creche_conveniada: 210,
+    matriculas_pre_conveniada: 45,
     matriculas_fundamental_ai: 1693,
     matriculas_fundamental_af: 1257,
     matriculas_medio: 735,

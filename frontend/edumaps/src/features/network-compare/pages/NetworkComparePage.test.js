@@ -83,8 +83,41 @@ describe("NetworkComparePage", () => {
     // #516 (QX-02): as escolas do município na base de análise, com as matrículas
     expect(screen.getByTestId("link-base")).toHaveAttribute(
       "href",
-      "/base-analise?uf=SP&codigo_ibge=3551702&blocos=etapas%2Cmatriculas",
+      "/base-analise?uf=SP&codigo_ibge=3551702&blocos=etapas%2Cmatriculas%2Cparceria",
     );
+  });
+
+  it("avisa das privadas conveniadas com a prefeitura (#518)", async () => {
+    getNetworkSummary.mockResolvedValue(NETWORK_SUMMARY_FIXTURE);
+    getNetworkPerformance.mockResolvedValue(NETWORK_PERFORMANCE_FIXTURE);
+    getNetworkMarkers.mockResolvedValue(NETWORK_MARKERS_FIXTURE);
+    window.location = new URL(
+      "http://localhost/municipio/compare?codigo_ibge=3551702",
+    );
+
+    render(NetworkComparePage);
+
+    const nota = await screen.findByTestId("nota-conveniadas");
+    expect(nota).toHaveTextContent(
+      /210 matrículas em creche e 45 na pré-escola estão em 3 escolas conveniadas com a prefeitura/,
+    );
+    expect(nota).toHaveTextContent(/some-as às da rede municipal/);
+  });
+
+  it("sem conveniadas, sem a nota (#518)", async () => {
+    getNetworkSummary.mockResolvedValue(
+      NETWORK_SUMMARY_FIXTURE.map((n) => ({ ...n, escolas_conveniadas: 0 })),
+    );
+    getNetworkPerformance.mockResolvedValue(NETWORK_PERFORMANCE_FIXTURE);
+    getNetworkMarkers.mockResolvedValue(NETWORK_MARKERS_FIXTURE);
+    window.location = new URL(
+      "http://localhost/municipio/compare?codigo_ibge=3551702",
+    );
+
+    render(NetworkComparePage);
+
+    await screen.findByText(/Redes que atendem Sertãozinho/i);
+    expect(screen.queryByTestId("nota-conveniadas")).toBeNull();
   });
 
   it("liga cada rede ao seu perfil analítico", async () => {

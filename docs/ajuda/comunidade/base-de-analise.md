@@ -36,6 +36,11 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      `mat_af`, `mat_medio`, `mat_profissional`, `mat_eja`), na educação
      especial (`mat_especial`) e em tempo integral (`mat_integral`), do mesmo
      Censo;
+   - **Parceria com o poder público:** se a escola tem convênio com o poder
+     público para custear o atendimento (`parceria_poder_publico`, 1 = sim),
+     com qual esfera (`parceria_esfera`: Municipal, Estadual ou Estadual e
+     municipal) e a categoria da escola privada (`categoria_privada`:
+     Particular, Comunitária, Confessional ou Filantrópica);
    - **Infraestrutura:** água, energia, esgoto, lixo, banheiro, biblioteca,
      laboratórios, quadra, internet e rampas (1 = tem, 0 = não tem), e se a
      escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
@@ -105,6 +110,17 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **Taxa de atendimento:** pede a população por idade (0 a 3 anos, 4 a
     5), que não está carregada. Com a população total (bloco Porte), dá
     para comparar matrículas por habitante, que é uma aproximação.
+  - **Creches conveniadas:** parte da oferta de creche das prefeituras é
+    feita por convênio com escolas privadas, que ficam na rede privada. Em
+    SP, elas têm 41% das matrículas em creche custeadas pelas prefeituras.
+    - **Exemplo:** Franca (SP) tem 0 matrícula em creche na rede municipal
+      e 7.758 em 78 escolas privadas conveniadas com a prefeitura.
+    - **Para a oferta da prefeitura,** baixe também a rede privada com o
+      bloco **Parceria com o poder público** e some as conveniadas com ela à
+      rede municipal. No R:
+      `conv <- subset(privada, parceria_esfera %in% c("Municipal", "Estadual e municipal"))`.
+    - **Escolas públicas também têm parceria** (sobretudo na educação
+      profissional): para a oferta conveniada, filtre a rede privada.
 - **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
   escolhido em **Ano da folha (SIOPE)**. O padrão é o último ano completo
   (12 meses) **da UF escolhida**; sem ano completo, o mais recente da UF. Cada

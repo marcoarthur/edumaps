@@ -56,6 +56,21 @@ subtest '[API Network] summary - creche e pré-escola separadas (#516)' => sub {
   }
 };
 
+subtest '[API Network] summary - privadas conveniadas com a prefeitura (#518)' => sub {
+  my $json = $t->get_ok($path . '/summary')->status_is(200)->tx->res->json;
+  for my $rede ($json->@*) {
+    my @c = qw(escolas_conveniadas matriculas_creche_conveniada matriculas_pre_conveniada);
+    ok((!grep { !exists $rede->{$_} } @c), "$rede->{rede}: as três colunas");
+    if ($rede->{rede} ne 'privada') {
+      is([ map { $rede->{$_} // 0 } @c ], [0, 0, 0], "$rede->{rede}: sem conveniadas");
+    }
+    ok(($rede->{escolas_conveniadas} // 0) <= ($rede->{total_escolas} // 0)
+      && ($rede->{matriculas_creche_conveniada} // 0) <= ($rede->{matriculas_creche} // 0)
+      && ($rede->{matriculas_pre_conveniada} // 0) <= ($rede->{matriculas_pre} // 0),
+      "$rede->{rede}: conveniadas dentro do total");
+  }
+};
+
 subtest '[API Network] summary - inclui rede federal' => sub {
   my $tx = $t->get_ok($path . '/summary')->tx;
   my $json = $tx->res->json;

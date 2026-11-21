@@ -61,6 +61,13 @@ __PACKAGE__->add_columns(
   { data_type => "bigint", is_nullable => 1 },
   "matriculas_pre",
   { data_type => "bigint", is_nullable => 1 },
+  # #518 (QW-01): privadas conveniadas com a prefeitura (change rede_escolas_conveniadas)
+  "escolas_conveniadas",
+  { data_type => "bigint", is_nullable => 1 },
+  "matriculas_creche_conveniada",
+  { data_type => "bigint", is_nullable => 1 },
+  "matriculas_pre_conveniada",
+  { data_type => "bigint", is_nullable => 1 },
   "matriculas_fundamental",
   { data_type => "bigint", is_nullable => 1 },
   "matriculas_fundamental_ai",

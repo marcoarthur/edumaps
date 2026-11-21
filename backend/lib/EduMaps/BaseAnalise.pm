@@ -339,6 +339,19 @@ sub _blocos {
     { id => 'matriculas', label => 'Matrículas', fonte => 'censo',
       descricao => 'Matrículas da escola na educação básica e por etapa (creche, pré-escola, anos iniciais, anos finais, médio, educação profissional, EJA), na educação especial e em tempo integral, para somar por município. As etapas não somam o total: use mat_basica.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @MATRICULAS ] },
+    # #518 (QW-01): a oferta da prefeitura feita por convênio fica na rede
+    # privada (SP: 41% das matrículas em creche custeadas pelas prefeituras).
+    # Colunas do próprio Censo, sem join.
+    { id => 'parceria', label => 'Parceria com o poder público', fonte => 'censo',
+      descricao => 'Se a escola tem parceria ou convênio com o poder público para custear o atendimento, com qual esfera (municipal, estadual ou as duas), e a categoria da escola privada. Com as matrículas, separa as privadas conveniadas com a prefeitura das demais.',
+      colunas => [
+        ['parceria_poder_publico', 'e.in_poder_publico_parceria',
+         'Parceria ou convênio com o poder público (1 = sim, 0 = não), como declarado ao Censo Escolar. Numa escola privada, é o convênio que custeia o atendimento (ex.: creche conveniada com a prefeitura). Algumas escolas públicas também têm parceria (sobretudo na educação profissional): para a oferta conveniada, filtre a rede privada', 1],
+        ['parceria_esfera', q{CASE e.tp_poder_publico_parceria WHEN 1 THEN 'Municipal' WHEN 2 THEN 'Estadual' WHEN 3 THEN 'Estadual e municipal' END},
+         'Esfera do poder público da parceria (Municipal, Estadual ou Estadual e municipal). Vazia sem parceria. Para a oferta da prefeitura, conte Municipal e Estadual e municipal', 0],
+        ['categoria_privada', q{CASE e.tp_categoria_escola_privada WHEN 1 THEN 'Particular' WHEN 2 THEN 'Comunitária' WHEN 3 THEN 'Confessional' WHEN 4 THEN 'Filantrópica' END},
+         'Categoria da escola privada (Particular, Comunitária, Confessional ou Filantrópica). Vazia nas escolas públicas', 0],
+      ] },
     { id => 'infraestrutura', label => 'Infraestrutura', fonte => 'censo',
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
