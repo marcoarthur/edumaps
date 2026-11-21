@@ -245,6 +245,23 @@ my @DOCENCIA = (
    "Formações continuadas dos docentes (soma das formações específicas do Censo) ÷ $DENOM, limitada a 1. Parte de 20% do índice de capacitação docente"],
 );
 
+# #516 (QX-01): matrículas da escola (mm = censo_matriculas do mesmo Censo).
+# O vazio é a escola sem linha de matrículas no Censo; 0 é 0.
+my $MAT_VAZIO = 'Vazio: a escola não tem linha de matrículas no Censo Escolar (0 é 0 matrículas)';
+my $MAT_NAO_SOMA = 'As etapas não somam o total da educação básica: a educação profissional repete matrículas do médio (médio integrado) e a educação especial atravessa as etapas. Para o total, use mat_basica';
+our @MATRICULAS = (
+  [mat_basica       => 'mm.qt_mat_bas',     "Matrículas na educação básica (total da escola, cada aluno uma vez). $MAT_VAZIO"],
+  [mat_creche       => 'mm.qt_mat_inf_cre', "Matrículas na creche. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_pre          => 'mm.qt_mat_inf_pre', "Matrículas na pré-escola. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_ai           => 'mm.qt_mat_fund_ai', "Matrículas nos anos iniciais do ensino fundamental. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_af           => 'mm.qt_mat_fund_af', "Matrículas nos anos finais do ensino fundamental. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_medio        => 'mm.qt_mat_med',     "Matrículas no ensino médio (inclusive o integrado à educação profissional). $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_profissional => 'mm.qt_mat_prof',    "Matrículas na educação profissional (técnica e qualificação), inclusive as que também contam no médio. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_eja          => 'mm.qt_mat_eja',     "Matrículas na educação de jovens e adultos (EJA). $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_especial     => 'mm.qt_mat_esp',     "Matrículas de alunos da educação especial, em classes comuns e exclusivas, em todas as etapas. $MAT_NAO_SOMA. $MAT_VAZIO"],
+  [mat_integral     => 'mm.qt_mat_bas_int', "Matrículas em tempo integral (7 horas diárias ou mais) na educação básica. $MAT_VAZIO"],
+);
+
 # #471 (RT-03): o INSE só existe para escolas com alunos no SAEB.
 my $INSE_VAZIO = 'Vazio: a escola não teve alunos avaliados no SAEB daquela edição. As privadas nunca têm INSE, e as creches e pré-escolas quase nunca';
 
@@ -316,6 +333,12 @@ sub _blocos {
     { id => 'etapas', label => 'Etapas oferecidas', fonte => 'censo',
       descricao => 'Se a escola oferece creche, pré-escola, anos iniciais, anos finais, ensino médio, EJA e educação profissional, e se tem classe especial exclusiva. Com o IDEB, separa "não oferece a etapa" de "não teve nota".',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @ETAPAS_OFERTA ] },
+    # #516 (QX-01): o número de matrículas, para medir a oferta (contar as
+    # escolas que oferecem a etapa não mede: Mirante e São José do Jacuípe/BA
+    # têm 3 escolas com creche cada e 106 contra 329 matrículas).
+    { id => 'matriculas', label => 'Matrículas', fonte => 'censo',
+      descricao => 'Matrículas da escola na educação básica e por etapa (creche, pré-escola, anos iniciais, anos finais, médio, educação profissional, EJA), na educação especial e em tempo integral, para somar por município. As etapas não somam o total: use mat_basica.',
+      colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @MATRICULAS ] },
     { id => 'infraestrutura', label => 'Infraestrutura', fonte => 'censo',
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
@@ -590,6 +613,9 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = und
   if ($tem{inse}) {
     $joins .= ' LEFT JOIN clean.inse x ON x.id_escola = e.co_entidade AND x.nu_ano_saeb = ?';
     push @jb, $anos->{inse} // -1;
+  }
+  if ($tem{matriculas}) {
+    $joins .= ' LEFT JOIN clean.censo_matriculas mm ON mm.co_entidade = e.co_entidade AND mm.nu_ano_censo = e.nu_ano_censo';
   }
   if ($tem{indices}) {
     $joins .= ' LEFT JOIN clean.mv_escolas_scores s ON s.co_entidade = e.co_entidade AND s.nu_ano_censo = e.nu_ano_censo'

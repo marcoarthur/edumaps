@@ -31,6 +31,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   edição escolhida), nível socioeconômico (INSE) e porte do município.
 - Sistema pode **dizer a versão dos dados** em cada linha e no nome do
   arquivo (ano do Censo, edição do IDEB e do INSE, ano da população).
+- Sistema pode **entregar as matrículas de cada escola** na educação
+  básica, por etapa (creche e pré-escola separadas), na educação especial e
+  em tempo integral, para medir e comparar a oferta entre municípios.
 - Sistema pode **avisar quando o IDEB e o Censo são de anos diferentes**,
   com a distância em anos e o que isso muda num modelo (escolas fechadas
   fora, infraestrutura medida depois da prova), inclusive na edição mais

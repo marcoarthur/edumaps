@@ -23,7 +23,9 @@ export const NETWORK_COLORS = {
 
 // Eixos do radar de matrículas por etapa (summary -> colunas da MV).
 export const STAGE_AXES = [
-  { key: "matriculas_infantil", label: "Infantil" },
+  // #516 (QX-02): creche e pré-escola separadas (metas diferentes no PNE)
+  { key: "matriculas_creche", label: "Creche" },
+  { key: "matriculas_pre", label: "Pré-escola" },
   { key: "matriculas_fundamental_ai", label: "Fundamental I" },
   { key: "matriculas_fundamental_af", label: "Fundamental II" },
   { key: "matriculas_medio", label: "Médio" },

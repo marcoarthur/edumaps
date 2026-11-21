@@ -43,11 +43,12 @@ describe("transformNetworkData", () => {
 
   it("gera o radar de perfil com participação % por rede", () => {
     const rows = buildShareRadarData(NETWORK_SUMMARY_FIXTURE);
-    expect(rows).toHaveLength(NETWORK_SUMMARY_FIXTURE.length * 6);
+    expect(rows).toHaveLength(NETWORK_SUMMARY_FIXTURE.length * 7);
 
     const privada = rows.filter((r) => r.group === "Privada");
     expect(privada.map((r) => r.stage)).toEqual([
-      "Infantil",
+      "Creche",
+      "Pré-escola",
       "Fundamental I",
       "Fundamental II",
       "Médio",
@@ -55,21 +56,24 @@ describe("transformNetworkData", () => {
       "Profissionalizante",
     ]);
 
-    // 988 matrículas infantil de {total de stage columns} da privada.
+    // 400 matrículas em creche de {total de stage columns} da privada.
     // Obs: a soma das colunas de etapa pode divergir de total_matriculas
     // (aluno pode ser contado em mais de uma etapa no censo).
     const privadaFixtures = NETWORK_SUMMARY_FIXTURE.find(
       (n) => n.rede === "privada",
     );
-    const privadaStageTotal = privadaFixtures.matriculas_infantil +
+    const privadaStageTotal = privadaFixtures.matriculas_creche +
+      privadaFixtures.matriculas_pre +
       privadaFixtures.matriculas_fundamental_ai +
       privadaFixtures.matriculas_fundamental_af +
       privadaFixtures.matriculas_medio +
       privadaFixtures.matriculas_eja +
       privadaFixtures.matriculas_profissional;
-    const infantil = privada.find((r) => r.stage === "Infantil");
-    expect(infantil.value).toBeCloseTo((988 / privadaStageTotal) * 100, 1);
-    expect(infantil.matricula).toBe(988);
+    // #516: creche e pré-escola separadas (400 + 588 = 988 da infantil)
+    const creche = privada.find((r) => r.stage === "Creche");
+    expect(creche.value).toBeCloseTo((400 / privadaStageTotal) * 100, 1);
+    expect(creche.matricula).toBe(400);
+    expect(privada.find((r) => r.stage === "Pré-escola").matricula).toBe(588);
 
     // Somatório da participação = 100% por rede
     const total = privada.reduce((acc, r) => acc + r.value, 0);
@@ -90,8 +94,8 @@ describe("transformNetworkData", () => {
 
   it("gera barras agrupadas para todas as etapas × redes", () => {
     const rows = buildStageBars(NETWORK_SUMMARY_FIXTURE);
-    expect(rows).toHaveLength(NETWORK_SUMMARY_FIXTURE.length * 6);
-    expect(rows[0]).toMatchObject({ group: "Federal", key: "Infantil" });
+    expect(rows).toHaveLength(NETWORK_SUMMARY_FIXTURE.length * 7);
+    expect(rows[0]).toMatchObject({ group: "Federal", key: "Creche" });
   });
 
   it("gera donut de participação ignorando redes sem valor", () => {

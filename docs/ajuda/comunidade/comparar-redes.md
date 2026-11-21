@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [buscar-escola, rankings, base-de-analise, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/rede-municipal.md
-ultima_revisao: 2026-11-20
+ultima_revisao: 2026-11-21
 ---
 
 # Comparar redes
@@ -29,7 +29,7 @@ Brasil.
    - a **tabela** com escolas, matrículas, docentes, etapas, alunos por
      docente e docentes com ensino superior de cada rede;
    - os gráficos de **escolas e matrículas por rede** e de matrículas por
-     etapa;
+     etapa, com a creche e a pré-escola separadas;
    - a **linha do IDEB** por rede e etapa, de 2005 até a edição mais recente;
    - o mapa com as escolas.
 3. **Perfil analítico:** acima da tabela, **Ver perfil analítico** abre uma
@@ -103,6 +103,13 @@ Somente dados públicos e agregados.
   um agrupamento rodado na plataforma: mudavam quando alguém rodava outro e
   só existiam em parte dos municípios. Os níveis do INSE são públicos, do
   INEP, e iguais em todo lugar.
+
+## Para baixar
+
+O link **Baixar as escolas deste município (base de análise)**, no pé da
+página, abre a [base de análise](base-de-analise.md) já com o município e
+os blocos de etapas e de matrículas: uma linha por escola, para somar por
+rede ou comparar com outros municípios.
 
 ## Veja também
 - [Rankings](rankings.md)

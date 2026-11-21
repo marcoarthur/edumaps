@@ -53,7 +53,7 @@ sub summary($self, $params = {}) {
     qw/
       co_municipio no_municipio sg_uf no_regiao codigo_rede rede
       total_escolas total_etapas media_etapas
-      total_matriculas matriculas_infantil matriculas_fundamental
+      total_matriculas matriculas_infantil matriculas_creche matriculas_pre matriculas_fundamental
       matriculas_fundamental_ai matriculas_fundamental_af matriculas_medio
       matriculas_profissional matriculas_eja matriculas_especial matriculas_integral
       total_docentes docentes_superior docentes_concursados
