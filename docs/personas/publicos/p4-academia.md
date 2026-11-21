@@ -163,7 +163,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima nona rodada (2026-11-21, **adotaria**, com a remuneração só para
   Cuiabá): QZ-01 (ano da folha único para o Brasil, sem dizer quem tem
   folha), QZ-02 (educação infantil sem magistério, motivo não dito) e QZ-03
-  (`prof_magisterio` não é o número de professores) → aguarda aprovação.
+  (`prof_magisterio` não é o número de professores) → #512.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

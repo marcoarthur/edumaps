@@ -89,4 +89,5 @@ entrega da vigésima oitava rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue (QZ-01 a QZ-03 juntas).
+Issue **#512** (QZ-01 a QZ-03 juntas), aberta com a aprovação do
+developer.
