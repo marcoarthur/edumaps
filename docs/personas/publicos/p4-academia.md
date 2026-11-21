@@ -166,10 +166,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   folha), QZ-02 (educação infantil sem magistério, motivo não dito) e QZ-03
   (`prof_magisterio` não é o número de professores) → #512, entregues
   (#513).
+  Trigésima rodada (2026-11-21, **adotaria**, com a base para a pergunta
+  do perfil): QY-01 (cruzamento de anos só dito com edição antiga do IDEB)
+  → aguarda aprovação.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (trigésima rodada, IDEB e infraestrutura pela base)
+
+**Veredito:** **adotaria** (mantido), com a base para a pergunta "quanto da
+variação do IDEB se associa à infraestrutura, controlando por rede?".
+Consolidação em
+[`avaliacoes/2026-11-21-p4-ideb-infraestrutura.md`](avaliacoes/2026-11-21-p4-ideb-infraestrutura.md).
+
+**O que funcionou:** a base lê no R com `read.csv2`, o IDEB se refaz (nota
+média × rendimento), os seis índices se refazem pelo bloco R da ajuda (0
+diferenças em 11.932 escolas), e o modelo dos anos finais roda com 2.271
+escolas.
+
+**Barreiras:**
+- QY-01 (detalhe): com a edição mais recente do IDEB (2023), a base cruza
+  com o Censo 2025 sem aviso; o aviso só aparece com uma edição antiga.
+  Preditor medido depois do resultado; 254 de 41.295 escolas com IDEB dos
+  anos iniciais fora (0,6%).
 
 ### 2026-11-21 — Análises públicas (vigésima nona rodada, remuneração na base de análise)
 
