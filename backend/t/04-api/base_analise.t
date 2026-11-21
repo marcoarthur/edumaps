@@ -452,6 +452,8 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   my $SIOPE2 = 2002;
   $f->execute($SIOPE2, $_, 'EVA', 'xxx.777.771-xx', $A, '600039', 'Municipal', $aux, 'Outros profissionais da educação', 30, 1600)
     for qw(Janeiro Fevereiro);
+  # mês só com a Secretaria: não conta nos meses da cobertura
+  $f->execute($SIOPE2, 'Março', 'DORA', 'xxx.555.551-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 9999);
 
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
   ok( (grep { $_ == $SIOPE } @{ $r->{anos}{siope} }), 'ano da folha no catálogo');

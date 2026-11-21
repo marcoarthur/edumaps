@@ -428,12 +428,16 @@ sub anos_siope ($class, $dbh) {
 # para /fontes. Um item por município com folha separada por escola, com o
 # código IBGE, o nome e a UF (do Censo) e, por ano, os meses e as escolas.
 # Município em que o SIOPE só traz o total da Secretaria fica com 0 escolas.
+# Os meses são os das escolas: o mês em que só a Secretaria aparece não conta
+# (Cuiabá 2026: julho e agosto só com o total da Secretaria).
 sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(q{
       SELECT m.co_municipio::text AS codigo_ibge, m.no_municipio AS municipio, m.sg_uf AS uf,
              r.ano::int AS ano,
-             count(DISTINCT left(r.mes, 3))::int AS meses,
+             -- meses com folha das escolas; só a Secretaria: os meses dela
+             COALESCE(NULLIF(count(DISTINCT left(r.mes, 3)) FILTER (WHERE r.cod_inep <> 99999999), 0),
+                      count(DISTINCT left(r.mes, 3)))::int AS meses,
              (count(DISTINCT r.cod_inep) FILTER (WHERE r.cod_inep <> 99999999))::int AS escolas
         FROM clean.remuneracao_municipal r
         JOIN (SELECT DISTINCT co_municipio, no_municipio, sg_uf FROM clean.censo_escolas) m
