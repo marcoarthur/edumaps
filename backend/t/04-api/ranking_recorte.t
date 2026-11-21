@@ -40,6 +40,24 @@ my $limpa = sub {
 $limpa->();
 END { $limpa->() }
 
+# #508 (RB-01): o ranking de redes só conta escolas em funcionamento na
+# rede municipal do Censo mais recente. Toda escola de rede dos testes entra
+# no Censo por este helper (municipal e em funcionamento, salvo dito).
+my ($ANO_CENSO) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
+$ANO_CENSO //= 2025;
+my @NO_CENSO;
+END { $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ANY(?)', {}, \@NO_CENSO) if @NO_CENSO }
+my $ins_censo = $dbh->prepare(q{INSERT INTO clean.censo_escolas
+  (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio, no_municipio, sg_uf,
+   tp_situacao_funcionamento, in_comum_fund_ai)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)});
+my $no_censo = sub {
+  my ($inep, $mun, $nome, $uf, $dep, $sit) = @_;
+  $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ?', {}, $inep);
+  push @NO_CENSO, $inep;
+  $ins_censo->execute($ANO_CENSO, $inep, "Escola $inep", $dep // 3, $mun, $nome, $uf, $sit // 1, 1);
+};
+
 my $ins = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
   (id_escola, sg_uf, co_municipio, no_municipio, no_escola, rede, ano, etapa, ideb_observado)
   VALUES (?, 'XX', ?, ?, ?, 'Municipal', ?, 'fundamental_i', ?)});
@@ -49,6 +67,7 @@ for my $e (@ESC) {
   $ins->execute($inep, $mun, $NOME{$mun}, "Escola $inep", 2023, $v23);
   $ins->execute($inep, $mun, $NOME{$mun}, "Escola $inep", 2021, $v21) if defined $v21;
   $inse->execute($inep, $nse);
+  $no_censo->($inep, $mun, $NOME{$mun}, 'XX');
 }
 
 # Porte (#439): Alfa com 5.000 habitantes (limite de "até 5 mil"), Beta com
@@ -117,6 +136,7 @@ my $ins2 = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
 for my $e (@ATIP) {
   $ins2->execute($e->[0], $e->[1], "Mun $e->[1]", 2023, $e->[2]);
   $ins2->execute($e->[0], $e->[1], "Mun $e->[1]", 2021, $e->[3]);
+  $no_censo->($e->[0], $e->[1], "Mun $e->[1]", 'XY');
 }
 
 subtest 'salto atípico e mínimo ajustável (#437)' => sub {
@@ -170,6 +190,7 @@ for my $e (@PAR) {
   my ($inep, $mun, $v23, $v21) = @$e;
   $ins4->execute($inep, $mun, $NOME_PAR{$mun}, 2023, $v23) if defined $v23;
   $ins4->execute($inep, $mun, $NOME_PAR{$mun}, 2021, $v21) if defined $v21;
+  $no_censo->($inep, $mun, $NOME_PAR{$mun}, 'XZ');
 }
 
 subtest 'variação nas mesmas escolas (#499)' => sub {
@@ -313,6 +334,59 @@ subtest 'infraestrutura básica (#457)' => sub {
   $limpa3->();
 };
 
+# #508 (RB-01): UF "XV". Zeta (6005081): três escolas municipais em
+# funcionamento (6,0; de 5,0 em 2021), uma municipal no Censo que o IDEB
+# registra como estadual (9,0; a rede vem do Censo) e três que saem: uma
+# paralisada, uma fora do Censo e uma que hoje é estadual (2,0 cada). Eta
+# (6005082): duas em funcionamento e uma extinta: com ela teria 3 escolas,
+# sem ela fica abaixo do mínimo.
+my @FUNC = (
+  # inep,       mun,     2023, 2021,  rede no IDEB, no Censo: [dep, situação] ou undef
+  ['60050811', 6005081, 6.0, 5.0,   'Municipal', [3, 1]],
+  ['60050812', 6005081, 6.0, 5.0,   'Municipal', [3, 1]],
+  ['60050813', 6005081, 6.0, 5.0,   'Municipal', [3, 1]],
+  ['60050814', 6005081, 9.0, undef, 'Estadual',  [3, 1]],
+  ['60050815', 6005081, 2.0, 1.0,   'Municipal', [3, 2]],
+  ['60050816', 6005081, 2.0, undef, 'Municipal', undef],
+  ['60050817', 6005081, 2.0, undef, 'Municipal', [2, 1]],
+  ['60050821', 6005082, 5.0, undef, 'Municipal', [3, 1]],
+  ['60050822', 6005082, 5.0, undef, 'Municipal', [3, 1]],
+  ['60050823', 6005082, 5.0, undef, 'Municipal', [3, 3]],
+);
+my %NOME_FUNC = (6005081 => 'Zeta do Teste', 6005082 => 'Eta do Teste');
+my @INEPS_FUNC = map { $_->[0] } @FUNC;
+my $limpa5 = sub { $dbh->do('DELETE FROM clean.ideb_notas_escolas WHERE id_escola = ANY(?)', {}, \@INEPS_FUNC) };
+$limpa5->();
+END { $limpa5->() }
+my $ins5 = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
+  (id_escola, sg_uf, co_municipio, no_municipio, no_escola, rede, ano, etapa, ideb_observado)
+  VALUES (?, 'XV', ?, ?, 'Escola', ?, ?, 'fundamental_i', ?)});
+for my $e (@FUNC) {
+  my ($inep, $mun, $v23, $v21, $rede, $censo) = @$e;
+  $ins5->execute($inep, $mun, $NOME_FUNC{$mun}, $rede, 2023, $v23);
+  $ins5->execute($inep, $mun, $NOME_FUNC{$mun}, $rede, 2021, $v21) if defined $v21;
+  if ($censo) { $no_censo->($inep, $mun, $NOME_FUNC{$mun}, 'XV', @$censo) }
+  else        { $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade = ?', {}, $inep) }
+}
+
+subtest 'só escolas em funcionamento na rede municipal (#508)' => sub {
+  my $url = '/api/ranking/redes?indicador=ideb_anos_iniciais&uf=XV';
+  my $r = $t->get_ok($url)->status_is(200)->tx->res->json;
+  is $r->{ano_censo}, $ANO_CENSO, 'o Censo da regra';
+  is $r->{total}, 1, 'só Zeta: Eta fica abaixo do mínimo sem a extinta';
+  is $r->{fora_por_poucas_escolas}, 1, 'Eta conta como fora por poucas escolas';
+  is $r->{escolas_fora}, 4, 'quatro escolas com IDEB fora de funcionamento no recorte';
+  my $z = $r->{redes}[0];
+  is $z->{municipio}, 'Zeta do Teste', 'Zeta';
+  is $z->{escolas}, 4, 'as três municipais e a que o IDEB registra como estadual';
+  is $z->{media}, 6.75, 'média sem a paralisada, a fora do Censo e a hoje estadual';
+  is $z->{escolas_fora}, 3, 'três de Zeta fora';
+  is $z->{escolas_variacao}, 3, 'variação nas três em funcionamento com 2021';
+  is $z->{variacao}, 1, 'a paralisada (1,0 → 2,0) não entra na variação';
+  my $d = $t->get_ok("$url&destaque=6005082")->tx->res->json->{destaque};
+  is [@$d{qw(situacao escolas)}], ['poucas_escolas', 2], 'destaque de Eta: duas em funcionamento';
+};
+
 subtest 'validações das redes' => sub {
   $t->get_ok('/api/ranking/redes?indicador=ideb_anos_iniciais')->status_is(400);
   $t->get_ok('/api/ranking/redes?indicador=infraestrutura&uf=XX')->status_is(400)
@@ -321,19 +395,7 @@ subtest 'validações das redes' => sub {
 };
 
 # #503: a lista do IDEB só tem escolas em funcionamento no Censo mais
-# recente; as quatro de Alfa entram no Censo, em funcionamento, com os anos
-# iniciais.
-my ($ANO_CENSO) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
-$ANO_CENSO //= 2025;
-my $limpa_censo = sub { $dbh->do("DELETE FROM clean.censo_escolas WHERE co_entidade IN ($ph)", {}, @INEPS) };
-$limpa_censo->();
-END { $limpa_censo->() }
-my $ins_censo = $dbh->prepare(q{INSERT INTO clean.censo_escolas
-  (nu_ano_censo, co_entidade, no_entidade, tp_dependencia, co_municipio, no_municipio, sg_uf,
-   tp_situacao_funcionamento, in_comum_fund_ai)
-  VALUES (?, ?, ?, ?, ?, ?, 'XX', ?, ?)});
-$ins_censo->execute($ANO_CENSO, $_, "Escola $_", 3, 6000301, 'Alfa do Teste', 1, 1)
-  for qw(60003001 60003002 60003003 60003004);
+# recente; as quatro de Alfa já estão no Censo (helper do #508).
 
 subtest 'escolas de um município' => sub {
   my $r = $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais')
@@ -376,7 +438,7 @@ subtest 'escolas de um município' => sub {
   $limpa_x->();
   for my $x (@EXTRA) {
     my ($inep, $dep, $sit, $ai, $ideb) = @$x;
-    $ins_censo->execute($ANO_CENSO, $inep, "Escola $inep", $dep, 6000301, 'Alfa do Teste', $sit, $ai);
+    $ins_censo->execute($ANO_CENSO, $inep, "Escola $inep", $dep, 6000301, 'Alfa do Teste', 'XX', $sit, $ai);
     $ins->execute($inep, 6000301, 'Alfa do Teste', "Escola $inep", 2023, $ideb) if defined $ideb;
   }
   $r = $t->get_ok('/api/ranking/escolas?codigo_ibge=6000301&indicador=ideb_anos_iniciais')->status_is(200)->tx->res->json;

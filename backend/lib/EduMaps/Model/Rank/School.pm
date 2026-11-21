@@ -632,7 +632,9 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   # só restringe as UFs, antes da posição, do INSE e do salto atípico.
   my $uf_sql = $uf ? 'AND sg_uf = ?' : $regiao ? 'AND sg_uf = ANY(?)' : '';
   my @uf_bind = $uf ? ($uf) : $regiao ? (EduMaps::Regiao->ufs($regiao)) : ();
-  # o mesmo filtro com o alias, para a junção das duas edições (#499)
+  # o mesmo filtro com o alias: a UF da escola no Censo (#508) e a da
+  # tabela do IDEB (escolas fora de funcionamento)
+  my $uf_sql_c = $uf_sql =~ s/\bsg_uf\b/c.sg_uf/r;
   my $uf_sql_i = $uf_sql =~ s/\bsg_uf\b/i.sg_uf/r;
   my $porte = $opts->{porte};
   croak "Porte desconhecido: $porte" if defined $porte && !EduMaps::Porte->valido($porte);
@@ -644,6 +646,10 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       ORDER BY ano DESC LIMIT 2", undef, $def->{etapa}, @uf_bind);
   return undef unless @$anos;
   my ($ano, $ano_ant) = @$anos;
+  # #508 (RB-01): só as escolas em funcionamento na rede municipal do Censo
+  # mais recente, como a lista de escolas (#504) e a base de análise; a rede,
+  # o município e a UF vêm do Censo.
+  my ($ano_censo) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
 
   my $min = $opts->{minimo} // $MIN_ESCOLAS_REDE;
   croak "Mínimo de escolas fora de $MIN_ESCOLAS_LIMITE_INF..$MIN_ESCOLAS_LIMITE_SUP: $min"
@@ -658,13 +664,30 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       SELECT pm.codigo_ibge, pm.populacao_estimada AS populacao, $porte_case AS porte
         FROM clean.populacao_municipal pm
     ),
+    ativa AS (
+      SELECT co_entidade, co_municipio, no_municipio, sg_uf
+        FROM clean.censo_escolas
+       WHERE nu_ano_censo = ? AND tp_situacao_funcionamento = 1 AND tp_dependencia = 3
+    ),
     atual AS (
-      SELECT i.co_municipio, max(i.no_municipio) AS no_municipio, max(i.sg_uf) AS sg_uf,
+      SELECT c.co_municipio, max(c.no_municipio) AS no_municipio, max(c.sg_uf) AS sg_uf,
              count(*) AS n, avg(i.$column)::float8 AS media,
              avg(x.media_inse)::float8 AS inse
         FROM clean.ideb_notas_escolas i
+        JOIN ativa c ON c.co_entidade = i.id_escola
         LEFT JOIN inse_ult x ON x.id_escola = i.id_escola
-       WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL $uf_sql
+       WHERE i.ano = ? AND i.etapa = ? AND i.$column IS NOT NULL $uf_sql_c
+       GROUP BY c.co_municipio
+    ),
+    -- #508: as escolas com o indicador na edição, municipais na tabela do
+    -- IDEB, que não estão mais em funcionamento na rede municipal
+    -- (paralisadas, extintas, fora do Censo ou hoje de outra rede).
+    fora AS (
+      SELECT i.co_municipio, count(*) AS n
+        FROM clean.ideb_notas_escolas i
+        LEFT JOIN ativa c ON c.co_entidade = i.id_escola
+       WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL
+         AND c.co_entidade IS NULL $uf_sql_i
        GROUP BY i.co_municipio
     ),
     -- #499 (RF-01): a variação nas MESMAS escolas, as que têm o indicador
@@ -672,23 +695,25 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     -- com escolas diferentes (em 2021 muitas ficaram sem IDEB); em 129 de
     -- 2.476 redes o sinal trocava.
     pares AS (
-      SELECT i.co_municipio, count(*) AS n, avg(i.$column - p.$column)::float8 AS variacao
+      SELECT c.co_municipio, count(*) AS n, avg(i.$column - p.$column)::float8 AS variacao
         FROM clean.ideb_notas_escolas i
+        JOIN ativa c ON c.co_entidade = i.id_escola
         JOIN clean.ideb_notas_escolas p
           ON p.id_escola = i.id_escola AND p.ano = ? AND p.etapa = i.etapa
-         AND p.rede = 'Municipal' AND p.$column IS NOT NULL
-       WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL $uf_sql_i
-       GROUP BY i.co_municipio
+         AND p.$column IS NOT NULL
+       WHERE i.ano = ? AND i.etapa = ? AND i.$column IS NOT NULL $uf_sql_c
+       GROUP BY c.co_municipio
     ),
     -- O filtro de porte entra aqui, antes da posição, dos quintos de INSE e
     -- do salto atípico: o ranking é entre as redes do mesmo porte.
     elegiveis AS (
       SELECT a.co_municipio, a.no_municipio, a.sg_uf, a.n, a.media,
              CASE WHEN p.n >= $min THEN p.variacao END AS variacao,
-             COALESCE(p.n, 0) AS n_variacao,
+             COALESCE(p.n, 0) AS n_variacao, COALESCE(f.n, 0) AS n_fora,
              a.inse, po.populacao, po.porte
         FROM atual a
         LEFT JOIN pares p USING (co_municipio)
+        LEFT JOIN fora f USING (co_municipio)
         LEFT JOIN pop po ON po.codigo_ibge = a.co_municipio::text
        WHERE a.n >= $min @{[ defined $porte ? 'AND po.porte = ?' : '' ]}
     ),
@@ -703,6 +728,8 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       FROM quintos q
      ORDER BY q.media DESC, q.no_municipio
   }, { Slice => {} },
+    $ano_censo // -1,
+    $ano, $def->{etapa}, @uf_bind,
     $ano, $def->{etapa}, @uf_bind,
     (defined $ano_ant ? $ano_ant : -1), $ano, $def->{etapa}, @uf_bind,
     (defined $porte ? ($porte) : ()));
@@ -711,12 +738,23 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     ? "AND EXISTS (SELECT 1 FROM clean.populacao_municipal pm
                     WHERE pm.codigo_ibge = i.co_municipio::text AND $porte_case = ?)"
     : '';
+  # Redes fora pelo mínimo e o total de escolas fora de funcionamento no
+  # recorte (#508), com a mesma regra das redes.
   my ($fora) = $dbh->selectrow_array(qq{
     SELECT count(*) FROM (
-      SELECT co_municipio FROM clean.ideb_notas_escolas i
-       WHERE ano = ? AND etapa = ? AND rede = 'Municipal' AND $column IS NOT NULL $uf_sql $porte_fora
-       GROUP BY co_municipio HAVING count(*) < $min
-    ) t}, undef, $ano, $def->{etapa}, @uf_bind, (defined $porte ? ($porte) : ()));
+      SELECT c.co_municipio AS co_municipio FROM clean.ideb_notas_escolas i
+        JOIN clean.censo_escolas c ON c.co_entidade = i.id_escola AND c.nu_ano_censo = ?
+         AND c.tp_situacao_funcionamento = 1 AND c.tp_dependencia = 3
+       WHERE i.ano = ? AND i.etapa = ? AND i.$column IS NOT NULL $uf_sql_c @{[ $porte_fora =~ s/\bi\.co_municipio\b/c.co_municipio/r ]}
+       GROUP BY c.co_municipio HAVING count(*) < $min
+    ) t}, undef, $ano_censo // -1, $ano, $def->{etapa}, @uf_bind, (defined $porte ? ($porte) : ()));
+  my ($fora_func) = $dbh->selectrow_array(qq{
+    SELECT count(*) FROM clean.ideb_notas_escolas i
+      LEFT JOIN clean.censo_escolas c ON c.co_entidade = i.id_escola AND c.nu_ano_censo = ?
+       AND c.tp_situacao_funcionamento = 1 AND c.tp_dependencia = 3
+     WHERE i.ano = ? AND i.etapa = ? AND i.rede = 'Municipal' AND i.$column IS NOT NULL
+       AND c.co_entidade IS NULL $uf_sql_i $porte_fora
+  }, undef, $ano_censo // -1, $ano, $def->{etapa}, @uf_bind, (defined $porte ? ($porte) : ()));
 
   # Ano da estimativa populacional, do catálogo de fontes (#428).
   my $pop_ano = eval { EduMaps::Fontes->versao($dbh, 'ibge_populacao')->{ibge_populacao}{periodo} };
@@ -744,7 +782,7 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
   # lista quando não está. Uma consulta a mais, só com `destaque`.
   my $destaque = defined $opts->{destaque}
     ? $self->_destaque_rede($opts->{destaque}, $rows, {
-        column => $column, etapa => $def->{etapa}, ano => $ano, min => $min,
+        column => $column, etapa => $def->{etapa}, ano => $ano, min => $min, ano_censo => $ano_censo,
         uf => $uf, regiao => $regiao, porte => $porte, porte_case => $porte_case })
     : undef;
 
@@ -773,12 +811,16 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
     variacao_regra => 'mesmas_escolas',
     total => scalar @$rows,
     fora_por_poucas_escolas => 0 + ($fora // 0),
+    # #508: a regra das escolas e quantas ficaram de fora por ela
+    ano_censo => defined $ano_censo ? 0 + $ano_censo : undef,
+    escolas_fora => 0 + ($fora_func // 0),
     redes => [ map { +{
       codigo_ibge => "$_->{co_municipio}",
       municipio   => $_->{no_municipio},
       uf          => $_->{sg_uf},
       escolas     => 0 + $_->{n},
       escolas_variacao => 0 + $_->{n_variacao},
+      escolas_fora => 0 + $_->{n_fora},
       media       => $num->($_->{media}),
       variacao    => $num->($_->{variacao}),
       inse        => $num->($_->{inse}),
@@ -809,10 +851,13 @@ sub _destaque_rede ($self, $codigo, $rows, $c) {
   my ($pop, $porte) = $dbh->selectrow_array(
     "SELECT pm.populacao_estimada, $c->{porte_case} FROM clean.populacao_municipal pm WHERE pm.codigo_ibge = ?",
     undef, "$codigo");
+  # #508: as escolas em funcionamento na rede municipal, como no ranking
   my ($n) = $dbh->selectrow_array(
-    "SELECT count(*) FROM clean.ideb_notas_escolas
-      WHERE co_municipio = ? AND ano = ? AND etapa = ? AND rede = 'Municipal' AND $col IS NOT NULL",
-    undef, $codigo, $c->{ano}, $c->{etapa});
+    "SELECT count(*) FROM clean.ideb_notas_escolas i
+       JOIN clean.censo_escolas e ON e.co_entidade = i.id_escola AND e.nu_ano_censo = ?
+        AND e.tp_situacao_funcionamento = 1 AND e.tp_dependencia = 3
+      WHERE e.co_municipio = ? AND i.ano = ? AND i.etapa = ? AND i.$col IS NOT NULL",
+    undef, $c->{ano_censo} // -1, $codigo, $c->{ano}, $c->{etapa});
   my ($row) = grep { "$_->{co_municipio}" eq "$codigo" } @$rows;
 
   my $situacao =

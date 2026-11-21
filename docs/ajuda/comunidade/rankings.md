@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/ranking.md
-ultima_revisao: 2026-11-19
+ultima_revisao: 2026-11-20
 ---
 
 # Rankings de redes e de escolas
@@ -68,6 +68,16 @@ indicador. Não precisa de login.
   incluía também escolas paralisadas, extintas ou fora do Censo.
 - **Valor da rede** é a **média simples das escolas municipais** com o
   indicador naquela edição. Não é o IDEB oficial da rede calculado pelo INEP.
+  Só entram as escolas **em funcionamento na rede municipal no Censo mais
+  recente**, como na lista de escolas e na base de análise: a escola
+  paralisada, extinta, fora do Censo ou que hoje é de outra rede fica de
+  fora, e a nota da tabela diz quantas são. O CSV traz essas escolas por
+  rede (`escolas_fora`) e o ano do Censo da regra (`ano_censo`).
+- **Para refazer a conta:** baixe a [base de análise](base-de-analise.md)
+  da UF com a rede municipal e o bloco "IDEB e SAEB" (do mesmo Censo do
+  `ano_censo`) e tire a média do indicador por município, com o mesmo
+  mínimo de escolas. A variação se refaz com a base da edição anterior,
+  nas escolas que têm o dado nas duas.
 - **Variação** é a diferença para a edição anterior **nas mesmas escolas**:
   só as que têm o indicador nas duas edições. Quando nem todas as escolas da
   rede estão nas duas, o número delas aparece entre parênteses ao lado da
@@ -186,6 +196,13 @@ notas de versões diferentes não são comparáveis. O histórico está em
   escolas, não no de redes.
 
 ## Perguntas frequentes
+- **Por que a posição da minha rede mudou?** Desde 20/11/2026 o ranking de
+  redes conta só as escolas em funcionamento na rede municipal do Censo mais
+  recente. Antes, uma escola paralisada ou extinta continuava na média da
+  edição em que teve nota. Em Mário Campos/MG, por exemplo, uma escola
+  paralisada com IDEB 3,0 nos anos iniciais puxava a média para 5,68, e a
+  rede ficava em 216º de 302 em MG; só com as 4 em funcionamento, a média é
+  6,35 e a rede fica em 68º de 298.
 - **Por que a variação da minha rede mudou?** Desde 19/11/2026 ela é medida
   nas mesmas escolas das duas edições. Antes, uma rede que ganhou escolas
   novas com IDEB alto, ou perdeu escolas fracas, parecia ter melhorado sem

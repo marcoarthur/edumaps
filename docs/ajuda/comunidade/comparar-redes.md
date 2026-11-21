@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [buscar-escola, rankings, base-de-analise, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/rede-municipal.md
-ultima_revisao: 2026-11-19
+ultima_revisao: 2026-11-20
 ---
 
 # Comparar redes
@@ -40,9 +40,9 @@ Brasil.
 - **Só escolas em funcionamento.** As escolas paralisadas ou extintas no
   Censo Escolar não entram: não têm aluno, e contá-las inflava o número de
   escolas e baixava os alunos por escola. É a mesma contagem do perfil, da
-  lista de escolas do ranking e da [base de análise](base-de-analise.md). O
-  ranking de redes é outra conta: a média das escolas com IDEB naquela
-  edição, inclusive as que fecharam depois.
+  lista de escolas do ranking, do ranking de redes e da
+  [base de análise](base-de-analise.md). Só a linha do IDEB (abaixo) é
+  outra conta: cada edição com as escolas que tiveram nota nela.
 - **Matrículas e docentes** são do Censo Escolar mais recente. Quem dá aula
   em mais de uma escola conta em cada uma.
 - **Médias simples.** "Alunos por docente" e "% docentes com superior" são

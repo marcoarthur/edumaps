@@ -19,20 +19,23 @@ export function rotuloRecorte(recorte) {
  * dizem de qual ordem são; a ordem das linhas é a da tela.
  * #499: `escolas_variacao`, as escolas com dado nas duas edições, sobre as
  * quais a variação é calculada.
+ * #508: `escolas_fora`, as escolas da rede com o indicador na edição que não
+ * estão mais em funcionamento (fora da conta), e `ano_censo`, o Censo da
+ * regra: com a base de análise do mesmo Censo, a conta se refaz.
  */
 export function tabelaRedes(r, redes) {
   const recorte = rotuloRecorte(r.recorte);
   const porte = r.recorte?.porte ?? "";
   return {
     cabecalho: [
-      "posicao_valor", "posicao_variacao", "codigo_ibge", "municipio", "uf", "escolas", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`,
+      "posicao_valor", "posicao_variacao", "codigo_ibge", "municipio", "uf", "escolas", "escolas_fora", `media_${r.ano}`, `variacao_${r.ano_anterior ?? ""}_${r.ano}`,
       "escolas_variacao", "salto_atipico", "inse_medio", "quinto_inse", "media_dos_municipios_do_mesmo_quinto",
-      `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "recorte", "porte_filtro", "minimo_escolas",
+      `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "ano_censo", "recorte", "porte_filtro", "minimo_escolas",
     ],
     linhas: redes.map((x) => [
-      x.posicao, x.posicao_variacao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.media, x.variacao, x.escolas_variacao, x.atipico ? "sim" : "",
+      x.posicao, x.posicao_variacao, x.codigo_ibge, x.municipio, x.uf, x.escolas, x.escolas_fora ?? null, x.media, x.variacao, x.escolas_variacao, x.atipico ? "sim" : "",
       x.inse, x.quinto_inse, x.media_quinto_inse, x.populacao, x.porte ? rotuloPorte(x.porte) : null,
-      recorte, porte, r.minimo_escolas,
+      r.ano_censo ?? null, recorte, porte, r.minimo_escolas,
     ]),
   };
 }

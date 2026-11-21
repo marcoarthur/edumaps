@@ -44,6 +44,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   responder "quais redes mais melhoraram?" e "este município entrega parecido
   com os semelhantes?" sem leitura punitiva. Redes com poucas escolas com dado
   ficam de fora e são contadas; o mínimo de escolas por rede é ajustável.
+  Só entram as escolas em funcionamento na rede municipal no Censo mais
+  recente, como na lista de escolas e na base de análise, e o ranking diz
+  quantas ficaram de fora por isso; a conta se refaz pela base de análise.
 - Sistema pode **avisar do salto atípico**: a rede cuja variação fica muito
   acima ou abaixo das outras do recorte (mais de 2 desvios padrão) é marcada,
   com o convite a conferir o dado antes de citar.
