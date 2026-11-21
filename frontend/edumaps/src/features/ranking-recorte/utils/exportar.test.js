@@ -32,6 +32,16 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     expect(t.linhas[2][i - 1]).toBe(-0.3);
   });
 
+  it("redes: escolas fora de funcionamento e o Censo da regra (#508)", () => {
+    const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
+    const i = t.cabecalho.indexOf("escolas_fora");
+    expect(t.cabecalho[i - 1]).toBe("escolas");
+    expect(t.linhas.map((l) => l[i])).toEqual([0, 0, 7]);
+    const c = t.cabecalho.indexOf("ano_censo");
+    expect(t.cabecalho[c + 1]).toBe("recorte");
+    expect(t.linhas[0][c]).toBe(2025);
+  });
+
   it("redes de uma UF sem porte: porte_filtro vazio", () => {
     const t = tabelaRedes(REDES_FIXTURE, REDES_FIXTURE.redes);
     expect(t.linhas[0].slice(-3)).toEqual(["UF:ES", "", 3]);

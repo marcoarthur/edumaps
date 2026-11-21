@@ -390,6 +390,12 @@
           <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-redes">
             Valor da rede = <strong>média simples das escolas municipais</strong> com {redes.indicador.label} em {redes.ano}
             (não é o IDEB oficial da rede, calculado pelo INEP).
+            {#if redes.ano_censo}
+              <span data-testid="regra-funcionamento">Só as escolas em funcionamento na rede municipal no Censo {redes.ano_censo},
+                como na lista de escolas e na base de análise{#if redes.escolas_fora > 0}:
+                  <strong>{redes.escolas_fora.toLocaleString("pt-BR")} {redes.escolas_fora === 1 ? "escola" : "escolas"} com dado em {redes.ano}</strong>
+                  {redes.escolas_fora === 1 ? "não está mais em funcionamento e fica" : "não estão mais em funcionamento e ficam"} de fora{/if}.</span>
+            {/if}
             <span data-testid="regra-variacao">Variação: diferença para {redes.ano_anterior ?? "a edição anterior"}
               <strong>nas mesmas escolas</strong>, as que têm dado nas duas edições; entre parênteses, quantas, quando não são todas.</span>
             {#if semVariacao > 0}

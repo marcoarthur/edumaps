@@ -24,6 +24,9 @@ describe("RankingRecortePage (#430)", () => {
     expect(nota).toHaveTextContent("média simples das escolas municipais");
     expect(nota).toHaveTextContent("pelo menos 3 escolas");
     expect(nota).toHaveTextContent("2 ficaram de fora");
+    // #508: a regra das escolas em funcionamento e quantas saíram
+    expect(screen.getByTestId("regra-funcionamento")).toHaveTextContent(
+      "Só as escolas em funcionamento na rede municipal no Censo 2025, como na lista de escolas e na base de análise: 7 escolas com dado em 2023 não estão mais em funcionamento e ficam de fora.");
     expect(window.location.search).toBe("?aba=redes&indicador=ideb_anos_iniciais&uf=ES");
   });
 
