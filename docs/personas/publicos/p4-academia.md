@@ -152,7 +152,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#507).
   Vigésima sétima rodada (2026-11-20, **adotaria**, sem citar o ranking
   de redes): RB-01 (o ranking de redes conta escolas fora de
-  funcionamento e não se refaz pela base) → aguarda aprovação.
+  funcionamento e não se refaz pela base) → #508.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

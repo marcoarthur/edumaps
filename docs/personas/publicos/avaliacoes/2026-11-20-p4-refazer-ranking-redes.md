@@ -74,4 +74,4 @@ entrega da vigésima sexta rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para virar issue.
+Issue **#508**, aberta com a aprovação do developer.
