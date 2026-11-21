@@ -157,7 +157,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima oitava rodada (2026-11-21, **adotaria**, sem o painel público
   para descrever a escola): RA-01 (etapas e infraestrutura apagadas que a
   escola tem), RA-02 (matrículas contadas duas vezes, porte sem fonte) e
-  RA-03 (cartões sem o empate, ajuda do painel vazia) → aguarda aprovação.
+  RA-03 (cartões sem o empate, ajuda do painel vazia) → #510.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

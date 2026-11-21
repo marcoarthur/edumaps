@@ -93,4 +93,5 @@ entrega da vigésima sétima rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue (RA-01 a RA-03 juntas).
+Issue **#510** (RA-01 a RA-03 juntas), aberta com a aprovação do
+developer.
