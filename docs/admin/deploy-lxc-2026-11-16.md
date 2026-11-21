@@ -208,6 +208,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `curl -s 'http://127.0.0.1:3000/api/school/29422620/ranking?indicador=sustentabilidade&national=1'`
       traz `empate` (~52.164 no nacional) e `percentil` 0 nos três escopos; o IDEB anos
       iniciais da 29190231 dá "1º de ~247" no município, sem escolas fora de funcionamento.
+- [ ] Ranking de redes só com escolas em funcionamento (#508):
+      `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=ideb_anos_iniciais&uf=MG'`
+      traz `ano_censo` e `escolas_fora` (~13); Mário Campos (3140159) com média 6,35,
+      4 escolas e `escolas_fora` = 1, perto de 68º de 298.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

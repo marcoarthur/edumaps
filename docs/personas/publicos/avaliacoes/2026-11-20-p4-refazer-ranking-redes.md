@@ -75,3 +75,12 @@ entrega da vigésima sexta rodada:
 ## Encaminhamento
 
 Issue **#508**, aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-20: #508 (PR #509) mergeado: RB-01 resolvido. O ranking de redes
+  conta só as escolas em funcionamento na rede municipal do Censo mais
+  recente, como a lista e a base; a nota da tabela e o CSV dizem quantas
+  saíram (`escolas_fora`) e o Censo da regra (`ano_censo`). As 347 redes da
+  BA se refazem pela base sem diferença; Mário Campos/MG passa de 216º de
+  302 para 68º de 298.

@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-20 (cx) — vigésima sétima avaliação da P4, #508 (PR #509) mergeado
+
+- Vigésima sétima rodada da P4 (refazer o ranking de redes pela base de
+  análise): adotaria, sem citar o ranking de redes. RB-01: o valor da rede
+  contava escolas paralisadas, extintas, fora do Censo ou hoje de outra
+  rede (17 de 348 redes da BA não se refaziam; Mário Campos/MG 216º → 68º)
+  → #508.
+- PR #509 (9a06f49), opção A: `redes_municipais` com o CTE `ativa`
+  (Censo mais recente, `tp_situacao_funcionamento = 1`, `tp_dependencia = 3`);
+  a rede vem do Censo, não da coluna `rede` do IDEB. `escolas_fora` e
+  `ano_censo` na resposta e no CSV; nota da tabela. Revê a decisão da nota
+  237. A linha do IDEB da comparação de redes segue por edição.
+- Script de conferência (base × ranking) em
+  `scratchpad/cmp.py`: as 347 redes da BA batem.
+- Fixtures de `ranking_recorte.t`: toda escola de rede entra no Censo pelo
+  helper `$no_censo`; UF fictícia nova `XV`.
+- Pendente no LXC: `deploy_backend_dev` + `deploy_frontend_dev`.
+- Nota técnica 239, ciclo `2026-11-20-ranking-redes-funcionamento.md`.
+
 ## Sessão 2026-11-20 (cw) — vigésima sexta avaliação da P4, #506 (PR #507) mergeado
 
 - Vigésima sexta rodada da P4 (posição da escola): adotaria, sem a posição.

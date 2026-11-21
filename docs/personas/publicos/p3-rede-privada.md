@@ -75,6 +75,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — versão citável dos índices nos textos](ciclos/2026-11-19-versao-indices-textos.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto.
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: privadas sem IDEB ditas na nota.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante (as privadas quase não têm IDEB; os índices já valiam).
+- [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto: ranking das redes municipais.
 
 ## Pendências
 
