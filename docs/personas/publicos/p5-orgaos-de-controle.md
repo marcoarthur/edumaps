@@ -76,6 +76,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: fossa não aparece mais como falta de esgoto.
 
 ## Pendências
 

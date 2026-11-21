@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-21 (cy) — vigésima oitava avaliação da P4, #510 (PR #511) mergeado
+
+- Vigésima oitava rodada da P4 (painel público da escola, Amai Pro
+  29190231): adotaria, sem o painel. RA-01: etapas e infraestrutura
+  apagadas por chaves diferentes entre backend e tela (`pre_infantil`,
+  `quadra_esporte`), acessibilidade ausente, fossa e gerador como falta;
+  RA-02: matrículas somavam infantil/EJA/médio ao `qt_mat_bas`, que já os
+  contém (357 → 285), porte "assumido"; RA-03: cartões sem o empate, ajuda
+  vazia → #510.
+- PR #511 (4cfcf9d): `panel_etapas`/`panel_infraestrutura` em
+  `Roles::Business::School::Profile`, com o estado 1/0/null e o `detalhe`
+  (`rede_publica`/`outra_solucao`) de esgoto e energia; `ano_censo` na
+  resposta; matrículas = `qt_mat_bas` do Censo mais recente; porte removido
+  (decisão do developer); `Icon.svelte` com n/d, o detalhe e a cor
+  corrigida (`$derived.by`).
+- Testes novos: `t/04-api/school_panel.t` (INEPs 60510001/2, município
+  6051000, UF `XU`) e `t/06-tools/painel_chaves.t`, que lê o `icon-data.js`.
+- Pendente no LXC: `deploy_backend_dev` + `deploy_frontend_dev`.
+- Nota técnica 240, ciclo `2026-11-21-painel-publico-escola.md`.
+
 ## Sessão 2026-11-20 (cx) — vigésima sétima avaliação da P4, #508 (PR #509) mergeado
 
 - Vigésima sétima rodada da P4 (refazer o ranking de redes pela base de

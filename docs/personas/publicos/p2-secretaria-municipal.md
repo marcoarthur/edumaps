@@ -79,6 +79,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: quantas escolas da etapa ficam sem IDEB.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a posição das escolas da rede sem empate escondido.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: posição da rede sem escolas fechadas, com quantas saíram.
+- [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o retrato público das escolas da rede bate com o Censo.
 
 ## Pendências
 

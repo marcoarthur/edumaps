@@ -79,6 +79,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p4--academia-pesquisadora): adotaria (mantido), com a lista de escolas pelo IDEB. RD-01 e RD-02 resolvidos; nenhum achado aberto da vigésima quinta avaliação.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p4--academia-pesquisadora): adotaria (mantido), agora também com a posição da escola. RC-01 e RC-02 resolvidos; nenhum achado aberto da vigésima sexta avaliação.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p4--academia-pesquisadora): adotaria (mantido), agora citando o ranking de redes. RB-01 resolvido; nenhum achado aberto da vigésima sétima avaliação.
+- [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p4--academia-pesquisadora): adotaria (mantido), agora também descrevendo a escola pelo painel público. RA-01 a RA-03 resolvidos; nenhum achado aberto da vigésima oitava avaliação.
 
 ## Pendências
 
@@ -157,7 +158,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Vigésima oitava rodada (2026-11-21, **adotaria**, sem o painel público
   para descrever a escola): RA-01 (etapas e infraestrutura apagadas que a
   escola tem), RA-02 (matrículas contadas duas vezes, porte sem fonte) e
-  RA-03 (cartões sem o empate, ajuda do painel vazia) → #510.
+  RA-03 (cartões sem o empate, ajuda do painel vazia) → #510, entregues
+  (#511).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

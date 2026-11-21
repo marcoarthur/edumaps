@@ -80,6 +80,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: sem escolas fechadas na lista.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: a posição da escola diz o empate e o "acima de" honesto.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a rede comparada com as escolas que existem hoje.
+- [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: o painel da escola sem etapas e itens apagados por erro e com as matrículas do Censo.
 
 ## Pendências
 

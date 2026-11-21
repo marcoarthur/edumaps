@@ -73,6 +73,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-19 — lista de escolas pelo IDEB com cobertura](ciclos/2026-11-19-ranking-escolas-cobertura.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a lista diz quantas ficaram de fora.
 - [2026-11-20 — posição da escola com empate](ciclos/2026-11-20-posicao-escola-empate.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "acima de X%" não infla escolas empatadas na nota mínima.
 - [2026-11-20 — ranking de redes só com escolas em funcionamento](ciclos/2026-11-20-ranking-redes-funcionamento.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: ranking de redes sem escola paralisada puxando a média.
+- [2026-11-21 — painel público da escola](ciclos/2026-11-21-painel-publico-escola.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: contagens de "escolas sem quadra/esgoto" não saem mais de ícones apagados por erro.
 
 ## Pendências
 

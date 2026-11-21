@@ -95,3 +95,17 @@ entrega da vigésima sétima rodada:
 
 Issue **#510** (RA-01 a RA-03 juntas), aberta com a aprovação do
 developer.
+
+## Andamento
+
+- 2026-11-21: #510 (PR #511) mergeado: RA-01 a RA-03 resolvidos.
+  - Etapas e infraestrutura vêm com o estado de cada item (tem, não tem, sem
+    dado) e as chaves da tela, conferidas por teste. Pré-escola, quadra e
+    rampas voltaram; esgoto e energia contam a fossa e o gerador como "outra
+    solução".
+  - Matrículas = total da educação básica do Censo, com o ano (Amai Pro:
+    357 → 285); o porte saiu.
+  - Os cartões dizem o empate e levam à posição; a ajuda do painel foi
+    reescrita.
+  - Correção: o empate da sustentabilidade 0 da Amai Pro é "empatada com
+    665" (os 666 da API incluem a própria escola), não 666.

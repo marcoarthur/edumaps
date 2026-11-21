@@ -212,6 +212,11 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=ideb_anos_iniciais&uf=MG'`
       traz `ano_censo` e `escolas_fora` (~13); Mário Campos (3140159) com média 6,35,
       4 escolas e `escolas_fora` = 1, perto de 68º de 298.
+- [ ] Painel público da escola (#510):
+      `curl -s 'http://127.0.0.1:3000/api/school/29190231/panel/info'` traz `escola.matriculas`
+      = 285, `ano_censo`, `etapas.pre_escola` = 1 e `infraestrutura` como objeto (com `detalhe`);
+      a 29211999 (Abaíra) com `esgoto` = 1 e `detalhe.esgoto` = "outra_solucao",
+      `quadra_esportes` e `acessibilidade` = 1.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
