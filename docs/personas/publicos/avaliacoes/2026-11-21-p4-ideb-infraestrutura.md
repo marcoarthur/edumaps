@@ -76,4 +76,4 @@ da vigésima nona rodada:
 
 ## Encaminhamento
 
-Aguarda a aprovação do developer para abrir a issue (QY-01).
+Issue **#514** (QY-01), aberta com a aprovação do developer.

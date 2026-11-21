@@ -168,7 +168,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (#513).
   Trigésima rodada (2026-11-21, **adotaria**, com a base para a pergunta
   do perfil): QY-01 (cruzamento de anos só dito com edição antiga do IDEB)
-  → aguarda aprovação.
+  → #514.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
