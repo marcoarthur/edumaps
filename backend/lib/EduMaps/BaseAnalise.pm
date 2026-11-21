@@ -337,7 +337,7 @@ sub _blocos {
       ] },
     # #491 (RJ-03): a folha do SIOPE agregada por escola, sem nomes nem CPF.
     { id => 'remuneracao', label => 'Remuneração (SIOPE)', fonte => 'siope', usa_ano_siope => 1,
-      descricao => 'Profissionais do magistério, salário médio mensal, carga horária média, salário para 40 horas e gasto com pessoal da escola no ano escolhido, '
+      descricao => 'Profissionais do magistério (no ano e por mês), salário médio mensal, carga horária média, salário para 40 horas, auxiliares e assistentes educacionais e gasto com pessoal da escola no ano escolhido, '
         . 'da folha que o município declara ao SIOPE. Só a rede municipal e só os municípios em que o SIOPE detalha a folha por escola; sem nomes nem CPF.',
       colunas => [
         ['prof_magisterio', 'f.prof_magisterio',
