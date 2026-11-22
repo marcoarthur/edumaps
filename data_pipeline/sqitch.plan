@@ -182,3 +182,4 @@ rede_escolas_ativas [censo_labels_consumers] 2026-11-17T23:30:00Z Marco Arthur <
 school_embedding_l2 [school_embedding] 2026-11-18T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #487: escolas semelhantes pela distancia euclidiana entre as notas (indice HNSW vector_l2_ops)
 ranking_escola_empates [ranking_escolas] 2026-11-19T20:00:00Z Marco Arthur <arthurpbs@gmail.com> # #506: tamanho do empate por escopo em analytics.ranking_escola, para o percentil contar so as escolas de valor menor
 rede_escolas_creche_pre [rede_escolas_ativas] 2026-11-21T19:00:00Z Marco Arthur <arthurpbs@gmail.com> # #516: mv_rede_escolas com matriculas_creche e matriculas_pre (creche e pre-escola separadas na comparacao de redes)
+rede_escolas_conveniadas [rede_escolas_creche_pre] 2026-11-21T22:00:00Z Marco Arthur <arthurpbs@gmail.com> # #518: mv_rede_escolas com as privadas conveniadas com a prefeitura (escolas e matriculas em creche e pre-escola)

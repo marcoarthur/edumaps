@@ -27,6 +27,9 @@ oferta educacional local.
 - Sistema pode mostrar as matrículas por etapa com a **creche e a pré-escola
   separadas**, e levar às escolas do município na base de análise, para
   baixar.
+- Sistema pode **mostrar as escolas privadas conveniadas com a prefeitura**
+  e as matrículas delas em creche e pré-escola, para somar à oferta da rede
+  municipal.
 - Sistema pode mostrar como cada rede contribui para a oferta do município.
 - Sistema pode apoiar leitura de políticas e de investimento por rede.
 - Sistema pode abrir, a partir da comparação, o perfil analítico de cada rede

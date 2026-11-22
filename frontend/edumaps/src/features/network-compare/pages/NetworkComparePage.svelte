@@ -20,6 +20,7 @@
   import NetworkIdedTimeline from "../components/NetworkIdedTimeline.svelte";
   import NetworkCompareTable from "../components/NetworkCompareTable.svelte";
   import NetworkSchoolMap from "../components/NetworkSchoolMap.svelte";
+  import { formatInt } from "../utils/transformNetworkData.js";
 
   const CITY_KEY = "municipio";
 
@@ -30,6 +31,12 @@
   let markers = $state([]);
   let loading = $state(false);
   let error = $state(null);
+
+  // #518 (QW-01): parte da oferta de creche das prefeituras é feita por
+  // convênio com escolas privadas; elas continuam na rede privada.
+  const conveniadas = $derived(
+    networks.find((n) => n.rede === "privada" && Number(n.escolas_conveniadas) > 0) ?? null,
+  );
 
   async function loadMunicipality(code) {
     if (!code) return;
@@ -137,6 +144,15 @@
       <NetworkShareDonut {networks} field="total_matriculas" title="Matrículas por rede" />
     </div>
 
+    {#if conveniadas}
+      <p class="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-md p-4" data-testid="nota-conveniadas">
+        Na rede privada, {formatInt(conveniadas.matriculas_creche_conveniada)} matrículas em creche e
+        {formatInt(conveniadas.matriculas_pre_conveniada)} na pré-escola estão em
+        {formatInt(conveniadas.escolas_conveniadas)} {Number(conveniadas.escolas_conveniadas) === 1 ? "escola conveniada" : "escolas conveniadas"}
+        com a prefeitura. Para a oferta pública, some-as às da rede municipal.
+      </p>
+    {/if}
+
     <NetworkIdedTimeline {performance} />
 
     <NetworkCompareTable {networks} {codigoIbge} />
@@ -154,8 +170,8 @@
       <a href="/ranking?aba=escolas&codigo_ibge={codigoIbge}" class="text-blue-700 hover:underline">Ranking das escolas deste município</a>
       {#if ufDoMunicipio(codigoIbge)}
         <a href="/ranking?aba=redes&uf={ufDoMunicipio(codigoIbge)}" class="text-blue-700 hover:underline">Ranking das redes municipais de {ufDoMunicipio(codigoIbge)}</a>
-        <!-- #516 (QX-02): as matrículas por escola, para baixar -->
-        <a href="/base-analise?uf={ufDoMunicipio(codigoIbge)}&codigo_ibge={codigoIbge}&blocos=etapas%2Cmatriculas"
+        <!-- #516 (QX-02): as matrículas por escola, para baixar; #518: com a parceria -->
+        <a href="/base-analise?uf={ufDoMunicipio(codigoIbge)}&codigo_ibge={codigoIbge}&blocos=etapas%2Cmatriculas%2Cparceria"
           class="text-blue-700 hover:underline" data-testid="link-base">Baixar as escolas deste município (base de análise)</a>
       {/if}
     </p>

@@ -30,6 +30,9 @@ Brasil.
      docente e docentes com ensino superior de cada rede;
    - os gráficos de **escolas e matrículas por rede** e de matrículas por
      etapa, com a creche e a pré-escola separadas;
+   - quando o município tem **escolas privadas conveniadas com a
+     prefeitura**, uma nota diz quantas são e quantas matrículas em creche
+     e pré-escola elas têm;
    - a **linha do IDEB** por rede e etapa, de 2005 até a edição mais recente;
    - o mapa com as escolas.
 3. **Perfil analítico:** acima da tabela, **Ver perfil analítico** abre uma
@@ -104,12 +107,20 @@ Somente dados públicos e agregados.
   só existiam em parte dos municípios. Os níveis do INSE são públicos, do
   INEP, e iguais em todo lugar.
 
+- **Por que as conveniadas ficam na rede privada?** O Censo classifica a
+  escola pela dependência administrativa: a conveniada é privada, mesmo
+  quando a prefeitura custeia as vagas. Para a oferta pública de creche,
+  some as conveniadas da nota às matrículas da rede municipal. Em Franca
+  (SP), a rede municipal tem 0 matrícula em creche, e as 82 escolas
+  conveniadas com a prefeitura têm 7.758 (78 delas oferecem creche).
+
 ## Para baixar
 
 O link **Baixar as escolas deste município (base de análise)**, no pé da
 página, abre a [base de análise](base-de-analise.md) já com o município e
-os blocos de etapas e de matrículas: uma linha por escola, para somar por
-rede ou comparar com outros municípios.
+os blocos de etapas, de matrículas e da parceria com o poder público: uma
+linha por escola, para somar por rede (separando as conveniadas) ou
+comparar com outros municípios.
 
 ## Veja também
 - [Rankings](rankings.md)
