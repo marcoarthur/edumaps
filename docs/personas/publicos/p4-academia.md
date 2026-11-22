@@ -182,7 +182,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima terceira rodada (2026-11-21, **adotaria**, com a oferta pública
   somando as conveniadas): QV-01 (a soma das conveniadas é um teto, sem
   aviso) e QV-02 (o código da ajuda para no `subset` e a junção perde
-  municípios), aguardando a decisão sobre a issue.
+  municípios) → #520.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

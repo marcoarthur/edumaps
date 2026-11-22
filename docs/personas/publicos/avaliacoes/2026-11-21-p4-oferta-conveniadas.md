@@ -91,4 +91,4 @@ da entrega da trigésima segunda rodada:
 
 ## Encaminhamento
 
-Aguarda a decisão do developer sobre abrir a issue (QV-01 e QV-02).
+Issue **#520** (QV-01 e QV-02), aberta com a aprovação do developer.
