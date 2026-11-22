@@ -36,7 +36,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   em tempo integral, para medir e comparar a oferta entre municípios.
 - Sistema pode **dizer quais escolas privadas são conveniadas com o poder
   público** (e com qual esfera) e a categoria da escola privada, para somar
-  à oferta da prefeitura a que ela faz por convênio.
+  à oferta da prefeitura a que ela faz por convênio, avisando que a soma é
+  um teto (o Censo marca a escola, não a vaga), com o código pronto para a
+  soma por município.
 - Sistema pode **avisar quando o IDEB e o Censo são de anos diferentes**,
   com a distância em anos e o que isso muda num modelo (escolas fechadas
   fora, infraestrutura medida depois da prova), inclusive na edição mais
