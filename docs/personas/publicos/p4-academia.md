@@ -189,10 +189,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   perfil docente): QU-01 ("sem especialização" mede quem não fez formação
   continuada) e QU-02 (duas medidas de formação continuada sem a relação
   dita) → #522, entregues (#523).
+  Trigésima quinta rodada (2026-11-22, **adotaria**, com ressalva na
+  comparação entre pública e privada): QT-01 (concursados 0 nas privadas,
+  onde o Censo não pergunta, no agrupamento, no índice e no ranking) e
+  QT-02 (o agrupamento ainda fala `prop_sem_especializacao` e mostra o
+  comentário inteiro do banco), aguardando a decisão sobre a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-22 — Agrupamento (trigésima quinta rodada, docência em SP)
+
+**Veredito:** **adotaria** (mantido), com ressalva na comparação entre
+pública e privada. Consolidação em
+[`avaliacoes/2026-11-22-p4-agrupamento-docencia.md`](avaliacoes/2026-11-22-p4-agrupamento-docencia.md).
+
+**O que funcionou:** o CSV do agrupamento diz a base no nome e nas colunas;
+o rótulo "sem formação continuada" chegou ao perfil e ao banco.
+
+**Barreiras:**
+- QT-01 (atrapalha): `prop_efetivos` é 0 nas privadas, mas o Censo só
+  pergunta o vínculo na escola pública; 92,7% das privadas de SP caem em
+  "Baixa"/"Muito baixa qualidade da docência", o índice de capacitação
+  docente delas tem teto de 8, e 116 das 136 privadas de Franca ficam na
+  metade de baixo do ranking.
+- QT-02 (detalhe): o agrupamento ainda usa `prop_sem_especializacao` (a
+  base usa `prop_sem_formacao_continuada`), e a tela mostra o comentário
+  inteiro do banco como rótulo.
 
 ### 2026-11-22 — Análises públicas (trigésima quarta rodada, perfil docente entre regiões)
 
