@@ -178,12 +178,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregues (#517).
   Trigésima segunda rodada (2026-11-21, **adotaria**, com as matrículas,
   sem as conveniadas): QW-01 (creches conveniadas com o poder público na
-  rede privada, sem a parceria na base) → #518,
-  entregue (#519).
+  rede privada, sem a parceria na base) → #518, entregue (#519).
+  Trigésima terceira rodada (2026-11-21, **adotaria**, com a oferta pública
+  somando as conveniadas): QV-01 (a soma das conveniadas é um teto, sem
+  aviso) e QV-02 (o código da ajuda para no `subset` e a junção perde
+  municípios), aguardando a decisão sobre a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-21 — Análises públicas (trigésima terceira rodada, oferta com as conveniadas)
+
+**Veredito:** **adotaria** (mantido), com a oferta pública somando as
+conveniadas. Consolidação em
+[`avaliacoes/2026-11-21-p4-oferta-conveniadas.md`](avaliacoes/2026-11-21-p4-oferta-conveniadas.md).
+
+**O que funcionou:** o bloco Parceria refaz pela base a conta que antes
+pedia o banco (correlação de postos de 0,51 e 25 municípios que mudam 20
+posições ou mais, nos 71 de 100 a 500 mil habitantes); com as conveniadas,
+a oferta pública de creche fica entre 18 e 25 por mil habitantes em todos
+os portes, e o convênio cresce com o porte (29% acima de 500 mil).
+
+**Barreiras:**
+- QV-01 (detalhe): a soma das conveniadas é um teto (o Censo marca a
+  escola, não a vaga), e nenhum texto diz isso; 9.844 matrículas em creche
+  em conveniadas da categoria Particular em SP.
+- QV-02 (detalhe): o código da ajuda para no `subset`; o `merge` padrão
+  do R deixa só 271 dos 645 municípios de SP.
 
 ### 2026-11-21 — Análises públicas (trigésima segunda rodada, creche conveniada)
 
