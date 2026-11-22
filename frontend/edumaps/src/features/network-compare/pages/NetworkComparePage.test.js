@@ -101,7 +101,10 @@ describe("NetworkComparePage", () => {
     expect(nota).toHaveTextContent(
       /210 matrículas em creche e 45 na pré-escola estão em 3 escolas conveniadas com a prefeitura/,
     );
-    expect(nota).toHaveTextContent(/some-as às da rede municipal/);
+    // #520 (QV-01): a soma é um teto, não a oferta pública exata.
+    expect(nota).toHaveTextContent(
+      /Somadas às da rede municipal, dão o máximo da oferta pública: o Censo marca a escola conveniada, não a vaga/,
+    );
   });
 
   it("sem conveniadas, sem a nota (#518)", async () => {

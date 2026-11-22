@@ -149,7 +149,8 @@
         Na rede privada, {formatInt(conveniadas.matriculas_creche_conveniada)} matrículas em creche e
         {formatInt(conveniadas.matriculas_pre_conveniada)} na pré-escola estão em
         {formatInt(conveniadas.escolas_conveniadas)} {Number(conveniadas.escolas_conveniadas) === 1 ? "escola conveniada" : "escolas conveniadas"}
-        com a prefeitura. Para a oferta pública, some-as às da rede municipal.
+        com a prefeitura. Somadas às da rede municipal, dão o máximo da oferta pública:
+        o Censo marca a escola conveniada, não a vaga.
       </p>
     {/if}
 

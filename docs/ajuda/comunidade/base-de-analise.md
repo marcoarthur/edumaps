@@ -112,13 +112,21 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     para comparar matrículas por habitante, que é uma aproximação.
   - **Creches conveniadas:** parte da oferta de creche das prefeituras é
     feita por convênio com escolas privadas, que ficam na rede privada. Em
-    SP, elas têm 41% das matrículas em creche custeadas pelas prefeituras.
+    SP, das matrículas em creche da rede municipal mais as das conveniadas
+    com a prefeitura, 41% estão nas conveniadas.
     - **Exemplo:** Franca (SP) tem 0 matrícula em creche na rede municipal
       e 7.758 em 78 escolas privadas conveniadas com a prefeitura.
-    - **Para a oferta da prefeitura,** baixe também a rede privada com o
-      bloco **Parceria com o poder público** e some as conveniadas com ela à
-      rede municipal. No R:
-      `conv <- subset(privada, parceria_esfera %in% c("Municipal", "Estadual e municipal"))`.
+    - **A soma é um teto.** O Censo marca a escola conveniada, não a vaga:
+      uma conveniada pode ter também alunos pagantes. Somar as matrículas
+      dela dá o máximo da oferta conveniada. O caso mais provável de
+      mistura são as conveniadas da categoria **Particular** (em SP, 155
+      escolas com creche e 9.844 matrículas, 2,4% das conveniadas); nas
+      comunitárias e filantrópicas a soma deve ficar perto do real.
+    - **Para a oferta da prefeitura,** baixe a rede municipal (blocos
+      **Matrículas** e **Porte do município**) e a rede privada (blocos
+      **Matrículas** e **Parceria com o poder público**) e some as
+      conveniadas com a prefeitura à rede municipal. O código no R está em
+      [Oferta de creche com as conveniadas no R](#oferta-de-creche-com-as-conveniadas-no-r).
     - **Escolas públicas também têm parceria** (sobretudo na educação
       profissional): para a oferta conveniada, filtre a rede privada.
 - **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
@@ -278,6 +286,40 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - O arquivo usa `;` como separador e vírgula decimal: abre direto no Excel.
   No R, `read.csv2()`; no Python, `pandas.read_csv(sep=";", decimal=",")`.
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.
+
+## Oferta de creche com as conveniadas no R
+
+Para a oferta de creche de cada prefeitura, somando as escolas privadas
+conveniadas com ela (veja **Creches conveniadas**, acima), baixe duas bases
+da mesma UF:
+
+- a rede **municipal**, com os blocos **Matrículas** e **Porte do
+  município**;
+- a rede **privada**, com os blocos **Matrículas** e **Parceria com o poder
+  público**.
+
+```r
+municipal <- read.csv2("base-analise-SP-municipal-censo2025.csv")
+privada   <- read.csv2("base-analise-SP-privada-censo2025.csv")
+conv <- subset(privada, parceria_esfera %in% c("Municipal", "Estadual e municipal"))
+rede <- aggregate(cbind(mat_creche, mat_pre) ~ codigo_ibge + municipio + populacao_municipio,
+                  data = municipal, FUN = sum)
+conv <- aggregate(cbind(conv_creche = mat_creche, conv_pre = mat_pre) ~ codigo_ibge,
+                  data = conv, FUN = sum)
+oferta <- merge(rede, conv, by = "codigo_ibge", all.x = TRUE)
+oferta$conv_creche[is.na(oferta$conv_creche)] <- 0
+oferta$conv_pre[is.na(oferta$conv_pre)] <- 0
+oferta$creche_mil <- 1000 * (oferta$mat_creche + oferta$conv_creche) / oferta$populacao_municipio
+```
+
+- **Conferência:** em SP, `oferta` tem os 645 municípios, e Franca fica com
+  21,2 matrículas em creche por mil habitantes.
+- **Não esqueça o `all.x = TRUE`.** Sem ele, o `merge` fica só com os
+  municípios que têm conveniadas (271 em SP), e os outros somem da conta em
+  vez de entrar com 0.
+- **`creche_mil` é um teto:** o Censo marca a escola conveniada, não a vaga.
+- **Por habitante, não por criança:** a população por idade não está
+  carregada (veja **Matrículas**, acima).
 
 ## Refazer os seis índices no R
 

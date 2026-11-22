@@ -32,7 +32,8 @@ Brasil.
      etapa, com a creche e a pré-escola separadas;
    - quando o município tem **escolas privadas conveniadas com a
      prefeitura**, uma nota diz quantas são e quantas matrículas em creche
-     e pré-escola elas têm;
+     e pré-escola elas têm (somadas às da rede municipal, são o máximo da
+     oferta pública);
    - a **linha do IDEB** por rede e etapa, de 2005 até a edição mais recente;
    - o mapa com as escolas.
 3. **Perfil analítico:** acima da tabela, **Ver perfil analítico** abre uma
@@ -109,8 +110,11 @@ Somente dados públicos e agregados.
 
 - **Por que as conveniadas ficam na rede privada?** O Censo classifica a
   escola pela dependência administrativa: a conveniada é privada, mesmo
-  quando a prefeitura custeia as vagas. Para a oferta pública de creche,
-  some as conveniadas da nota às matrículas da rede municipal. Em Franca
+  com o convênio. Para a oferta pública de creche, some as conveniadas da
+  nota às matrículas da rede municipal, sabendo que a soma é um **teto**: o
+  Censo marca a escola conveniada, não a vaga, e uma conveniada pode ter
+  também alunos pagantes (o caso mais provável são as da categoria
+  Particular; veja na [base de análise](base-de-analise.md)). Em Franca
   (SP), a rede municipal tem 0 matrícula em creche, e as 82 escolas
   conveniadas com a prefeitura têm 7.758 (78 delas oferecem creche).
 

@@ -504,6 +504,9 @@ subtest 'parceria com o poder público (#518)' => sub {
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
   like $d{parceria_poder_publico}[1], qr/filtre a rede privada/, 'dicionário: públicas com parceria';
   like $d{parceria_esfera}[1], qr/oferta da prefeitura/, 'dicionário: a esfera da prefeitura';
+  # #520 (QV-01): o Censo marca a escola, não a vaga; a soma é um teto.
+  like $d{parceria_poder_publico}[1], qr/não a vaga.*teto.*Particular/, 'dicionário: a soma das conveniadas é um teto';
+  unlike $d{parceria_poder_publico}[1], qr/custeia/, 'dicionário: sem dizer que o convênio custeia tudo';
 
   $dbh->do('UPDATE clean.censo_escolas SET in_poder_publico_parceria = NULL, tp_poder_publico_parceria = NULL WHERE co_entidade = ?', {}, $A);
   $dbh->do('UPDATE clean.censo_escolas SET tp_dependencia = 2, in_poder_publico_parceria = NULL,
