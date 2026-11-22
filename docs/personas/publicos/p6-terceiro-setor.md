@@ -80,6 +80,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a creche da prefeitura passa a contar as conveniadas.
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: código pronto e a ressalva do teto.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: some o "sem especialização" que o dado não sustentava.
+- [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: some a "docência pior" das privadas que vinha do 0.
 
 ## Pendências
 

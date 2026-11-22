@@ -98,3 +98,16 @@ entrega da trigésima quarta rodada:
 ## Encaminhamento
 
 Issue **#524** (QT-01 e QT-02), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-22: #524 (PR #525) mergeado: QT-01 e QT-02 resolvidos.
+  - Concursados vazios nas privadas na base, no agrupamento (as privadas
+    saem do conjunto docência, e a caixa Universo as conta), nos perfis e
+    no relatório por rede.
+  - Capacitação docente da privada com o peso redistribuído (`indices-v7`,
+    IVET `ivet-v1.9`): média no Brasil de 3,88 para 4,85, teto de 10. Em
+    Franca, 108 das 136 privadas na metade de baixo do ranking (eram 116).
+  - O CSV do agrupamento traz `prop_sem_formacao_continuada`; a tela
+    mostra "Docentes sem formação continuada" e "Proporção de docentes
+    concursados".

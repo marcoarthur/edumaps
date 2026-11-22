@@ -4,6 +4,35 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-22 (df) — trigésima quinta avaliação da P4, #524 (PR #525) mergeado
+
+- Trigésima quinta rodada da P4 (agrupamento "Qualidade de docência" em SP,
+  K-Means 4): adotaria, com ressalva entre pública e privada.
+  - QT-01: vínculo do docente só perguntado na escola pública (INEP), mas
+    `prop_efetivos` = 0 nas privadas; 92,7% delas em "Baixa"/"Muito
+    baixa"; índice com teto de 8 (média 3,88);
+  - QT-02: CSV do agrupamento com `prop_sem_especializacao`, rótulo da
+    tela com o comentário inteiro, e "NULL sem docente (#467)" perdido na
+    #523 → #524.
+- PR #525 (06fba4f), opções A e A do developer:
+  - change `escolas_scores_vinculo`, `indices-v7` e `ivet-v1.9`;
+  - concursados vazios nas privadas (base, `Clustering.pm`, perfil R,
+    relatório); perfil regra 8, perfil da rede versao 6;
+  - alias só no cabeçalho do CSV do agrupamento;
+  - amostra `base-indices-amostra.csv` refeita a partir da base local.
+- Lições:
+  - recriar a MV no Postgres do Docker local estoura o `/dev/shm`: usar
+    `docker compose run --rm -e PGOPTIONS="-c max_parallel_workers_per_gather=0" sqitch`
+    e depois `up sqitch` para o backend subir;
+  - `refresh_ivet` por `eval` precisa de `[{}]` como argumento;
+  - scripts no contêiner do backend com
+    `PERL5LIB=/opt/edumaps/backend/local/lib/perl5`.
+- Local: `ranking.pl`, escolas semelhantes, `refresh_ivet` (v1.9) e a
+  referência do perfil.
+- Pendente no LXC: `deploy_db_dev`, backend, minion, analytics e frontend,
+  e as cargas do §6.
+- Nota técnica 247, ciclo `2026-11-22-concursados-privadas.md`.
+
 ## Sessão 2026-11-22 (de) — trigésima quarta avaliação da P4, #522 (PR #523) mergeado
 
 - Trigésima quarta rodada da P4 (perfil docente entre regiões, PA/BA/SP/RS/GO,

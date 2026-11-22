@@ -86,6 +86,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p4--academia-pesquisadora): adotaria (mantido), com a oferta da prefeitura somando as conveniadas. QW-01 resolvido; nenhum achado aberto da trigésima segunda avaliação.
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p4--academia-pesquisadora): adotaria (mantido). QV-01 e QV-02 resolvidos; nenhum achado aberto da trigésima terceira avaliação.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva no perfil docente. QU-01 e QU-02 resolvidos; nenhum achado aberto da trigésima quarta avaliação.
+- [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva entre pública e privada. QT-01 e QT-02 resolvidos; nenhum achado aberto da trigésima quinta avaliação.
 
 ## Pendências
 
@@ -193,7 +194,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação entre pública e privada): QT-01 (concursados 0 nas privadas,
   onde o Censo não pergunta, no agrupamento, no índice e no ranking) e
   QT-02 (o agrupamento ainda fala `prop_sem_especializacao` e mostra o
-  comentário inteiro do banco) → #524.
+  comentário inteiro do banco) → #524, entregues (#525).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

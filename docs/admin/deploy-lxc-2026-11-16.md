@@ -77,6 +77,7 @@ já estar lá — o registry é quem diz):
 | `rede_escolas_creche_pre` | #516 (recria `analytics.mv_rede_escolas` com `matriculas_creche` e `matriculas_pre`; a coluna da infantil fica) |
 | `rede_escolas_conveniadas` | #518 (recria `analytics.mv_rede_escolas` com `escolas_conveniadas`, `matriculas_creche_conveniada` e `matriculas_pre_conveniada`) |
 | `docentes_formacao_continuada_rotulos` | #522 (só comentários: as 19 colunas `qt_doc_bas_espec_*` como formação continuada, não especialização; sem recálculo) |
+| `escolas_scores_vinculo` | #524 (recria `clean.mv_escolas_scores`: capacitação docente com os concursados vazios nas privadas, peso redistribuído, `VERSÃO indices-v7`; comentários curtos em `school_indicators`; ver §6, passo 3. No Postgres do Docker local precisou de `PGOPTIONS="-c max_parallel_workers_per_gather=0"`: a consulta paralela estourou o `/dev/shm` de 64 MB) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -84,7 +85,7 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `docentes_formacao_continuada_rotulos` (#522; antes `rede_escolas_conveniadas`) e o `deploy_db_dev` não
+- [ ] A última change do registry é `escolas_scores_vinculo` (#524; antes `docentes_formacao_continuada_rotulos`) e o `deploy_db_dev` não
       reportou erro. Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
@@ -97,7 +98,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
       `psql edumaps_dev -f verify/ranking_escola_empates.sql` (falha se faltar alguma das três colunas de empate) e
       `psql edumaps_dev -f verify/rede_escolas_creche_pre.sql` (falha se faltar creche ou pré-escola, ou se as duas não somarem a infantil) e
       `psql edumaps_dev -f verify/rede_escolas_conveniadas.sql` (falha se faltar coluna, se uma rede pública tiver conveniadas ou se as conveniadas passarem dos totais) e
-      `psql edumaps_dev -f verify/docentes_formacao_continuada_rotulos.sql` (falha se um comentário de `qt_doc_bas_espec_*` ainda disser especialização).
+      `psql edumaps_dev -f verify/docentes_formacao_continuada_rotulos.sql` (falha se um comentário de `qt_doc_bas_espec_*` ainda disser especialização) e
+      `psql edumaps_dev -f verify/escolas_scores_vinculo.sql` (falha se a capacitação docente não bater com a fórmula da `indices-v7` ou faltar comentário da #524).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -161,7 +163,7 @@ Leva o template novo do nginx (só a SPA e `/api/`, PR #344), as travas de
 envio (#415/#416), planos, visão da rede e documento da rede, os totais das
 roscas e o "menor é melhor" (#421) e a ausência no financeiro e na folha
 (#422), os menus dos gráficos em PT-BR e a página de Análises sem jargão
-(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v6`; `GET /api/cluster/presets` traz `etapa_filter` e `etapas` no `desempenho`, e `POST /api/task/cluster` com `preset=desempenho` sem `etapa` responde 400, #481; `/api/school/<inep>/profile` traz `metadata.regra_sinais = 4`, `ideb_comparacao = mesma_etapa` e a tabela `ideb_por_etapa`, e `/api/network/<ibge>/profile` traz `ideb_anos_iniciais` … `nota_ensino_medio` no lugar de `ideb_observado`, #483; `/api/school/<inep>/evolution` traz o SAEB com `etapa` e `variacao` nula nas séries de uma edição, #485, `/api/school/29445906/panel/info` traz em `similar_schools` a `distancia` em pontos e as seis `notas` de cada vizinha, com a 29398037 em primeiro (a 1,56 ponto), #487, e `/api/fontes` termina nas entradas `indices_edumaps` (#462 e #467) e `ivet_edumaps`, com `versao = ivet-v1.8` e nove versões no histórico (#489); no painel de uma escola sem isócrona (Sul, Centro-Oeste ou Norte) o IVET diz "ainda não pode ser calculado: faltam os blocos C (acesso)…" e mostra os blocos medidos, e os rótulos de D a G são Saúde, Segurança, Meio ambiente e Recursos, #489; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v6.csv`, com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471, seguidas das do atendimento (`alunos_sala_turno` … `alimentacao`), #473, e das da capacidade gestora (`gestores_formacao` … `prop_acesso_cargo_selecao`, vazia nas privadas), #475, e das da infraestrutura e da sustentabilidade (`infra_basico` … `educacao_ambiental`), #477; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
+(#431), a página `/fontes` e o selo de fonte (#428) e a página `/ranking` (#430, com o salto atípico, o mínimo e a ordem da #437, o porte do município da #439 e a região da #445; conferir que `/api/ranking/redes?indicador=ideb_anos_iniciais&regiao=NE` responde 200; o CSV baixado traz `recorte`, #448; e `&destaque=3205309` traz o bloco `destaque`, #449; o CSV de redes traz `posicao_valor` e `posicao_variacao`, #453; `/api/ranking/escolas?codigo_ibge=2204402&indicador=infraestrutura_basica` traz `faltam` e `indicador.metodo`, #457; com `indicador=diversidade_discente`, `indicador.versao = indices-v7` (#524); `GET /api/cluster/presets` traz `etapa_filter` e `etapas` no `desempenho`, e `POST /api/task/cluster` com `preset=desempenho` sem `etapa` responde 400, #481; `/api/school/<inep>/profile` traz `metadata.regra_sinais = 4`, `ideb_comparacao = mesma_etapa` e a tabela `ideb_por_etapa`, e `/api/network/<ibge>/profile` traz `ideb_anos_iniciais` … `nota_ensino_medio` no lugar de `ideb_observado`, #483; `/api/school/<inep>/evolution` traz o SAEB com `etapa` e `variacao` nula nas séries de uma edição, #485, `/api/school/29445906/panel/info` traz em `similar_schools` a `distancia` em pontos e as seis `notas` de cada vizinha, com a 29398037 em primeiro (a 1,56 ponto), #487, e `/api/fontes` termina nas entradas `indices_edumaps` (#462 e #467) e `ivet_edumaps`, com `versao = ivet-v1.9` e dez versões no histórico (#489, #524); no painel de uma escola sem isócrona (Sul, Centro-Oeste ou Norte) o IVET diz "ainda não pode ser calculado: faltam os blocos C (acesso)…" e mostra os blocos medidos, e os rótulos de D a G são Saúde, Segurança, Meio ambiente e Recursos, #489; `/api/ranking/escolas?codigo_ibge=2927408&indicador=capacitacao_docente` sem escola com valor 0 vinda de centro de atendimento, cerca de 1.410 escolas, #467) e a página `/base-analise` (#439, com os avisos da #444; conferir que `/api/base-analise/csv?uf=AC&blocos=porte` responde 200 com `base-analise-AC-censo<ano>.csv` e a coluna `regiao` depois de `uf`, #448; com `blocos=infraestrutura`, as colunas `in_*_inexistente` e, na identificação, `latitude`/`longitude`, #452; com `blocos=etapas`, as colunas `oferece_*`, #461; com `blocos=indices`, o arquivo `base-analise-AC-censo<ano>-indices-v3.csv` com as seis colunas `indice_*` e `versao_indice`, #465; agora `-indices-v7.csv` (#524), com célula vazia na escola sem registro, #467, e as partes da diversidade (`diversidade_racial` … `prop_eja`) no fim do bloco, #471, seguidas das do atendimento (`alunos_sala_turno` … `alimentacao`), #473, e das da capacidade gestora (`gestores_formacao` … `prop_acesso_cargo_selecao`, vazia nas privadas), #475, e das da infraestrutura e da sustentabilidade (`infra_basico` … `educacao_ambiental`), #477; com `blocos=docencia`, as colunas `prop_superior`, `prop_pos_graduacao` e `prop_formacao_continuada` no fim do bloco, vazias nas escolas sem docentes, #469). O `frontend/nginx.conf` do #423 é só da stack Docker; o LXC usa o
 template do Rexfile.
 
 - [ ] O bundle novo está no ar: a chave de envio está nele.
@@ -183,7 +185,7 @@ Leva `ivet-v1.3` (acesso em log, #295/PR #362) e a instalação completa das
 dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
-(`regra_sinais` diferente; agora 7, com "sem formação continuada" no lugar de "sem especialização", #522; a 6 trouxe o grupo de referência pelo contexto, as
+(`regra_sinais` diferente; agora 8, com os concursados vazios nas privadas, #524; a 7 trouxe "sem formação continuada" no lugar de "sem especialização", #522; a 6 trouxe o grupo de referência pelo contexto, as
 30 escolas do município mais parecidas, e o INSE sem sinal, #493; as escolas
 similares pelo mesmo contexto, no município inteiro, #495).
 O agrupamento passa a guardar cada execução (#427): o motor grava em
@@ -195,7 +197,7 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] Perfil com o grupo pelo contexto (#493): `curl -s http://127.0.0.1:3000/api/school/29445906/profile`
-      no backend traz `metadata.regra_sinais = 7` (#522), `cluster_source = contexto_municipio`,
+      no backend traz `metadata.regra_sinais = 8` (#524), `cluster_source = contexto_municipio`,
       `cluster_size = 30` e nenhum sinal `inse`.
 - [ ] Similares do perfil pelo contexto (#495): no mesmo perfil,
       `metadata.peers_source = contexto_municipio` e até 10 `tables.peers`
@@ -246,7 +248,14 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Sem formação continuada (#522, change `docentes_formacao_continuada_rotulos`):
       `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=SP&blocos=docencia' | grep -c '^prop_sem_formacao_continuada;'`
       → 1 e `grep -c '^prop_sem_especializacao;'` → 0; o perfil da rede de Franca diz
-      "Docentes sem formação continuada" (cache do perfil da rede na `versao` 5).
+      "Docentes sem formação continuada" (cache do perfil da rede na `versao` 6, #524).
+- [ ] Concursados vazios nas privadas (#524, change `escolas_scores_vinculo`):
+      `curl -s 'http://127.0.0.1:3000/api/ranking/escolas?codigo_ibge=3516200&indicador=capacitacao_docente'`
+      traz `indicador.versao = indices-v7` e, das 136 privadas de Franca, cerca de 108 na metade de baixo
+      (eram 116); o CSV de uma execução de agrupamento com o conjunto docência traz
+      `prop_sem_formacao_continuada`, e a caixa Universo conta as privadas sem dado de concursados.
+      Depois do `ranking.pl`, rodar `school_profile_refresh.sh` (a referência do perfil passa a ter
+      `prop_efetivos` vazio na rede 4).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
@@ -272,7 +281,7 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    ```
    Esperado: ~80% dos acidentes com município. Se faltar memória, rodar com
    `--arg apenas_marcos` depois de uma carga parcial (nota técnica 189).
-3. **Índices das escolas recalculados (#459, #467, #471, #473 e #475)**, nesta ordem, depois do
+3. **Índices das escolas recalculados (#459, #467, #471, #473, #475 e #524)**, nesta ordem, depois do
    `deploy_db_dev` e do `deploy_backend_dev` (a MV já sai recalculada da change;
    o `ranking.pl` precisa ser o da #467, que remove quem saiu do ranking):
    ```bash
@@ -282,11 +291,12 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    Esperado: média do `score_diversidade_discente` perto de 3,7 (era 6,0 antes da #459 e 4,4 na `indices-v3`);
    `score_capacidade_atendimento` das escolas públicas perto de 6,2 nos municípios com menos de 20 mil habitantes e de 5,6 nos com mais de 500 mil (#473);
    `score_capacidade_gestora` com média perto de 4,75 nas privadas e 5,47 nas públicas (#475);
+   `score_capacitacao_docente` com média perto de 4,85 nas privadas (era 3,88, teto de 8) e 6,41 nas públicas, máximo 10 nas duas (#524);
    ~2.067 escolas com `score_capacitacao_docente` nulo e ~1.774 com a
    diversidade nula (Censo 2025); `analytics.ranking_escola` sem nenhuma linha
    de escola sem o índice (`capacitacao_docente`/`todas` com ~178,5 mil);
    `refresh_school_embeddings` termina com ~178 mil vetores. O IVET vem no
-   §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.8`).
+   §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.9`).
 
 ## 7. Isócrona ES/MG e IVET (#295)
 
@@ -310,7 +320,7 @@ mostra (esperado `2026-10-21`). A carga roda destacada no host do banco
 Depois, reprocessar o IVET pelo job `refresh_ivet` (fila `analytics`), como na
 validação de 2026-10-20, e conferir:
 
-- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.8` (#459 e #471: insumo de diversidade corrigido; #467: índice vazio sem registro; #473: lotação por turno; #475: partes da capacidade gestora).
+- [ ] ES e MG com acesso calculado (não `n/d`), fórmula `ivet-v1.9` (#459 e #471: insumo de diversidade corrigido; #467: índice vazio sem registro; #473: lotação por turno; #475: partes da capacidade gestora; #524: concursados vazios nas privadas).
 - [ ] Publicáveis próximos dos 145 mil da última medição nacional.
 - [ ] **Medir a régua da versão vigente (#489, RK-02).** As medições
       publicadas (§4.8 de `docs/analises/ivet.md`) são da `ivet-v1.2`, de antes
@@ -318,7 +328,7 @@ validação de 2026-10-20, e conferir:
       ```bash
       ssh root@analytic.edumaps 'cd /opt/edumaps/analysis/edumapsr && Rscript inst/scripts/medir-ivet-nacional.R'
       ```
-      Registrar a distribuição (p25, p50, p75, p90, publicáveis) da `ivet-v1.8`
+      Registrar a distribuição (p25, p50, p75, p90, publicáveis) da `ivet-v1.9`
       no §4.8 e repor a régua na §4.1 da ajuda `docs/ajuda/gestor/ivet.md`
       (commit só de documentação).
 - [ ] Fechar a #295 e abrir a issue de Sul, Centro-Oeste e Norte (~47 mil

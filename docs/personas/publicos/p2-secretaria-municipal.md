@@ -86,6 +86,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: a oferta que a prefeitura faz por convênio aparece na comparação de redes.
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a nota não promete que as conveniadas sejam toda a oferta pública.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto direto: o perfil da rede diz formação continuada, a política que a secretaria controla.
+- [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o ranking do município sem o 0 das privadas.
 
 ## Pendências
 
