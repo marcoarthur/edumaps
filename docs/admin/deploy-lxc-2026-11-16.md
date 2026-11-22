@@ -238,6 +238,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `escolas_conveniadas` 82 e `matriculas_creche_conveniada` 7758; o dicionário de
       `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=SP&blocos=parceria'` traz
       `parceria_poder_publico`, `parceria_esfera` e `categoria_privada`.
+- [ ] Teto das conveniadas (#520, sem change nova):
+      `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=SP&blocos=parceria' | grep -c 'não a vaga'`
+      → 1; a nota da comparação de redes de Franca diz "o máximo da oferta pública".
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

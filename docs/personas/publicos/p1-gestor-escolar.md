@@ -85,6 +85,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base de análise não é a tela dela.
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base e a comparação de redes não são as telas dela.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base e a comparação de redes não são as telas dela.
+- [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base e a comparação de redes não são as telas dela.
 
 ## Pendências
 

@@ -92,3 +92,14 @@ da entrega da trigésima segunda rodada:
 ## Encaminhamento
 
 Issue **#520** (QV-01 e QV-02), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-22: #520 (PR #521) mergeado: QV-01 e QV-02 resolvidos.
+  - A nota da comparação de redes, o dicionário de
+    `parceria_poder_publico` e as ajudas dizem que a soma das conveniadas é
+    um teto (o Censo marca a escola, não a vaga), com a categoria
+    Particular como o caso mais provável de mistura.
+  - A ajuda da base tem a seção "Oferta de creche com as conveniadas no
+    R", com o `merge` com `all.x = TRUE`, conferida em SP (645 municípios;
+    Franca 21,2 por mil habitantes).

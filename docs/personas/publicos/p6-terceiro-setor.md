@@ -78,6 +78,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: cruzamento IDEB × infraestrutura com os anos ditos.
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: "quantas crianças a prefeitura atende na creche" sai da base, sem contar escolas.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a creche da prefeitura passa a contar as conveniadas.
+- [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: código pronto e a ressalva do teto.
 
 ## Pendências
 

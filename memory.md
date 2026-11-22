@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-22 (dd) — trigésima terceira avaliação da P4, #520 (PR #521) mergeado
+
+- Trigésima terceira rodada da P4 (oferta de creche com as conveniadas pela
+  base): adotaria; a conta da rodada anterior se refaz pela base (postos
+  0,51, 25 municípios mudam 20+ posições).
+  - QV-01: a soma das conveniadas é um teto (o Censo marca a escola, não a
+    vaga); 155 conveniadas Particulares com 9.844 em creche em SP;
+  - QV-02: a ajuda parava no `subset`; o `merge` padrão deixa 271 de 645
+    → #520.
+  - CNPJ da mantenedora não serve para as conveniadas (Guarulhos: 109 de
+    110 com `99999999999999`).
+- PR #521 (53e811e): textos do teto (dicionário, nota, ajudas, fichas) e
+  seção "Oferta de creche com as conveniadas no R" na ajuda da base.
+- Lições: descrição do dicionário sem `;` (o leitor dos testes parte o
+  campo); bloco de código cercado não vai dentro de lista aninhada (o
+  python-markdown do site não o mostra); em PR sem `analysis/`,
+  `data_pipeline/` ou `db/`, o teste do R não roda.
+- Pendente no LXC: `deploy_backend_dev` + `deploy_frontend_dev`.
+- Nota técnica 245, ciclo `2026-11-22-conveniadas-teto.md`.
+
 ## Sessão 2026-11-21 (dc) — trigésima segunda avaliação da P4, #518 (PR #519) mergeado
 
 - Trigésima segunda rodada da P4 (creche conveniada): adotaria, sem as

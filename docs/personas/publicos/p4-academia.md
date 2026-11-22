@@ -84,6 +84,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p4--academia-pesquisadora): adotaria (mantido), com a base para a pergunta do perfil. QY-01 resolvido; nenhum achado aberto da trigésima avaliação.
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p4--academia-pesquisadora): adotaria (mantido), agora com a base para medir a oferta. QX-01 e QX-02 resolvidos; nenhum achado aberto da trigésima primeira avaliação.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p4--academia-pesquisadora): adotaria (mantido), com a oferta da prefeitura somando as conveniadas. QW-01 resolvido; nenhum achado aberto da trigésima segunda avaliação.
+- [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p4--academia-pesquisadora): adotaria (mantido). QV-01 e QV-02 resolvidos; nenhum achado aberto da trigésima terceira avaliação.
 
 ## Pendências
 
@@ -182,7 +183,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima terceira rodada (2026-11-21, **adotaria**, com a oferta pública
   somando as conveniadas): QV-01 (a soma das conveniadas é um teto, sem
   aviso) e QV-02 (o código da ajuda para no `subset` e a junção perde
-  municípios) → #520.
+  municípios) → #520, entregues (#521).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

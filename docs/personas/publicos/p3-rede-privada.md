@@ -81,6 +81,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: as matrículas das privadas também saem na base, sem mudar o veredito.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: a categoria da escola privada e a parceria saem na base.
+- [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante: muda só o texto sobre as conveniadas.
 
 ## Pendências
 
