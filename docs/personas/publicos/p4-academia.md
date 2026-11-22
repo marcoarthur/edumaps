@@ -193,7 +193,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação entre pública e privada): QT-01 (concursados 0 nas privadas,
   onde o Censo não pergunta, no agrupamento, no índice e no ranking) e
   QT-02 (o agrupamento ainda fala `prop_sem_especializacao` e mostra o
-  comentário inteiro do banco), aguardando a decisão sobre a issue.
+  comentário inteiro do banco) → #524.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

@@ -97,4 +97,4 @@ entrega da trigésima quarta rodada:
 
 ## Encaminhamento
 
-Aguarda a decisão do developer sobre abrir a issue (QT-01 e QT-02).
+Issue **#524** (QT-01 e QT-02), aberta com a aprovação do developer.
