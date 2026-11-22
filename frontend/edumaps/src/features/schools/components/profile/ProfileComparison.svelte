@@ -50,6 +50,10 @@
               {#if sentidoIndicador(ind.indicador, ind.direcao) === 'menor'}
                 <span class="block text-xs text-gray-500">menor é melhor</span>
               {/if}
+              <!-- #527: indicador que não se aplica à escola (ex.: concursados na privada) -->
+              {#if ind.nota}
+                <span class="block max-w-xs whitespace-normal text-xs text-gray-500">{ind.nota}</span>
+              {/if}
             </td>
             {#each KEYS as key}
               <td

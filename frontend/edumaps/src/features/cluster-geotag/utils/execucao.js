@@ -1,4 +1,4 @@
-import { ETAPAS_IDEB, usaIdeb } from "../constants/cluster.js";
+import { ETAPAS_IDEB, usaIdeb, rotuloCurto } from "../constants/cluster.js";
 // src/features/cluster-geotag/utils/execucao.js
 //
 // Execuções guardadas do agrupamento (#427): leitura do universo e rótulo
@@ -13,16 +13,7 @@ import { ETAPAS_IDEB, usaIdeb } from "../constants/cluster.js";
  */
 export function rotuloIndicador(coluna, columns = []) {
   const c = columns.find((col) => col.column_name === coluna);
-  const comentario = (c?.comment ?? "").trim();
-  if (!comentario) return coluna;
-  return comentario
-    .replace(/\s*\([^)]*\)\s*/g, " ")
-    .replace(/^Há\s+/i, "")
-    .replace(/\s+na escola\?$/i, "")
-    .replace(/\?$/, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (l) => l.toUpperCase());
+  return rotuloCurto(c?.comment) || coluna;
 }
 
 /**

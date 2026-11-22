@@ -58,6 +58,10 @@ resultado que pode ser bem diferente.
   horas. Não é a falta de pós-graduação (especialização, mestrado ou
   doutorado). Até novembro de 2026 esta linha se chamava "Docentes sem
   especialização".
+- **Docentes efetivos (concursados) na escola privada:** o Censo só
+  pergunta o vínculo do docente na escola pública. Na escola privada, a
+  linha fica sem valores e diz *"Não se aplica à rede privada"*: as médias
+  do município e do Brasil seriam só das escolas públicas.
 - **IDEB e nota SAEB na posição relativa:** a linha diz a edição e a etapa
   (ex.: *IDEB observado 2023, anos finais*). Com mais de uma etapa, vale a
   de maior nota da escola. Município, rede, Brasil e grupo são da **mesma

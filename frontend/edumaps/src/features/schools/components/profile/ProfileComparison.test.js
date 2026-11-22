@@ -38,4 +38,20 @@ describe("ProfileComparison (#421)", () => {
     render(ProfileComparison, { indicadores: IND });
     expect(screen.getByText(/no Q4 se menor é melhor/)).toBeInTheDocument();
   });
+
+  it("indicador que não se aplica diz o motivo e fica sem valores (#527)", () => {
+    render(ProfileComparison, {
+      indicadores: [{
+        indicador: "prop_efetivos",
+        label: "Docentes efetivos (concursados)",
+        escola: null, municipio: null, rede: null, brasil: null, cluster: null,
+        quartil_no_cluster: null, atencao: false, direcao: "maior",
+        nota: "Não se aplica à rede privada: o Censo só pergunta o vínculo do docente na escola pública.",
+      }],
+    });
+    const linha = screen.getByText("Docentes efetivos (concursados)").closest("tr");
+    expect(linha).toHaveTextContent("Não se aplica à rede privada");
+    expect(linha).not.toHaveTextContent("%");
+    expect(linha).not.toHaveTextContent("⚠");
+  });
 });

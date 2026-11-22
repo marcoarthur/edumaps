@@ -80,8 +80,9 @@ PROFILE_DIRECAO <- c(
 # similares pelo mesmo contexto do grupo, no município inteiro (#495). 7:
 # "sem especialização" passa a "sem formação continuada" no rótulo e no sinal
 # (#522). 8: concursados vazios nas privadas, onde o Censo não pergunta o
-# vínculo (#524).
-PROFILE_REGRA_SINAIS <- 8L
+# vínculo (#524). 9: na escola privada, concursados sem comparação e com o
+# motivo (#527).
+PROFILE_REGRA_SINAIS <- 9L
 
 # Quantas escolas similares o perfil mostra (#495): as primeiras da ordem
 # do grupo de referência, dentro do limiar de distância.
@@ -94,6 +95,12 @@ PROFILE_GRUPO_K <- 30L
 # Indicadores que não geram sinal de atenção (#493, RI-02): o INSE é o
 # contexto dos alunos, não algo em que a escola possa agir.
 PROFILE_SEM_SINAL <- c("inse")
+
+# Indicadores que o Censo só pergunta na escola pública (#527): na escola
+# privada a linha fica sem comparação e diz o motivo.
+PROFILE_SO_PUBLICA <- c(
+  prop_efetivos = "Não se aplica à rede privada: o Censo só pergunta o vínculo do docente na escola pública."
+)
 
 # Critério do grupo, em texto, para o payload e a tela (#493).
 PROFILE_GRUPO_CRITERIO <- paste(
@@ -722,6 +729,8 @@ load_school_profile.postgres_source <- function(
     co_municipio = first$co_municipio,
     no_municipio = first$no_municipio,
     sg_uf = first$sg_uf,
+    # #527: a rede da escola decide os indicadores que não se aplicam a ela
+    tp_dependencia = as.integer(first$tp_dependencia),
     nu_ano_censo = ano
   )
   school_meta$ideb_etapa <- ideb$etapa

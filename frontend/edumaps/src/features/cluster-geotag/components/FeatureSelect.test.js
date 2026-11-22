@@ -82,4 +82,26 @@ describe("FeatureSelect", () => {
 
     expect(screen.queryByRole("option")).toBeNull();
   });
+
+  it("chip e opção com o rótulo curto; o comentário inteiro no title e na busca (#526)", async () => {
+    const cols = [
+      ...COLUMNS,
+      {
+        column_name: "prop_efetivos",
+        data_type: "double precision",
+        comment: "Proporção de docentes concursados (qt_doc_bas_vinculo_concur / qt_doc_bas; vazia nas privadas: o Censo só pergunta o vínculo na escola pública)",
+        table_name: "censo_docentes",
+      },
+    ];
+    render(FeatureSelect, { props: { columns: cols, value: ["qt_doc_bas"] } });
+    const chip = screen.getByText("Docentes na educação básica");
+    expect(chip).toHaveAttribute("title", "Docentes na educação básica (total)");
+
+    const input = screen.getByLabelText(/buscar indicador/i);
+    await fireEvent.input(input, { target: { value: "vínculo" } }); // só no comentário
+    const opcao = screen.getByRole("option");
+    expect(opcao).toHaveTextContent("Proporção de docentes concursados");
+    expect(opcao).not.toHaveTextContent("qt_doc_bas_vinculo_concur /");
+    expect(opcao).toHaveAttribute("title", expect.stringContaining("vazia nas privadas"));
+  });
 });

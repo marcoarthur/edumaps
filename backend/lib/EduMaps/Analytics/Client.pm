@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed);
 
 # Versão do perfil da escola: regra dos sinais (#421) e rótulos (#431). Espelha
 # PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
-our $PERFIL_REGRA_SINAIS = 8;  # 8: concursados vazios nas privadas (#524); 7: "sem formação continuada" (#522)
+our $PERFIL_REGRA_SINAIS = 9;  # 9: concursados sem comparação na privada (#527); 8: vazios (#524)
 
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {

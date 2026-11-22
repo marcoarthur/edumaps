@@ -178,3 +178,31 @@ test_that("concursados vazios nas privadas, onde o Censo não pergunta o víncul
   expect_match(expr, "END", fixed = TRUE)
   expect_gte(PROFILE_REGRA_SINAIS, 8L)
 })
+
+test_that("escola privada: concursados sem comparação e com o motivo (#527)", {
+  m <- fixture_school_profile_model()
+  m$metadata$tp_dependencia <- 4L
+  res <- analyze_school_profile(m)
+  cmp <- res$tables$indicadores_comparados
+  ef <- cmp[cmp$indicador == "prop_efetivos", ]
+  expect_true(all(is.na(unlist(ef[c("escola", "municipio", "rede", "brasil", "cluster")]))))
+  expect_true(is.na(ef$quartil_no_cluster))
+  expect_false(ef$atencao)
+  expect_match(ef$nota, "Não se aplica à rede privada")
+  expect_false("prop_efetivos" %in% res$tables$flags$indicador)
+  resumo <- res$tables$cluster_resumo
+  expect_true(is.na(resumo$p50[resumo$indicador == "prop_efetivos"]))
+  # os outros indicadores não mudam
+  expect_true(all(is.na(cmp$nota[cmp$indicador != "prop_efetivos"])))
+  expect_equal(cmp$brasil[cmp$indicador == "prop_licenciatura"], 0.79)
+  expect_gte(PROFILE_REGRA_SINAIS, 9L)
+})
+
+test_that("escola pública: concursados com a comparação de sempre (#527)", {
+  m <- fixture_school_profile_model()
+  m$metadata$tp_dependencia <- 3L
+  cmp <- analyze_school_profile(m)$tables$indicadores_comparados
+  ef <- cmp[cmp$indicador == "prop_efetivos", ]
+  expect_equal(ef$brasil, 0.40)
+  expect_true(is.na(ef$nota))
+})
