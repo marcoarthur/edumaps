@@ -184,10 +184,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   somando as conveniadas): QV-01 (a soma das conveniadas é um teto, sem
   aviso) e QV-02 (o código da ajuda para no `subset` e a junção perde
   municípios) → #520, entregues (#521).
+  Trigésima quarta rodada (2026-11-22, **adotaria**, com ressalva no
+  perfil docente): QU-01 ("sem especialização" mede quem não fez formação
+  continuada) e QU-02 (duas medidas de formação continuada sem a relação
+  dita), aguardando a decisão sobre a issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-22 — Análises públicas (trigésima quarta rodada, perfil docente entre regiões)
+
+**Veredito:** **adotaria** (mantido), com ressalva no perfil docente.
+Consolidação em
+[`avaliacoes/2026-11-22-p4-perfil-docente-regioes.md`](avaliacoes/2026-11-22-p4-perfil-docente-regioes.md).
+
+**O que funcionou:** dez bases (cinco UFs, uma por região, redes municipal
+e estadual) juntam pela coluna `regiao`; o dicionário diz o denominador de
+cada proporção e a contagem dupla de quem dá aula em duas escolas.
+
+**Barreiras:**
+- QU-01 (atrapalha): "docentes sem especialização" vem de
+  `qt_doc_bas_espec_nenhum`, que o INEP define como sem formação
+  continuada de 80 horas ou mais; em 56% das escolas, pós-graduação + "sem
+  especialização" passa de 1. O rótulo está na base, nos perfis da escola
+  e da rede, no agrupamento e nas ajudas.
+- QU-02 (detalhe): duas medidas de formação continuada (soma de cursos e
+  docentes com ao menos um curso) sem a relação dita; 15,5% e 9,5% na rede
+  estadual de SP.
 
 ### 2026-11-21 — Análises públicas (trigésima terceira rodada, oferta com as conveniadas)
 
