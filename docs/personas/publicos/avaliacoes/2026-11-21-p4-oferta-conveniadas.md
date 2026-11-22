@@ -63,7 +63,7 @@ da entrega da trigésima segunda rodada:
    - Nas comunitárias e filantrópicas (97% das matrículas) a soma deve
      estar perto do real, mas nenhum texto do produto diz que é teto.
 6. **Olhou a mantenedora**, para saber quantas organizações operam as
-   conveniadas. Em Guarulhos, 110 das 112 conveniadas vêm com o CNPJ da
+   conveniadas. Em Guarulhos, 109 das 110 conveniadas com a prefeitura vêm com o CNPJ da
    mantenedora `99999999999999` (não informado). O dado não serve para
    isso; não é pedido ao produto.
 
