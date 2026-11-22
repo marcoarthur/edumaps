@@ -42,6 +42,9 @@ investidores que segmentam redes.
   escala não se compara, e dizer a etapa no rótulo, no link e no CSV.
 - Sistema pode agrupar por infraestrutura contando como falta só a escola
   sem o serviço, não a que usa gerador, poço ou fossa.
+- Sistema pode agrupar pela docência sem penalizar a escola privada pelo que
+  o Censo não pergunta a ela (o vínculo do docente), e entregar no arquivo
+  a coluna de formação continuada com o mesmo nome da base de análise.
 - Sistema pode apoiar decisões de rede a partir dos agrupamentos.
 
 ## Valor

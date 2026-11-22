@@ -173,7 +173,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **Índices do EduMaps:** são calculados por nós a partir do Censo Escolar,
   não pelo INEP. Os seis se refazem com as partes que estão na base, pelo
   [bloco R abaixo](#refazer-os-seis-índices-no-r). Cite com a
-  versão (`versao_indice`, ex.: `indices-v6`, que também vai no nome do
+  versão (`versao_indice`, ex.: `indices-v7`, que também vai no nome do
   arquivo): notas de versões diferentes não são comparáveis, e o histórico
   está em [Fontes e metodologia](fontes-e-metodologia.md). Logo depois de
   uma carga nova do Censo, as células dos índices podem ficar vazias até o
@@ -257,6 +257,13 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
 - **As partes do índice de capacitação docente:**
   - **as quatro partes:** `prop_superior` (30%), `prop_pos_graduacao` (30%),
     `prop_efetivos` (20%) e `prop_formacao_continuada` (20%);
+  - **concursados só na rede pública:** o Censo só pergunta o vínculo do
+    docente (concursado, contrato, terceirizado ou CLT) na escola pública.
+    Na privada, `prop_efetivos` fica vazia, e no índice o peso dela vai para
+    as outras três partes (o índice é a soma das três dividida por 0,8).
+    Até a `indices-v6`, a coluna vinha 0 e a privada ficava com no máximo 8.
+    Num modelo que junta públicas e privadas, deixe os concursados de fora
+    ou separe as redes;
   - **o limite a 1:** a pós-graduação e a formação continuada são limitadas a
     1, como no índice. No Censo, quem tem mais de uma pós ou formação conta
     mais de uma vez;
@@ -354,9 +361,11 @@ base <- within(base, {
     infra_acessibilidade + infra_tecnologia) / 4
   refeito_sustentabilidade <- 10 * (energia_renovavel + reciclagem_lixo +
     area_verde_plantio + educacao_ambiental) / 4
+  tem_efetivos <- !is.na(prop_efetivos)
   refeito_capacitacao_docente <- 10 * (0.3 * prop_superior +
-    0.3 * prop_pos_graduacao + 0.2 * pmin(prop_efetivos, 1) +
-    0.2 * prop_formacao_continuada)
+    0.3 * prop_pos_graduacao +
+    0.2 * ifelse(tem_efetivos, pmin(prop_efetivos, 1), 0) +
+    0.2 * prop_formacao_continuada) / (0.8 + 0.2 * (tem_efetivos))
   refeito_diversidade_discente <- ifelse(is.na(diversidade_racial),
     10 * (0.25 * equilibrio_genero + 0.2 * prop_educacao_especial_cc +
       0.2 * prop_eja) / 0.65,

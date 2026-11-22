@@ -79,6 +79,9 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
 - Sistema pode **deixar de fora quem não tem o dado**: a escola sem o
   registro de que um índice depende (matrículas, docentes ou gestores no
   Censo) não entra na lista daquele índice, em vez de aparecer no fim com 0.
+  Na escola privada, a parte do índice que o Censo não pergunta a ela (o
+  acesso ao cargo do gestor e o vínculo dos docentes) fica de fora, com o
+  peso redistribuído.
 - Sistema pode **ordenar do menor para o maior**, nas duas listas, para achar
   quem está no fim (ex.: escolas com menos infraestrutura).
 

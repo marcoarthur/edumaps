@@ -32,7 +32,7 @@ test_that("o bloco R da ajuda refaz os seis índices da amostra da base", {
 
   base <- utils::read.csv2(testthat::test_path("fixtures", "base-indices-amostra.csv"),
                            encoding = "UTF-8", check.names = FALSE, na.strings = "")
-  expect_equal(unique(base$versao_indice), "indices-v6",
+  expect_equal(unique(base$versao_indice), "indices-v7",
                info = "fórmula nova: gere a amostra de novo e atualize a versão aqui")
   eval(parse(text = blocos[[1]]))
 

@@ -241,8 +241,11 @@ subtest 'partes do índice de capacitação docente (#469)' => sub {
       [qw(prop_superior prop_pos_graduacao prop_formacao_continuada)], 'no fim do bloco, na ordem';
     my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
     my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; $x =~ tr/,/./; 0 + $x };
+    # #524: concursados vazios na privada, com o peso redistribuído
+    my $tem_ef = $linha->[ $i{prop_efetivos} ] ne '';
     my $refeito = 10 * (0.3 * $v->('prop_superior') + 0.3 * $v->('prop_pos_graduacao')
-                      + 0.2 * ($v->('prop_efetivos') > 1 ? 1 : $v->('prop_efetivos')) + 0.2 * $v->('prop_formacao_continuada'));
+                      + ($tem_ef ? 0.2 * ($v->('prop_efetivos') > 1 ? 1 : $v->('prop_efetivos')) : 0)
+                      + 0.2 * $v->('prop_formacao_continuada')) / ($tem_ef ? 1 : 0.8);
     ok abs($refeito - $s->{cap}) < 0.01, "índice refeito com as partes ($refeito vs $s->{cap})";
     ok $v->('prop_pos_graduacao') <= 1 && $v->('prop_formacao_continuada') <= 1, 'limitadas a 1';
   }
@@ -429,6 +432,8 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   like $d{prop_pos_graduacao}[1], qr/limitada a 1.*Parte de 30%/, 'pós: limite e parte';
   like $d{prop_formacao_continuada}[1], qr/Parte de 20%/, 'formação continuada: parte';
   like $d{prop_efetivos}[1], qr/Parte de 20%/, 'efetivos: parte';
+  like $d{prop_efetivos}[1], qr/Vazia nas escolas privadas: o Censo só pergunta o vínculo do docente na escola pública/,
+    'efetivos: vazia nas privadas (#524)';
   # #522 (QU-01, QU-02): a coluna de qt_doc_bas_espec_nenhum é a formação
   # continuada, não a pós; e a soma de cursos não conta pessoas.
   ok !exists $d{prop_sem_especializacao}, 'nome antigo fora da base (#522)';
@@ -622,6 +627,28 @@ subtest 'erros' => sub {
   $t->get_ok('/api/base-analise/csv?uf=AC&blocos=salarios')->status_is(400)->json_like('/error' => qr/salarios/);
   $t->get_ok('/api/base-analise/csv?uf=AC&blocos=desempenho&ano_ideb=1990')->status_is(400)->json_like('/error' => qr/1990/);
   $t->get_ok('/api/base-analise/csv?uf=AC&rede=comunitaria')->status_is(400);
+};
+
+# #524 (QT-01): o vínculo do docente só é perguntado na escola pública; na
+# privada, prop_efetivos fica vazia e o índice de capacitação docente pode
+# chegar a 10 (antes, teto de 8).
+subtest 'concursados vazios nas privadas (#524)' => sub {
+  my $p = $dbh->selectrow_hashref(q{
+    SELECT e.sg_uf, e.co_municipio::text AS mun
+      FROM clean.censo_escolas e
+      JOIN clean.censo_docentes d ON d.co_entidade = e.co_entidade AND d.nu_ano_censo = e.nu_ano_censo
+     WHERE e.tp_dependencia = 4 AND e.tp_situacao_funcionamento = 1 AND e.nu_ano_censo = ? AND d.qt_doc_bas > 0
+     ORDER BY e.co_entidade LIMIT 1}, undef, $ANO);
+  SKIP: {
+    skip 'nenhuma privada com docentes no banco', 3 unless $p;
+    my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$p->{sg_uf}&codigo_ibge=$p->{mun}&rede=privada&blocos=docencia")->status_is(200)->tx);
+    my %i; @i{ @{ $l->[0] } } = 0 .. $#{ $l->[0] };
+    my @linhas = @$l[1 .. $#$l];
+    ok @linhas > 0, 'privadas na base';
+    is [ grep { $_->[ $i{prop_efetivos} ] ne '' } @linhas ], [], 'prop_efetivos vazia em toda privada';
+  }
+  like $EduMaps::Model::Rank::School::METODO{capacitacao_docente},
+    qr/Na escola privada, a parte de concursados fica de fora.*indices-v6/, 'método diz a mudança';
 };
 
 done_testing;

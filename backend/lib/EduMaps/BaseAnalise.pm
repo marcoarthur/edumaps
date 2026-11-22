@@ -228,7 +228,10 @@ my @DOCENCIA = (
   [prop_licenciatura       => 'd.qt_doc_bas_esco_sup_grad_licen::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com licenciatura ÷ $DENOM"],
   [prop_mestrado           => 'd.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com mestrado ÷ $DENOM"],
   [prop_doutorado          => 'd.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com doutorado ÷ $DENOM"],
-  [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes concursados (efetivos) ÷ $DENOM. Parte de 20% do índice de capacitação docente"],
+  # #524 (QT-01): o Censo só pergunta o vínculo do docente na escola pública;
+  # na privada a célula fica vazia (antes, 0).
+  [prop_efetivos           => 'CASE WHEN e.tp_dependencia <> 4 THEN d.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0) END',
+   "Docentes concursados (efetivos) ÷ $DENOM. Vazia nas escolas privadas: o Censo só pergunta o vínculo do docente na escola pública. Parte de 20% do índice de capacitação docente (na privada o peso vai para as outras partes)"],
   # #522 (QU-01): vem de qt_doc_bas_espec_nenhum, que o INEP descreve como
   # formação continuada de no mínimo 80 horas "Nenhum". Até 2026-11 a coluna
   # se chamava prop_sem_especializacao (dentro da plataforma o nome segue).

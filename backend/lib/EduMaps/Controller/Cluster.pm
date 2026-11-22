@@ -78,6 +78,10 @@ sub execucao_escolas($self) {
   $self->render(text => $geojson // '{"type":"FeatureCollection","features":[]}', format => 'json');
 }
 
+# #524 (QT-02): no CSV, a coluna sai com o nome da base de análise (#522);
+# por dentro (tabela, conjuntos prontos, execuções guardadas) o nome segue.
+my %NOME_NO_CSV = (prop_sem_especializacao => 'prop_sem_formacao_continuada');
+
 sub execucao_csv($self) {
   my $exec = $self->_execucao_ou_404 or return;
   my $features = $exec->{parametros}{features} // [];
@@ -105,7 +109,8 @@ sub execucao_csv($self) {
                  : EduMaps::Presets->usa_ideb($features) ? 'misturadas' : undef;
 
   # Separador ';' e BOM: abre direto no Excel em PT-BR (vírgula é decimal).
-  my @cab = (qw(inep escola municipio uf rede grupo rotulo), @$features, qw(ano_censo ano_ideb etapa_ideb));
+  my @cab = (qw(inep escola municipio uf rede grupo rotulo), (map { $NOME_NO_CSV{$_} // $_ } @$features),
+             qw(ano_censo ano_ideb etapa_ideb));
   my @out = (join ';', map { $q->($_) } @cab);
   for my $r (@$linhas) {
     push @out, join ';', map { $q->($_) } (

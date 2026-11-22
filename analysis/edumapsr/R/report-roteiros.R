@@ -507,6 +507,15 @@ roteiro_docentes_territorio <- function(model, source) {
       r <- report_sum_by(ref, "rede", conta)
       colSums(r[, intersect(conta, names(r)), drop = FALSE], na.rm = TRUE)
     }
+    # #524 (QT-01): o Censo só pergunta o vínculo do docente na escola
+    # pública. Concursados e contratados são sobre os docentes das redes
+    # públicas; na linha da rede privada ficam vazios.
+    publica <- function(tab) tab[is.na(tab$rede) | tab$rede != "Privada", , drop = FALSE]
+    total_pub <- colSums(publica(por_rede)[, intersect(conta, names(por_rede)), drop = FALSE], na.rm = TRUE)
+    ref_pub <- if (nrow(ref)) {
+      r <- publica(report_sum_by(ref, "rede", conta))
+      colSums(r[, intersect(conta, names(r)), drop = FALSE], na.rm = TRUE)
+    }
     p <- function(tot, col) {
       if (is.null(tot) || !col %in% names(tot)) NA else report_prop(tot[[col]], tot[["qt_doc_bas"]])
     }
@@ -524,8 +533,8 @@ roteiro_docentes_territorio <- function(model, source) {
           list(rotulo = ref_label, valor = p(ref_total, "qt_doc_bas_esco_sup_pos_espec"))
         ),
         report_kpi(
-          "Concursados", p(total, "qt_doc_bas_vinculo_concur"), "percentual",
-          list(rotulo = ref_label, valor = p(ref_total, "qt_doc_bas_vinculo_concur"))
+          "Concursados (redes públicas)", p(total_pub, "qt_doc_bas_vinculo_concur"), "percentual",
+          list(rotulo = ref_label, valor = p(ref_pub, "qt_doc_bas_vinculo_concur"))
         )
       )
     )
@@ -541,6 +550,9 @@ roteiro_docentes_territorio <- function(model, source) {
       perc_contratados = "qt_doc_bas_vinculo_contra"
     )
     for (nm in names(pct)) tab[[nm]] <- report_prop(tab[[pct[[nm]]]], tab$qt_doc_bas)
+    privada <- !is.na(tab$rede) & tab$rede == "Privada"
+    tab$perc_concursados[privada] <- NA_real_
+    tab$perc_contratados[privada] <- NA_real_
 
     secoes[[length(secoes) + 1L]] <- report_section_table(
       "docentes_por_rede", "Formação e vínculo por rede",
@@ -559,7 +571,9 @@ roteiro_docentes_territorio <- function(model, source) {
       nota = paste(
         "Contagens de vínculos escola-professor (quem atua em duas escolas conta",
         "duas vezes), somadas entre zonas urbana e rural. Percentuais calculados",
-        "pelo EduMaps sobre o total de professores da rede."
+        "pelo EduMaps sobre o total de professores da rede. Concursados e",
+        "contrato temporário ficam vazios na rede privada: o Censo só pergunta o",
+        "vínculo do docente na escola pública."
       )
     )
     secoes[[length(secoes) + 1L]] <- report_section_chart(
