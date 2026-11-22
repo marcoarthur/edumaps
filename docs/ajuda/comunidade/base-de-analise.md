@@ -49,7 +49,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      mestrado, doutorado e concursados, a de docentes **sem formação
      continuada** (`prop_sem_formacao_continuada`), e as com ensino
      superior, pós-graduação e formação continuada, que são as partes do
-     índice de capacitação docente;
+     índice de capacitação docente, e os docentes por etapa
+     (`qt_docentes_infantil`, `qt_docentes_ai`, `qt_docentes_af` e
+     `qt_docentes_em`). As proporções são da escola inteira: veja
+     [Docência num modelo por etapa](#docência-num-modelo-por-etapa);
    - **IDEB e SAEB por etapa:** IDEB, notas e aprovação nos anos iniciais
      (`_ai`), nos anos finais (`_af`) e no ensino médio (`_em`), na edição que
      você escolher;
@@ -345,6 +348,38 @@ oferta$creche_mil <- 1000 * (oferta$mat_creche + oferta$conv_creche) / oferta$po
 - **`creche_mil` é um teto:** o Censo marca a escola conveniada, não a vaga.
 - **Por habitante, não por criança:** a população por idade não está
   carregada (veja **Matrículas**, acima).
+
+## Docência num modelo por etapa
+
+As proporções do bloco Docência (formação, concursados, formação
+continuada) são sobre **todos** os docentes da escola. Num modelo do IDEB
+dos anos iniciais, a escola que também tem anos finais ou ensino médio
+entra com a formação de professores dessas outras etapas. Em SP, isso
+acontece em 1.725 das 5.779 escolas municipais e estaduais com IDEB dos
+anos iniciais. Nelas, a mediana é de 55% do quadro nos anos iniciais, e o
+efeito estimado dos concursados vai de +0,02 (escolas só de anos iniciais)
+a −0,30.
+
+Use os docentes por etapa para separar ou ponderar as escolas. Quem dá aula
+em duas etapas conta nas duas, então a parte da etapa é um teto e a soma das
+etapas pode passar de `qt_docentes`.
+
+```r
+base <- read.csv2("base-analise-SP-censo2025-ideb2023-inse2023.csv",
+                  fileEncoding = "UTF-8-BOM")
+ai <- subset(base, !is.na(ideb_ai) & rede %in% c("Municipal", "Estadual"))
+ai$parte_ai <- pmin(1, ai$qt_docentes_ai / ai$qt_docentes)
+so_ai <- subset(ai, parte_ai >= 0.8)
+modelo <- lm(ideb_ai ~ prop_superior + prop_pos_graduacao +
+               prop_sem_formacao_continuada + prop_efetivos + inse_media + rede,
+             data = so_ai)
+```
+
+- **Conferência:** em SP, `ai` tem 5.781 escolas, e `so_ai` fica com as
+  3.386 escolas, as que têm ao menos 80% do quadro nos anos iniciais. Nelas,
+  o efeito dos concursados é de +0,03 (p = 0,51).
+- **O corte de 80% é uma escolha:** teste outros, ou use `parte_ai` como
+  peso (`weights = parte_ai`) ou como controle.
 
 ## Refazer os seis índices no R
 
