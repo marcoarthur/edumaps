@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed);
 
 # Versão do perfil da escola: regra dos sinais (#421) e rótulos (#431). Espelha
 # PROFILE_REGRA_SINAIS do edumapsr e entra na chave do cache do perfil.
-our $PERFIL_REGRA_SINAIS = 7;  # 7: "sem formação continuada" no lugar de "sem especialização" (#522)
+our $PERFIL_REGRA_SINAIS = 8;  # 8: concursados vazios nas privadas (#524); 7: "sem formação continuada" (#522)
 
 has [qw(url timeout source_version cache_enabled app)];
 has ua => sub {
@@ -143,7 +143,8 @@ sub run_network_profile ($self, $args = {}) {
       # antigo deixa de ser servido). #497: a rede filtrada contra a mesma
       # rede no Brasil e os grupos pelos níveis do INSE do INEP. #522: o
       # rótulo "sem formação continuada" no lugar de "sem especialização".
-      versao         => 5,
+      # #524: concursados vazios nas privadas.
+      versao         => 6,
     },
   });
 }

@@ -62,7 +62,11 @@
 # (indices-v6) deixa de fora a parte de gestores por aluno sem matrícula e a
 # de acesso ao cargo nas privadas, com o peso redistribuído, e os resultados
 # mudam, por isso a versão sobe.
-ivet_versao <- function() "ivet-v1.8"
+# ivet-v1.9 (#524): mesma agregação; o insumo score_capacitacao_docente
+# (indices-v7) deixa de fora a parte de concursados nas privadas, onde o
+# Censo não pergunta o vínculo, com o peso redistribuído, e os resultados
+# mudam, por isso a versão sobe.
+ivet_versao <- function() "ivet-v1.9"
 
 #' Nomes dos blocos (dimensões de topo) e o rótulo de cada um (§4.2).
 #' @export

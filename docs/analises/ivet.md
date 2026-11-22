@@ -3,8 +3,11 @@
 > **Issue**: #137 · **Escopo**: entregáveis 1 (fórmula documentada/versionada),
 > 2 (decisão de leitura), 3 (núcleo reprodutível + extração dos blocos B/E/G),
 > 4 (vigência/retreino, §4.6) e 5 (card do índice, §4.7).
-> **Versão da fórmula**: `ivet-v1.8` (histórico: `ivet-v1.7`, `ivet-v1.6`, `ivet-v1.5`, `ivet-v1.4`, `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-17
-> (`ivet-v1.8`: insumo corrigido, sem mudar a agregação. Na `score_capacidade_gestora`, a parte
+> **Versão da fórmula**: `ivet-v1.9` (histórico: `ivet-v1.8`, `ivet-v1.7`, `ivet-v1.6`, `ivet-v1.5`, `ivet-v1.4`, `ivet-v1.3`, `ivet-v1.2`, `ivet-v1.1`, `ivet-v1.0`) · **Data**: 2026-11-22
+> (`ivet-v1.9`: insumo corrigido, sem mudar a agregação. Na `score_capacitacao_docente`, a parte
+> de concursados fica de fora nas privadas, onde o Censo não pergunta o vínculo do docente,
+> com o peso redistribuído, #524 (`indices-v7`).
+> `ivet-v1.8`: insumo corrigido, sem mudar a agregação. Na `score_capacidade_gestora`, a parte
 > de gestores por aluno fica de fora sem matrícula e a de acesso ao cargo nas privadas, com o
 > peso redistribuído, #475 (`indices-v6`).
 > `ivet-v1.7`: insumo corrigido, sem mudar a agregação. A parte de alunos por sala do
@@ -112,14 +115,15 @@ pesos sem justificativa registrada. **Sem consumidor**: só existem as classes
 
 ### 2.2 Sistema B — `clean.mv_escolas_scores` (MV) · **canônico**
 
-> **Versão citável dos seis scores** (#462): **`indices-v6`** (2026-11-17),
+> **Versão citável dos seis scores** (#462): **`indices-v7`** (2026-11-22),
 > separada da versão do IVET. Histórico: `indices-v1` (2026-06-04), a fórmula
 > original; `indices-v2` (2026-11-16), a inclusão da diversidade pela educação
 > especial em classe comum (#459); `indices-v3` (2026-11-17), escola sem
 > registro fica sem o score (#467); `indices-v4` (2026-11-17), cor/raça sobre
 > as matrículas com cor declarada (#471); `indices-v5` (2026-11-17), lotação
 > por sala e por turno (#473); `indices-v6` (2026-11-17), partes da capacidade
-> gestora vazias sem matrícula e nas privadas (#475). O registro fica em
+> gestora vazias sem matrícula e nas privadas (#475); `indices-v7` (2026-11-22),
+> concursados da capacitação docente vazios nas privadas (#524). O registro fica em
 > `EduMaps::Model::Rank::School` (`$INDICES_VERSAO`, `@INDICES_HISTORICO`) e
 > no COMMENT da MV; mudança de fórmula sobe os dois e os textos que citam a
 > versão atual (`t/02-models/indices_versao.t`, #501).
@@ -133,7 +137,7 @@ agregação final** (os 6 scores vivem lado a lado). Base: escolas ativas
 |-------|------------------|
 | `score_capacidade_atendimento` | `0.4·10·(1 − (qt_mat_bas/(qt_salas_utilizadas·turnos))/50) + 0.2·(etapas/7·10) + 0.2·(qt_mat_bas_int/qt_mat_bas·10) + 0.2·(alimentação?10:0)`. Turnos = matutino, vespertino e noturno com matrícula (mín. 1), desde `indices-v5` (#473); antes, sem os turnos |
 | `score_infraestrutura` | `média( A,B,C,D )` onde A=5 colunas básicas, B=9 itens pedagógicos, C=5 de acessibilidade, D=5 de tecnologia (cada `÷N·10`) |
-| `score_capacitacao_docente` | `0.3·sup_grad/quadro·10 + 0.3·pós/quadro·10 + 0.2·concurso/quadro·10 + 0.2·formações_continuadas/quadro·10` |
+| `score_capacitacao_docente` | `0.3·sup_grad/quadro·10 + 0.3·pós/quadro·10 + 0.2·concurso/quadro·10 + 0.2·formações_continuadas/quadro·10`; nas privadas, onde o Censo não pergunta o vínculo, a parte de concursados fica de fora e o índice é `(0.3·sup_grad + 0.3·pós + 0.2·formações_continuadas)/0.8` (#524, `indices-v7`) |
 | `score_diversidade_discente` | `0.35·racial + 0.25·gênero + 0.20·inclusão + 0.20·EJA` (cada bloco em 0–10). Cor/raça = `1 − Σ(cor/declaradas)²` sobre as matrículas com cor declarada desde `indices-v4` (#471); com menos de metade declarada, fica de fora e o índice é `(0.25·gênero + 0.20·inclusão + 0.20·EJA)/0.65`. Inclusão = `qt_mat_esp_cc/qt_mat_bas` (educação especial em classe comum), desde a `indices-v2` (#459; no IVET, `ivet-v1.4`); até a `indices-v1` somava `qt_mat_bas_d+dm+dv`, que são **turnos** (componente ≈ 9,8 em quase toda escola) |
 | `score_capacidade_gestora` | `0.3·qualificação + 0.2·especialização_gestão + 0.2·proporção_gestor_aluno + 0.2·colegiados + 0.1·acesso_meritocrático`, dividido pela soma dos pesos presentes: proporção gestor/aluno vazia sem matrícula e acesso vazio nas privadas (#475, `indices-v6`) |
 | `score_sustentabilidade` | `(energia_renovável?10:0 + resíduos?10:0 + média(área_verde, área_plantio)·10 + educação_ambiental?10:0) / 4` |

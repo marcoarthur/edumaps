@@ -82,7 +82,8 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   mesmas definições do índice, para refazê-lo e separar o efeito de cada
   parte, e **dizer que a formação continuada não é a especialização**: a
   proporção de docentes sem formação continuada tem o nome do que mede, e o
-  dicionário separa a contagem de cursos da de professores. O dicionário diz que os pesos dos índices são uma escolha da
+  dicionário separa a contagem de cursos da de professores. Os concursados
+  ficam vazios nas privadas, onde o Censo não pergunta o vínculo do docente. O dicionário diz que os pesos dos índices são uma escolha da
   plataforma, não estimados contra o IDEB.
 - Sistema pode **entregar a remuneração por escola**, da folha que o
   município declara ao SIOPE, no ano escolhido: profissionais do magistério

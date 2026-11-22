@@ -79,8 +79,9 @@ PROFILE_DIRECAO <- c(
 # INSE sem sinal de atenção e o N de cada indicador (#493). 6: escolas
 # similares pelo mesmo contexto do grupo, no município inteiro (#495). 7:
 # "sem especialização" passa a "sem formação continuada" no rótulo e no sinal
-# (#522).
-PROFILE_REGRA_SINAIS <- 7L
+# (#522). 8: concursados vazios nas privadas, onde o Censo não pergunta o
+# vínculo (#524).
+PROFILE_REGRA_SINAIS <- 8L
 
 # Quantas escolas similares o perfil mostra (#495): as primeiras da ordem
 # do grupo de referência, dentro do limiar de distância.
@@ -110,7 +111,8 @@ PROFILE_GRUPO_CRITERIO <- paste(
     prop_licenciatura       = "(d.qt_doc_bas_esco_sup_grad_licen::float8 / NULLIF(d.qt_doc_bas, 0))",
     prop_mestrado           = "(d.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0))",
     prop_doutorado          = "(d.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0))",
-    prop_efetivos           = "(d.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0))",
+    # #524: o Censo só pergunta o vínculo do docente na escola pública.
+    prop_efetivos           = "(CASE WHEN e.tp_dependencia <> 4 THEN d.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0) END)",
     prop_sem_especializacao = "(d.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0))",
     ratio_aluno_docente     = "(m.qt_mat_bas::float8 / NULLIF(d.qt_doc_bas, 0))",
     ideb_observado          = "i.ideb_observado",

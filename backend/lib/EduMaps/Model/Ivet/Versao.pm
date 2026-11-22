@@ -13,6 +13,8 @@ use utf8;
 # t/02-models/ivet_versao.t falha se divergirem.
 
 our @HISTORICO = (
+  { versao => 'ivet-v1.9', data => '2026-11-22',
+    mudou => 'Bloco A: na capacitação docente, a parte de concursados fica de fora nas escolas privadas, onde o Censo não pergunta o vínculo, com o peso redistribuído (indices-v7, #524).' },
   { versao => 'ivet-v1.8', data => '2026-11-17',
     mudou => 'Bloco A: na capacidade gestora, a parte de gestores por aluno fica de fora sem matrícula e a de acesso ao cargo nas privadas, com o peso redistribuído (indices-v6, #475).' },
   { versao => 'ivet-v1.7', data => '2026-11-17',

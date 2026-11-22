@@ -21,10 +21,11 @@ my $INEP_SEM = '60002803';   # sem coordenada, grupo 2 (fora do mapa)
 my $RUN      = 'run_1731700000_a1b2c3d4';
 my $VENCIDA  = 'run_1700000000_deadbeef';
 my $ANTIGA   = 'run_1731600000_0badc0de';   # sem parametros.dados (antes da #428)
+my $DOCENTE  = 'run_1731650000_d0c3a7e5';   # conjunto docência (#524)
 my $ANO = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas') // 2025;
 
 my $limpa = sub {
-  $dbh->do('DELETE FROM analytics.cluster_execucoes WHERE run_id IN (?, ?, ?)', {}, $RUN, $VENCIDA, $ANTIGA);
+  $dbh->do('DELETE FROM analytics.cluster_execucoes WHERE run_id IN (?, ?, ?, ?)', {}, $RUN, $VENCIDA, $ANTIGA, $DOCENTE);
   $dbh->do('DELETE FROM clean.censo_escolas WHERE co_entidade IN (?, ?, ?)', {}, $INEP_A, $INEP_B, $INEP_SEM);
 };
 $limpa->();
@@ -50,6 +51,9 @@ $atr->execute($RUN, $INEP_SEM, 2, 'Baixa infraestrutura', '{"in_agua_potavel":0}
 $dbh->do(q{INSERT INTO analytics.cluster_execucoes (run_id, estado, parametros)
            VALUES (?, 'concluida', '{"algorithm":"kmeans","clusters":2,"features":["qt_salas"]}')}, {}, $ANTIGA);
 $atr->execute($ANTIGA, $INEP_A, 1, 'Grupo 1', '{"qt_salas":12}');
+$dbh->do(q{INSERT INTO analytics.cluster_execucoes (run_id, estado, parametros)
+           VALUES (?, 'concluida', '{"algorithm":"kmeans","clusters":2,"preset":"docencia","features":["prop_efetivos","prop_sem_especializacao"]}')}, {}, $DOCENTE);
+$atr->execute($DOCENTE, $INEP_A, 1, 'Grupo 1', '{"prop_efetivos":0.5,"prop_sem_especializacao":0.25}');
 $dbh->do(q{INSERT INTO analytics.cluster_execucoes (run_id, estado, expira_em)
            VALUES (?, 'concluida', now() - interval '1 day')}, {}, $VENCIDA);
 
@@ -84,6 +88,17 @@ subtest 'CSV: uma linha por escola, indicadores na ordem dos parâmetros' => sub
   is $l[1], qq{$INEP_A;"Escola Alfa; Teste";Cidade Teste;XX;Municipal;1;Alta infraestrutura;1;12,5;2025;2023;},
     'grupo 1 primeiro, ";" entre aspas, decimal com vírgula';
   like $l[3], qr/^\Q$INEP_SEM\E;.*;0;;2025;2023;$/, 'indicador sem valor fica vazio; versão em toda linha';
+};
+
+subtest 'CSV: "sem formação continuada" com o nome da base (#524)' => sub {
+  my $txt = decode('UTF-8', $t->get_ok("/api/cluster/execucoes/$DOCENTE/csv")->status_is(200)->tx->res->body);
+  $txt =~ s/^\x{FEFF}//;
+  my @l = split /\r\n/, $txt;
+  is $l[0], 'inep;escola;municipio;uf;rede;grupo;rotulo;prop_efetivos;prop_sem_formacao_continuada;ano_censo;ano_ideb;etapa_ideb',
+    'prop_sem_formacao_continuada, como na base';
+  like $l[1], qr/;0,5;0,25;/, 'os valores seguem';
+  my $r = $t->get_ok("/api/cluster/execucoes/$DOCENTE")->tx->res->json;
+  is $r->{parametros}{features}[1], 'prop_sem_especializacao', 'a execução guardada segue com o nome interno';
 };
 
 subtest 'CSV de execução antiga, sem a versão dos dados' => sub {

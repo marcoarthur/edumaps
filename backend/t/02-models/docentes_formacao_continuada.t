@@ -31,8 +31,13 @@ for my $c (@$espec) {
 }
 like $coment->('clean.censo_docentes', 'qt_doc_bas_espec_nenhum'),
   qr/^Docentes sem formação continuada de no mínimo 80 horas/, 'espec_nenhum: sem formação continuada';
+# #524 (QT-02): comentário curto; o agrupamento faz o rótulo da tela com ele
 like $coment->('clean.school_indicators', 'prop_sem_especializacao'),
-  qr/sem formação continuada.*nome da coluna é histórico/, 'school_indicators: comentário e nome histórico';
+  qr/^Docentes sem formação continuada \(/, 'school_indicators: comentário curto (#524)';
+like $coment->('clean.school_indicators', 'prop_efetivos'),
+  qr/^Proporção de docentes concursados \(.*vazia nas privadas/, 'concursados: vazia nas privadas (#524)';
+like $coment->('clean.mv_escolas_scores', 'score_capacitacao_docente'),
+  qr/NULL sem docente \(#467\)/, 'capacitação docente: sem docente, NULL (#467, de volta na #524)';
 like $coment->('clean.mv_escolas_scores', 'score_capacitacao_docente'),
   qr/formação continuada/, 'capacitação docente: formação continuada';
 

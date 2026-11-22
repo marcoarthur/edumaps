@@ -382,7 +382,10 @@ sub _indicators_build_sql() {
       d.qt_doc_bas_esco_sup_grad_licen::float / NULLIF(d.qt_doc_bas, 0) AS prop_licenciatura,
       d.qt_doc_bas_esco_sup_pos_mestra::float / NULLIF(d.qt_doc_bas, 0)  AS prop_mestrado,
       d.qt_doc_bas_esco_sup_pos_douto::float / NULLIF(d.qt_doc_bas, 0)   AS prop_doutorado,
-      d.qt_doc_bas_vinculo_concur::float / NULLIF(d.qt_doc_bas, 0)       AS prop_efetivos,
+      -- #524 (QT-01): vínculo só perguntado na escola pública; vazio na
+      -- privada (a escola sai do agrupamento que usa concursados).
+      CASE WHEN e.tp_dependencia <> 4
+           THEN d.qt_doc_bas_vinculo_concur::float / NULLIF(d.qt_doc_bas, 0) END AS prop_efetivos,
       d.qt_doc_bas_espec_nenhum::float / NULLIF(d.qt_doc_bas, 0)         AS prop_sem_especializacao,
       i.ano AS ano_ideb,
       i.nota_media,

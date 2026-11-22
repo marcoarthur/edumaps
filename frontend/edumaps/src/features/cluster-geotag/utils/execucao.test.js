@@ -16,6 +16,17 @@ describe("rotuloIndicador (#427)", () => {
   it("sem comentário, o nome da coluna", () => {
     expect(rotuloIndicador("qt_salas", COLS)).toBe("qt_salas");
   });
+  it("comentários da #524 viram rótulos curtos", () => {
+    // comentários de clean.school_indicators da change escolas_scores_vinculo
+    const cols = [
+      { column_name: "prop_sem_especializacao",
+        comment: "Docentes sem formação continuada (qt_doc_bas_espec_nenhum / qt_doc_bas: sem curso de no mínimo 80 horas; não é a pós-graduação)" },
+      { column_name: "prop_efetivos",
+        comment: "Proporção de docentes concursados (qt_doc_bas_vinculo_concur / qt_doc_bas; vazia nas privadas: o Censo só pergunta o vínculo na escola pública)" },
+    ];
+    expect(rotuloIndicador("prop_sem_especializacao", cols)).toBe("Docentes sem formação continuada");
+    expect(rotuloIndicador("prop_efetivos", cols)).toBe("Proporção de docentes concursados");
+  });
 });
 
 describe("resumoUniverso (#427)", () => {

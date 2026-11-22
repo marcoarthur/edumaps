@@ -127,10 +127,12 @@ São sobretudo centros de atendimento especializado e outras escolas sem turma
 regular, que antes apareciam no fim da lista com 0.
 
 **Versão da fórmula:** os seis índices são calculados pelo EduMaps, e cada
-mudança de fórmula ganha uma versão nova. A atual é a **`indices-v6`**, de
-17/11/2026: na capacidade gestora, a parte de gestores por aluno fica de
-fora na escola sem matrículas, e a de acesso ao cargo nas escolas privadas.
-A `indices-v5`, do mesmo dia, passou a lotação da capacidade de atendimento
+mudança de fórmula ganha uma versão nova. A atual é a **`indices-v7`**, de
+22/11/2026: na capacitação docente, a parte de concursados fica de fora nas
+escolas privadas, onde o Censo não pergunta o vínculo do docente. A
+`indices-v6`, de 17/11/2026, fez o mesmo na capacidade gestora com a parte
+de gestores por aluno na escola sem matrículas e a de acesso ao cargo nas
+escolas privadas. A `indices-v5`, do mesmo dia, passou a lotação da capacidade de atendimento
 para por turno. A `indices-v4`, também do mesmo dia, mediu a cor/raça da diversidade só com quem
 declarou a cor. A `indices-v3`, ainda do mesmo dia, deixou sem o índice a escola
 sem registro, em vez de 0. A
@@ -138,7 +140,7 @@ sem registro, em vez de 0. A
 `indices-v1`, de 04/06/2026, é a fórmula original. A tela
 mostra a versão ao lado de "Como se calcula", e o CSV do ranking de escolas
 traz a coluna `versao_indice` em toda linha e a versão no nome do arquivo
-(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v6.csv`).
+(ex.: `ranking-escolas-2927408-diversidade_discente-2025-indices-v7.csv`).
 Para os índices de todas as escolas de uma UF de uma vez, use a
 [base de análise](base-de-analise.md), bloco "Índices do EduMaps". Para citar, informe a versão:
 notas de versões diferentes não são comparáveis. O histórico está em
@@ -166,7 +168,11 @@ notas de versões diferentes não são comparáveis. O histórico está em
   conta não considerava os turnos, e a escola de dois ou três turnos
   parecia lotada.
 - **Capacitação docente:** ensino superior (30%), pós-graduação (30%),
-  concursados (20%) e formação continuada (20%).
+  concursados (20%) e formação continuada (20%). O Censo só pergunta o
+  vínculo do docente na escola pública: na privada, a parte de concursados
+  fica de fora, e o peso dela vai para as outras. Antes da `indices-v7`
+  (22/11/2026), ela contava 0, e toda escola privada ficava com no máximo
+  8.
 - **Diversidade discente:** cor/raça (35%), equilíbrio entre meninas e
   meninos (25%), inclusão (20%: a proporção de alunos da educação especial
   em classe comum) e EJA (20%). A cor/raça é calculada sobre as matrículas

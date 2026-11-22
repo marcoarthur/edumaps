@@ -141,6 +141,12 @@ test_that("docentes_territorio sempre pede `colunas` e fatia rede × localizaç�
   tab <- report_secao(r, "docentes_por_rede")
   expect_equal(tab$linhas$rede, c("Municipal", "Estadual", "Privada"))
   expect_equal(tab$linhas$qt_doc_bas, c(200, 200, 200))
+  # #524: o vínculo só é perguntado na escola pública
+  expect_true(is.na(tab$linhas$perc_concursados[tab$linhas$rede == "Privada"]))
+  expect_true(is.na(tab$linhas$perc_contratados[tab$linhas$rede == "Privada"]))
+  expect_false(any(is.na(tab$linhas$perc_concursados[tab$linhas$rede != "Privada"])))
+  expect_match(kpis$itens[[4]]$rotulo, "redes públicas")
+  expect_match(tab$nota, "só pergunta o\\s+vínculo")
 })
 
 test_that("docentes_territorio na região compara com o Brasil", {

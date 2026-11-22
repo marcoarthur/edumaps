@@ -171,3 +171,10 @@ test_that("sem especialização é sem formação continuada no rótulo e no sin
   expect_gte(PROFILE_REGRA_SINAIS, 7L)
   expect_false(.profile_cache_regra_atual(list(metadata = list(regra_sinais = 6L))))
 })
+
+test_that("concursados vazios nas privadas, onde o Censo não pergunta o vínculo (#524)", {
+  expr <- .profile_indicator_exprs()[["prop_efetivos"]]
+  expect_match(expr, "CASE WHEN e.tp_dependencia <> 4 THEN", fixed = TRUE)
+  expect_match(expr, "END", fixed = TRUE)
+  expect_gte(PROFILE_REGRA_SINAIS, 8L)
+})

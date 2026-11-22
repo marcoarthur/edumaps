@@ -6,7 +6,7 @@ nivel: avancado
 status: ativo
 relacionadas: [perfil-da-escola, escolas-semelhantes, rede-municipal]
 funcionalidade: ../../funcionalidades/analise/clusters.md
-ultima_revisao: 2026-11-17
+ultima_revisao: 2026-11-22
 ---
 
 # Agrupar escolas parecidas no mapa
@@ -71,6 +71,20 @@ em vez de tratar toda a rede do mesmo jeito.
   **sem** esgoto. Energia de gerador e esgoto em fossa não são falta. Até
   17/11/2026, o conjunto usava "da rede pública", e cerca de 70 mil escolas
   com fossa contavam como sem esgoto.
+- **Docência e escolas privadas:** o Censo só pergunta o vínculo do
+  docente (concursado, contrato, terceirizado) na escola pública. Por isso,
+  a proporção de concursados fica vazia nas privadas, e o conjunto
+  **Qualidade de docência**, que usa os concursados, deixa as privadas de
+  fora: a caixa **Universo** mostra quantas escolas ficaram sem dado em
+  "Proporção de docentes concursados". Até 22/11/2026 a privada entrava
+  com 0 concursados e caía nos grupos de baixa qualidade só por isso. Para
+  comparar privadas, monte uma lista sua sem os concursados.
+- **Sem formação continuada:** a coluna
+  `prop_sem_formacao_continuada` do CSV (no **Buscar indicador…**,
+  "Docentes sem formação continuada") é a proporção de docentes sem curso
+  de formação continuada de 80 horas ou mais. Não é a falta de
+  pós-graduação. É a mesma coluna da
+  [base de análise](../comunidade/base-de-analise.md).
 - **Rótulo do grupo:** com um conjunto pronto, o grupo recebe uma gradação
   (*"Alta qualidade de infraestrutura"*). Grupo com menos de 5 escolas (ou
   menos de 2% das agrupadas) aparece como **Grupo pequeno (N escolas)**, sem

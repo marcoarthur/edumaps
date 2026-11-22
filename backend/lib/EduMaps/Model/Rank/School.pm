@@ -43,8 +43,10 @@ has network_map => sub {
 # change. O teste t/02-models/indices_versao.t compara o COMMENT com
 # $INDICES_VERSAO. Formato: indices-vN, N inteiro que só sobe; a data é a do
 # deploy da fórmula. Correção de texto do %METODO não sobe a versão.
-our $INDICES_VERSAO = 'indices-v6';
+our $INDICES_VERSAO = 'indices-v7';
 our @INDICES_HISTORICO = (
+  { versao => 'indices-v7', data => '2026-11-22',
+    mudou  => 'Capacitação docente: a parte de concursados fica de fora nas escolas privadas (o Censo só pergunta o vínculo do docente na escola pública), e o peso dela vai para as outras três. Antes, contava 0, e a escola privada ficava com no máximo 8. Nas escolas públicas, a nota não muda.' },
   { versao => 'indices-v6', data => '2026-11-17',
     mudou  => 'Capacidade gestora: a parte de gestores por aluno fica de fora na escola sem matrículas, e a de acesso ao cargo fica de fora nas escolas privadas (o Censo não registra a escolha pela mantenedora); o peso da parte que fica de fora vai para as outras. Antes, as duas contavam 0. Nas escolas públicas com matrícula, a nota não muda.' },
   { versao => 'indices-v5', data => '2026-11-17',
@@ -79,9 +81,11 @@ our %METODO = (
     . 'Escola sem matrículas no Censo fica sem o índice (vazio, não 0). '
     . 'A parte de alunos por sala passou a contar os turnos na versão indices-v5, de 17/11/2026 (antes, a escola de dois ou três turnos parecia lotada). ' . $SEM_DADO,
   capacitacao_docente => 'Índice de 0 a 10 (maior é melhor). 30%: docentes com ensino superior. '
-    . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados. '
-    . '20%: com formação continuada (soma das formações específicas do Censo, limitada ao total). '
-    . 'Escola sem registro de docentes no Censo fica sem o índice (vazio, não 0).',
+    . '30%: com pós-graduação (especialização, mestrado ou doutorado). 20%: concursados, só na rede pública. '
+    . '20%: com formação continuada (soma dos cursos de no mínimo 80 horas do Censo, limitada ao total). '
+    . 'Escola sem registro de docentes no Censo fica sem o índice (vazio, não 0). '
+    . 'Na escola privada, a parte de concursados fica de fora (o Censo só pergunta o vínculo do docente na escola pública), e o peso dela vai para as outras. '
+    . 'Ela contava 0 até a versão indices-v6, e a privada ficava com no máximo 8.',
   diversidade_discente => 'Índice de 0 a 10 (maior é melhor). 35%: diversidade de cor/raça das matrículas com cor declarada (1 menos a soma dos quadrados das proporções). '
     . '25%: equilíbrio entre meninas e meninos. 20%: inclusão (proporção de alunos da educação especial em classe comum). '
     . '20%: proporção de matrículas na EJA. Escola sem matrículas no Censo fica sem o índice (vazio, não 0). '

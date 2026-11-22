@@ -129,8 +129,8 @@ export const COLUMNS_FIXTURE = [
   { column_name: "prop_licenciatura",          data_type: "double precision", comment: "Proporção de docentes com licenciatura", table_name: "censo_docentes" },
   { column_name: "prop_mestrado",              data_type: "double precision", comment: "Proporção de docentes com mestrado",    table_name: "censo_docentes" },
   { column_name: "prop_doutorado",             data_type: "double precision", comment: "Proporção de docentes com doutorado",   table_name: "censo_docentes" },
-  { column_name: "prop_efetivos",              data_type: "double precision", comment: "Proporção de docentes concursados",     table_name: "censo_docentes" },
-  { column_name: "prop_sem_especializacao",    data_type: "double precision", comment: "Proporção de docentes sem formação continuada de no mínimo 80 horas", table_name: "censo_docentes" },
+  { column_name: "prop_efetivos",              data_type: "double precision", comment: "Proporção de docentes concursados (qt_doc_bas_vinculo_concur / qt_doc_bas; vazia nas privadas: o Censo só pergunta o vínculo na escola pública)", table_name: "censo_docentes" },
+  { column_name: "prop_sem_especializacao",    data_type: "double precision", comment: "Docentes sem formação continuada (qt_doc_bas_espec_nenhum / qt_doc_bas: sem curso de no mínimo 80 horas; não é a pós-graduação)", table_name: "censo_docentes" },
   // IDEB
   { column_name: "ano_ideb",                   data_type: "integer",          comment: "Ano IDEB/SAEB usado no build",          table_name: "ideb_notas_escolas" },
   { column_name: "nota_media",                 data_type: "numeric",          comment: "Média das proficiências (SAEB)",        table_name: "ideb_notas_escolas" },
