@@ -87,4 +87,4 @@ entrega da trigésima terceira rodada:
 
 ## Encaminhamento
 
-Aguarda a decisão do developer sobre abrir a issue (QU-01 e QU-02).
+Issue **#522** (QU-01 e QU-02), aberta com a aprovação do developer.

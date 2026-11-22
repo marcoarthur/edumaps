@@ -187,7 +187,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima quarta rodada (2026-11-22, **adotaria**, com ressalva no
   perfil docente): QU-01 ("sem especialização" mede quem não fez formação
   continuada) e QU-02 (duas medidas de formação continuada sem a relação
-  dita), aguardando a decisão sobre a issue.
+  dita) → #522.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
