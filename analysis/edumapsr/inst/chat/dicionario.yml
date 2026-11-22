@@ -31,7 +31,7 @@ tabelas:
     descricao: "Matrículas do Censo Escolar por escola/ano, detalhadas por etapa do censo (infantil, fundamental, médio, EJA, especial, profissional), sexo, cor/raça, faixa etária, turno e transporte escolar."
     chave: co_entidade
   clean.censo_docentes:
-    descricao: "Docentes do Censo Escolar por escola/ano: quantidade por etapa, formação/escolaridade, vínculo, disciplinas lecionadas e especializações (incluindo Libras)."
+    descricao: "Docentes do Censo Escolar por escola/ano: quantidade por etapa, formação/escolaridade, vínculo, disciplinas lecionadas e formação continuada de 80h ou mais (incluindo Libras; as colunas qt_doc_bas_espec_* são formação continuada, não pós-graduação)."
     chave: co_entidade
   clean.censo_gestor:
     descricao: "Gestores escolares do Censo Escolar por escola/ano: perfil (sexo, idade, cor/raça), escolaridade, vínculo, critério de acesso ao cargo e formação continuada."
@@ -210,8 +210,8 @@ colunas:
     qt_doc_bas_docente: "Docentes em regência de classe (função docente)"
     qt_doc_bas_tradutor_libras: "Docentes tradutores/intérpretes de Libras"
     qt_doc_bas_disc_libras: "Docentes que lecionam Libras"
-    qt_doc_bas_espec_bil_surdos: "Docentes com especialização em bilinguismo para surdos"
-    qt_doc_bas_espec_ed_especial: "Docentes com especialização em educação especial"
+    qt_doc_bas_espec_bil_surdos: "Docentes com formação continuada (>=80h) em bilinguismo para surdos"
+    qt_doc_bas_espec_ed_especial: "Docentes com formação continuada (>=80h) em educação especial"
     qt_doc_bas_libras: "Docentes com proficiência em Libras"
   clean.censo_gestor:
     nu_ano_censo: "Ano do censo escolar"
@@ -405,7 +405,7 @@ termos:
       - "clean.censo_docentes.qt_doc_bas_libras (docentes com proficiência)"
       - "clean.censo_docentes.qt_doc_bas_tradutor_libras (docentes intérpretes)"
       - "clean.censo_docentes.qt_doc_bas_disc_libras (docentes que lecionam Libras)"
-      - "clean.censo_docentes.qt_doc_bas_espec_bil_surdos (docentes com especialização bilíngue)"
+      - "clean.censo_docentes.qt_doc_bas_espec_bil_surdos (docentes com formação continuada bilíngue)"
   acessibilidade:
     descricao: "Infraestrutura acessível na escola (PcD)"
     colunas:

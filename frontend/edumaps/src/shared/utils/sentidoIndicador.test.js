@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { sentidoIndicador, diferencaFavoravel } from "./sentidoIndicador.js";
 
 describe("sentidoIndicador (#421, AN-02)", () => {
-  it("sem especialização e aluno/docente: menor é melhor", () => {
+  it("sem formação continuada e aluno/docente: menor é melhor", () => {
     expect(sentidoIndicador("prop_sem_especializacao")).toBe("menor");
     expect(sentidoIndicador("ratio_aluno_docente")).toBe("menor");
     expect(sentidoIndicador("ideb_observado")).toBe("maior");
@@ -14,7 +14,7 @@ describe("sentidoIndicador (#421, AN-02)", () => {
     expect(sentidoIndicador("prop_sem_especializacao", "x")).toBe("menor");
   });
 
-  it("queda de 'sem especialização' é favorável; queda do IDEB não", () => {
+  it("queda de 'sem formação continuada' é favorável; queda do IDEB não", () => {
     expect(diferencaFavoravel("prop_sem_especializacao", -0.436)).toBe(true);
     expect(diferencaFavoravel("ratio_aluno_docente", -2.7)).toBe(true);
     expect(diferencaFavoravel("ratio_aluno_docente", 1)).toBe(false);

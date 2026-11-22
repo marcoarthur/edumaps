@@ -28,7 +28,7 @@ test_that("sinal de atenção segue o sentido do indicador (#421)", {
 
   # prop_efetivos (maior é melhor): Q1 e abaixo da mediana -> atenção.
   # ratio_aluno_docente (menor é melhor): Q4 e acima da mediana -> atenção.
-  # prop_sem_especializacao (menor é melhor): Q1 = poucos sem especialização,
+  # prop_sem_especializacao (menor é melhor): Q1 = poucos sem formação continuada,
   # é BOM -> sem atenção (a regra v1 marcava).
   esperados <- c("prop_efetivos", "ratio_aluno_docente")
   expect_setequal(cmp$indicador[cmp$atencao], esperados)
@@ -160,4 +160,14 @@ test_that("analyze_school_profile rejeita modelo de outra classe", {
     analyze_school_profile(fixture_histogram_model()),
     "school_profile_model"
   )
+})
+
+test_that("sem especialização é sem formação continuada no rótulo e no sinal (#522)", {
+  expect_equal(unname(PROFILE_LABELS["prop_sem_especializacao"]), "Docentes sem formação continuada")
+  meta <- .school_profile_flags_meta()
+  textos <- meta$mensagem
+  expect_false(any(grepl("especializa", textos, ignore.case = TRUE)))
+  expect_true(any(grepl("sem formação continuada \\(80h ou mais\\)", textos)))
+  expect_gte(PROFILE_REGRA_SINAIS, 7L)
+  expect_false(.profile_cache_regra_atual(list(metadata = list(regra_sinais = 6L))))
 })

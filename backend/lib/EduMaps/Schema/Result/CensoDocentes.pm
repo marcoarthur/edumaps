@@ -788,133 +788,133 @@ Docentes instrutores de educação profissional
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em creche
+Docentes com formação continuada (80h ou mais) em creche
 
 =head2 qt_doc_bas_espec_pre_escola
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em pré-escola
+Docentes com formação continuada (80h ou mais) em pré-escola
 
 =head2 qt_doc_bas_espec_anos_iniciais
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em anos iniciais
+Docentes com formação continuada (80h ou mais) em anos iniciais
 
 =head2 qt_doc_bas_espec_anos_finais
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em anos finais
+Docentes com formação continuada (80h ou mais) em anos finais
 
 =head2 qt_doc_bas_espec_ens_medio
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em ensino médio
+Docentes com formação continuada (80h ou mais) em ensino médio
 
 =head2 qt_doc_bas_espec_eja
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em EJA
+Docentes com formação continuada (80h ou mais) em EJA
 
 =head2 qt_doc_bas_espec_ed_especial
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação especial
+Docentes com formação continuada (80h ou mais) em educação especial
 
 =head2 qt_doc_bas_espec_bil_surdos
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em bilinguismo para surdos
+Docentes com formação continuada (80h ou mais) em bilinguismo para surdos
 
 =head2 qt_doc_bas_espec_ed_indigena
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação indígena
+Docentes com formação continuada (80h ou mais) em educação indígena
 
 =head2 qt_doc_bas_espec_campo
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação do campo
+Docentes com formação continuada (80h ou mais) em educação do campo
 
 =head2 qt_doc_bas_espec_ambiental
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação ambiental
+Docentes com formação continuada (80h ou mais) em educação ambiental
 
 =head2 qt_doc_bas_espec_dir_humanos
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em direitos humanos
+Docentes com formação continuada (80h ou mais) em direitos humanos
 
 =head2 qt_doc_bas_espec_div_sexual
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em diversidade sexual
+Docentes com formação continuada (80h ou mais) em diversidade sexual
 
 =head2 qt_doc_bas_espec_dir_adolesc
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em direitos de adolescentes
+Docentes com formação continuada (80h ou mais) em direitos de adolescentes
 
 =head2 qt_doc_bas_espec_afro
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação afro-brasileira
+Docentes com formação continuada (80h ou mais) em educação afro-brasileira
 
 =head2 qt_doc_bas_espec_gestao
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em gestão
+Docentes com formação continuada (80h ou mais) em gestão
 
 =head2 qt_doc_bas_espec_educ_tic
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com especialização em educação e TIC
+Docentes com formação continuada (80h ou mais) em educação e TIC
 
 =head2 qt_doc_bas_espec_outros
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes com outras especializações
+Docentes com outra formação continuada (80h ou mais)
 
 =head2 qt_doc_bas_espec_nenhum
 
   data_type: 'integer'
   is_nullable: 1
 
-Docentes sem especialização
+Docentes sem formação continuada (80h ou mais)
 
 =head2 qt_doc_bas_disc_lingua_port
 

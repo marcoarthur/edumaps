@@ -23,7 +23,7 @@
       title="O que é um sinal de atenção"
       text="Indicadores em que a escola está pior que o seu grupo de referência — escolas do município de contexto parecido."
       items={[
-        'Regra: a escola está no quartil do lado ruim do grupo (Q1 quando maior é melhor; Q4 quando menor é melhor, como em "sem especialização" e "aluno/docente") e pior que a mediana.',
+        'Regra: a escola está no quartil do lado ruim do grupo (Q1 quando maior é melhor; Q4 quando menor é melhor, como em "sem formação continuada" e "aluno/docente") e pior que a mediana.',
         'A severidade indica a prioridade sugerida (alta/média/baixa).',
         'Não é julgamento absoluto: um indicador pode ser baixo no grupo e ainda aceitável no Brasil.',
         'O INSE (nível socioeconômico) é contexto: aparece na comparação, mas não gera sinal.',
