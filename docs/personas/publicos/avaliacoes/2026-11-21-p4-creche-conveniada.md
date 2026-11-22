@@ -84,3 +84,15 @@ da entrega da trigésima primeira rodada:
 ## Encaminhamento
 
 Issue **#518** (QW-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-21: #518 (PR #519) mergeado: QW-01 resolvido.
+  - A base tem o bloco "Parceria com o poder público": a parceria (0/1), a
+    esfera (municipal, estadual ou as duas) e a categoria da escola
+    privada.
+  - A comparação de redes diz, na rede privada, quantas escolas são
+    conveniadas com a prefeitura e quantas matrículas de creche e
+    pré-escola têm (Franca: 82 conveniadas, 7.758 em creche).
+  - A ajuda mostra o filtro no R e explica por que as conveniadas ficam na
+    rede privada.

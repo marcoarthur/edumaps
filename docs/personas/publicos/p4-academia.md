@@ -83,6 +83,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — folha da base por UF](ciclos/2026-11-21-base-folha-uf.md#p4--academia-pesquisadora): adotaria (mantido), agora com a remuneração em todos os municípios carregados. QZ-01 a QZ-03 resolvidos; nenhum achado aberto da vigésima nona avaliação.
 - [2026-11-21 — aviso de anos na base](ciclos/2026-11-21-base-aviso-anos.md#p4--academia-pesquisadora): adotaria (mantido), com a base para a pergunta do perfil. QY-01 resolvido; nenhum achado aberto da trigésima avaliação.
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p4--academia-pesquisadora): adotaria (mantido), agora com a base para medir a oferta. QX-01 e QX-02 resolvidos; nenhum achado aberto da trigésima primeira avaliação.
+- [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p4--academia-pesquisadora): adotaria (mantido), com a oferta da prefeitura somando as conveniadas. QW-01 resolvido; nenhum achado aberto da trigésima segunda avaliação.
 
 ## Pendências
 
@@ -177,7 +178,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   entregues (#517).
   Trigésima segunda rodada (2026-11-21, **adotaria**, com as matrículas,
   sem as conveniadas): QW-01 (creches conveniadas com o poder público na
-  rede privada, sem a parceria na base) → #518.
+  rede privada, sem a parceria na base) → #518,
+  entregue (#519).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

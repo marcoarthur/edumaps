@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-21 (dc) — trigésima segunda avaliação da P4, #518 (PR #519) mergeado
+
+- Trigésima segunda rodada da P4 (creche conveniada): adotaria, sem as
+  conveniadas.
+  - QW-01: a oferta da prefeitura por convênio fica na rede privada (SP:
+    404 mil em creche nas conveniadas contra 580 mil na municipal; Franca 0
+    × 7.758) → #518.
+- PR #519 (35673b8):
+  - bloco `parceria` na base (`parceria_poder_publico`, `parceria_esfera`,
+    `categoria_privada`), sem filtrar a rede (841 municipais também têm
+    parceria);
+  - change `rede_escolas_conveniadas` (recria `analytics.mv_rede_escolas`
+    com `escolas_conveniadas` e as matrículas de creche e pré conveniadas;
+    conveniada = privada com parceria municipal ou estadual e municipal);
+  - nota âmbar na comparação de redes e link da base com `parceria`.
+- Lição: `gh run list --commit` só com o SHA completo, e esperar os três
+  workflows pelo nome antes do aviso de fim.
+- Pendente no LXC: `deploy_db_dev` + `deploy_backend_dev` +
+  `deploy_frontend_dev`.
+- Nota técnica 244, ciclo `2026-11-21-conveniadas.md`.
+
 ## Sessão 2026-11-21 (db) — trigésima primeira avaliação da P4, #516 (PR #517) mergeado
 
 - Trigésima primeira rodada da P4 (oferta de educação infantil em
