@@ -16,7 +16,7 @@
   } from "../utils/transformNetworkProfileData.js";
   import { diferencaFavoravel, sentidoIndicador } from "@/shared/utils/sentidoIndicador.js";
 
-  // #421: a cor segue o sentido do indicador (em "sem especialização" e
+  // #421: a cor segue o sentido do indicador (em "sem formação continuada" e
   // "aluno/docente", ficar abaixo do Brasil é bom).
   function corVariacao(ind) {
     const f = diferencaFavoravel(ind.indicador, ind.variacao);
@@ -111,7 +111,7 @@
               'Fonte: Censo Escolar, IDEB/SAEB e INSE — edição mais recente.',
               'A média do Brasil vem da referência pré-computada (mesma base do perfil da escola) ou é calculada na hora.',
               'Variação = rede − Brasil (positivo = acima da média nacional; proporções em pontos percentuais, p.p.).',
-              'Verde = melhor que o Brasil, vermelho = pior, conforme o sentido do indicador: em "sem especialização" e "aluno/docente", menor é melhor.',
+              'Verde = melhor que o Brasil, vermelho = pior, conforme o sentido do indicador: em "sem formação continuada" e "aluno/docente", menor é melhor.',
             ]}
           />
         </div>

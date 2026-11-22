@@ -46,7 +46,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      escola **não tem** água, energia ou esgoto (`_inexistente`, 1 = não
      tem);
    - **Docência:** número de docentes e as proporções com licenciatura,
-     mestrado, doutorado, concursados e sem especialização, e as com ensino
+     mestrado, doutorado e concursados, a de docentes **sem formação
+     continuada** (`prop_sem_formacao_continuada`), e as com ensino
      superior, pós-graduação e formação continuada, que são as partes do
      índice de capacitação docente;
    - **IDEB e SAEB por etapa:** IDEB, notas e aprovação nos anos iniciais
@@ -263,6 +264,23 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     [bloco R abaixo](#refazer-os-seis-índices-no-r);
   - **para modelar, use as partes:** elas podem se associar ao resultado em
     sentidos opostos, e o índice soma todas com peso positivo.
+- **Formação continuada não é especialização:**
+  - **`prop_sem_formacao_continuada`** é a proporção de docentes que não
+    fizeram nenhum curso de formação continuada de no mínimo 80 horas (o
+    Censo pergunta por "outros cursos"). A pós-graduação, inclusive a
+    especialização, está em `prop_pos_graduacao`. Uma escola pode ter
+    muitos professores com pós e, ao mesmo tempo, muitos sem formação
+    continuada: na rede estadual de SP, 32% têm pós e 91% não declararam
+    formação continuada;
+  - **o nome antigo:** até novembro de 2026 a coluna se chamava
+    `prop_sem_especializacao`, e o rótulo dizia "sem especialização", o que
+    estava errado. Scripts com o nome antigo dão erro de coluna
+    inexistente: troque pelo nome novo;
+  - **cursos ou pessoas:** `prop_formacao_continuada` soma os cursos e
+    divide pelos docentes, então quem fez dois cursos conta duas vezes. Para
+    saber quantos professores fizeram ao menos um curso, use
+    `1 - prop_sem_formacao_continuada`. Na rede estadual de SP, a soma de
+    cursos dá 15,5% e os professores com ao menos um curso são 9,5%.
 - **As partes do índice de infraestrutura** (bloco Índices do EduMaps), de
   0 a 1, com peso igual:
   - **`infra_basico`:** água potável, energia da rede pública, esgoto da

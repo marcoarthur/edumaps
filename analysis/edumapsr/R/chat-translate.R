@@ -237,7 +237,7 @@ chat_system_prompt <- function(dicionario, glossario, contexto) {
     "  analytics.school_profile_flat (filtre pela escola e pelo nu_ano_censo",
     "  mais recente): uma linha por indicador com municipio/rede/brasil/cluster,",
     "  quartil_no_cluster (1=menores valores) e atencao (true = pior que o",
-    "  grupo no sentido do indicador; sem especialização e aluno/docente:",
+    "  grupo no sentido do indicador; sem formação continuada e aluno/docente:",
     "  menor é melhor).",
     "- Resposta em markdown, até ~8 linhas, com os números principais; se vazio, diga.",
     "- Fora do tema educacional/censo, explique que não pode ajudar.",

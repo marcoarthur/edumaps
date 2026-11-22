@@ -34,10 +34,13 @@ describe("NetworkProfilePage", () => {
     renderWithQuery("?codigo_ibge=3551702");
     await screen.findByText(/Sertãozinho/);
 
-    // sem especialização abaixo do Brasil = melhor: verde, em p.p.
+    // sem formação continuada abaixo do Brasil = melhor: verde, em p.p.
     const semEsp = screen.getByText("-43.6 p.p.");
     expect(semEsp.className).toMatch(/text-emerald-700/);
     expect(screen.getByText("menor é melhor")).toBeInTheDocument();
+    // #522: o rótulo e a explicação dizem formação continuada, não especialização
+    expect(screen.getAllByText(/sem formação continuada/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/sem especialização/)).toBeNull();
 
     // IDEB abaixo do Brasil = pior: vermelho
     expect(screen.getByText("-0.1").className).toMatch(/text-red-700/);

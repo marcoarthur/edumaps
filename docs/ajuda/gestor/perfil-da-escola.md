@@ -42,7 +42,7 @@ resultado que pode ser bem diferente.
 - **Sinais de atenção:** cada sinal tem gravidade **Alta**, **Média** ou
   **Baixa**. Aparece quando a escola está **pior que o seu grupo**: no
   **Q1** quando maior é melhor (ex.: IDEB) ou no **Q4** quando menor é
-  melhor (docentes sem especialização, alunos por docente), e abaixo/acima da
+  melhor (docentes sem formação continuada, alunos por docente), e abaixo/acima da
   mediana do grupo. Empatar com a mediana não gera sinal. Não é um julgamento
   absoluto: um indicador pode ser baixo no grupo e ainda aceitável no Brasil.
   Sem sinais, a tela diz *"Nenhum indicador pior que o grupo de
@@ -53,6 +53,11 @@ resultado que pode ser bem diferente.
   Grupo | Quartil**. O quartil vai de **Q1** (os 25% mais baixos do grupo)
   a **Q4** (os 25% mais altos). Os indicadores em que menor é melhor trazem
   a nota *"menor é melhor"*. Linhas em atenção ficam destacadas com ⚠.
+- **Docentes sem formação continuada:** professores da escola que não
+  declararam ao Censo nenhum curso de formação continuada de no mínimo 80
+  horas. Não é a falta de pós-graduação (especialização, mestrado ou
+  doutorado). Até novembro de 2026 esta linha se chamava "Docentes sem
+  especialização".
 - **IDEB e nota SAEB na posição relativa:** a linha diz a edição e a etapa
   (ex.: *IDEB observado 2023, anos finais*). Com mais de uma etapa, vale a
   de maior nota da escola. Município, rede, Brasil e grupo são da **mesma

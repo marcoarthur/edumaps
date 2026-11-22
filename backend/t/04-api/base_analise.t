@@ -237,7 +237,7 @@ subtest 'partes do índice de capacitação docente (#469)' => sub {
     my $l = ler_csv($t->get_ok("/api/base-analise/csv?uf=$s->{sg_uf}&codigo_ibge=$s->{mun}&blocos=docencia,indices")->status_is(200)->tx);
     my @cab = @{ $l->[0] };
     my %i; @i{@cab} = 0 .. $#cab;
-    is [ @cab[ $i{prop_sem_especializacao} + 1 .. $i{prop_sem_especializacao} + 3 ] ],
+    is [ @cab[ $i{prop_sem_formacao_continuada} + 1 .. $i{prop_sem_formacao_continuada} + 3 ] ],
       [qw(prop_superior prop_pos_graduacao prop_formacao_continuada)], 'no fim do bloco, na ordem';
     my ($linha) = grep { $_->[0] eq $s->{inep} } @$l[1 .. $#$l];
     my $v = sub ($c) { my $x = $linha->[ $i{$c} ]; $x =~ tr/,/./; 0 + $x };
@@ -423,12 +423,21 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   }
   like $d{qt_docentes}[1], qr/mais de uma escola conta em cada uma/, 'contagem por escola';
   like $d{$_}[1], qr/÷ docentes da escola \(qt_docentes\)/, "$_: denominador"
-    for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_especializacao
+    for qw(prop_licenciatura prop_mestrado prop_doutorado prop_efetivos prop_sem_formacao_continuada
            prop_superior prop_pos_graduacao prop_formacao_continuada);
   like $d{prop_superior}[1], qr/Parte de 30% do índice de capacitação docente/, 'superior: parte do índice (#469)';
   like $d{prop_pos_graduacao}[1], qr/limitada a 1.*Parte de 30%/, 'pós: limite e parte';
   like $d{prop_formacao_continuada}[1], qr/Parte de 20%/, 'formação continuada: parte';
   like $d{prop_efetivos}[1], qr/Parte de 20%/, 'efetivos: parte';
+  # #522 (QU-01, QU-02): a coluna de qt_doc_bas_espec_nenhum é a formação
+  # continuada, não a pós; e a soma de cursos não conta pessoas.
+  ok !exists $d{prop_sem_especializacao}, 'nome antigo fora da base (#522)';
+  like $d{prop_sem_formacao_continuada}[1], qr/sem formação continuada de no mínimo 80 horas.*Não é a pós-graduação.*se chamava prop_sem_especializacao/,
+    'sem formação continuada: o que mede e o nome antigo (#522)';
+  unlike $d{$_}[1], qr/sem especialização/i, "$_: sem 'especialização' (#522)"
+    for qw(prop_sem_formacao_continuada prop_formacao_continuada);
+  like $d{prop_formacao_continuada}[1], qr/Conta cursos, não pessoas.*1 − prop_sem_formacao_continuada/,
+    'formação continuada: cursos e pessoas (#522)';
 
   $l = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=desempenho&ano_ideb=2021")->status_is(200)->tx);
   %d = map { $_->[0] => $_ } @$l[1 .. $#$l];

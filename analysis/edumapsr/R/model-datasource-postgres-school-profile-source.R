@@ -44,7 +44,9 @@ PROFILE_LABELS <- c(
   prop_mestrado           = "Docentes com mestrado",
   prop_doutorado          = "Docentes com doutorado",
   prop_efetivos           = "Docentes efetivos (concursados)",
-  prop_sem_especializacao = "Docentes sem especialização",
+  # #522: qt_doc_bas_espec_nenhum é a formação continuada (80h ou mais), não a
+  # especialização (pós-graduação). O id do indicador ficou o antigo.
+  prop_sem_especializacao = "Docentes sem formação continuada",
   ratio_aluno_docente     = "Relação aluno/docente",
   ideb_observado          = "IDEB observado",
   nota_media              = "Nota média (SAEB)",
@@ -75,8 +77,10 @@ PROFILE_DIRECAO <- c(
 # mesma etapa da escola, e o IDEB de cada etapa (#483). 5: grupo de
 # referência pelo contexto (as 30 escolas do município mais parecidas), o
 # INSE sem sinal de atenção e o N de cada indicador (#493). 6: escolas
-# similares pelo mesmo contexto do grupo, no município inteiro (#495).
-PROFILE_REGRA_SINAIS <- 6L
+# similares pelo mesmo contexto do grupo, no município inteiro (#495). 7:
+# "sem especialização" passa a "sem formação continuada" no rótulo e no sinal
+# (#522).
+PROFILE_REGRA_SINAIS <- 7L
 
 # Quantas escolas similares o perfil mostra (#495): as primeiras da ordem
 # do grupo de referência, dentro do limiar de distância.
@@ -137,7 +141,7 @@ PROFILE_GRUPO_CRITERIO <- paste(
     "Proporção de docentes com mestrado no quartil inferior do grupo de referência",
     "Proporção de docentes com doutorado no quartil inferior do grupo de referência",
     "Proporção de docentes efetivos no quartil inferior do grupo de referência",
-    "Proporção de docentes sem especialização no quartil superior do grupo de referência",
+    "Proporção de docentes sem formação continuada (80h ou mais) no quartil superior do grupo de referência",
     "Relação aluno/docente no quartil superior do grupo de referência",
     "IDEB observado no quartil inferior do grupo de referência",
     "Nota média (SAEB) no quartil inferior do grupo de referência",

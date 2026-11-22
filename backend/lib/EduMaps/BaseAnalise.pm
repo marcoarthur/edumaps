@@ -229,7 +229,11 @@ my @DOCENCIA = (
   [prop_mestrado           => 'd.qt_doc_bas_esco_sup_pos_mestra::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com mestrado ÷ $DENOM"],
   [prop_doutorado          => 'd.qt_doc_bas_esco_sup_pos_douto::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes com doutorado ÷ $DENOM"],
   [prop_efetivos           => 'd.qt_doc_bas_vinculo_concur::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes concursados (efetivos) ÷ $DENOM. Parte de 20% do índice de capacitação docente"],
-  [prop_sem_especializacao => 'd.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0)', "Docentes sem especialização ÷ $DENOM"],
+  # #522 (QU-01): vem de qt_doc_bas_espec_nenhum, que o INEP descreve como
+  # formação continuada de no mínimo 80 horas "Nenhum". Até 2026-11 a coluna
+  # se chamava prop_sem_especializacao (dentro da plataforma o nome segue).
+  [prop_sem_formacao_continuada => 'd.qt_doc_bas_espec_nenhum::float8 / NULLIF(d.qt_doc_bas, 0)',
+   "Docentes sem formação continuada de no mínimo 80 horas ÷ $DENOM. Não é a pós-graduação (especialização, mestrado ou doutorado), que está em prop_pos_graduacao. Até 2026-11 a coluna se chamava prop_sem_especializacao"],
   # #469 (RW-01): as outras partes do índice de capacitação docente, com as
   # mesmas expressões de clean.mv_escolas_scores (escolas_scores_sem_registro),
   # inclusive o limite a 1. No fim do bloco, para não mudar a posição das
@@ -242,7 +246,7 @@ my @DOCENCIA = (
   [prop_formacao_continuada => _ate_um(join ' + ', map { "COALESCE(d.qt_doc_bas_espec_$_,0)" }
        qw(cre pre_escola anos_iniciais anos_finais ens_medio eja ed_especial bil_surdos ed_indigena campo
           ambiental dir_humanos div_sexual dir_adolesc afro gestao educ_tic outros)),
-   "Formações continuadas dos docentes (soma das formações específicas do Censo) ÷ $DENOM, limitada a 1. Parte de 20% do índice de capacitação docente"],
+   "Formações continuadas dos docentes (soma dos cursos de formação continuada de no mínimo 80 horas do Censo) ÷ $DENOM, limitada a 1. Conta cursos, não pessoas: quem fez dois cursos conta duas vezes. Para a proporção de docentes com ao menos um curso, use 1 − prop_sem_formacao_continuada. Parte de 20% do índice de capacitação docente"],
 );
 
 # #516 (QX-01): matrículas da escola (mm = censo_matriculas do mesmo Censo).
@@ -357,7 +361,7 @@ sub _blocos {
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
     { id => 'docencia', label => 'Docência', fonte => 'censo',
-      descricao => 'Número de docentes e proporções de licenciatura, mestrado, doutorado, efetivos, sem especialização, ensino superior, pós-graduação e formação continuada, sobre o total de docentes da escola (as quatro partes do índice de capacitação docente). Quem dá aula em mais de uma escola conta em cada uma.',
+      descricao => 'Número de docentes e proporções de licenciatura, mestrado, doutorado, efetivos, sem formação continuada, ensino superior, pós-graduação e formação continuada, sobre o total de docentes da escola (as quatro partes do índice de capacitação docente). Quem dá aula em mais de uma escola conta em cada uma.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @DOCENCIA ] },
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
       descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida. O IDEB falta sobretudo nas escolas pequenas, rurais e sem infraestrutura: marque também as etapas oferecidas.',

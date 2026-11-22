@@ -56,7 +56,7 @@ Média de quatro categorias: básico, pedagógico, acessibilidade, tecnologia.
   data_type: 'numeric'
   is_nullable: 1
 
-Formação superior, pós-graduação, vínculo efetivo, especializações.
+Formação superior, pós-graduação, vínculo efetivo, formação continuada.
 
 =head2 score_diversidade_discente
 

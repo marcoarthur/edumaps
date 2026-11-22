@@ -361,7 +361,7 @@ subtest 'chave do cache do perfil inclui a versão da regra dos sinais (#421)' =
   $make_client->({ cache_enabled => 1 })->run_school_profile({ co_entidade => '23165669' });
   is $params->{regra_sinais}, $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS,
     'regra_sinais na chave';
-  ok $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS >= 2, 'regra v2 ou mais nova';
+  ok $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS >= 7, 'regra v7 ou mais nova (#522)';
 
   # mesma versão do pacote R (senão o cache do backend guardaria perfis
   # da regra nova sob a chave antiga, ou o contrário)
@@ -383,7 +383,7 @@ subtest 'chave do cache do perfil da rede: referência da mesma rede e grupos do
   local *EduMaps::Analytics::Client::_cache_write = sub { 1 };
 
   $make_client->({ cache_enabled => 1 })->run_network_profile({ codigo_ibge => '2927408', tp_dependencia => 3 });
-  is $params->{versao}, 4, 'versão 4 na chave (cache de antes da #497 não vale)';
+  is $params->{versao}, 5, 'versão 5 na chave (cache de antes da #522, com "sem especialização", não vale)';
   is $params->{tp_dependencia}, 3, 'rede na chave';
 };
 

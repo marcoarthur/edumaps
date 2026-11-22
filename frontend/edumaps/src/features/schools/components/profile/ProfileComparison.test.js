@@ -8,7 +8,7 @@ import ProfileComparison from "./ProfileComparison.svelte";
 const IND = [
   {
     indicador: "prop_sem_especializacao",
-    label: "Docentes sem especialização",
+    label: "Docentes sem formação continuada",
     escola: 0.04, municipio: 0.305, rede: 0.482, brasil: 0.538, cluster: 0.294,
     quartil_no_cluster: 1, atencao: false, direcao: "menor",
   },
@@ -23,7 +23,7 @@ const IND = [
 describe("ProfileComparison (#421)", () => {
   it("Q1 em indicador 'menor é melhor' não leva ⚠ nem destaque", () => {
     render(ProfileComparison, { indicadores: IND });
-    const linhaSem = screen.getByText("Docentes sem especialização").closest("tr");
+    const linhaSem = screen.getByText("Docentes sem formação continuada").closest("tr");
     expect(linhaSem.className).toMatch(/bg-white/);
     expect(linhaSem.textContent).not.toMatch(/⚠/);
     expect(linhaSem.textContent).toMatch(/menor é melhor/);
