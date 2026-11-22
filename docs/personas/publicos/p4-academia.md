@@ -195,10 +195,28 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   onde o Censo não pergunta, no agrupamento, no índice e no ranking) e
   QT-02 (o agrupamento ainda fala `prop_sem_especializacao` e mostra o
   comentário inteiro do banco) → #524, entregues (#525).
+  Trigésima sexta rodada (2026-11-22, **adotaria**, com ressalva em
+  modelos por etapa): QS-01 (a docência é da escola inteira e mistura as
+  etapas, sem os docentes por etapa na base) → #529.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-22 — Base de análise (trigésima sexta rodada, IDEB e formação docente)
+
+**Veredito:** **adotaria** (mantido), com ressalva em modelos por etapa.
+Consolidação em
+[`avaliacoes/2026-11-22-p4-ideb-docencia.md`](avaliacoes/2026-11-22-p4-ideb-docencia.md).
+
+**O que funcionou:** etapas, docência, IDEB por etapa, INSE e porte numa
+leitura só; concursados vazios só nas privadas.
+
+**Barreiras:**
+- QS-01 (atrapalha): a docência é da escola inteira; em 1.725 das 5.779
+  escolas de SP com IDEB dos anos iniciais há outras etapas (mediana de 55%
+  do quadro nos anos iniciais), e o efeito dos concursados vai de +0,02
+  para −0,30. Os docentes por etapa existem no banco, mas não na base.
 
 ### 2026-11-22 — Agrupamento (trigésima quinta rodada, docência em SP)
 
