@@ -85,6 +85,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p4--academia-pesquisadora): adotaria (mantido), agora com a base para medir a oferta. QX-01 e QX-02 resolvidos; nenhum achado aberto da trigésima primeira avaliação.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p4--academia-pesquisadora): adotaria (mantido), com a oferta da prefeitura somando as conveniadas. QW-01 resolvido; nenhum achado aberto da trigésima segunda avaliação.
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p4--academia-pesquisadora): adotaria (mantido). QV-01 e QV-02 resolvidos; nenhum achado aberto da trigésima terceira avaliação.
+- [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva no perfil docente. QU-01 e QU-02 resolvidos; nenhum achado aberto da trigésima quarta avaliação.
 
 ## Pendências
 
@@ -187,7 +188,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima quarta rodada (2026-11-22, **adotaria**, com ressalva no
   perfil docente): QU-01 ("sem especialização" mede quem não fez formação
   continuada) e QU-02 (duas medidas de formação continuada sem a relação
-  dita) → #522.
+  dita) → #522, entregues (#523).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

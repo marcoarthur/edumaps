@@ -76,6 +76,7 @@ já estar lá — o registry é quem diz):
 | `ranking_escola_empates` | #506 (colunas `empate_municipio/estado/nacional` em `analytics.ranking_escola`; vazias até o `ranking.pl` do §6) |
 | `rede_escolas_creche_pre` | #516 (recria `analytics.mv_rede_escolas` com `matriculas_creche` e `matriculas_pre`; a coluna da infantil fica) |
 | `rede_escolas_conveniadas` | #518 (recria `analytics.mv_rede_escolas` com `escolas_conveniadas`, `matriculas_creche_conveniada` e `matriculas_pre_conveniada`) |
+| `docentes_formacao_continuada_rotulos` | #522 (só comentários: as 19 colunas `qt_doc_bas_espec_*` como formação continuada, não especialização; sem recálculo) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -83,7 +84,7 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `rede_escolas_conveniadas` (#518; antes `rede_escolas_creche_pre`) e o `deploy_db_dev` não
+- [ ] A última change do registry é `docentes_formacao_continuada_rotulos` (#522; antes `rede_escolas_conveniadas`) e o `deploy_db_dev` não
       reportou erro. Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
@@ -95,7 +96,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
       `psql edumaps_dev -f verify/school_embedding_l2.sql` (falha se o índice das escolas semelhantes não for `vector_l2_ops`) e
       `psql edumaps_dev -f verify/ranking_escola_empates.sql` (falha se faltar alguma das três colunas de empate) e
       `psql edumaps_dev -f verify/rede_escolas_creche_pre.sql` (falha se faltar creche ou pré-escola, ou se as duas não somarem a infantil) e
-      `psql edumaps_dev -f verify/rede_escolas_conveniadas.sql` (falha se faltar coluna, se uma rede pública tiver conveniadas ou se as conveniadas passarem dos totais).
+      `psql edumaps_dev -f verify/rede_escolas_conveniadas.sql` (falha se faltar coluna, se uma rede pública tiver conveniadas ou se as conveniadas passarem dos totais) e
+      `psql edumaps_dev -f verify/docentes_formacao_continuada_rotulos.sql` (falha se um comentário de `qt_doc_bas_espec_*` ainda disser especialização).
 - [ ] Não rodar `sqitch verify` global: o registry do LXC dá ~45 "Out of
       order" históricos (ver AGENTS.md). Para conferir uma change, rodar o
       `verify/<change>.sql` dela no banco.
@@ -181,7 +183,7 @@ Leva `ivet-v1.3` (acesso em log, #295/PR #362) e a instalação completa das
 dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
-(`regra_sinais` diferente; agora 6: o grupo de referência pelo contexto, as
+(`regra_sinais` diferente; agora 7, com "sem formação continuada" no lugar de "sem especialização", #522; a 6 trouxe o grupo de referência pelo contexto, as
 30 escolas do município mais parecidas, e o INSE sem sinal, #493; as escolas
 similares pelo mesmo contexto, no município inteiro, #495).
 O agrupamento passa a guardar cada execução (#427): o motor grava em
@@ -193,7 +195,7 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] Perfil com o grupo pelo contexto (#493): `curl -s http://127.0.0.1:3000/api/school/29445906/profile`
-      no backend traz `metadata.regra_sinais = 6`, `cluster_source = contexto_municipio`,
+      no backend traz `metadata.regra_sinais = 7` (#522), `cluster_source = contexto_municipio`,
       `cluster_size = 30` e nenhum sinal `inse`.
 - [ ] Similares do perfil pelo contexto (#495): no mesmo perfil,
       `metadata.peers_source = contexto_municipio` e até 10 `tables.peers`
@@ -241,6 +243,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Teto das conveniadas (#520, sem change nova):
       `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=SP&blocos=parceria' | grep -c 'não a vaga'`
       → 1; a nota da comparação de redes de Franca diz "o máximo da oferta pública".
+- [ ] Sem formação continuada (#522, change `docentes_formacao_continuada_rotulos`):
+      `curl -s 'http://127.0.0.1:3000/api/base-analise/dicionario?uf=SP&blocos=docencia' | grep -c '^prop_sem_formacao_continuada;'`
+      → 1 e `grep -c '^prop_sem_especializacao;'` → 0; o perfil da rede de Franca diz
+      "Docentes sem formação continuada" (cache do perfil da rede na `versao` 5).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

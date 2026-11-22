@@ -4,6 +4,29 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-22 (de) — trigésima quarta avaliação da P4, #522 (PR #523) mergeado
+
+- Trigésima quarta rodada da P4 (perfil docente entre regiões, PA/BA/SP/RS/GO,
+  municipal e estadual, 52.794 escolas): adotaria, com ressalva no perfil
+  docente.
+  - QU-01: `prop_sem_especializacao` vem de `qt_doc_bas_espec_nenhum`
+    (INEP: formação continuada ≥80h "Nenhum"), não da pós; pós + "sem
+    especialização" > 1 em 56% das escolas; SP estadual 32% pós × 91%;
+  - QU-02: `prop_formacao_continuada` conta cursos; pessoas = 1 − a
+    coluna (15,5% × 9,5% em SP estadual) → #522.
+- PR #523 (9feaa4d), opção A do developer:
+  - base com `prop_sem_formacao_continuada`, sem o nome antigo;
+  - id interno `prop_sem_especializacao` mantido; mudam só os rótulos (R,
+    frontend, Assistente, preset);
+  - cache: perfil da escola regra 7, perfil da rede versao 5;
+  - change `docentes_formacao_continuada_rotulos` (comentários das 19
+    `qt_doc_bas_espec_*`, `school_indicators`, `score_capacitacao_docente`).
+- Lições: o rótulo errado nasceu no comentário da coluna e se copiou para
+  tudo; conferir no dicionário do INEP. O `rede_escolas_ativas` falha no
+  verify do banco de CI local por resíduo de testes (CI limpo passa).
+- Pendente no LXC: `deploy_db_dev`, backend, minion, analytics e frontend.
+- Nota técnica 246, ciclo `2026-11-22-sem-formacao-continuada.md`.
+
 ## Sessão 2026-11-22 (dd) — trigésima terceira avaliação da P4, #520 (PR #521) mergeado
 
 - Trigésima terceira rodada da P4 (oferta de creche com as conveniadas pela

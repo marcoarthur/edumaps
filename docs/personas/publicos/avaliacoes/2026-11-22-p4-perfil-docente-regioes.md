@@ -88,3 +88,15 @@ entrega da trigésima terceira rodada:
 ## Encaminhamento
 
 Issue **#522** (QU-01 e QU-02), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-22: #522 (PR #523) mergeado: QU-01 e QU-02 resolvidos.
+  - A coluna da base passou a `prop_sem_formacao_continuada` (o nome antigo
+    sai, e o dicionário e a ajuda o citam). O rótulo "Docentes sem formação
+    continuada" está no perfil da escola e da rede, nos sinais e no
+    agrupamento; a versão do cache dos perfis subiu.
+  - Os comentários do banco das 19 colunas `qt_doc_bas_espec_*` dizem
+    formação continuada (change `docentes_formacao_continuada_rotulos`).
+  - O dicionário e a ajuda dizem que `prop_formacao_continuada` conta
+    cursos e que 1 − `prop_sem_formacao_continuada` conta professores.

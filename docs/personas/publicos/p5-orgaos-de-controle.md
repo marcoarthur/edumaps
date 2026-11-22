@@ -82,6 +82,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-21 — matrículas na base](ciclos/2026-11-21-base-matriculas.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: creche separada da pré-escola para acompanhar a meta 1 do PNE.
 - [2026-11-21 — conveniadas](ciclos/2026-11-21-conveniadas.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: dá para ver quanto da creche um município oferece por convênio.
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a oferta conveniada dita como teto.
+- [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: o indicador docente diz o que mede.
 
 ## Pendências
 
