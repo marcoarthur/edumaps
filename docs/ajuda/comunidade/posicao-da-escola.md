@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, buscar-escola, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/ranking.md
-ultima_revisao: 2026-11-19
+ultima_revisao: 2026-11-23
 ---
 
 # Posição da escola no município e no estado
@@ -44,8 +44,12 @@ está acima.
   sustentabilidade só tem 9 notas, e mais de 52 mil escolas têm 0; na
   aprovação dos anos iniciais, um terço das escolas tem 100%.
 - **"Acima de X% das outras escolas"** conta só as escolas com valor
-  **menor**. As empatadas não contam como abaixo. Uma escola com a nota
-  mínima, empatada com outras, fica "acima de 0%".
+  **menor**. As empatadas não contam como abaixo.
+- **Primeiro e último lugar divididos:** quando o empate é no topo, a tela
+  diz "1º lugar, dividido com N escolas com o mesmo valor", e não "acima de
+  16%". Quando é no fim, diz "último lugar, dividido com N escolas", e não
+  "acima de 0%". Na aprovação dos anos iniciais, por exemplo, dezenas de
+  escolas de um município podem ter 100% e dividir o primeiro lugar.
 - **Ausência não é zero:** sem o indicador, a escola não tem posição, e o
   seletor marca o indicador como indisponível.
 

@@ -4,6 +4,7 @@
   import { getAvailableIndicators, getSchoolRanking } from '../api/rankingApi.js';
   import { ApiError } from '@/shared/api/client.js';
   import InfoHint from '@/shared/ui/components/InfoHint.svelte';
+  import { leituraPosicao } from '../utils/leituraPosicao.js';
 
   // ============================================================
   // PROPS (Svelte 5: $props())
@@ -21,6 +22,8 @@
   let selectedIndicator = $state(null);
   let selectedNetwork = $state(null); // null = todas
   let ranking = $state(null);
+  // #541: a leitura da posição, com a rede filtrada no fim da frase
+  const leitura = (e) => leituraPosicao(e, ranking?.rede ? `da rede ${ranking.rede}` : "");
   let loadingIndicators = $state(true);
   let loadingRanking = $state(false);
   let error = $state(null);
@@ -150,18 +153,12 @@
             de {e.total.toLocaleString('pt-BR')}
           </span>
         </p>
-        {#if e.empate > 1}
-          <!-- #506 (RC-01): o empate visível; as empatadas dividem a posição -->
-          <p class="text-xs text-gray-600 mt-1" data-testid="empate">
-            empatada com {(e.empate - 1).toLocaleString('pt-BR')} {e.empate - 1 === 1 ? 'escola' : 'escolas'}
-          </p>
+        <!-- #506 (RC-01): o empate visível; as empatadas dividem a posição.
+             #541: empate nas pontas como primeiro ou último lugar dividido. -->
+        {#if leitura(e).empate}
+          <p class="text-xs text-gray-600 mt-1" data-testid="empate">{leitura(e).empate}</p>
         {/if}
-        <p class="text-xs text-gray-600 mt-1">
-          Acima de {e.percentil}% das outras escolas
-          {#if ranking.rede}
-            da rede {ranking.rede}
-          {/if}
-        </p>
+        <p class="text-xs text-gray-600 mt-1" data-testid="leitura-posicao">{leitura(e).frase}</p>
       </div>
     {/snippet}
 
@@ -172,7 +169,7 @@
         text="A posição compara a escola com as escolas que têm o indicador, no município e no estado."
         items={[
           'O total ("de N") são as escolas com o indicador na mesma edição, não todas as escolas. No IDEB e no SAEB, só as escolas em funcionamento no Censo mais recente que têm a nota; muitas escolas, sobretudo as pequenas, rurais e privadas, não têm.',
-          'Escolas com o mesmo valor dividem a posição: "1º, empatada com 10 escolas" quer dizer que 11 escolas têm o maior valor.',
+          'Escolas com o mesmo valor dividem a posição: "1º lugar, dividido com 10 escolas" quer dizer que 11 escolas têm o maior valor; "último lugar, dividido" é o mesmo no fim da lista.',
           '"Acima de X% das outras escolas" conta só as escolas com valor menor; as empatadas não contam como abaixo.',
         ]}
       />

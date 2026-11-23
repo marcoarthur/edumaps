@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [buscar-escola, posicao-da-escola, fontes-e-metodologia, privacidade]
 funcionalidade: ../../funcionalidades/analise/painel-escola.md
-ultima_revisao: 2026-11-21
+ultima_revisao: 2026-11-23
 ---
 
 # Painel público da escola
@@ -63,8 +63,11 @@ que o dado não existe, e nunca é lido como "não tem".
   de porte de escola, e o número com o ano basta.
 - **Cartões de indicadores:** "N de T" é a posição no município; quando
   outras escolas têm o mesmo valor, o cartão diz "empatada com N escolas", e
-  "acima de X% das outras escolas" conta só as de valor menor. A regra está
-  em [Posição da escola](posicao-da-escola.md).
+  "acima de X% das outras escolas" conta só as de valor menor. Se o empate é
+  no topo ou no fim da lista, o cartão diz "1º lugar, dividido com N
+  escolas" ou "último lugar, dividido com N escolas". O texto não tem cor de
+  bom ou ruim: a posição e o total dizem onde a escola está. A regra está em
+  [Posição da escola](posicao-da-escola.md).
 
 ## Limitações conhecidas
 
