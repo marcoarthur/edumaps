@@ -218,6 +218,8 @@ sub _indices_colunas {
 }
 sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 
+# #531: cobertura das coordenadas (Censo 2025, escolas em funcionamento).
+my $SEM_COORD = 'Vazia quando o Censo não traz, o que é bem mais comum nas escolas privadas (cerca de 1 em cada 3 no Brasil) que nas municipais (16%) e estaduais (12%). Sem a coordenada, use o cep, o bairro e o endereco';
 my $DENOM = 'docentes da escola (qt_docentes)';
 # Proporção sobre qt_doc_bas limitada a 1; vazia sem docentes (#469).
 sub _ate_um ($num) {
@@ -330,7 +332,7 @@ sub _blocos {
   }
   return [
     { id => 'identificacao', label => 'Identificação', fixo => 1, fonte => 'censo',
-      descricao => 'INEP, nome, município, UF, região, rede, localização (urbana ou rural) e as coordenadas da escola (sempre incluído).',
+      descricao => 'INEP, nome, município, UF, região, rede, localização (urbana ou rural), as coordenadas e o endereço da escola (CEP, bairro, logradouro e número), sempre incluído.',
       colunas => [
         ['inep',        'e.co_entidade::text', 'Código INEP da escola', 0],
         ['escola',      'e.no_entidade', 'Nome da escola', 0],
@@ -343,8 +345,16 @@ sub _blocos {
         ['rede',        q{CASE e.tp_dependencia WHEN 1 THEN 'Federal' WHEN 2 THEN 'Estadual' WHEN 3 THEN 'Municipal' WHEN 4 THEN 'Privada' END}, 'Rede (dependência administrativa)', 0],
         ['localizacao', q{CASE e.tp_localizacao WHEN 1 THEN 'Urbana' WHEN 2 THEN 'Rural' END}, 'Localização (urbana ou rural)', 0],
         # #452 (VJ-04): coordenadas como declaradas ao Censo, com 6 casas.
-        ['latitude',    'e.latitude::float8',  'Latitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
-        ['longitude',   'e.longitude::float8', 'Longitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação; vazia quando o Censo não traz', 'coord'],
+        # #531 (QR-01): a coordenada falta em cerca de um terço das privadas
+        # (16% das municipais); o CEP e o endereço, que o Censo traz de toda
+        # escola, permitem situar a escola mesmo assim.
+        ['latitude',    'e.latitude::float8',  "Latitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação. $SEM_COORD", 'coord'],
+        ['longitude',   'e.longitude::float8', "Longitude da escola, em graus decimais (WGS84), como declarada ao Censo Escolar, sem verificação. $SEM_COORD", 'coord'],
+        ['cep',         q{CASE WHEN e.co_cep ~ '^[0-9]{8}$' THEN substr(e.co_cep, 1, 5) || '-' || substr(e.co_cep, 6, 3) END},
+         'CEP da escola, como declarado ao Censo Escolar, no formato 00000-000 (com o hífen, o Excel não tira o zero do começo). Para situar a escola sem coordenada, geocodifique o CEP com o endereço e o município', 0],
+        ['bairro',      q{NULLIF(btrim(e.no_bairro), '')}, 'Bairro da escola, como declarado ao Censo Escolar. Vazio quando o Censo não traz, o que é comum nas escolas rurais (cerca de 6 em cada 10)', 0],
+        ['endereco',    q{NULLIF(concat_ws(', ', NULLIF(btrim(e.ds_endereco), ''), CASE WHEN btrim(e.nu_endereco) ~ '[1-9]' THEN btrim(e.nu_endereco) END), '')},
+         'Endereço da escola (logradouro e número), como declarado ao Censo Escolar. Sem o número quando o Censo traz S/N, 0 ou nada', 0],
       ] },
     # #461 (RX-02): a oferta separa "não oferece a etapa" de "não teve IDEB".
     { id => 'etapas', label => 'Etapas oferecidas', fonte => 'censo',

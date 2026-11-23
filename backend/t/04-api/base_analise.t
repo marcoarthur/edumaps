@@ -41,15 +41,19 @@ my $esc = $dbh->prepare('INSERT INTO clean.censo_escolas
     sg_uf, tp_situacao_funcionamento, in_agua_potavel, in_internet,
     in_esgoto_rede_publica, in_esgoto_inexistente, in_energia_inexistente, in_agua_inexistente,
     latitude, longitude,
-    in_comum_fund_ai, in_comum_medio_medio, in_comum_medio_integrado, in_comum_medio_normal, in_profissionalizante)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    in_comum_fund_ai, in_comum_medio_medio, in_comum_medio_integrado, in_comum_medio_normal, in_profissionalizante,
+    co_cep, no_bairro, ds_endereco, nu_endereco)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 # #461: Alfa oferece anos iniciais e não oferece médio; Beta só tem o médio
 # integrado (conta como médio) e não respondeu a educação profissional.
 # #452: Alfa tem fossa (esgoto fora da rede pública, mas tem esgoto) e
 # coordenadas com mais de 6 casas; Beta não tem esgoto nem coordenadas.
-$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1,     0, 0, 0, 0, -9.97432149, -67.8076543, 1, 0, 0, 0, 0);
-$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef, 0, 1, 0, 0, undef, undef, 0, 0, 1, 0, undef);
-$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1,     1, 0, 0, 0, undef, undef, 1, 0, 0, 0, 0);
+$esc->execute($ANO, $A,       'Escola "Alfa"', 3, 1, $MUN, 'Cidade Teste', 'AC', 1, 1, 1,     0, 0, 0, 0, -9.97432149, -67.8076543, 1, 0, 0, 0, 0,
+              '01001000', ' Centro ', 'Rua das Flores', ' 10 ');
+$esc->execute($ANO, $B,       'Escola Beta',        2, 2, $MUN, 'Cidade Teste', 'AC', 1, 0, undef, 0, 1, 0, 0, undef, undef, 0, 0, 1, 0, undef,
+              '69900123', '', 'Ramal do Limoeiro', 'S/N');
+$esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 'AC', 2, 1, 1,     1, 0, 0, 0, undef, undef, 1, 0, 0, 0, 0,
+              '69900000', undef, undef, undef);
 
 $dbh->do('INSERT INTO clean.censo_docentes (nu_ano_censo, co_entidade, qt_doc_bas,
    qt_doc_bas_esco_sup_grad_licen, qt_doc_bas_esco_sup_pos_mestra, qt_doc_bas_esco_sup_pos_douto,
@@ -92,11 +96,14 @@ subtest 'CSV só com a identificação' => sub {
     ->header_like('Content-Type' => qr{text/csv})
     ->header_like('Content-Disposition' => qr/"base-analise-AC-\Q$MUN\E-censo\Q$ANO\E\.csv"/)->tx;
   my $l = ler_csv($tx);
-  is $l->[0], [qw(inep escola codigo_ibge municipio uf regiao rede localizacao latitude longitude ano_censo)],
-    'cabeçalho (região depois da UF, #448; coordenadas no fim da identificação, #452)';
+  is $l->[0], [qw(inep escola codigo_ibge municipio uf regiao rede localizacao latitude longitude cep bairro endereco ano_censo)],
+    'cabeçalho (região depois da UF, #448; coordenadas, #452; endereço no fim da identificação, #531)';
   is scalar @$l, 3, 'cabeçalho + 2 escolas (a fechada fica fora)';
-  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Norte', 'Municipal', 'Urbana', '-9,974321', '-67,807654', "$ANO"],
-    'aspas no nome escapadas';
+  is $l->[1], [$A, '"Escola ""Alfa"""', "$MUN", 'Cidade Teste', 'AC', 'Norte', 'Municipal', 'Urbana', '-9,974321', '-67,807654',
+                '01001-000', 'Centro', 'Rua das Flores, 10', "$ANO"],
+    'aspas no nome escapadas; CEP com hífen e o zero do começo (#531)';
+  is [ @{ $l->[2] }[8 .. 12] ], ['', '', '69900-123', '', 'Ramal do Limoeiro'],
+    'sem coordenada, com CEP; bairro vazio; S/N fora do endereço (#531)';
 };
 
 subtest 'todos os blocos' => sub {
@@ -175,6 +182,11 @@ subtest 'dicionário' => sub {
   like $d{ideb_af}[1], qr/IDEB observado, anos finais/, 'descrição da coluna';
   like $d{ideb_af}[3], qr/IDEB e SAEB \(INEP\)/, 'fonte';
   like $d{ideb_af}[5], qr{^https://www\.gov\.br/inep/}, 'link oficial';
+  # #531 (QR-01): a falta de coordenada e o endereço
+  like $d{latitude}[1], qr/privadas \(cerca de 1 em cada 3.*use o cep, o bairro e o endereco/, 'latitude: cobertura por rede e o endereço (#531)';
+  like $d{cep}[1], qr/00000-000.*zero do começo.*geocodifique/, 'cep: formato e uso (#531)';
+  like $d{bairro}[1], qr/rurais/, 'bairro: falta nas rurais (#531)';
+  like $d{endereco}[1], qr/S\/N, 0 ou nada/, 'endereço: sem o número S/N (#531)';
   is $d{populacao_municipio}[4], '2025', 'ano da população';
   ok $d{ano_censo}, 'colunas de versão no dicionário';
   like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';
@@ -520,7 +532,7 @@ subtest 'parceria com o poder público (#518)' => sub {
   $dbh->do('UPDATE clean.censo_escolas SET in_poder_publico_parceria = 0, tp_poder_publico_parceria = NULL
             WHERE co_entidade = ?', {}, $A);
   ($a) = grep { $_->[0] eq $A } @{ ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=parceria")->tx) };
-  is [ @$a[ 10 .. 12 ] ], [0, '', ''], 'sem parceria: 0 e vazio';
+  is [ @$a[ 13 .. 15 ] ], [0, '', ''], 'sem parceria: 0 e vazio (depois do endereço, #531)';
 
   my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?blocos=parceria")->tx);
   my %d = map { $_->[0] => $_ } @$d[1 .. $#$d];
