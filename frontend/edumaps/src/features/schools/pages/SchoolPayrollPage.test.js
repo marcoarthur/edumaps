@@ -31,4 +31,24 @@ describe("SchoolPayrollPage (#422)", () => {
     render(SchoolPayrollPage);
     expect(await screen.findByText(/Erro ao carregar/)).toBeInTheDocument();
   });
+
+  it("nome com letra ilegível do SIOPE: a nota explica o \"?\" (#536)", async () => {
+    mocks.getSchoolPayroll.mockResolvedValue([
+      { nome_profissional: "MARIA PE?ANHA", escola: "EMEB TESTE", salario_total: 1000 },
+      { nome_profissional: "JOÃO GONÇALVES", escola: "EMEB TESTE", salario_total: 1000 },
+    ]);
+    render(SchoolPayrollPage);
+    expect(await screen.findByTestId("nota-nome-ilegivel")).toHaveTextContent(
+      'Um nome tem "?" no lugar de uma letra: ela já veio ilegível no arquivo do SIOPE',
+    );
+  });
+
+  it("sem \"?\" nos nomes, sem a nota (#536)", async () => {
+    mocks.getSchoolPayroll.mockResolvedValue([
+      { nome_profissional: "JOÃO GONÇALVES", escola: "EMEB TESTE", salario_total: 1000 },
+    ]);
+    render(SchoolPayrollPage);
+    await screen.findByText(/1 profissional/);
+    expect(screen.queryByTestId("nota-nome-ilegivel")).toBeNull();
+  });
 });
