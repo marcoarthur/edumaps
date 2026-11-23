@@ -19,6 +19,7 @@
   import NetworkShareDonut from "../components/NetworkShareDonut.svelte";
   import NetworkIdedTimeline from "../components/NetworkIdedTimeline.svelte";
   import NetworkCompareTable from "../components/NetworkCompareTable.svelte";
+  import NetworkAtendimentoInfantil from "../components/NetworkAtendimentoInfantil.svelte";
   import NetworkSchoolMap from "../components/NetworkSchoolMap.svelte";
   import { formatInt } from "../utils/transformNetworkData.js";
 
@@ -153,6 +154,8 @@
         o Censo marca a escola conveniada, não a vaga.
       </p>
     {/if}
+
+    <NetworkAtendimentoInfantil {networks} />
 
     <NetworkIdedTimeline {performance} />
 

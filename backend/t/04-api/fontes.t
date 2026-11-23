@@ -19,7 +19,7 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   my $tx = $t->get_ok('/api/fontes')->status_is(200)
     ->header_like('Cache-Control' => qr/max-age=600/)->tx;
   my $r = $tx->res->json;
-  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao indices_edumaps ivet_edumaps)], 'bases e ordem';
+  is [map { $_->{id} } @$r], [qw(censo ideb inse siope ibge_malha ibge_populacao ibge_populacao_idade indices_edumaps ivet_edumaps)], 'bases e ordem';
 
   my ($censo) = grep { $_->{id} eq 'censo' } @$r;
   my ($ano) = $dbh->selectrow_array('SELECT max(nu_ano_censo)::text FROM clean.censo_escolas');

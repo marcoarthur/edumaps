@@ -65,8 +65,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
      cada um;
    - **Nível socioeconômico (INSE):** a média e o nível, da edição mais
      recente do SAEB;
-   - **Porte do município:** a população estimada pelo IBGE e a classe de
-     tamanho;
+   - **Porte do município:** a população estimada pelo IBGE, a classe de
+     tamanho e as crianças de 0 a 3 e de 4 e 5 anos, do Censo Demográfico
+     de 2022;
    - **Remuneração (SIOPE):** a folha que o município declara ao SIOPE,
      somada por escola no ano escolhido (só a rede municipal; veja abaixo).
      Com o bloco marcado, a tela diz que municípios da UF têm a folha, em que
@@ -97,7 +98,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `base$tem_ideb <- !is.na(base$ideb_ai)` e
     `with(subset(base, oferece_ai == 1), tapply(tem_ideb, in_agua_inexistente, mean))`.
 - **Versão dos dados:** as últimas colunas (`ano_censo`, `ano_ideb`,
-  `ano_inse`, `ano_populacao`) repetem em toda linha o ano de cada base, e o
+  `ano_inse`, `ano_populacao`, `ano_populacao_idade`) repetem em toda linha o ano de cada base, e o
   nome do arquivo também leva os anos (ex.:
   `base-analise-ES-censo2025-ideb2023.csv`). Guardado ou renomeado, o arquivo
   continua dizendo de onde veio.
@@ -112,9 +113,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **Para somar por município** (no R), junto com o porte e a região:
     `aggregate(cbind(mat_creche, mat_pre) ~ codigo_ibge + municipio + porte_municipio + regiao, data = base, FUN = sum)`
     (marque também o bloco **Porte do município**).
-  - **Taxa de atendimento:** pede a população por idade (0 a 3 anos, 4 a
-    5), que não está carregada. Com a população total (bloco Porte), dá
-    para comparar matrículas por habitante, que é uma aproximação.
+  - **Taxa de atendimento:** some as matrículas em creche (ou na
+    pré-escola) do município e divida por `populacao_0_3` (ou
+    `populacao_4_5`), do bloco **Porte do município**. A conta está em
+    **Taxa de atendimento da educação infantil no R**, abaixo.
+    - **A população é do Censo Demográfico de 2022,** e as matrículas, do
+      Censo Escolar mais recente (`ano_populacao_idade` e `ano_censo`).
+    - **A taxa pode passar de 100%:** entram crianças de outros municípios
+      e fora da idade.
   - **Creches conveniadas:** parte da oferta de creche das prefeituras é
     feita por convênio com escolas privadas, que ficam na rede privada. Em
     SP, das matrículas em creche da rede municipal mais as das conveniadas
@@ -131,7 +137,7 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
       **Matrículas** e **Porte do município**) e a rede privada (blocos
       **Matrículas** e **Parceria com o poder público**) e some as
       conveniadas com a prefeitura à rede municipal. O código no R está em
-      [Oferta de creche com as conveniadas no R](#oferta-de-creche-com-as-conveniadas-no-r).
+      [Taxa de atendimento da educação infantil no R](#taxa-de-atendimento-da-educação-infantil-no-r).
     - **Escolas públicas também têm parceria** (sobretudo na educação
       profissional): para a oferta conveniada, filtre a rede privada.
 - **Remuneração (SIOPE):** uma linha por escola, sem nomes nem CPF, no ano
@@ -325,11 +331,11 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   No R, `read.csv2()`; no Python, `pandas.read_csv(sep=";", decimal=",")`.
 - Os indicadores são os publicados pelo INEP e pelo IBGE, sem correção.
 
-## Oferta de creche com as conveniadas no R
+## Taxa de atendimento da educação infantil no R
 
-Para a oferta de creche de cada prefeitura, somando as escolas privadas
-conveniadas com ela (veja **Creches conveniadas**, acima), baixe duas bases
-da mesma UF:
+Para a taxa de atendimento da creche e da pré-escola de cada prefeitura
+(a meta 1 do PNE), somando as escolas privadas conveniadas com ela (veja
+**Creches conveniadas**, acima), baixe duas bases da mesma UF:
 
 - a rede **municipal**, com os blocos **Matrículas** e **Porte do
   município**;
@@ -340,24 +346,27 @@ da mesma UF:
 municipal <- read.csv2("base-analise-SP-municipal-censo2025.csv")
 privada   <- read.csv2("base-analise-SP-privada-censo2025.csv")
 conv <- subset(privada, parceria_esfera %in% c("Municipal", "Estadual e municipal"))
-rede <- aggregate(cbind(mat_creche, mat_pre) ~ codigo_ibge + municipio + populacao_municipio,
+rede <- aggregate(cbind(mat_creche, mat_pre) ~ codigo_ibge + municipio + populacao_0_3 + populacao_4_5,
                   data = municipal, FUN = sum)
 conv <- aggregate(cbind(conv_creche = mat_creche, conv_pre = mat_pre) ~ codigo_ibge,
                   data = conv, FUN = sum)
 oferta <- merge(rede, conv, by = "codigo_ibge", all.x = TRUE)
 oferta$conv_creche[is.na(oferta$conv_creche)] <- 0
 oferta$conv_pre[is.na(oferta$conv_pre)] <- 0
-oferta$creche_mil <- 1000 * (oferta$mat_creche + oferta$conv_creche) / oferta$populacao_municipio
+oferta$taxa_creche <- 100 * (oferta$mat_creche + oferta$conv_creche) / oferta$populacao_0_3
+oferta$taxa_pre    <- 100 * (oferta$mat_pre + oferta$conv_pre) / oferta$populacao_4_5
 ```
 
-- **Conferência:** em SP, `oferta` tem os 645 municípios, e Franca fica com
-  21,2 matrículas em creche por mil habitantes.
+- **Conferência:** em SP, `oferta` tem os 645 municípios. Franca fica com
+  48,9% na creche e 75,7% na pré-escola. 304 municípios chegam aos 50% da
+  creche, e 171 aos 100% da pré-escola.
 - **Não esqueça o `all.x = TRUE`.** Sem ele, o `merge` fica só com os
   municípios que têm conveniadas (271 em SP), e os outros somem da conta em
   vez de entrar com 0.
-- **`creche_mil` é um teto:** o Censo marca a escola conveniada, não a vaga.
-- **Por habitante, não por criança:** a população por idade não está
-  carregada (veja **Matrículas**, acima).
+- **As taxas são um teto:** o Censo marca a escola conveniada, não a vaga.
+- **Só a rede municipal:** divida `mat_creche`, sem somar `conv_creche`.
+  A taxa da meta do PNE conta todas as redes, inclusive as privadas sem
+  convênio, e está na comparação de redes do município.
 
 ## Escolas próximas
 

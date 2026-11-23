@@ -201,3 +201,46 @@ export function networkProfileUrl(codigoIbge, codigoRede) {
 export function networkCompareUrl(codigoIbge) {
   return `/municipio/compare?codigo_ibge=${encodeURIComponent(String(codigoIbge))}`;
 }
+
+/**
+ * #533 (QP-01 da P2): taxa de atendimento da educação infantil, a meta 1 do
+ * PNE (creche para 50% das crianças de 0 a 3 anos, pré-escola para todas as
+ * de 4 e 5). Matrículas da etapa sobre a população na idade (Censo
+ * Demográfico), em três recortes: todas as redes (a meta), a rede municipal
+ * e a municipal mais as privadas conveniadas com a prefeitura (teto: o
+ * Censo marca a escola conveniada, não a vaga, #520).
+ *
+ * Devolve null sem a população carregada.
+ */
+export function buildAtendimentoInfantil(networks) {
+  const first = networks?.[0];
+  if (!first) return null;
+  const pop = { creche: Number(first.populacao_0_3), pre: Number(first.populacao_4_5) };
+  if (!(pop.creche > 0) || !(pop.pre > 0)) return null;
+
+  const porRede = (key) => networks.find((n) => normalizeRede(n.rede) === key);
+  const municipal = porRede("municipal");
+  const privada = porRede("privada");
+  const soma = (campo) => networks.reduce((acc, n) => acc + toNumber(n[campo]), 0);
+
+  const etapa = (campo, populacao) => {
+    const todas = soma(`matriculas_${campo}`);
+    const mun = toNumber(municipal?.[`matriculas_${campo}`]);
+    const conv = toNumber(privada?.[`matriculas_${campo}_conveniada`]);
+    return {
+      populacao,
+      todas: todas / populacao,
+      municipal: mun / populacao,
+      teto: conv > 0 ? (mun + conv) / populacao : null,
+    };
+  };
+
+  return {
+    ano: first.ano_populacao_idade ?? null,
+    creche: { ...etapa("creche", pop.creche), meta: 0.5 },
+    pre: { ...etapa("pre", pop.pre), meta: 1 },
+  };
+}
+
+export const formatPercent = (fraction, digits = 1) =>
+  `${formatDecimal(toNumber(fraction) * 100, digits)}%`;

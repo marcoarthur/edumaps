@@ -34,6 +34,10 @@ Brasil.
      prefeitura**, uma nota diz quantas são e quantas matrículas em creche
      e pré-escola elas têm (somadas às da rede municipal, são o máximo da
      oferta pública);
+   - o **atendimento da educação infantil:** a taxa de atendimento da
+     creche e da pré-escola (a meta 1 do PNE), em todas as redes, na rede
+     municipal e, com conveniadas, na municipal somada a elas (veja
+     abaixo);
    - a **linha do IDEB** por rede e etapa, de 2005 até a edição mais recente;
    - o mapa com as escolas.
 3. **Perfil analítico:** acima da tabela, **Ver perfil analítico** abre uma
@@ -49,6 +53,19 @@ Brasil.
   outra conta: cada edição com as escolas que tiveram nota nela.
 - **Matrículas e docentes** são do Censo Escolar mais recente. Quem dá aula
   em mais de uma escola conta em cada uma.
+- **Taxa de atendimento da educação infantil.** Matrículas em creche
+  sobre as crianças de 0 a 3 anos, e na pré-escola sobre as de 4 e 5. A
+  meta do PNE é 50% na creche e 100% na pré-escola.
+  - **Três contas:** todas as redes (a da meta, com as privadas
+    inclusive), só a rede municipal, e a municipal com as privadas
+    conveniadas com a prefeitura, que é um teto (o Censo marca a escola
+    conveniada, não a vaga). Em Franca (SP), a rede municipal não tem
+    creche, e com as conveniadas o teto fica em 48,9%.
+  - **Anos diferentes:** as crianças são as do Censo Demográfico de 2022
+    (IBGE), e as matrículas, do Censo Escolar mais recente.
+  - **Pode passar de 100%,** com crianças de outros municípios e fora da
+    idade.
+  - Sem a população por idade do município, o quadro não aparece.
 - **Médias simples.** "Alunos por docente" e "% docentes com superior" são
   somas da rede (todas as matrículas sobre todos os docentes). As médias do
   IDEB e do perfil são médias das escolas, cada escola com o mesmo peso, sem

@@ -107,6 +107,41 @@ describe("NetworkComparePage", () => {
     );
   });
 
+  it("taxa de atendimento da creche e da pré-escola (#533)", async () => {
+    getNetworkSummary.mockResolvedValue(NETWORK_SUMMARY_FIXTURE);
+    getNetworkPerformance.mockResolvedValue(NETWORK_PERFORMANCE_FIXTURE);
+    getNetworkMarkers.mockResolvedValue(NETWORK_MARKERS_FIXTURE);
+    window.location = new URL(
+      "http://localhost/municipio/compare?codigo_ibge=3551702",
+    );
+
+    render(NetworkComparePage);
+
+    const creche = await screen.findByTestId("atendimento-creche");
+    // 6.000 crianças, 41,8% em todas as redes, 35,1% na municipal, 38,6% com as conveniadas
+    expect(creche).toHaveTextContent(/6\.000\s*41,8%\s*35,1%\s*38,6%\s*50%/);
+    expect(screen.getByTestId("atendimento-pre")).toHaveTextContent(/109,0%/);
+    expect(screen.getByTestId("atendimento-nota")).toHaveTextContent(
+      /Censo Demográfico 2022 .*pode passar de 100%/,
+    );
+  });
+
+  it("sem a população por idade, sem a taxa (#533)", async () => {
+    getNetworkSummary.mockResolvedValue(
+      NETWORK_SUMMARY_FIXTURE.map((n) => ({ ...n, populacao_0_3: null, populacao_4_5: null })),
+    );
+    getNetworkPerformance.mockResolvedValue(NETWORK_PERFORMANCE_FIXTURE);
+    getNetworkMarkers.mockResolvedValue(NETWORK_MARKERS_FIXTURE);
+    window.location = new URL(
+      "http://localhost/municipio/compare?codigo_ibge=3551702",
+    );
+
+    render(NetworkComparePage);
+
+    await screen.findByText(/Redes que atendem Sertãozinho/i);
+    expect(screen.queryByTestId("atendimento-infantil")).toBeNull();
+  });
+
   it("sem conveniadas, sem a nota (#518)", async () => {
     getNetworkSummary.mockResolvedValue(
       NETWORK_SUMMARY_FIXTURE.map((n) => ({ ...n, escolas_conveniadas: 0 })),

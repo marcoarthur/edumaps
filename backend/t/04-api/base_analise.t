@@ -31,6 +31,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.ideb_notas_escolas WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
+  $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = ? AND tabela_id = '9514'}, {}, "$MUN");
   $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002))', {}, @INEPS, '600039');
 };
 $limpa->();
@@ -71,6 +72,11 @@ $dbh->do(q{INSERT INTO clean.inse (nu_ano_saeb, id_escola, media_inse, inse_clas
   {}, $SAEB, $A);
 $dbh->do(q{INSERT INTO clean.populacao_municipal (nome_municipio, populacao_estimada, codigo_ibge)
            VALUES ('Cidade Teste', 12345678, ?)}, {}, "$MUN");
+# #533: população por idade do Censo 2022 (SIDRA 9514), 0 a 3 = 46 e 4 a 5 = 29
+my %IDADE = ('Total' => 1000, 'Menos de 1 ano' => 10, '1 ano' => 11, '2 anos' => 12, '3 anos' => 13,
+             '4 anos' => 14, '5 anos' => 15, '6 anos' => 16);
+$dbh->do(q{INSERT INTO clean.ibge_agregados (codigo_ibge, ano, tabela_id, variavel, classificacao, valor, unidade)
+           VALUES (?, 2022, '9514', '93', ?, ?, 'Pessoas')}, {}, "$MUN", $_, $IDADE{$_}) for sort keys %IDADE;
 
 sub ler_csv ($tx) {
   my $txt = decode('UTF-8', $tx->res->body);
@@ -142,8 +148,12 @@ subtest 'todos os blocos' => sub {
   is $a[$i{inse_classificacao}], 'Nível V', 'nível do INSE';
   is $a[$i{populacao_municipio}], '12345678', 'população inteira, sem notação científica';
   is $a[$i{porte_municipio}], 'mais_500mil', 'porte';
-  is [@cab[-4 .. -1]], [qw(ano_censo ano_ideb ano_inse ano_populacao)], 'versão no fim';
-  is [@a[-4 .. -1]], ["$ANO", "$IDEB", "$SAEB", '2025'], 'versão em toda linha';
+  # #533: crianças na idade da creche e da pré-escola, do Censo Demográfico
+  is [ @cab[ $i{porte_municipio} + 1, $i{porte_municipio} + 2 ] ], [qw(populacao_0_3 populacao_4_5)],
+    'população por idade depois do porte (#533)';
+  is [ @a[ @i{qw(populacao_0_3 populacao_4_5)} ] ], ['46', '29'], '0 a 3 e 4 e 5 anos (#533)';
+  is [@cab[-5 .. -1]], [qw(ano_censo ano_ideb ano_inse ano_populacao ano_populacao_idade)], 'versão no fim';
+  is [@a[-5 .. -1]], ["$ANO", "$IDEB", "$SAEB", '2025', '2022'], 'versão em toda linha';
 };
 
 subtest 'etapas oferecidas e cobertura do IDEB (#461)' => sub {
@@ -188,6 +198,12 @@ subtest 'dicionário' => sub {
   like $d{bairro}[1], qr/rurais/, 'bairro: falta nas rurais (#531)';
   like $d{endereco}[1], qr/S\/N, 0 ou nada/, 'endereço: sem o número S/N (#531)';
   is $d{populacao_municipio}[4], '2025', 'ano da população';
+  # #533: a população por idade é de outra fonte e de outro ano que o bloco
+  is $d{populacao_0_3}[3], 'População por idade (Censo Demográfico) (IBGE)', 'fonte da população por idade (#533)';
+  is $d{populacao_0_3}[4], '2022', 'ano do Censo Demográfico (#533)';
+  like $d{populacao_0_3}[5], qr{sidra\.ibge\.gov\.br/tabela/9514}, 'link da tabela do SIDRA (#533)';
+  like $d{populacao_4_5}[1], qr/pré-escola.*Taxa de atendimento.*passar de 100%.*anterior ao Censo Escolar/, 'a conta e os avisos (#533)';
+  like $d{ano_populacao_idade}[1], qr/anterior ao das matrículas/, 'ano da população por idade (#533)';
   ok $d{ano_censo}, 'colunas de versão no dicionário';
   like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';
   like $d{latitude}[1], qr/como declarada ao Censo Escolar, sem verificação/, 'coordenada no dicionário (#452)';

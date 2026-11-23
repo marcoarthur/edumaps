@@ -88,6 +88,20 @@ our @CATALOGO = (
     periodo   => ['2025', '2025'],
     telas     => [qw(ranking base_analise)],
   },
+  # #533 (QP-01 da P2): a população por idade do Censo 2022, base da taxa
+  # de atendimento da creche e da pré-escola (job IBGEPopulacaoIdade).
+  {
+    id        => 'ibge_populacao_idade',
+    nome      => 'População por idade (Censo Demográfico)',
+    orgao     => 'IBGE',
+    descricao => 'Crianças e jovens de cada idade por município, contados no Censo Demográfico, '
+      . 'usados na taxa de atendimento da creche (0 a 3 anos) e da pré-escola (4 e 5 anos).',
+    url       => 'https://sidra.ibge.gov.br/tabela/9514',
+    metodologia => 'https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html',
+    tabelas   => [qw(clean.populacao_idade)],
+    periodo_sql => 'SELECT min(ano)::text, max(ano)::text FROM clean.populacao_idade',
+    telas     => [qw(comparacao_redes base_analise)],
+  },
   # #462 (RX-01): os seis índices calculados pelo EduMaps a partir do Censo.
   # Não é base de terceiros: a versão e o histórico vêm do registro em
   # EduMaps::Model::Rank::School, e a "carga" é a última materialização.

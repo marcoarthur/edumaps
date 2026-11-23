@@ -30,6 +30,10 @@ oferta educacional local.
 - Sistema pode **mostrar as escolas privadas conveniadas com a prefeitura**
   e as matrículas delas em creche e pré-escola, para somar à oferta da rede
   municipal como teto (o Censo marca a escola conveniada, não a vaga).
+- Sistema pode **mostrar a taxa de atendimento da creche e da pré-escola**
+  (a meta 1 do PNE) em todas as redes, na rede municipal e na municipal com
+  as conveniadas, com as crianças na idade contadas pelo Censo Demográfico
+  do IBGE.
 - Sistema pode mostrar como cada rede contribui para a oferta do município.
 - Sistema pode apoiar leitura de políticas e de investimento por rede.
 - Sistema pode abrir, a partir da comparação, o perfil analítico de cada rede
