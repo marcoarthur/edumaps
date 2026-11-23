@@ -11,13 +11,16 @@
   /** @type {{ tela: string, class?: string }} */
   let { tela, class: className = "" } = $props();
 
-  let fontes = $state([]);
+  // #539: o catálogo é buscado uma vez; trocar a tela (ex.: o indicador do
+  // ranking) só refiltra.
+  let catalogo = $state([]);
+  const fontes = $derived(fontesDaTela(catalogo, tela));
 
   onMount(async () => {
     try {
-      fontes = fontesDaTela(await getFontes(), tela);
+      catalogo = await getFontes();
     } catch {
-      fontes = [];
+      catalogo = [];
     }
   });
 </script>

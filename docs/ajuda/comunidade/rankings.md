@@ -69,6 +69,9 @@ indicador. Não precisa de login.
    - O CSV (`ranking-atendimento-creche-MT-2022.csv`) traz as três taxas,
      as crianças, as matrículas de cada conta, a meta e o recorte em toda
      linha.
+   - O selo **Fonte**, no pé da página, cita as bases dessa conta: o Censo
+     Escolar, a população por idade do Censo Demográfico e a estimativa da
+     população, com o ano e a data da carga.
 
 ## Taxa de atendimento da educação infantil
 

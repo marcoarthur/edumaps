@@ -16,6 +16,7 @@
     comparacao_redes: "comparação de redes",
     perfil_escola: "perfil da escola",
     ranking: "ranking",
+    ranking_atendimento: "ranking da educação infantil",
     agrupamento: "agrupamento de escolas",
     busca: "busca",
     financeiro: "financeiro da escola",

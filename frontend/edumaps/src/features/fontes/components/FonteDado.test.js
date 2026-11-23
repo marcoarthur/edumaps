@@ -18,6 +18,19 @@ describe("FonteDado (#428)", () => {
     expect(screen.getByRole("link", { name: "Fontes e metodologia" })).toHaveAttribute("href", "/fontes");
   });
 
+  it("trocar a tela refiltra sem buscar de novo (#539)", async () => {
+    let buscas = 0;
+    const { FONTES_FIXTURE } = await import("../mocks/fixtures.js");
+    server.use(http.get("*/api/fontes", () => { buscas += 1; return HttpResponse.json(FONTES_FIXTURE); }));
+    const { rerender } = render(FonteDado, { props: { tela: "ranking" } });
+    const selo = await screen.findByTestId("fonte-dado");
+    expect(selo).toHaveTextContent("IDEB e SAEB");
+    await rerender({ tela: "ranking_atendimento" });
+    expect(screen.getByTestId("fonte-dado")).toHaveTextContent("População por idade (Censo Demográfico) 2022 (IBGE");
+    expect(screen.getByTestId("fonte-dado")).not.toHaveTextContent("IDEB");
+    expect(buscas).toBe(1);
+  });
+
   it("falha na busca: o selo some, a tela segue", async () => {
     server.use(http.get("*/api/fontes", () => HttpResponse.json({ error: "x" }, { status: 500 })));
     render(FonteDado, { props: { tela: "folha" } });
