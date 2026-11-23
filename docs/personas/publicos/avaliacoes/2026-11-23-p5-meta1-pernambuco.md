@@ -84,5 +84,5 @@ planilha (QJ-02).
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer. QJ-01 vale para
+Issues **#549** (QJ-01) e **#550** (QJ-02), abertas com a aprovação do developer. QJ-01 vale para
 todos os públicos que citam a taxa.

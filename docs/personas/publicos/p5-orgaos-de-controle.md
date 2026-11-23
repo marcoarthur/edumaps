@@ -112,7 +112,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Meta 1 do PNE em Pernambuco (2026-11-23, **não adotaria**, registro; mais
   perto): QJ-01 (a "taxa de atendimento" é uma taxa bruta, e nada diz que
   não é o indicador oficial) e QJ-02 (o CSV do ranking sem as fontes)
-  aguardam a aprovação do developer para virar issue. Sem
+  → #549 e #550. Sem
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 
 ## Entradas
