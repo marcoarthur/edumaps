@@ -93,6 +93,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a população por idade na base, com fonte e ano.
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o CSV dos municípios sem rodar R.
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante: a base usa os totais.
+- [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a referência da população por idade na tela.
 
 ## Pendências
 

@@ -90,6 +90,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto direto: a meta 1 do PNE mensurável por município.
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QO-01 resolvido; QO-02 (#536) aberto.
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QO-02 resolvido.
+- [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: o anexo cita as bases da conta.
 
 ## Pendências
 

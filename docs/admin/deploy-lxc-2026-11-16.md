@@ -275,6 +275,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=atendimento_creche&uf=MT&destaque=5103403'` traz
       `tipo = atendimento`, `total = 141`, `meta.abaixo = 116` e o destaque de Cuiabá na posição 101; na tela,
       `/ranking?aba=redes&indicador=atendimento_creche&uf=MT` abre com menor primeiro.
+- [ ] Fontes do ranking pelo indicador (#539, sem change nova): nessa tela, o rodapé "Fonte:" cita o Censo Escolar, a
+      estimativa da população e a "População por idade (Censo Demográfico) 2022", sem IDEB nem INSE;
+      `/api/fontes` traz `ranking_atendimento` em `censo`, `ibge_populacao` e `ibge_populacao_idade`.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

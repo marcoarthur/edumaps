@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dl) — quinta avaliação da P6, #539 (PR #540)
+
+- Quinta rodada da P6 (creche no Nordeste): adotaria (mantido).
+  - 1.305 de 1.794 municípios abaixo da meta, conferidos na base escola
+    por escola.
+  - QN-01: o rodapé de fontes do ranking sem o Censo Demográfico na taxa
+    → #539.
+  - Só há matrículas do Censo Escolar 2025 carregadas: não há série da
+    creche.
+- PR #540 (39578d7), opção A1:
+  - tela `ranking_atendimento` no catálogo `EduMaps::Fontes`;
+  - `FonteDado` filtra num `$derived` da `tela` (antes, só no `onMount`);
+  - rodapé e texto do topo do ranking conforme o indicador.
+- Lição: o `FonteDado` não reagia à troca de prop. Componente que busca
+  no `onMount` precisa de um `$derived` para o que depende de props.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #540 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 254; ciclo `2026-11-23-fontes-ranking-indicador.md`.
+
 ## Sessão 2026-11-23 (dk) — #536 (PR #538), nomes da folha do SIOPE
 
 - O developer autorizou o download das planilhas do SIOPE de Cuiabá (2025

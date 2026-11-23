@@ -95,3 +95,11 @@ o número conferido. Só a citação da fonte exige uma volta a `/fontes`
 ## Encaminhamento
 
 Issue **#539** (QN-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-23: #539 (PR #540) mergeado: QN-01 resolvido.
+  - Com a taxa de atendimento, o rodapé do ranking cita o Censo Escolar, a
+    estimativa da população e a população por idade do Censo Demográfico,
+    sem as bases do IDEB. O texto do topo não fala do INSE.
+  - #454 (registro da carga do IDEB) segue aberta.
