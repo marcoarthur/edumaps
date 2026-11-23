@@ -109,8 +109,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (sem taxa de atendimento da educação infantil; população por idade sem
   fonte) → #533, entregue (#534).
 - Expansão da creche (2026-11-23, **adotaria, em piloto**): QK-01 (a taxa
-  não diz quantas vagas faltam para a meta) aguarda a aprovação do
-  developer para virar issue. "Onde abrir" depende de carregar os setores
+  não diz quantas vagas faltam para a meta) → #547. "Onde abrir" depende de carregar os setores
   do Censo 2022.
 
 ## Entradas

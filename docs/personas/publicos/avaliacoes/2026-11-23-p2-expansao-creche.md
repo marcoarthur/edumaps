@@ -86,4 +86,4 @@ da plataforma, com fonte. O número que vai para o plano e o orçamento
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer.
+Issue **#547** (QK-01), aberta com a aprovação do developer.
