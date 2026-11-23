@@ -108,10 +108,37 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Auditoria de Cuiabá (2026-11-23, **não adotaria**, registro; mais
   perto): QO-01 (taxa de atendimento só município a município, fora do
   ranking de redes) e QO-02 (nomes acentuados quebrados na folha de
-  Cuiabá) → #535, entregue (#537), e #536, entregue (#538). Sem
+  Cuiabá) → #535, entregue (#537), e #536, entregue (#538).
+- Meta 1 do PNE em Pernambuco (2026-11-23, **não adotaria**, registro; mais
+  perto): QJ-01 (a "taxa de atendimento" é uma taxa bruta, e nada diz que
+  não é o indicador oficial) e QJ-02 (o CSV do ranking sem as fontes)
+  aguardam a aprovação do developer para virar issue. Sem
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 
 ## Entradas
+
+### 2026-11-23 — Meta 1 do PNE em Pernambuco (terceira rodada, só registro)
+
+**Material:** o ranking da creche e da pré-escola em PE e o CSV, as ajudas
+e o rodapé de fontes. Consolidação em
+[`avaliacoes/2026-11-23-p5-meta1-pernambuco.md`](avaliacoes/2026-11-23-p5-meta1-pernambuco.md).
+
+**O que tentou:** acompanhar a meta 1 no estado para o TCE-PE, com a
+planilha anexada ao relatório.
+
+**O que funciona para ele:** 174 de 185 municípios abaixo da meta da
+creche e 96.578 vagas faltando; metade do déficit em 15 municípios
+(Jaboatão dos Guararapes, Recife, Paulista, Olinda, Caruaru…); os anos e o
+recorte em cada linha do CSV.
+
+**Barreiras:**
+- QJ-01 (atrapalha): a taxa é bruta (matrículas de qualquer idade e
+  município ÷ crianças), e nada diz que não é o indicador oficial da meta
+  (frequência, de pesquisa domiciliar).
+- QJ-02 (incomoda): o CSV sem o nome das bases, a carga e o link.
+- AN-12 (aberto): sem comparação de gasto.
+
+**Veredito:** **não adotaria** (registro; mantido), mais perto.
 
 ### 2026-11-23 — Auditoria da educação de Cuiabá (segunda avaliação, só registro)
 
