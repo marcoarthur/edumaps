@@ -273,8 +273,8 @@
     <p class="mt-1 text-sm text-gray-600" data-testid="intro-ranking">
       {#if aba === "redes" && atendimento}
         <!-- #539: na taxa de atendimento cada linha é um município (todas as redes), sem INSE. -->
-        Compare os municípios de um estado, de uma região ou do Brasil pela taxa de atendimento da creche ou da pré-escola,
-        a meta 1 do PNE: quem está mais longe da meta aparece primeiro.
+        Compare os municípios de um estado, de uma região ou do Brasil pela taxa bruta de matrícula da creche ou da pré-escola,
+        comparada à meta 1 do PNE: a menor taxa aparece primeiro.
       {:else}
         Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
         O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
@@ -329,7 +329,7 @@
             <optgroup label="IDEB e SAEB">
               {#each INDICADORES_IDEB as i}<option value={i.id}>{i.label}</option>{/each}
             </optgroup>
-            <optgroup label="Educação infantil (meta 1 do PNE)">
+            <optgroup label="Educação infantil: taxa bruta de matrícula">
               {#each INDICADORES_ATENDIMENTO as i}<option value={i.id}>{i.label}</option>{/each}
             </optgroup>
           </select>
@@ -398,7 +398,7 @@
               {#if d.uf}({d.uf}{d.regiao ? `, ${rotuloRegiao(d.regiao)}` : ""}{d.porte ? `, ${rotuloPorte(d.porte)}` : ""}){/if}:
               {#if d.situacao === "no_ranking" && redes.tipo === "atendimento"}
                 {d.posicao}ª de {redes.total} {redes.total === 1 ? "município" : "municípios"} neste recorte, da menor taxa para a maior{#if linhaDestaque}:
-                  {(linhaDestaque.taxa * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% em todas as redes{linhaDestaque.abaixo_meta ? ", abaixo da meta" : ""}{/if}.
+                  {(linhaDestaque.taxa * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% em todas as redes{linhaDestaque.abaixo_meta ? `, abaixo de ${Math.round((redes.meta?.valor ?? 0) * 100)}%` : ""}{/if}.
                 <button type="button" onclick={irParaDestaque} data-testid="ir-destaque" class="ml-1 text-xs text-blue-700 hover:underline">Ver na tabela</button>
               {:else if d.situacao === "no_ranking"}
                 {d.posicao}ª de {redes.total} {redes.total === 1 ? "rede" : "redes"} neste recorte pelo valor de {redes.ano}{#if ordem === "variacao" && linhaDestaque?.posicao_variacao}{" "}e {linhaDestaque.posicao_variacao}ª pela variação{/if}.

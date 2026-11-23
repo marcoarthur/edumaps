@@ -222,7 +222,7 @@ sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 my $SEM_COORD = 'Vazia quando o Censo não traz, o que é bem mais comum nas escolas privadas (cerca de 1 em cada 3 no Brasil) que nas municipais (16%) e estaduais (12%). Sem a coordenada, use o cep, o bairro e o endereco';
 my $DENOM = 'docentes da escola (qt_docentes)';
 # #533: a conta da taxa de atendimento da educação infantil (meta 1 do PNE).
-my $TAXA_ATENDIMENTO = 'Taxa de atendimento: some as matrículas da etapa nas escolas do município (bloco Matrículas) e divida por este número. Pode passar de 100%, com crianças de outros municípios ou fora da idade, e o Censo Demográfico é anterior ao Censo Escolar';
+my $TAXA_ATENDIMENTO = 'Taxa bruta de matrícula: some as matrículas da etapa nas escolas do município (bloco Matrículas) e divida por este número. Não é o indicador oficial da meta 1 do PNE (o percentual das crianças da idade que frequentam creche ou escola, de pesquisa domiciliar), e os números podem diferir. Pode passar de 100%, com crianças de outros municípios ou fora da idade, e o Censo Demográfico é anterior ao Censo Escolar';
 # Proporção sobre qt_doc_bas limitada a 1; vazia sem docentes (#469).
 sub _ate_um ($num) {
   "CASE WHEN d.qt_doc_bas > 0 THEN LEAST(1, ($num)::float8 / d.qt_doc_bas) END";

@@ -28,10 +28,13 @@
     class="bg-white border border-gray-200 rounded-card shadow-card p-6"
     data-testid="atendimento-infantil"
   >
-    <h2 class="text-lg font-semibold text-gray-900">Atendimento da educação infantil</h2>
+    <!-- #549 (QJ-01 da P5): a conta pelo nome, e que não é o indicador oficial -->
+    <h2 class="text-lg font-semibold text-gray-900">Matrículas na educação infantil por criança da idade</h2>
     <p class="text-sm text-gray-600 mt-1">
-      Matrículas sobre as crianças na idade da etapa. A meta do PNE é a creche para metade
-      das crianças de 0 a 3 anos e a pré-escola para todas as de 4 e 5.
+      <strong>Taxa bruta de matrícula:</strong> matrículas na etapa (de qualquer idade e de qualquer município) sobre as
+      crianças da idade que moram no município, comparada à meta 1 do PNE (a creche para metade das crianças de 0 a 3 anos
+      e a pré-escola para todas as de 4 e 5).
+      <span data-testid="aviso-oficial">Não é o indicador oficial da meta 1 do PNE, que mede o percentual das crianças da idade que frequentam creche ou escola, em pesquisa domiciliar: os números podem diferir.</span>
     </p>
 
     <div class="overflow-x-auto mt-4">
@@ -46,7 +49,7 @@
               <th class="py-2 pr-4 font-medium text-right">{atendimento.redeLocal} + conveniadas (teto)</th>
             {/if}
             <th class="py-2 font-medium text-right">Meta do PNE</th>
-            <th class="py-2 pl-4 font-medium text-right">Vagas que faltam para a meta</th>
+            <th class="py-2 pl-4 font-medium text-right">Vagas que faltam (estimativa)</th>
           </tr>
         </thead>
         <tbody>
@@ -72,7 +75,7 @@
     <p class="text-xs text-gray-500 mt-3" data-testid="atendimento-nota">
       Crianças contadas no Censo Demográfico {atendimento.ano ?? ""} (IBGE), matrículas do Censo
       Escolar mais recente. A taxa pode passar de 100%: entram crianças de outros municípios e
-      fora da idade, e a população mudou desde o Censo. As vagas que faltam são a meta sobre essas crianças menos as
+      fora da idade, e a população mudou desde o Censo. As vagas que faltam são uma estimativa por esta conta: a meta sobre essas crianças menos as
       matrículas de todas as redes; "—" quando a meta já foi atingida.
     </p>
   </section>

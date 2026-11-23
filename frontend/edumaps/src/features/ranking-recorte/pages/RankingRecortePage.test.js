@@ -488,12 +488,15 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(consulta.get("indicador")).toBe("atendimento_creche");
     const linhas = tabela.querySelectorAll("tbody tr");
     expect(linhas[0]).toHaveTextContent("Araguainha");
-    expect(linhas[1]).toHaveTextContent(/Cuiabá\s*34\.367\s*44,9%\s*abaixo da meta\s*34,3%\s*38,1%/);
-    expect(linhas[2]).not.toHaveTextContent("abaixo da meta");
+    // #549: "abaixo de 50%" (pela conta bruta), não "abaixo da meta"
+    expect(linhas[1]).toHaveTextContent(/Cuiabá\s*34\.367\s*44,9%\s*abaixo de 50%\s*34,3%\s*38,1%/);
+    expect(linhas[2]).not.toHaveTextContent("abaixo de 50%");
+    expect(screen.getByTestId("aviso-oficial")).toHaveTextContent("Não é o indicador oficial da meta 1 do PNE");
+    expect(screen.getByTestId("nota-atendimento")).toHaveTextContent(/Taxa bruta de matrícula = matrículas na creche \(de qualquer idade e de qualquer município\)/);
     expect(linhas[2]).toHaveTextContent("61,0%"); // uma casa sempre
     expect(screen.getByTestId("abaixo-meta")).toHaveTextContent("2 de 3 municípios");
     // #547: a soma das vagas que faltam no recorte
-    expect(screen.getByTestId("vagas-recorte")).toHaveTextContent("faltam 1.794 vagas no recorte");
+    expect(screen.getByTestId("vagas-recorte")).toHaveTextContent("faltam, por esta conta, cerca de 1.794 vagas no recorte");
     expect(screen.getByTestId("nota-atendimento")).toHaveTextContent(/Censo Demográfico 2022.*pode passar de 100%/);
     expect(screen.queryByLabelText("Ordenar por")).toBeNull();
     expect(screen.queryByLabelText("Mínimo de escolas por rede")).toBeNull();
@@ -527,7 +530,7 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     })));
     abrir("?aba=redes&uf=MT&indicador=atendimento_creche&destaque=5103403");
     const resumo = await screen.findByTestId("destaque-resumo");
-    expect(resumo).toHaveTextContent("2ª de 3 municípios neste recorte, da menor taxa para a maior: 44,9% em todas as redes, abaixo da meta.");
+    expect(resumo).toHaveTextContent("2ª de 3 municípios neste recorte, da menor taxa para a maior: 44,9% em todas as redes, abaixo de 50%.");
     expect(screen.getByTestId("linha-destaque")).toHaveTextContent("Cuiabá");
   });
 
@@ -566,7 +569,7 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(selo).toHaveTextContent("Censo Escolar 2025");
     expect(selo).not.toHaveTextContent("IDEB");
     expect(selo).not.toHaveTextContent("Índices do EduMaps");
-    expect(screen.getByTestId("intro-ranking")).toHaveTextContent("taxa de atendimento");
+    expect(screen.getByTestId("intro-ranking")).toHaveTextContent("taxa bruta de matrícula");
     expect(screen.getByTestId("intro-ranking")).not.toHaveTextContent("INSE");
 
     const sel = screen.getByLabelText("Indicador");
@@ -599,5 +602,6 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(cuiaba[i.recorte]).toBe("UF:MT");
     expect(cuiaba[i.ano_populacao_idade]).toBe("2022");
     expect(cuiaba[i.vagas_faltam_meta]).toBe("1763"); // #547
+    expect(cuiaba[i.metodo]).toMatch(/^taxa bruta de matrícula .*não é o indicador oficial do PNE$/); // #549
   });
 });

@@ -83,6 +83,14 @@ indicador. Não precisa de login.
 - **A conta:** matrículas na etapa ÷ crianças na idade (0 a 3 anos na
   creche, 4 e 5 na pré-escola). A meta do PNE é 50% na creche e 100% na
   pré-escola.
+- **Taxa bruta, não o indicador oficial:** a conta é uma taxa bruta de
+  matrícula. Ela soma as matrículas de crianças de qualquer idade e de
+  qualquer município e divide pelas crianças da idade que moram no
+  município. O indicador oficial da meta 1 do PNE é outro: o percentual das
+  crianças da idade que **frequentam** creche ou escola, medido em pesquisa
+  domiciliar. Os números podem diferir, e por isso a tela diz "abaixo de
+  50%" (pela conta bruta), e não "abaixo da meta". As vagas que faltam são
+  uma estimativa pela mesma conta.
 - **Três taxas:**
   - **todas as redes:** é a conta da meta, e a posição sai dela;
   - **rede do município:** só as escolas da prefeitura;
