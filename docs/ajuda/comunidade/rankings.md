@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/ranking.md
-ultima_revisao: 2026-11-20
+ultima_revisao: 2026-11-23
 ---
 
 # Rankings de redes e de escolas
@@ -17,7 +17,8 @@ ultima_revisao: 2026-11-20
 ## Em 30 segundos
 A página **Rankings** (botão na página inicial, ou `/ranking`) tem duas
 abas: **Redes municipais**, que compara as redes dos municípios de um estado
-pelo IDEB/SAEB, e **Escolas de um município**, que lista as escolas por um
+pelo IDEB/SAEB ou os municípios pela taxa de atendimento da educação
+infantil, e **Escolas de um município**, que lista as escolas por um
 indicador. Não precisa de login.
 
 ## Passo a passo
@@ -56,6 +57,39 @@ indicador. Não precisa de login.
    diferentes podem ser juntados sem misturar as posições.
 4. Da **Comparação de redes** de um município há atalhos para os dois
    rankings.
+5. **Educação infantil (meta 1 do PNE):** no **Indicador** das redes
+   municipais, o grupo **Educação infantil** tem **Creche (0 a 3 anos)** e
+   **Pré-escola (4 e 5 anos)**. Cada linha é um município, e a lista vem
+   da menor taxa para a maior, com quem está mais longe da meta no topo (o
+   botão inverte).
+   - Somem **Ordenar por** e **Mínimo de escolas**, que são só do IDEB.
+     A abrangência, o porte e o destaque continuam.
+   - A nota diz quantos municípios do recorte estão abaixo da meta, e a
+     tabela marca cada um.
+   - O CSV (`ranking-atendimento-creche-MT-2022.csv`) traz as três taxas,
+     as crianças, as matrículas de cada conta, a meta e o recorte em toda
+     linha.
+
+## Taxa de atendimento da educação infantil
+
+- **A conta:** matrículas na etapa ÷ crianças na idade (0 a 3 anos na
+  creche, 4 e 5 na pré-escola). A meta do PNE é 50% na creche e 100% na
+  pré-escola.
+- **Três taxas:**
+  - **todas as redes:** é a conta da meta, e a posição sai dela;
+  - **rede municipal:** só as escolas da prefeitura;
+  - **municipal + conveniadas:** soma as escolas privadas conveniadas com
+    a prefeitura. É um teto, porque o Censo marca a escola conveniada, não
+    a vaga. Só aparece quando o município tem conveniadas.
+- **Anos diferentes:** as crianças são do Censo Demográfico de 2022 (IBGE),
+  e as matrículas, das escolas em funcionamento no Censo Escolar mais
+  recente.
+- **Pode passar de 100%,** com crianças de outros municípios e fora da
+  idade. Em município com poucas crianças, poucas matrículas mudam muito a
+  taxa: veja a coluna **Crianças**.
+- **Exemplo:** em MT, 116 dos 141 municípios estão abaixo dos 50% na
+  creche. Cuiabá tem 44,9% em todas as redes (101ª de 141, da menor para a
+  maior), 34,3% na rede municipal e 38,1% com as conveniadas.
 
 ## Entendendo os números
 - **Escolas de um município, IDEB e SAEB:** só entram as escolas em
@@ -199,7 +233,8 @@ notas de versões diferentes não são comparáveis. O histórico está em
 ## Limitações conhecidas
 - Por ora, só redes **municipais** entram no ranking de redes.
 - Indicadores do Censo (infraestrutura, docentes…) entram no ranking de
-  escolas, não no de redes.
+  escolas, não no de redes. A exceção é a taxa de atendimento da educação
+  infantil, que é do município (todas as redes), e não da rede municipal.
 
 ## Perguntas frequentes
 - **Por que a posição da minha rede mudou?** Desde 20/11/2026 o ranking de

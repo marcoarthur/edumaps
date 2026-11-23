@@ -60,6 +60,10 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   no recorte, o motivo quando a rede fica de fora (outro recorte, outro
   porte, poucas escolas ou sem dado) e a sugestão de comparar com os de
   mesmo porte na região ou na UF dele.
+- Sistema pode **ordenar os municípios pela taxa de atendimento da creche
+  e da pré-escola** (meta 1 do PNE), de quem está mais longe da meta para
+  quem está mais perto, em todas as redes, na rede municipal e na municipal
+  com as conveniadas, dizendo quantos estão abaixo da meta no recorte.
 - Sistema pode **listar as escolas sem infraestrutura básica** de um
   município: quantos dos 4 itens (água, energia, esgoto, banheiro) cada uma
   tem e quais faltam, pelas respostas do Censo Escolar.

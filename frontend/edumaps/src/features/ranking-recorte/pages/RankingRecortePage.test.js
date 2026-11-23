@@ -56,7 +56,7 @@ describe("RankingRecortePage (#430)", () => {
 
 import { http, HttpResponse } from "msw";
 import { server } from "../../../mocks/server.js";
-import { REDES_FIXTURE, ESCOLAS_FIXTURE } from "../mocks/fixtures.js";
+import { REDES_FIXTURE, ESCOLAS_FIXTURE, ATENDIMENTO_FIXTURE } from "../mocks/fixtures.js";
 
 describe("RankingRecortePage — atípico, mínimo e ordem (#437)", () => {
   beforeEach(() => _resetFontes());
@@ -464,5 +464,98 @@ describe("RankingRecortePage — cobertura do IDEB na lista de escolas (#503)", 
     await screen.findByTestId("tabela-escolas");
     expect(screen.queryByTestId("cobertura-escolas")).toBeNull();
     expect(screen.getByTestId("nota-escolas")).toHaveTextContent("2 escolas de Vitória (ES)");
+  });
+});
+
+describe("RankingRecortePage — taxa de atendimento da educação infantil (#535)", () => {
+  let consulta;
+  beforeEach(() => {
+    _resetFontes();
+    consulta = null;
+    server.use(http.get("*/api/ranking/redes", ({ request }) => {
+      consulta = new URL(request.url).searchParams;
+      return HttpResponse.json(consulta.get("indicador").startsWith("atendimento_") ? ATENDIMENTO_FIXTURE : REDES_FIXTURE);
+    }));
+  });
+  afterEach(() => {
+    window.history.replaceState({}, "", "/");
+    vi.restoreAllMocks();
+  });
+
+  it("menor primeiro, as três contas, a meta e sem os controles do IDEB", async () => {
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche");
+    const tabela = await screen.findByTestId("tabela-atendimento");
+    expect(consulta.get("indicador")).toBe("atendimento_creche");
+    const linhas = tabela.querySelectorAll("tbody tr");
+    expect(linhas[0]).toHaveTextContent("Araguainha");
+    expect(linhas[1]).toHaveTextContent(/Cuiabá\s*34\.367\s*44,9%\s*abaixo da meta\s*34,3%\s*38,1%/);
+    expect(linhas[2]).not.toHaveTextContent("abaixo da meta");
+    expect(linhas[2]).toHaveTextContent("61,0%"); // uma casa sempre
+    expect(screen.getByTestId("abaixo-meta")).toHaveTextContent("2 de 3 municípios");
+    expect(screen.getByTestId("nota-atendimento")).toHaveTextContent(/Censo Demográfico 2022.*pode passar de 100%/);
+    expect(screen.queryByLabelText("Ordenar por")).toBeNull();
+    expect(screen.queryByLabelText("Mínimo de escolas por rede")).toBeNull();
+    expect(screen.getByTestId("sentido-redes")).toHaveTextContent("Menor primeiro");
+    expect(window.location.search).toBe("?aba=redes&indicador=atendimento_creche&uf=MT");
+  });
+
+  it("maior primeiro inverte e vai na URL", async () => {
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche");
+    await screen.findByTestId("tabela-atendimento");
+    await fireEvent.click(screen.getByTestId("sentido-redes"));
+    const linhas = screen.getByTestId("tabela-atendimento").querySelectorAll("tbody tr");
+    expect(linhas[0]).toHaveTextContent("Várzea Grande");
+    expect(window.location.search).toContain("sentido=desc");
+  });
+
+  it("trocar do IDEB para a creche volta ao menor primeiro", async () => {
+    abrir("?aba=redes&uf=MT");
+    await screen.findByTestId("tabela-redes");
+    const sel = screen.getByLabelText("Indicador");
+    sel.value = "atendimento_creche";
+    await fireEvent.change(sel);
+    await screen.findByTestId("tabela-atendimento");
+    expect(screen.getByTestId("sentido-redes")).toHaveTextContent("Menor primeiro");
+  });
+
+  it("destaque: posição da menor taxa para a maior", async () => {
+    server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
+      ...ATENDIMENTO_FIXTURE,
+      destaque: { codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", regiao: "CO", porte: "mais_500mil", situacao: "no_ranking", posicao: 2 },
+    })));
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche&destaque=5103403");
+    const resumo = await screen.findByTestId("destaque-resumo");
+    expect(resumo).toHaveTextContent("2ª de 3 municípios neste recorte, da menor taxa para a maior: 44,9% em todas as redes, abaixo da meta.");
+    expect(screen.getByTestId("linha-destaque")).toHaveTextContent("Cuiabá");
+  });
+
+  it("destaque sem a população por idade: o motivo", async () => {
+    server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
+      ...ATENDIMENTO_FIXTURE,
+      destaque: { codigo_ibge: "5100000", municipio: "Sem Censo", uf: "MT", situacao: "sem_populacao_idade", posicao: null },
+    })));
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche&destaque=5100000");
+    expect(await screen.findByTestId("destaque-resumo")).toHaveTextContent("não tem a população por idade do Censo Demográfico");
+  });
+
+  it("CSV com as três contas, a meta e o recorte", async () => {
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche");
+    await screen.findByTestId("tabela-atendimento");
+    let blob = null;
+    let nome = null;
+    URL.createObjectURL = vi.fn((b) => { blob = b; return "blob:teste"; });
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () { nome = this.download; });
+    await fireEvent.click(screen.getByRole("button", { name: "Baixar CSV" }));
+    const texto = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsText(blob); });
+    const l = texto.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).map((x) => x.split(";"));
+    expect(nome).toBe("ranking-atendimento-creche-MT-2022.csv");
+    expect(l[0]).toContain("taxa_todas_as_redes");
+    expect(l[0]).toContain("taxa_municipal_mais_conveniadas_teto");
+    const cuiaba = l.find((x) => x[2] === "Cuiabá");
+    const i = Object.fromEntries(l[0].map((c, k) => [c, k]));
+    expect(cuiaba[i.abaixo_da_meta]).toBe("sim");
+    expect(cuiaba[i.recorte]).toBe("UF:MT");
+    expect(cuiaba[i.ano_populacao_idade]).toBe("2022");
   });
 });

@@ -20,3 +20,27 @@ export const ESCOLAS_FIXTURE = {
     { co_entidade: "32040164", no_entidade: "EMEF EXEMPLO; TESTE", rede: "Municipal", valor: 6.1, posicao: 2, inse: null },
   ],
 };
+
+// #535 (QO-01 da P5): taxa de atendimento da creche por município.
+export const ATENDIMENTO_FIXTURE = {
+  tipo: "atendimento",
+  indicador: { id: "atendimento_creche", label: "Atendimento em creche (0 a 3 anos)", etapa: "creche", idade: "0 a 3 anos" },
+  ano: 2022,
+  ano_censo: 2025,
+  meta: { valor: 0.5, abaixo: 2 },
+  ordem: "menor_primeiro",
+  recorte: { uf: "MT" },
+  portes: [],
+  regioes: [],
+  populacao_fonte: { ano: "2025", descricao: "Estimativa da população do IBGE" },
+  populacao_idade_fonte: { ano: 2022, descricao: "Censo Demográfico do IBGE" },
+  total: 3,
+  redes: [
+    { codigo_ibge: "5101209", municipio: "Araguainha", uf: "MT", posicao: 1, media: 0, taxa: 0, taxa_municipal: 0, teto: null,
+      abaixo_meta: true, criancas: 36, matriculas: 0, matriculas_municipal: 0, matriculas_conveniadas: 0, populacao: 997, porte: "ate_5mil" },
+    { codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", posicao: 2, media: 0.4487, taxa: 0.4487, taxa_municipal: 0.3433, teto: 0.3806,
+      abaixo_meta: true, criancas: 34367, matriculas: 15421, matriculas_municipal: 11797, matriculas_conveniadas: 1284, populacao: 691875, porte: "mais_500mil" },
+    { codigo_ibge: "5108402", municipio: "Várzea Grande", uf: "MT", posicao: 3, media: 0.61, taxa: 0.61, taxa_municipal: 0.4, teto: null,
+      abaixo_meta: false, criancas: 15000, matriculas: 9150, matriculas_municipal: 6000, matriculas_conveniadas: 0, populacao: 300000, porte: "100_500mil" },
+  ],
+};
