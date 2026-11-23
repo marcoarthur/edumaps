@@ -22,6 +22,12 @@
     da menor taxa para a maior.
     <strong data-testid="abaixo-meta">{redes.meta.abaixo.toLocaleString("pt-BR")} de {redes.total.toLocaleString("pt-BR")}
       {redes.total === 1 ? "município" : "municípios"}</strong> neste recorte estão abaixo da meta.
+    {#if redes.meta?.vagas_faltam > 0}
+      <!-- #547: quanto falta, em vagas, somando os municípios abaixo da meta -->
+      <span data-testid="vagas-recorte">Para todos chegarem à meta, faltam
+        <strong>{redes.meta.vagas_faltam.toLocaleString("pt-BR")} vagas</strong> no recorte (a conta de cada município está
+        no CSV e na comparação de redes).</span>
+    {/if}
     A rede do município sozinha e somada às escolas privadas conveniadas com a prefeitura (um teto: o Censo marca a
     escola conveniada, não a vaga) vêm ao lado.
     Crianças do Censo Demográfico {redes.ano} (IBGE), matrículas das escolas em funcionamento no Censo Escolar

@@ -7,6 +7,7 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use POSIX ();
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -63,6 +64,15 @@ subtest 'creche em RO: taxa, posição da menor para a maior e a meta' => sub {
   is $r->{meta}{valor}, 0.5, 'meta da creche: 50%';
   is $r->{meta}{abaixo}, scalar(grep { $_->{taxa} < 0.5 } values %m), 'quantos abaixo da meta';
   ok $m{1100205}{abaixo_meta}, 'marcado abaixo da meta';
+  # #547: vagas que faltam = meta × crianças (para cima) − matrículas; 0 se atingiu
+  for my $c (keys %m) {
+    my $alvo = POSIX::ceil(0.5 * $m{$c}{criancas} - 1e-9);
+    my $esp = $alvo > $m{$c}{matriculas} ? $alvo - $m{$c}{matriculas} : 0;
+    is $m{$c}{vagas_faltam_meta}, $esp, "vagas que faltam em $c (#547)";
+  }
+  is $m{1100205}{vagas_faltam_meta}, 200, 'sem creche: metade das 400 crianças';
+  my $soma = 0; $soma += $_->{vagas_faltam_meta} for values %m;
+  is $r->{meta}{vagas_faltam}, $soma, 'soma do recorte (#547)';
   ok !exists $r->{minimo_escolas} && !exists $r->{atipico}, 'sem mínimo de escolas nem salto atípico';
   is $m{1100015}{rede_local}, 'municipal', 'rede local fora do DF: a municipal (#545)';
 };
@@ -74,6 +84,7 @@ subtest 'pré-escola: pode passar de 100%' => sub {
   cmp_ok abs($m{1100015}{taxa} - $todas / 500), '<', 1e-4, 'taxa da pré-escola';
   is $r->{meta}{valor}, 1, 'meta da pré-escola: 100%';
   ok !$m{1100015}{abaixo_meta}, 'acima de 100% não está abaixo da meta' if $m{1100015}{taxa} >= 1;
+  is $m{1100015}{vagas_faltam_meta}, 0, 'meta atingida: 0 vagas (#547)' if $m{1100015}{taxa} >= 1;
 };
 
 subtest 'teto com as conveniadas (Taquarituba, SP)' => sub {

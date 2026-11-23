@@ -46,6 +46,7 @@
               <th class="py-2 pr-4 font-medium text-right">{atendimento.redeLocal} + conveniadas (teto)</th>
             {/if}
             <th class="py-2 font-medium text-right">Meta do PNE</th>
+            <th class="py-2 pl-4 font-medium text-right">Vagas que faltam para a meta</th>
           </tr>
         </thead>
         <tbody>
@@ -59,6 +60,9 @@
                 <td class="py-2 pr-4 text-right tabular-nums">{l.teto === null ? "—" : formatPercent(l.teto)}</td>
               {/if}
               <td class="py-2 text-right tabular-nums text-gray-500">{l.meta}</td>
+              <td class="py-2 pl-4 text-right tabular-nums font-medium" data-testid="vagas-{l.id}">
+                {l.vagas > 0 ? formatInt(l.vagas) : "—"}
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -68,7 +72,8 @@
     <p class="text-xs text-gray-500 mt-3" data-testid="atendimento-nota">
       Crianças contadas no Censo Demográfico {atendimento.ano ?? ""} (IBGE), matrículas do Censo
       Escolar mais recente. A taxa pode passar de 100%: entram crianças de outros municípios e
-      fora da idade, e a população mudou desde o Censo.
+      fora da idade, e a população mudou desde o Censo. As vagas que faltam são a meta sobre essas crianças menos as
+      matrículas de todas as redes; "—" quando a meta já foi atingida.
     </p>
   </section>
 {/if}

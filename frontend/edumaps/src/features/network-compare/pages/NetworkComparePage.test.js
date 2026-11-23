@@ -121,6 +121,9 @@ describe("NetworkComparePage", () => {
     // 6.000 crianças, 41,8% em todas as redes, 35,1% na municipal, 38,6% com as conveniadas
     expect(creche).toHaveTextContent(/6\.000\s*41,8%\s*35,1%\s*38,6%\s*50%/);
     expect(screen.getByTestId("atendimento-pre")).toHaveTextContent(/109,0%/);
+    // #547: vagas que faltam para a meta
+    expect(screen.getByTestId("vagas-creche")).toHaveTextContent("494");
+    expect(screen.getByTestId("vagas-pre")).toHaveTextContent("—");
     expect(screen.getByTestId("atendimento-nota")).toHaveTextContent(
       /Censo Demográfico 2022 .*pode passar de 100%/,
     );

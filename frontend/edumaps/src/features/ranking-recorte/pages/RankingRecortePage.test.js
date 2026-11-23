@@ -492,6 +492,8 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(linhas[2]).not.toHaveTextContent("abaixo da meta");
     expect(linhas[2]).toHaveTextContent("61,0%"); // uma casa sempre
     expect(screen.getByTestId("abaixo-meta")).toHaveTextContent("2 de 3 municípios");
+    // #547: a soma das vagas que faltam no recorte
+    expect(screen.getByTestId("vagas-recorte")).toHaveTextContent("faltam 1.794 vagas no recorte");
     expect(screen.getByTestId("nota-atendimento")).toHaveTextContent(/Censo Demográfico 2022.*pode passar de 100%/);
     expect(screen.queryByLabelText("Ordenar por")).toBeNull();
     expect(screen.queryByLabelText("Mínimo de escolas por rede")).toBeNull();
@@ -596,5 +598,6 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(cuiaba[i.abaixo_da_meta]).toBe("sim");
     expect(cuiaba[i.recorte]).toBe("UF:MT");
     expect(cuiaba[i.ano_populacao_idade]).toBe("2022");
+    expect(cuiaba[i.vagas_faltam_meta]).toBe("1763"); // #547
   });
 });
