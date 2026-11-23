@@ -47,6 +47,34 @@ subtest '[API Network] summary - contrato' => sub {
   }
 };
 
+# #533: a população por idade do Censo 2022 (SIDRA 9514), para a taxa de
+# atendimento. Só grava se o município não tiver a carga real.
+my $dbh = $t->app->schema->storage->dbh;
+my ($tem_carga) = $dbh->selectrow_array(
+  q{SELECT count(*) FROM clean.ibge_agregados WHERE codigo_ibge = '3550308' AND tabela_id = '9514'});
+unless ($tem_carga) {
+  my %idade = ('Menos de 1 ano' => 100, '1 ano' => 110, '2 anos' => 120, '3 anos' => 130, '4 anos' => 140, '5 anos' => 150);
+  $dbh->do(q{INSERT INTO clean.ibge_agregados (codigo_ibge, ano, tabela_id, variavel, classificacao, valor, unidade)
+             VALUES ('3550308', 2022, '9514', '93', ?, ?, 'Pessoas')}, {}, $_, $idade{$_}) for sort keys %idade;
+}
+END {
+  $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = '3550308' AND tabela_id = '9514'})
+    if $dbh && !$tem_carga;
+}
+
+subtest '[API Network] summary - população na idade da creche e da pré-escola (#533)' => sub {
+  my $json = $t->get_ok($path . '/summary')->status_is(200)->tx->res->json;
+  my $esperado = $dbh->selectrow_hashref(
+    q{SELECT populacao_0_3, populacao_4_5, ano FROM clean.populacao_idade WHERE codigo_ibge = '3550308'});
+  is $esperado->{populacao_0_3}, 460, 'a visão soma 0 a 3 anos' unless $tem_carga;
+  is $esperado->{populacao_4_5}, 290, 'e 4 e 5 anos' unless $tem_carga;
+  for my $rede ($json->@*) {
+    is $rede->{populacao_0_3}, $esperado->{populacao_0_3}, "$rede->{rede}: 0 a 3 anos";
+    is $rede->{populacao_4_5}, $esperado->{populacao_4_5}, "$rede->{rede}: 4 e 5 anos";
+    is $rede->{ano_populacao_idade}, 2022, "$rede->{rede}: ano do Censo Demográfico";
+  }
+};
+
 subtest '[API Network] summary - creche e pré-escola separadas (#516)' => sub {
   my $json = $t->get_ok($path . '/summary')->status_is(200)->tx->res->json;
   for my $rede ($json->@*) {

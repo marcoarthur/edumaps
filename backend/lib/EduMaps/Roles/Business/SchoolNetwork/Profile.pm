@@ -69,7 +69,33 @@ sub summary($self, $params = {}) {
   ->columns($columns)
   ->as_hash->get_all;
 
+  # #533 (QP-01 da P2): a população na idade da creche e da pré-escola (Censo
+  # Demográfico), a mesma em todas as redes do município, para a taxa de
+  # atendimento. Sem a carga, os campos vêm nulos.
+  my $pop = $self->populacao_idade($params->{codigo_ibge});
+  $_ = { %$_, %$pop } for @$results;
+
   return $results->to_array;
+}
+
+=head2 populacao_idade($codigo_ibge)
+
+População de 0 a 3 e de 4 e 5 anos do município no Censo Demográfico mais
+recente carregado (C<clean.populacao_idade>), com o ano. Campos nulos sem
+a carga.
+
+=cut
+
+sub populacao_idade($self, $codigo_ibge) {
+  my $row = eval {
+    $self->schema->storage->dbh->selectrow_hashref(q{
+      SELECT populacao_0_3, populacao_4_5, ano AS ano_populacao_idade
+        FROM clean.populacao_idade
+       WHERE codigo_ibge = ?
+       ORDER BY ano DESC LIMIT 1
+    }, undef, "$codigo_ibge");
+  };
+  return { populacao_0_3 => undef, populacao_4_5 => undef, ano_populacao_idade => undef, %{ $row // {} } };
 }
 
 =head2 schools($params)

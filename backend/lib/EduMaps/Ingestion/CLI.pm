@@ -211,6 +211,7 @@ Args por job:
   SICONFI  cod_ibge | uf=SP,RJ | todos; exercicio, nr_periodo, dca,
            max_municipios, dt_snapshot
   IBGE     anos (sintaxe do SIDRA: "last 10", "2019,2020", "2010-2021")
+  IBGEPopulacaoIdade  csv (relê o bruto preservado, sem baixar de novo)
 
 Os downloads ficam preservados em <raw_dir>/<fonte>/<AAAA-MM-DD>/
 (raw_dir: --config raw_dir, ou EDUMAPS_RAW_DIR, ou /srv/edumaps/raw).

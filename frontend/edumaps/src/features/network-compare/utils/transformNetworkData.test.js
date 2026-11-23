@@ -5,6 +5,8 @@ import {
   NETWORK_SUMMARY_FIXTURE,
 } from "../mocks/fixtures.js";
 import {
+  buildAtendimentoInfantil,
+  formatPercent,
   networkCompareUrl,
   networkProfileUrl,
   buildIdedTimeline,
@@ -157,5 +159,37 @@ describe("linha do IDEB: escolas por ponto (#479)", () => {
     expect(idebTooltipText(rows[0])).toBe("Estadual · Ensino Médio, 2023: 3,72 (69 escolas com IDEB)");
     expect(idebTooltipText({ ...rows[0], escolas: 1 })).toContain("(1 escola com IDEB)");
     expect(idebTooltipText({ ...rows[0], escolas: null })).toBe("Estadual · Ensino Médio, 2023: 3,72");
+  });
+});
+
+describe("buildAtendimentoInfantil (#533)", () => {
+  it("taxa de todas as redes, da municipal e o teto com as conveniadas", () => {
+    const a = buildAtendimentoInfantil(NETWORK_SUMMARY_FIXTURE);
+    expect(a.ano).toBe(2022);
+    // creche: 2106 municipal + 400 privada = 2506 de 6000 crianças
+    expect(a.creche.populacao).toBe(6000);
+    expect(a.creche.todas).toBeCloseTo(2506 / 6000);
+    expect(a.creche.municipal).toBeCloseTo(2106 / 6000);
+    expect(a.creche.teto).toBeCloseTo((2106 + 210) / 6000);
+    expect(a.creche.meta).toBe(0.5);
+    // pré-escola: passa de 100% com todas as redes
+    expect(a.pre.todas).toBeCloseTo(3488 / 3200);
+    expect(a.pre.teto).toBeCloseTo((2900 + 45) / 3200);
+    expect(formatPercent(a.pre.todas)).toBe("109,0%");
+  });
+
+  it("sem conveniadas, sem teto", () => {
+    const nets = NETWORK_SUMMARY_FIXTURE.map((n) => ({
+      ...n, matriculas_creche_conveniada: 0, matriculas_pre_conveniada: 0,
+    }));
+    const a = buildAtendimentoInfantil(nets);
+    expect(a.creche.teto).toBeNull();
+    expect(a.pre.teto).toBeNull();
+  });
+
+  it("sem a população carregada, null", () => {
+    const nets = NETWORK_SUMMARY_FIXTURE.map((n) => ({ ...n, populacao_0_3: null, populacao_4_5: null }));
+    expect(buildAtendimentoInfantil(nets)).toBeNull();
+    expect(buildAtendimentoInfantil([])).toBeNull();
   });
 });

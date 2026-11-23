@@ -7,6 +7,10 @@ export const FIXTURE_CODIGO_IBGE = 3551702;
 export const NETWORK_SUMMARY_FIXTURE = [
   {
     co_municipio: "3551702",
+    // #533: população na idade da creche e da pré-escola (Censo 2022)
+    populacao_0_3: 6000,
+    populacao_4_5: 3200,
+    ano_populacao_idade: 2022,
     no_municipio: "Sertãozinho",
     sg_uf: "SP",
     no_regiao: "Sudeste",
@@ -34,6 +38,10 @@ export const NETWORK_SUMMARY_FIXTURE = [
   },
   {
     co_municipio: "3551702",
+    // #533: população na idade da creche e da pré-escola (Censo 2022)
+    populacao_0_3: 6000,
+    populacao_4_5: 3200,
+    ano_populacao_idade: 2022,
     no_municipio: "Sertãozinho",
     sg_uf: "SP",
     no_regiao: "Sudeste",
@@ -61,6 +69,10 @@ export const NETWORK_SUMMARY_FIXTURE = [
   },
   {
     co_municipio: "3551702",
+    // #533: população na idade da creche e da pré-escola (Censo 2022)
+    populacao_0_3: 6000,
+    populacao_4_5: 3200,
+    ano_populacao_idade: 2022,
     no_municipio: "Sertãozinho",
     sg_uf: "SP",
     no_regiao: "Sudeste",
@@ -88,6 +100,10 @@ export const NETWORK_SUMMARY_FIXTURE = [
   },
   {
     co_municipio: "3551702",
+    // #533: população na idade da creche e da pré-escola (Censo 2022)
+    populacao_0_3: 6000,
+    populacao_4_5: 3200,
+    ano_populacao_idade: 2022,
     no_municipio: "Sertãozinho",
     sg_uf: "SP",
     no_regiao: "Sudeste",

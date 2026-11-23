@@ -221,6 +221,8 @@ sub indices_versao ($class) { $EduMaps::Model::Rank::School::INDICES_VERSAO }
 # #531: cobertura das coordenadas (Censo 2025, escolas em funcionamento).
 my $SEM_COORD = 'Vazia quando o Censo não traz, o que é bem mais comum nas escolas privadas (cerca de 1 em cada 3 no Brasil) que nas municipais (16%) e estaduais (12%). Sem a coordenada, use o cep, o bairro e o endereco';
 my $DENOM = 'docentes da escola (qt_docentes)';
+# #533: a conta da taxa de atendimento da educação infantil (meta 1 do PNE).
+my $TAXA_ATENDIMENTO = 'Taxa de atendimento: some as matrículas da etapa nas escolas do município (bloco Matrículas) e divida por este número. Pode passar de 100%, com crianças de outros municípios ou fora da idade, e o Censo Demográfico é anterior ao Censo Escolar';
 # Proporção sobre qt_doc_bas limitada a 1; vazia sem docentes (#469).
 sub _ate_um ($num) {
   "CASE WHEN d.qt_doc_bas > 0 THEN LEAST(1, ($num)::float8 / d.qt_doc_bas) END";
@@ -432,10 +434,16 @@ sub _blocos {
           "Meses do ano com folha da escola no SIOPE (de 1 a 12). $SIOPE_VAZIO", 1],
       ] },
     { id => 'porte', label => 'Porte do município', fonte => 'ibge_populacao',
-      descricao => 'População estimada do município e a classe de tamanho do IBGE.',
+      descricao => 'População estimada do município, a classe de tamanho do IBGE e as crianças na idade da creche e da pré-escola (Censo Demográfico).',
       colunas => [
         ['populacao_municipio', 'pm.populacao_estimada', 'População estimada do município', 1],
         ['porte_municipio', EduMaps::Porte->case_sql('pm.populacao_estimada'), 'Classe de tamanho da população do IBGE (ex.: 10_20mil = de 10 mil a 20 mil habitantes)', 0],
+        # #533 (QP-01 da P2): a idade da creche e da pré-escola, do Censo
+        # Demográfico (outra fonte e outro ano que a estimativa acima).
+        ['populacao_0_3', 'pi.populacao_0_3',
+          "Crianças de 0 a 3 anos no município, a idade da creche, contadas no Censo Demográfico (ano em ano_populacao_idade). $TAXA_ATENDIMENTO", 1, 'ibge_populacao_idade'],
+        ['populacao_4_5', 'pi.populacao_4_5',
+          "Crianças de 4 e 5 anos no município, a idade da pré-escola, contadas no Censo Demográfico (ano em ano_populacao_idade). $TAXA_ATENDIMENTO", 1, 'ibge_populacao_idade'],
       ] },
   ];
 }
@@ -460,11 +468,13 @@ sub anos ($class, $dbh) {
   my ($inse)  = $dbh->selectrow_array('SELECT max(nu_ano_saeb) FROM clean.inse');
   my $ideb = $dbh->selectcol_arrayref('SELECT DISTINCT ano FROM clean.ideb_notas_escolas ORDER BY ano DESC');
   my $pop = eval { EduMaps::Fontes->versao($dbh, 'ibge_populacao')->{ibge_populacao}{periodo} };
+  my $pop_idade = eval { EduMaps::Fontes->versao($dbh, 'ibge_populacao_idade')->{ibge_populacao_idade}{periodo} };
   return {
     censo => defined $censo ? 0 + $censo : undef,
     inse  => defined $inse ? 0 + $inse : undef,
     ideb  => [ map { 0 + $_ } @$ideb ],
     populacao => $pop,
+    populacao_idade => $pop_idade,
     indices => $class->indices_versao,
     %{ $class->anos_siope($dbh) },
   };
@@ -620,6 +630,8 @@ sub colunas ($class, $blocos, $anos, $ano_ideb, $ano_siope = undef) {
   push @versao, ['ano_ideb', $ano_ideb, $class->descricao_ano_ideb($anos, $ano_ideb), 'ideb'] if $quer{desempenho};
   push @versao, ['ano_inse', $anos->{inse}, $class->descricao_ano_inse($anos, $ano_ideb, $quer{desempenho}), 'inse'] if $quer{inse};
   push @versao, ['ano_populacao', $anos->{populacao}, 'Ano da estimativa de população', 'ibge_populacao'] if $quer{porte};
+  push @versao, ['ano_populacao_idade', $anos->{populacao_idade},
+    'Ano do Censo Demográfico da população por idade (populacao_0_3 e populacao_4_5), anterior ao das matrículas', 'ibge_populacao_idade'] if $quer{porte};
   push @versao, ['versao_indice', $anos->{indices}, 'Versão da fórmula dos índices do EduMaps (o histórico está em Fontes e metodologia)', 'indices_edumaps'] if $quer{indices};
   push @versao, ['ano_siope', $ano_siope, 'Ano (exercício) da folha do SIOPE', 'siope'] if $quer{remuneracao};
   return (\@b, \@versao);
@@ -668,7 +680,9 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = und
     push @jb, $ano_siope // -1;
   }
   if ($tem{porte}) {
-    $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text';
+    $joins .= ' LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = e.co_municipio::text'
+            . ' LEFT JOIN clean.populacao_idade pi ON pi.codigo_ibge = e.co_municipio::text'
+            . ' AND pi.ano = (SELECT max(ano) FROM clean.populacao_idade)';
   }
 
   my $sql = 'SELECT ' . join(', ', @sel) . " FROM clean.censo_escolas e $joins WHERE $where"
@@ -694,12 +708,16 @@ sub dicionario ($class, $dbh, $blocos, $ano_ideb = undef, $ano_siope = undef) {
   my ($bl, $versao) = $class->colunas($blocos, $anos, $ano_ideb, $ano_siope);
   my %fonte = map { $_->{id} => $_ } @EduMaps::Fontes::CATALOGO;
   my %ano = (censo => $anos->{censo}, ideb => $ano_ideb, inse => $anos->{inse}, ibge_populacao => $anos->{populacao},
+             ibge_populacao_idade => $anos->{populacao_idade},
              indices_edumaps => $anos->{censo}, siope => $ano_siope);
   my @linhas;
   for my $b (@$bl) {
-    my $f = $fonte{ $b->{fonte} };
-    push @linhas, [ $_->[0], $_->[2], $b->{label}, _fonte_nome($f), $ano{ $b->{fonte} }, $f->{url} ]
-      for @{ $b->{colunas} };
+    for my $c (@{ $b->{colunas} }) {
+      # Coluna de outra fonte que a do bloco (#533: a população por idade no Porte).
+      my $id = $c->[4] // $b->{fonte};
+      my $f = $fonte{$id};
+      push @linhas, [ $c->[0], $c->[2], $b->{label}, _fonte_nome($f), $ano{$id}, $f->{url} ];
+    }
   }
   for my $v (@$versao) {
     my $f = $fonte{ $v->[3] };

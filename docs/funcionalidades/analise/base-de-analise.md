@@ -28,9 +28,12 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   de uma rede, só com as escolas em funcionamento.
 - Sistema pode **juntar blocos de indicadores** à escolha: infraestrutura,
   docência, IDEB e SAEB por etapa (anos iniciais, finais e ensino médio, na
-  edição escolhida), nível socioeconômico (INSE) e porte do município.
+  edição escolhida), nível socioeconômico (INSE) e porte do município, com
+  as crianças na idade da creche e da pré-escola (Censo Demográfico), para
+  a taxa de atendimento.
 - Sistema pode **dizer a versão dos dados** em cada linha e no nome do
-  arquivo (ano do Censo, edição do IDEB e do INSE, ano da população).
+  arquivo (ano do Censo, edição do IDEB e do INSE, ano da população e do
+  Censo Demográfico).
 - Sistema pode **entregar as matrículas de cada escola** na educação
   básica, por etapa (creche e pré-escola separadas), na educação especial e
   em tempo integral, para medir e comparar a oferta entre municípios.
