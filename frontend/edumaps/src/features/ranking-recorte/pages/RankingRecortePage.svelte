@@ -274,7 +274,7 @@
       {#if aba === "redes" && atendimento}
         <!-- #539: na taxa de atendimento cada linha é um município (todas as redes), sem INSE. -->
         Compare os municípios de um estado, de uma região ou do Brasil pela taxa bruta de matrícula da creche ou da pré-escola,
-        a meta 1 do PNE: quem está mais longe da meta aparece primeiro.
+        comparada à meta 1 do PNE: a menor taxa aparece primeiro.
       {:else}
         Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
         O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
