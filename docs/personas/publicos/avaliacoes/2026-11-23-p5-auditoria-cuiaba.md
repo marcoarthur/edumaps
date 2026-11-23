@@ -131,6 +131,7 @@ batam com os do portal (QO-02).
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer. A P5 não orienta
+Issues **#535** (QO-01) e **#536** (QO-02), abertas com a aprovação do
+developer. A P5 não orienta
 produto até a decisão de posicionamento, mas o QO-01 também serve à P2 e à
 P6. O QO-02 é um defeito de dado e vale para qualquer público.

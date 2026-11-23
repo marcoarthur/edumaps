@@ -101,7 +101,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Auditoria de Cuiabá (2026-11-23, **não adotaria**, registro; mais
   perto): QO-01 (taxa de atendimento só município a município, fora do
   ranking de redes) e QO-02 (nomes acentuados quebrados na folha de
-  Cuiabá) aguardam a aprovação do developer para virar issue. Sem
+  Cuiabá) → #535 e #536. Sem
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 
 ## Entradas
