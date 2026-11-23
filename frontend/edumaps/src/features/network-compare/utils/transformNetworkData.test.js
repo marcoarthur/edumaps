@@ -176,6 +176,9 @@ describe("buildAtendimentoInfantil (#533)", () => {
     expect(a.pre.todas).toBeCloseTo(3488 / 3200);
     expect(a.pre.teto).toBeCloseTo((2900 + 45) / 3200);
     expect(formatPercent(a.pre.todas)).toBe("109,0%");
+    // #547: faltam 3.000 − 2.506 = 494 vagas de creche; a pré-escola passou da meta
+    expect(a.creche.vagas).toBe(494);
+    expect(a.pre.vagas).toBe(0);
   });
 
   it("sem conveniadas, sem teto", () => {

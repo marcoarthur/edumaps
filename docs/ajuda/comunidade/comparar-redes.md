@@ -61,6 +61,12 @@ Brasil.
     conveniadas com a prefeitura, que é um teto (o Censo marca a escola
     conveniada, não a vaga). Em Franca (SP), a rede municipal não tem
     creche, e com as conveniadas o teto fica em 48,9%.
+  - **Vagas que faltam para a meta:** a meta sobre as crianças (50% na
+    creche, 100% na pré-escola) menos as matrículas de todas as redes,
+    arredondado para cima. É o número que vai para o plano municipal e o
+    orçamento. Em Vitória de Santo Antão (PE), faltam 2.026 vagas de creche
+    e 494 de pré-escola. "—" quando a meta já foi atingida. A conta usa as
+    crianças do Censo 2022, e a população mudou desde então.
   - **Distrito Federal:** sem prefeitura, a conta usa a rede distrital (a
     "estadual" do Censo) e as conveniadas com o governo distrital. A
     coluna se chama "Rede do DF (distrital)".

@@ -225,7 +225,7 @@ export function buildAtendimentoInfantil(networks) {
   const privada = porRede("privada");
   const soma = (campo) => networks.reduce((acc, n) => acc + toNumber(n[campo]), 0);
 
-  const etapa = (campo, populacao) => {
+  const etapa = (campo, populacao, meta) => {
     const todas = soma(`matriculas_${campo}`);
     const mun = toNumber(municipal?.[`matriculas_${campo}`]);
     const conv = toNumber(privada?.[`matriculas_${campo}_conveniada`]);
@@ -234,14 +234,17 @@ export function buildAtendimentoInfantil(networks) {
       todas: todas / populacao,
       municipal: mun / populacao,
       teto: conv > 0 ? (mun + conv) / populacao : null,
+      // #547: vagas que faltam para a meta (meta × crianças, para cima,
+      // menos as matrículas de todas as redes); 0 quando atingida
+      vagas: Math.max(0, Math.ceil(meta * populacao - 1e-9) - todas),
     };
   };
 
   return {
     ano: first.ano_populacao_idade ?? null,
     redeLocal: df ? "Rede do DF (distrital)" : "Rede municipal",
-    creche: { ...etapa("creche", pop.creche), meta: 0.5 },
-    pre: { ...etapa("pre", pop.pre), meta: 1 },
+    creche: { ...etapa("creche", pop.creche, 0.5), meta: 0.5 },
+    pre: { ...etapa("pre", pop.pre, 1), meta: 1 },
   };
 }
 

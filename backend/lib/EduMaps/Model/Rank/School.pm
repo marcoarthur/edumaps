@@ -1,6 +1,7 @@
 package EduMaps::Model::Rank::School;
 use Mojo::Base 'EduMaps::Model::Base', -signatures;
 use Carp qw(croak);
+use POSIX ();
 use EduMaps::Fontes;
 use EduMaps::Porte;
 use EduMaps::Regiao;
@@ -930,6 +931,16 @@ sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
   my $num = sub ($v) { defined $v ? 0 + $v : undef };
   my $taxa = sub ($v) { defined $v ? 0 + sprintf('%.4f', $v) : undef };
   my $abaixo = grep { $_->{taxa} < $def->{meta} } @$rows;
+  # #547 (QK-01 da P2): as vagas que faltam para a meta, em matrículas
+  # (meta × crianças, para cima, menos as matrículas de todas as redes);
+  # 0 quando a meta foi atingida.
+  my $faltam = sub ($r) {
+    my $alvo = POSIX::ceil($def->{meta} * $r->{criancas} - 1e-9);
+    my $f = $alvo - $r->{matriculas};
+    return $f > 0 ? 0 + $f : 0;
+  };
+  my $vagas_recorte = 0;
+  $vagas_recorte += $faltam->($_) for @$rows;
 
   my $destaque = defined $opts->{destaque}
     ? $self->_destaque_atendimento($opts->{destaque}, $rows, {
@@ -942,7 +953,7 @@ sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
     (defined $destaque ? (destaque => $destaque) : ()),
     ano => 0 + $ano,
     ano_censo => defined $ano_censo ? 0 + $ano_censo : undef,
-    meta => { valor => $def->{meta}, abaixo => 0 + $abaixo },
+    meta => { valor => $def->{meta}, abaixo => 0 + $abaixo, vagas_faltam => $vagas_recorte },
     ordem => 'menor_primeiro',
     recorte => {
       ($uf ? (uf => $uf) : $regiao ? (regiao => { id => $regiao, nome => EduMaps::Regiao->nome($regiao) }) : (nacional => \1)),
@@ -963,6 +974,7 @@ sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
       taxa_municipal => $taxa->($_->{taxa_municipal}),
       teto        => $taxa->($_->{teto}),
       abaixo_meta => $_->{taxa} < $def->{meta} ? \1 : \0,
+      vagas_faltam_meta => $faltam->($_),
       criancas    => 0 + $_->{criancas},
       matriculas  => 0 + $_->{matriculas},
       matriculas_municipal => 0 + $_->{matriculas_municipal},

@@ -65,7 +65,9 @@ indicador. Não precisa de login.
    - Somem **Ordenar por** e **Mínimo de escolas**, que são só do IDEB.
      A abrangência, o porte e o destaque continuam.
    - A nota diz quantos municípios do recorte estão abaixo da meta, e a
-     tabela marca cada um.
+     tabela marca cada um. Diz também quantas vagas faltam, somando os
+     municípios abaixo da meta (o CSV traz a conta de cada um em
+     `vagas_faltam_meta`).
    - O CSV (`ranking-atendimento-creche-MT-2022.csv`) traz as três taxas,
      as crianças, as matrículas de cada conta, a meta e o recorte em toda
      linha. A coluna `rede_local` diz qual é a rede do município
