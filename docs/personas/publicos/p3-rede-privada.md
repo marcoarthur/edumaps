@@ -94,8 +94,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Análises públicas (2026-11-14): reavaliar quando houver leitura de mercado
   local (AN-10). A etapa nas escolas semelhantes (AN-03) foi entregue no
   PR #425.
+- Concorrentes locais (2026-11-23, **não adotaria**, mais perto): QR-01 (23%
+  das privadas sem coordenada e a base sem o CEP e o bairro), aguardando a
+  decisão sobre a issue; AN-10 (#429) segue aberto.
 
 ## Entradas
+
+### 2026-11-23 — Base de análise e perfil (segunda rodada, concorrentes locais)
+
+**Material:** base de análise de Franca e de SP, perfil da escola 35004827,
+ranking de escolas e comparação de redes. Consolidação em
+[`avaliacoes/2026-11-23-p3-concorrentes-locais.md`](avaliacoes/2026-11-23-p3-concorrentes-locais.md).
+
+**O que tentou:** "quais concorrentes estão perto e como se comparam?" e
+"quantas crianças há em volta da unidade?".
+
+**O que funciona para ele:** a base pública lista os concorrentes com
+etapas, matrículas, conveniadas e índices (sem zero imposto à privada); o
+perfil da privada é um benchmark entre privadas.
+
+**Barreiras:**
+- AN-10 (bloqueia, #429): a demanda do entorno continua só no painel do
+  gestor; a distância aos concorrentes exige planilha.
+- QR-01 (atrapalha): 23,3% das privadas de SP sem coordenada (16 de 136 em
+  Franca, entre elas as duas bilíngues); o Censo tem CEP e bairro de
+  todas, e a base não os entrega.
+
+**Veredito:** **não adotaria** (mantido), mais perto. A lista de
+concorrentes já sai da base; falta a demanda.
 
 ### 2026-11-14 — Análises públicas (primeira avaliação)
 
