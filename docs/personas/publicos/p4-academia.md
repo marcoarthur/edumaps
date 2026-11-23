@@ -209,8 +209,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   etapas, sem os docentes por etapa na base) → #529, entregue (#530).
   Trigésima sétima rodada (2026-11-23, **adotaria**, com ressalva no DF):
   QL-01 (no Distrito Federal a rede distrital e as conveniadas com o
-  governo distrital somem da taxa da rede e do teto) aguarda a aprovação
-  do developer para virar issue.
+  governo distrital somem da taxa da rede e do teto) → #545.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

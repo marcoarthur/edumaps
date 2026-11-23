@@ -98,4 +98,4 @@ citável. Ressalva: no DF, a conta da rede local e do teto não vale
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer.
+Issue **#545** (QL-01), aberta com a aprovação do developer.
