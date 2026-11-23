@@ -96,10 +96,43 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   fiscal, avaliar o relatório do plano como **peça recebida** na prestação de
   contas.
 - Análises públicas (2026-11-14): reavaliar quando a folha cobrir mais
-  municípios (AN-12; a cobertura já aparece na tela, PR #426) e a fonte e
-  a data estiverem na tela (AN-08).
+  municípios (AN-12; a cobertura já aparece na tela, PR #426). A fonte e a
+  data já estão na tela (AN-08, #428).
+- Auditoria de Cuiabá (2026-11-23, **não adotaria**, registro; mais
+  perto): QO-01 (taxa de atendimento só município a município, fora do
+  ranking de redes) e QO-02 (nomes acentuados quebrados na folha de
+  Cuiabá) aguardam a aprovação do developer para virar issue. Sem
+  comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 
 ## Entradas
+
+### 2026-11-23 — Auditoria da educação de Cuiabá (segunda avaliação, só registro)
+
+**Material:** `/fontes`, a comparação de redes de Cuiabá (MT) com a taxa
+de atendimento, o ranking de redes de MT e o nacional dos municípios com
+mais de 500 mil habitantes, a base da rede municipal com a folha de 2025 e
+a folha de uma escola. Consolidação em
+[`avaliacoes/2026-11-23-p5-auditoria-cuiaba.md`](avaliacoes/2026-11-23-p5-auditoria-cuiaba.md).
+
+**O que tentou:** as três perguntas do perfil e a meta 1 do PNE, para a
+fiscalização do TCE-MT.
+
+**O que funciona para ele:** a fonte e a data da carga em `/fontes`; a
+posição de Cuiabá entre as redes de MT (25ª de 53) e entre os municípios
+com mais de 500 mil habitantes (20ª de 47); a taxa de atendimento de
+Cuiabá (creche 44,9% em todas as redes, pré-escola 92,8%); a folha por
+escola cruzada com matrícula e INSE.
+
+**Barreiras:**
+- QO-01 (atrapalha): a taxa de atendimento não está no ranking de redes.
+  Os 141 municípios de MT só saem baixando a base e rodando R (116 abaixo
+  dos 50% na creche).
+- QO-02 (atrapalha): os nomes com acento da folha de Cuiabá estão
+  quebrados (~440 nomes; o "Ç" perdido), e o nome não bate com o do
+  portal da transparência.
+- AN-12 (atrapalha, aberto): sem comparação de gasto entre municípios.
+
+**Veredito:** **não adotaria** (registro; mantido), mais perto.
 
 ### 2026-11-14 — Análises públicas (primeira avaliação, só registro)
 
