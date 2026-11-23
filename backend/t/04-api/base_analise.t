@@ -53,7 +53,8 @@ $esc->execute($ANO, $FECHADA, 'Escola Fechada',     3, 1, $MUN, 'Cidade Teste', 
 
 $dbh->do('INSERT INTO clean.censo_docentes (nu_ano_censo, co_entidade, qt_doc_bas,
    qt_doc_bas_esco_sup_grad_licen, qt_doc_bas_esco_sup_pos_mestra, qt_doc_bas_esco_sup_pos_douto,
-   qt_doc_bas_vinculo_concur, qt_doc_bas_espec_nenhum) VALUES (?, ?, 20, 15, 2, 0, 10, 5)', {}, $ANO, $A);
+   qt_doc_bas_vinculo_concur, qt_doc_bas_espec_nenhum, qt_doc_fund_ai, qt_doc_fund_af)
+   VALUES (?, ?, 20, 15, 2, 0, 10, 5, 12, 11)', {}, $ANO, $A);
 
 my $ideb = $dbh->prepare(q{INSERT INTO clean.ideb_notas_escolas
   (id_escola, sg_uf, co_municipio, no_municipio, no_escola, rede, ano, etapa, ideb_observado, nota_matematica)
@@ -119,6 +120,12 @@ subtest 'todos os blocos' => sub {
   is $b[$i{latitude}], '', 'sem coordenada: vazio';
   is $a[$i{qt_docentes}], '20', 'docentes';
   is $a[$i{prop_licenciatura}], '0,75', 'proporção com vírgula';
+  # #529 (QS-01): docentes por etapa no fim do bloco; quem dá aula em duas
+  # etapas conta nas duas (12 + 11 > 20); sem a etapa, 0; sem docentes, vazio
+  is [ @cab[ $i{prop_formacao_continuada} + 1 .. $i{prop_formacao_continuada} + 4 ] ],
+    [qw(qt_docentes_infantil qt_docentes_ai qt_docentes_af qt_docentes_em)], 'docentes por etapa no fim do bloco (#529)';
+  is [ @a[ @i{qw(qt_docentes_infantil qt_docentes_ai qt_docentes_af qt_docentes_em)} ] ], ['0', '12', '11', '0'], 'Alfa: por etapa';
+  is $b[$i{qt_docentes_ai}], '', 'sem docentes: vazio';
   is $a[$i{ideb_ai}], '6,1', 'IDEB dos anos iniciais na edição pedida';
   is $a[$i{ideb_af}], '4,9', 'IDEB dos anos finais';
   is $a[$i{nota_matematica_ai}], '225,5', 'nota por etapa';
@@ -432,6 +439,7 @@ subtest 'dicionário: ressalvas (#444)' => sub {
   like $d{prop_pos_graduacao}[1], qr/limitada a 1.*Parte de 30%/, 'pós: limite e parte';
   like $d{prop_formacao_continuada}[1], qr/Parte de 20%/, 'formação continuada: parte';
   like $d{prop_efetivos}[1], qr/Parte de 20%/, 'efetivos: parte';
+  like $d{qt_docentes_ai}[1], qr/anos iniciais.*conta em cada uma.*não só os desta etapa/, 'por etapa: dupla contagem e proporções da escola (#529)';
   like $d{prop_efetivos}[1], qr/Vazia nas escolas privadas: o Censo só pergunta o vínculo do docente na escola pública/,
     'efetivos: vazia nas privadas (#524)';
   # #522 (QU-01, QU-02): a coluna de qt_doc_bas_espec_nenhum é a formação

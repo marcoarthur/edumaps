@@ -250,6 +250,16 @@ my @DOCENCIA = (
        qw(cre pre_escola anos_iniciais anos_finais ens_medio eja ed_especial bil_surdos ed_indigena campo
           ambiental dir_humanos div_sexual dir_adolesc afro gestao educ_tic outros)),
    "Formações continuadas dos docentes (soma dos cursos de formação continuada de no mínimo 80 horas do Censo) ÷ $DENOM, limitada a 1. Conta cursos, não pessoas: quem fez dois cursos conta duas vezes. Para a proporção de docentes com ao menos um curso, use 1 − prop_sem_formacao_continuada. Parte de 20% do índice de capacitação docente"],
+  # #529 (QS-01): docentes por etapa, para o modelo por etapa separar ou
+  # ponderar as escolas pela parte do quadro na etapa. No fim do bloco, para
+  # não mudar a posição das colunas antigas. Vazias sem docentes.
+  (map { my ($col, $censo, $etapa) = @$_;
+         [$col => "CASE WHEN d.qt_doc_bas > 0 THEN COALESCE(d.$censo, 0) END",
+          "Docentes que dão aula $etapa na escola. Quem dá aula em mais de uma etapa conta em cada uma, então a soma das etapas pode passar de qt_docentes. As proporções do bloco são sobre todos os docentes da escola, não só os desta etapa"] }
+     [qt_docentes_infantil => 'qt_doc_inf',     'na educação infantil (creche e pré-escola)'],
+     [qt_docentes_ai       => 'qt_doc_fund_ai', 'nos anos iniciais do fundamental'],
+     [qt_docentes_af       => 'qt_doc_fund_af', 'nos anos finais do fundamental'],
+     [qt_docentes_em       => 'qt_doc_med',     'no ensino médio']),
 );
 
 # #516 (QX-01): matrículas da escola (mm = censo_matriculas do mesmo Censo).
@@ -364,7 +374,7 @@ sub _blocos {
       descricao => 'Água, energia, esgoto (e se a escola não tem água, energia ou esgoto), lixo, banheiro, biblioteca, laboratórios, quadra, internet e rampas.',
       colunas => [ map { [$_->[0], "e.$_->[0]", $_->[1], 1] } @INFRA ] },
     { id => 'docencia', label => 'Docência', fonte => 'censo',
-      descricao => 'Número de docentes e proporções de licenciatura, mestrado, doutorado, efetivos, sem formação continuada, ensino superior, pós-graduação e formação continuada, sobre o total de docentes da escola (as quatro partes do índice de capacitação docente). Quem dá aula em mais de uma escola conta em cada uma.',
+      descricao => 'Número de docentes, proporções de licenciatura, mestrado, doutorado, efetivos, sem formação continuada, ensino superior, pós-graduação e formação continuada, sobre o total de docentes da escola (as quatro partes do índice de capacitação docente), e os docentes por etapa. As proporções são da escola inteira, não de uma etapa: num modelo por etapa, use os docentes por etapa para separar ou ponderar as escolas. Quem dá aula em mais de uma escola conta em cada uma.',
       colunas => [ map { [$_->[0], $_->[1], $_->[2], 1] } @DOCENCIA ] },
     { id => 'desempenho', label => 'IDEB e SAEB por etapa', fonte => 'ideb', usa_ano_ideb => 1,
       descricao => 'IDEB, notas e aprovação nos anos iniciais (_ai), finais (_af) e no ensino médio (_em), na edição escolhida. O IDEB falta sobretudo nas escolas pequenas, rurais e sem infraestrutura: marque também as etapas oferecidas.',
