@@ -164,3 +164,62 @@ export function transformProfileData(raw) {
     })),
   };
 }
+
+/**
+ * #542 (P1-PN-02 da P1): o sinal de atenção em linguagem do dia a dia e com
+ * os números — o valor da escola, a mediana das escolas parecidas e de que
+ * lado a escola está em relação ao município e ao Brasil (decisão B1:
+ * sempre, melhor ou pior). "Quartil" e "grupo de referência" ficam no "?".
+ * Sem o valor da escola ou a mediana do grupo, devolve null e a tela usa a
+ * mensagem do motor.
+ *
+ * @param {object} flag  linha de `flags` (indicador, mensagem…)
+ * @param {Array<object>} indicadores  `indicadores_comparados`
+ * @param {Array<object>} clusterResumo  `cluster_resumo` (p50, n)
+ * @param {number|null} [tamanhoGrupo]  escolas do grupo, se faltar o n
+ * @returns {{ titulo: string, texto: string } | null}
+ */
+export function fraseSinal(flag, indicadores = [], clusterResumo = [], tamanhoGrupo = null) {
+  const ind = indicadores.find((i) => i.indicador === flag?.indicador);
+  const grupo = clusterResumo.find((r) => r.indicador === flag?.indicador);
+  const num = (v) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const escola = num(ind?.escola ?? flag?.escola);
+  const mediana = num(grupo?.p50);
+  if (!ind || escola === null || mediana === null) return null;
+
+  const prop = isProporcao(flag.indicador);
+  const fmt = (v) => (prop
+    ? `${Math.round(v * 100)}%`
+    : v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+  const menor = (ind.direcao ?? "maior") === "menor";
+  const n = num(grupo?.n) ?? num(tamanhoGrupo);
+  const noTeto = prop && !menor && mediana >= 1;
+  const noPiso = menor && mediana <= 0;
+  const limite = noTeto || noPiso ? "" : menor ? " ou menos" : " ou mais";
+  const quem = n ? `Nas ${n} escolas parecidas do município` : "Nas escolas parecidas do município";
+
+  // melhor/pior pelo sentido do indicador; igual quando arredonda igual
+  const lado = (outro) => {
+    if (outro === null) return null;
+    if (fmt(outro) === fmt(escola)) return "igual";
+    return (menor ? escola < outro : escola > outro) ? "melhor" : "pior";
+  };
+  const partes = [
+    ["o município", num(ind.municipio)],
+    ["o Brasil", num(ind.brasil)],
+  ].map(([nome, v]) => ({ nome, v, lado: lado(v) })).filter((p) => p.lado);
+  let contexto = "";
+  if (partes.length === 2 && partes[0].lado === partes[1].lado && partes[0].lado !== "igual") {
+    contexto = ` A escola está ${partes[0].lado} que o município (${fmt(partes[0].v)}) e o Brasil (${fmt(partes[1].v)}).`;
+  } else if (partes.length > 0) {
+    const txt = partes.map((p) => (p.lado === "igual"
+      ? `igual ${p.nome.replace(/^o /, "ao ")} (${fmt(p.v)})`
+      : `${p.lado} que ${p.nome} (${fmt(p.v)})`));
+    contexto = ` A escola está ${txt.join(" e ")}.`;
+  }
+
+  return {
+    titulo: ind.label ?? flag.indicador,
+    texto: `${fmt(escola)} nesta escola. ${quem}, metade tem ${fmt(mediana)}${limite}.${contexto}`,
+  };
+}

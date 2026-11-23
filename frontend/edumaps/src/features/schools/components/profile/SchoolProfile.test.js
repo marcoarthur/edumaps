@@ -31,9 +31,10 @@ describe("SchoolProfile", () => {
     render(SchoolProfile, { profile: profileFixture() });
 
     expect(screen.getByText("Sinais de atenção")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Relação aluno\/docente no quartil inferior do cluster/),
-    ).toBeInTheDocument();
+    // #542: a frase com os números, no lugar de "quartil… do cluster"
+    const sinal = screen.getByTestId("sinal-ratio_aluno_docente");
+    expect(sinal).toHaveTextContent(/32,1 nesta escola\. Nas \d+ escolas parecidas do município, metade tem/);
+    expect(sinal.textContent).not.toMatch(/quartil/);
   });
 
   it("mostra mensagem positiva quando não há sinais de atenção", () => {

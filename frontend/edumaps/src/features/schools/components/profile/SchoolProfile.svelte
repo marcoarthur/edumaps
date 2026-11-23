@@ -64,7 +64,8 @@
     </div>
   </header>
 
-  <AttentionFlags flags={profile.flags} />
+  <AttentionFlags flags={profile.flags} indicadores={profile.indicadores}
+    clusterResumo={profile.clusterResumo} tamanhoGrupo={profile.cluster?.size ?? null} />
 
   <ProfileComparison indicadores={profile.indicadores} />
 

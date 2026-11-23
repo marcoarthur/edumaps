@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   asArray,
+  fraseSinal,
   formatIndicator,
   formatSimilarity,
   formatQuartil,
@@ -81,3 +82,24 @@ describe("transformProfileData", () => {
     expect(p.peersCriterio).toBe("x");
   });
 });
+
+describe("fraseSinal (#542)", () => {
+  const ind = (o) => [{ indicador: "prop_efetivos", label: "Docentes efetivos (concursados)", direcao: "maior", ...o }];
+  const flag = { indicador: "prop_efetivos", mensagem: "motor" };
+
+  it("melhor que um e pior que o outro", () => {
+    const f = fraseSinal(flag, ind({ escola: 0.6, municipio: 0.5, brasil: 0.7 }), [{ indicador: "prop_efetivos", p50: 0.8, n: 30 }]);
+    expect(f.texto).toBe("60% nesta escola. Nas 30 escolas parecidas do município, metade tem 80% ou mais. A escola está melhor que o município (50%) e pior que o Brasil (70%).");
+  });
+
+  it("igual ao município, sem o Brasil", () => {
+    const f = fraseSinal(flag, ind({ escola: 0.6, municipio: 0.601, brasil: null }), [{ indicador: "prop_efetivos", p50: 0.8 }], 30);
+    expect(f.texto).toBe("60% nesta escola. Nas 30 escolas parecidas do município, metade tem 80% ou mais. A escola está igual ao município (60%).");
+  });
+
+  it("sem a mediana do grupo: null (a tela usa a mensagem do motor)", () => {
+    expect(fraseSinal(flag, ind({ escola: 0.6 }), [])).toBeNull();
+    expect(fraseSinal(flag, [], [{ indicador: "prop_efetivos", p50: 0.8 }])).toBeNull();
+  });
+});
+
