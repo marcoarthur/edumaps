@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dn) — #542 (PR #544), sinal de atenção com os números
+
+- PR #544 (47d9601), opções A1 e B1:
+  - `fraseSinal` (`transformProfileData.js`) monta a frase no frontend,
+    com a tabela comparada e o `cluster_resumo` (p50, n);
+  - melhor, pior ou igual ao município e ao Brasil, sempre;
+  - a `mensagem` do motor fica como reserva;
+  - o motor R e o cache não mudam (regra 9).
+- O n da frase é o `cluster_resumo.n` (escolas com o dado): pode ser 29
+  num grupo de 30. Decisão: ficar com o número da conta.
+- Com isso, a avaliação da P1 de 23/11 não tem nenhum achado aberto.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #544 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 256; ciclo `2026-11-23-sinais-com-numeros.md`.
+
 ## Sessão 2026-11-23 (dm) — avaliação da P1, #541 (PR #543)
 
 - Rodada da P1 (painel e perfil de uma escola municipal de Cuiabá de INSE

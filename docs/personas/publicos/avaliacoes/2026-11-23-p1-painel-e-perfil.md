@@ -103,4 +103,8 @@ Issues **#541** (P1-PN-01) e **#542** (P1-PN-02), abertas com a aprovação do d
     a 76ª de 81 no IDEB fica em cinza.
   - O empate no topo aparece como "1º lugar, dividido com 67 escolas com
     o mesmo valor", e o do fim, como "último lugar, dividido".
-- P1-PN-02 (#542) segue aberto.
+- 2026-11-23: #542 (PR #544) mergeado: P1-PN-02 resolvido.
+  - O sinal diz "Docentes com licenciatura: 94% nesta escola. Nas 29
+    escolas parecidas do município, metade tem 100%. A escola está melhor
+    que o município (85%) e o Brasil (80%)."
+  - Nenhum achado aberto desta avaliação.

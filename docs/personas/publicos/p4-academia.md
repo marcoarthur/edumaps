@@ -95,6 +95,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante: a base usa os totais.
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a referência da população por idade na tela.
 - [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante.
+- [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 
