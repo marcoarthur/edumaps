@@ -96,6 +96,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a fonte da taxa certa no relatório.
 - [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a posição lida do mesmo jeito.
 - [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: sinais lidos sem confusão.
+- [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o DF vê a própria oferta.
 
 ## Pendências
 

@@ -99,3 +99,12 @@ citável. Ressalva: no DF, a conta da rede local e do teto não vale
 ## Encaminhamento
 
 Issue **#545** (QL-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-23: #545 (PR #546) mergeado: QL-01 resolvido.
+  - A change `rede_escolas_df` conta, no DF, as conveniadas com o governo
+    distrital. O ranking e a comparação de redes usam a rede distrital
+    como a rede do município.
+  - DF, creche: 32,7% em todas as redes, 0,1% na rede distrital e 19,0%
+    de teto.

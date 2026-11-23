@@ -93,6 +93,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
 - [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: sem verde na posição baixa.
 - [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: o perfil da privada com a frase nova.
+- [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: a conveniada do DF como oferta pública.
 
 ## Pendências
 

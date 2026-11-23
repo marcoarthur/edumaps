@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (do) — 37ª avaliação da P4, #545 (PR #546), avaliação da P2 e #547
+
+- Trigésima sétima rodada da P4 (educação infantil por porte e região):
+  adotaria. A taxa se reproduz pela base (PE e SC, 480 municípios, sem
+  diferença). QL-01: no DF, a rede distrital e as conveniadas com o GDF
+  ficavam fora → #545.
+- PR #546 (6529213), opções A1 e B1:
+  - change `rede_escolas_df` (MV com as conveniadas do DF pela esfera
+    estadual);
+  - `rede_local` no ranking e colunas `*_rede_local` no CSV;
+  - "Rede do DF (distrital)" na comparação de redes.
+- A primeira reconstrução do backend caiu num tempo esgotado da rede no
+  `carton install`, e o `;` deixou os contêineres subirem com a imagem
+  antiga. Só o md5 acusou. Recriar só com `if build; then up; fi`.
+- Segunda avaliação da P2 do dia (expansão da creche em Vitória de Santo
+  Antão, PE): adotaria em piloto. QK-01: a taxa não diz quantas vagas
+  faltam → #547 (plano proposto, esperando a escolha A1/A2). "Onde abrir"
+  depende de carregar os setores do Censo 2022 (sem carga para PE).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #546 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 257; ciclo `2026-11-23-df-rede-distrital.md`.
+
 ## Sessão 2026-11-23 (dn) — #542 (PR #544), sinal de atenção com os números
 
 - PR #544 (47d9601), opções A1 e B1:

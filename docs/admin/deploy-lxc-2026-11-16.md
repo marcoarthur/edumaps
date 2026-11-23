@@ -80,6 +80,7 @@ já estar lá — o registry é quem diz):
 | `escolas_scores_vinculo` | #524 (recria `clean.mv_escolas_scores`: capacitação docente com os concursados vazios nas privadas, peso redistribuído, `VERSÃO indices-v7`; comentários curtos em `school_indicators`; ver §6, passo 3. No Postgres do Docker local precisou de `PGOPTIONS="-c max_parallel_workers_per_gather=0"`: a consulta paralela estourou o `/dev/shm` de 64 MB) |
 | `populacao_idade_censo2022` | #533 (visão `clean.populacao_idade` sobre `clean.ibge_agregados`, vazia até a carga `IBGEPopulacaoIdade` do §6; comentário de origem nas `faixa_*` de `clean.populacao_municipal`) |
 | `remuneracao_nomes_utf8` | #536 (repara os nomes da folha do SIOPE codificados duas vezes na fonte: decodifica, recupera a letra perdida pelo CPF e marca o resto com "?"; sem revert de dado) |
+| `rede_escolas_df` | #545 (recria `analytics.mv_rede_escolas`: no DF, as privadas conveniadas com o governo distrital, esfera estadual, contam como conveniadas. No Docker local precisou de `PGOPTIONS="-c max_parallel_workers_per_gather=0"`) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -87,8 +88,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `remuneracao_nomes_utf8` (#536; antes `populacao_idade_censo2022`, #533) e o `deploy_db_dev` não
-      reportou erro. `psql edumaps_dev -f verify/remuneracao_nomes_utf8.sql` (falha se algum nome da folha ainda tiver "Ã"/"Â" seguido de byte de continuação ou "ÿ"). `psql edumaps_dev -f verify/populacao_idade_censo2022.sql` (falha sem a visão `clean.populacao_idade`, sem o GRANT ao `edumaps_leitor` ou sem o comentário de origem nas `faixa_*`). Conferir as seis últimas pelos verifies:
+- [ ] A última change do registry é `rede_escolas_df` (#545; antes `remuneracao_nomes_utf8`, #536) e o `deploy_db_dev` não
+      reportou erro. `psql edumaps_dev -f verify/rede_escolas_df.sql` (falha se as conveniadas do DF na MV não baterem com o Censo). `psql edumaps_dev -f verify/remuneracao_nomes_utf8.sql` (falha se algum nome da folha ainda tiver "Ã"/"Â" seguido de byte de continuação ou "ÿ"). `psql edumaps_dev -f verify/populacao_idade_censo2022.sql` (falha sem a visão `clean.populacao_idade`, sem o GRANT ao `edumaps_leitor` ou sem o comentário de origem nas `faixa_*`). Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
       `psql edumaps_dev -f verify/escolas_scores_sem_registro.sql` (falha se houver 0 onde falta o registro ou sem `indices-v3` ou posterior) e
@@ -282,6 +283,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       "Acima de X%" sai em cinza, e o empate no 1º lugar aparece como "1º lugar, dividido com N escolas com o mesmo valor".
 - [ ] Sinal de atenção com os números (#542, só frontend): no perfil de uma escola com sinal (ex.: `/escola/perfil?inep=51038510`),
       o sinal diz o valor da escola, "metade tem…" das parecidas e se está melhor ou pior que o município e o Brasil, sem "quartil".
+- [ ] Rede distrital do DF (#545, change `rede_escolas_df`): `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=atendimento_creche&uf=DF'`
+      traz `rede_local = distrital`, `matriculas_municipal = 149`, `matriculas_conveniadas = 24570` e `teto` perto de 0,19
+      (com a carga do §6); MT continua com `meta.abaixo = 116`.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
