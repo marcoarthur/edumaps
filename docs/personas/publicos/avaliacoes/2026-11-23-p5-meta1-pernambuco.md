@@ -86,3 +86,12 @@ planilha (QJ-02).
 
 Issues **#549** (QJ-01) e **#550** (QJ-02), abertas com a aprovação do developer. QJ-01 vale para
 todos os públicos que citam a taxa.
+
+## Andamento
+
+- 2026-11-23: #549 (PR #551) mergeado: QJ-01 resolvido.
+  - A taxa é chamada de "taxa bruta de matrícula", com o aviso de que não
+    é o indicador oficial da meta 1, nas telas, no CSV (coluna `metodo`)
+    e nas ajudas.
+  - A marca passou a "abaixo de 50%".
+- QJ-02 (#550) segue aberto.

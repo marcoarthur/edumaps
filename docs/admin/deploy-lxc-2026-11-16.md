@@ -288,6 +288,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       (com a carga do §6); MT continua com `meta.abaixo = 116`.
 - [ ] Vagas que faltam para a meta (#547, sem change nova): `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=atendimento_creche&regiao=NE'`
       traz `meta.vagas_faltam` perto de 405.893; na comparação de redes de Vitória de Santo Antão (2616407), 2.026 vagas de creche e 494 de pré-escola.
+- [ ] Taxa bruta de matrícula (#549, sem change nova): o rótulo do indicador em `/api/ranking/redes?indicador=atendimento_creche&uf=PE`
+      é "Creche (0 a 3 anos): taxa bruta de matrícula"; a tela diz "abaixo de 50%" e traz o aviso de que não é o indicador oficial.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

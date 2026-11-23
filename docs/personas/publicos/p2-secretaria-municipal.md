@@ -98,6 +98,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: sinais lidos sem confusão.
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o DF vê a própria oferta.
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QK-01 resolvido; "onde abrir" pendente da carga dos setores.
+- [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o plano cita a conta certa.
 
 ## Pendências
 

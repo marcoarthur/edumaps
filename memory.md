@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dq) — 3ª avaliação da P3, 3ª da P5, #549 (PR #551)
+
+- Terceira rodada da P3 (onde abrir uma unidade de educação infantil, SP):
+  adotaria em piloto para escolher a cidade (era não adotaria). Sem achado
+  novo; comentário na #429 (o bairro depende da carga dos setores do
+  Censo 2022, cerca de 1,5 GB, e de uma tela de mercado local).
+- Terceira rodada da P5 (meta 1 em PE): não adotaria (registro), mais
+  perto.
+  - QJ-01: a taxa é bruta e não é o indicador oficial → #549.
+  - QJ-02: o CSV do ranking sem as fontes → #550 (aberta).
+- PR #551 (910fd41), opções A1 e B1:
+  - "taxa bruta de matrícula" e o aviso em todo lugar;
+  - "abaixo de 50%/100%";
+  - coluna `metodo` no CSV, sem renomear colunas.
+- Commits de docs logo depois do merge cancelaram duas vezes o CI do
+  `main` do ciclo anterior. Esperar o CI terminar antes do próximo push
+  de docs (o commit fica local até lá).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #551 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 259; ciclo `2026-11-23-taxa-bruta.md`.
+
 ## Sessão 2026-11-23 (dp) — #547 (PR #548), vagas que faltam para a meta
 
 - PR #548 (5a80642), opção A1:
