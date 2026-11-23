@@ -207,10 +207,37 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima sexta rodada (2026-11-22, **adotaria**, com ressalva em
   modelos por etapa): QS-01 (a docência é da escola inteira e mistura as
   etapas, sem os docentes por etapa na base) → #529, entregue (#530).
+  Trigésima sétima rodada (2026-11-23, **adotaria**, com ressalva no DF):
+  QL-01 (no Distrito Federal a rede distrital e as conveniadas com o
+  governo distrital somem da taxa da rede e do teto) aguarda a aprovação
+  do developer para virar issue.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-23 — Educação infantil por porte e região (trigésima sétima rodada)
+
+**Material:** o ranking de redes com a creche e a pré-escola no recorte
+nacional, a base de análise de PE e de SC para refazer a conta, e a
+comparação de redes e a base do DF. Consolidação em
+[`avaliacoes/2026-11-23-p4-atendimento-infantil.md`](avaliacoes/2026-11-23-p4-atendimento-infantil.md).
+
+**O que tentou:** "municípios de porte e região semelhantes têm oferta
+parecida?" para a creche e a pré-escola, com a conta refeita a partir dos
+dados por escola.
+
+**O que funciona para ela:** a mediana por região e porte sai do CSV
+nacional (Norte e Centro-Oeste abaixo em todos os portes; no Nordeste a
+taxa cai com o porte); a conta refeita pela base bate em todos os 480
+municípios de PE e de SC; as crianças no CSV para ponderar.
+
+**Barreiras:**
+- QL-01 (atrapalha): o DF aparece com 0,0% na rede municipal e sem teto,
+  embora 24.570 matrículas em creche estejam em conveniadas com o governo
+  distrital.
+
+**Veredito:** **adotaria** (mantido), com ressalva no DF.
 
 ### 2026-11-22 — Base de análise (trigésima sexta rodada, IDEB e formação docente)
 
