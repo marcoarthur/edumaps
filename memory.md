@@ -4,6 +4,30 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dg) — sobras #526/#527 (PR #528), 36ª avaliação da P4, #529 (PR #530)
+
+- Developer ausente (~5h): autorizou abrir as issues das sobras e
+  implementá-las, rodar as rodadas da P4 e abrir issues sozinho, só
+  notificando. Os merges ficaram para a volta, e a permissão foi dada
+  depois para os dois PRs.
+- PR #528 (ed5e5c0):
+  - #526: `rotuloCurto` único para chips, busca, resumo e Universo do
+    agrupamento;
+  - #527: `PROFILE_SO_PUBLICA` no R; na escola privada, concursados sem
+    comparação e com a `nota`; `tp_dependencia` no metadata; regra 9.
+- Trigésima sexta rodada da P4 (IDEB dos anos iniciais × formação docente,
+  SP): QS-01, a docência é da escola inteira (1.725 de 5.779 escolas
+  mistas; concursados +0,02 → −0,30) → #529.
+- PR #530 (9f36d0a): `qt_docentes_infantil/_ai/_af/_em` no fim do bloco
+  Docência; ajuda "Docência num modelo por etapa", com o R conferido
+  (5.781 → 3.386).
+- Lição: para validar a base de um branch sem trocar a stack local, rodar
+  o backend do host contra o Postgres do Docker
+  (`EDUMAPS_DB_HOST=127.0.0.1 perl -Ilib script/edumaps.pl get '/api/...'`).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #530.
+- Notas técnicas 248 e 249; ciclos `2026-11-23-sobras-concursados.md` e
+  `2026-11-23-docentes-por-etapa.md`.
+
 ## Sessão 2026-11-22 (df) — trigésima quinta avaliação da P4, #524 (PR #525) mergeado
 
 - Trigésima quinta rodada da P4 (agrupamento "Qualidade de docência" em SP,

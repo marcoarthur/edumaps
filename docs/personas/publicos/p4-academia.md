@@ -87,6 +87,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p4--academia-pesquisadora): adotaria (mantido). QV-01 e QV-02 resolvidos; nenhum achado aberto da trigésima terceira avaliação.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva no perfil docente. QU-01 e QU-02 resolvidos; nenhum achado aberto da trigésima quarta avaliação.
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva entre pública e privada. QT-01 e QT-02 resolvidos; nenhum achado aberto da trigésima quinta avaliação.
+- [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o agrupamento fala do indicador do mesmo jeito em toda a tela.
+- [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva em modelos por etapa. QS-01 resolvido; nenhum achado aberto da trigésima sexta avaliação.
 
 ## Pendências
 
@@ -197,7 +199,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comentário inteiro do banco) → #524, entregues (#525).
   Trigésima sexta rodada (2026-11-22, **adotaria**, com ressalva em
   modelos por etapa): QS-01 (a docência é da escola inteira e mistura as
-  etapas, sem os docentes por etapa na base) → #529.
+  etapas, sem os docentes por etapa na base) → #529, entregue (#530).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

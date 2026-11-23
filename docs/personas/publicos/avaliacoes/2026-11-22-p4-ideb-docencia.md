@@ -81,3 +81,14 @@ developer (ausente), depois das entregas:
 
 Issue **#529** (QS-01), aberta sem esperar a aprovação, por autorização
 do developer (ausente).
+
+## Andamento
+
+- 2026-11-23: #529 (PR #530) mergeado: QS-01 resolvido.
+  - O bloco Docência traz `qt_docentes_infantil`, `qt_docentes_ai`,
+    `qt_docentes_af` e `qt_docentes_em`, e o dicionário diz que as
+    proporções são da escola inteira e que quem dá aula em duas etapas
+    conta nas duas.
+  - A ajuda da base tem a seção "Docência num modelo por etapa", com o
+    código R conferido em SP (5.781 → 3.386 escolas; concursados +0,03,
+    p = 0,51).

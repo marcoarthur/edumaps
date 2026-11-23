@@ -84,6 +84,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a oferta conveniada dita como teto.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: o indicador docente diz o que mede.
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: o ranking misto sem favorecer a pública por construção.
+- [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 
 ## Pendências
 

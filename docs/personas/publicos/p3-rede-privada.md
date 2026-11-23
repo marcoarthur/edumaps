@@ -84,6 +84,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante: muda só o texto sobre as conveniadas.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: o mesmo rótulo no perfil das privadas.
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto direto: a privada deixa de perder até 2 pontos na capacitação docente por um dado que o Censo não pede.
+- [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p3--rede-privada-mantenedor): não adotaria (mantido; reavaliação a seguir). Impacto direto: o perfil da privada sem comparação de concursados com as públicas, e com o motivo.
+- [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 

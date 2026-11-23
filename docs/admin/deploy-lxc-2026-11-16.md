@@ -185,7 +185,7 @@ Leva `ivet-v1.3` (acesso em log, #295/PR #362) e a instalação completa das
 dependências do `DESCRIPTION` (#363: o deploy falha se faltar alguma; o Rexfile
 já instala `libsodium-dev` e `libuv1-dev`), mais os sinais de atenção v2 do
 perfil da escola (#421). O cache antigo do perfil é ignorado sozinho
-(`regra_sinais` diferente; agora 8, com os concursados vazios nas privadas, #524; a 7 trouxe "sem formação continuada" no lugar de "sem especialização", #522; a 6 trouxe o grupo de referência pelo contexto, as
+(`regra_sinais` diferente; agora 9, com os concursados sem comparação e com o motivo na privada, #527; a 8 trouxe os concursados vazios nas privadas, #524; a 7 trouxe "sem formação continuada" no lugar de "sem especialização", #522; a 6 trouxe o grupo de referência pelo contexto, as
 30 escolas do município mais parecidas, e o INSE sem sinal, #493; as escolas
 similares pelo mesmo contexto, no município inteiro, #495).
 O agrupamento passa a guardar cada execução (#427): o motor grava em
@@ -197,7 +197,7 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 
 - [ ] `ssh root@analytic.edumaps 'systemctl is-active edumaps-analytic'`.
 - [ ] Perfil com o grupo pelo contexto (#493): `curl -s http://127.0.0.1:3000/api/school/29445906/profile`
-      no backend traz `metadata.regra_sinais = 8` (#524), `cluster_source = contexto_municipio`,
+      no backend traz `metadata.regra_sinais = 9` (#527), `cluster_source = contexto_municipio`,
       `cluster_size = 30` e nenhum sinal `inse`.
 - [ ] Similares do perfil pelo contexto (#495): no mesmo perfil,
       `metadata.peers_source = contexto_municipio` e até 10 `tables.peers`
@@ -256,6 +256,12 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `prop_sem_formacao_continuada`, e a caixa Universo conta as privadas sem dado de concursados.
       Depois do `ranking.pl`, rodar `school_profile_refresh.sh` (a referência do perfil passa a ter
       `prop_efetivos` vazio na rede 4).
+- [ ] Rótulos curtos e privada sem comparação (#526 e #527, sem change nova): no agrupamento, os
+      indicadores escolhidos aparecem com o nome curto; `curl -s http://127.0.0.1:3000/api/school/35004827/profile`
+      traz, na linha `prop_efetivos`, `brasil` nulo e a `nota` "Não se aplica à rede privada…".
+- [ ] Docentes por etapa (#529, sem change nova):
+      `curl -s 'http://127.0.0.1:3000/api/base-analise/csv?uf=SP&codigo_ibge=3516200&blocos=docencia' | head -1`
+      termina em `qt_docentes_infantil;qt_docentes_ai;qt_docentes_af;qt_docentes_em` (antes das colunas de versão).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

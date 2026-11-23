@@ -111,3 +111,7 @@ Issue **#524** (QT-01 e QT-02), aberta com a aprovação do developer.
   - O CSV do agrupamento traz `prop_sem_formacao_continuada`; a tela
     mostra "Docentes sem formação continuada" e "Proporção de docentes
     concursados".
+- 2026-11-23: sobras do ciclo resolvidas no PR #528. Os indicadores
+  escolhidos no agrupamento aparecem com o rótulo curto (#526), e o perfil
+  da escola privada mostra os concursados sem comparação e com o motivo
+  (#527).

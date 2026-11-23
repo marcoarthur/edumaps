@@ -88,6 +88,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — teto das conveniadas](ciclos/2026-11-22-conveniadas-teto.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base e a comparação de redes não são as telas dela.
 - [2026-11-22 — sem formação continuada](ciclos/2026-11-22-sem-formacao-continuada.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto direto: o sinal do perfil da escola diz formação continuada, não especialização.
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: na escola pública nada muda.
+- [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: na escola pública o perfil não muda.
+- [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a base não é a tela dela.
 
 ## Pendências
 
