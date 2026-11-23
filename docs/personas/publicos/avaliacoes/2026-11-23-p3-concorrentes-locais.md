@@ -90,5 +90,5 @@ rodada.
 
 ## Encaminhamento
 
-Aguarda a decisão do developer sobre abrir a issue (QR-01) e comentar a
-#429 com a evidência desta rodada.
+Issue **#531** (QR-01), aberta com a aprovação do developer, e comentário
+na #429 com a evidência desta rodada.

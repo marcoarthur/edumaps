@@ -95,8 +95,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   local (AN-10). A etapa nas escolas semelhantes (AN-03) foi entregue no
   PR #425.
 - Concorrentes locais (2026-11-23, **não adotaria**, mais perto): QR-01 (23%
-  das privadas sem coordenada e a base sem o CEP e o bairro), aguardando a
-  decisão sobre a issue; AN-10 (#429) segue aberto.
+  das privadas sem coordenada e a base sem o CEP e o bairro) → #531; AN-10
+  (#429) segue aberto, com a evidência da rodada comentada lá.
 
 ## Entradas
 
