@@ -87,6 +87,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p3--rede-privada-mantenedor): não adotaria (mantido; reavaliação a seguir). Impacto direto: o perfil da privada sem comparação de concursados com as públicas, e com o motivo.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p3--rede-privada-mantenedor): não adotaria (mantido), mais perto. QR-01 resolvido; AN-10 (#429) segue aberto.
+- [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: onde a oferta está abaixo da meta.
 
 ## Pendências
 

@@ -90,6 +90,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: agrupamento mais legível.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: professores por etapa, escola por escola.
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a lista das escolas sai com o endereço.
+- [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido), mais perto. QP-01 resolvido.
 
 ## Pendências
 
@@ -101,7 +102,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Reavaliar com uma secretaria real num piloto.
 - Prestação de contas ao conselho (2026-11-23, **adotaria, em piloto**): QP-01
   (sem taxa de atendimento da educação infantil; população por idade sem
-  fonte) → #533.
+  fonte) → #533, entregue (#534).
 
 ## Entradas
 

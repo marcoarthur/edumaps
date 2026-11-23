@@ -78,6 +78,7 @@ já estar lá — o registry é quem diz):
 | `rede_escolas_conveniadas` | #518 (recria `analytics.mv_rede_escolas` com `escolas_conveniadas`, `matriculas_creche_conveniada` e `matriculas_pre_conveniada`) |
 | `docentes_formacao_continuada_rotulos` | #522 (só comentários: as 19 colunas `qt_doc_bas_espec_*` como formação continuada, não especialização; sem recálculo) |
 | `escolas_scores_vinculo` | #524 (recria `clean.mv_escolas_scores`: capacitação docente com os concursados vazios nas privadas, peso redistribuído, `VERSÃO indices-v7`; comentários curtos em `school_indicators`; ver §6, passo 3. No Postgres do Docker local precisou de `PGOPTIONS="-c max_parallel_workers_per_gather=0"`: a consulta paralela estourou o `/dev/shm` de 64 MB) |
+| `populacao_idade_censo2022` | #533 (visão `clean.populacao_idade` sobre `clean.ibge_agregados`, vazia até a carga `IBGEPopulacaoIdade` do §6; comentário de origem nas `faixa_*` de `clean.populacao_municipal`) |
 
 ```bash
 rex -H database.edumaps deploy_db_dev
@@ -85,8 +86,8 @@ ssh root@database.edumaps "sudo -u postgres psql edumaps_dev -Atc \
   \"SELECT change FROM sqitch.changes ORDER BY committed_at DESC LIMIT 5\""
 ```
 
-- [ ] A última change do registry é `escolas_scores_vinculo` (#524; antes `docentes_formacao_continuada_rotulos`) e o `deploy_db_dev` não
-      reportou erro. Conferir as seis últimas pelos verifies:
+- [ ] A última change do registry é `populacao_idade_censo2022` (#533; antes `escolas_scores_vinculo`) e o `deploy_db_dev` não
+      reportou erro. `psql edumaps_dev -f verify/populacao_idade_censo2022.sql` (falha sem a visão `clean.populacao_idade`, sem o GRANT ao `edumaps_leitor` ou sem o comentário de origem nas `faixa_*`). Conferir as seis últimas pelos verifies:
       `psql edumaps_dev -f verify/escolas_scores_diversidade_esp.sql` (falha se a MV ainda somar os turnos) e
       `psql edumaps_dev -f verify/escolas_scores_versao.sql` (falha se o COMMENT da MV não trouxer `indices-vN`) e
       `psql edumaps_dev -f verify/escolas_scores_sem_registro.sql` (falha se houver 0 onde falta o registro ou sem `indices-v3` ou posterior) e
@@ -265,6 +266,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] CEP, bairro e endereço (#531, sem change nova):
       `curl -s 'http://127.0.0.1:3000/api/base-analise/csv?uf=SP&codigo_ibge=3516200&blocos=porte' | head -2`
       traz `longitude;cep;bairro;endereco` (a identificação sai sempre), e o CEP vem como `00000-000` (ex.: `14404-110`).
+- [ ] Taxa de atendimento da educação infantil (#533, change `populacao_idade_censo2022`), depois da carga do §6:
+      `curl -s http://127.0.0.1:3000/api/network/3516200/summary` traz `populacao_0_3 = 15862`, `populacao_4_5 = 9094` e
+      `ano_populacao_idade = 2022` em toda rede; o CSV da base com `blocos=porte` traz `populacao_0_3;populacao_4_5` depois de
+      `porte_municipio` e termina em `ano_populacao_idade`; `/api/fontes` traz o cartão `ibge_populacao_idade`.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
@@ -306,6 +311,15 @@ Rodar no `backend.edumaps`, em `/opt/edumaps/backend`, uma de cada vez
    de escola sem o índice (`capacitacao_docente`/`todas` com ~178,5 mil);
    `refresh_school_embeddings` termina com ~178 mil vetores. O IVET vem no
    §7 (precisa do `deploy_analytics_dev` do §5, com `ivet-v1.9`).
+
+4. **População por idade do Censo 2022 (#533):** depois do `deploy_db_dev`
+   (change `populacao_idade_censo2022`) e do `deploy_backend_dev`.
+   ```bash
+   perl -Ilib ingestion_runner.pl --job=IBGEPopulacaoIdade
+   ```
+   Esperado: 5 requisições ao `apisidra.ibge.gov.br`, 222.800 registros de
+   5.570 municípios em ~30 s; `SELECT sum(populacao_total) FROM clean.populacao_idade`
+   dá 203.080.756. O job aborta, sem gravar, se as faixas não somarem o total.
 
 ## 7. Isócrona ES/MG e IVET (#295)
 

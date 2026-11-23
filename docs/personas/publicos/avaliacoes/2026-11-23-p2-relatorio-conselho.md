@@ -82,3 +82,13 @@ Desde então, nas telas públicas:
 Issue **#533** (QP-01), aberta sem esperar a aprovação, por autorização
 do developer (ausente). A carga da população por idade exige baixar dados do IBGE, o que
 depende da permissão do developer.
+
+## Andamento
+
+- 2026-11-23: #533 (PR #534) mergeado: QP-01 resolvido.
+  - A população por idade do Censo 2022 (SIDRA 9514) está em `/fontes` e
+    na base (`populacao_0_3` e `populacao_4_5`, bloco Porte).
+  - A comparação de redes mostra a taxa de atendimento da creche e da
+    pré-escola em todas as redes, na municipal e com as conveniadas (teto).
+    Em Franca, a creche fica em 58,0%, 0,0% e 48,9%.
+  - As faixas antigas, sem fonte, ficam com o comentário dizendo a origem.

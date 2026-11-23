@@ -84,6 +84,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: menos chance de citar uma comparação que não se aplica.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: o modelo por etapa sem misturar etapas.
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: chegar à escola pelo endereço.
+- [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a creche por município, com fonte citável.
 
 ## Pendências
 

@@ -90,6 +90,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o agrupamento fala do indicador do mesmo jeito em toda a tela.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva em modelos por etapa. QS-01 resolvido; nenhum achado aberto da trigésima sexta avaliação.
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a cobertura das coordenadas por rede no dicionário.
+- [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a população por idade na base, com fonte e ano.
 
 ## Pendências
 

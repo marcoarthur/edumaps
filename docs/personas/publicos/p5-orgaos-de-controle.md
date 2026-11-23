@@ -87,6 +87,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto direto: a meta 1 do PNE mensurável por município.
 
 ## Pendências
 

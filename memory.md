@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (di) — #531 mergeado, #533 (PR #534)
+
+- PR #532 (#531, CEP e endereço) mergeado em f03656e; nota 250.
+- #533: o developer autorizou o download do IBGE e aprovou A1 (idade
+  simples de 0 a 17 e faixas de 5 anos) e B1 (faixas antigas ficam, com o
+  comentário de origem).
+- PR #534 (9aea643):
+  - job `IBGEPopulacaoIdade` (SIDRA 9514, 5 requisições `n6/all`), em
+    `clean.ibge_agregados`, conferindo as somas antes de gravar;
+  - change `populacao_idade_censo2022` (visão `clean.populacao_idade`);
+  - quadro "Atendimento da educação infantil" na comparação de redes, com
+    três taxas;
+  - `populacao_0_3`/`populacao_4_5` no bloco Porte, com fonte própria por
+    coluna no dicionário (5º elemento da coluna em `BaseAnalise`).
+- Carga local: `docker exec ... perl -Ilib ingestion_runner.pl
+  --job=IBGEPopulacaoIdade --config=<arquivo com dir_trabalho>`. O
+  `--config` precisa de um arquivo real (`/dev/null` é recusado).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #534, mais
+  a carga `IBGEPopulacaoIdade` (§6, passo 4).
+- Nota técnica 251; ciclo `2026-11-23-taxa-atendimento-infantil.md`.
+
 ## Sessão 2026-11-23 (dh) — segunda avaliação da P3, #531 (PR #532), avaliação da P2 e #533
 
 - Segunda rodada da P3 (concorrentes locais, Franca): não adotaria, mais
