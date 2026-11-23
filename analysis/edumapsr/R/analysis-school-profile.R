@@ -148,6 +148,22 @@ analyze_school_profile <- function(model, parameters = list()) {
 
   labels <- .profile_labels(indicators$indicador, model$metadata)
 
+  # #527: na escola privada, o indicador só perguntado na pública fica sem
+  # comparação (município e Brasil seriam médias só das públicas) e diz o
+  # motivo.
+  nota <- rep(NA_character_, nrow(indicators))
+  if (identical(as.integer(model$metadata$tp_dependencia), 4L)) {
+    so_pub <- indicators$indicador %in% names(PROFILE_SO_PUBLICA)
+    nota[so_pub] <- unname(PROFILE_SO_PUBLICA[indicators$indicador[so_pub]])
+    for (col in c("escola", "municipio", "rede", "brasil", "cluster",
+                  "cluster_media", "cluster_p25", "cluster_p50", "cluster_p75")) {
+      if (!is.null(indicators[[col]])) indicators[[col]][so_pub] <- NA_real_
+    }
+    if (!is.null(indicators$cluster_n)) indicators$cluster_n[so_pub] <- 0L
+    quartil[so_pub] <- NA_integer_
+    atencao[so_pub] <- FALSE
+  }
+
   comparados <- data.frame(
     indicador = indicators$indicador,
     label = labels,
@@ -159,6 +175,7 @@ analyze_school_profile <- function(model, parameters = list()) {
     quartil_no_cluster = quartil,
     atencao = atencao,
     direcao = direcao,
+    nota = nota,
     stringsAsFactors = FALSE
   )
 

@@ -79,6 +79,9 @@ em vez de tratar toda a rede do mesmo jeito.
   "Proporção de docentes concursados". Até 22/11/2026 a privada entrava
   com 0 concursados e caía nos grupos de baixa qualidade só por isso. Para
   comparar privadas, monte uma lista sua sem os concursados.
+- **Nome dos indicadores:** a tela mostra o nome curto (*"Proporção de
+  docentes concursados"*). Passe o mouse sobre o indicador para ver a
+  descrição inteira, com a fórmula.
 - **Sem formação continuada:** a coluna
   `prop_sem_formacao_continuada` do CSV (no **Buscar indicador…**,
   "Docentes sem formação continuada") é a proporção de docentes sem curso

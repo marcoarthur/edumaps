@@ -72,7 +72,7 @@
           <span
             class="inline-flex items-center gap-1.5 text-xs font-medium bg-white border border-gray-200 rounded-full px-2 py-1 select-none"
           >
-            <span>{featureLabel(featureFor(name))}</span>
+            <span title={featureFor(name).comment || name}>{featureLabel(featureFor(name))}</span>
             <code class="hidden text-[10px] text-gray-400">{name}</code>
             {#if !disabled}
               <button

@@ -361,7 +361,7 @@ subtest 'chave do cache do perfil inclui a versão da regra dos sinais (#421)' =
   $make_client->({ cache_enabled => 1 })->run_school_profile({ co_entidade => '23165669' });
   is $params->{regra_sinais}, $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS,
     'regra_sinais na chave';
-  ok $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS >= 8, 'regra v8 ou mais nova (#524)';
+  ok $EduMaps::Analytics::Client::PERFIL_REGRA_SINAIS >= 9, 'regra v9 ou mais nova (#527)';
 
   # mesma versão do pacote R (senão o cache do backend guardaria perfis
   # da regra nova sob a chave antiga, ou o contrário)

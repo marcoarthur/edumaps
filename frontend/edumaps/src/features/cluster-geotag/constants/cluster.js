@@ -32,11 +32,26 @@ export const SOURCE_TAG_COLORS = {
   ideb_notas_escolas: "bg-sky-50 text-sky-700",
 };
 
-// Rótulo de exibição de uma feature: usa o comment do banco quando existe
-// (o metadado do censo/docentes/IDEB costuma descrever o indicador).
+// Rótulo curto a partir do comment do banco: tira a pergunta ("Há água
+// potável na escola?") e o que está entre parênteses (fórmula, notas para
+// quem lê o banco). Comentário vazio dá "".
+export function rotuloCurto(comment) {
+  const comentario = (comment ?? "").trim();
+  if (!comentario) return "";
+  return comentario
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/^Há\s+/i, "")
+    .replace(/\s+na escola\?$/i, "")
+    .replace(/\?$/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (l) => l.toUpperCase());
+}
+
+// Rótulo de exibição de uma feature (#526): o mesmo rótulo curto do resumo
+// dos grupos e da caixa Universo; o comment inteiro fica no title.
 export function featureLabel({ column_name, comment }) {
-  const label = (comment || "").trim();
-  return label || formatColumnName(column_name);
+  return rotuloCurto(comment) || formatColumnName(column_name);
 }
 
 // Fallback legível para colunas sem comentário (ex.: qt_doc_bas).
