@@ -84,7 +84,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   proporção de docentes sem formação continuada tem o nome do que mede, e o
   dicionário separa a contagem de cursos da de professores. Os concursados
   ficam vazios nas privadas, onde o Censo não pergunta o vínculo do docente.
-  Entrega também os docentes por etapa, para o modelo de uma etapa separar
+  Entrega o CEP, o bairro e o endereço de cada escola, para situar a que não
+  tem coordenada (cerca de um terço das privadas). Entrega também os
+  docentes por etapa, para o modelo de uma etapa separar
   as escolas pela parte do quadro naquela etapa. O dicionário diz que os pesos dos índices são uma escolha da
   plataforma, não estimados contra o IDEB.
 - Sistema pode **entregar a remuneração por escola**, da folha que o

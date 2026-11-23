@@ -25,7 +25,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
    restrinja a um **município** e a uma **rede** (pública, municipal,
    estadual, federal ou privada). A página mostra quantas escolas entram.
 2. **Indicadores:** a **identificação** (INEP, nome, município, UF, região,
-   rede, localização urbana ou rural, latitude e longitude) vem sempre.
+   rede, localização urbana ou rural, latitude, longitude, CEP, bairro e
+   endereço) vem sempre.
    Marque os blocos que quiser:
    - **Etapas oferecidas:** se a escola oferece creche, pré-escola, anos
      iniciais (`oferece_ai`), anos finais (`oferece_af`), ensino médio
@@ -211,10 +212,19 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   nenhum.
 - **Coordenadas:** `latitude` e `longitude` em graus decimais, com 6 casas,
   como a escola declarou ao Censo Escolar, sem verificação. Cerca de 4 em 5
-  escolas têm; nas outras, a célula fica vazia. Para um mapa, no R:
+  escolas têm; nas outras, a célula fica vazia. A falta é bem maior nas
+  **privadas** (cerca de 1 em cada 3 no Brasil, contra 16% das municipais e
+  12% das estaduais): uma lista de concorrentes só pela coordenada deixa
+  muitas privadas de fora. Veja
+  [Escolas próximas](#escolas-próximas). Para um mapa, no R:
   `sf::st_as_sf(na.omit(base[, c("inep", "latitude", "longitude")]),
   coords = c("longitude", "latitude"), crs = 4326)`; no Python, com
   `geopandas.points_from_xy(base.longitude, base.latitude)`.
+- **Endereço:** `cep` no formato `00000-000` (com o hífen, o Excel não tira
+  o zero do começo), `bairro` e `endereco` (logradouro e número, sem o
+  número quando a escola declarou S/N), como declarados ao Censo Escolar.
+  Toda escola tem CEP. O bairro falta em cerca de 6 em cada 10 escolas
+  rurais.
 - **Docência:** as proporções são sobre o total de docentes da escola
   (`qt_docentes`). Na contagem do Censo Escolar, quem dá aula em mais de uma
   escola conta em cada uma.
@@ -348,6 +358,39 @@ oferta$creche_mil <- 1000 * (oferta$mat_creche + oferta$conv_creche) / oferta$po
 - **`creche_mil` é um teto:** o Censo marca a escola conveniada, não a vaga.
 - **Por habitante, não por criança:** a população por idade não está
   carregada (veja **Matrículas**, acima).
+
+## Escolas próximas
+
+Para listar as escolas perto de uma unidade (concorrentes, ou quem atende a
+mesma vizinhança), calcule a distância pela coordenada. As escolas sem
+coordenada não entram nessa conta. Liste-as à parte, pelo bairro e pelo CEP,
+para conferir no mapa ou geocodificar o endereço.
+
+```r
+base <- read.csv2("base-analise-SP-3516200-censo2025.csv",
+                  fileEncoding = "UTF-8-BOM")
+unidade <- base[base$inep == 35004827, ]
+km <- function(lat1, lon1, lat2, lon2) {
+  r <- pi / 180
+  a <- sin((lat2 - lat1) * r / 2)^2 +
+    cos(lat1 * r) * cos(lat2 * r) * sin((lon2 - lon1) * r / 2)^2
+  2 * 6371 * asin(sqrt(a))
+}
+base$dist_km <- km(unidade$latitude, unidade$longitude,
+                   base$latitude, base$longitude)
+perto <- subset(base, !is.na(dist_km) & dist_km <= 2 & inep != unidade$inep)
+sem_coordenada <- subset(base, is.na(latitude),
+                         select = c(inep, escola, rede, bairro, cep, endereco))
+```
+
+- **Conferência:** em Franca, a unidade 35004827 tem 60 escolas a até 2 km
+  (37 delas com pré-escola ou anos iniciais), e `sem_coordenada` tem 18
+  escolas, 16 delas privadas.
+- **Mesmo bairro:** `subset(sem_coordenada, bairro == unidade$bairro)` mostra
+  quem não tem coordenada e declarou o mesmo bairro da unidade (em Franca, 1
+  escola, no bairro Cidade Nova).
+- **Geocodificar:** com o CEP, o endereço e o município, um serviço de mapas
+  acha a escola; a coordenada assim obtida é sua, não do Censo.
 
 ## Docência num modelo por etapa
 
