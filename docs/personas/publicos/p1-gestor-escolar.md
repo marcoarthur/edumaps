@@ -103,8 +103,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - P1-RD-01 (aviso na tela de que a secretaria lê o plano): entregue no PR #408 (#407).
 - Conferir com 2 ou 3 diretoras reais se objetivos → metas → ações cobre o
   plano delas (suposição da spec, §6).
+- Painel e perfil para o conselho (2026-11-23, **adotaria**): P1-PN-01 (verde
+  fixo nos cartões de posição) e P1-PN-02 (sinal de atenção sem o porquê)
+  aguardam a aprovação do developer para virar issue.
 
 ## Entradas
+
+### 2026-11-23 — Painel e perfil da escola para o conselho
+
+**Material:** o painel e o perfil analítico de uma escola municipal de
+Cuiabá de INSE baixo (INEP 51038510), só as telas públicas. Consolidação em
+[`avaliacoes/2026-11-23-p1-painel-e-perfil.md`](avaliacoes/2026-11-23-p1-painel-e-perfil.md).
+
+**O que tentou:** "como está a infraestrutura?", "estou abaixo da média do
+município?" e "melhoramos no IDEB?", para a reunião do conselho escolar.
+
+**O que funciona para ela:** a infraestrutura em ícones, com o que falta
+riscado; a posição no município com o total e o empate; a tabela do perfil
+com município, rede, Brasil e escolas parecidas; a série do SAEB.
+
+**Barreiras:**
+- P1-PN-01 (atrapalha): "Acima de X%" sempre em verde (IDEB 76ª de 81 em
+  verde); "1ª de 81" e "acima de 16%" parecem se contradizer no empate.
+- P1-PN-02 (atrapalha): sinal de atenção em jargão ("quartil inferior do
+  grupo de referência") e sem os números. A escola tem 94% de licenciatura,
+  acima do município e do Brasil.
+- Observação: sem botão de imprimir no painel e no perfil.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-13 — Visão da rede (#375, PRs #399 a #403)
 
