@@ -4,6 +4,28 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dk) — #536 (PR #538), nomes da folha do SIOPE
+
+- O developer autorizou o download das planilhas do SIOPE de Cuiabá (2025
+  e 2026) para o diagnóstico. **O captcha do SIOPE não é necessário**: o
+  `CAPTCHA_SIOPE` vazio funciona.
+- Diagnóstico pelo XML do `.xlsx` (entidades numéricas): o defeito é da
+  fonte. Em 2026, "Ã" + U+0087 (UTF-8 codificado duas vezes); em 2025,
+  "Ã¿" (letra perdida).
+- PR #538 (91cac01), opções A1 e B1:
+  - `EduMaps::Util::Mojibake` (`corrige_texto`) aplicado a todas as
+    colunas na carga;
+  - `query_siope` apaga o município e o ano antes de inserir (antes, a
+    recarga duplicava);
+  - change `remuneracao_nomes_utf8` (letra perdida pelo mesmo CPF
+    mascarado e formato do nome; "?" no resto: 26 profissionais de 2025).
+- O rebuild do backend reinstalou as dependências Perl e passou de 10 min.
+  Rodar em fundo. Depois do merge, se o branch é igual ao `main` no
+  código, basta o md5 nos contêineres.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #538 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 253; ciclo `2026-11-23-folha-nomes-acentuados.md`.
+
 ## Sessão 2026-11-23 (dj) — segunda avaliação da P5, #535 (PR #537)
 
 - Segunda rodada da P5 (auditoria de Cuiabá, TCE-MT): não adotaria

@@ -92,6 +92,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a lista das escolas sai com o endereço.
 - [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido), mais perto. QP-01 resolvido.
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: onde o município fica entre os do estado.
+- [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a folha declarada com os nomes certos.
 
 ## Pendências
 

@@ -89,6 +89,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p3--rede-privada-mantenedor): não adotaria (mantido), mais perto. QR-01 resolvido; AN-10 (#429) segue aberto.
 - [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: onde a oferta está abaixo da meta.
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: mapa de onde falta vaga de creche.
+- [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto: o SIOPE é só da rede municipal.
 
 ## Pendências
 

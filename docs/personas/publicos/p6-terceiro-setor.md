@@ -86,6 +86,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: chegar à escola pelo endereço.
 - [2026-11-23 — taxa de atendimento da educação infantil](ciclos/2026-11-23-taxa-atendimento-infantil.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a creche por município, com fonte citável.
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a lista citável dos mais longe da meta.
+- [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: o nome como no portal oficial.
 
 ## Pendências
 

@@ -144,5 +144,10 @@ P6. O QO-02 é um defeito de dado e vale para qualquer público.
     municípios estão abaixo da meta e o CSV.
   - Em MT, 116 dos 141 municípios ficam abaixo dos 50% na creche, e
     Cuiabá é a 101ª (44,9%).
-- QO-02 (#536) segue aberto: precisa baixar de novo a folha de Cuiabá do
-  SIOPE.
+- 2026-11-23: #536 (PR #538) mergeado: QO-02 resolvido.
+  - As planilhas do SIOPE mostraram que o defeito vem da fonte. A carga
+    passou a corrigir na leitura, e a change `remuneracao_nomes_utf8`
+    reparou o banco.
+  - Em Cuiabá, 2026 ficou todo certo. Em 2025, a letra perdida voltou de
+    outro mês do mesmo profissional para 193 de 219 pessoas. As outras 26
+    aparecem com "?", e a tela avisa.
