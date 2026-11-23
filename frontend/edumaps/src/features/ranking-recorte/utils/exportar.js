@@ -78,13 +78,13 @@ export function tabelaAtendimento(r, redes) {
   return {
     cabecalho: [
       "posicao", "codigo_ibge", "municipio", "uf", `criancas_${r.indicador.idade?.replace(/ /g, "_") ?? ""}_${r.ano}`,
-      "matriculas_todas_as_redes", "taxa_todas_as_redes", "matriculas_rede_municipal", "taxa_rede_municipal",
-      "matriculas_conveniadas", "taxa_municipal_mais_conveniadas_teto", "meta_pne", "abaixo_da_meta",
+      "matriculas_todas_as_redes", "taxa_todas_as_redes", "rede_local", "matriculas_rede_local", "taxa_rede_local",
+      "matriculas_conveniadas", "taxa_rede_local_mais_conveniadas_teto", "meta_pne", "abaixo_da_meta",
       `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "ano_populacao_idade", "ano_censo", "recorte", "porte_filtro",
     ],
     linhas: redes.map((x) => [
       x.posicao, x.codigo_ibge, x.municipio, x.uf, x.criancas,
-      x.matriculas, x.taxa, x.matriculas_municipal, x.taxa_municipal,
+      x.matriculas, x.taxa, x.rede_local ?? "municipal", x.matriculas_municipal, x.taxa_municipal,
       x.matriculas_conveniadas, x.teto, r.meta?.valor ?? null, x.abaixo_meta ? "sim" : "nao",
       x.populacao, x.porte ? rotuloPorte(x.porte) : null, r.ano, r.ano_censo ?? null, recorte, porte,
     ]),

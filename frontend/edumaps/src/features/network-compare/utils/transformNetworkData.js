@@ -219,7 +219,9 @@ export function buildAtendimentoInfantil(networks) {
   if (!(pop.creche > 0) || !(pop.pre > 0)) return null;
 
   const porRede = (key) => networks.find((n) => normalizeRede(n.rede) === key);
-  const municipal = porRede("municipal");
+  // #545: no DF não há prefeitura; a rede local é a distrital (estadual no Censo)
+  const df = ehDistritoFederal(first.co_municipio);
+  const municipal = porRede(df ? "estadual" : "municipal");
   const privada = porRede("privada");
   const soma = (campo) => networks.reduce((acc, n) => acc + toNumber(n[campo]), 0);
 
@@ -237,6 +239,7 @@ export function buildAtendimentoInfantil(networks) {
 
   return {
     ano: first.ano_populacao_idade ?? null,
+    redeLocal: df ? "Rede do DF (distrital)" : "Rede municipal",
     creche: { ...etapa("creche", pop.creche), meta: 0.5 },
     pre: { ...etapa("pre", pop.pre), meta: 1 },
   };
@@ -244,3 +247,7 @@ export function buildAtendimentoInfantil(networks) {
 
 export const formatPercent = (fraction, digits = 1) =>
   `${formatDecimal(toNumber(fraction) * 100, digits)}%`;
+
+/** #545: o Distrito Federal (sem prefeitura: a rede local é a distrital). */
+export const ehDistritoFederal = (codigoIbge) => String(codigoIbge ?? "") === "5300108";
+

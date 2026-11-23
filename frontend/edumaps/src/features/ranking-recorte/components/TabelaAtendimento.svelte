@@ -22,11 +22,12 @@
     da menor taxa para a maior.
     <strong data-testid="abaixo-meta">{redes.meta.abaixo.toLocaleString("pt-BR")} de {redes.total.toLocaleString("pt-BR")}
       {redes.total === 1 ? "município" : "municípios"}</strong> neste recorte estão abaixo da meta.
-    A rede municipal sozinha e a municipal com as escolas privadas conveniadas com a prefeitura (um teto: o Censo marca a
+    A rede do município sozinha e somada às escolas privadas conveniadas com a prefeitura (um teto: o Censo marca a
     escola conveniada, não a vaga) vêm ao lado.
     Crianças do Censo Demográfico {redes.ano} (IBGE), matrículas das escolas em funcionamento no Censo Escolar
     {redes.ano_censo ?? ""}. A taxa pode passar de 100%: entram crianças de outros municípios e fora da idade, e a
     população mudou desde o Censo. Município com poucas crianças tem taxa instável.
+    No Distrito Federal, que não tem prefeitura, a rede do município é a distrital, e as conveniadas são com o governo distrital.
     {#if redes.recorte?.regiao}
       Só os municípios da região {redes.recorte.regiao.nome ?? rotuloRegiao(redes.recorte.regiao.id)}.
     {/if}
@@ -45,9 +46,9 @@
         <th class="px-2 py-2 font-medium">Município</th>
         <th class="px-2 py-2 font-medium text-right">Crianças ({redes.indicador.idade})</th>
         <th class="px-2 py-2 font-medium text-right">Todas as redes</th>
-        <th class="px-2 py-2 font-medium text-right">Rede municipal</th>
+        <th class="px-2 py-2 font-medium text-right">Rede do município</th>
         {#if temTeto}
-          <th class="px-2 py-2 font-medium text-right">Municipal + conveniadas (teto)</th>
+          <th class="px-2 py-2 font-medium text-right">Rede do município + conveniadas (teto)</th>
         {/if}
         <th class="px-2 py-2 font-medium text-right">População</th>
       </tr>
@@ -71,7 +72,14 @@
                 data-testid="abaixo-da-meta" title="Abaixo da meta do PNE ({pct(meta)})">abaixo da meta</span>
             {/if}
           </td>
-          <td class="px-2 py-1.5 text-right">{pct(r.taxa_municipal)}</td>
+          <td class="px-2 py-1.5 text-right whitespace-nowrap">
+            {pct(r.taxa_municipal)}
+            {#if r.rede_local === "distrital"}
+              <!-- #545: no DF não há prefeitura; a rede local é a distrital -->
+              <span class="ml-1 text-[11px] text-gray-500" data-testid="rede-distrital"
+                title="No Distrito Federal a rede do ente local é a distrital, e as conveniadas são com o governo distrital.">distrital</span>
+            {/if}
+          </td>
           {#if temTeto}
             <td class="px-2 py-1.5 text-right">{pct(r.teto)}</td>
           {/if}

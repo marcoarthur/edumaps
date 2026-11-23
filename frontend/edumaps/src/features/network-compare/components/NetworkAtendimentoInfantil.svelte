@@ -41,9 +41,9 @@
             <th class="py-2 pr-4 font-medium">Etapa</th>
             <th class="py-2 pr-4 font-medium text-right">Crianças na idade</th>
             <th class="py-2 pr-4 font-medium text-right">Todas as redes</th>
-            <th class="py-2 pr-4 font-medium text-right">Rede municipal</th>
+            <th class="py-2 pr-4 font-medium text-right">{atendimento.redeLocal}</th>
             {#if temTeto}
-              <th class="py-2 pr-4 font-medium text-right">Municipal + conveniadas (teto)</th>
+              <th class="py-2 pr-4 font-medium text-right">{atendimento.redeLocal} + conveniadas (teto)</th>
             {/if}
             <th class="py-2 font-medium text-right">Meta do PNE</th>
           </tr>

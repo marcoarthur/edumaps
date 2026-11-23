@@ -857,6 +857,11 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
 # A posição vai da menor taxa para a maior: 1ª = a mais longe da meta
 # (decisão B1). Sem variação (a população tem um ano só), sem mínimo de
 # escolas e sem INSE.
+# #545: o Distrito Federal não tem prefeitura; a rede local é a distrital
+# (codigo_rede 2) e as conveniadas são com o governo distrital (change
+# rede_escolas_df).
+our $DF = '5300108';
+
 has indicadores_atendimento => sub {
   return {
     atendimento_creche => {
@@ -894,7 +899,9 @@ sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
     WITH m AS (
       SELECT co_municipio::text AS codigo_ibge, max(no_municipio) AS no_municipio, max(sg_uf) AS sg_uf,
              sum($mat)::bigint AS matriculas,
-             COALESCE(sum($mat) FILTER (WHERE codigo_rede = 3), 0)::bigint AS matriculas_municipal,
+             -- #545: a rede do ente local; no DF (sem prefeitura), a distrital
+             COALESCE(sum($mat) FILTER (WHERE codigo_rede = 3
+                OR (co_municipio::text = '$DF' AND codigo_rede = 2)), 0)::bigint AS matriculas_municipal,
              COALESCE(sum($conv) FILTER (WHERE codigo_rede = 4), 0)::bigint AS matriculas_conveniadas
         FROM analytics.mv_rede_escolas
        WHERE true $uf_sql
@@ -960,6 +967,8 @@ sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
       matriculas  => 0 + $_->{matriculas},
       matriculas_municipal => 0 + $_->{matriculas_municipal},
       matriculas_conveniadas => 0 + $_->{matriculas_conveniadas},
+      # #545: de qual rede é a "rede local" (no DF, a distrital)
+      rede_local  => "$_->{codigo_ibge}" eq $DF ? 'distrital' : 'municipal',
       populacao   => $num->($_->{populacao}),
       porte       => $_->{porte},
     } } @$rows ],
