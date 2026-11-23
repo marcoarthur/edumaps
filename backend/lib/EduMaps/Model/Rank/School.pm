@@ -621,6 +621,10 @@ sub _metodo_ideb ($self, $def, $ano, $ano_censo) {
 }
 
 sub redes_municipais ($self, $indicator_id, $opts = {}) {
+  # #535 (QO-01 da P5): a taxa de atendimento da educação infantil tem
+  # leitura própria (sem média de escolas, mínimo, variação nem INSE).
+  return $self->atendimento_municipios($indicator_id, $opts)
+    if $self->indicadores_atendimento->{$indicator_id};
   my $def = $self->indicator_registry->{$indicator_id}
     or croak "Indicador desconhecido: $indicator_id";
   croak "Ranking de redes só para indicadores do IDEB/SAEB: $indicator_id"
@@ -836,6 +840,166 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
       populacao   => $num->($_->{populacao}),
       porte       => $_->{porte},
     } } @$rows ],
+  };
+}
+
+# ============================================================================
+# Taxa de atendimento da educação infantil por município (#535, QO-01 da P5)
+# ============================================================================
+#
+# A meta 1 do PNE no ranking de redes: matrículas na etapa (escolas em
+# funcionamento, analytics.mv_rede_escolas) sobre as crianças na idade
+# (clean.populacao_idade, Censo Demográfico), em três contas:
+#   * todas as redes — a conta da meta, que define a posição (decisão A1);
+#   * a rede municipal;
+#   * a municipal mais as privadas conveniadas com a prefeitura, um teto
+#     (o Censo marca a escola conveniada, não a vaga; #520).
+# A posição vai da menor taxa para a maior: 1ª = a mais longe da meta
+# (decisão B1). Sem variação (a população tem um ano só), sem mínimo de
+# escolas e sem INSE.
+has indicadores_atendimento => sub {
+  return {
+    atendimento_creche => {
+      etapa => 'creche', label => 'Atendimento em creche (0 a 3 anos)', idade => '0 a 3 anos',
+      meta => 0.5, populacao => 'populacao_0_3',
+      matriculas => 'matriculas_creche', conveniadas => 'matriculas_creche_conveniada',
+    },
+    atendimento_pre => {
+      etapa => 'pre', label => 'Atendimento na pré-escola (4 e 5 anos)', idade => '4 e 5 anos',
+      meta => 1, populacao => 'populacao_4_5',
+      matriculas => 'matriculas_pre', conveniadas => 'matriculas_pre_conveniada',
+    },
+  };
+};
+
+sub atendimento_municipios ($self, $indicator_id, $opts = {}) {
+  my $def = $self->indicadores_atendimento->{$indicator_id}
+    or croak "Indicador desconhecido: $indicator_id";
+  my $dbh = $self->schema->storage->dbh;
+  my $uf = $opts->{uf};
+  my $regiao = $uf ? undef : $opts->{regiao};
+  croak "Região desconhecida: $regiao" if defined $regiao && !EduMaps::Regiao->valido($regiao);
+  croak "Informe a UF, a região ou o recorte nacional" unless $uf || $regiao || $opts->{national};
+  my $porte = $opts->{porte};
+  croak "Porte desconhecido: $porte" if defined $porte && !EduMaps::Porte->valido($porte);
+  my $porte_case = EduMaps::Porte->case_sql('pm.populacao_estimada');
+  my $uf_sql = $uf ? 'AND sg_uf = ?' : $regiao ? 'AND sg_uf = ANY(?)' : '';
+  my @uf_bind = $uf ? ($uf) : $regiao ? (EduMaps::Regiao->ufs($regiao)) : ();
+  my ($mat, $conv, $pop) = @$def{qw(matriculas conveniadas populacao)};
+
+  my ($ano) = $dbh->selectrow_array('SELECT max(ano) FROM clean.populacao_idade');
+  return undef unless defined $ano;
+
+  my $rows = $dbh->selectall_arrayref(qq{
+    WITH m AS (
+      SELECT co_municipio::text AS codigo_ibge, max(no_municipio) AS no_municipio, max(sg_uf) AS sg_uf,
+             sum($mat)::bigint AS matriculas,
+             COALESCE(sum($mat) FILTER (WHERE codigo_rede = 3), 0)::bigint AS matriculas_municipal,
+             COALESCE(sum($conv) FILTER (WHERE codigo_rede = 4), 0)::bigint AS matriculas_conveniadas
+        FROM analytics.mv_rede_escolas
+       WHERE true $uf_sql
+       GROUP BY co_municipio
+    ),
+    base AS (
+      SELECT m.*, pi.$pop AS criancas, pm.populacao_estimada AS populacao, $porte_case AS porte
+        FROM m
+        JOIN clean.populacao_idade pi ON pi.codigo_ibge = m.codigo_ibge AND pi.ano = ?
+        LEFT JOIN clean.populacao_municipal pm ON pm.codigo_ibge = m.codigo_ibge
+       WHERE pi.$pop > 0 @{[ defined $porte ? "AND $porte_case = ?" : '' ]}
+    )
+    SELECT b.*,
+           b.matriculas::float8 / b.criancas AS taxa,
+           b.matriculas_municipal::float8 / b.criancas AS taxa_municipal,
+           CASE WHEN b.matriculas_conveniadas > 0
+                THEN (b.matriculas_municipal + b.matriculas_conveniadas)::float8 / b.criancas END AS teto,
+           RANK() OVER (ORDER BY b.matriculas::float8 / b.criancas) AS posicao
+      FROM base b
+     ORDER BY taxa, b.no_municipio
+  }, { Slice => {} }, @uf_bind, $ano, (defined $porte ? ($porte) : ()));
+  return undef unless @$rows;
+
+  my ($ano_censo) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
+  my $pop_ano = eval { EduMaps::Fontes->versao($dbh, 'ibge_populacao')->{ibge_populacao}{periodo} };
+  my $num = sub ($v) { defined $v ? 0 + $v : undef };
+  my $taxa = sub ($v) { defined $v ? 0 + sprintf('%.4f', $v) : undef };
+  my $abaixo = grep { $_->{taxa} < $def->{meta} } @$rows;
+
+  my $destaque = defined $opts->{destaque}
+    ? $self->_destaque_atendimento($opts->{destaque}, $rows, {
+        pop => $pop, ano => $ano, uf => $uf, regiao => $regiao, porte => $porte, porte_case => $porte_case })
+    : undef;
+
+  return {
+    tipo => 'atendimento',
+    indicador => { id => $indicator_id, label => $def->{label}, etapa => $def->{etapa}, idade => $def->{idade} },
+    (defined $destaque ? (destaque => $destaque) : ()),
+    ano => 0 + $ano,
+    ano_censo => defined $ano_censo ? 0 + $ano_censo : undef,
+    meta => { valor => $def->{meta}, abaixo => 0 + $abaixo },
+    ordem => 'menor_primeiro',
+    recorte => {
+      ($uf ? (uf => $uf) : $regiao ? (regiao => { id => $regiao, nome => EduMaps::Regiao->nome($regiao) }) : (nacional => \1)),
+      (defined $porte ? (porte => $porte) : ()),
+    },
+    portes  => EduMaps::Porte->lista,
+    regioes => EduMaps::Regiao->lista,
+    populacao_fonte => { ano => $pop_ano, descricao => 'Estimativa da população do IBGE' },
+    populacao_idade_fonte => { ano => 0 + $ano, descricao => 'Censo Demográfico do IBGE' },
+    total => scalar @$rows,
+    redes => [ map { +{
+      codigo_ibge => "$_->{codigo_ibge}",
+      municipio   => $_->{no_municipio},
+      uf          => $_->{sg_uf},
+      posicao     => 0 + $_->{posicao},
+      media       => $taxa->($_->{taxa}),
+      taxa        => $taxa->($_->{taxa}),
+      taxa_municipal => $taxa->($_->{taxa_municipal}),
+      teto        => $taxa->($_->{teto}),
+      abaixo_meta => $_->{taxa} < $def->{meta} ? \1 : \0,
+      criancas    => 0 + $_->{criancas},
+      matriculas  => 0 + $_->{matriculas},
+      matriculas_municipal => 0 + $_->{matriculas_municipal},
+      matriculas_conveniadas => 0 + $_->{matriculas_conveniadas},
+      populacao   => $num->($_->{populacao}),
+      porte       => $_->{porte},
+    } } @$rows ],
+  };
+}
+
+# Situação do município destacado na taxa de atendimento (#535): como em
+# _destaque_rede, mais sem_populacao_idade (sem o Censo Demográfico).
+sub _destaque_atendimento ($self, $codigo, $rows, $c) {
+  my $dbh = $self->schema->storage->dbh;
+  my ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio = ? ORDER BY nu_ano_censo DESC LIMIT 1',
+    undef, $codigo);
+  my ($pop, $porte) = $dbh->selectrow_array(
+    "SELECT pm.populacao_estimada, $c->{porte_case} FROM clean.populacao_municipal pm WHERE pm.codigo_ibge = ?",
+    undef, "$codigo");
+  my ($criancas) = $dbh->selectrow_array(
+    "SELECT $c->{pop} FROM clean.populacao_idade WHERE codigo_ibge = ? AND ano = ?", undef, "$codigo", $c->{ano});
+  my ($row) = grep { "$_->{codigo_ibge}" eq "$codigo" } @$rows;
+
+  my $situacao =
+      $row                                     ? 'no_ranking'
+    : !defined $nome                           ? 'sem_dado'
+    : (defined $c->{uf} && $uf ne $c->{uf})
+      || (defined $c->{regiao} && (EduMaps::Regiao->de_uf($uf) // '') ne $c->{regiao})
+                                               ? 'fora_do_recorte'
+    : !$criancas                               ? 'sem_populacao_idade'
+    : defined $c->{porte} && !defined $porte   ? 'sem_populacao'
+    : defined $c->{porte} && $porte ne $c->{porte} ? 'fora_do_porte'
+    :                                            'sem_dado';
+
+  return {
+    codigo_ibge => "$codigo",
+    municipio   => $nome,
+    uf          => $uf,
+    regiao      => defined $uf ? EduMaps::Regiao->de_uf($uf) : undef,
+    populacao   => defined $pop ? 0 + $pop : undef,
+    porte       => $porte,
+    situacao    => $situacao,
+    posicao     => $row ? 0 + $row->{posicao} : undef,
   };
 }
 

@@ -66,3 +66,33 @@ export function tabelaEscolas(e, escolas) {
     ]),
   };
 }
+
+/**
+ * #535 (QO-01 da P5): taxa de atendimento da educação infantil por
+ * município. Taxas como fração (0,449 = 44,9%), com as crianças (Censo
+ * Demográfico), as matrículas das três contas e o recorte em toda linha.
+ */
+export function tabelaAtendimento(r, redes) {
+  const recorte = rotuloRecorte(r.recorte);
+  const porte = r.recorte?.porte ?? "";
+  return {
+    cabecalho: [
+      "posicao", "codigo_ibge", "municipio", "uf", `criancas_${r.indicador.idade?.replace(/ /g, "_") ?? ""}_${r.ano}`,
+      "matriculas_todas_as_redes", "taxa_todas_as_redes", "matriculas_rede_municipal", "taxa_rede_municipal",
+      "matriculas_conveniadas", "taxa_municipal_mais_conveniadas_teto", "meta_pne", "abaixo_da_meta",
+      `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "ano_populacao_idade", "ano_censo", "recorte", "porte_filtro",
+    ],
+    linhas: redes.map((x) => [
+      x.posicao, x.codigo_ibge, x.municipio, x.uf, x.criancas,
+      x.matriculas, x.taxa, x.matriculas_municipal, x.taxa_municipal,
+      x.matriculas_conveniadas, x.teto, r.meta?.valor ?? null, x.abaixo_meta ? "sim" : "nao",
+      x.populacao, x.porte ? rotuloPorte(x.porte) : null, r.ano, r.ano_censo ?? null, recorte, porte,
+    ]),
+  };
+}
+
+/** Nome do CSV da taxa de atendimento: etapa, recorte, porte e o ano da população. */
+export function nomeCsvAtendimento(r) {
+  const rec = r.recorte?.uf ?? r.recorte?.regiao?.id ?? "BR";
+  return `ranking-atendimento-${r.indicador.etapa}-${rec}${r.recorte?.porte ? `-${r.recorte.porte}` : ""}-${r.ano}.csv`;
+}

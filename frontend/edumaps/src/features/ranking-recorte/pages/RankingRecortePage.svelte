@@ -15,9 +15,10 @@
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { dataBR } from "@/features/fontes/utils.js";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
-  import { INDICADORES_IDEB, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
+  import { INDICADORES_IDEB, INDICADORES_ATENDIMENTO, ehAtendimento, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
-  import { tabelaRedes, tabelaEscolas, nomeCsvEscolas } from "../utils/exportar.js";
+  import TabelaAtendimento from "../components/TabelaAtendimento.svelte";
+  import { tabelaRedes, tabelaEscolas, nomeCsvEscolas, tabelaAtendimento, nomeCsvAtendimento } from "../utils/exportar.js";
 
   const inicial = new URLSearchParams(window.location.search);
 
@@ -32,12 +33,19 @@
   let regiao = $state(regiaoInicial || "SE");
   const multiUf = $derived(abrangencia !== "uf");
   let indicadorRede = $state(
-    INDICADORES_IDEB.some((i) => i.id === inicial.get("indicador")) ? inicial.get("indicador") : "ideb_anos_iniciais",
+    [...INDICADORES_IDEB, ...INDICADORES_ATENDIMENTO].some((i) => i.id === inicial.get("indicador"))
+      ? inicial.get("indicador") : "ideb_anos_iniciais",
   );
+  // #535: na taxa de atendimento a ordem de fábrica é menor primeiro (quem
+  // está mais longe da meta no topo); no IDEB, maior primeiro.
+  const atendimento = $derived(ehAtendimento(indicadorRede));
+  const sentidoPadrao = () => (ehAtendimento(indicadorRede) ? "asc" : "desc");
   let ordem = $state(inicial.get("ordem") === "variacao" ? "variacao" : "media");
   // #437: mínimo de escolas por rede e sentido da ordem (as duas abas).
   let minimo = $state(MINIMOS.includes(Number(inicial.get("minimo"))) ? Number(inicial.get("minimo")) : 3);
-  let sentido = $state(inicial.get("sentido") === "asc" ? "asc" : "desc");
+  let sentido = $state(
+    ["asc", "desc"].includes(inicial.get("sentido")) ? inicial.get("sentido") : (ehAtendimento(inicial.get("indicador")) ? "asc" : "desc"),
+  );
   // #439: porte do município (classes de população do IBGE); "" = todos.
   let porte = $state(PORTES.some((p) => p.id === inicial.get("porte")) ? inicial.get("porte") : "");
   let redes = $state(null);
@@ -87,7 +95,7 @@
       if (codigoIbge) p.set("codigo_ibge", codigoIbge);
       if (rede) p.set("rede", rede);
     }
-    if (sentido === "asc") p.set("sentido", "asc");
+    if (sentido !== (aba === "redes" ? sentidoPadrao() : "desc")) p.set("sentido", sentido);
     window.history.replaceState({}, "", `/ranking?${p}`);
   }
 
@@ -127,6 +135,14 @@
     } finally {
       loading = false;
     }
+  }
+
+  // #535: trocar entre o IDEB e a taxa de atendimento volta à ordem de
+  // fábrica de cada um (a variação não existe na taxa).
+  function trocarIndicadorRede() {
+    sentido = sentidoPadrao();
+    if (atendimento) ordem = "media";
+    carregarRedes();
   }
 
   function alternarSentido() {
@@ -212,6 +228,8 @@
         return `${fora} o município é de ${x.uf} (${rotuloRegiao(x.regiao) || "região desconhecida"}), fora deste recorte.`;
       case "fora_do_porte":
         return `${fora} o município tem ${num(x.populacao, 0)} habitantes (${rotuloPorte(x.porte)}), fora do porte escolhido.`;
+      case "sem_populacao_idade":
+        return `O município não está nesta lista: não tem a população por idade do Censo Demográfico carregada.`;
       case "sem_populacao":
         return `${fora} o município não tem estimativa de população carregada, então não entra com filtro de porte.`;
       case "poucas_escolas":
@@ -225,6 +243,10 @@
 
   function exportarRedes() {
     const r = redes;
+    if (r.tipo === "atendimento") {
+      baixarCsv(nomeCsvAtendimento(r), csvDe(tabelaAtendimento(r, redesOrdenadas)));
+      return;
+    }
     baixarCsv(
       `ranking-redes-${r.indicador.id}-${abrangencia === "brasil" ? "BR" : abrangencia === "regiao" ? regiao : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
       csvDe(tabelaRedes(r, redesOrdenadas)),
@@ -296,11 +318,17 @@
         {/if}
         <div>
           <label for="indicador-rede" class="block text-sm text-gray-600 mb-1">Indicador</label>
-          <select id="indicador-rede" bind:value={indicadorRede} onchange={carregarRedes}
+          <select id="indicador-rede" bind:value={indicadorRede} onchange={trocarIndicadorRede}
             class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-            {#each INDICADORES_IDEB as i}<option value={i.id}>{i.label}</option>{/each}
+            <optgroup label="IDEB e SAEB">
+              {#each INDICADORES_IDEB as i}<option value={i.id}>{i.label}</option>{/each}
+            </optgroup>
+            <optgroup label="Educação infantil (meta 1 do PNE)">
+              {#each INDICADORES_ATENDIMENTO as i}<option value={i.id}>{i.label}</option>{/each}
+            </optgroup>
           </select>
         </div>
+        {#if !atendimento}
         <div>
           <label for="ordem" class="block text-sm text-gray-600 mb-1">Ordenar por</label>
           <select id="ordem" bind:value={ordem} onchange={definirUrl}
@@ -316,6 +344,7 @@
             {#each MINIMOS as m}<option value={m}>{m}</option>{/each}
           </select>
         </div>
+        {/if}
         <div>
           <label for="porte" class="block text-sm text-gray-600 mb-1">Porte do município</label>
           <select id="porte" bind:value={porte} onchange={carregarRedes}
@@ -361,7 +390,11 @@
             <p>
               <strong>{d.municipio ?? d.codigo_ibge}</strong>
               {#if d.uf}({d.uf}{d.regiao ? `, ${rotuloRegiao(d.regiao)}` : ""}{d.porte ? `, ${rotuloPorte(d.porte)}` : ""}){/if}:
-              {#if d.situacao === "no_ranking"}
+              {#if d.situacao === "no_ranking" && redes.tipo === "atendimento"}
+                {d.posicao}ª de {redes.total} {redes.total === 1 ? "município" : "municípios"} neste recorte, da menor taxa para a maior{#if linhaDestaque}:
+                  {(linhaDestaque.taxa * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% em todas as redes{linhaDestaque.abaixo_meta ? ", abaixo da meta" : ""}{/if}.
+                <button type="button" onclick={irParaDestaque} data-testid="ir-destaque" class="ml-1 text-xs text-blue-700 hover:underline">Ver na tabela</button>
+              {:else if d.situacao === "no_ranking"}
                 {d.posicao}ª de {redes.total} {redes.total === 1 ? "rede" : "redes"} neste recorte pelo valor de {redes.ano}{#if ordem === "variacao" && linhaDestaque?.posicao_variacao}{" "}e {linhaDestaque.posicao_variacao}ª pela variação{/if}.
                 <button type="button" onclick={irParaDestaque} data-testid="ir-destaque" class="ml-1 text-xs text-blue-700 hover:underline">Ver na tabela</button>
               {:else}
@@ -386,6 +419,9 @@
             {/if}
           </div>
         {/if}
+        {#if redes.tipo === "atendimento"}
+          <TabelaAtendimento {redes} linhas={redesOrdenadas} destaque={d} {multiUf} onExportar={exportarRedes} />
+        {:else}
         <div class="flex flex-wrap items-start justify-between gap-3">
           <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-redes">
             Valor da rede = <strong>média simples das escolas municipais</strong> com {redes.indicador.label} em {redes.ano}
@@ -475,6 +511,7 @@
             </tbody>
           </table>
         </div>
+        {/if}
         {#if redes.total === 0}
           <p class="text-sm text-gray-500" data-testid="redes-vazio">Nenhuma rede neste recorte. Tente outro porte ou um mínimo de escolas menor.</p>
         {/if}

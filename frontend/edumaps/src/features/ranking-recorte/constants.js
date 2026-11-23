@@ -28,6 +28,15 @@ export const INDICADORES_CENSO = [
 
 export const INDICADORES_ESCOLA = [...INDICADORES_IDEB, ...INDICADORES_CENSO];
 
+// #535 (QO-01 da P5): taxa de atendimento da educação infantil (meta 1 do
+// PNE), só no ranking de redes; cada linha é um município (todas as redes).
+export const INDICADORES_ATENDIMENTO = [
+  { id: "atendimento_creche", label: "Creche (0 a 3 anos)" },
+  { id: "atendimento_pre", label: "Pré-escola (4 e 5 anos)" },
+];
+
+export const ehAtendimento = (id) => INDICADORES_ATENDIMENTO.some((i) => i.id === id);
+
 // Mínimo de escolas por rede oferecido na tela (#437); o backend aceita 3..30.
 export const MINIMOS = [3, 5, 10, 20];
 

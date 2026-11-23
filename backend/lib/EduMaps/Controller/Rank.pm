@@ -104,7 +104,7 @@ sub redes_municipais ($self) {
         (defined $v->param('porte') ? (porte => $v->param('porte')) : ()),
         (defined $v->param('destaque') ? (destaque => $v->param('destaque')) : ()) });
   };
-  return $self->render(json => { error => 'Indicador inválido para o ranking de redes (use um do IDEB/SAEB).' }, status => 400) if $@;
+  return $self->render(json => { error => 'Indicador inválido para o ranking de redes (use um do IDEB/SAEB ou da educação infantil).' }, status => 400) if $@;
   return $self->render(json => { error => 'Sem redes com este indicador no recorte.' }, status => 404) unless $r;
   $self->res->headers->cache_control('public, max-age=600');
   $self->render(json => $r);
