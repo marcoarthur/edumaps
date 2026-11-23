@@ -108,8 +108,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Prestação de contas ao conselho (2026-11-23, **adotaria, em piloto**): QP-01
   (sem taxa de atendimento da educação infantil; população por idade sem
   fonte) → #533, entregue (#534).
+- Expansão da creche (2026-11-23, **adotaria, em piloto**): QK-01 (a taxa
+  não diz quantas vagas faltam para a meta) aguarda a aprovação do
+  developer para virar issue. "Onde abrir" depende de carregar os setores
+  do Censo 2022.
 
 ## Entradas
+
+### 2026-11-23 — Expansão da creche no plano municipal (segunda rodada do dia)
+
+**Material:** a comparação de redes de Vitória de Santo Antão (PE, 56
+escolas municipais), o ranking da creche no Nordeste (100 a 500 mil
+habitantes) e a base da rede municipal. Consolidação em
+[`avaliacoes/2026-11-23-p2-expansao-creche.md`](avaliacoes/2026-11-23-p2-expansao-creche.md).
+
+**O que tentou:** escrever a meta 1 do plano municipal: quanto falta,
+quantas vagas abrir e onde.
+
+**O que funciona para ele:** a taxa com as três contas e a meta (creche
+19,1%, rede municipal 6,3%); a posição entre os municípios parecidos; as 5
+escolas municipais com creche, com o bairro.
+
+**Barreiras:**
+- QK-01 (atrapalha): a tela não diz quantas vagas faltam (cerca de 2.026
+  na creche e 494 na pré-escola, feitas à mão).
+- Observação: "onde abrir" pede as crianças por setor ou bairro, sem carga
+  para PE.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-23 — Telas públicas (prestação de contas ao conselho)
 
