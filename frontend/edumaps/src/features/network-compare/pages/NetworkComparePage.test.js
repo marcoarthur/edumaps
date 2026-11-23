@@ -124,6 +124,9 @@ describe("NetworkComparePage", () => {
     // #547: vagas que faltam para a meta
     expect(screen.getByTestId("vagas-creche")).toHaveTextContent("494");
     expect(screen.getByTestId("vagas-pre")).toHaveTextContent("—");
+    // #549: a conta pelo nome e o aviso
+    expect(screen.getByTestId("atendimento-infantil")).toHaveTextContent("Matrículas na educação infantil por criança da idade");
+    expect(screen.getByTestId("aviso-oficial")).toHaveTextContent("Não é o indicador oficial da meta 1 do PNE");
     expect(screen.getByTestId("atendimento-nota")).toHaveTextContent(
       /Censo Demográfico 2022 .*pode passar de 100%/,
     );

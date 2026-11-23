@@ -67,6 +67,9 @@ export function tabelaEscolas(e, escolas) {
   };
 }
 
+// #549 (QJ-01 da P5): o método em toda linha (B1: os nomes das colunas ficam).
+export const METODO_ATENDIMENTO = "taxa bruta de matrícula (matrículas na etapa ÷ crianças da idade), não é o indicador oficial do PNE";
+
 /**
  * #535 (QO-01 da P5): taxa de atendimento da educação infantil por
  * município. Taxas como fração (0,449 = 44,9%), com as crianças (Censo
@@ -80,13 +83,13 @@ export function tabelaAtendimento(r, redes) {
       "posicao", "codigo_ibge", "municipio", "uf", `criancas_${r.indicador.idade?.replace(/ /g, "_") ?? ""}_${r.ano}`,
       "matriculas_todas_as_redes", "taxa_todas_as_redes", "rede_local", "matriculas_rede_local", "taxa_rede_local",
       "matriculas_conveniadas", "taxa_rede_local_mais_conveniadas_teto", "meta_pne", "abaixo_da_meta", "vagas_faltam_meta",
-      `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "ano_populacao_idade", "ano_censo", "recorte", "porte_filtro",
+      `populacao_${r.populacao_fonte?.ano ?? ""}`, "porte", "ano_populacao_idade", "ano_censo", "recorte", "porte_filtro", "metodo",
     ],
     linhas: redes.map((x) => [
       x.posicao, x.codigo_ibge, x.municipio, x.uf, x.criancas,
       x.matriculas, x.taxa, x.rede_local ?? "municipal", x.matriculas_municipal, x.taxa_municipal,
       x.matriculas_conveniadas, x.teto, r.meta?.valor ?? null, x.abaixo_meta ? "sim" : "nao", x.vagas_faltam_meta ?? null,
-      x.populacao, x.porte ? rotuloPorte(x.porte) : null, r.ano, r.ano_censo ?? null, recorte, porte,
+      x.populacao, x.porte ? rotuloPorte(x.porte) : null, r.ano, r.ano_censo ?? null, recorte, porte, METODO_ATENDIMENTO,
     ]),
   };
 }

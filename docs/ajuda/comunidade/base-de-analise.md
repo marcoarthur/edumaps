@@ -121,6 +121,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
       Censo Escolar mais recente (`ano_populacao_idade` e `ano_censo`).
     - **A taxa pode passar de 100%:** entram crianças de outros municípios
       e fora da idade.
+    - **É uma taxa bruta de matrícula,** e não o indicador oficial da meta
+      1 do PNE, que mede o percentual das crianças da idade que frequentam
+      creche ou escola, em pesquisa domiciliar. Os números podem diferir.
   - **Creches conveniadas:** parte da oferta de creche das prefeituras é
     feita por convênio com escolas privadas, que ficam na rede privada. Em
     SP, das matrículas em creche da rede municipal mais as das conveniadas

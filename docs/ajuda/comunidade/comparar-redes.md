@@ -55,7 +55,16 @@ Brasil.
   em mais de uma escola conta em cada uma.
 - **Taxa de atendimento da educação infantil.** Matrículas em creche
   sobre as crianças de 0 a 3 anos, e na pré-escola sobre as de 4 e 5. A
-  meta do PNE é 50% na creche e 100% na pré-escola.
+  meta do PNE é 50% na creche e 100% na pré-escola. O quadro se chama
+  "Matrículas na educação infantil por criança da idade".
+  - **Taxa bruta, não o indicador oficial:** a conta é uma taxa bruta de
+    matrícula. Ela soma as matrículas de crianças de qualquer idade e de
+    qualquer município e divide pelas crianças da idade que moram no
+    município. O indicador oficial da meta 1 do PNE é outro: o percentual das
+    crianças da idade que **frequentam** creche ou escola, medido em pesquisa
+    domiciliar. Os números podem diferir, e por isso a tela diz "abaixo de
+    50%" (pela conta bruta), e não "abaixo da meta". As vagas que faltam são
+    uma estimativa pela mesma conta.
   - **Três contas:** todas as redes (a da meta, com as privadas
     inclusive), só a rede municipal, e a municipal com as privadas
     conveniadas com a prefeitura, que é um teto (o Censo marca a escola

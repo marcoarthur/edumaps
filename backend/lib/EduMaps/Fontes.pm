@@ -97,7 +97,7 @@ our @CATALOGO = (
     nome      => 'População por idade (Censo Demográfico)',
     orgao     => 'IBGE',
     descricao => 'Crianças e jovens de cada idade por município, contados no Censo Demográfico, '
-      . 'usados na taxa de atendimento da creche (0 a 3 anos) e da pré-escola (4 e 5 anos).',
+      . 'usados na taxa bruta de matrícula da creche (0 a 3 anos) e da pré-escola (4 e 5 anos).',
     url       => 'https://sidra.ibge.gov.br/tabela/9514',
     metodologia => 'https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html',
     tabelas   => [qw(clean.populacao_idade)],

@@ -16,16 +16,19 @@
 
 <div class="flex flex-wrap items-start justify-between gap-3">
   <p class="text-xs text-gray-600 max-w-3xl" data-testid="nota-atendimento">
-    Taxa de atendimento = matrículas na {redes.indicador.etapa === "creche" ? "creche" : "pré-escola"} ÷ crianças de
-    {redes.indicador.idade} no município. A posição é pela conta de <strong>todas as redes</strong>, a da meta 1 do PNE
+    <!-- #549 (QJ-01 da P5): a conta pelo nome, e que não é o indicador oficial -->
+    <strong>Taxa bruta de matrícula</strong> = matrículas na {redes.indicador.etapa === "creche" ? "creche" : "pré-escola"}
+    (de qualquer idade e de qualquer município) ÷ crianças de {redes.indicador.idade} que moram no município.
+    <span data-testid="aviso-oficial">Não é o indicador oficial da meta 1 do PNE, que mede o percentual das crianças da idade que frequentam creche ou escola, em pesquisa domiciliar: os números podem diferir.</span>
+    A posição é pela conta de <strong>todas as redes</strong>, comparada à meta 1 do PNE
     ({redes.indicador.etapa === "creche" ? "50% das crianças de 0 a 3 anos" : "todas as crianças de 4 e 5 anos"}),
     da menor taxa para a maior.
     <strong data-testid="abaixo-meta">{redes.meta.abaixo.toLocaleString("pt-BR")} de {redes.total.toLocaleString("pt-BR")}
-      {redes.total === 1 ? "município" : "municípios"}</strong> neste recorte estão abaixo da meta.
+      {redes.total === 1 ? "município" : "municípios"}</strong> neste recorte estão abaixo de {pct(meta).replace(",0", "")}.
     {#if redes.meta?.vagas_faltam > 0}
       <!-- #547: quanto falta, em vagas, somando os municípios abaixo da meta -->
-      <span data-testid="vagas-recorte">Para todos chegarem à meta, faltam
-        <strong>{redes.meta.vagas_faltam.toLocaleString("pt-BR")} vagas</strong> no recorte (a conta de cada município está
+      <span data-testid="vagas-recorte">Para todos chegarem a {pct(meta).replace(",0", "")}, faltam, por esta conta, cerca de
+        <strong>{redes.meta.vagas_faltam.toLocaleString("pt-BR")} vagas</strong> no recorte (a estimativa de cada município está
         no CSV e na comparação de redes).</span>
     {/if}
     A rede do município sozinha e somada às escolas privadas conveniadas com a prefeitura (um teto: o Censo marca a
@@ -75,7 +78,7 @@
             {pct(r.taxa)}
             {#if r.abaixo_meta}
               <span class="ml-1 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 text-[11px] font-medium"
-                data-testid="abaixo-da-meta" title="Abaixo da meta do PNE ({pct(meta)})">abaixo da meta</span>
+                data-testid="abaixo-da-meta" title="Abaixo de {pct(meta)} pela taxa bruta de matrícula">abaixo de {pct(meta).replace(",0", "")}</span>
             {/if}
           </td>
           <td class="px-2 py-1.5 text-right whitespace-nowrap">

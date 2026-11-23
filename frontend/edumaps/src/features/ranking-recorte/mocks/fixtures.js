@@ -24,7 +24,7 @@ export const ESCOLAS_FIXTURE = {
 // #535 (QO-01 da P5): taxa de atendimento da creche por município.
 export const ATENDIMENTO_FIXTURE = {
   tipo: "atendimento",
-  indicador: { id: "atendimento_creche", label: "Atendimento em creche (0 a 3 anos)", etapa: "creche", idade: "0 a 3 anos" },
+  indicador: { id: "atendimento_creche", label: "Creche (0 a 3 anos): taxa bruta de matrícula", etapa: "creche", idade: "0 a 3 anos" },
   ano: 2022,
   ano_censo: 2025,
   meta: { valor: 0.5, abaixo: 2, vagas_faltam: 1794 },

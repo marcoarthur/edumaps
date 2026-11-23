@@ -202,7 +202,7 @@ subtest 'dicionário' => sub {
   is $d{populacao_0_3}[3], 'População por idade (Censo Demográfico) (IBGE)', 'fonte da população por idade (#533)';
   is $d{populacao_0_3}[4], '2022', 'ano do Censo Demográfico (#533)';
   like $d{populacao_0_3}[5], qr{sidra\.ibge\.gov\.br/tabela/9514}, 'link da tabela do SIDRA (#533)';
-  like $d{populacao_4_5}[1], qr/pré-escola.*Taxa de atendimento.*passar de 100%.*anterior ao Censo Escolar/, 'a conta e os avisos (#533)';
+  like $d{populacao_4_5}[1], qr/pré-escola.*Taxa bruta de matrícula.*Não é o indicador oficial da meta 1 do PNE.*passar de 100%.*anterior ao Censo Escolar/, 'a conta e os avisos (#533, #549)';
   like $d{ano_populacao_idade}[1], qr/anterior ao das matrículas/, 'ano da população por idade (#533)';
   ok $d{ano_censo}, 'colunas de versão no dicionário';
   like $d{regiao}[1], qr/Região geográfica do IBGE.*derivada da UF/, 'região no dicionário (#448)';

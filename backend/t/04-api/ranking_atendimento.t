@@ -48,6 +48,7 @@ subtest 'creche em RO: taxa, posição da menor para a maior e a meta' => sub {
   my $r = $t->get_ok('/api/ranking/redes?indicador=atendimento_creche&uf=RO')->status_is(200)->tx->res->json;
   is $r->{tipo}, 'atendimento', 'leitura da taxa de atendimento';
   is $r->{indicador}{idade}, '0 a 3 anos', 'idade da etapa';
+  like $r->{indicador}{label}, qr/taxa bruta de matrícula/, 'o nome da conta (#549)';
   is $r->{ano}, 2022, 'ano da população (Censo Demográfico)';
   is $r->{ordem}, 'menor_primeiro', 'menor primeiro (B1)';
   is $r->{total}, 2, 'os dois municípios de RO das fixtures';

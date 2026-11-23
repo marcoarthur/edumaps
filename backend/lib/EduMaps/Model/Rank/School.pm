@@ -846,6 +846,10 @@ sub redes_municipais ($self, $indicator_id, $opts = {}) {
 
 # ============================================================================
 # Taxa de atendimento da educação infantil por município (#535, QO-01 da P5)
+#
+# #549 (QJ-01 da P5): é uma taxa BRUTA de matrícula (matrículas na etapa,
+# de qualquer idade e município, ÷ crianças da idade), não o indicador
+# oficial da meta 1 do PNE (frequência por idade, de pesquisa domiciliar).
 # ============================================================================
 #
 # A meta 1 do PNE no ranking de redes: matrículas na etapa (escolas em
@@ -866,12 +870,12 @@ our $DF = '5300108';
 has indicadores_atendimento => sub {
   return {
     atendimento_creche => {
-      etapa => 'creche', label => 'Atendimento em creche (0 a 3 anos)', idade => '0 a 3 anos',
+      etapa => 'creche', label => 'Creche (0 a 3 anos): taxa bruta de matrícula', idade => '0 a 3 anos',
       meta => 0.5, populacao => 'populacao_0_3',
       matriculas => 'matriculas_creche', conveniadas => 'matriculas_creche_conveniada',
     },
     atendimento_pre => {
-      etapa => 'pre', label => 'Atendimento na pré-escola (4 e 5 anos)', idade => '4 e 5 anos',
+      etapa => 'pre', label => 'Pré-escola (4 e 5 anos): taxa bruta de matrícula', idade => '4 e 5 anos',
       meta => 1, populacao => 'populacao_4_5',
       matriculas => 'matriculas_pre', conveniadas => 'matriculas_pre_conveniada',
     },
