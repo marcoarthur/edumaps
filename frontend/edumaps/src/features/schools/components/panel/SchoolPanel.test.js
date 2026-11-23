@@ -110,6 +110,24 @@ describe("SchoolPanel", () => {
     expect(screen.getByTestId("fonte-censo")).toHaveTextContent("Censo Escolar 2025");
   });
 
+  it("#541: posição sem verde e primeiro lugar dividido dito como lugar", () => {
+    render(SchoolPanel, {
+      school: mockSchool,
+      similarSchools: [],
+      indicators: [
+        { indicador: { id: "ideb_anos_iniciais", label: "IDEB – Anos Iniciais", valor: 4.7 }, ano: 2023,
+          ranking: { municipio: { posicao: 76, total: 81, percentil: 4, abaixo: 5, empate: 1 } } },
+        { indicador: { id: "taxa_aprovacao_fund_i", label: "Taxa de Aprovação – Anos Iniciais", valor: 100 }, ano: 2023,
+          ranking: { municipio: { posicao: 1, total: 81, percentil: 16, abaixo: 13, empate: 68 } } },
+      ],
+    });
+    const ideb = screen.getByTestId("leitura-ideb_anos_iniciais");
+    expect(ideb).toHaveTextContent("Acima de 4% das outras escolas no município");
+    expect(ideb.className).not.toMatch(/green/);
+    expect(screen.getByTestId("leitura-taxa_aprovacao_fund_i")).toHaveTextContent("1º lugar, dividido com 67 escolas com o mesmo valor");
+    expect(screen.queryByText(/acima de 16%/i)).toBeNull();
+  });
+
   it("#510: o cartão diz o empate e leva à posição da escola", () => {
     const indicators = [
       {
@@ -122,8 +140,9 @@ describe("SchoolPanel", () => {
     ];
     render(SchoolPanel, { school: mockSchool, indicators, similarSchools: [] });
 
-    expect(screen.getByTestId("empate-sustentabilidade")).toHaveTextContent("empatada com 665 escolas");
-    expect(screen.getByText(/Acima de 0% das outras escolas no município/)).toBeInTheDocument();
+    // #541: empate no fim da lista = último lugar dividido
+    expect(screen.getByTestId("leitura-sustentabilidade")).toHaveTextContent("Último lugar, dividido com 665 escolas com o mesmo valor");
+    expect(screen.queryByTestId("empate-sustentabilidade")).toBeNull();
     expect(screen.getByText("ver a posição →")).toHaveAttribute(
       "href",
       "/escola/ranking?inep=12345678",

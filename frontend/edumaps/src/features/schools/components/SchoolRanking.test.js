@@ -102,10 +102,12 @@ describe("SchoolRanking", () => {
     await waitForRankingLoad();
     const escopos = await screen.findAllByTestId("escopo-posicao");
     expect(escopos[0]).toHaveTextContent("767º de 1.432");
-    expect(escopos[0]).toHaveTextContent("empatada com 665 escolas");
-    expect(escopos[0]).toHaveTextContent("Acima de 0% das outras escolas");
+    expect(escopos[0]).not.toHaveTextContent("empatada com");
+    // #541: último lugar dividido, no lugar de "acima de 0%"
+    expect(escopos[0]).toHaveTextContent("Último lugar, dividido com 665 escolas com o mesmo valor");
     // sem empate: sem a linha
     expect(escopos[1]).not.toHaveTextContent("empatada");
+    expect(escopos[1]).toHaveTextContent("Acima de 100% das outras escolas");
     expect(screen.getAllByRole("button", { name: "Detalhes sobre este dado" }).length).toBeGreaterThan(0);
   });
 });

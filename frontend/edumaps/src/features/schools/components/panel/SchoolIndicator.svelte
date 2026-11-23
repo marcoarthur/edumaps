@@ -17,6 +17,8 @@
    * @property {'municipio'|'estado'|'nacional'} [primaryScope] - escopo em destaque no selo
    */
 
+  import { leituraPosicao } from "../../utils/leituraPosicao.js";
+
   /** @type {Props} */
   let { indicators = [], primaryScope = "municipio", inep = null } = $props();
 
@@ -50,15 +52,13 @@
         </p>
         {#if rank}
           <!-- #510 (RA-03): como a página da posição (#506): o empate dito, e
-               "acima de" só conta as escolas com valor menor -->
-          {#if rank.empate > 1}
-            <p class="mt-0.5 text-xs text-gray-600" data-testid="empate-{item.indicador.id}">
-              empatada com {(rank.empate - 1).toLocaleString('pt-BR')} {rank.empate - 1 === 1 ? 'escola' : 'escolas'}
-            </p>
+               "acima de" só conta as escolas com valor menor. #541: sem cor
+               de bom ou ruim, e o empate nas pontas como lugar dividido. -->
+          {@const leitura = leituraPosicao(rank, scopeLabel[primaryScope])}
+          {#if leitura.empate}
+            <p class="mt-0.5 text-xs text-gray-600" data-testid="empate-{item.indicador.id}">{leitura.empate}</p>
           {/if}
-          <p class="mt-0.5 text-xs text-green-600">
-            Acima de {rank.percentil}% das outras escolas {scopeLabel[primaryScope]}
-          </p>
+          <p class="mt-0.5 text-xs text-gray-600" data-testid="leitura-{item.indicador.id}">{leitura.frase}</p>
         {/if}
         {#if inep}
           <a
