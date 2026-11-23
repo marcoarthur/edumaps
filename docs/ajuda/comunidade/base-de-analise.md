@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/base-de-analise.md
-ultima_revisao: 2026-11-21
+ultima_revisao: 2026-11-23
 ---
 
 # Base de análise: indicadores por escola para baixar
@@ -124,7 +124,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - **Creches conveniadas:** parte da oferta de creche das prefeituras é
     feita por convênio com escolas privadas, que ficam na rede privada. Em
     SP, das matrículas em creche da rede municipal mais as das conveniadas
-    com a prefeitura, 41% estão nas conveniadas.
+    com a prefeitura, 41% estão nas conveniadas. No **Distrito Federal**,
+    sem prefeitura, o convênio é com o governo distrital, e a base mostra
+    `parceria_esfera` = "Estadual": para a oferta pública do DF, some a
+    rede estadual (a distrital) às privadas com essa parceria.
     - **Exemplo:** Franca (SP) tem 0 matrícula em creche na rede municipal
       e 7.758 em 78 escolas privadas conveniadas com a prefeitura.
     - **A soma é um teto.** O Censo marca a escola conveniada, não a vaga:

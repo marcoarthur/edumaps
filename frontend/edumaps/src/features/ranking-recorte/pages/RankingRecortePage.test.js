@@ -529,6 +529,24 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(screen.getByTestId("linha-destaque")).toHaveTextContent("Cuiabá");
   });
 
+  it("DF: a rede do município é a distrital (#545)", async () => {
+    server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
+      ...ATENDIMENTO_FIXTURE,
+      recorte: { uf: "DF" },
+      total: 1,
+      meta: { valor: 0.5, abaixo: 1 },
+      redes: [{ codigo_ibge: "5300108", municipio: "Brasília", uf: "DF", posicao: 1, media: 0.3272, taxa: 0.3272,
+        taxa_municipal: 0.0011, teto: 0.19, abaixo_meta: true, criancas: 130134, matriculas: 42582,
+        matriculas_municipal: 149, matriculas_conveniadas: 24570, populacao: 2982818, porte: "mais_500mil", rede_local: "distrital" }],
+    })));
+    abrir("?aba=redes&uf=DF&indicador=atendimento_creche");
+    const tabela = await screen.findByTestId("tabela-atendimento");
+    expect(tabela).toHaveTextContent("Rede do município");
+    expect(screen.getByTestId("rede-distrital")).toHaveTextContent("distrital");
+    expect(tabela).toHaveTextContent("19,0%");
+    expect(screen.getByTestId("nota-atendimento")).toHaveTextContent("No Distrito Federal, que não tem prefeitura, a rede do município é a distrital");
+  });
+
   it("destaque sem a população por idade: o motivo", async () => {
     server.use(http.get("*/api/ranking/redes", () => HttpResponse.json({
       ...ATENDIMENTO_FIXTURE,
@@ -571,7 +589,8 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     const l = texto.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).map((x) => x.split(";"));
     expect(nome).toBe("ranking-atendimento-creche-MT-2022.csv");
     expect(l[0]).toContain("taxa_todas_as_redes");
-    expect(l[0]).toContain("taxa_municipal_mais_conveniadas_teto");
+    expect(l[0]).toContain("taxa_rede_local_mais_conveniadas_teto");
+    expect(l[0]).toContain("rede_local");
     const cuiaba = l.find((x) => x[2] === "Cuiabá");
     const i = Object.fromEntries(l[0].map((c, k) => [c, k]));
     expect(cuiaba[i.abaixo_da_meta]).toBe("sim");

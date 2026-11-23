@@ -68,7 +68,10 @@ indicador. Não precisa de login.
      tabela marca cada um.
    - O CSV (`ranking-atendimento-creche-MT-2022.csv`) traz as três taxas,
      as crianças, as matrículas de cada conta, a meta e o recorte em toda
-     linha.
+     linha. A coluna `rede_local` diz qual é a rede do município
+     (`municipal`, ou `distrital` no DF), e as colunas dela se chamam
+     `matriculas_rede_local`, `taxa_rede_local` e
+     `taxa_rede_local_mais_conveniadas_teto`.
    - O selo **Fonte**, no pé da página, cita as bases dessa conta: o Censo
      Escolar, a população por idade do Censo Demográfico e a estimativa da
      população, com o ano e a data da carga.
@@ -80,10 +83,14 @@ indicador. Não precisa de login.
   pré-escola.
 - **Três taxas:**
   - **todas as redes:** é a conta da meta, e a posição sai dela;
-  - **rede municipal:** só as escolas da prefeitura;
-  - **municipal + conveniadas:** soma as escolas privadas conveniadas com
-    a prefeitura. É um teto, porque o Censo marca a escola conveniada, não
-    a vaga. Só aparece quando o município tem conveniadas.
+  - **rede do município:** só as escolas da prefeitura;
+  - **rede do município + conveniadas:** soma as escolas privadas
+    conveniadas com a prefeitura. É um teto, porque o Censo marca a escola
+    conveniada, não a vaga. Só aparece quando o município tem conveniadas.
+- **Distrito Federal:** não tem prefeitura. Lá, a rede do município é a
+  distrital (a "estadual" do Censo), e as conveniadas são as que têm
+  convênio com o governo distrital. A tabela marca a linha com
+  "distrital", e o CSV diz `rede_local` = `distrital`.
 - **Anos diferentes:** as crianças são do Censo Demográfico de 2022 (IBGE),
   e as matrículas, das escolas em funcionamento no Censo Escolar mais
   recente.

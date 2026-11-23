@@ -21,7 +21,7 @@
   import NetworkCompareTable from "../components/NetworkCompareTable.svelte";
   import NetworkAtendimentoInfantil from "../components/NetworkAtendimentoInfantil.svelte";
   import NetworkSchoolMap from "../components/NetworkSchoolMap.svelte";
-  import { formatInt } from "../utils/transformNetworkData.js";
+  import { formatInt, ehDistritoFederal } from "../utils/transformNetworkData.js";
 
   const CITY_KEY = "municipio";
 
@@ -150,7 +150,12 @@
         Na rede privada, {formatInt(conveniadas.matriculas_creche_conveniada)} matrículas em creche e
         {formatInt(conveniadas.matriculas_pre_conveniada)} na pré-escola estão em
         {formatInt(conveniadas.escolas_conveniadas)} {Number(conveniadas.escolas_conveniadas) === 1 ? "escola conveniada" : "escolas conveniadas"}
-        com a prefeitura. Somadas às da rede municipal, dão o máximo da oferta pública:
+        {#if ehDistritoFederal(codigoIbge)}
+          <!-- #545: no DF o convênio é com o governo distrital -->
+          com o governo do DF. Somadas às da rede distrital, dão o máximo da oferta pública:
+        {:else}
+          com a prefeitura. Somadas às da rede municipal, dão o máximo da oferta pública:
+        {/if}
         o Censo marca a escola conveniada, não a vaga.
       </p>
     {/if}

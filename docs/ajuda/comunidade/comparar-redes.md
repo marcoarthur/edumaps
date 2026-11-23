@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [buscar-escola, rankings, base-de-analise, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/rede-municipal.md
-ultima_revisao: 2026-11-21
+ultima_revisao: 2026-11-23
 ---
 
 # Comparar redes
@@ -61,6 +61,9 @@ Brasil.
     conveniadas com a prefeitura, que é um teto (o Censo marca a escola
     conveniada, não a vaga). Em Franca (SP), a rede municipal não tem
     creche, e com as conveniadas o teto fica em 48,9%.
+  - **Distrito Federal:** sem prefeitura, a conta usa a rede distrital (a
+    "estadual" do Censo) e as conveniadas com o governo distrital. A
+    coluna se chama "Rede do DF (distrital)".
   - **Anos diferentes:** as crianças são as do Censo Demográfico de 2022
     (IBGE), e as matrículas, do Censo Escolar mais recente.
   - **Pode passar de 100%,** com crianças de outros municípios e fora da

@@ -193,3 +193,20 @@ describe("buildAtendimentoInfantil (#533)", () => {
     expect(buildAtendimentoInfantil([])).toBeNull();
   });
 });
+
+describe("buildAtendimentoInfantil no DF (#545)", () => {
+  const DF = [
+    { co_municipio: "5300108", rede: "estadual", matriculas_creche: 149, matriculas_pre: 30000, populacao_0_3: 130134, populacao_4_5: 72213, ano_populacao_idade: 2022 },
+    { co_municipio: "5300108", rede: "privada", matriculas_creche: 42433, matriculas_pre: 35371, matriculas_creche_conveniada: 24570, matriculas_pre_conveniada: 100, populacao_0_3: 130134, populacao_4_5: 72213, ano_populacao_idade: 2022 },
+  ];
+  it("a rede local é a distrital e o teto soma as conveniadas com o governo distrital", () => {
+    const a = buildAtendimentoInfantil(DF);
+    expect(a.redeLocal).toBe("Rede do DF (distrital)");
+    expect(a.creche.municipal).toBeCloseTo(149 / 130134);
+    expect(a.creche.teto).toBeCloseTo((149 + 24570) / 130134);
+  });
+  it("fora do DF, a rede municipal", () => {
+    expect(buildAtendimentoInfantil(NETWORK_SUMMARY_FIXTURE).redeLocal).toBe("Rede municipal");
+  });
+});
+

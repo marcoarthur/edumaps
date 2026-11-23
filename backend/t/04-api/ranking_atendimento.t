@@ -64,6 +64,7 @@ subtest 'creche em RO: taxa, posição da menor para a maior e a meta' => sub {
   is $r->{meta}{abaixo}, scalar(grep { $_->{taxa} < 0.5 } values %m), 'quantos abaixo da meta';
   ok $m{1100205}{abaixo_meta}, 'marcado abaixo da meta';
   ok !exists $r->{minimo_escolas} && !exists $r->{atipico}, 'sem mínimo de escolas nem salto atípico';
+  is $m{1100015}{rede_local}, 'municipal', 'rede local fora do DF: a municipal (#545)';
 };
 
 subtest 'pré-escola: pode passar de 100%' => sub {
