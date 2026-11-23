@@ -94,4 +94,4 @@ mal sem explicar (P1-PN-02).
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer.
+Issues **#541** (P1-PN-01) e **#542** (P1-PN-02), abertas com a aprovação do developer.

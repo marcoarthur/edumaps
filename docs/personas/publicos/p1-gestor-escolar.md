@@ -105,7 +105,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   plano delas (suposição da spec, §6).
 - Painel e perfil para o conselho (2026-11-23, **adotaria**): P1-PN-01 (verde
   fixo nos cartões de posição) e P1-PN-02 (sinal de atenção sem o porquê)
-  aguardam a aprovação do developer para virar issue.
+  → #541 e #542.
 
 ## Entradas
 
