@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [painel-da-escola, escolas-semelhantes, agrupamentos-de-escolas]
 funcionalidade: ../../funcionalidades/analise/perfil-escola.md
-ultima_revisao: 2026-11-19
+ultima_revisao: 2026-11-23
 ---
 
 # Perfil da escola: diagnóstico e comparação justa
@@ -45,6 +45,11 @@ resultado que pode ser bem diferente.
   melhor (docentes sem formação continuada, alunos por docente), e abaixo/acima da
   mediana do grupo. Empatar com a mediana não gera sinal. Não é um julgamento
   absoluto: um indicador pode ser baixo no grupo e ainda aceitável no Brasil.
+  Por isso o sinal diz os números: o valor da escola, quanto tem a escola do
+  meio entre as parecidas ("metade tem…") e se a escola está melhor ou pior
+  que o município e o Brasil. Ex.: *"Docentes com licenciatura: 94% nesta
+  escola. Nas 30 escolas parecidas do município, metade tem 100%. A escola
+  está melhor que o município (85%) e o Brasil (80%)."*
   Sem sinais, a tela diz *"Nenhum indicador pior que o grupo de
   referência"*. O **INSE** aparece na comparação, mas **não gera sinal**: é
   o nível socioeconômico dos alunos, o contexto, e não algo em que a escola
