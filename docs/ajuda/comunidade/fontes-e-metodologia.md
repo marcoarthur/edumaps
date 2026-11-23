@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, painel-publico-da-escola, privacidade]
 funcionalidade: ../../funcionalidades/plataforma/fontes-de-dados.md
-ultima_revisao: 2026-11-21
+ultima_revisao: 2026-11-23
 ---
 
 # Fontes e metodologia
@@ -27,10 +27,14 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 3. **Para conferir o arquivo:** quando a carga registra os arquivos baixados,
    o cartão traz **Arquivos da última carga**, cada um com o endereço oficial
    e o SHA-256, que permite verificar que é o mesmo arquivo publicado pelo
-   órgão. As bases desta página foram carregadas antes desse registro: hoje
-   nenhum cartão traz os arquivos, e eles aparecem a partir da próxima carga
-   de cada base.
-4. **Para citar uma análise:** use o ano do selo **Fonte** da própria tela. No
+   órgão. A maior parte das bases foi carregada antes desse registro, e os
+   arquivos delas aparecem a partir da próxima carga. A população por idade
+   do Censo Demográfico já traz o arquivo.
+4. **Para citar uma análise:** use o ano do selo **Fonte** da própria tela.
+   O selo lista as bases da conta que a tela mostra: no ranking, com o
+   indicador da creche ou da pré-escola, ele traz o Censo Escolar, a
+   população por idade do Censo Demográfico e a estimativa da população, e
+   não o IDEB. No
    agrupamento de escolas, a caixa **Universo** diz o ano do Censo e do IDEB
    usados, e o CSV baixado é aquele resultado.
 5. **Para citar um índice do EduMaps** (infraestrutura, docentes,

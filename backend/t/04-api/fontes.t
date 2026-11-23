@@ -32,6 +32,15 @@ subtest 'GET /api/fontes: catálogo público' => sub {
   unlike $corpo, qr/n[ãa]o verificad|pendente|DECIS/i, 'nenhuma situação de licença interna';
 };
 
+subtest 'ranking da educação infantil (#539): só as bases da conta' => sub {
+  my $r = $t->get_ok('/api/fontes')->status_is(200)->tx->res->json;
+  my @ids = map { $_->{id} } grep { grep { $_ eq 'ranking_atendimento' } @{ $_->{telas} } } @$r;
+  is \@ids, [qw(censo ibge_populacao ibge_populacao_idade)], 'Censo Escolar, estimativa e população por idade';
+  my @ranking = map { $_->{id} } grep { grep { $_ eq 'ranking' } @{ $_->{telas} } } @$r;
+  ok( (grep { $_ eq 'ideb' } @ranking), 'o ranking do IDEB continua com o IDEB');
+  ok !(grep { $_ eq 'ibge_populacao_idade' } @ranking), 'e sem a população por idade';
+};
+
 subtest 'SIOPE (#512): a lista de municípios com folha' => sub {
   my ($s) = grep { $_->{id} eq 'siope' } @{ $t->get_ok('/api/fontes')->tx->res->json };
   is ref $s->{cobertura}, 'ARRAY', 'cobertura no cartão do SIOPE';

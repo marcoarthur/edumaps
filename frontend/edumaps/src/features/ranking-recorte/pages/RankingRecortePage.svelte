@@ -270,9 +270,15 @@
 <div class="space-y-6">
   <header>
     <h1 class="text-2xl font-bold text-gray-900">Rankings</h1>
-    <p class="mt-1 text-sm text-gray-600">
-      Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
-      O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
+    <p class="mt-1 text-sm text-gray-600" data-testid="intro-ranking">
+      {#if aba === "redes" && atendimento}
+        <!-- #539: na taxa de atendimento cada linha é um município (todas as redes), sem INSE. -->
+        Compare os municípios de um estado, de uma região ou do Brasil pela taxa de atendimento da creche ou da pré-escola,
+        a meta 1 do PNE: quem está mais longe da meta aparece primeiro.
+      {:else}
+        Compare as redes municipais de um estado, de uma região ou do Brasil, ou as escolas de um município, por um indicador.
+        O nível socioeconômico (INSE) aparece ao lado: posição sem contexto não diz quem faz mais com o que tem.
+      {/if}
     </p>
   </header>
 
@@ -619,5 +625,6 @@
     </section>
   {/if}
 
-  <FonteDado tela="ranking" class="pt-2" />
+  <!-- #539: na taxa de atendimento, só as bases da conta (Censo Escolar e população do IBGE) -->
+  <FonteDado tela={aba === "redes" && atendimento ? "ranking_atendimento" : "ranking"} class="pt-2" />
 </div>

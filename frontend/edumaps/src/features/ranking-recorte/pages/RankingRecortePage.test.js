@@ -538,6 +538,26 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(await screen.findByTestId("destaque-resumo")).toHaveTextContent("não tem a população por idade do Censo Demográfico");
   });
 
+  it("rodapé de fontes e texto do topo seguem o indicador (#539)", async () => {
+    abrir("?aba=redes&uf=MT&indicador=atendimento_creche");
+    await screen.findByTestId("tabela-atendimento");
+    const selo = await screen.findByTestId("fonte-dado");
+    expect(selo).toHaveTextContent("População por idade (Censo Demográfico) 2022");
+    expect(selo).toHaveTextContent("Censo Escolar 2025");
+    expect(selo).not.toHaveTextContent("IDEB");
+    expect(selo).not.toHaveTextContent("Índices do EduMaps");
+    expect(screen.getByTestId("intro-ranking")).toHaveTextContent("taxa de atendimento");
+    expect(screen.getByTestId("intro-ranking")).not.toHaveTextContent("INSE");
+
+    const sel = screen.getByLabelText("Indicador");
+    sel.value = "ideb_anos_iniciais";
+    await fireEvent.change(sel);
+    await screen.findByTestId("tabela-redes");
+    await waitFor(() => expect(screen.getByTestId("fonte-dado")).toHaveTextContent("IDEB e SAEB"));
+    expect(screen.getByTestId("fonte-dado")).not.toHaveTextContent("População por idade");
+    expect(screen.getByTestId("intro-ranking")).toHaveTextContent("INSE");
+  });
+
   it("CSV com as três contas, a meta e o recorte", async () => {
     abrir("?aba=redes&uf=MT&indicador=atendimento_creche");
     await screen.findByTestId("tabela-atendimento");

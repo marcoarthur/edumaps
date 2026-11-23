@@ -5,7 +5,7 @@ export const FONTES_FIXTURE = [
     descricao: "Escolas, matrículas, docentes, gestores e infraestrutura.",
     url: "https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/censo-escolar",
     metodologia: "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
-    telas: ["comparacao_redes", "perfil_escola", "ranking", "agrupamento", "busca"],
+    telas: ["comparacao_redes", "perfil_escola", "ranking", "ranking_atendimento", "agrupamento", "busca"],
     periodo: { inicio: "2025", fim: "2025", texto: "2025" },
     carga: { data: "2026-10-14", arquivos: [] },
     licenca: null,
@@ -51,6 +51,17 @@ export const FONTES_FIXTURE = [
       { versao: "indices-v2", data: "2026-11-16", mudou: "Diversidade discente: inclusão pela educação especial em classe comum." },
       { versao: "indices-v1", data: "2026-06-04", mudou: "Fórmula original dos seis índices." },
     ],
+  },
+  // #533/#539: a população por idade, só nas telas da taxa de atendimento.
+  {
+    id: "ibge_populacao_idade", nome: "População por idade (Censo Demográfico)", orgao: "IBGE",
+    descricao: "Crianças de cada idade por município, para a taxa de atendimento da creche e da pré-escola.",
+    url: "https://sidra.ibge.gov.br/tabela/9514",
+    metodologia: "https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html",
+    telas: ["comparacao_redes", "ranking_atendimento", "base_analise"],
+    periodo: { inicio: "2022", fim: "2022", texto: "2022" },
+    carga: { data: "2026-11-23", arquivos: [] },
+    licenca: "Domínio público (IBGE)",
   },
   {
     id: "ivet_edumaps", nome: "IVET do EduMaps", orgao: "EduMaps", proprio: true,

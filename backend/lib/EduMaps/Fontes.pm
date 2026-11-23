@@ -29,7 +29,9 @@ our @CATALOGO = (
     metodologia => 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar',
     tabelas   => [qw(clean.censo_escolas clean.censo_docentes clean.censo_matriculas)],
     periodo_sql => 'SELECT max(nu_ano_censo)::text, max(nu_ano_censo)::text FROM clean.censo_escolas',
-    telas     => [qw(comparacao_redes perfil_escola ranking agrupamento busca base_analise)],
+    # #539: ranking_atendimento = o ranking de redes na taxa de atendimento
+    # da educação infantil (matrículas do Censo sobre a população por idade).
+    telas     => [qw(comparacao_redes perfil_escola ranking ranking_atendimento agrupamento busca base_analise)],
   },
   {
     id        => 'ideb',
@@ -86,7 +88,7 @@ our @CATALOGO = (
     # A tabela não guarda o ano; a carga é a estimativa de 2025
     # (data_pipeline/deploy/raw_populacao.sql, pop_2025_mun.csv).
     periodo   => ['2025', '2025'],
-    telas     => [qw(ranking base_analise)],
+    telas     => [qw(ranking ranking_atendimento base_analise)],
   },
   # #533 (QP-01 da P2): a população por idade do Censo 2022, base da taxa
   # de atendimento da creche e da pré-escola (job IBGEPopulacaoIdade).
@@ -100,7 +102,7 @@ our @CATALOGO = (
     metodologia => 'https://www.ibge.gov.br/estatisticas/sociais/trabalho/22827-censo-demografico-2022.html',
     tabelas   => [qw(clean.populacao_idade)],
     periodo_sql => 'SELECT min(ano)::text, max(ano)::text FROM clean.populacao_idade',
-    telas     => [qw(comparacao_redes base_analise)],
+    telas     => [qw(comparacao_redes ranking_atendimento base_analise)],
   },
   # #462 (RX-01): os seis índices calculados pelo EduMaps a partir do Censo.
   # Não é base de terceiros: a versão e o histórico vêm do registro em
