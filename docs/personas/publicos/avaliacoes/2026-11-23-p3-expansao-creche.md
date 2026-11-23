@@ -84,4 +84,4 @@ de mercado local (AN-10, #429).
 
 ## Encaminhamento
 
-Comentar a #429 com a evidência desta rodada, se o developer aprovar.
+Comentário na #429 com a evidência desta rodada, com a aprovação do developer.
