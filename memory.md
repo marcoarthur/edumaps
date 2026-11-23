@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dj) — segunda avaliação da P5, #535 (PR #537)
+
+- Segunda rodada da P5 (auditoria de Cuiabá, TCE-MT): não adotaria
+  (registro), mais perto.
+  - QO-01: a taxa de atendimento fora do ranking de redes → #535.
+  - QO-02: os nomes acentuados da folha de Cuiabá estão quebrados (~440
+    nomes; o "Ç" virou "Ã¿" na conversão xlsx→csv do SIOPE) → #536. Precisa
+    baixar de novo do SIOPE.
+- PR #537 (df55911), opções A1 e B1:
+  - `atendimento_creche`/`atendimento_pre` em `/api/ranking/redes`, com
+    leitura própria `atendimento_municipios` (sobre `mv_rede_escolas` e
+    `populacao_idade`), resposta com `tipo: atendimento`;
+  - a tela abre com menor primeiro, em tabela própria
+    (`TabelaAtendimento.svelte`), e o CSV `ranking-atendimento-*`.
+- Teste contra MV: não se insere escola numa MV. Grava-se só a população
+  de teste para municípios das fixtures (RO, Taquarituba), e o teste
+  confere contra as matrículas que estão na MV.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #537 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 252; ciclo `2026-11-23-ranking-atendimento.md`.
+
 ## Sessão 2026-11-23 (di) — #531 mergeado, #533 (PR #534)
 
 - PR #532 (#531, CEP e endereço) mergeado em f03656e; nota 250.

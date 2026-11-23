@@ -135,3 +135,14 @@ Issues **#535** (QO-01) e **#536** (QO-02), abertas com a aprovação do
 developer. A P5 não orienta
 produto até a decisão de posicionamento, mas o QO-01 também serve à P2 e à
 P6. O QO-02 é um defeito de dado e vale para qualquer público.
+
+## Andamento
+
+- 2026-11-23: #535 (PR #537) mergeado: QO-01 resolvido.
+  - O ranking de redes tem a creche e a pré-escola no grupo "Educação
+    infantil (meta 1 do PNE)", da menor taxa para a maior, com quantos
+    municípios estão abaixo da meta e o CSV.
+  - Em MT, 116 dos 141 municípios ficam abaixo dos 50% na creche, e
+    Cuiabá é a 101ª (44,9%).
+- QO-02 (#536) segue aberto: precisa baixar de novo a folha de Cuiabá do
+  SIOPE.

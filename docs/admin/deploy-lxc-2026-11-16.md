@@ -270,6 +270,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `curl -s http://127.0.0.1:3000/api/network/3516200/summary` traz `populacao_0_3 = 15862`, `populacao_4_5 = 9094` e
       `ano_populacao_idade = 2022` em toda rede; o CSV da base com `blocos=porte` traz `populacao_0_3;populacao_4_5` depois de
       `porte_municipio` e termina em `ano_populacao_idade`; `/api/fontes` traz o cartão `ibge_populacao_idade`.
+- [ ] Taxa de atendimento no ranking de redes (#535, sem change nova), depois da carga do §6:
+      `curl -s 'http://127.0.0.1:3000/api/ranking/redes?indicador=atendimento_creche&uf=MT&destaque=5103403'` traz
+      `tipo = atendimento`, `total = 141`, `meta.abaixo = 116` e o destaque de Cuiabá na posição 101; na tela,
+      `/ranking?aba=redes&indicador=atendimento_creche&uf=MT` abre com menor primeiro.
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`
