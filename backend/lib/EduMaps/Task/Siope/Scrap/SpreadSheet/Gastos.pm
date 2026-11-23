@@ -9,6 +9,7 @@ use Syntax::Keyword::Try;
 use IO::All;
 use utf8;
 use EduMaps::Data::Allowlist;
+use EduMaps::Util::Mojibake qw(corrige_texto);
 
 =pod
 
@@ -291,10 +292,14 @@ sub _read_sheet_fast($self) {
   while (<$fh>) {
     chomp;
     my @cols = split /;/, $_;
-    # Aplica a correção apenas na coluna de índice 7
+    # #536 (QO-02 da P5): texto codificado duas vezes na fonte (nomes de
+    # Cuiabá); letra perdida vira "?".
+    @cols = map { corrige_texto($_) } @cols;
+    # A categoria (coluna 7) chegou com a letra perdida ("magistï¿½rio",
+    # U+FFFD depois de corrige_texto); estas duas palavras têm conserto.
     if (defined $cols[7]) {
-      $cols[7] =~ s/magistï¿½rio/magistério/g;
-      $cols[7] =~ s/educaï¿½ï¿½o/educação/g;
+      $cols[7] =~ s/magist(?:ï¿½|\x{FFFD})rio/magistério/g;
+      $cols[7] =~ s/educa(?:ï¿½|\x{FFFD}){2}o/educação/g;
     }
     # clean field year (e.g. 2023.0) and other integer numbers wrongly put as decimal
     for (@cols) {

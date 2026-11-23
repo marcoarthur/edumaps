@@ -11,6 +11,9 @@
   // #422: 404 = não há folha desta escola (ausência, não erro)
   let semFolha = $state(false);
   let inep = $state(null);
+  // #536 (QO-02 da P5): letras que já chegaram perdidas no arquivo do SIOPE
+  // aparecem como "?" no nome.
+  const nomesIlegiveis = $derived(payrollData.filter((p) => (p.nome_profissional ?? "").includes("?")).length);
 
   // Função para obter parâmetro da query string
   function getQueryParam(param) {
@@ -105,6 +108,12 @@
       <p class="text-sm">{error}</p>
     </div>
   {:else}
+    {#if nomesIlegiveis > 0}
+      <p class="text-xs text-gray-600" data-testid="nota-nome-ilegivel">
+        {nomesIlegiveis === 1 ? "Um nome tem" : `${nomesIlegiveis} nomes têm`} "?" no lugar de uma letra: ela já veio
+        ilegível no arquivo do SIOPE e não pôde ser recuperada de outro mês do mesmo profissional.
+      </p>
+    {/if}
     <SchoolPayrollTable payrollData={payrollData} />
   {/if}
   <FonteDado tela="folha" class="pt-2" />

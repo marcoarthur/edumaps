@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [financeiro-e-folha, painel-da-escola]
 funcionalidade: ../../funcionalidades/analise/folha-pagamento.md
-ultima_revisao: 2026-11-18
+ultima_revisao: 2026-11-23
 ---
 
 # Folha de pagamento por escola
@@ -54,6 +54,12 @@ números da rede.
 - Os dados chegam com o atraso de publicação do SIOPE.
 - Profissionais pagos por outras fontes (fora dos recursos declarados ao
   SIOPE) não aparecem.
+- **Nome com "?":** em alguns municípios, o arquivo do SIOPE traz os nomes
+  com os acentos quebrados. A plataforma corrige esses nomes. Quando a letra
+  já veio perdida, ela é recuperada de outro mês do mesmo profissional, e o
+  que não volta aparece como "?" (ex.: "PE?ANHA"). A tela avisa quando
+  algum nome está assim. Em Cuiabá, isso ficou em 26 profissionais da
+  folha de 2025.
 
 ## Privacidade
 

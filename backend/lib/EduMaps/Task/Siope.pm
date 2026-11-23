@@ -46,12 +46,17 @@ sub _query_siope($job, $city_id, $year) {
       sub { push @$_, $city_id, 'Municipal'; }
     );
 
-    while(@$rows) {
-      my @chunk   = splice(@$rows, 0, $chunk_size);
-      $processed += scalar(@chunk);
-      $rs->populate([$col_order, @chunk]);
-      $job->progress(($processed / $total)*100, "$processed records saved");
-    }
+    # #536: recarregar o mesmo município e ano troca a folha, sem duplicar
+    # linhas; apagar e inserir numa transação só.
+    $job->app->schema->txn_do(sub {
+      $rs->search({ cod_municipio => "$city_id", ano => $year })->delete;
+      while(@$rows) {
+        my @chunk   = splice(@$rows, 0, $chunk_size);
+        $processed += scalar(@chunk);
+        $rs->populate([$col_order, @chunk]);
+        $job->progress(($processed / $total)*100, "$processed records saved");
+      }
+    });
   } catch($err) {
     $job->app->log->error("Error during $city_id payroll for year $year");
     return $job->fail({ error => $err });

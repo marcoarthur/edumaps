@@ -27,6 +27,9 @@ Gestão pública, pesquisadores e investidores que avaliam o quadro profissional
   **base de análise** traz a folha somada por escola e por ano
   (profissionais do magistério, salário médio, carga horária, salário para
   40 horas e gasto com pessoal), sem nomes nem CPF.
+- Sistema pode **corrigir os nomes com acentos quebrados** que chegam do
+  SIOPE, recuperando a letra perdida de outro mês do mesmo profissional e
+  marcando com "?" a que não volta.
 
 ## Valor
 
