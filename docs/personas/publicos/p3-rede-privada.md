@@ -106,8 +106,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Concorrentes locais (2026-11-23, **não adotaria**, mais perto): QR-01 (23%
   das privadas sem coordenada e a base sem o CEP e o bairro) → #531, entregue (#532); AN-10
   (#429) segue aberto, com a evidência da rodada comentada lá.
+- Expansão da educação infantil (2026-11-23, **adotaria, em piloto, para
+  escolher a cidade**; era não adotaria): sem achado novo; a escolha do
+  bairro depende do AN-10 (#429) e da carga dos setores do Censo 2022.
 
 ## Entradas
+
+### 2026-11-23 — Onde abrir uma unidade de educação infantil (terceira rodada)
+
+**Material:** o ranking da creche em SP (100 a 500 mil habitantes) e o
+CSV, a comparação de redes de Pindamonhangaba e a base das escolas
+privadas de lá. Consolidação em
+[`avaliacoes/2026-11-23-p3-expansao-creche.md`](avaliacoes/2026-11-23-p3-expansao-creche.md).
+
+**O que tentou:** escolher a cidade e o bairro para uma unidade de
+educação infantil de um grupo com 8 unidades no interior de SP.
+
+**O que funciona para ele:** a triagem de cidades por vagas que faltam
+(Pindamonhangaba: 877, sem conveniadas); o mercado de convênio
+(Itaquaquecetuba compra 4.928 vagas de creche); os 23 concorrentes
+privados de creche da cidade, com tamanho e bairro.
+
+**Barreiras:**
+- AN-10 (#429, aberto): sem crianças e renda por bairro ou em volta da
+  unidade. Depende da carga dos setores do Censo 2022 e de uma tela de
+  mercado local.
+
+**Veredito:** **adotaria, em piloto, para escolher a cidade** (era não
+adotaria). Para o bairro, ainda não.
 
 ### 2026-11-23 — Base de análise e perfil (segunda rodada, concorrentes locais)
 
