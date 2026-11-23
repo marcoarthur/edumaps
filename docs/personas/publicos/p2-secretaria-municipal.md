@@ -98,8 +98,29 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   #411).
 - P2-RD-04 (vínculo por diretoria regional): só com uma rede estadual real.
 - Reavaliar com uma secretaria real num piloto.
+- Prestação de contas ao conselho (2026-11-23, **adotaria, em piloto**): QP-01
+  (sem taxa de atendimento da educação infantil; população por idade sem
+  fonte) → #533.
 
 ## Entradas
+
+### 2026-11-23 — Telas públicas (prestação de contas ao conselho)
+
+**Material:** ranking de redes municipais (SP, 100 a 500 mil habitantes,
+Franca em destaque), ranking das escolas municipais de Franca, comparação de
+redes e ajuda da base. Consolidação em
+[`avaliacoes/2026-11-23-p2-relatorio-conselho.md`](avaliacoes/2026-11-23-p2-relatorio-conselho.md).
+
+**O que funcionou:** Franca é a 11ª de 70 redes do mesmo porte em SP no
+IDEB dos anos iniciais, com edição e mínimo de escolas; as escolas da rede
+por indicador, com o INSE.
+
+**Barreiras:**
+- QP-01 (atrapalha): sem taxa de atendimento em creche e pré-escola (meta
+  do PNE); só matrículas por habitante. As faixas etárias do banco não têm
+  fonte nem ano, não separam 0 a 3 de 4 a 5 e têm faixas faltando.
+
+**Veredito:** **adotaria, em piloto** (mantido).
 
 ### 2026-11-13 — Visão da rede (#375, PRs #399 a #403)
 
