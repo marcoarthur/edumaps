@@ -97,6 +97,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante.
 - [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto relevante.
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva no DF. QL-01 resolvido.
+- [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o déficit em vagas por recorte.
 
 ## Pendências
 

@@ -97,6 +97,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a posição lida do mesmo jeito.
 - [2026-11-23 — sinal de atenção com os números](ciclos/2026-11-23-sinais-com-numeros.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: sinais lidos sem confusão.
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o DF vê a própria oferta.
+- [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QK-01 resolvido; "onde abrir" pendente da carga dos setores.
 
 ## Pendências
 
@@ -110,7 +111,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (sem taxa de atendimento da educação infantil; população por idade sem
   fonte) → #533, entregue (#534).
 - Expansão da creche (2026-11-23, **adotaria, em piloto**): QK-01 (a taxa
-  não diz quantas vagas faltam para a meta) → #547. "Onde abrir" depende de carregar os setores
+  não diz quantas vagas faltam para a meta) → #547, entregue (#548). "Onde abrir" depende de carregar os setores
   do Censo 2022.
 
 ## Entradas

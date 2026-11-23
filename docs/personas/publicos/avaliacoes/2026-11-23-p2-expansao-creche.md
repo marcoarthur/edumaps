@@ -87,3 +87,12 @@ da plataforma, com fonte. O número que vai para o plano e o orçamento
 ## Encaminhamento
 
 Issue **#547** (QK-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-23: #547 (PR #548) mergeado: QK-01 resolvido.
+  - A comparação de redes diz as vagas que faltam (Vitória de Santo
+    Antão: 2.026 de creche e 494 de pré-escola).
+  - O ranking dá a soma do recorte (Nordeste: 405.893 de creche) e o CSV
+    traz `vagas_faltam_meta`.
+- "Onde abrir" segue pendente da carga dos setores do Censo 2022.

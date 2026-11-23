@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dp) — #547 (PR #548), vagas que faltam para a meta
+
+- PR #548 (5a80642), opção A1:
+  - `vagas_faltam_meta` por município e `meta.vagas_faltam` no ranking da
+    taxa (`ceil(meta × crianças − 1e-9) − matrículas de todas as redes`,
+    0 se atingiu);
+  - coluna "Vagas que faltam para a meta" na comparação de redes;
+  - soma na nota do ranking, número por município no CSV.
+- Vitória de Santo Antão: 2.026 (creche) e 494 (pré-escola); Nordeste:
+  405.893 e 134.141.
+- A reconstrução com o `if build; then up; fi` passou de primeira.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #548 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 258; ciclo `2026-11-23-vagas-faltam-meta.md`.
+
 ## Sessão 2026-11-23 (do) — 37ª avaliação da P4, #545 (PR #546), avaliação da P2 e #547
 
 - Trigésima sétima rodada da P4 (educação infantil por porte e região):
