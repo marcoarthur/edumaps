@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dh) — segunda avaliação da P3, #531 (PR #532), avaliação da P2 e #533
+
+- Segunda rodada da P3 (concorrentes locais, Franca): não adotaria, mais
+  perto. QR-01, 23,3% das privadas de SP sem coordenada e a base sem o
+  endereço → #531; comentário na #429 (AN-10).
+- PR #532 (f03656e), plano opções A e A, implementado sozinho de noite:
+  `cep` (`00000-000`), `bairro` e `endereco` ("logradouro, número", sem
+  S/N) depois da longitude; o dicionário de latitude/longitude diz a
+  cobertura por rede; ajuda "Escolas próximas" com R conferido em Franca
+  (60 a até 2 km, 18 sem coordenada, 16 privadas).
+- Avaliação da P2 (prestação de contas ao conselho, Franca): adotaria em
+  piloto (mantido). QP-01, falta a taxa de atendimento da educação
+  infantil (meta do PNE) → #533. As faixas de `clean.populacao_municipal`
+  vêm de um CSV sem fonte e sem 25–29 e 90–94 (Franca 325.006 contra
+  365.494). A solução precisa baixar a população por idade do Censo 2022
+  (IBGE): **espera a permissão de download do developer**.
+- O backend do Docker local publica na porta 3010 (não 3000); a
+  identificação sai sempre no CSV da base, qualquer que seja o `blocos`.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #532.
+- Nota técnica 250; ciclo `2026-11-23-cep-endereco.md`.
+
 ## Sessão 2026-11-23 (dg) — sobras #526/#527 (PR #528), 36ª avaliação da P4, #529 (PR #530)
 
 - Developer ausente (~5h): autorizou abrir as issues das sobras e

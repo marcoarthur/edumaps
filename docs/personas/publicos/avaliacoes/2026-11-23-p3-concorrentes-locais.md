@@ -92,3 +92,12 @@ rodada.
 
 Issue **#531** (QR-01), aberta com a aprovação do developer, e comentário
 na #429 com a evidência desta rodada.
+
+## Andamento
+
+- 2026-11-23: #531 (PR #532) mergeado: QR-01 resolvido.
+  - A identificação da base traz `cep` (`00000-000`), `bairro` e
+    `endereco`, depois da longitude.
+  - O dicionário diz a cobertura das coordenadas por rede, e a ajuda tem a
+    seção "Escolas próximas", com o código R.
+  - AN-10 (#429) segue aberto.

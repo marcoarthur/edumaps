@@ -86,6 +86,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto direto: a privada deixa de perder até 2 pontos na capacitação docente por um dado que o Censo não pede.
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p3--rede-privada-mantenedor): não adotaria (mantido; reavaliação a seguir). Impacto direto: o perfil da privada sem comparação de concursados com as públicas, e com o motivo.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
+- [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p3--rede-privada-mantenedor): não adotaria (mantido), mais perto. QR-01 resolvido; AN-10 (#429) segue aberto.
 
 ## Pendências
 
@@ -95,7 +96,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   local (AN-10). A etapa nas escolas semelhantes (AN-03) foi entregue no
   PR #425.
 - Concorrentes locais (2026-11-23, **não adotaria**, mais perto): QR-01 (23%
-  das privadas sem coordenada e a base sem o CEP e o bairro) → #531; AN-10
+  das privadas sem coordenada e a base sem o CEP e o bairro) → #531, entregue (#532); AN-10
   (#429) segue aberto, com a evidência da rodada comentada lá.
 
 ## Entradas

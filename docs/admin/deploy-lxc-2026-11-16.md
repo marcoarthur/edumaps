@@ -262,6 +262,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Docentes por etapa (#529, sem change nova):
       `curl -s 'http://127.0.0.1:3000/api/base-analise/csv?uf=SP&codigo_ibge=3516200&blocos=docencia' | head -1`
       termina em `qt_docentes_infantil;qt_docentes_ai;qt_docentes_af;qt_docentes_em` (antes das colunas de versão).
+- [ ] CEP, bairro e endereço (#531, sem change nova):
+      `curl -s 'http://127.0.0.1:3000/api/base-analise/csv?uf=SP&codigo_ibge=3516200&blocos=porte' | head -2`
+      traz `longitude;cep;bairro;endereco` (a identificação sai sempre), e o CEP vem como `00000-000` (ex.: `14404-110`).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
       (`http://analytic:8000`, em `files/edumaps_db.conf`):
       `ssh root@backend.edumaps 'curl -s -o /dev/null -w "%{http_code}\n" http://analytic:8000/health'`

@@ -89,6 +89,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-22 — concursados vazios nas privadas](ciclos/2026-11-22-concursados-privadas.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva entre pública e privada. QT-01 e QT-02 resolvidos; nenhum achado aberto da trigésima quinta avaliação.
 - [2026-11-23 — rótulos curtos e a privada sem comparação](ciclos/2026-11-23-sobras-concursados.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o agrupamento fala do indicador do mesmo jeito em toda a tela.
 - [2026-11-23 — docentes por etapa](ciclos/2026-11-23-docentes-por-etapa.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva em modelos por etapa. QS-01 resolvido; nenhum achado aberto da trigésima sexta avaliação.
+- [2026-11-23 — CEP e endereço na base](ciclos/2026-11-23-cep-endereco.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a cobertura das coordenadas por rede no dicionário.
 
 ## Pendências
 
