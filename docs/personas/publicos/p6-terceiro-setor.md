@@ -98,8 +98,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 entregue (#458); a fórmula da diversidade
   discente foi corrigida na #459 (#460). Pendente: #454 (operacional).
 - Creche no Nordeste (2026-11-23, **adotaria**): QN-01 (rodapé de fontes do
-  ranking sem o Censo Demográfico na taxa de atendimento) aguarda a
-  aprovação do developer para virar issue. Pendente: #454.
+  ranking sem o Censo Demográfico na taxa de atendimento) → #539.
+  Pendente: #454.
 
 ## Entradas
 

@@ -94,4 +94,4 @@ o número conferido. Só a citação da fonte exige uma volta a `/fontes`
 
 ## Encaminhamento
 
-Os achados viram issue com a aprovação do developer.
+Issue **#539** (QN-01), aberta com a aprovação do developer.
