@@ -91,6 +91,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: mapa de onde falta vaga de creche.
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto: o SIOPE é só da rede municipal.
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p3--rede-privada-mantenedor): não adotaria (mantido). Sem impacto relevante.
+- [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: sem verde na posição baixa.
 
 ## Pendências
 

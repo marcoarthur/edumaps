@@ -278,6 +278,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Fontes do ranking pelo indicador (#539, sem change nova): nessa tela, o rodapé "Fonte:" cita o Censo Escolar, a
       estimativa da população e a "População por idade (Censo Demográfico) 2022", sem IDEB nem INSE;
       `/api/fontes` traz `ranking_atendimento` em `censo`, `ibge_populacao` e `ibge_populacao_idade`.
+- [ ] Posição da escola sem verde fixo (#541, só frontend): no painel de uma escola (ex.: `/escola/panel?inep=51038510`),
+      "Acima de X%" sai em cinza, e o empate no 1º lugar aparece como "1º lugar, dividido com N escolas com o mesmo valor".
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

@@ -4,6 +4,25 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-23 (dm) — avaliação da P1, #541 (PR #543)
+
+- Rodada da P1 (painel e perfil de uma escola municipal de Cuiabá de INSE
+  baixo, 51038510): adotaria (mantido).
+  - P1-PN-01: "Acima de X%" sempre verde no painel (76ª de 81 em verde) e
+    "1ª de 81" com "acima de 16%" → #541.
+  - P1-PN-02: o sinal de atenção do perfil em jargão ("quartil inferior do
+    grupo de referência") e sem números, com a escola acima do município
+    e do Brasil → #542 (aberta; a frase deve vir do motor R).
+- PR #543 (5eab253), opções A1 e B1: `leituraPosicao` comum ao painel e à
+  página da posição, sem cor; 1º e último lugar divididos.
+- Lição Svelte 5: `{@const}` só como filho direto de bloco (`{#if}`,
+  `{#each}`, `{#snippet}`), não dentro de um elemento.
+- Lição CI: o commit de docs da avaliação seguinte cancelou o
+  backend-tests do ciclo anterior. Esperar no SHA mais novo resolveu.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #543 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 255; ciclo `2026-11-23-posicao-sem-verde.md`.
+
 ## Sessão 2026-11-23 (dl) — quinta avaliação da P6, #539 (PR #540)
 
 - Quinta rodada da P6 (creche no Nordeste): adotaria (mantido).

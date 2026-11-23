@@ -95,6 +95,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante: a taxa é do município.
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: os nomes dos professores certos na folha.
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
+- [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). P1-PN-01 resolvido; P1-PN-02 (#542) aberto.
 
 ## Pendências
 
@@ -105,7 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   plano delas (suposição da spec, §6).
 - Painel e perfil para o conselho (2026-11-23, **adotaria**): P1-PN-01 (verde
   fixo nos cartões de posição) e P1-PN-02 (sinal de atenção sem o porquê)
-  → #541 e #542.
+  → #541, entregue (#543), e #542.
 
 ## Entradas
 

@@ -95,3 +95,12 @@ mal sem explicar (P1-PN-02).
 ## Encaminhamento
 
 Issues **#541** (P1-PN-01) e **#542** (P1-PN-02), abertas com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-23: #541 (PR #543) mergeado: P1-PN-01 resolvido.
+  - Os cartões do painel e a página da posição não pintam mais de verde:
+    a 76ª de 81 no IDEB fica em cinza.
+  - O empate no topo aparece como "1º lugar, dividido com 67 escolas com
+    o mesmo valor", e o do fim, como "último lugar, dividido".
+- P1-PN-02 (#542) segue aberto.

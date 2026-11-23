@@ -88,6 +88,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa de atendimento no ranking de redes](ciclos/2026-11-23-ranking-atendimento.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: a lista citável dos mais longe da meta.
 - [2026-11-23 — nomes acentuados da folha](ciclos/2026-11-23-folha-nomes-acentuados.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: o nome como no portal oficial.
 - [2026-11-23 — fontes do ranking pelo indicador](ciclos/2026-11-23-fontes-ranking-indicador.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). QN-01 resolvido; #454 aberta.
+- [2026-11-23 — posição da escola sem verde fixo](ciclos/2026-11-23-posicao-sem-verde.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: primeiro lugar dividido não vira "a melhor".
 
 ## Pendências
 
