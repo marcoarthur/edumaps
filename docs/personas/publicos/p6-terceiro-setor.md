@@ -97,8 +97,35 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   VJ-05: VJ-01 a VJ-04 entregues (#455, #456); pendente #454 (VJ-05,
   operacional). Quarta rodada (2026-11-16, **adotaria**): VK-01 entregue (#458); a fórmula da diversidade
   discente foi corrigida na #459 (#460). Pendente: #454 (operacional).
+- Creche no Nordeste (2026-11-23, **adotaria**): QN-01 (rodapé de fontes do
+  ranking sem o Censo Demográfico na taxa de atendimento) aguarda a
+  aprovação do developer para virar issue. Pendente: #454.
 
 ## Entradas
+
+### 2026-11-23 — Onde falta creche no Nordeste (quinta rodada)
+
+**Material:** o ranking de redes com o indicador da creche no Nordeste
+(com e sem o porte), o CSV, a base de análise de três municípios do topo
+da lista, `/fontes` e o rodapé de fontes. Consolidação em
+[`avaliacoes/2026-11-23-p6-creche-nordeste.md`](avaliacoes/2026-11-23-p6-creche-nordeste.md).
+
+**O que tentou:** a pauta "Onde falta creche no Nordeste": a meta do PNE,
+os municípios mais longe dela e as capitais, com a fonte para citar.
+
+**O que funciona para ela:** 1.305 de 1.794 municípios abaixo da meta, com
+o número conferido na base escola por escola (Feira Nova e Jaborandi sem
+creche nenhuma); as 11 cidades com mais de 500 mil habitantes, todas
+abaixo, e o peso das conveniadas em São Luís e Salvador; o link estável e
+o CSV com o recorte.
+
+**Barreiras:**
+- QN-01 (atrapalha): o rodapé de fontes do ranking não cita o Censo
+  Demográfico 2022 na taxa e lista bases do IDEB que não entram na conta.
+- Observação: sem a série do Censo Escolar, "quem mais abriu vagas" não
+  tem resposta.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-16 — Análises públicas (quarta rodada, pautas revisitadas)
 
