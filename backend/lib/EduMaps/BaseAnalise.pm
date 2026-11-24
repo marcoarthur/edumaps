@@ -503,15 +503,18 @@ sub _blocos {
           "Salário total médio por mês de um profissional do magistério, em reais, sem dezembro (que traz o 13º). Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
         ['carga_horaria_media_magisterio', 'f.carga_media',
           "Carga horária semanal média de um profissional do magistério por mês, em horas, sem dezembro. Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
-        ['salario_40h_magisterio', 'f.salario_40h',
+        ['salario_40h_magisterio', 'CASE WHEN cm.suspeita THEN NULL ELSE f.salario_40h END',
           "Salário médio do magistério convertido para 40 horas semanais (salário ÷ carga × 40), em reais, sem dezembro e sem os meses sem carga horária. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
         # #563 (QQ-01 da P6): o salário base (vencimento), sobre o qual vale o piso.
-        ['salario_base_40h_magisterio', 'f.salario_base_40h',
+        ['salario_base_40h_magisterio', 'CASE WHEN cm.suspeita THEN NULL ELSE f.salario_base_40h END',
           "Salário base (vencimento, sem gratificações nem adicionais) médio por mês de um profissional do magistério, convertido para 40 horas semanais (base ÷ carga × 40), em reais, sem dezembro. É sobre o salário base que vale o piso do magistério; salario_40h_magisterio é o salário total. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
         ['piso_magisterio_ano', 'CASE WHEN f.cod_inep IS NOT NULL THEN f.piso END',
           "O piso salarial nacional do magistério do ano da folha, por 40 horas semanais, usado em prof_magisterio_base_abaixo_piso (2024: R\$ 4.580,57; 2025: R\$ 4.867,77; 2026: R\$ 5.130,63, Portaria MEC nº 82/2026). Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
-        ['prof_magisterio_base_abaixo_piso', 'f.abaixo_piso',
+        ['prof_magisterio_base_abaixo_piso', 'CASE WHEN cm.suspeita THEN NULL ELSE f.abaixo_piso END',
           "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro): um mês de admissão ou de desconto sozinho não conta. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Quem trabalha em mais de uma escola conta em cada uma: a soma das escolas pode passar do número de pessoas da rede. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
+        # #572 (QI-02 da P3): a carga mais comum do município e o aviso.
+        ['carga_comum_municipio', 'CASE WHEN f.cod_inep IS NOT NULL THEN cm.carga END',
+          "Carga horária mais comum dos profissionais do magistério do município no ano (toda a folha, sem dezembro). Quando a maioria dos pagamentos tem carga abaixo de 20, a carga não parece estar em horas semanais (aulas ou jornada parcial): então salario_40h_magisterio, salario_base_40h_magisterio e prof_magisterio_base_abaixo_piso ficam vazios, e vale o salário sem conversão (salario_medio_magisterio). $SIOPE_VAZIO", 1],
         # #512 (QZ-02): na educação infantil, quem está com as crianças pode
         # estar na folha como auxiliar ou assistente educacional, não no
         # magistério.
@@ -669,12 +672,17 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
              count(DISTINCT (cpf, nome_profissional))::int AS pessoas,
              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY t))::float8 AS total,
              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY b))::float8 AS base,
-             (mode() WITHIN GROUP (ORDER BY ch))::float8 AS carga
+             (mode() WITHIN GROUP (ORDER BY ch))::float8 AS carga,
+             -- #572 (QI-02 da P3): a maioria dos pagamentos com carga abaixo
+             -- de 20: a carga não parece estar em horas semanais (aulas,
+             -- jornada parcial), e as contas por 40 horas não valem.
+             (avg((ch < 20)::int) > 0.5) AS suspeita
         FROM pm GROUP BY 1, 2
       SQL
   } // [];
   return { map { ("$_->{cod6}|$_->{ano}" => {
     pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
+    carga_suspeita => ($_->{suspeita} ? \1 : \0),
   }) } @$rows };
 }
 
@@ -923,6 +931,21 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = und
     $joins .= " LEFT JOIN ($SQL_FOLHA) f ON f.cod_inep = e.co_entidade";
     push @jb, undef, undef, $ano_siope // -1,   # meses incompletos (todos os municípios) e o ano
               $class->piso_magisterio($ano_siope // -1);   # #563: o piso do ano (ou vazio)
+    # #572 (QI-02 da P3): a carga mais comum do município no ano e se ela não
+    # parece em horas (as contas por 40 horas ficam vazias). Códigos de 6
+    # dígitos e números vêm do banco; validados antes de entrar no SQL.
+    my $sal = $class->salario_rede($dbh);
+    my @cm;
+    for my $k (sort keys %$sal) {
+      my ($c6, $a) = split /\|/, $k;
+      next unless defined $ano_siope && $a == $ano_siope && $c6 =~ /^\d{6}$/;
+      my $carga = $sal->{$k}{carga_comum};
+      push @cm, sprintf("('%s', %s, %s)", $c6, (defined $carga && $carga =~ /^[\d.]+$/ ? $carga : 'NULL'),
+        (${ $sal->{$k}{carga_suspeita} } ? 'true' : 'false'));
+    }
+    $joins .= ' LEFT JOIN (' . (@cm ? 'VALUES ' . join(', ', @cm)
+                                    : 'SELECT NULL::text, NULL::float8, NULL::boolean WHERE false')
+            . ') AS cm(cod6, carga, suspeita) ON cm.cod6 = left(e.co_municipio::text, 6)';
     # #557: os meses incompletos do município no ano da folha
     $joins .= " LEFT JOIN (SELECT cod6, string_agg((ARRAY['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'])[mes], ', ' ORDER BY mes) AS meses FROM ($SQL_MESES) q WHERE ano = ? GROUP BY cod6) mi"
             . ' ON mi.cod6 = left(e.co_municipio::text, 6)';

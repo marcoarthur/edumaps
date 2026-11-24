@@ -41,4 +41,9 @@ describe("salário do magistério da rede (#571)", () => {
       "salário total R$ 6.975 e base R$ 2.669 (medianas por mês, sem dezembro, de 2.961 profissionais do magistério); carga mais comum: 18");
     expect(textoSalarioRede(null)).toBe("");
   });
+  it("#572: avisa quando a carga não parece em horas", () => {
+    expect(textoSalarioRede({ pessoas: 2961, total: 6975, base: 2669, carga_comum: 18, carga_suspeita: true }))
+      .toContain("carga mais comum: 18 (não parece ser em horas semanais, e sim em aulas ou numa jornada parcial: as contas por 40 horas não valem aqui)");
+    expect(textoSalarioRede({ pessoas: 10, total: 1, base: 1, carga_comum: 30, carga_suspeita: false })).not.toContain("não parece");
+  });
 });
