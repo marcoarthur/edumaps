@@ -132,7 +132,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Secretaria fora da soma das escolas) → #553, entregue (#555), e #554, entregue (#556).
 - Fiscalização do piso em Cuiabá (2026-11-24, **não adotaria**, registro):
   QH-01 (a contagem do piso fora da Secretaria) e QH-02 (o aviso do mês
-  incompleto sem o registro da carga), aguardando a aprovação do developer.
+  incompleto sem o registro da carga) → #575 e #576.
 
 ## Entradas
 

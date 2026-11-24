@@ -77,4 +77,4 @@ contagem do piso fora da Secretaria (QH-01).
 
 ## Encaminhamento
 
-Achados QH-01 e QH-02 aguardam a aprovação do developer para virar issue.
+Issues **#575** (QH-01) e **#576** (QH-02), abertas com a aprovação do developer.
