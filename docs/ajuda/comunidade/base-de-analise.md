@@ -261,7 +261,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     escolas fora da lista, com o código e o nome como o SIOPE declara. Em
     Ubatuba (2026), R$ 67,7 mi declarados: R$ 55,6 mi nas escolas, R$ 11,8
     mi da Secretaria e R$ 267,8 mil numa escola fora da lista do Censo
-    2025.
+    2025. A mesma frase diz a divisão por fonte da folha inteira, com a
+    Secretaria (em Ubatuba, 94,5% pela parcela de 70% do Fundeb), que as
+    colunas por escola não cobrem.
   - **`prof_magisterio` = 0 e o salário vazio:** a escola tem folha, mas
     ninguém no magistério. É o caso das creches em que a folha só traz
     auxiliares e assistentes educacionais (veja `aux_educacional`); o Censo

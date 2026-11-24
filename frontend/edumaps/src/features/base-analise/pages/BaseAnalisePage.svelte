@@ -309,7 +309,7 @@
                 {#if fechamentos.length}
                   <!-- #554 (QS-02 da P5): a soma das escolas não é o total declarado -->
                   <div class="mt-2 text-xs text-gray-700" data-testid="fechamento-folha">
-                    <p>A soma das escolas da base não é o total que o município declara ao SIOPE: falta a folha da Secretaria (sem escola) e a de escolas que a lista do Censo não tem.</p>
+                    <p>A soma das escolas da base não é o total que o município declara ao SIOPE: falta a folha da Secretaria (sem escola) e a de escolas que a lista do Censo não tem. A divisão por fonte é da folha inteira, com a Secretaria, e não é a verificação do mínimo de 70% exigido em lei.</p>
                     <ul class="list-disc ml-5 mt-1">
                       {#each fechamentos as frase}<li>{frase}</li>{/each}
                     </ul>
