@@ -116,8 +116,38 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   não é o indicador oficial) e QJ-02 (o CSV do ranking sem as fontes)
   → #549, entregue (#551), e #550, entregue (#552). Sem
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
+- Folha do Fundeb em Ubatuba (2026-11-24, **não adotaria**, registro):
+  QS-01 (a parte do Fundeb na folha não aparece) e QS-02 (a folha da
+  Secretaria fora da soma das escolas), aguardando a aprovação do
+  developer.
 
 ## Entradas
+
+### 2026-11-24 — Folha do Fundeb em Ubatuba (quarta rodada, só registro)
+
+**Material:** `/fontes`, a folha de uma escola municipal e a base de
+análise da rede municipal de Ubatuba (folha de 2026). Consolidação em
+[`avaliacoes/2026-11-24-p5-cacs-fundeb-ubatuba.md`](avaliacoes/2026-11-24-p5-cacs-fundeb-ubatuba.md).
+
+**O que tentou:** como conselheiro do CACS-Fundeb, conferir a folha
+declarada contra as escolas e os professores, quanto foi pago com o Fundeb
+e se o recurso chegou às escolas que mais precisam.
+
+**O que funciona para ele:** 47 de 51 escolas com folha (as 4 sem folha
+são pequenas); 616 profissionais do magistério por mês contra 693 docentes
+do Censo, com a maior diferença numa escola de 1.316 matrículas; nas
+escolas de INSE mais baixo, gasto por aluno parecido, mais profissionais e
+salário menor.
+
+**Barreiras:**
+- QS-01 (atrapalha): a parte da folha paga com o Fundeb (70%, 30%, outras)
+  não aparece, embora o SIOPE a traga (em Ubatuba, 94,5% pela parte dos
+  70%).
+- QS-02 (incomoda): a folha sem escola (R$ 11,8 mi da Secretaria) não
+  aparece, e a soma da base não fecha com o total declarado.
+- AN-12 (aberto): sem a receita do Fundeb e sem comparação de gasto.
+
+**Veredito:** **não adotaria** (registro; mantido).
 
 ### 2026-11-23 — Meta 1 do PNE em Pernambuco (terceira rodada, só registro)
 
