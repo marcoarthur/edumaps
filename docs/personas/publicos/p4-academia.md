@@ -106,6 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: em que meses a folha é por escola.
 - [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p4--academia-pesquisadora): adotaria (mantido). QM-01 resolvido.
 - [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: salário base e total separados.
+- [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: data e SHA-256 da planilha.
 
 ## Pendências
 

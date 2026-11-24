@@ -103,3 +103,5 @@ Issues **#557** (QT-01) e **#558** (QT-02), abertas com a aprovação do develop
   - A cobertura diz em que meses a folha é por escola e em quais é só da
     Secretaria (Cuiabá 2026: por escola só em janeiro e fevereiro), e o
     painel da escola avisa os meses em que a folha dela não aparece.
+- 2026-11-24: a recarga do SIOPE (#564) trouxe setembro e outubro de 2025
+  iguais: a falta está na declaração publicada, não na carga.

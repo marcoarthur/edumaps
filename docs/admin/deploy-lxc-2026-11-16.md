@@ -311,6 +311,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Salário base e piso (#563, sem change nova): o CSV da base de Alta Floresta D'Oeste (RO, rede municipal, Remuneração,
       2024) traz `piso_magisterio_ano` = 4580,57 e a soma de `prof_magisterio_base_abaixo_piso` = 45 (se a folha do LXC for a
       mesma do local).
+- [ ] Registro da carga da folha (#564, sem change nova; inclui `deploy_minion_dev`): antes de recarregar, `/fontes`
+      diz "carga não registrada" em todos; recarregar um município (ex.: Ubatuba 2026, com permissão) e conferir
+      `psql edumaps_dev -Atc "SELECT jsonb_array_length(raw_manifest) FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'"`
+      e "carga em <data>" em `/fontes`.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

@@ -4,6 +4,24 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dy) — #564 (PR #566), registro da carga; recarga B1
+
+- PR #566 (977547c), opção A1: cada carga do `query_siope` registrada em
+  `clean.import_metadata` (linha de `clean.remuneracao_municipal`), uma
+  entrada por município e ano em `raw_manifest`; a cobertura diz "carga em
+  dd/mm/aaaa"; o job apaga a planilha do `/tmp` antes e depois (antes
+  reaproveitava a de uma carga anterior).
+- B1: recarga local de Cuiabá 2025 e 2026, Alta Floresta 2024, Taubaté e
+  Ubatuba 2026 (jobs 4105 a 4109, `carton exec perl script/edumaps.pl eval
+  'app->get_siope(...)'` no contêiner `edumaps-backend`). Mesmas linhas.
+- Setembro e outubro de 2025 em Cuiabá vieram iguais do SIOPE: a falta está
+  na declaração publicada, não na carga (pendência da #557 fechada).
+- Segunda rodada da P1 (a folha da própria escola, Ubatuba): adotaria;
+  P1-FL-01 e P1-FL-02 aguardam aprovação.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #566 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 267; ciclo `2026-11-24-registro-carga-siope.md`.
+
 ## Sessão 2026-11-24 (dx) — 3ª avaliação da P6, #563 (PR #565)
 
 - Terceira rodada da P6: o piso do magistério na folha municipal.

@@ -107,6 +107,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a série que para em fevereiro vem explicada.
 - [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
+- [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a data dos dados.
 
 ## Pendências
 
@@ -118,8 +119,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Painel e perfil para o conselho (2026-11-23, **adotaria**): P1-PN-01 (verde
   fixo nos cartões de posição) e P1-PN-02 (sinal de atenção sem o porquê)
   → #541, entregue (#543), e #542, entregue (#544).
+- Folha da própria escola (2026-11-24, **adotaria**): P1-FL-01 (docentes
+  da folha contra os do Censo, sem explicação) e P1-FL-02 ("competências" e
+  a soma das categorias), aguardando a aprovação do developer.
 
 ## Entradas
+
+### 2026-11-24 — A folha da própria escola (segunda rodada)
+
+**Material:** o painel financeiro da EM Presidente Tancredo de Almeida
+Neves (Ubatuba; INEP 35070212), folha de 2026, e a ajuda de financeiro e
+folha. Consolidação em
+[`avaliacoes/2026-11-24-p1-folha-da-escola.md`](avaliacoes/2026-11-24-p1-folha-da-escola.md).
+
+**O que tentou:** levar ao conselho escolar quanto custa a equipe, de onde
+vem o dinheiro e quantas pessoas trabalham na escola.
+
+**O que funciona para ela:** R$ 2,43 mi em 8 meses, 100% pela parcela de
+70% do Fundeb, com o aviso; a data da carga para citar.
+
+**Barreiras:**
+- P1-FL-01 (atrapalha): 36 docentes na folha contra 62 no Censo, sem
+  explicação; em Ubatuba, 658 profissionais do magistério só no código da
+  Secretaria.
+- P1-FL-02 (incomoda): "competências" no lugar de meses; categorias somam
+  59 e o cartão diz 57.
+- Observação: sem botão de imprimir.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-23 — Painel e perfil da escola para o conselho
 

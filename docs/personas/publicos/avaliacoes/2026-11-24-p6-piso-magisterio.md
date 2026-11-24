@@ -88,4 +88,6 @@ Issues **#563** (QQ-01) e **#564** (QQ-02), abertas com a aprovação do develop
   - A base traz `salario_base_40h_magisterio`, `piso_magisterio_ano` e
     `prof_magisterio_base_abaixo_piso` (no mês típico da pessoa), com o
     aviso de que não é a verificação legal. Alta Floresta 2024: 45 abaixo.
-- QQ-02 (#564) segue aberto.
+- 2026-11-24: #564 (PR #566) mergeado: QQ-02 resolvido. Cada carga da
+  folha é registrada; depois da recarga dos quatro municípios, `/fontes`
+  diz "carga em 24/11/2026".
