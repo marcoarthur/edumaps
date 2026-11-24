@@ -81,3 +81,11 @@ comparar municípios ou cobrir uma rede grande, falta o salário base na base
 ## Encaminhamento
 
 Issues **#563** (QQ-01) e **#564** (QQ-02), abertas com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-24: #563 (PR #565) mergeado: QQ-01 resolvido.
+  - A base traz `salario_base_40h_magisterio`, `piso_magisterio_ano` e
+    `prof_magisterio_base_abaixo_piso` (no mês típico da pessoa), com o
+    aviso de que não é a verificação legal. Alta Floresta 2024: 45 abaixo.
+- QQ-02 (#564) segue aberto.

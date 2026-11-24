@@ -106,6 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a queda no gráfico vem explicada.
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a série que para em fevereiro vem explicada.
 - [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
+- [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 

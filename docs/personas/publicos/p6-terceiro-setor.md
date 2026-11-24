@@ -99,6 +99,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: falta de dado não é demissão.
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: as creches não subestimadas.
+- [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). QQ-01 resolvido; QQ-02 (#564) aberto.
 
 ## Pendências
 
@@ -113,7 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   ranking sem o Censo Demográfico na taxa de atendimento) → #539, entregue (#540).
   Pendente: #454.
 - Piso do magistério na folha (2026-11-24, **adotaria**): QQ-01 (salário
-  base fora da base) e QQ-02 (carga da folha não registrada) → #563 e #564.
+  base fora da base) e QQ-02 (carga da folha não registrada) → #563, entregue (#565), e #564.
 
 ## Entradas
 

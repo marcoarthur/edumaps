@@ -308,6 +308,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Gasto dos meses completos (#561, sem change nova): o CSV da base de Cuiabá (rede municipal, bloco Remuneração, 2025)
       traz `meses_completos` = 10 e, na escola 51171805, `gasto_pessoal_meses_completos` perto de 4.308.886 (se a folha do LXC
       for a mesma do local).
+- [ ] Salário base e piso (#563, sem change nova): o CSV da base de Alta Floresta D'Oeste (RO, rede municipal, Remuneração,
+      2024) traz `piso_magisterio_ano` = 4580,57 e a soma de `prof_magisterio_base_abaixo_piso` = 45 (se a folha do LXC for a
+      mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

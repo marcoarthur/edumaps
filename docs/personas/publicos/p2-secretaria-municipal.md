@@ -105,6 +105,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QT-01 resolvido; QT-02 (#558) aberto.
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QT-02 resolvido.
 - [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o gasto anualizado por escola.
+- [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: quantos ficam abaixo do piso.
 
 ## Pendências
 

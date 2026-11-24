@@ -4,6 +4,26 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dx) — 3ª avaliação da P6, #563 (PR #565)
+
+- Terceira rodada da P6: o piso do magistério na folha municipal.
+  Adotaria (mantido).
+  - QQ-01: a base só trazia o salário total → #563.
+  - QQ-02: a carga da folha não é registrada → #564 (aberta).
+- PR #565 (c5ee46b), opções A1 e B1:
+  - `salario_base_40h_magisterio`, `piso_magisterio_ano` e
+    `prof_magisterio_base_abaixo_piso` (mediana dos meses da pessoa);
+  - `%PISO_MAGISTERIO` no código: 2024 4.580,57; 2025 4.867,77; 2026
+    5.130,63 (Portaria MEC nº 82/2026, conferida por busca). O reajuste
+    de 2027 entra no PR do ano.
+- Cuiabá 2025: 673 "em algum mês", 40 no mês típico; soma das escolas 47
+  (quem está em duas escolas conta nas duas, dito no dicionário).
+- O developer autorizou o merge do #565 condicionado ao CI, aos testes e
+  ao rebuild local: conferido no último commit antes do merge.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #565 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 266; ciclo `2026-11-24-salario-base-piso.md`.
+
 ## Sessão 2026-11-24 (dw) — 38ª avaliação da P4, #561 (PR #562)
 
 - Trigésima oitava rodada da P4: gasto com pessoal por aluno em Cuiabá
