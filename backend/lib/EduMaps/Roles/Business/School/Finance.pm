@@ -530,6 +530,11 @@ sub financial_summary($self, $params) {
     # #558 (QT-02 da P2): os meses do ano em que o município declarou a
     # folha (quase) só no total da Secretaria: neles a folha da escola não
     # aparece. Só faz sentido quando o painel é da escola.
+    # #576 (QH-02 da P5): a data da carga registrada do município e ano (os
+    # dados são os da planilha baixada nessa data); sem registro, undef.
+    carga_folha => (defined $ano && $siope->{cod_municipio}
+      ? EduMaps::BaseAnalise->cargas_folha($dbh)->{"$siope->{cod_municipio}|$ano"}
+      : undef),
     # #571 (QI-01 da P3): o salário do magistério da rede inteira no ano,
     # com a folha da Secretaria (vale também no painel da Secretaria).
     salario_rede => (defined $ano && $siope->{cod_municipio}

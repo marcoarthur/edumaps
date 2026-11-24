@@ -59,3 +59,11 @@ describe("piso na rede inteira (#575)", () => {
     expect(textoPisoRede(null, 2026)).toBe("");
   });
 });
+
+describe("mês incompleto com a carga registrada (#576)", () => {
+  it("diz que já está na planilha do SIOPE", () => {
+    expect(sufixoIncompletos([{ nome: "setembro" }, { nome: "outubro" }], "2026-11-24")).toBe(" (setembro e outubro incompletos já na planilha do SIOPE)");
+    expect(textoAnoFolha({ meses: 12, escolas: 167, incompletos: [{ nome: "setembro" }], carga: "2026-11-24" }))
+      .toBe("12 meses (setembro incompleto já na planilha do SIOPE), 167 escolas; carga em 24/11/2026");
+  });
+});

@@ -542,7 +542,7 @@ sub _blocos {
         ['meses_folha', 'f.meses',
           "Meses do ano com folha da escola no SIOPE (de 1 a 12). $SIOPE_VAZIO", 1],
         ['meses_folha_incompletos', 'CASE WHEN f.cod_inep IS NOT NULL THEN mi.meses END',
-          "Meses do ano em que a folha do município veio pela metade: menos categorias de profissionais que o habitual do ano, ou menos da metade dos registros de um mês típico (ex.: \"set, out\"). Nesses meses o gasto e as médias por mês ficam abaixo do real. Pode ser a declaração do município ao SIOPE ou a carga. Vazio: nenhum mês incompleto, ou escola sem folha", 0],
+          "Meses do ano em que a folha do município veio pela metade: menos categorias de profissionais que o habitual do ano, ou menos da metade dos registros de um mês típico (ex.: \"set, out\"). Nesses meses o gasto e as médias por mês ficam abaixo do real. Sem carga registrada, pode ser a declaração do município ao SIOPE ou a carga; com a carga registrada (a data está em Fontes e metodologia), os dados são os da planilha baixada nessa data, e a falta está na fonte, não na carga. Vazio: nenhum mês incompleto, ou escola sem folha", 0],
         # #561 (QM-01 da P4): para anualizar sem os meses incompletos.
         ['meses_completos', 'f.meses_completos',
           "Meses do ano com folha da escola fora dos meses incompletos do município (veja meses_folha_incompletos). Sem mês incompleto, igual a meses_folha. $SIOPE_VAZIO", 1],
@@ -717,6 +717,21 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
   }) } @$rows };
 }
 
+# #564 (QQ-02 da P6): a data de cada carga registrada da folha, por
+# "<cod6>|<ano>" => "AAAA-MM-DD". #576 (QH-02 da P5): com a carga
+# registrada, os dados são os da planilha baixada nessa data (a folha e o
+# registro trocam na mesma transação): um mês incompleto já veio assim.
+sub cargas_folha ($class, $dbh) {
+  my %carga;
+  my ($manifesto) = eval { $dbh->selectrow_array(
+    q{SELECT raw_manifest::text FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'}) };
+  for my $e (@{ (eval { Mojo::JSON::decode_json($manifesto // '[]') }) // [] }) {
+    next unless ref $e eq 'HASH' && $e->{cod_municipio} && $e->{ano};
+    $carga{"$e->{cod_municipio}|$e->{ano}"} = substr($e->{baixado_em} // '', 0, 10) || undef;
+  }
+  return \%carga;
+}
+
 sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(q{
@@ -737,14 +752,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $inc = $class->meses_incompletos($dbh);
   my $lugar = $class->meses_por_lugar($dbh);
   my $salario = $class->salario_rede($dbh);   # #571
-  # #564 (QQ-02 da P6): a data de cada carga registrada, por município e ano
-  my %carga;
-  my ($manifesto) = eval { $dbh->selectrow_array(
-    q{SELECT raw_manifest::text FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'}) };
-  for my $e (@{ (eval { Mojo::JSON::decode_json($manifesto // '[]') }) // [] }) {
-    next unless ref $e eq 'HASH' && $e->{cod_municipio} && $e->{ano};
-    $carga{"$e->{cod_municipio}|$e->{ano}"} = substr($e->{baixado_em} // '', 0, 10) || undef;
-  }
+  my %carga = %{ $class->cargas_folha($dbh) };   # #564
   my (@lista, %por);
   for my $r (@$rows) {
     my $m = $por{ $r->{codigo_ibge} } //= do {

@@ -40,8 +40,10 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   declarados que os outros (menos categorias, ou menos da metade dos
   registros de um mês típico), um aviso acima dos gráficos diz qual mês e os
   números. Nesse mês o custo e os profissionais ficam abaixo do real, e o
-  total do ano também. A causa pode ser a declaração do município ao SIOPE
-  ou a carga; a plataforma não corrige os números. Para refazer o gasto do
+  total do ano também. Sem carga registrada, a causa pode ser a declaração
+  do município ao SIOPE ou a carga. Com a carga registrada, o aviso diz a
+  data: a planilha do SIOPE baixada nesse dia já traz o mês assim, e a falta
+  está na fonte, e não na carga. A plataforma não corrige os números. Para refazer o gasto do
   ano sem esses meses, de todas as escolas de uma vez, a
   [base de análise](../comunidade/base-de-analise.md) traz o gasto só dos
   meses completos.

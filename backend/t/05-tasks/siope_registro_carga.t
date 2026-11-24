@@ -85,6 +85,9 @@ like $e->[0]{baixado_em}, qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/, 'data e hor
 unlike $e->[0]{url}, qr/recaptcha/, 'URL sem o captcha';
 my ($m) = grep { $_->{codigo_ibge} eq $MUN7 } @{ EduMaps::BaseAnalise->cobertura_siope($dbh, 'AC') };
 is $m->{anos}[0]{carga}, substr($e->[0]{baixado_em}, 0, 10), 'a data da carga na cobertura do município';
+# #576 (QH-02 da P5): o painel da escola traz a data da carga registrada
+my $fin = $t->get_ok("/api/school/$INEP/finance?ano=$ANO")->status_is(200)->tx->res->json;
+is $fin->{carga_folha}, substr($e->[0]{baixado_em}, 0, 10), 'painel: a data da carga do município e ano';
 
 @PLANILHA = (linha('Janeiro'), linha('Fevereiro'), linha('Março'));
 is carregar()->info->{state}, 'finished', 'recarga';

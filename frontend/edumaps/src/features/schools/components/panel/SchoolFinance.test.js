@@ -218,3 +218,19 @@ describe("SchoolFinance — piso na rede (#575)", () => {
     expect(screen.queryByTestId("piso-rede")).toBeNull();
   });
 });
+
+// #576 (QH-02 da P5): com a carga registrada, a falta está na fonte.
+describe("SchoolFinance — mês incompleto com a carga registrada (#576)", () => {
+  const INC = [{ mes: 9, nome: "setembro", registros: 3269, categorias: 2, registros_habitual: 9680, categorias_habitual: 4 }];
+  const serie = [8, 9].map((m) => ({ ano: 2025, mes: String(m), mes_num: m, total_salario: 1000, total_profissionais: 10 }));
+  it("com a data, diz que a planilha do SIOPE traz assim", () => {
+    render(SchoolFinance, { props: { inep: "1", series: serie, categorias: CATEGORIAS, ano: 2025, mesesIncompletos: INC, cargaFolha: "2026-11-24" } });
+    const a = screen.getByTestId("aviso-meses-incompletos");
+    expect(a).toHaveTextContent("A planilha do SIOPE baixada em 24/11/2026 traz este mês assim: a falta está na fonte, e não na carga.");
+    expect(a).not.toHaveTextContent("Pode ser a declaração");
+  });
+  it("sem a data, o texto de antes", () => {
+    render(SchoolFinance, { props: { inep: "1", series: serie, categorias: CATEGORIAS, ano: 2025, mesesIncompletos: INC } });
+    expect(screen.getByTestId("aviso-meses-incompletos")).toHaveTextContent("Pode ser a declaração do município ao SIOPE ou a carga");
+  });
+});
