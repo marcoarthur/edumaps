@@ -79,4 +79,4 @@ infantil espera o QM-01.
 
 ## Encaminhamento
 
-Achado QM-01 aguarda a aprovação do developer para virar issue.
+Issue **#561** (QM-01), aberta com a aprovação do developer.

@@ -220,7 +220,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   governo distrital somem da taxa da rede e do teto) → #545, entregue (#546).
   Trigésima oitava rodada (2026-11-24, **adotaria**, com ressalva no gasto
   anual de 2025 em Cuiabá): QM-01 (os meses incompletos marcados, sem como
-  tirá-los da conta), aguardando a aprovação do developer.
+  tirá-los da conta) → #561.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
