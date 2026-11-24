@@ -114,6 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno.
+- [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 

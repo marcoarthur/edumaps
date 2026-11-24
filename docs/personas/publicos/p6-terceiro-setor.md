@@ -107,6 +107,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
+- [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). QG-01 e QG-02 resolvidos.
 
 ## Pendências
 
@@ -124,7 +125,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   base fora da base) e QQ-02 (carga da folha não registrada) → #563, entregue (#565), e #564, entregue (#566).
 - Comparar a folha das prefeituras (2026-11-24, **adotaria**): QG-01 (a
   parte do Fundeb da folha inteira) e QG-02 (os números por município sem
-  CSV) → #579 e #580.
+  CSV) → #579, entregue (#581), e #580, entregue (#582).
 
 ## Entradas
 

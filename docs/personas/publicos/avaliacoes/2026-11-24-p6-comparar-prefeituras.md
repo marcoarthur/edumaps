@@ -69,3 +69,10 @@ Continua pendente: #454 (a carga do IDEB registrada).
 ## Encaminhamento
 
 Issues **#579** (QG-01) e **#580** (QG-02), abertas no modo autônomo autorizado pelo developer (até 25/11, 9h).
+
+## Andamento
+
+- 2026-11-24: #579 (PR #581) e #580 (PR #582) mergeados: QG-01 e QG-02
+  resolvidos. A frase do fechamento diz a divisão por fonte da folha
+  inteira; `folha-municipios.csv?uf=` dá a tabela das prefeituras, com
+  dicionário.

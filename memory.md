@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ef) — modo autônomo: 4ª avaliação da P6, #579 e #580
+
+- O developer autorizou o modo autônomo às 18:50 ("execute de modo
+  autonomo até as 9h do proximo dia") e liberou downloads às 18:58; só
+  ações destrutivas bloqueiam. A #454 continua de fora: o job do INEP
+  recusa a carga do IDEB até a resposta do e-SIC (decisão do projeto).
+- Quarta rodada da P6 (comparar a folha das prefeituras): adotaria.
+  QG-01 → #579 (PR #581, `por_fonte` no fechamento) e QG-02 → #580 (PR
+  #582, `folha-municipios.csv` e o dicionário).
+- O backend-tests do merge do #581 falhou em `rede/acesso.t` (instável sob
+  `-j4`); a nova rodada deu verde. Observar.
+- Nota técnica 274; ciclo `2026-11-24-folha-por-municipio.md`.
+
 ## Sessão 2026-11-24 (ee) — #576 (PR #578), aviso do mês incompleto com a carga
 
 - PR #578 (7a839fa), opções A1 e B1: `cargas_folha` e `carga_folha` no
