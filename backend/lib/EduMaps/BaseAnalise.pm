@@ -295,11 +295,47 @@ my $MAGISTERIO = 'Profissionais do magistério';
 my $FONTE_SOMA = 'As três partes (gasto_fundeb_70_ano, gasto_fundeb_30_ano e gasto_outras_fontes_ano) somam o gasto_pessoal_ano, em reais inteiros, com diferença de arredondamento de até 2 reais. Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a receita do Fundeb do município, que não está na base.';
 our $AUX_EDUCACIONAL = 'Auxiliar/Assistente Educacional';
 
+# #557 (QT-01 da P2): o mês com a folha pela metade. Comparado com o próprio
+# ano do município: tem menos categorias de profissionais que o habitual (a
+# moda do ano) ou menos da metade dos registros do mês mediano. Pelo número
+# de registros e de categorias, não pelo valor: dezembro (13º) e janeiro
+# (mais baixo, antes dos contratos do ano) não viram alarme. A causa não se
+# sabe (declaração do município ao SIOPE ou carga): só se marca.
+our @MESES = qw(janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro);
+# O número do mês (1 a 12) a partir do texto ("Março" também em latin1).
+sub _mes_num ($col) {
+  return "CASE left($col, 3) " . join(' ', map {
+    sprintf "WHEN '%s' THEN %d", ucfirst(substr($MESES[$_ - 1] =~ s/ç/c/r, 0, 3)), $_
+  } 1 .. 12) . ' END';
+}
+my $MES_NUM = _mes_num('mes');
+my $SQL_MESES = <<~"SQL";
+  WITH m AS (
+    SELECT cod_municipio::text AS cod6, ano::int AS ano, $MES_NUM AS mes,
+           count(*)::int AS registros, count(DISTINCT categoria)::int AS categorias
+      FROM clean.remuneracao_municipal
+     WHERE (?::text IS NULL OR cod_municipio::text = ?)
+     GROUP BY 1, 2, 3
+  ), a AS (
+    SELECT cod6, ano,
+           percentile_cont(0.5) WITHIN GROUP (ORDER BY registros) AS registros_habitual,
+           mode() WITHIN GROUP (ORDER BY categorias) AS categorias_habitual
+      FROM m GROUP BY 1, 2
+  )
+  SELECT m.cod6, m.ano, m.mes, m.registros, m.categorias,
+         round(a.registros_habitual)::int AS registros_habitual, a.categorias_habitual
+    FROM m JOIN a USING (cod6, ano)
+   WHERE m.mes IS NOT NULL
+     AND (m.categorias < a.categorias_habitual OR m.registros < 0.5 * a.registros_habitual)
+   ORDER BY 1, 2, 3
+  SQL
+
 # Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
 # pessoa pode ter mais de um vínculo na escola no mesmo mês), depois por
 # escola. O mês vem em texto, com um caso conhecido de latin1 ("Março"): as
 # três primeiras letras bastam. O agregado da Secretaria (99999999) fica de
 # fora: não é escola.
+my $MES_NUM_R = _mes_num('r.mes');
 my $SQL_FOLHA = <<~"SQL";
   SELECT cod_inep,
          (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE tipo = '$MAGISTERIO'))::int AS prof_magisterio,
@@ -314,14 +350,20 @@ my $SQL_FOLHA = <<~"SQL";
          round(sum(f70))::float8 AS gasto_fundeb_70,
          round(sum(f30))::float8 AS gasto_fundeb_30,
          round(sum(fo))::float8 AS gasto_outras,
-         count(DISTINCT m)::int AS meses
-    FROM (SELECT cod_inep, left(mes, 3) AS m, cpf, nome_profissional, tipo,
-                 categoria = '$AUX_EDUCACIONAL' AS aux,
-                 sum(salario_total) AS s, sum(carga_horaria) AS ch,
-                 sum(salario_fundeb_max) AS f70, sum(salario_fundeb_min) AS f30,
-                 sum(salario_outros) AS fo
-            FROM clean.remuneracao_municipal
-           WHERE ano = ? AND cod_inep <> 99999999
+         count(DISTINCT m)::int AS meses,
+         -- #561 (QM-01 da P4): só os meses fora dos incompletos, para anualizar
+         (count(DISTINCT m) FILTER (WHERE NOT inc))::int AS meses_completos,
+         coalesce(round(sum(s) FILTER (WHERE NOT inc)), 0)::float8 AS gasto_completos
+    FROM (SELECT r.cod_inep, left(r.mes, 3) AS m, r.cpf, r.nome_profissional, r.tipo,
+                 r.categoria = '$AUX_EDUCACIONAL' AS aux,
+                 sum(r.salario_total) AS s, sum(r.carga_horaria) AS ch,
+                 sum(r.salario_fundeb_max) AS f70, sum(r.salario_fundeb_min) AS f30,
+                 sum(r.salario_outros) AS fo,
+                 bool_or(i.mes IS NOT NULL) AS inc   -- #561: mês incompleto do município (#557)
+            FROM clean.remuneracao_municipal r
+            LEFT JOIN ($SQL_MESES) i
+              ON i.cod6 = r.cod_municipio::text AND i.ano = r.ano AND i.mes = $MES_NUM_R
+           WHERE r.ano = ? AND r.cod_inep <> 99999999
            GROUP BY 1, 2, 3, 4, 5, 6) pm
    GROUP BY cod_inep
   SQL
@@ -448,6 +490,11 @@ sub _blocos {
           "Meses do ano com folha da escola no SIOPE (de 1 a 12). $SIOPE_VAZIO", 1],
         ['meses_folha_incompletos', 'CASE WHEN f.cod_inep IS NOT NULL THEN mi.meses END',
           "Meses do ano em que a folha do município veio pela metade: menos categorias de profissionais que o habitual do ano, ou menos da metade dos registros de um mês típico (ex.: \"set, out\"). Nesses meses o gasto e as médias por mês ficam abaixo do real. Pode ser a declaração do município ao SIOPE ou a carga. Vazio: nenhum mês incompleto, ou escola sem folha", 0],
+        # #561 (QM-01 da P4): para anualizar sem os meses incompletos.
+        ['meses_completos', 'f.meses_completos',
+          "Meses do ano com folha da escola fora dos meses incompletos do município (veja meses_folha_incompletos). Sem mês incompleto, igual a meses_folha. $SIOPE_VAZIO", 1],
+        ['gasto_pessoal_meses_completos', 'f.gasto_completos',
+          "O gasto_pessoal_ano só dos meses completos (meses_completos), em reais. Para anualizar sem os meses incompletos: gasto_pessoal_meses_completos × 12 ÷ meses_completos. Dezembro, com o 13º, entra quando está completo. Sem mês incompleto, igual a gasto_pessoal_ano. $SIOPE_VAZIO", 1],
       ] },
     { id => 'porte', label => 'Porte do município', fonte => 'ibge_populacao',
       descricao => 'População estimada do município, a classe de tamanho do IBGE e as crianças na idade da creche e da pré-escola (Censo Demográfico).',
@@ -520,36 +567,6 @@ sub anos_siope ($class, $dbh) {
 # Município em que o SIOPE só traz o total da Secretaria fica com 0 escolas.
 # Os meses são os das escolas: o mês em que só a Secretaria aparece não conta
 # (Cuiabá 2026: julho e agosto só com o total da Secretaria).
-# #557 (QT-01 da P2): o mês com a folha pela metade. Comparado com o próprio
-# ano do município: tem menos categorias de profissionais que o habitual (a
-# moda do ano) ou menos da metade dos registros do mês mediano. Pelo número
-# de registros e de categorias, não pelo valor: dezembro (13º) e janeiro
-# (mais baixo, antes dos contratos do ano) não viram alarme. A causa não se
-# sabe (declaração do município ao SIOPE ou carga): só se marca.
-our @MESES = qw(janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro);
-my $MES_NUM = 'CASE left(mes, 3) ' . join(' ', map {
-  sprintf "WHEN '%s' THEN %d", ucfirst(substr($MESES[$_ - 1] =~ s/ç/c/r, 0, 3)), $_
-} 1 .. 12) . ' END';
-my $SQL_MESES = <<~"SQL";
-  WITH m AS (
-    SELECT cod_municipio::text AS cod6, ano::int AS ano, $MES_NUM AS mes,
-           count(*)::int AS registros, count(DISTINCT categoria)::int AS categorias
-      FROM clean.remuneracao_municipal
-     WHERE (?::text IS NULL OR cod_municipio::text = ?)
-     GROUP BY 1, 2, 3
-  ), a AS (
-    SELECT cod6, ano,
-           percentile_cont(0.5) WITHIN GROUP (ORDER BY registros) AS registros_habitual,
-           mode() WITHIN GROUP (ORDER BY categorias) AS categorias_habitual
-      FROM m GROUP BY 1, 2
-  )
-  SELECT m.cod6, m.ano, m.mes, m.registros, m.categorias,
-         round(a.registros_habitual)::int AS registros_habitual, a.categorias_habitual
-    FROM m JOIN a USING (cod6, ano)
-   WHERE m.mes IS NOT NULL
-     AND (m.categorias < a.categorias_habitual OR m.registros < 0.5 * a.registros_habitual)
-   ORDER BY 1, 2, 3
-  SQL
 
 # Meses incompletos por "<cod6>|<ano>"; com $cod6, só os desse município.
 sub meses_incompletos ($class, $dbh, $cod6 = undef) {
@@ -820,7 +837,7 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = und
   }
   if ($tem{remuneracao}) {
     $joins .= " LEFT JOIN ($SQL_FOLHA) f ON f.cod_inep = e.co_entidade";
-    push @jb, $ano_siope // -1;
+    push @jb, undef, undef, $ano_siope // -1;   # meses incompletos (todos os municípios) e o ano
     # #557: os meses incompletos do município no ano da folha
     $joins .= " LEFT JOIN (SELECT cod6, string_agg((ARRAY['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'])[mes], ', ' ORDER BY mes) AS meses FROM ($SQL_MESES) q WHERE ano = ? GROUP BY cod6) mi"
             . ' ON mi.cod6 = left(e.co_municipio::text, 6)';
