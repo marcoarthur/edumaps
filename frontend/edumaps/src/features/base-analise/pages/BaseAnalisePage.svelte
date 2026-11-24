@@ -320,7 +320,7 @@
                   <div class="mt-2 text-xs text-gray-700" data-testid="salario-rede-base">
                     <p>Magistério na rede municipal em {anoSiope} (toda a folha, nas escolas e no total da Secretaria; sem conversão para 40 horas):</p>
                     <ul class="list-disc ml-5 mt-1">
-                      {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.{#if textoPisoRede(x.s, anoSiope)} <span data-testid="piso-rede-base">{textoPisoRede(x.s, anoSiope)}</span>{/if}</li>{/each}
+                      {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.{#if textoPisoRede(x.s, anoSiope)}{" "}<span data-testid="piso-rede-base">{textoPisoRede(x.s, anoSiope)}</span>{/if}</li>{/each}
                     </ul>
                   </div>
                 {/if}
