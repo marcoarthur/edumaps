@@ -115,6 +115,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a correção é na declaração.
 - [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno.
 - [2026-11-24 — aviso de anos com o ano da folha](ciclos/2026-11-24-aviso-anos-folha.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Sem impacto relevante.
+- [2026-11-24 — folha detalhada do total da Secretaria](ciclos/2026-11-24-folha-secretaria.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QE-01 resolvido.
 
 ## Pendências
 
@@ -134,7 +135,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   (mês com a folha pela metade sem aviso) e QT-02 (a cobertura conta como
   por escola o mês da Secretaria) → #557, entregue (#559), e #558, entregue (#560).
 - Resposta ao tribunal sobre o piso (2026-11-24, **adotaria, em piloto**,
-  modo autônomo): QE-01 (a folha detalhada da Secretaria não aparece) → #585.
+  modo autônomo): QE-01 (a folha detalhada da Secretaria não aparece) → #585, entregue (#586).
 
 ## Entradas
 

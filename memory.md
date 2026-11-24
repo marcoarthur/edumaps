@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (eh) — modo autônomo: 4ª avaliação da P2, #585 (PR #586)
+
+- Quarta rodada da P2 (a resposta ao tribunal sobre o piso em Cuiabá):
+  adotaria em piloto. QE-01 → #585 (PR #586, 12daeeb): a folha detalhada do
+  total da Secretaria, com busca e páginas de 100.
+- A carga dos setores do Censo 2022 carregou a malha (468.097) e falhou na
+  parte do Censo: falta `unzip` na imagem do minion → #587 (correção no
+  Dockerfile e no Rexfile), e a parte do Censo roda de novo com
+  `--arg so=censo --arg dir_zips=…` (sem baixar de novo).
+- Nota técnica 276; ciclo `2026-11-24-folha-secretaria.md`.
+
 ## Sessão 2026-11-24 (eg) — modo autônomo: 39ª avaliação da P4, #583 (PR #584)
 
 - Trigésima nona rodada da P4 (salário do professor e IDEB em Cuiabá):

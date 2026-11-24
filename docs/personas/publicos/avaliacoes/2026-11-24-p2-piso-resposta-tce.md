@@ -63,3 +63,9 @@ número, falta a lista (QE-01).
 ## Encaminhamento
 
 Issue **#585** (QE-01), aberta no modo autônomo autorizado pelo developer.
+
+## Andamento
+
+- 2026-11-24: #585 (PR #586) mergeado: QE-01 resolvido. A folha do total da
+  Secretaria abre pelo painel (Cuiabá, abril de 2026: 13.019 registros, com
+  busca e páginas de 100).
