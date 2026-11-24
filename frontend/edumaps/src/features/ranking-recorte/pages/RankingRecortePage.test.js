@@ -210,7 +210,7 @@ describe("RankingRecortePage — recorte no CSV (#448)", () => {
     URL.revokeObjectURL = vi.fn();
     const clique = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     await fireEvent.click(botao);
-    expect(clique).toHaveBeenCalled();
+    await waitFor(() => expect(clique).toHaveBeenCalled());
     // O Blob do jsdom não tem .text(); o FileReader lê.
     const texto = await new Promise((ok) => {
       const fr = new FileReader();
@@ -226,9 +226,14 @@ describe("RankingRecortePage — recorte no CSV (#448)", () => {
     abrir("?aba=redes&regiao=NE&porte=10_20mil");
     await screen.findByTestId("tabela-redes");
     const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
-    expect(l[0].slice(-3)).toEqual(["recorte", "porte_filtro", "minimo_escolas"]);
+    expect(l[0].slice(-5)).toEqual(["recorte", "porte_filtro", "minimo_escolas", "fontes", "fontes_links"]);
     expect(l).toHaveLength(4);
-    for (const linha of l.slice(1)) expect(linha.slice(-3)).toEqual(["regiao:NE", "10_20mil", "3"]);
+    for (const linha of l.slice(1)) expect(linha.slice(-5, -2)).toEqual(["regiao:NE", "10_20mil", "3"]);
+    // #550: as fontes do rodapé da tela "ranking" em toda linha.
+    expect(l[1].at(-2)).toContain("Censo Escolar 2025 (INEP, carga em 14/10/2026)");
+    expect(l[1].at(-2)).toContain("IDEB e SAEB 2005–2023 (INEP, carga não registrada)");
+    expect(l[1].at(-2)).not.toContain("População por idade");
+    expect(l[1].at(-1)).toContain("https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb");
   });
 
   it("CSV das redes traz as duas posições com nome (#453)", async () => {
@@ -244,8 +249,18 @@ describe("RankingRecortePage — recorte no CSV (#448)", () => {
     abrir("?aba=escolas&codigo_ibge=3205309&rede=municipal");
     await screen.findByTestId("tabela-escolas");
     const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
-    expect(l[0].slice(-4)).toEqual(["codigo_ibge", "municipio", "uf", "rede_filtro"]);
-    expect(l[1].slice(-4)).toEqual(["3205309", "Vitória", "ES", "municipal"]);
+    expect(l[0].slice(-6)).toEqual(["codigo_ibge", "municipio", "uf", "rede_filtro", "fontes", "fontes_links"]);
+    expect(l[1].slice(-6, -2)).toEqual(["3205309", "Vitória", "ES", "municipal"]);
+    expect(l[1].at(-2)).toContain("Índices do EduMaps");
+  });
+
+  it("sem o catálogo de fontes, o CSV sai assim mesmo, com o aviso (#550)", async () => {
+    server.use(http.get("*/api/fontes", () => HttpResponse.json({ erro: "fora" }, { status: 500 })));
+    abrir("?aba=redes&uf=ES");
+    await screen.findByTestId("tabela-redes");
+    const l = await baixado(screen.getByRole("button", { name: "Baixar CSV" }));
+    expect(l).toHaveLength(4);
+    expect(l[1].slice(-2)).toEqual(["ver /fontes no EduMaps", ""]);
   });
 });
 
@@ -590,6 +605,7 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     URL.revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () { nome = this.download; });
     await fireEvent.click(screen.getByRole("button", { name: "Baixar CSV" }));
+    await waitFor(() => expect(nome).not.toBeNull());
     const texto = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsText(blob); });
     const l = texto.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).map((x) => x.split(";"));
     expect(nome).toBe("ranking-atendimento-creche-MT-2022.csv");
@@ -603,5 +619,10 @@ describe("RankingRecortePage — taxa de atendimento da educação infantil (#53
     expect(cuiaba[i.ano_populacao_idade]).toBe("2022");
     expect(cuiaba[i.vagas_faltam_meta]).toBe("1763"); // #547
     expect(cuiaba[i.metodo]).toMatch(/^taxa bruta de matrícula .*não é o indicador oficial do PNE$/); // #549
+    // #550: as fontes da tela da taxa: a população por idade entra, o IDEB não.
+    expect(cuiaba[i.fontes]).toContain("População por idade (Censo Demográfico) 2022 (IBGE");
+    expect(cuiaba[i.fontes]).toContain("Censo Escolar 2025 (INEP, carga em 14/10/2026)");
+    expect(cuiaba[i.fontes]).not.toContain("IDEB");
+    expect(cuiaba[i.fontes_links]).toContain("https://sidra.ibge.gov.br/tabela/9514");
   });
 });

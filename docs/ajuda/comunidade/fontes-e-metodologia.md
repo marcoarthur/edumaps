@@ -34,7 +34,8 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
    O selo lista as bases da conta que a tela mostra: no ranking, com o
    indicador da creche ou da pré-escola, ele traz o Censo Escolar, a
    população por idade do Censo Demográfico e a estimativa da população, e
-   não o IDEB. No
+   não o IDEB. O CSV dos rankings leva as mesmas bases em toda linha, nas
+   colunas `fontes` e `fontes_links`. No
    agrupamento de escolas, a caixa **Universo** diz o ano do Censo e do IDEB
    usados, e o CSV baixado é aquele resultado.
 5. **Para citar um índice do EduMaps** (infraestrutura, docentes,

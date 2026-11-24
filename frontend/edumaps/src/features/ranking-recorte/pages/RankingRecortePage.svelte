@@ -13,12 +13,13 @@
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
-  import { dataBR } from "@/features/fontes/utils.js";
+  import { dataBR, fontesDaTela } from "@/features/fontes/utils.js";
+  import { getFontes } from "@/features/fontes/api/fontesApi.js";
   import { getRankingRedes, getRankingEscolas } from "../api/rankingRecorteApi.js";
   import { INDICADORES_IDEB, INDICADORES_ATENDIMENTO, ehAtendimento, INDICADORES_ESCOLA, UFS, REDES, MINIMOS, PORTES, REGIOES, rotuloPorte, rotuloRegiao } from "../constants.js";
   import { num, variacao, contexto, csv, baixarCsv } from "../utils/formato.js";
   import TabelaAtendimento from "../components/TabelaAtendimento.svelte";
-  import { tabelaRedes, tabelaEscolas, nomeCsvEscolas, tabelaAtendimento, nomeCsvAtendimento } from "../utils/exportar.js";
+  import { tabelaRedes, tabelaEscolas, nomeCsvEscolas, tabelaAtendimento, nomeCsvAtendimento, comFontes } from "../utils/exportar.js";
 
   const inicial = new URLSearchParams(window.location.search);
 
@@ -241,24 +242,34 @@
 
   const csvDe = (t) => csv(t.cabecalho, t.linhas);
 
-  function exportarRedes() {
-    const r = redes;
-    if (r.tipo === "atendimento") {
-      baixarCsv(nomeCsvAtendimento(r), csvDe(tabelaAtendimento(r, redesOrdenadas)));
-      return;
+  // #550: as fontes da tela (as do rodapé) em toda linha do CSV. O catálogo
+  // vem do cache do rodapé; se a busca falhar, o arquivo sai sem elas.
+  async function fontesDe(tela) {
+    try {
+      return fontesDaTela(await getFontes(), tela);
+    } catch {
+      return null;
     }
-    baixarCsv(
-      `ranking-redes-${r.indicador.id}-${abrangencia === "brasil" ? "BR" : abrangencia === "regiao" ? regiao : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`,
-      csvDe(tabelaRedes(r, redesOrdenadas)),
-    );
   }
 
-  function exportarEscolas() {
+  async function exportarRedes() {
+    const r = redes;
+    const linhas = redesOrdenadas;
+    if (r.tipo === "atendimento") {
+      const fontes = await fontesDe("ranking_atendimento");
+      baixarCsv(nomeCsvAtendimento(r), csvDe(comFontes(tabelaAtendimento(r, linhas), fontes)));
+      return;
+    }
+    const nome = `ranking-redes-${r.indicador.id}-${abrangencia === "brasil" ? "BR" : abrangencia === "regiao" ? regiao : uf}${porte ? `-${porte}` : ""}-${r.ano}-min${r.minimo_escolas}.csv`;
+    const fontes = await fontesDe("ranking");
+    baixarCsv(nome, csvDe(comFontes(tabelaRedes(r, linhas), fontes)));
+  }
+
+  async function exportarEscolas() {
     const e = escolas;
-    baixarCsv(
-      nomeCsvEscolas(e),
-      csvDe(tabelaEscolas(e, escolasOrdenadas)),
-    );
+    const linhas = escolasOrdenadas;
+    const fontes = await fontesDe("ranking");
+    baixarCsv(nomeCsvEscolas(e), csvDe(comFontes(tabelaEscolas(e, linhas), fontes)));
   }
 
   onMount(() => {

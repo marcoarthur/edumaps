@@ -54,7 +54,11 @@ indicador. Não precisa de login.
    posição e o INSE parecido foram calculados: nas redes, `recorte` (`UF:ES`,
    `regiao:NE` ou `BR`), `porte_filtro` e `minimo_escolas`; nas escolas, o
    município e a rede escolhida (`rede_filtro`). Assim, arquivos de recortes
-   diferentes podem ser juntados sem misturar as posições.
+   diferentes podem ser juntados sem misturar as posições. As duas últimas
+   colunas dizem de onde vieram os dados, como o selo **Fonte** da página:
+   `fontes` (o nome de cada base, o ano, o órgão e a data da carga) e
+   `fontes_links` (o link oficial de cada uma, na mesma ordem). Solta num
+   relatório ou num processo, a planilha diz a origem sozinha.
 4. Da **Comparação de redes** de um município há atalhos para os dois
    rankings.
 5. **Educação infantil (meta 1 do PNE):** no **Indicador** das redes
@@ -76,7 +80,8 @@ indicador. Não precisa de login.
      `taxa_rede_local_mais_conveniadas_teto`.
    - O selo **Fonte**, no pé da página, cita as bases dessa conta: o Censo
      Escolar, a população por idade do Censo Demográfico e a estimativa da
-     população, com o ano e a data da carga.
+     população, com o ano e a data da carga. As mesmas bases vão nas
+     colunas `fontes` e `fontes_links` do CSV.
 
 ## Taxa de atendimento da educação infantil
 

@@ -5,6 +5,7 @@
 // toda linha (e não só no nome do arquivo), como a versão dos dados na base
 // de análise. O recorte vem da resposta da API, não do estado da tela.
 import { rotuloPorte } from "../constants.js";
+import { dataBR, rotuloFonte } from "@/features/fontes/utils.js";
 
 /** "UF:ES", "regiao:NE" ou "BR", a partir de `recorte` da resposta. */
 export function rotuloRecorte(recorte) {
@@ -98,4 +99,24 @@ export function tabelaAtendimento(r, redes) {
 export function nomeCsvAtendimento(r) {
   const rec = r.recorte?.uf ?? r.recorte?.regiao?.id ?? "BR";
   return `ranking-atendimento-${r.indicador.etapa}-${rec}${r.recorte?.porte ? `-${r.recorte.porte}` : ""}-${r.ano}.csv`;
+}
+
+// #550 (QJ-02 da P5): as fontes dentro do CSV, como no rodapé "Fonte:" da
+// tela (A1: duas colunas repetidas em toda linha, como o recorte e o método;
+// o arquivo segue uma tabela limpa para o Excel e o read.csv2). Sem o
+// catálogo (a busca falhou), o arquivo sai assim mesmo, com "ver /fontes".
+export const SEM_FONTES = "ver /fontes no EduMaps";
+
+/** "Censo Escolar 2025 (INEP, carga em 14/10/2026) | …" e os links, na mesma ordem. */
+export function colunasFontes(fontes) {
+  if (!Array.isArray(fontes) || !fontes.length) return [SEM_FONTES, ""];
+  const nomes = fontes.map((f) =>
+    `${rotuloFonte(f)} (${f.orgao}, ${f.carga?.data ? `carga em ${dataBR(f.carga.data)}` : "carga não registrada"})`);
+  return [nomes.join(" | "), fontes.map((f) => f.url ?? "").join(" | ")];
+}
+
+/** A tabela com `fontes` e `fontes_links` no fim de cada linha. */
+export function comFontes(t, fontes) {
+  const extra = colunasFontes(fontes);
+  return { cabecalho: [...t.cabecalho, "fontes", "fontes_links"], linhas: t.linhas.map((l) => [...l, ...extra]) };
 }
