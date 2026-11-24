@@ -75,5 +75,4 @@ diante da secretaria (P1-FL-01).
 
 ## Encaminhamento
 
-Achados P1-FL-01 e P1-FL-02 aguardam a aprovação do developer para virar
-issue.
+Issues **#567** (P1-FL-01) e **#568** (P1-FL-02), abertas com a aprovação do developer.

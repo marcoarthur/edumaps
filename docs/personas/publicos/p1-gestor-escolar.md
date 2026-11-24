@@ -121,7 +121,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #541, entregue (#543), e #542, entregue (#544).
 - Folha da própria escola (2026-11-24, **adotaria**): P1-FL-01 (docentes
   da folha contra os do Censo, sem explicação) e P1-FL-02 ("competências" e
-  a soma das categorias), aguardando a aprovação do developer.
+  a soma das categorias) → #567 e #568.
 
 ## Entradas
 
