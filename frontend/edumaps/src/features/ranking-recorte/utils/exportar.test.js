@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rotuloRecorte, tabelaRedes, tabelaEscolas, nomeCsvEscolas } from "./exportar.js";
+import { rotuloRecorte, tabelaRedes, tabelaEscolas, nomeCsvEscolas, colunasFontes, comFontes, SEM_FONTES } from "./exportar.js";
 import { REDES_FIXTURE, ESCOLAS_FIXTURE } from "../mocks/fixtures.js";
 
 describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
@@ -78,5 +78,32 @@ describe("CSVs do ranking com o recorte em toda linha (#448)", () => {
     const e = { ...ESCOLAS_FIXTURE, indicador: { id: "diversidade_discente", versao: "indices-v2" } };
     expect(nomeCsvEscolas(e)).toBe(`ranking-escolas-${e.municipio.codigo_ibge}-diversidade_discente-${e.ano}-indices-v2.csv`);
     expect(nomeCsvEscolas(ESCOLAS_FIXTURE)).toBe(`ranking-escolas-${ESCOLAS_FIXTURE.municipio.codigo_ibge}-${ESCOLAS_FIXTURE.indicador.id}-${ESCOLAS_FIXTURE.ano}.csv`);
+  });
+});
+
+describe("fontes em toda linha do CSV (#550)", () => {
+  const FONTES = [
+    { nome: "Censo Escolar", orgao: "INEP", periodo: { texto: "2025" }, carga: { data: "2026-10-14" }, url: "https://inep/censo" },
+    { nome: "IDEB e SAEB", orgao: "INEP", periodo: { texto: "2005–2023" }, carga: null, url: "https://inep/ideb" },
+  ];
+
+  it("nomes, órgão e data da carga; links na mesma ordem", () => {
+    expect(colunasFontes(FONTES)).toEqual([
+      "Censo Escolar 2025 (INEP, carga em 14/10/2026) | IDEB e SAEB 2005–2023 (INEP, carga não registrada)",
+      "https://inep/censo | https://inep/ideb",
+    ]);
+  });
+
+  it("sem catálogo, o aviso no lugar", () => {
+    expect(colunasFontes(null)).toEqual([SEM_FONTES, ""]);
+    expect(colunasFontes([])).toEqual([SEM_FONTES, ""]);
+  });
+
+  it("as duas colunas no fim de cada linha, sem ponto e vírgula", () => {
+    const t = comFontes({ cabecalho: ["a"], linhas: [[1], [2]] }, FONTES);
+    expect(t.cabecalho).toEqual(["a", "fontes", "fontes_links"]);
+    expect(t.linhas.map((l) => l.length)).toEqual([3, 3]);
+    expect(t.linhas[1][1]).toBe(t.linhas[0][1]);
+    expect(t.linhas[0].join("")).not.toContain(";");
   });
 });

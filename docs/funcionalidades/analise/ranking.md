@@ -31,7 +31,8 @@ comparáveis; pesquisadores e investidores que avaliam desempenho relativo.
   lista diz quantas escolas oferecem a etapa e quantas têm o dado, e avisa
   que a falta não é aleatória. Os arquivos exportados dizem o recorte em cada linha
   (UF, região ou Brasil, porte e mínimo; ou o município e a rede), porque a
-  posição só vale dentro dele.
+  posição só vale dentro dele, e as fontes dos dados (as bases, o órgão, a
+  data da carga e o link oficial), para a planilha citar a origem sozinha.
 - Sistema pode **mostrar a posição de uma escola** no município e no estado
   num indicador, com o empate visível ("empatada com N escolas") e o "acima
   de X% das outras escolas" contando só as de valor menor; no IDEB, só entre
