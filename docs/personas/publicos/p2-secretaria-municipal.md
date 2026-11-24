@@ -117,8 +117,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Expansão da creche (2026-11-23, **adotaria, em piloto**): QK-01 (a taxa
   não diz quantas vagas faltam para a meta) → #547, entregue (#548). "Onde abrir" depende de carregar os setores
   do Censo 2022.
+- Folha do Fundeb em Cuiabá (2026-11-24, **adotaria, em piloto**): QT-01
+  (mês com a folha pela metade sem aviso) e QT-02 (a cobertura conta como
+  por escola o mês da Secretaria), aguardando a aprovação do developer.
 
 ## Entradas
+
+### 2026-11-24 — Folha do Fundeb no relatório ao conselho (Cuiabá)
+
+**Material:** o painel financeiro de uma escola municipal (2025 e 2026) e
+a base da rede municipal de Cuiabá. Consolidação em
+[`avaliacoes/2026-11-24-p2-folha-fundeb-cuiaba.md`](avaliacoes/2026-11-24-p2-folha-fundeb-cuiaba.md).
+
+**O que tentou:** a parte da folha no relatório anual ao conselho do
+Fundeb: quanto, com que fonte, escolas e Secretaria, a tabela por escola e
+a prévia de 2026.
+
+**O que funciona para ele:** 2025 com R$ 489,5 mi, 93,4% pela parcela de
+70% do Fundeb; a conta fechada (R$ 472,4 mi nas escolas, R$ 17,1 mi na
+Secretaria); a tabela por escola para anexar.
+
+**Barreiras:**
+- QT-01 (atrapalha): setembro e outubro de 2025 só com o magistério (a
+  folha das escolas cai pela metade), sem aviso; o ano conta como completo.
+- QT-02 (incomoda): "2026: 6 meses, 168 escolas", mas de março em diante
+  quase tudo está na Secretaria.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-23 — Expansão da creche no plano municipal (segunda rodada do dia)
 
