@@ -130,8 +130,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Folha do Fundeb em Ubatuba (2026-11-24, **não adotaria**, registro):
   QS-01 (a parte do Fundeb na folha não aparece) e QS-02 (a folha da
   Secretaria fora da soma das escolas) → #553, entregue (#555), e #554, entregue (#556).
+- Fiscalização do piso em Cuiabá (2026-11-24, **não adotaria**, registro):
+  QH-01 (a contagem do piso fora da Secretaria) e QH-02 (o aviso do mês
+  incompleto sem o registro da carga), aguardando a aprovação do developer.
 
 ## Entradas
+
+### 2026-11-24 — A fiscalização do piso em Cuiabá (quinta rodada, só registro)
+
+**Material:** a base da rede municipal de Cuiabá (2025 e 2026), o painel
+de uma escola, `/fontes`. Consolidação em
+[`avaliacoes/2026-11-24-p5-piso-cuiaba.md`](avaliacoes/2026-11-24-p5-piso-cuiaba.md).
+
+**O que tentou:** a matriz de achados da folha do magistério: o piso, a
+declaração ao SIOPE e a folha sem escola.
+
+**O que funciona para ele:** o piso do ano com a regra do mês típico e o
+aviso; os avisos da folha sem escola e do mês incompleto; a carga com data
+e SHA-256.
+
+**Barreiras:**
+- QH-01 (atrapalha): a contagem do piso é só por escola; em Cuiabá 2026,
+  157 na base contra 1.780 na rede inteira (1.637 só na Secretaria).
+- QH-02 (incomoda): o aviso do mês incompleto divide a causa, mesmo com a
+  recarga mostrando que a falta está na fonte.
+
+**Veredito:** **não adotaria** (registro; mantido).
 
 ### 2026-11-24 — Folha do Fundeb em Ubatuba (quarta rodada, só registro)
 
