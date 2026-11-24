@@ -100,3 +100,8 @@ export function searchPaginatedSchools({
     per_page,
   });
 }
+
+/** #585 (QE-01 da P2): a folha detalhada do total da Secretaria do município da escola, no mês. */
+export function getSecretariaPayroll(codInep, date = "10-2025") {
+  return apiClient.get(`${BASE}/${codInep}/payroll/secretaria`, { date });
+}

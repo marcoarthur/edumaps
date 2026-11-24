@@ -5,6 +5,7 @@ use DateTime;
 use DateTime::Format::Strptime;
 use Carp qw(croak);
 use EduMaps::BaseAnalise ();   # #557: meses incompletos da folha
+use Mojo::Collection ();
 
 requires qw(schema default_columns);
 
@@ -216,6 +217,30 @@ sub school_payroll($self, $params) {
     }
   );
 
+  return $results;
+}
+
+# #585 (QE-01 da P2): a folha detalhada do total da Secretaria (código
+# 99999999) do município da escola, no mês: as pessoas sem escola informada
+# no SIOPE. Só para escola da rede municipal (o SIOPE é a folha municipal).
+# Pública, pela mesma decisão da folha por escola.
+sub secretaria_payroll($self, $params) {
+  croak "need date %m-%Y" unless $params->{date};
+  croak "need cod_inep" unless $params->{cod_inep};
+  my $siope = $self->siope_status($params->{cod_inep});
+  return Mojo::Collection->new unless $siope->{habilitado};
+
+  my $dt = $self->parser->parse_datetime($params->{date});
+  my ($year, $month) = ($dt->year, ucfirst($dt->month_name));
+  my $results = $self->schema->resultset('RemuneracaoMunicipal')
+    ->search_rs({ ano => $year, mes => $month, cod_inep => 99999999, cod_municipio => "$siope->{cod_municipio}" })
+    ->as_hash->get_all->each(sub {
+      $_->{salario_base} += 0;
+      $_->{salario_total} += 0;
+      $_->{salario_fundeb_max} += 0;
+      $_->{salario_fundeb_min} += 0;
+      $_->{salario_outros} += 0;
+    });
   return $results;
 }
 

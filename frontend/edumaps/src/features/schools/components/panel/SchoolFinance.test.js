@@ -71,8 +71,8 @@ describe("SchoolFinance", () => {
         /rede municipal/.test(el.textContent),
       ),
     ).toBeInTheDocument();
-    // a folha detalhada (nomes) fica indisponível no agregado
-    expect(screen.getByRole("button", { name: /ver folha completa/i })).toBeDisabled();
+    // #585: a folha detalhada do total da Secretaria passa a existir
+    expect(screen.getByRole("button", { name: /ver folha completa/i })).not.toBeDisabled();
   });
 });
 
@@ -232,5 +232,25 @@ describe("SchoolFinance — mês incompleto com a carga registrada (#576)", () =
   it("sem a data, o texto de antes", () => {
     render(SchoolFinance, { props: { inep: "1", series: serie, categorias: CATEGORIAS, ano: 2025, mesesIncompletos: INC } });
     expect(screen.getByTestId("aviso-meses-incompletos")).toHaveTextContent("Pode ser a declaração do município ao SIOPE ou a carga");
+  });
+});
+
+// #585 (QE-01 da P2): a folha detalhada do total da Secretaria.
+describe("SchoolFinance — folha da Secretaria (#585)", () => {
+  it("no painel da Secretaria, o botão leva à folha da Secretaria", async () => {
+    render(SchoolFinance, { props: { inep: "35010919", series: SERIES, categorias: CATEGORIAS, origem: "secretaria" } });
+    const b = screen.getByRole("button", { name: /Ver folha completa/ });
+    expect(b).not.toBeDisabled();
+    await fireEvent.click(b);
+    expect(router.navigate).toHaveBeenCalledWith(expect.stringContaining("&secretaria=1"));
+  });
+  it("no painel da escola com gente só na Secretaria, o atalho", () => {
+    render(SchoolFinance, { props: { inep: "35070212", series: SERIES, categorias: CATEGORIAS,
+      docentes: { folha_ano: 36, folha_por_mes: 26.5, censo: null, municipio: { magisterio: 1374, so_secretaria: 658, avisar: true } } } });
+    expect(screen.getByTestId("ver-folha-secretaria")).toBeInTheDocument();
+  });
+  it("sem ninguém só na Secretaria, sem o atalho", () => {
+    setup();
+    expect(screen.queryByTestId("ver-folha-secretaria")).toBeNull();
   });
 });
