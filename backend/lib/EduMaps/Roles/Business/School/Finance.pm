@@ -461,6 +461,24 @@ sub financial_summary($self, $params) {
     ORDER BY total_salario DESC
   SQL
 
+  # #553 (QS-01 da P5): a folha do ano por fonte de recurso, como o SIOPE a
+  # declara em cada pagamento: a parcela de 70% do Fundeb, a de 30% e as
+  # outras fontes. As três somam o salário total; o que faltar (campo vazio
+  # numa carga) vai em nao_informado, para a soma sempre fechar.
+  my $fonte = $dbh->selectrow_hashref(<<~"SQL", undef, @bind);
+    SELECT COALESCE(SUM(salario_fundeb_max), 0)::float AS fundeb_70,
+           COALESCE(SUM(salario_fundeb_min), 0)::float AS fundeb_30,
+           COALESCE(SUM(salario_outros), 0)::float     AS outras,
+           COALESCE(SUM(salario_total), 0)::float      AS total
+      FROM clean.remuneracao_municipal
+     WHERE $where
+  SQL
+  my $por_fonte;
+  if ($fonte && $fonte->{total} > 0) {
+    my $resto = $fonte->{total} - $fonte->{fundeb_70} - $fonte->{fundeb_30} - $fonte->{outras};
+    $por_fonte = { %$fonte, nao_informado => (abs($resto) < 0.01 ? 0 : 0 + sprintf('%.2f', $resto)) };
+  }
+
   # Total de profissionais distintos no ano — o card do painel usa este
   # total; a competência mais recente pode ter 1 servidor e parecer que a
   # escola só tem 1.
@@ -507,6 +525,7 @@ sub financial_summary($self, $params) {
     periodo    => _periodo($series),
     series     => $series     // [],
     categorias => $categorias // [],
+    por_fonte  => $por_fonte,
     siope      => {
       habilitado     => $siope->{habilitado},
       cod_municipio  => $siope->{cod_municipio},

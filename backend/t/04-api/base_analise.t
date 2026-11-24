@@ -591,6 +591,14 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   # mês só com a Secretaria: não conta nos meses da cobertura
   $f->execute($SIOPE2, 'Março', 'DORA', 'xxx.555.551-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 9999);
 
+  # #553: a fonte de cada pagamento: o magistério pela parcela de 70% do
+  # Fundeb, a auxiliar pela de 30% e o apoio (CAIO) por outras fontes.
+  $dbh->do(q{UPDATE clean.remuneracao_municipal
+                SET salario_fundeb_max = CASE WHEN tipo = ? THEN salario_total ELSE 0 END,
+                    salario_fundeb_min = CASE WHEN categoria = ? THEN salario_total ELSE 0 END,
+                    salario_outros     = CASE WHEN tipo <> ? AND categoria <> ? THEN salario_total ELSE 0 END
+              WHERE cod_inep = ? AND ano = ?}, {}, $mag, $aux, $mag, $aux, $A, $SIOPE);
+
   my $r = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
   ok( (grep { $_ == $SIOPE } @{ $r->{anos}{siope} }), 'ano da folha no catálogo');
 
@@ -604,6 +612,11 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   is [ @$a[ @i{qw(prof_magisterio salario_medio_magisterio carga_horaria_media_magisterio salario_40h_magisterio gasto_pessoal_ano meses_folha)} ] ],
      ['2', '3750', '40', '3833', '37000', '3'],
      'pessoa = CPF mascarado + nome; média por pessoa e mês sem dezembro; gasto do ano com o 13º (e a auxiliar); sem a Secretaria';
+  # #553: as três fontes somam o gasto do ano (37000)
+  is [ @$a[ @i{qw(gasto_fundeb_70_ano gasto_fundeb_30_ano gasto_outras_fontes_ano)} ] ], ['25000', '6000', '6000'],
+     'gasto por fonte: Fundeb 70%, Fundeb 30% e outras';
+  is [ @$b[ @i{qw(gasto_fundeb_70_ano gasto_fundeb_30_ano gasto_outras_fontes_ano)} ] ], ['', '', ''],
+     'escola sem folha: as fontes vazias';
   # #512 (QZ-03): pessoas por mês (ANA e BRUNO nos três meses)
   is $a->[ $i{prof_magisterio_mes} ], '2', 'magistério por mês';
   # #512 (QZ-02): a auxiliar, no ano, por mês e o salário sem dezembro
@@ -621,6 +634,8 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   my ($linha) = grep { $_->[0] eq 'prof_magisterio' } @$d;
   like $linha->[3], qr/SIOPE/, 'fonte no dicionário';
   is $linha->[4], "$SIOPE", 'ano no dicionário';
+  my ($f70) = grep { $_->[0] eq 'gasto_fundeb_70_ano' } @$d;
+  like $f70->[1], qr/Não é a verificação do mínimo de 70%/, 'dicionário avisa que não é o mínimo legal';
   $t->get_ok("/api/base-analise/csv?uf=AC&blocos=remuneracao&ano_siope=1990")->status_is(400);
 
   # #512 (QZ-02): só a auxiliar no ano: 0 no magistério, salário vazio

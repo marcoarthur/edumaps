@@ -4,6 +4,7 @@
   import LineChart from "@/shared/ui/components/charts/LineChart.svelte";
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
+  import FolhaPorFonte from "./FolhaPorFonte.svelte";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -27,10 +28,11 @@
    * @property {{ mes_inicial, mes_final, meses }|null} [periodo] meses do ano com folha
    * @property {Array<{ ano, mes, mes_num, total_salario, total_profissionais }>} [series]
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
+   * @property {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} [porFonte] folha do ano por fonte de recurso (#553)
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -197,6 +199,9 @@
       </div>
     </section>
   {/if}
+
+  <!-- #553: por fonte de recurso (Fundeb 70%, 30%, outras) -->
+  <FolhaPorFonte {porFonte} titulo={`${noAno}${ehRede ? " · rede municipal" : ""}`} />
 
   <!-- Folha completa (detalhes por competência) -->
   <section

@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [painel-da-escola]
 funcionalidade: ../../funcionalidades/analise/financeiro.md
-ultima_revisao: 2026-11-18
+ultima_revisao: 2026-11-24
 ---
 
 # Financeiro e Folha (SIOPE)
@@ -28,6 +28,14 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   recente). O custo total, os profissionais, as categorias e os gráficos são
   desse ano, e o cartão diz os meses ("Custo total em 2025 (jan a dez)"). Um
   ano com poucos meses (ex.: "jan a fev (2 meses)") ainda está chegando.
+- **Por fonte de recurso.** O cartão **Por fonte de recurso** divide o custo
+  do ano pela origem do dinheiro, como o município declara ao SIOPE em cada
+  pagamento: **Fundeb, parcela de 70%**, **Fundeb, parcela de 30%** e
+  **Outras fontes** (fora do Fundeb), com o valor e o percentual. As três
+  somam o custo total. **Não é a verificação do mínimo de 70% exigido em
+  lei:** essa conta divide o gasto com os profissionais pela receita do
+  Fundeb do município, e a receita não está na plataforma. Serve para
+  conferir a prestação de contas, por exemplo no conselho do Fundeb.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF

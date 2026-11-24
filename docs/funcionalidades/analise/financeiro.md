@@ -38,6 +38,11 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   de quais municípios há folha, com os anos e se o dado é por escola ou só o
   total da Secretaria. O total da Secretaria só é usado para escolas da rede
   municipal, nunca para outra rede.
+- Sistema pode **dizer de que fonte saiu a folha do ano**: a parte paga com a
+  parcela de 70% do Fundeb, a de 30% e a de outras fontes, como o município
+  declara ao SIOPE em cada pagamento, no painel e na base de análise. Avisa
+  que não é a verificação do mínimo de 70% exigido em lei, porque a receita
+  do Fundeb do município não está na plataforma.
 - Sistema pode contextualizar os recursos frente à rede e ao desempenho.
 - Sistema pode buscar, sob demanda e em segundo plano, os dados do **SIOPE**
   (remuneração municipal) de um ano que ainda não está disponível — para escolas

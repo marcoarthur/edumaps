@@ -75,3 +75,30 @@ describe("SchoolFinance", () => {
     expect(screen.getByRole("button", { name: /ver folha completa/i })).toBeDisabled();
   });
 });
+
+// #553 (QS-01 da P5): a folha do ano por fonte de recurso.
+describe("SchoolFinance — por fonte de recurso (#553)", () => {
+  const UBATUBA = { fundeb_70: 63980190, fundeb_30: 208437, outras: 3507782, total: 67696409, nao_informado: 0 };
+
+  it("mostra as três partes, com o percentual e o aviso do mínimo legal", () => {
+    render(SchoolFinance, { props: { inep: "35070212", series: SERIES, categorias: CATEGORIAS, porFonte: UBATUBA, ano: 2026 } });
+    const card = screen.getByTestId("folha-por-fonte");
+    expect(card).toHaveTextContent("Por fonte de recurso em 2026");
+    expect(screen.getByTestId("fonte-fundeb_70")).toHaveTextContent("Fundeb, parcela de 70%");
+    expect(screen.getByTestId("fonte-fundeb_70")).toHaveTextContent("94,5%");
+    expect(screen.getByTestId("fonte-fundeb_30")).toHaveTextContent("0,3%");
+    expect(screen.getByTestId("fonte-outras")).toHaveTextContent("5,2%");
+    expect(screen.queryByTestId("fonte-nao_informado")).toBeNull();
+    expect(screen.getByTestId("aviso-minimo-legal")).toHaveTextContent("Não é a verificação do mínimo de 70% exigido em lei");
+  });
+
+  it("no total da Secretaria, diz que é a rede municipal", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", porFonte: { ...UBATUBA } } });
+    expect(screen.getByTestId("folha-por-fonte")).toHaveTextContent("rede municipal");
+  });
+
+  it("sem a divisão, o cartão não aparece", () => {
+    setup();
+    expect(screen.queryByTestId("folha-por-fonte")).toBeNull();
+  });
+});

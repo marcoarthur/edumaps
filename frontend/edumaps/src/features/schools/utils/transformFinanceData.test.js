@@ -73,3 +73,20 @@ describe("periodoTexto (#491)", () => {
     expect(periodoTexto(null)).toBe("");
   });
 });
+
+import { linhasPorFonte } from "./transformFinanceData.js";
+
+describe("linhasPorFonte (#553)", () => {
+  it("três partes com o percentual do total", () => {
+    const l = linhasPorFonte({ fundeb_70: 700, fundeb_30: 200, outras: 100, total: 1000, nao_informado: 0 });
+    expect(l.map((x) => [x.id, x.pct])).toEqual([["fundeb_70", 70], ["fundeb_30", 20], ["outras", 10]]);
+  });
+  it("a fonte não informada só quando sobra", () => {
+    const l = linhasPorFonte({ fundeb_70: 700, fundeb_30: 0, outras: 0, total: 1000, nao_informado: 300 });
+    expect(l.at(-1)).toMatchObject({ id: "nao_informado", valor: 300, pct: 30 });
+  });
+  it("sem total, nada", () => {
+    expect(linhasPorFonte(null)).toEqual([]);
+    expect(linhasPorFonte({ total: 0 })).toEqual([]);
+  });
+});
