@@ -42,6 +42,10 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   números. Nesse mês o custo e os profissionais ficam abaixo do real, e o
   total do ano também. A causa pode ser a declaração do município ao SIOPE
   ou a carga; a plataforma não corrige os números.
+- **Meses só com o total da Secretaria.** Se o município passou a declarar a
+  folha no total da Secretaria, sem separar as escolas, um aviso diz em que
+  meses isso aconteceu (ex.: "De março a agosto de 2026"). Nesses meses a
+  folha da escola não aparece, e o custo do ano fica abaixo do real.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF

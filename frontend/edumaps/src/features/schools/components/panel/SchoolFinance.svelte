@@ -5,7 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
-  import { listaMeses } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -34,7 +34,7 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [] } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [] } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -51,6 +51,12 @@
   const incompletos = $derived(
     mesesIncompletos.filter((m) => series.some((s) => Number(s.mes_num) === Number(m.mes))),
   );
+
+  // #558: "De março a agosto" / "Em janeiro e fevereiro" / "Em junho"
+  const quandoSecretaria = $derived.by(() => {
+    const t = faixasMeses(mesesSecretaria);
+    return t.startsWith("de ") ? `D${t.slice(1)}` : `Em ${t}`;
+  });
 
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
@@ -151,6 +157,15 @@
       <p class="text-xl font-bold text-gray-900 mt-1">{stats.mesCount}</p>
     </div>
   </section>
+
+  {#if !ehRede && mesesSecretaria.length}
+    <!-- #558 (QT-02 da P2): meses em que o município declarou só o total da Secretaria -->
+    <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="aviso-meses-secretaria">
+      {quandoSecretaria}{ano ? ` de ${ano}` : ""},
+      o município declarou a folha só no total da Secretaria, sem separar as escolas:
+      {mesesSecretaria.length === 1 ? "nesse mês" : "nesses meses"} a folha desta escola não aparece, e o custo do ano fica abaixo do real.
+    </p>
+  {/if}
 
   {#if incompletos.length}
     <!-- #557 (QT-01 da P2): mês com a folha do município pela metade -->

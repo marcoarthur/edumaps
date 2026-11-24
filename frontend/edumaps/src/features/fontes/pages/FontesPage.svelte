@@ -6,7 +6,7 @@
   // SHA-256 — e as regras de leitura que valem para todas as telas.
   import { onMount } from "svelte";
   import { getFontes } from "../api/fontesApi.js";
-  import { dataBR, sufixoIncompletos } from "../utils.js";
+  import { dataBR, textoAnoFolha } from "../utils.js";
 
   let fontes = $state([]);
   let loading = $state(true);
@@ -124,9 +124,7 @@
                 {#each f.cobertura as m (m.codigo_ibge)}
                   <li>
                     <strong class="text-gray-800">{m.municipio}/{m.uf}</strong>:
-                    {m.anos.map((a) => a.escolas
-                      ? `${a.ano} (${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"})`
-                      : `${a.ano} (só o total da Secretaria${a.incompletos?.length ? `; ${sufixoIncompletos(a.incompletos).slice(2, -1)}` : ""})`).join("; ")}
+                    {m.anos.map((a) => `${a.ano} (${textoAnoFolha(a)})`).join("; ")}
                   </li>
                 {/each}
               </ul>

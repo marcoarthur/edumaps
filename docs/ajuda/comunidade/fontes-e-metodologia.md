@@ -75,7 +75,12 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
   (12 meses (setembro e outubro incompletos), 167 escolas)": nele há menos
   categorias de profissionais que o habitual do ano, ou menos da metade dos
   registros de um mês típico. A causa não se sabe: pode ser a declaração do
-  município ao SIOPE ou a carga.
+  município ao SIOPE ou a carga. Quando o município passa a declarar a
+  folha no total da Secretaria, sem separar as escolas, a lista diz em que
+  meses ela é por escola, por exemplo "2026 (por escola só em janeiro e
+  fevereiro; de março a agosto, só o total da Secretaria; 168 escolas)". O
+  mês conta como da Secretaria quando a maior parte do valor declarado está
+  nela.
 
 ## Veja também
 - [Comparar redes](comparar-redes.md)

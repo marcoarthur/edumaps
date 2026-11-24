@@ -130,3 +130,21 @@ describe("SchoolFinance — meses incompletos (#557)", () => {
     expect(screen.queryByTestId("aviso-meses-incompletos")).toBeNull();
   });
 });
+
+// #558 (QT-02 da P2): meses em que o município declarou só o total da Secretaria.
+describe("SchoolFinance — meses da Secretaria (#558)", () => {
+  it("avisa que a folha da escola não aparece nesses meses", () => {
+    render(SchoolFinance, { props: { inep: "51171805", series: SERIES, categorias: CATEGORIAS, ano: 2026, mesesSecretaria: [3, 4, 5, 6, 7, 8] } });
+    expect(screen.getByTestId("aviso-meses-secretaria")).toHaveTextContent(
+      "De março a agosto de 2026, o município declarou a folha só no total da Secretaria, sem separar as escolas: nesses meses a folha desta escola não aparece");
+  });
+  it("um mês só", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2026, mesesSecretaria: [6] } });
+    expect(screen.getByTestId("aviso-meses-secretaria")).toHaveTextContent("Em junho de 2026, o município declarou");
+    expect(screen.getByTestId("aviso-meses-secretaria")).toHaveTextContent("nesse mês");
+  });
+  it("no painel da Secretaria, sem o aviso", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", mesesSecretaria: [3] } });
+    expect(screen.queryByTestId("aviso-meses-secretaria")).toBeNull();
+  });
+});

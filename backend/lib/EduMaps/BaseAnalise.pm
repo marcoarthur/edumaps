@@ -564,6 +564,30 @@ sub meses_incompletos ($class, $dbh, $cod6 = undef) {
   return \%por;
 }
 
+# #558 (QT-02 da P2): em cada mês, onde está a maior parte do valor
+# declarado: nas escolas ou no código da Secretaria (99999999, sem escola).
+# Cuiabá 2026: janeiro e fevereiro por escola; de março em diante, quase tudo
+# na Secretaria. Chave "<cod6>|<ano>" => { escola => [meses], secretaria => [meses] }.
+sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod6, $cod6);
+      SELECT cod_municipio::text AS cod6, ano::int AS ano, $MES_NUM AS mes,
+             coalesce(sum(salario_total) FILTER (WHERE cod_inep <> 99999999), 0)::float8 AS escolas,
+             coalesce(sum(salario_total) FILTER (WHERE cod_inep = 99999999), 0)::float8 AS secretaria
+        FROM clean.remuneracao_municipal
+       WHERE (?::text IS NULL OR cod_municipio::text = ?)
+       GROUP BY 1, 2, 3
+       ORDER BY 1, 2, 3
+      SQL
+  } // [];
+  my %por;
+  for my $r (grep { defined $_->{mes} } @$rows) {
+    my $x = $por{"$r->{cod6}|$r->{ano}"} //= { escola => [], secretaria => [] };
+    push @{ $x->{ $r->{escolas} >= $r->{secretaria} ? 'escola' : 'secretaria' } }, $r->{mes};
+  }
+  return \%por;
+}
+
 sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(q{
@@ -582,6 +606,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
     }, { Slice => {} }, $uf, $uf);
   } // [];
   my $inc = $class->meses_incompletos($dbh);
+  my $lugar = $class->meses_por_lugar($dbh);
   my (@lista, %por);
   for my $r (@$rows) {
     my $m = $por{ $r->{codigo_ibge} } //= do {
@@ -590,8 +615,18 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
       $lista[-1];
     };
     push @{ $m->{anos} }, { map { $_ => $r->{$_} } qw(ano meses escolas) };
+    my $chave = substr($r->{codigo_ibge}, 0, 6) . "|$r->{ano}";
     # #557: os meses com a folha pela metade
-    $m->{anos}[-1]{incompletos} = $inc->{ substr($r->{codigo_ibge}, 0, 6) . "|$r->{ano}" } // [];
+    $m->{anos}[-1]{incompletos} = $inc->{$chave} // [];
+    # #558 (QT-02 da P2): os meses por escola e os da Secretaria, pela maior
+    # parte do valor. "meses" conta só os por escola (o mês com um centavo
+    # numa escola e o resto na Secretaria não é folha por escola); sem
+    # nenhum, os meses da Secretaria, como antes.
+    my $l = $lugar->{$chave} // { escola => [], secretaria => [] };
+    $m->{anos}[-1]{meses_escola}     = $l->{escola};
+    $m->{anos}[-1]{meses_secretaria} = $l->{secretaria};
+    $m->{anos}[-1]{meses} = scalar @{ $l->{escola} } || scalar @{ $l->{secretaria} } || $r->{meses}
+      if $r->{escolas};
   }
   return \@lista;
 }
