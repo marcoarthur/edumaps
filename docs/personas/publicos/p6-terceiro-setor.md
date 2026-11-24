@@ -122,8 +122,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Pendente: #454.
 - Piso do magistério na folha (2026-11-24, **adotaria**): QQ-01 (salário
   base fora da base) e QQ-02 (carga da folha não registrada) → #563, entregue (#565), e #564, entregue (#566).
+- Comparar a folha das prefeituras (2026-11-24, **adotaria**): QG-01 (a
+  parte do Fundeb da folha inteira) e QG-02 (os números por município sem
+  CSV) → #579 e #580.
 
 ## Entradas
+
+### 2026-11-24 — Comparar a folha das prefeituras (quarta rodada)
+
+**Material:** a tela da base das quatro redes com folha, o painel da
+Secretaria de Taubaté e de uma escola de Ubatuba, `/fontes`. Consolidação em
+[`avaliacoes/2026-11-24-p6-comparar-prefeituras.md`](avaliacoes/2026-11-24-p6-comparar-prefeituras.md).
+
+**O que tentou:** uma tabela das prefeituras: total pago, parte do Fundeb,
+salário típico, abaixo do piso, data dos dados.
+
+**O que funciona para ele:** a data da carga; o salário e o piso da rede
+inteira, com os avisos; o fechamento da folha.
+
+**Barreiras:**
+- QG-01 (atrapalha): a parte do Fundeb da folha inteira do município só
+  aparece onde tudo é da Secretaria (Taubaté).
+- QG-02 (incomoda): os números por município só em frases; nenhum CSV por
+  município.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-24 — O piso do magistério na folha municipal (terceira rodada)
 
