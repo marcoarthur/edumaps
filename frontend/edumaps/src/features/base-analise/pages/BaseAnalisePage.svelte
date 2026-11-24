@@ -63,10 +63,17 @@
   );
   // #514 (QY-01): o aviso vale sempre que o IDEB e o Censo forem de anos
   // diferentes, inclusive na edição mais recente (2023 contra o Censo 2025).
-  const anosDiferentes = $derived(
+  const censoDifere = $derived(
     !!catalogo && blocos.includes("desempenho") && anoIdeb != null && catalogo.anos.censo != null
       && anoIdeb !== catalogo.anos.censo,
   );
+  // #583 (QF-01 da P4): a folha do SIOPE de outro ano que o IDEB também avisa
+  const folhaDifere = $derived(
+    !!catalogo && blocos.includes("desempenho") && blocos.includes("remuneracao")
+      && anoIdeb != null && anoSiope != null && Number(anoSiope) !== anoIdeb,
+  );
+  const anosDiferentes = $derived(censoDifere || folhaDifere);
+  const distanciaFolha = $derived(anoIdeb && anoSiope ? Math.abs(Number(anoSiope) - anoIdeb) : 0);
   const distanciaAnos = $derived(catalogo && anoIdeb ? Math.abs(catalogo.anos.censo - anoIdeb) : 0);
   const EXTENSO = { 1: "um ano", 2: "dois anos", 3: "três anos", 4: "quatro anos" };
 
@@ -162,10 +169,16 @@
 
 {#snippet avisoAnos(testid)}
   <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2" role="note" data-testid={testid}>
-    A lista de escolas, a infraestrutura e a docência são do Censo {catalogo.anos.censo}; o IDEB é de {anoIdeb}
-    ({EXTENSO[distanciaAnos] ?? `${distanciaAnos} anos`} {catalogo.anos.censo > anoIdeb ? "antes" : "depois"}).
-    {#if catalogo.anos.censo > anoIdeb}
-      Escolas fechadas depois de {anoIdeb} não entram, e num modelo o que vem do Censo foi medido depois do IDEB.
+    {#if censoDifere}
+      A lista de escolas, a infraestrutura e a docência são do Censo {catalogo.anos.censo}; o IDEB é de {anoIdeb}
+      ({EXTENSO[distanciaAnos] ?? `${distanciaAnos} anos`} {catalogo.anos.censo > anoIdeb ? "antes" : "depois"}).
+      {#if catalogo.anos.censo > anoIdeb}
+        Escolas fechadas depois de {anoIdeb} não entram, e num modelo o que vem do Censo foi medido depois do IDEB.
+      {/if}
+    {/if}
+    {#if folhaDifere}
+      <span data-testid="aviso-anos-folha">A folha do SIOPE é de {anoSiope}, {EXTENSO[distanciaFolha] ?? `${distanciaFolha} anos`}
+      {Number(anoSiope) > anoIdeb ? "depois" : "antes"} do IDEB ({anoIdeb}): num modelo, o salário e o gasto são de outro ano que o desempenho.</span>
     {/if}
     {#if blocos.includes("inse") && catalogo.anos.inse}
       O INSE é da edição {catalogo.anos.inse} do SAEB{catalogo.anos.inse === anoIdeb ? ", a mesma do IDEB" : `, diferente da do IDEB (${anoIdeb})`}.

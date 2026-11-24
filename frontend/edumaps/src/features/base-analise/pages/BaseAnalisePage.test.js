@@ -106,6 +106,12 @@ describe("BaseAnalisePage (#439)", () => {
     expect(f).not.toHaveTextContent("Taubaté");
   });
 
+  it("#583: com desempenho e remuneração, o aviso diz o ano da folha", async () => {
+    abrir("?uf=SP&blocos=desempenho,remuneracao&ano_ideb=2023&ano_siope=2026");
+    const [a] = await screen.findAllByTestId("aviso-anos-folha"); // no bloco e junto do botão de baixar
+    expect(a).toHaveTextContent("A folha do SIOPE é de 2026, três anos depois do IDEB (2023)");
+  });
+
   it("#512: UF sem folha diz que o bloco sai vazio e fica no padrão do Brasil", async () => {
     abrir("?uf=ES&blocos=remuneracao");
     expect(await screen.findByTestId("cobertura-siope")).toHaveTextContent("Nenhum município de ES");
