@@ -119,7 +119,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   do Censo 2022.
 - Folha do Fundeb em Cuiabá (2026-11-24, **adotaria, em piloto**): QT-01
   (mês com a folha pela metade sem aviso) e QT-02 (a cobertura conta como
-  por escola o mês da Secretaria), aguardando a aprovação do developer.
+  por escola o mês da Secretaria) → #557 e #558.
 
 ## Entradas
 

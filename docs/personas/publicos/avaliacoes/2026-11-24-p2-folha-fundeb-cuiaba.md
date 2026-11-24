@@ -90,4 +90,4 @@ metade (QT-01) e que 2026 é, quase todo, da Secretaria (QT-02).
 
 ## Encaminhamento
 
-Achados QT-01 e QT-02 aguardam a aprovação do developer para virar issue.
+Issues **#557** (QT-01) e **#558** (QT-02), abertas com a aprovação do developer.
