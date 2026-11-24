@@ -322,6 +322,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       "No último mês (…)", sem "competência", e a nota da soma das categorias quando passa do total.
 - [ ] Salário da rede inteira (#571, sem change nova): `curl -s http://127.0.0.1:3000/api/school/35010919/finance | jq .salario_rede`
       (Secretaria de Taubaté) traz `total` 6975, `base` 2669 e `carga_comum` 18 (se a folha do LXC for a mesma do local).
+- [ ] Carga que não parece em horas (#572, sem change nova): `curl -s http://127.0.0.1:3000/api/school/35010919/finance | jq .salario_rede.carga_suspeita`
+      dá true (Taubaté, carga 18); o CSV da base de Ubatuba traz `carga_comum_municipio` = 31 e o salário por 40 horas preenchido.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

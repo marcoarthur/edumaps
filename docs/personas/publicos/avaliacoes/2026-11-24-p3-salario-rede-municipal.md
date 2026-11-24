@@ -70,4 +70,6 @@ Issues **#571** (QI-01) e **#572** (QI-02), abertas com a aprovação do develop
 - 2026-11-24: #571 (PR #573) mergeado: QI-01 resolvido. O painel (da
   escola e da Secretaria) e a tela da base dizem o salário do magistério da
   rede inteira; Taubaté: total R$ 6.975, base R$ 2.669, carga 18.
-- QI-02 (#572) segue aberto.
+- 2026-11-24: #572 (PR #574) mergeado: QI-02 resolvido. Onde a carga não
+  parece em horas (Taubaté, carga 18), as contas por 40 horas ficam vazias e
+  a tela avisa.

@@ -107,6 +107,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 - [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 - [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). QI-01 resolvido; QI-02 (#572) aberto.
+- [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). QI-02 resolvido.
 
 ## Pendências
 
@@ -123,7 +124,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   bairro depende do AN-10 (#429) e da carga dos setores do Censo 2022.
 - Salário da rede municipal (2026-11-24, **adotaria, em piloto**): QI-01
   (município só com a Secretaria sem salário) e QI-02 (a conversão por 40
-  horas supõe horas) → #571, entregue (#573), e #572.
+  horas supõe horas) → #571, entregue (#573), e #572, entregue (#574).
 
 ## Entradas
 

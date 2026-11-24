@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ec) — #572 (PR #574), carga que não parece em horas
+
+- PR #574 (317719e), opções A1 e B1: `carga_suspeita` em `salario_rede`
+  (maioria dos pagamentos do magistério com carga abaixo de 20); na base,
+  `carga_comum_municipio` e as contas por 40 horas vazias nesse
+  município e ano; aviso no texto do salário da rede.
+- Só Taubaté 2026 entra (94,1%); hoje é preventivo (Taubaté não tem
+  escola na base).
+- QI-01 e QI-02 da P3 resolvidos. Abertos: AN-12, #429, #454.
+- O LXC continua fora; deploys de #489 a #574.
+- Nota técnica 271; ciclo `2026-11-24-carga-nao-horas.md`.
+
 ## Sessão 2026-11-24 (eb) — 4ª avaliação da P3, #571 (PR #573)
 
 - Quarta rodada da P3: o salário da rede municipal (Ubatuba e Taubaté).
