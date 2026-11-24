@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dr) — #550 (PR #552), fontes no CSV do ranking
+
+- PR #552 (7ab52fb), opções A1 e B1:
+  - colunas `fontes` e `fontes_links` em toda linha dos três CSVs do
+    ranking (redes do IDEB, taxa da educação infantil, escolas);
+  - as bases do rodapé da tela (`fontesDaTela` com `ranking_atendimento`
+    ou `ranking`), do catálogo em cache; sem ele, "ver /fontes no
+    EduMaps";
+  - só frontend; a exportação ficou assíncrona.
+- QJ-01 e QJ-02 da P5 resolvidos. Abertos: AN-12 (SICONFI vazio), #429
+  (setores do Censo 2022, download com permissão), #454.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #552 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 260; ciclo `2026-11-24-fontes-csv-ranking.md`.
+
 ## Sessão 2026-11-23 (dq) — 3ª avaliação da P3, 3ª da P5, #549 (PR #551)
 
 - Terceira rodada da P3 (onde abrir uma unidade de educação infantil, SP):

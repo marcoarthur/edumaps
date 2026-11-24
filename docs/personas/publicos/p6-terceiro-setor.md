@@ -93,6 +93,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem "capital sem creche pública".
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto direto: o déficit em vagas, citável.
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem confundir com o número oficial.
+- [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: a planilha cita as bases.
 
 ## Pendências
 

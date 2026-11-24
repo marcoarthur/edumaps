@@ -94,4 +94,7 @@ todos os públicos que citam a taxa.
     é o indicador oficial da meta 1, nas telas, no CSV (coluna `metodo`)
     e nas ajudas.
   - A marca passou a "abaixo de 50%".
-- QJ-02 (#550) segue aberto.
+- 2026-11-24: #550 (PR #552) mergeado: QJ-02 resolvido.
+  - Os três CSVs do ranking trazem, em toda linha, as bases da tela com o
+    ano, o órgão e a data da carga (`fontes`) e os links oficiais
+    (`fontes_links`).

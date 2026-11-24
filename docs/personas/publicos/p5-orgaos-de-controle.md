@@ -96,6 +96,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a oferta conveniada do DF.
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto direto: o déficit da meta 1 em vagas.
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QJ-01 resolvido; QJ-02 (#550) aberto.
+- [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QJ-02 resolvido.
 
 ## Pendências
 
@@ -113,7 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Meta 1 do PNE em Pernambuco (2026-11-23, **não adotaria**, registro; mais
   perto): QJ-01 (a "taxa de atendimento" é uma taxa bruta, e nada diz que
   não é o indicador oficial) e QJ-02 (o CSV do ranking sem as fontes)
-  → #549, entregue (#551), e #550. Sem
+  → #549, entregue (#551), e #550, entregue (#552). Sem
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 
 ## Entradas

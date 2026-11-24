@@ -96,6 +96,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: a conveniada do DF como oferta pública.
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p3--rede-privada-mantenedor): não adotaria (mantido). Impacto pequeno: a demanda de creche em vagas.
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto relevante.
+- [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto relevante.
 
 ## Pendências
 

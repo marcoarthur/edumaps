@@ -99,6 +99,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — rede distrital do DF](ciclos/2026-11-23-df-rede-distrital.md#p4--academia-pesquisadora): adotaria (mantido), sem a ressalva no DF. QL-01 resolvido.
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o déficit em vagas por recorte.
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o método nomeado.
+- [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o arquivo diz a carga.
 
 ## Pendências
 
