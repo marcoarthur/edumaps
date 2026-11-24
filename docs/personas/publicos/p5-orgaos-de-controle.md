@@ -98,6 +98,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QJ-01 resolvido; QJ-02 (#550) aberto.
 - [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido), mais perto. QJ-02 resolvido.
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). QS-01 resolvido; QS-02 (#554) aberto.
+- [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). QS-02 resolvido.
 
 ## Pendências
 
@@ -119,7 +120,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 - Folha do Fundeb em Ubatuba (2026-11-24, **não adotaria**, registro):
   QS-01 (a parte do Fundeb na folha não aparece) e QS-02 (a folha da
-  Secretaria fora da soma das escolas) → #553, entregue (#555), e #554.
+  Secretaria fora da soma das escolas) → #553, entregue (#555), e #554, entregue (#556).
 
 ## Entradas
 

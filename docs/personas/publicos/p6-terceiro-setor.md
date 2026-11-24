@@ -95,6 +95,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem confundir com o número oficial.
 - [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: a planilha cita as bases.
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: a divisão declarada do Fundeb.
+- [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem "diferença" falsa.
 
 ## Pendências
 

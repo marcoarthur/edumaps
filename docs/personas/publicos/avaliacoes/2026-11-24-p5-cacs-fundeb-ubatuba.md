@@ -112,4 +112,8 @@ Issues **#553** (QS-01) e **#554** (QS-02), abertas com a aprovação do develop
     de que não é a verificação do mínimo legal.
   - A base traz `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
     `gasto_outras_fontes_ano`.
-- QS-02 (#554) segue aberto.
+- 2026-11-24: #554 (PR #556) mergeado: QS-02 resolvido.
+  - A tela da base fecha a conta da folha por município: o total
+    declarado, as escolas da base, a Secretaria e as escolas fora da lista
+    do Censo (em Ubatuba, a 35659605, com R$ 267,8 mil).
+  - A rota do total do município deixou de quebrar o acento.

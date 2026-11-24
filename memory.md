@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dt) — #554 (PR #556), fechamento da folha
+
+- PR #556 (af9a75a), opções A1 e B1:
+  - `fechamento_folha` por município e ano (total, escolas_base,
+    secretaria, fora_total e a lista fora), dentro da cobertura da folha
+    da base; a tela fecha a conta no bloco Remuneração;
+  - `/api/city/:ibge/payroll/overall` com `render(data => …)`: o modelo já
+    devolvia bytes UTF-8, e o `text` codificava de novo ("SÃ£o Paulo").
+- Em Ubatuba, a escola 35659605 do SIOPE não está em nenhum Censo
+  carregado; parece a "EM JOSE LIBORIO" com código novo (não afirmado).
+- QS-01 e QS-02 da P5 resolvidos. Abertos: AN-12, #429, #454.
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #556 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 262; ciclo `2026-11-24-fechamento-folha.md`.
+
 ## Sessão 2026-11-24 (ds) — 4ª avaliação da P5, #553 (PR #555)
 
 - Quarta rodada da P5, agora o conselheiro do CACS-Fundeb (Ubatuba, folha

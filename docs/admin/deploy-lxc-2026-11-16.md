@@ -296,6 +296,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       (Secretaria de Taubaté, 2026) traz `fundeb_70` perto de 137,5 mi e `fundeb_30` perto de 25,7 mi; o painel
       `/escola/financeiro?inep=35010919` mostra o cartão "Por fonte de recurso" com o aviso do mínimo legal; a base de Ubatuba
       (bloco Remuneração, 2026) traz `gasto_fundeb_70_ano` em reais inteiros, sem notação científica.
+- [ ] Fechamento da folha (#554, sem change nova): `curl -s 'http://127.0.0.1:3000/api/base-analise?uf=SP&codigo_ibge=3555406' | jq '.folha.municipios[].anos[].fechamento'`
+      traz, em Ubatuba 2026, `total` perto de 67,7 mi, `escolas_base` 55,6 mi, `secretaria` 11,8 mi e a escola 35659605 em `fora`;
+      `curl -s http://127.0.0.1:3000/api/city/3555406/payroll/overall` diz "São Paulo".
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
