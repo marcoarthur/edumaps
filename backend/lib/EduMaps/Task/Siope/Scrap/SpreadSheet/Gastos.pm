@@ -267,6 +267,27 @@ Remove o arquivo Excel temporário do disco.
 
 =cut
 
+=head2 arquivo
+
+my $info = $self->arquivo;   # { url, sha256, bytes } ou undef
+
+#564: o arquivo baixado, para o registro da carga: a URL consultada (sem o
+campo do captcha), o SHA-256 e o tamanho. Sem a planilha no disco, undef.
+
+=cut
+
+sub arquivo($self) {
+  return undef unless -f $self->sheet;
+  require Digest::SHA;
+  my $url = Mojo::URL->new($self->base->to_unsafe_string);
+  $url->query->remove('g-recaptcha-response');
+  return {
+    url    => $url->to_string,
+    sha256 => Digest::SHA->new(256)->addfile($self->sheet, 'b')->hexdigest,
+    bytes  => -s $self->sheet,
+  };
+}
+
 sub cleanup($self) {
   if (-f $self->sheet) {
     unlink $self->sheet or warn "Não foi possível remover " . $self->sheet;
