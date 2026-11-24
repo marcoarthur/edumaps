@@ -78,3 +78,10 @@ contagem do piso fora da Secretaria (QH-01).
 ## Encaminhamento
 
 Issues **#575** (QH-01) e **#576** (QH-02), abertas com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-24: #575 (PR #577) mergeado: QH-01 resolvido. Cuiabá 2026: 1.559
+  abaixo do piso na rede inteira, 1.421 só na Secretaria (entre quem
+  recebeu 3 meses ou mais), na tela da base e no painel da Secretaria.
+- QH-02 (#576) segue aberto.

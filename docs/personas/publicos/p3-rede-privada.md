@@ -108,6 +108,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 - [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). QI-01 resolvido; QI-02 (#572) aberto.
 - [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). QI-02 resolvido.
+- [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto relevante.
 
 ## Pendências
 

@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ed) — 5ª avaliação da P5, #575 (PR #577)
+
+- Quinta rodada da P5: a fiscalização do piso em Cuiabá. Não adotaria
+  (registro; mantido).
+  - QH-01: a contagem do piso só por escola, sem a Secretaria → #575.
+  - QH-02: o aviso do mês incompleto sem o registro da carga → #576
+    (aberta).
+- PR #577 (3d93d15), opções A1 e B1: piso na rede inteira em
+  `salario_rede` (com a Secretaria), só quem recebeu 3 meses ou mais
+  (também na coluna por escola da #563); tela da base e painel da
+  Secretaria. Cuiabá 2026: 1.559, 1.421 só na Secretaria.
+- Desempenho: `Fontes->versao` resolvia o catálogo inteiro (cobertura da
+  folha de todos os municípios) a cada `BaseAnalise->anos`; o catálogo da
+  base levava 31 s em MT. `resolver($dbh, $so)` resolve só o pedido: 4,4 s.
+- O LXC continua fora; deploys de #489 a #577.
+- Nota técnica 272; ciclo `2026-11-24-piso-rede-inteira.md`.
+
 ## Sessão 2026-11-24 (ec) — #572 (PR #574), carga que não parece em horas
 
 - PR #574 (317719e), opções A1 e B1: `carga_suspeita` em `salario_rede`

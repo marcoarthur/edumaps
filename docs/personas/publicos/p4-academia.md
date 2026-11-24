@@ -111,6 +111,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p4--academia-pesquisadora): adotaria (mantido). Sem impacto.
 - [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: a mediana da rede.
 - [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: as contas por 40 h não misturam unidades.
+- [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: mesma regra na escola e na rede.
 
 ## Pendências
 
