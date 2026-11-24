@@ -5,6 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
+  import { listaMeses } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -29,10 +30,11 @@
    * @property {Array<{ ano, mes, mes_num, total_salario, total_profissionais }>} [series]
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    * @property {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} [porFonte] folha do ano por fonte de recurso (#553)
+   * @property {Array<{ mes, nome, registros, categorias, registros_habitual, categorias_habitual }>} [mesesIncompletos] meses do ano com a folha do município pela metade (#557)
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [] } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -43,6 +45,12 @@
   const ehRede = $derived(origem === "secretaria");
   const escopo = $derived(ehRede ? "rede municipal" : "escola");
   const escopoTitulo = $derived(ehRede ? "Rede municipal (Secretaria)" : "");
+
+  // #557: só os meses incompletos que estão na série mostrada (a escola pode
+  // não ter folha num mês incompleto do município).
+  const incompletos = $derived(
+    mesesIncompletos.filter((m) => series.some((s) => Number(s.mes_num) === Number(m.mes))),
+  );
 
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
@@ -143,6 +151,17 @@
       <p class="text-xl font-bold text-gray-900 mt-1">{stats.mesCount}</p>
     </div>
   </section>
+
+  {#if incompletos.length}
+    <!-- #557 (QT-01 da P2): mês com a folha do município pela metade -->
+    <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="aviso-meses-incompletos">
+      {listaMeses(incompletos).replace(/^./, (c) => c.toUpperCase())}{ano ? ` de ${ano}` : ""}
+      {incompletos.length === 1 ? "tem" : "têm"} bem menos profissionais declarados que os outros meses do município
+      ({incompletos.map((m) => `${m.nome}: ${m.registros.toLocaleString("pt-BR")} registros em ${m.categorias} ${m.categorias === 1 ? "categoria" : "categorias"}, contra ${m.registros_habitual.toLocaleString("pt-BR")} em ${m.categorias_habitual} num mês típico`).join("; ")}).
+      Pode ser a declaração do município ao SIOPE ou a carga.
+      {incompletos.length === 1 ? "Nesse mês" : "Nesses meses"}, o custo e os profissionais ficam abaixo do real, e o total do ano também.
+    </p>
+  {/if}
 
   <!-- Séries temporais -->
   <section class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -74,7 +74,7 @@ describe("BaseAnalisePage (#439)", () => {
     await fireEvent.click(screen.getByLabelText(/Remuneração \(SIOPE\)/));
     const sel = screen.getByLabelText("Ano da folha (SIOPE)");
     expect(sel.value).toBe("2026");
-    expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Ubatuba (2026: 8 meses, 48 escolas)");
+    expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Ubatuba (2026: 8 meses (julho incompleto), 48 escolas)");
     expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Taubaté (2026: só o total da Secretaria)");
     expect(screen.getByTestId("folha-recorte")).toHaveTextContent("48 escolas deste recorte têm folha em 2026");
     // #554: de onde vem o total declarado, por município

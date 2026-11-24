@@ -19,3 +19,20 @@ export function fontesDaTela(fontes, tela) {
 export function rotuloFonte(f) {
   return [f.nome, f.periodo?.texto].filter(Boolean).join(" ");
 }
+
+/**
+ * #557 (QT-01 da P2): os meses em que a folha do município veio pela metade.
+ * [{nome:"setembro"},{nome:"outubro"}] → "setembro e outubro"
+ */
+export function listaMeses(meses) {
+  const n = (meses ?? []).map((m) => m.nome);
+  if (n.length <= 1) return n[0] ?? "";
+  return `${n.slice(0, -1).join(", ")} e ${n.at(-1)}`;
+}
+
+/** " (setembro e outubro incompletos)" ou "" */
+export function sufixoIncompletos(meses) {
+  const n = meses?.length ?? 0;
+  if (!n) return "";
+  return ` (${listaMeses(meses)} ${n === 1 ? "incompleto" : "incompletos"})`;
+}

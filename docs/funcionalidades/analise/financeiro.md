@@ -43,6 +43,9 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   declara ao SIOPE em cada pagamento, no painel e na base de análise. Avisa
   que não é a verificação do mínimo de 70% exigido em lei, porque a receita
   do Fundeb do município não está na plataforma.
+- Sistema pode **avisar o mês com a folha pela metade** (bem menos
+  profissionais declarados que no resto do ano), no painel, na cobertura e
+  na base, sem corrigir os números nem afirmar a causa.
 - Sistema pode contextualizar os recursos frente à rede e ao desempenho.
 - Sistema pode buscar, sob demanda e em segundo plano, os dados do **SIOPE**
   (remuneração municipal) de um ano que ainda não está disponível — para escolas

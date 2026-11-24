@@ -4,6 +4,7 @@ use Mojo::Exception qw(raise);
 use DateTime;
 use DateTime::Format::Strptime;
 use Carp qw(croak);
+use EduMaps::BaseAnalise ();   # #557: meses incompletos da folha
 
 requires qw(schema default_columns);
 
@@ -526,6 +527,11 @@ sub financial_summary($self, $params) {
     series     => $series     // [],
     categorias => $categorias // [],
     por_fonte  => $por_fonte,
+    # #557 (QT-01 da P2): os meses do ano em que a folha do município veio
+    # pela metade (vale para todas as escolas dele).
+    meses_incompletos => (defined $ano && $siope->{cod_municipio}
+      ? (EduMaps::BaseAnalise->meses_incompletos($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"} // [])
+      : []),
     siope      => {
       habilitado     => $siope->{habilitado},
       cod_municipio  => $siope->{cod_municipio},

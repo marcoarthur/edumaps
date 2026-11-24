@@ -175,6 +175,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - `meses_folha_incompletos`: os meses do ano em que a folha do município
+    veio pela metade (ex.: `set, out`), com menos categorias de profissionais
+    que o habitual do ano ou menos da metade dos registros de um mês típico.
+    Nesses meses, o gasto e as médias por mês ficam abaixo do real, e a
+    plataforma não corrige: mostra o que foi declarado. A causa pode ser a
+    declaração do município ao SIOPE ou a carga. Em Cuiabá (2025), setembro e
+    outubro só trazem o magistério. Para tirar esses meses de uma conta,
+    use a folha mês a mês do painel financeiro.
   - `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
     `gasto_outras_fontes_ano`: o `gasto_pessoal_ano` dividido pela fonte do
     dinheiro, como o município declara ao SIOPE em cada pagamento (a parcela
