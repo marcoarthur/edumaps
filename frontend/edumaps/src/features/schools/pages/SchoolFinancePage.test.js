@@ -76,7 +76,7 @@ describe("SchoolFinancePage — SIOPE", () => {
     await screen.findByText(/Profissionais \(total\)/);
     // total distinto = 5 (a última competência tem só 1)
     expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText(/Competência mais recente/)).toBeInTheDocument();
+    expect(screen.getByText(/No último mês/)).toBeInTheDocument();
   });
 
   it("avisa quando os dados vêm do agregado da Secretaria", async () => {

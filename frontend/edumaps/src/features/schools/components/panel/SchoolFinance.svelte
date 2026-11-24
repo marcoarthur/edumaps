@@ -59,6 +59,9 @@
     return t.startsWith("de ") ? `D${t.slice(1)}` : `Em ${t}`;
   });
 
+  // #568 (P1-FL-02): quem está em mais de uma categoria conta em cada uma.
+  const somaCategorias = $derived(buckets.reduce((n, b) => n + (Number(b.total_profissionais) || 0), 0));
+
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
   const buckets = $derived(buildCategoryBuckets(categorias));
@@ -150,11 +153,11 @@
         {formatInt(totalProfissionais)}
       </p>
       <p class="text-xs text-gray-400 mt-0.5">
-        Competência mais recente ({stats.lastPeriod ?? "—"}): {formatInt(stats.lastProfessionals)}
+        No último mês ({stats.lastPeriod ? stats.lastPeriod.toLowerCase() : "—"}): {formatInt(stats.lastProfessionals)}
       </p>
     </div>
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-4">
-      <p class="text-xs text-gray-500">Competências com dados</p>
+      <p class="text-xs text-gray-500">Meses com folha</p>
       <p class="text-xl font-bold text-gray-900 mt-1">{stats.mesCount}</p>
     </div>
   </section>
@@ -231,6 +234,12 @@
             </li>
           {/each}
         </ul>
+        {#if somaCategorias > totalProfissionais && totalProfissionais > 0}
+          <p class="text-xs text-gray-500 mt-2" data-testid="nota-soma-categorias">
+            Quem está em mais de uma categoria conta em cada uma: a soma ({formatInt(somaCategorias)}) passa do
+            total de profissionais ({formatInt(totalProfissionais)}).
+          </p>
+        {/if}
         {#if docentes && !ehRede}
           <!-- #567 (P1-FL-01): os docentes do Censo ao lado da folha -->
           <div class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-700" data-testid="docentes-folha-censo">

@@ -172,3 +172,21 @@ describe("SchoolFinance — docentes da folha e do Censo (#567)", () => {
     expect(screen.queryByTestId("docentes-folha-censo")).toBeNull();
   });
 });
+
+// #568 (P1-FL-02 da P1): meses, não "competências"; a soma das categorias.
+describe("SchoolFinance — meses e a soma das categorias (#568)", () => {
+  it("fala em meses", () => {
+    setup();
+    expect(screen.getByText("Meses com folha")).toBeInTheDocument();
+    expect(screen.getByText(/No último mês \(dez\/2025\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/[Cc]ompetência/)).toBeNull();
+  });
+  it("explica a soma das categorias quando passa do total", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, totalProfissionais: 9 } });
+    expect(screen.getByTestId("nota-soma-categorias")).toHaveTextContent("a soma (10) passa do total de profissionais (9)");
+  });
+  it("sem nota quando a soma fecha", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, totalProfissionais: 10 } });
+    expect(screen.queryByTestId("nota-soma-categorias")).toBeNull();
+  });
+});

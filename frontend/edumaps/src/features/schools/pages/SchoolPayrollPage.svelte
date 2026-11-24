@@ -94,7 +94,7 @@
   {:else if semFolha}
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-6 space-y-2">
       <p class="text-sm text-gray-700">
-        Não há folha de pagamento desta escola para esta competência.
+        Não há folha de pagamento desta escola para este mês.
       </p>
       <p class="text-sm text-gray-600">
         O
