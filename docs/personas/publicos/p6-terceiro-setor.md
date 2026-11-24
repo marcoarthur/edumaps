@@ -112,8 +112,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Creche no Nordeste (2026-11-23, **adotaria**): QN-01 (rodapé de fontes do
   ranking sem o Censo Demográfico na taxa de atendimento) → #539, entregue (#540).
   Pendente: #454.
+- Piso do magistério na folha (2026-11-24, **adotaria**): QQ-01 (salário
+  base fora da base) e QQ-02 (carga da folha não registrada), aguardando a
+  aprovação do developer.
 
 ## Entradas
+
+### 2026-11-24 — O piso do magistério na folha municipal (terceira rodada)
+
+**Material:** `/fontes`, a base das redes municipais com folha (bloco
+Remuneração) e o dicionário, a folha pública de uma escola. Consolidação em
+[`avaliacoes/2026-11-24-p6-piso-magisterio.md`](avaliacoes/2026-11-24-p6-piso-magisterio.md).
+
+**O que tentou:** apurar se os professores da rede municipal recebem o piso
+do magistério em Alta Floresta D'Oeste, Cuiabá e Ubatuba.
+
+**O que funciona para ele:** a folha pública por pessoa, com o salário base
+e o total; a cobertura em `/fontes` com os avisos; o link do SIOPE.
+
+**Barreiras:**
+- QQ-01 (atrapalha): a base só traz o salário total (Alta Floresta: mediana
+  R$ 6.727 por 40 h); o piso é sobre o salário base (mediana R$ 5.176; 45
+  de 266 pessoas abaixo do piso de 2024 em algum mês).
+- QQ-02 (incomoda): a carga da folha aparece como "não registrada".
+
+**Veredito:** **adotaria** (mantido), com ressalva na pauta do piso.
 
 ### 2026-11-23 — Onde falta creche no Nordeste (quinta rodada)
 
