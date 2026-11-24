@@ -5,7 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
-  import { listaMeses, faixasMeses } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses, textoSalarioRede } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -31,11 +31,12 @@
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    * @property {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} [porFonte] folha do ano por fonte de recurso (#553)
    * @property {{ folha_ano, folha_por_mes, censo: { docentes, ano }|null, municipio: { magisterio, so_secretaria, avisar }|null }|null} [docentes] folha e Censo lado a lado (#567)
+   * @property {{ pessoas, total, base, carga_comum }|null} [salarioRede] o salário do magistério da rede inteira no ano (#571)
    * @property {Array<{ mes, nome, registros, categorias, registros_habitual, categorias_habitual }>} [mesesIncompletos] meses do ano com a folha do município pela metade (#557)
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -179,6 +180,14 @@
       ({incompletos.map((m) => `${m.nome}: ${m.registros.toLocaleString("pt-BR")} registros em ${m.categorias} ${m.categorias === 1 ? "categoria" : "categorias"}, contra ${m.registros_habitual.toLocaleString("pt-BR")} em ${m.categorias_habitual} num mês típico`).join("; ")}).
       Pode ser a declaração do município ao SIOPE ou a carga.
       {incompletos.length === 1 ? "Nesse mês" : "Nesses meses"}, o custo e os profissionais ficam abaixo do real, e o total do ano também.
+    </p>
+  {/if}
+
+  {#if salarioRede?.pessoas}
+    <!-- #571 (QI-01 da P3): o salário do magistério da rede inteira, com a Secretaria -->
+    <p class="text-sm text-gray-700 bg-white border border-gray-200 rounded-card shadow-card px-4 py-3" data-testid="salario-rede">
+      <strong>Magistério na rede municipal{ano ? ` em ${ano}` : ""}:</strong> {textoSalarioRede(salarioRede)}.
+      <span class="text-xs text-gray-500">Toda a folha do município, nas escolas e no total da Secretaria; sem conversão para 40 horas.</span>
     </p>
   {/if}
 

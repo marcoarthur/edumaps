@@ -5,6 +5,7 @@
 use lib qw(t/lib lib);
 use Imports;
 use Test::Mojo;
+use EduMaps::BaseAnalise;
 use utf8;
 use open ':std', ':encoding(UTF-8)';
 
@@ -47,5 +48,15 @@ ok $d->{municipio}{avisar}, 'um terço só na Secretaria: avisa';
 
 $r = $t->get_ok("/api/school/$INEP/finance?ano=2002")->tx->res->json;
 ok !$r->{docentes}{municipio}{avisar}, 'ninguém só na Secretaria: sem aviso';
+
+# #571 (QI-01 da P3): o salário do magistério da rede inteira, com a Secretaria
+$dbh->do(q{UPDATE clean.remuneracao_municipal SET salario_base = 600, carga_horaria = 30 WHERE cod_municipio::text = ?}, {}, $MUN);
+$f->execute(2001, 'Dezembro', 'ANA', 'xxx.ANA.567-xx', $INEP, $MUN, 'Municipal', 'Docente', $MAG);   # 13º: fora
+$r = $t->get_ok("/api/school/$INEP/finance?ano=2001")->tx->res->json;
+is $r->{salario_rede}, { pessoas => 3, total => 1000, base => 600, carga_comum => 30 },
+  'rede inteira: 3 pessoas (escola e Secretaria), sem dezembro';
+my ($c) = grep { $_->{codigo_ibge} eq "$CO_MUN" } @{ EduMaps::BaseAnalise->cobertura_siope($dbh) };
+my ($a1) = grep { $_->{ano} == 2001 } @{ $c->{anos} };
+is $a1->{salario_magisterio}{pessoas}, 3, 'na cobertura da folha também';
 
 done_testing;

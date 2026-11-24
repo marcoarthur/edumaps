@@ -57,6 +57,12 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   do ano, com o aviso de que não é a verificação legal.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
+- **O magistério na rede municipal.** Uma linha diz o salário do magistério
+  de toda a folha do município no ano, nas escolas e no total da Secretaria:
+  a mediana do salário total e do base, por mês e sem dezembro, e a carga
+  mais comum. Serve para comparar a escola com a rede e aparece também no
+  painel da Secretaria, onde não há salário por escola. Não é convertido
+  para 40 horas: a carga declarada pode estar em aulas, e não em horas.
 - **Docentes na folha e no Censo.** No cartão das categorias, o painel mostra
   os docentes da folha (no ano e a média por mês) e os do Censo Escolar. Os
   números podem diferir: o professor pode ser pago no total da Secretaria,

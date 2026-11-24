@@ -11,7 +11,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import { ufDoMunicipio } from "@/features/ranking-recorte/constants.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
-  import { textoAnoFolha } from "@/features/fontes/utils.js";
+  import { textoAnoFolha, textoSalarioRede } from "@/features/fontes/utils.js";
   import { getBaseAnalise, baseCsvUrl, dicionarioUrl } from "../api/baseAnaliseApi.js";
 
   const inicial = new URLSearchParams(window.location.search);
@@ -47,6 +47,15 @@
           .filter((m) => !codigoIbge || m.codigo_ibge === codigoIbge)
           .map((m) => fraseFechamento(m, anoSiope, catalogo?.anos?.censo))
           .filter(Boolean)
+      : [],
+  );
+  // #571 (QI-01 da P3): o salário do magistério da rede, por município do recorte
+  const salariosRede = $derived(
+    folha && anoSiope
+      ? folha.municipios
+          .filter((m) => !codigoIbge || m.codigo_ibge === codigoIbge)
+          .map((m) => ({ municipio: m.municipio, s: m.anos.find((a) => a.ano === anoSiope)?.salario_magisterio }))
+          .filter((x) => x.s?.pessoas)
       : [],
   );
   const anosFolhaUf = $derived(
@@ -303,6 +312,15 @@
                     <p>A soma das escolas da base não é o total que o município declara ao SIOPE: falta a folha da Secretaria (sem escola) e a de escolas que a lista do Censo não tem.</p>
                     <ul class="list-disc ml-5 mt-1">
                       {#each fechamentos as frase}<li>{frase}</li>{/each}
+                    </ul>
+                  </div>
+                {/if}
+                {#if salariosRede.length}
+                  <!-- #571 (QI-01 da P3): o salário do magistério da rede inteira -->
+                  <div class="mt-2 text-xs text-gray-700" data-testid="salario-rede-base">
+                    <p>Magistério na rede municipal em {anoSiope} (toda a folha, nas escolas e no total da Secretaria; sem conversão para 40 horas):</p>
+                    <ul class="list-disc ml-5 mt-1">
+                      {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.</li>{/each}
                     </ul>
                   </div>
                 {/if}
