@@ -530,6 +530,10 @@ sub financial_summary($self, $params) {
     # #558 (QT-02 da P2): os meses do ano em que o município declarou a
     # folha (quase) só no total da Secretaria: neles a folha da escola não
     # aparece. Só faz sentido quando o painel é da escola.
+    # #567 (P1-FL-01): os docentes do Censo ao lado da folha, e quantos
+    # profissionais do magistério do município estão só no total da
+    # Secretaria (sem escola). Só no painel da escola.
+    ($origem eq 'escola' && defined $ano ? (docentes => $self->_docentes_folha_censo($dbh, $cod, $ano, $siope->{cod_municipio})) : ()),
     meses_secretaria => (defined $ano && $siope->{cod_municipio} && $origem eq 'escola'
       ? ((EduMaps::BaseAnalise->meses_por_lugar($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"} // {})->{secretaria} // [])
       : []),
@@ -545,6 +549,42 @@ sub financial_summary($self, $params) {
       ano_atual      => DateTime->now->year,
       anos_presentes => $siope->{anos_presentes},
     },
+  };
+}
+
+# #567 (P1-FL-01 da P1): folha e Censo lado a lado. A folha conta as pessoas
+# do magistério pagas no ano e a média por mês (a mais perto do Censo, que é
+# a fotografia de um dia de maio); o Censo, os docentes da educação básica da
+# escola no ano mais recente. Do município no ano: os profissionais do
+# magistério só no total da Secretaria (99999999), sem nenhuma escola.
+sub _docentes_folha_censo ($self, $dbh, $cod, $ano, $cod_mun) {
+  my $folha = $dbh->selectrow_hashref(<<~"SQL", undef, $cod, $ano);
+    SELECT count(DISTINCT $PESSOA)::int AS ano,
+           round(count(*)::numeric / NULLIF(count(DISTINCT left(mes, 3)), 0), 1)::float8 AS por_mes
+      FROM (SELECT DISTINCT left(mes, 3) AS mes, cpf, nome_profissional
+              FROM clean.remuneracao_municipal
+             WHERE cod_inep = ? AND ano = ? AND tipo = 'Profissionais do magistério') x
+    SQL
+  my $censo = $dbh->selectrow_hashref(
+    'SELECT qt_doc_bas::int AS docentes, nu_ano_censo::int AS ano FROM clean.censo_docentes
+      WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, $cod);
+  my $sec = $cod_mun ? $dbh->selectrow_hashref(q{
+    SELECT count(*)::int AS total, (count(*) FILTER (WHERE sec AND NOT esc))::int AS so_secretaria
+      FROM (SELECT bool_or(cod_inep = 99999999) AS sec, bool_or(cod_inep <> 99999999) AS esc
+              FROM clean.remuneracao_municipal
+             WHERE cod_municipio::text = ? AND ano = ? AND tipo = 'Profissionais do magistério'
+             GROUP BY cpf, nome_profissional) p
+  }, undef, "$cod_mun", $ano) : undef;
+  return {
+    folha_ano     => ($folha->{ano} // 0) + 0,
+    folha_por_mes => $folha->{por_mes},
+    censo         => $censo ? { docentes => $censo->{docentes}, ano => $censo->{ano} } : undef,
+    municipio     => $sec && $sec->{total} ? {
+      magisterio    => $sec->{total},
+      so_secretaria => $sec->{so_secretaria},
+      # B1: o aviso só com 10% ou mais só na Secretaria
+      avisar        => ($sec->{so_secretaria} >= 0.1 * $sec->{total} ? \1 : \0),
+    } : undef,
   };
 }
 

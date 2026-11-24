@@ -57,6 +57,14 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   do ano, com o aviso de que não é a verificação legal.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
+- **Docentes na folha e no Censo.** No cartão das categorias, o painel mostra
+  os docentes da folha (no ano e a média por mês) e os do Censo Escolar. Os
+  números podem diferir: o professor pode ser pago no total da Secretaria,
+  por outra rede ou por outra fonte; a folha conta quem esteve na escola só
+  parte do ano e quem está nela sem dar aula; o Censo é a fotografia de um
+  dia de maio. Quando 10% ou mais dos profissionais do magistério do
+  município aparecem só no total da Secretaria, sem escola, um aviso diz
+  quantos: parte dos professores da escola pode estar lá.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF
   mascarado **e** pelo nome. O SIOPE publica só seis dígitos do CPF, e
   pessoas diferentes podem ter o mesmo CPF mascarado; contar só por ele
