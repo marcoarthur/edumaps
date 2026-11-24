@@ -11,6 +11,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import { ufDoMunicipio } from "@/features/ranking-recorte/constants.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
+  import { sufixoIncompletos } from "@/features/fontes/utils.js";
   import { getBaseAnalise, baseCsvUrl, dicionarioUrl } from "../api/baseAnaliseApi.js";
 
   const inicial = new URLSearchParams(window.location.search);
@@ -279,7 +280,7 @@
                     {#if folha.municipios.length}
                       Folha por escola em {uf}:
                       {#each folha.municipios as m, i}{i ? "; " : ""}<strong>{m.municipio}</strong> ({m.anos.map((a) => a.escolas
-                        ? `${a.ano}: ${a.meses} ${a.meses === 1 ? "mês" : "meses"}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`
+                        ? `${a.ano}: ${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`
                         : `${a.ano}: só o total da Secretaria`).join("; ")}){/each}.
                     {:else}
                       Nenhum município de {uf} tem a folha do SIOPE separada por escola: o bloco sai vazio.

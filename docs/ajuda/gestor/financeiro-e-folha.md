@@ -36,6 +36,12 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   lei:** essa conta divide o gasto com os profissionais pela receita do
   Fundeb do município, e a receita não está na plataforma. Serve para
   conferir a prestação de contas, por exemplo no conselho do Fundeb.
+- **Mês com a folha pela metade.** Quando um mês tem bem menos profissionais
+  declarados que os outros (menos categorias, ou menos da metade dos
+  registros de um mês típico), um aviso acima dos gráficos diz qual mês e os
+  números. Nesse mês o custo e os profissionais ficam abaixo do real, e o
+  total do ano também. A causa pode ser a declaração do município ao SIOPE
+  ou a carga; a plataforma não corrige os números.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF

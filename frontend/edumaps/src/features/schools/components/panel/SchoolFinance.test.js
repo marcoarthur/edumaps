@@ -102,3 +102,23 @@ describe("SchoolFinance — por fonte de recurso (#553)", () => {
     expect(screen.queryByTestId("folha-por-fonte")).toBeNull();
   });
 });
+
+// #557 (QT-01 da P2): mês com a folha do município pela metade.
+describe("SchoolFinance — meses incompletos (#557)", () => {
+  const INC = [
+    { mes: 9, nome: "setembro", registros: 3269, categorias: 2, registros_habitual: 9680, categorias_habitual: 4 },
+    { mes: 10, nome: "outubro", registros: 3253, categorias: 1, registros_habitual: 9680, categorias_habitual: 4 },
+  ];
+  it("avisa, com os números e sem afirmar a causa", () => {
+    render(SchoolFinance, { props: { inep: "51171805", series: SERIES, categorias: CATEGORIAS, ano: 2025, mesesIncompletos: INC } });
+    const a = screen.getByTestId("aviso-meses-incompletos");
+    expect(a).toHaveTextContent("Setembro e outubro de 2025 têm bem menos profissionais declarados");
+    expect(a).toHaveTextContent("setembro: 3.269 registros em 2 categorias, contra 9.680 em 4 num mês típico");
+    expect(a).toHaveTextContent("outubro: 3.253 registros em 1 categoria");
+    expect(a).toHaveTextContent("Pode ser a declaração do município ao SIOPE ou a carga");
+  });
+  it("sem mês incompleto, sem aviso", () => {
+    setup();
+    expect(screen.queryByTestId("aviso-meses-incompletos")).toBeNull();
+  });
+});

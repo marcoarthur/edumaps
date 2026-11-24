@@ -32,7 +32,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
   $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = ? AND tabela_id = '9514'}, {}, "$MUN");
-  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002))', {}, @INEPS, '600039');
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003))', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -713,6 +713,49 @@ subtest 'concursados vazios nas privadas (#524)' => sub {
   }
   like $EduMaps::Model::Rank::School::METODO{capacitacao_docente},
     qr/Na escola privada, a parte de concursados fica de fora.*indices-v6/, 'método diz a mudança';
+};
+
+subtest 'mês com a folha pela metade (#557)' => sub {
+  my $ANO_F = 2003;
+  my $f = $dbh->prepare('INSERT INTO clean.remuneracao_municipal
+     (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, carga_horaria, salario_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  my @pessoas = (['ANA', 'Docente', 'Profissionais do magistério'], ['BIA', 'Docente', 'Profissionais do magistério'],
+                 ['CIDA', 'Merendeira', 'Outros profissionais da educação'], ['DUDA', 'Merendeira', 'Outros profissionais da educação']);
+  my %mes = (
+    Janeiro => [0, 1, 2],          # janeiro mais baixo (3 de 4), com as duas categorias: não é alarme
+    Fevereiro => [0 .. 3], 'Março' => [0 .. 3], Abril => [0 .. 3],
+    Maio => [0],                   # só o magistério: incompleto
+    Dezembro => [0 .. 3],          # com o 13º: o valor dobra, os registros não
+  );
+  for my $m (sort keys %mes) {
+    for my $k (@{ $mes{$m} }) {
+      my ($nome, $cat, $tipo) = @{ $pessoas[$k] };
+      $f->execute($ANO_F, $m, $nome, "xxx.$k$k$k.33$k-xx", $A, '600039', 'Municipal', $cat, $tipo, 40, $m eq 'Dezembro' ? 4000 : 2000);
+    }
+  }
+
+  my $inc = EduMaps::BaseAnalise->meses_incompletos($dbh, '600039');
+  is [ map { [ @$_{qw(mes nome registros categorias registros_habitual categorias_habitual)} ] } @{ $inc->{"600039|$ANO_F"} } ],
+     [[5, 'maio', 1, 1, 4, 2]], 'só maio: uma categoria e um registro contra 2 e 4';
+
+  my $cat = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
+  my ($cid) = grep { $_->{codigo_ibge} eq "$MUN" } @{ $cat->{folha}{municipios} };
+  my ($a3) = grep { $_->{ano} == $ANO_F } @{ $cid->{anos} };
+  is [ map { $_->{nome} } @{ $a3->{incompletos} } ], ['maio'], 'cobertura com o mês incompleto';
+  my ($a1) = grep { $_->{ano} == 2001 } @{ $cid->{anos} };
+  is $a1->{incompletos}, [], 'ano sem mês incompleto: lista vazia';
+
+  my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_F")->tx);
+  my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  my ($b) = grep { $_->[0] eq $B } @$c;
+  is $a->[ $i{meses_folha_incompletos} ], 'mai', 'coluna da base com o mês incompleto';
+  is $b->[ $i{meses_folha_incompletos} ], '', 'escola sem folha: vazio';
+  ok $i{meses_folha_incompletos} == $i{meses_folha} + 1, 'logo depois de meses_folha';
+
+  my $r = $t->get_ok("/api/school/$A/finance?ano=$ANO_F")->status_is(200)->tx->res->json;
+  is [ map { $_->{nome} } @{ $r->{meses_incompletos} // [] } ], ['maio'], 'painel financeiro com o mês incompleto';
 };
 
 done_testing;

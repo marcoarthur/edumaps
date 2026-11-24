@@ -14,6 +14,7 @@ export const baseAnaliseHandlers = [
               { codigo_ibge: "3554102", municipio: "Taubaté", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 0,
                 fechamento: { total: 163254335, escolas_base: 0, secretaria: 163254335, fora_total: 0, fora: [] } }] },
               { codigo_ibge: "3555406", municipio: "Ubatuba", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 48,
+                incompletos: [{ mes: 7, nome: "julho", registros: 500, categorias: 5, registros_habitual: 1200, categorias_habitual: 9 }],
                 fechamento: { total: 67696409, escolas_base: 55590647, secretaria: 11838003, fora_total: 267757,
                   fora: [{ inep: "35659605", escola: "JOSE LIBORIO - SEU FRANCA EM", valor: 267757 }] } }] },
             ] }

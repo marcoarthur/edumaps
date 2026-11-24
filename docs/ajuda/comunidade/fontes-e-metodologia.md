@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [comparar-redes, painel-publico-da-escola, privacidade]
 funcionalidade: ../../funcionalidades/plataforma/fontes-de-dados.md
-ultima_revisao: 2026-11-23
+ultima_revisao: 2026-11-24
 ---
 
 # Fontes e metodologia
@@ -71,7 +71,11 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
 - A folha de pagamento cobre só os municípios já carregados. O cartão do
   SIOPE lista esses municípios, com os anos, os meses e as escolas de cada
   um; município em que o SIOPE só traz o total da Secretaria aparece como
-  tal.
+  tal. Um mês com a folha pela metade aparece marcado, por exemplo "2025
+  (12 meses (setembro e outubro incompletos), 167 escolas)": nele há menos
+  categorias de profissionais que o habitual do ano, ou menos da metade dos
+  registros de um mês típico. A causa não se sabe: pode ser a declaração do
+  município ao SIOPE ou a carga.
 
 ## Veja também
 - [Comparar redes](comparar-redes.md)

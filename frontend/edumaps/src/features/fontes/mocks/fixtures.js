@@ -33,7 +33,9 @@ export const FONTES_FIXTURE = [
     },
     licenca: "Domínio público",
     cobertura: [
-      { codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", anos: [{ ano: 2026, meses: 6, escolas: 168 }, { ano: 2025, meses: 12, escolas: 167 }] },
+      { codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", anos: [{ ano: 2026, meses: 6, escolas: 168 }, { ano: 2025, meses: 12, escolas: 167,
+        incompletos: [{ mes: 9, nome: "setembro", registros: 3269, categorias: 2, registros_habitual: 9680, categorias_habitual: 4 },
+                      { mes: 10, nome: "outubro", registros: 3253, categorias: 1, registros_habitual: 9680, categorias_habitual: 4 }] }] },
       { codigo_ibge: "3554102", municipio: "Taubaté", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 0 }] },
     ],
   },
