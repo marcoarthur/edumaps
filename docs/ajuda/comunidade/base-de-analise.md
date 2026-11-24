@@ -173,6 +173,13 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     salários e as cargas somados. O salário para 40 horas é salário ÷ carga
     × 40, para comparar escolas com jornadas diferentes. É o salário
     **total**: o vencimento mais gratificações e adicionais.
+  - `carga_comum_municipio`: a carga mais comum do magistério do município
+    no ano. Quando a maioria dos pagamentos tem carga abaixo de 20, a carga
+    não parece estar em horas semanais (aulas ou jornada parcial): as contas
+    por 40 horas (`salario_40h_magisterio`, `salario_base_40h_magisterio` e
+    a contagem do piso) ficam vazias, e vale o salário sem conversão
+    (`salario_medio_magisterio`). Em Taubaté (2026), a carga mais comum é 18,
+    em 94% dos pagamentos.
   - `salario_base_40h_magisterio`: o mesmo, só com o salário **base**
     (vencimento). É sobre ele que vale o piso do magistério.
   - `piso_magisterio_ano` e `prof_magisterio_base_abaixo_piso`: o piso

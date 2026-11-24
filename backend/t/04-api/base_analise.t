@@ -32,7 +32,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
   $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = ? AND tabela_id = '9514'}, {}, "$MUN");
-  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003, 2004, 2026))', {}, @INEPS, '600039');
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003, 2004, 2005, 2026))', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -817,6 +817,7 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
     'base médio por 40 h, o piso do ano e só ANA abaixo (BIA não, pelo mês de admissão)';
   is [ @$b[ @i{qw(salario_base_40h_magisterio piso_magisterio_ano prof_magisterio_base_abaixo_piso)} ] ], ['', '', ''], 'escola sem folha: vazio';
   ok $i{salario_base_40h_magisterio} == $i{salario_40h_magisterio} + 1, 'logo depois do salário total';
+  is $a->[ $i{carga_comum_municipio} ], '40', '#572: carga mais comum do município, em horas';
 
   my $c1 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=2001")->tx);
   my %j; @j{ @{ $c1->[0] } } = 0 .. $#{ $c1->[0] };
@@ -826,6 +827,29 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
   my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?uf=AC&blocos=remuneracao&ano_siope=$ANO_P")->tx);
   my ($ab) = grep { $_->[0] eq 'prof_magisterio_base_abaixo_piso' } @$d;
   like $ab->[1], qr/Não é a verificação legal do piso/, 'dicionário avisa';
+};
+
+subtest 'carga que não parece em horas (#572)' => sub {
+  my $ANO_C = 2005;
+  my $f = $dbh->prepare('INSERT INTO clean.remuneracao_municipal
+     (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, carga_horaria, salario_base, salario_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  for my $p (qw(ANA BIA CAIO)) {
+    $f->execute($ANO_C, $_, $p, "xxx.$p.572-xx", $A, '600039', 'Municipal', 'Docente', 'Profissionais do magistério', 18, 2000, 5000)
+      for qw(Janeiro Fevereiro Março);
+  }
+  my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_C"};
+  is [ $s->{carga_comum}, !!${ $s->{carga_suspeita} } ], [18, 1], 'carga 18 na maioria: suspeita';
+
+  my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_C")->tx);
+  my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  is [ @$a[ @i{qw(salario_medio_magisterio carga_comum_municipio salario_40h_magisterio salario_base_40h_magisterio prof_magisterio_base_abaixo_piso)} ] ],
+     ['5000', '18', '', '', ''], 'salário sem conversão e a carga ficam; as contas por 40 h ficam vazias';
+
+  my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?uf=AC&blocos=remuneracao&ano_siope=$ANO_C")->tx);
+  my ($cc) = grep { $_->[0] eq 'carga_comum_municipio' } @$d;
+  like $cc->[1], qr/não parece estar em horas semanais/, 'dicionário explica';
 };
 
 done_testing;

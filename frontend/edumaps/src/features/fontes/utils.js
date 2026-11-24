@@ -91,5 +91,9 @@ export function textoSalarioRede(s) {
   if (!s || !s.pessoas) return "";
   const pessoas = `${Number(s.pessoas).toLocaleString("pt-BR")} ${s.pessoas === 1 ? "profissional" : "profissionais"} do magistério`;
   const carga = s.carga_comum != null ? `; carga mais comum: ${Number(s.carga_comum).toLocaleString("pt-BR")}` : "";
-  return `salário total ${brl(s.total)} e base ${brl(s.base)} (medianas por mês, sem dezembro, de ${pessoas})${carga}`;
+  // #572 (QI-02 da P3): carga que não parece em horas semanais
+  const aviso = s.carga_suspeita
+    ? " (não parece ser em horas semanais, e sim em aulas ou numa jornada parcial: as contas por 40 horas não valem aqui)"
+    : "";
+  return `salário total ${brl(s.total)} e base ${brl(s.base)} (medianas por mês, sem dezembro, de ${pessoas})${carga}${aviso}`;
 }
