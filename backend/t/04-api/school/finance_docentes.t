@@ -45,6 +45,7 @@ is [ @$d{qw(folha_ano folha_por_mes)} ], [2, 1.5], 'folha: 2 pessoas no ano, 1,5
 is $d->{censo}, { docentes => 10, ano => 2025 }, 'Censo: 10 docentes em 2025';
 is [ @{ $d->{municipio} }{qw(magisterio so_secretaria)} ], [3, 1], 'município: 3 no magistério, 1 só na Secretaria';
 ok $d->{municipio}{avisar}, 'um terço só na Secretaria: avisa';
+is $r->{carga_folha}, undef, '#576: sem carga registrada, sem data';
 
 $r = $t->get_ok("/api/school/$INEP/finance?ano=2002")->tx->res->json;
 ok !$r->{docentes}{municipio}{avisar}, 'ninguém só na Secretaria: sem aviso';

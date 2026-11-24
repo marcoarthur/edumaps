@@ -224,7 +224,9 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     veio pela metade (ex.: `set, out`), com menos categorias de profissionais
     que o habitual do ano ou menos da metade dos registros de um mês típico.
     Nesses meses, o gasto e as médias por mês ficam abaixo do real, e a
-    plataforma não corrige: mostra o que foi declarado. A causa pode ser a
+    plataforma não corrige: mostra o que foi declarado. Com a carga
+    registrada (a data está na tela e em Fontes e metodologia), a falta está
+    na fonte: a planilha do SIOPE já veio assim. Sem registro, pode ser a
     declaração do município ao SIOPE ou a carga. Em Cuiabá (2025), setembro e
     outubro só trazem o magistério.
   - `meses_completos` e `gasto_pessoal_meses_completos`: os meses com folha

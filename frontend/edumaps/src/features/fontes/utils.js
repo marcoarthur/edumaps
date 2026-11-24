@@ -30,11 +30,11 @@ export function listaMeses(meses) {
   return `${n.slice(0, -1).join(", ")} e ${n.at(-1)}`;
 }
 
-/** " (setembro e outubro incompletos)" ou "" */
-export function sufixoIncompletos(meses) {
+/** " (setembro e outubro incompletos)" ou "" (#576: com carga registrada, "… já na planilha do SIOPE") */
+export function sufixoIncompletos(meses, carga = null) {
   const n = meses?.length ?? 0;
   if (!n) return "";
-  return ` (${listaMeses(meses)} ${n === 1 ? "incompleto" : "incompletos"})`;
+  return ` (${listaMeses(meses)} ${n === 1 ? "incompleto" : "incompletos"}${carga ? " já na planilha do SIOPE" : ""})`;
 }
 
 const NOMES_MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -71,13 +71,13 @@ export function textoAnoFolha(a) {
 }
 
 function textoAnoFolhaSemCarga(a) {
-  const inc = sufixoIncompletos(a.incompletos).slice(2, -1);
+  const inc = sufixoIncompletos(a.incompletos, a.carga).slice(2, -1);
   if (!a.escolas) return `só o total da Secretaria${inc ? `; ${inc}` : ""}`;
   const escolas = `${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`;
   if (a.meses_secretaria?.length) {
     return `por escola só em ${faixasMeses(a.meses_escola)}; ${faixasMeses(a.meses_secretaria)}, só o total da Secretaria${inc ? `; ${inc}` : ""}; ${escolas}`;
   }
-  return `${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${escolas}`;
+  return `${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos, a.carga)}, ${escolas}`;
 }
 
 const brl = (v) => `R$ ${Math.round(Number(v) || 0).toLocaleString("pt-BR")}`;

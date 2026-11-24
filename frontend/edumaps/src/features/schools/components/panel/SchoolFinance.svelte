@@ -5,7 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
-  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -31,12 +31,13 @@
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    * @property {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} [porFonte] folha do ano por fonte de recurso (#553)
    * @property {{ folha_ano, folha_por_mes, censo: { docentes, ano }|null, municipio: { magisterio, so_secretaria, avisar }|null }|null} [docentes] folha e Censo lado a lado (#567)
+   * @property {string|null} [cargaFolha] data da carga registrada do município e ano (#576)
    * @property {{ pessoas, total, base, carga_comum }|null} [salarioRede] o salário do magistério da rede inteira no ano (#571)
    * @property {Array<{ mes, nome, registros, categorias, registros_habitual, categorias_habitual }>} [mesesIncompletos] meses do ano com a folha do município pela metade (#557)
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, cargaFolha = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -178,7 +179,11 @@
       {listaMeses(incompletos).replace(/^./, (c) => c.toUpperCase())}{ano ? ` de ${ano}` : ""}
       {incompletos.length === 1 ? "tem" : "têm"} bem menos profissionais declarados que os outros meses do município
       ({incompletos.map((m) => `${m.nome}: ${m.registros.toLocaleString("pt-BR")} registros em ${m.categorias} ${m.categorias === 1 ? "categoria" : "categorias"}, contra ${m.registros_habitual.toLocaleString("pt-BR")} em ${m.categorias_habitual} num mês típico`).join("; ")}).
-      Pode ser a declaração do município ao SIOPE ou a carga.
+      {#if cargaFolha}
+        A planilha do SIOPE baixada em {dataBR(cargaFolha)} traz {incompletos.length === 1 ? "este mês" : "estes meses"} assim: a falta está na fonte, e não na carga.
+      {:else}
+        Pode ser a declaração do município ao SIOPE ou a carga.
+      {/if}
       {incompletos.length === 1 ? "Nesse mês" : "Nesses meses"}, o custo e os profissionais ficam abaixo do real, e o total do ano também.
     </p>
   {/if}
