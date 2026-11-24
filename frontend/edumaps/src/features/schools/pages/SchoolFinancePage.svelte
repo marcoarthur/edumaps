@@ -19,6 +19,7 @@
   let escola = $state(null);
   let series = $state([]);
   let categorias = $state([]);
+  let porFonte = $state(null);
   let totalProfissionais = $state(0);
   let origem = $state("escola");
   let rotuloOrigem = $state(null);
@@ -64,6 +65,7 @@
       escola = data.escola ?? null;
       series = data.series ?? [];
       categorias = data.categorias ?? [];
+      porFonte = data.por_fonte ?? null;
       totalProfissionais = data.total_profissionais ?? 0;
       origem = data.origem ?? "escola";
       rotuloOrigem = data.rotulo_origem ?? null;
@@ -75,6 +77,7 @@
       escola = null;
       series = [];
       categorias = [];
+      porFonte = null;
       siope = null;
       error =
         err instanceof ApiError
@@ -258,7 +261,7 @@
           <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
         </div>
       {/if}
-      <SchoolFinance {inep} {escola} {series} {categorias} {totalProfissionais} {origem} {ano} {periodo} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {totalProfissionais} {origem} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

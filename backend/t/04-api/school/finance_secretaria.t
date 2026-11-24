@@ -29,8 +29,9 @@ if ($has_tables) {
   # agregado da secretaria (99999999) para o município
   for my $m (qw(Janeiro Fevereiro)) {
     $dbh->do('INSERT INTO clean.remuneracao_municipal
-                (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, salario_total)
-              VALUES (2024, ?, ?, ?, 99999999, ?, ?, ?, ?, 1000)',
+                (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, salario_total,
+                 salario_fundeb_max, salario_fundeb_min, salario_outros)
+              VALUES (2024, ?, ?, ?, 99999999, ?, ?, ?, ?, 1000, 700, 200, 100)',
       {}, $m, "Servidor $m", "xxx.$m.025-xx", $MUN, 'Municipal',
       'Docente habilitado em curso de pedagogia', 'Profissionais do magistério');
   }
@@ -54,6 +55,9 @@ subtest 'escola sem folha própria cai para o agregado da Secretaria' => sub {
   like $r->{rotulo_origem} // '', qr/Secretaria/i, 'rótulo de origem presente';
   is scalar(@{ $r->{series} }), 2, 'série vem do agregado (2 competências)';
   ok $r->{total_profissionais} >= 2, 'total de profissionais do agregado';
+  # #553 (QS-01 da P5): a folha do agregado por fonte de recurso
+  is($r->{por_fonte}, { fundeb_70 => 1400, fundeb_30 => 400, outras => 200, total => 2000, nao_informado => 0 },
+    'folha por fonte: Fundeb 70%, 30% e outras, somando o total');
 };
 
 done_testing;

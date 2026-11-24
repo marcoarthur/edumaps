@@ -113,3 +113,24 @@ export function formatInt(value) {
   if (!Number.isFinite(num)) return "—";
   return num.toLocaleString("pt-BR");
 }
+
+/**
+ * #553 (QS-01 da P5): a folha do ano por fonte de recurso, como o SIOPE a
+ * declara em cada pagamento. Percentuais sobre o total; "não informado" só
+ * quando a carga deixou a fonte vazia.
+ * @param {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} f
+ * @returns {Array<{ id, rotulo, valor, pct }>}
+ */
+export function linhasPorFonte(f) {
+  const total = Number(f?.total) || 0;
+  if (total <= 0) return [];
+  const linhas = [
+    { id: "fundeb_70", rotulo: "Fundeb, parcela de 70%", valor: Number(f.fundeb_70) || 0 },
+    { id: "fundeb_30", rotulo: "Fundeb, parcela de 30%", valor: Number(f.fundeb_30) || 0 },
+    { id: "outras", rotulo: "Outras fontes", valor: Number(f.outras) || 0 },
+  ];
+  if (Math.abs(Number(f.nao_informado) || 0) >= 0.01) {
+    linhas.push({ id: "nao_informado", rotulo: "Fonte não informada", valor: Number(f.nao_informado) });
+  }
+  return linhas.map((l) => ({ ...l, pct: (l.valor / total) * 100 }));
+}

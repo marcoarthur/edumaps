@@ -52,6 +52,7 @@ subtest 'motivo da ausência' => sub {
   my $r = $t->get_ok("/api/school/$INEP_MUNICIPAL/finance")->status_is(200)->tx->res->json;
   is $r->{ausencia}, 'municipio_sem_carga', 'municipal sem carga no município';
   is scalar @{ $r->{series} }, 0, 'série vazia';
+  is $r->{por_fonte}, undef, 'sem folha: sem divisão por fonte (#553)';
 
   $r = $t->get_ok("/api/school/$INEP_ESTADUAL/finance")->status_is(200)->tx->res->json;
   is $r->{ausencia}, 'nao_municipal', 'estadual: o SIOPE só cobre a rede municipal';

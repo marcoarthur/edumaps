@@ -6,7 +6,7 @@ nivel: basico
 status: ativo
 relacionadas: [rankings, fontes-e-metodologia]
 funcionalidade: ../../funcionalidades/analise/base-de-analise.md
-ultima_revisao: 2026-11-23
+ultima_revisao: 2026-11-24
 ---
 
 # Base de análise: indicadores por escola para baixar
@@ -175,6 +175,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
+    `gasto_outras_fontes_ano`: o `gasto_pessoal_ano` dividido pela fonte do
+    dinheiro, como o município declara ao SIOPE em cada pagamento (a parcela
+    de 70% do Fundeb, a de 30% e as outras fontes). As três somam o
+    `gasto_pessoal_ano`, em reais inteiros, com diferença de arredondamento de
+    até 2 reais. Não
+    é a verificação do mínimo de 70% da lei, que usa a receita do Fundeb do
+    município (fora da base). A folha da Secretaria, sem escola, não entra.
   - **Vazio:** escola fora da rede municipal, município sem folha nesse ano,
     ou município em que o SIOPE só traz o total da Secretaria, sem separar as
     escolas. A cobertura é pequena (poucos municípios carregados) e não é uma

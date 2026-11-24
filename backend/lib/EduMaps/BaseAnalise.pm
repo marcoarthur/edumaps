@@ -291,6 +291,8 @@ my $SIOPE_VAZIO = 'Vazio: escola fora da rede municipal, município sem folha ca
 # #512 (QZ-02): o quarto motivo do salário do magistério vazio.
 my $SEM_MAGISTERIO = 'Com prof_magisterio = 0, a escola tem folha, mas ninguém no magistério: é o caso de creches em que a folha só traz auxiliares e assistentes educacionais (veja aux_educacional)';
 my $MAGISTERIO = 'Profissionais do magistério';
+# #553: o que vale para as três colunas da folha por fonte.
+my $FONTE_SOMA = 'As três partes (gasto_fundeb_70_ano, gasto_fundeb_30_ano e gasto_outras_fontes_ano) somam o gasto_pessoal_ano, em reais inteiros, com diferença de arredondamento de até 2 reais. Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a receita do Fundeb do município, que não está na base.';
 our $AUX_EDUCACIONAL = 'Auxiliar/Assistente Educacional';
 
 # Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
@@ -309,10 +311,15 @@ my $SQL_FOLHA = <<~"SQL";
          round((avg(ch) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::numeric, 1)::float8 AS carga_media,
          round(avg(s / ch * 40) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0))::float8 AS salario_40h,
          round(sum(s))::float8 AS gasto_ano,
+         round(sum(f70))::float8 AS gasto_fundeb_70,
+         round(sum(f30))::float8 AS gasto_fundeb_30,
+         round(sum(fo))::float8 AS gasto_outras,
          count(DISTINCT m)::int AS meses
     FROM (SELECT cod_inep, left(mes, 3) AS m, cpf, nome_profissional, tipo,
                  categoria = '$AUX_EDUCACIONAL' AS aux,
-                 sum(salario_total) AS s, sum(carga_horaria) AS ch
+                 sum(salario_total) AS s, sum(carga_horaria) AS ch,
+                 sum(salario_fundeb_max) AS f70, sum(salario_fundeb_min) AS f30,
+                 sum(salario_outros) AS fo
             FROM clean.remuneracao_municipal
            WHERE ano = ? AND cod_inep <> 99999999
            GROUP BY 1, 2, 3, 4, 5, 6) pm
@@ -403,7 +410,7 @@ sub _blocos {
       ] },
     # #491 (RJ-03): a folha do SIOPE agregada por escola, sem nomes nem CPF.
     { id => 'remuneracao', label => 'Remuneração (SIOPE)', fonte => 'siope', usa_ano_siope => 1,
-      descricao => 'Profissionais do magistério (no ano e por mês), salário médio mensal, carga horária média, salário para 40 horas, auxiliares e assistentes educacionais e gasto com pessoal da escola no ano escolhido, '
+      descricao => 'Profissionais do magistério (no ano e por mês), salário médio mensal, carga horária média, salário para 40 horas, auxiliares e assistentes educacionais e gasto com pessoal da escola no ano escolhido, com a parte paga pelo Fundeb (70% e 30%) e por outras fontes, '
         . 'da folha que o município declara ao SIOPE. Só a rede municipal e só os municípios em que o SIOPE detalha a folha por escola; sem nomes nem CPF.',
       colunas => [
         ['prof_magisterio', 'f.prof_magisterio',
@@ -430,6 +437,13 @@ sub _blocos {
           "Salário total médio por mês de um auxiliar ou assistente educacional, em reais, sem dezembro. Soma os vínculos da pessoa na escola no mês. Vazio também quando a escola não tem auxiliares na folha. $SIOPE_VAZIO", 1],
         ['gasto_pessoal_ano', 'f.gasto_ano',
           "Soma do salário total de todos os profissionais da escola no ano (magistério e demais), em reais, com o 13º. Com menos de 12 meses (veja meses_folha), é só o gasto desses meses. $SIOPE_VAZIO", 1],
+        # #553 (QS-01 da P5): o gasto do ano por fonte de recurso.
+        ['gasto_fundeb_70_ano', 'f.gasto_fundeb_70',
+          "Parte do gasto_pessoal_ano paga com a parcela de 70% do Fundeb, em reais, como o município declara ao SIOPE em cada pagamento. $FONTE_SOMA $SIOPE_VAZIO", 1],
+        ['gasto_fundeb_30_ano', 'f.gasto_fundeb_30',
+          "Parte do gasto_pessoal_ano paga com a parcela de 30% do Fundeb, em reais. $FONTE_SOMA $SIOPE_VAZIO", 1],
+        ['gasto_outras_fontes_ano', 'f.gasto_outras',
+          "Parte do gasto_pessoal_ano paga com outras fontes (fora do Fundeb), em reais. $FONTE_SOMA $SIOPE_VAZIO", 1],
         ['meses_folha', 'f.meses',
           "Meses do ano com folha da escola no SIOPE (de 1 a 12). $SIOPE_VAZIO", 1],
       ] },
