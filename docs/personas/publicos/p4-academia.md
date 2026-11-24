@@ -231,10 +231,30 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima oitava rodada (2026-11-24, **adotaria**, com ressalva no gasto
   anual de 2025 em Cuiabá): QM-01 (os meses incompletos marcados, sem como
   tirá-los da conta) → #561, entregue (#562).
+  Trigésima nona rodada (2026-11-24, **adotaria**, modo autônomo): QF-01
+  (o aviso de anos diferentes não fala da folha) → #583.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-24 — Salário do professor e IDEB (trigésima nona rodada)
+
+**Material:** a base da rede municipal de Cuiabá (Desempenho, INSE e
+Remuneração, folha de 2025). Consolidação em
+[`avaliacoes/2026-11-24-p4-salario-ideb.md`](avaliacoes/2026-11-24-p4-salario-ideb.md).
+
+**O que tentou:** "o salário do professor se associa ao IDEB, controlando
+o INSE?".
+
+**O que funciona para ela:** salário total e base por 40 horas, sem
+dezembro, com a carga; +0,13 de IDEB por R$ 1.000, em 50 escolas.
+
+**Barreiras:**
+- QF-01 (incomoda): o aviso de anos diferentes não diz o ano da folha
+  (IDEB 2023, folha 2025).
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-24 — Gasto com pessoal por aluno em Cuiabá (trigésima oitava rodada)
 
