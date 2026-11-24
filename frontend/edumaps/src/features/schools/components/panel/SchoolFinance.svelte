@@ -30,11 +30,12 @@
    * @property {Array<{ ano, mes, mes_num, total_salario, total_profissionais }>} [series]
    * @property {Array<{ categoria, tipo, total_salario, total_profissionais }>} [categorias]
    * @property {{ fundeb_70, fundeb_30, outras, total, nao_informado }|null} [porFonte] folha do ano por fonte de recurso (#553)
+   * @property {{ folha_ano, folha_por_mes, censo: { docentes, ano }|null, municipio: { magisterio, so_secretaria, avisar }|null }|null} [docentes] folha e Censo lado a lado (#567)
    * @property {Array<{ mes, nome, registros, categorias, registros_habitual, categorias_habitual }>} [mesesIncompletos] meses do ano com a folha do município pela metade (#557)
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [] } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -230,6 +231,29 @@
             </li>
           {/each}
         </ul>
+        {#if docentes && !ehRede}
+          <!-- #567 (P1-FL-01): os docentes do Censo ao lado da folha -->
+          <div class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-700" data-testid="docentes-folha-censo">
+            <p>
+              <strong>Docentes na folha:</strong> {formatInt(docentes.folha_ano)}{ano ? ` em ${ano}` : ""}{#if docentes.folha_por_mes != null}{` (${docentes.folha_por_mes.toLocaleString("pt-BR")} por mês, em média)`}{/if}.
+              {#if docentes.censo}
+                <strong>No Censo Escolar {docentes.censo.ano}:</strong> {formatInt(docentes.censo.docentes)}.
+              {/if}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              Os números podem diferir: o professor pode ser pago no total da Secretaria, por outra rede ou por outra
+              fonte; a folha conta quem esteve na escola só parte do ano e quem está nela sem dar aula; o Censo conta os
+              docentes de um dia de maio.
+            </p>
+            {#if docentes.municipio?.avisar}
+              <p class="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2" role="note" data-testid="aviso-so-secretaria">
+                {ano ? `Em ${ano}, ` : ""}{formatInt(docentes.municipio.so_secretaria)} dos {formatInt(docentes.municipio.magisterio)}
+                profissionais do magistério do município aparecem só no total da Secretaria, sem escola: parte dos
+                professores desta escola pode estar lá.
+              </p>
+            {/if}
+          </div>
+        {/if}
       </div>
     </section>
   {/if}

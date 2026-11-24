@@ -148,3 +148,27 @@ describe("SchoolFinance — meses da Secretaria (#558)", () => {
     expect(screen.queryByTestId("aviso-meses-secretaria")).toBeNull();
   });
 });
+
+// #567 (P1-FL-01 da P1): os docentes do Censo ao lado da folha.
+describe("SchoolFinance — docentes da folha e do Censo (#567)", () => {
+  const DOC = { folha_ano: 36, folha_por_mes: 26.5, censo: { docentes: 62, ano: 2025 },
+    municipio: { magisterio: 1374, so_secretaria: 658, avisar: true } };
+  it("mostra os dois números, o porquê e o aviso da Secretaria", () => {
+    render(SchoolFinance, { props: { inep: "35070212", series: SERIES, categorias: CATEGORIAS, ano: 2026, docentes: DOC } });
+    const b = screen.getByTestId("docentes-folha-censo");
+    expect(b).toHaveTextContent("Docentes na folha: 36 em 2026 (26,5 por mês, em média). No Censo Escolar 2025: 62.");
+    expect(b).toHaveTextContent("Os números podem diferir");
+    expect(screen.getByTestId("aviso-so-secretaria")).toHaveTextContent(
+      "Em 2026, 658 dos 1.374 profissionais do magistério do município aparecem só no total da Secretaria");
+  });
+  it("sem o aviso abaixo de 10%", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2025,
+      docentes: { ...DOC, municipio: { magisterio: 3485, so_secretaria: 60, avisar: false } } } });
+    expect(screen.getByTestId("docentes-folha-censo")).toBeInTheDocument();
+    expect(screen.queryByTestId("aviso-so-secretaria")).toBeNull();
+  });
+  it("no painel da Secretaria, sem o bloco", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", docentes: DOC } });
+    expect(screen.queryByTestId("docentes-folha-censo")).toBeNull();
+  });
+});
