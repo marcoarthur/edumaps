@@ -615,6 +615,7 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   # #553: as três fontes somam o gasto do ano (37000)
   is [ @$a[ @i{qw(gasto_fundeb_70_ano gasto_fundeb_30_ano gasto_outras_fontes_ano)} ] ], ['25000', '6000', '6000'],
      'gasto por fonte: Fundeb 70%, Fundeb 30% e outras';
+  ok !(grep { defined && /e\+/ } @$a), 'nenhum valor em notação científica';
   is [ @$b[ @i{qw(gasto_fundeb_70_ano gasto_fundeb_30_ano gasto_outras_fontes_ano)} ] ], ['', '', ''],
      'escola sem folha: as fontes vazias';
   # #512 (QZ-03): pessoas por mês (ANA e BRUNO nos três meses)

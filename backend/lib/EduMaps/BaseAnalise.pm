@@ -292,7 +292,7 @@ my $SIOPE_VAZIO = 'Vazio: escola fora da rede municipal, município sem folha ca
 my $SEM_MAGISTERIO = 'Com prof_magisterio = 0, a escola tem folha, mas ninguém no magistério: é o caso de creches em que a folha só traz auxiliares e assistentes educacionais (veja aux_educacional)';
 my $MAGISTERIO = 'Profissionais do magistério';
 # #553: o que vale para as três colunas da folha por fonte.
-my $FONTE_SOMA = 'As três partes (gasto_fundeb_70_ano, gasto_fundeb_30_ano e gasto_outras_fontes_ano) somam o gasto_pessoal_ano, com diferença de arredondamento de até 1 real. Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a receita do Fundeb do município, que não está na base.';
+my $FONTE_SOMA = 'As três partes (gasto_fundeb_70_ano, gasto_fundeb_30_ano e gasto_outras_fontes_ano) somam o gasto_pessoal_ano, em reais inteiros, com diferença de arredondamento de até 2 reais. Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a receita do Fundeb do município, que não está na base.';
 our $AUX_EDUCACIONAL = 'Auxiliar/Assistente Educacional';
 
 # Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
@@ -311,9 +311,9 @@ my $SQL_FOLHA = <<~"SQL";
          round((avg(ch) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez'))::numeric, 1)::float8 AS carga_media,
          round(avg(s / ch * 40) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0))::float8 AS salario_40h,
          round(sum(s))::float8 AS gasto_ano,
-         round(sum(f70), 2)::float8 AS gasto_fundeb_70,
-         round(sum(f30), 2)::float8 AS gasto_fundeb_30,
-         round(sum(fo), 2)::float8 AS gasto_outras,
+         round(sum(f70))::float8 AS gasto_fundeb_70,
+         round(sum(f30))::float8 AS gasto_fundeb_30,
+         round(sum(fo))::float8 AS gasto_outras,
          count(DISTINCT m)::int AS meses
     FROM (SELECT cod_inep, left(mes, 3) AS m, cpf, nome_profissional, tipo,
                  categoria = '$AUX_EDUCACIONAL' AS aux,

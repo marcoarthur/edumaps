@@ -179,7 +179,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `gasto_outras_fontes_ano`: o `gasto_pessoal_ano` dividido pela fonte do
     dinheiro, como o município declara ao SIOPE em cada pagamento (a parcela
     de 70% do Fundeb, a de 30% e as outras fontes). As três somam o
-    `gasto_pessoal_ano`, com diferença de arredondamento de até 1 real. Não
+    `gasto_pessoal_ano`, em reais inteiros, com diferença de arredondamento de
+    até 2 reais. Não
     é a verificação do mínimo de 70% da lei, que usa a receita do Fundeb do
     município (fora da base). A folha da Secretaria, sem escola, não entra.
   - **Vazio:** escola fora da rede municipal, município sem folha nesse ano,
