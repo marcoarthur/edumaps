@@ -12,7 +12,7 @@
   import { ufDoMunicipio } from "@/features/ranking-recorte/constants.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { textoAnoFolha, textoSalarioRede, textoPisoRede } from "@/features/fontes/utils.js";
-  import { getBaseAnalise, baseCsvUrl, dicionarioUrl } from "../api/baseAnaliseApi.js";
+  import { getBaseAnalise, baseCsvUrl, dicionarioUrl, folhaMunicipiosUrl, FOLHA_MUNICIPIOS_DICIONARIO_URL } from "../api/baseAnaliseApi.js";
 
   const inicial = new URLSearchParams(window.location.search);
 
@@ -323,6 +323,14 @@
                       {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.{#if textoPisoRede(x.s, anoSiope)}{" "}<span data-testid="piso-rede-base">{textoPisoRede(x.s, anoSiope)}</span>{/if}</li>{/each}
                     </ul>
                   </div>
+                {/if}
+                {#if folha?.municipios?.length && uf}
+                  <!-- #580 (QG-02 da P6): os números por município, num arquivo -->
+                  <p class="mt-2 text-xs text-gray-700" data-testid="folha-municipios">
+                    <a href={folhaMunicipiosUrl(uf)} class="text-blue-700 hover:underline">Baixar a folha por município de {uf} (CSV)</a>:
+                    uma linha por município e ano, com o total declarado e de onde vem, a parte do Fundeb, o salário e o piso da rede e a data da carga.
+                    <a href={FOLHA_MUNICIPIOS_DICIONARIO_URL} class="text-blue-700 hover:underline">Dicionário</a>.
+                  </p>
                 {/if}
                 <!-- #491 (RJ-03): a cobertura é pequena e não aleatória. -->
                 <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="aviso-siope">

@@ -861,4 +861,21 @@ subtest 'carga que não parece em horas (#572)' => sub {
   like $cc->[1], qr/não parece estar em horas semanais/, 'dicionário explica';
 };
 
+subtest 'folha por município, num arquivo (#580)' => sub {
+  my $c = ler_csv($t->get_ok('/api/base-analise/folha-municipios.csv?uf=AC')->status_is(200)
+    ->header_like('Content-Disposition' => qr/folha-municipios-AC\.csv/)->tx);
+  my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
+  my ($l) = grep { $_->[0] eq "$MUN" && $_->[ $i{ano} ] eq '2001' } @$c;
+  ok $l, 'o município do teste em 2001';
+  is [ @$l[ @i{qw(meses_por_escola escolas_com_folha total_declarado total_escolas_base total_secretaria total_fora_lista)} ] ],
+     ['3', '2', '47499', '37000', '9999', '500'], 'meses, escolas e o fechamento';
+  is [ @$l[ @i{qw(fundeb_70 fundeb_30 outras_fontes)} ] ], ['25000', '6000', '6000'], 'a folha inteira por fonte';
+  ok exists $i{abaixo_piso_rede} && exists $i{data_carga} && exists $i{sha256_planilha}, 'piso da rede e a carga';
+  $t->get_ok('/api/base-analise/folha-municipios.csv')->status_is(400);
+  my $d = ler_csv($t->get_ok('/api/base-analise/folha-municipios-dicionario.csv')->status_is(200)->tx);
+  is scalar(@$d) - 1, scalar(@{ $c->[0] }), 'uma linha do dicionário por coluna';
+  my ($fu) = grep { $_->[0] eq 'fundeb_70' } @$d;
+  like $fu->[1], qr/Não é a verificação do mínimo legal/, 'o aviso do Fundeb';
+};
+
 done_testing;

@@ -125,6 +125,20 @@ sub csv ($self) {
   $self->_enviar_csv($self->_nome('base-analise', $v, $blocos, $anos, $ano_ideb, $ano_siope), $B->csv($cab, $linhas, $num));
 }
 
+# #580 (QG-02 da P6): a folha por município da UF, e o dicionário dela.
+sub folha_municipios ($self) {
+  my $ok = $self->_validar or return $self->bad_req;
+  my $uf = $ok->{v}->param('uf') // return $self->render(json => { error => 'Informe a UF' }, status => 400);
+  my $dbh = $self->app->schema->storage->dbh;
+  my ($cab, $linhas, $num) = $B->folha_municipios($dbh, $uf);
+  $self->_enviar_csv("folha-municipios-$uf.csv", $B->csv($cab, $linhas, $num));
+}
+
+sub folha_municipios_dicionario ($self) {
+  my ($cab, $linhas) = $B->folha_municipios_dicionario;
+  $self->_enviar_csv('folha-municipios-dicionario.csv', $B->csv($cab, $linhas));
+}
+
 sub dicionario ($self) {
   my $ok = $self->_validar or return $self->bad_req;
   my $v = $ok->{v};

@@ -31,3 +31,10 @@ export function baseCsvUrl(filtros) {
 export function dicionarioUrl({ blocos, anoIdeb, anoSiope }) {
   return `/api/base-analise/dicionario?${params({ blocos, anoIdeb, anoSiope })}`;
 }
+
+/** #580 (QG-02 da P6): a folha por município da UF (uma linha por município e ano). */
+export function folhaMunicipiosUrl(uf) {
+  return `/api/base-analise/folha-municipios.csv?uf=${encodeURIComponent(uf)}`;
+}
+
+export const FOLHA_MUNICIPIOS_DICIONARIO_URL = "/api/base-analise/folha-municipios-dicionario.csv";

@@ -108,6 +108,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
   nacional do ano**: o salário base para 40 horas por escola e quantos
   profissionais ficam abaixo do piso no mês típico, sem afirmar
   descumprimento.
+- Sistema pode **entregar a folha por município num arquivo**: uma linha
+  por município e ano, com o total declarado e de onde vem, a parte do
+  Fundeb, o salário e o piso da rede e a data da carga, com dicionário.
 - Sistema pode **separar pessoas pagas no ano e por mês**, e entregar os
   **auxiliares e assistentes educacionais**, que na educação infantil podem
   ser quem trabalha com as crianças quando a folha não tem magistério.
