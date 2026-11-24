@@ -802,7 +802,11 @@ sub fechamento_folha ($class, $dbh, $uf, $ano_censo) {
              CASE WHEN r.cod_inep = 99999999 OR l.co_entidade IS NOT NULL THEN NULL
                   ELSE r.cod_inep::text END AS inep,
              max(r.escola) AS escola,
-             round(sum(r.salario_total))::float8 AS valor
+             round(sum(r.salario_total))::float8 AS valor,
+             -- #579 (QG-01 da P6): a folha inteira por fonte
+             coalesce(sum(r.salario_fundeb_max), 0)::float8 AS f70,
+             coalesce(sum(r.salario_fundeb_min), 0)::float8 AS f30,
+             coalesce(sum(r.salario_outros), 0)::float8 AS fo
         FROM clean.remuneracao_municipal r
         JOIN mun m ON m.cod6 = r.cod_municipio::text
         LEFT JOIN lista l ON l.co_entidade = r.cod_inep
@@ -812,8 +816,13 @@ sub fechamento_folha ($class, $dbh, $uf, $ano_censo) {
   } // [];
   my %f;
   for my $r (@$rows) {
-    my $x = $f{"$r->{cod6}|$r->{ano}"} //= { total => 0, escolas_base => 0, secretaria => 0, fora_total => 0, fora => [] };
+    my $x = $f{"$r->{cod6}|$r->{ano}"} //= { total => 0, escolas_base => 0, secretaria => 0, fora_total => 0, fora => [],
+                                             por_fonte => { fundeb_70 => 0, fundeb_30 => 0, outras => 0 } };
     $x->{total} += $r->{valor};
+    # #579: a divisão por fonte da folha inteira (escolas, Secretaria e fora da lista)
+    $x->{por_fonte}{fundeb_70} += $r->{f70};
+    $x->{por_fonte}{fundeb_30} += $r->{f30};
+    $x->{por_fonte}{outras}    += $r->{fo};
     if    ($r->{parte} eq 'base')       { $x->{escolas_base} += $r->{valor} }
     elsif ($r->{parte} eq 'secretaria') { $x->{secretaria}   += $r->{valor} }
     else {
@@ -821,6 +830,7 @@ sub fechamento_folha ($class, $dbh, $uf, $ano_censo) {
       push @{ $x->{fora} }, { inep => $r->{inep}, escola => $r->{escola}, valor => $r->{valor} };
     }
   }
+  for my $x (values %f) { $_ = 0 + sprintf('%.0f', $_) for values %{ $x->{por_fonte} } }
   return \%f;
 }
 

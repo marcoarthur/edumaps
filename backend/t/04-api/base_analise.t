@@ -667,6 +667,9 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   is [ @$fe{qw(total escolas_base secretaria fora_total)} ], [47499, 37000, 9999, 500],
     'fechamento: escolas da base + Secretaria + fora da lista = total';
   is $fe->{fora}, [{ inep => '60003904', escola => undef, valor => 500 }], 'a escola fora da lista, com o código';
+  # #579 (QG-01 da P6): a folha inteira por fonte (o teste do #553 marca o
+  # magistério de A pela parcela de 70%, a auxiliar pela de 30%, o apoio por outras)
+  is $fe->{por_fonte}, { fundeb_70 => 25000, fundeb_30 => 6000, outras => 6000 }, 'a folha inteira por fonte (a Secretaria e a escola fora, sem fonte, ficam de fora da soma das fontes)';
   my ($a2002) = grep { $_->{ano} == 2002 } @{ $cid->{anos} };
   is [ @{ $a2002->{fechamento} }{qw(total escolas_base secretaria fora_total)} ], [13199, 3200, 9999, 0],
     'em 2002: a auxiliar e o mês só da Secretaria';

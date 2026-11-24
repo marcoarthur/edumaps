@@ -33,5 +33,22 @@ export function fraseFechamento(m, ano, anoCenso) {
     partes.push(`em ${n} ${n === 1 ? "escola" : "escolas"} fora da lista do Censo ${anoCenso} (${quais}${mais}), ${reaisCurto(f.fora_total)}`);
   }
   const resto = partes.join("; ");
-  return `${m.municipio}: ${reaisCurto(f.total)} declarados em ${ano}. ${resto.charAt(0).toUpperCase()}${resto.slice(1)}.`;
+  return `${m.municipio}: ${reaisCurto(f.total)} declarados em ${ano}. ${resto.charAt(0).toUpperCase()}${resto.slice(1)}.${frasePorFonte(f)}`;
+}
+
+const pct = (v, t) => `${((100 * v) / t).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+/**
+ * #579 (QG-01 da P6): a folha inteira do município (com a Secretaria) por
+ * fonte. " Pela fonte: 94,5% pela parcela de 70% do Fundeb, 0,3% pela de 30%
+ * e 5,2% de outras fontes." Sem fonte nenhuma informada: "".
+ */
+export function frasePorFonte(f) {
+  const p = f?.por_fonte;
+  if (!p || !(f.total > 0)) return "";
+  const soma = (p.fundeb_70 || 0) + (p.fundeb_30 || 0) + (p.outras || 0);
+  if (!(soma > 0)) return "";
+  const sem = f.total - soma;
+  const semTxt = sem / f.total >= 0.005 ? `; ${pct(sem, f.total)} sem a fonte informada` : "";
+  return ` Pela fonte: ${pct(p.fundeb_70 || 0, f.total)} pela parcela de 70% do Fundeb, ${pct(p.fundeb_30 || 0, f.total)} pela de 30% e ${pct(p.outras || 0, f.total)} de outras fontes${semTxt}.`;
 }

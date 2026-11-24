@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { reaisCurto, fraseFechamento } from "./fechamentoFolha.js";
+import { reaisCurto, fraseFechamento, frasePorFonte } from "./fechamentoFolha.js";
 
 describe("fechamento da folha (#554)", () => {
   const UBATUBA = { municipio: "Ubatuba", anos: [{ ano: 2026, fechamento: {
@@ -25,5 +25,19 @@ describe("fechamento da folha (#554)", () => {
 
   it("sem folha no ano: nada", () => {
     expect(fraseFechamento(UBATUBA, 2025, 2025)).toBeNull();
+  });
+});
+
+describe("a folha inteira por fonte (#579)", () => {
+  it("percentuais da folha inteira", () => {
+    expect(frasePorFonte({ total: 67696409, por_fonte: { fundeb_70: 63980190, fundeb_30: 208437, outras: 3507782 } }))
+      .toBe(" Pela fonte: 94,5% pela parcela de 70% do Fundeb, 0,3% pela de 30% e 5,2% de outras fontes.");
+  });
+  it("a parte sem fonte informada", () => {
+    expect(frasePorFonte({ total: 1000, por_fonte: { fundeb_70: 700, fundeb_30: 0, outras: 0 } }))
+      .toBe(" Pela fonte: 70,0% pela parcela de 70% do Fundeb, 0,0% pela de 30% e 0,0% de outras fontes; 30,0% sem a fonte informada.");
+  });
+  it("sem fonte nenhuma, nada", () => {
+    expect(frasePorFonte({ total: 1000, por_fonte: { fundeb_70: 0, fundeb_30: 0, outras: 0 } })).toBe("");
   });
 });

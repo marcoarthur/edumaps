@@ -80,6 +80,7 @@ describe("BaseAnalisePage (#439)", () => {
     // #554: de onde vem o total declarado, por município
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Ubatuba: R$ 67,7 mi declarados em 2026");
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("35659605, JOSE LIBORIO - SEU FRANCA EM");
+    expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Pela fonte: 94,5% pela parcela de 70% do Fundeb"); // #579
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Taubaté: R$ 163,3 mi declarados em 2026. Da Secretaria");
     // #571: o salário do magistério da rede inteira, com a Secretaria
     expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Taubaté: salário total R$ 6.975 e base R$ 2.669");
