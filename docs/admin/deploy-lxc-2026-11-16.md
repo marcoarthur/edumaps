@@ -305,6 +305,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Meses por escola e da Secretaria (#558, sem change nova): `/fontes` mostra Cuiabá "2026 (por escola só em janeiro e
       fevereiro; de março a agosto, só o total da Secretaria; …)" e o painel `/escola/financeiro?inep=51171805` (2026) avisa
       "De março a agosto de 2026, o município declarou a folha só no total da Secretaria" (se a folha do LXC for a mesma do local).
+- [ ] Gasto dos meses completos (#561, sem change nova): o CSV da base de Cuiabá (rede municipal, bloco Remuneração, 2025)
+      traz `meses_completos` = 10 e, na escola 51171805, `gasto_pessoal_meses_completos` perto de 4.308.886 (se a folha do LXC
+      for a mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

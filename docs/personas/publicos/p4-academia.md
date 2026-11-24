@@ -104,6 +104,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: quanto da folha a base não cobre.
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: que meses tirar antes de modelar.
 - [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: em que meses a folha é por escola.
+- [2026-11-24 — gasto da folha só dos meses completos](ciclos/2026-11-24-folha-meses-completos.md#p4--academia-pesquisadora): adotaria (mantido). QM-01 resolvido.
 
 ## Pendências
 
@@ -220,7 +221,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   governo distrital somem da taxa da rede e do teto) → #545, entregue (#546).
   Trigésima oitava rodada (2026-11-24, **adotaria**, com ressalva no gasto
   anual de 2025 em Cuiabá): QM-01 (os meses incompletos marcados, sem como
-  tirá-los da conta) → #561.
+  tirá-los da conta) → #561, entregue (#562).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

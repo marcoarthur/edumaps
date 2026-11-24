@@ -80,3 +80,11 @@ infantil espera o QM-01.
 ## Encaminhamento
 
 Issue **#561** (QM-01), aberta com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-24: #561 (PR #562) mergeado: QM-01 resolvido.
+  - A base traz `meses_completos` e `gasto_pessoal_meses_completos`, para
+    anualizar com `gasto × 12 ÷ meses`. Em Cuiabá 2025, a educação
+    infantil passa de R$ 14.668 para R$ 17.602 por aluno (mediana); o
+    fundamental, de R$ 6.671 para R$ 6.922.

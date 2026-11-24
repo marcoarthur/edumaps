@@ -4,6 +4,23 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dw) — 38ª avaliação da P4, #561 (PR #562)
+
+- Trigésima oitava rodada da P4: gasto com pessoal por aluno em Cuiabá
+  (folha 2025). Adotaria (mantido).
+  - QM-01: os meses incompletos marcados, sem como tirá-los da conta →
+    #561.
+- PR #562 (d669c24), opções A1 e B1: `meses_completos` e
+  `gasto_pessoal_meses_completos` na base, para anualizar; o bloco dos
+  meses (#557) passou para antes de `$SQL_FOLHA`, com `_mes_num($coluna)`.
+- Validado: Cuiabá 2025, educação infantil anualizada de R$ 14.668 para
+  R$ 17.602 por aluno (mediana).
+- Abertos: AN-12, #429, #454; conferir no SIOPE setembro e outubro de
+  2025 de Cuiabá (download com permissão).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #562 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 265; ciclo `2026-11-24-folha-meses-completos.md`.
+
 ## Sessão 2026-11-24 (dv) — #558 (PR #560), meses por escola e da Secretaria
 
 - PR #560 (820fec0), opções A1 e B1:
