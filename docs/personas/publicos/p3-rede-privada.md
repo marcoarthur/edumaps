@@ -122,7 +122,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   bairro depende do AN-10 (#429) e da carga dos setores do Censo 2022.
 - Salário da rede municipal (2026-11-24, **adotaria, em piloto**): QI-01
   (município só com a Secretaria sem salário) e QI-02 (a conversão por 40
-  horas supõe horas), aguardando a aprovação do developer.
+  horas supõe horas) → #571 e #572.
 
 ## Entradas
 

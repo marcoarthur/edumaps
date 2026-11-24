@@ -63,4 +63,4 @@ número (QI-01), e a conta por 40 horas, se feita, sairia errada (QI-02).
 
 ## Encaminhamento
 
-Achados QI-01 e QI-02 aguardam a aprovação do developer para virar issue.
+Issues **#571** (QI-01) e **#572** (QI-02), abertas com a aprovação do developer.
