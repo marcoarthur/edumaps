@@ -6,7 +6,7 @@ nivel: intermediario
 status: ativo
 relacionadas: [financeiro-e-folha, painel-da-escola]
 funcionalidade: ../../funcionalidades/analise/folha-pagamento.md
-ultima_revisao: 2026-11-23
+ultima_revisao: 2026-11-24
 ---
 
 # Folha de pagamento por escola
@@ -76,7 +76,7 @@ reproduz como estão. Mesmo assim:
 - **Um profissional da escola não está na lista.** Ele pode ser pago por outra
   fonte, estar lotado em outra unidade no SIOPE, ou o mês escolhido pode ser
   anterior à sua entrada.
-- **Aparece "Não há folha de pagamento desta escola para esta competência".**
+- **Aparece "Não há folha de pagamento desta escola para este mês".**
   Não há folha detalhada da escola no período. O link para o Painel
   financeiro leva à explicação do motivo e à lista de municípios com folha.
 

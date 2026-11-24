@@ -65,6 +65,12 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   dia de maio. Quando 10% ou mais dos profissionais do magistério do
   município aparecem só no total da Secretaria, sem escola, um aviso diz
   quantos: parte dos professores da escola pode estar lá.
+- **Meses com folha e o último mês.** O painel diz quantos meses do ano têm
+  folha e quantos profissionais foram pagos no último mês (o SIOPE chama o mês
+  de referência de "competência").
+- **A soma das categorias.** Quem está em mais de uma categoria (por exemplo,
+  docente e coordenação) conta em cada uma. Quando a soma passa do total de
+  profissionais, uma nota sob as categorias diz isso.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF
   mascarado **e** pelo nome. O SIOPE publica só seis dígitos do CPF, e
   pessoas diferentes podem ter o mesmo CPF mascarado; contar só por ele
