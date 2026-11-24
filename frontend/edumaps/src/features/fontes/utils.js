@@ -62,8 +62,15 @@ export function faixasMeses(meses) {
  * "8 meses, 48 escolas"; "12 meses (setembro e outubro incompletos), 167 escolas";
  * "por escola só em janeiro e fevereiro; de março a agosto, só o total da Secretaria; 168 escolas";
  * "só o total da Secretaria; julho incompleto".
+ * Sempre com a carga no fim (#564): "; carga em 24/11/2026" ou "; carga não registrada".
  */
 export function textoAnoFolha(a) {
+  // #564 (QQ-02 da P6): a data da carga do município e ano, quando registrada
+  const carga = `; ${a.carga ? `carga em ${dataBR(a.carga)}` : "carga não registrada"}`;
+  return textoAnoFolhaSemCarga(a) + carga;
+}
+
+function textoAnoFolhaSemCarga(a) {
   const inc = sufixoIncompletos(a.incompletos).slice(2, -1);
   if (!a.escolas) return `só o total da Secretaria${inc ? `; ${inc}` : ""}`;
   const escolas = `${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`;

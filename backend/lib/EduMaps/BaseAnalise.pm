@@ -2,6 +2,7 @@ package EduMaps::BaseAnalise;
 use Mojo::Base -strict, -signatures;
 use utf8;
 use Carp qw(croak);
+use Mojo::JSON ();
 use EduMaps::Fontes;
 use EduMaps::Model::Rank::School ();
 use EduMaps::Porte;
@@ -667,6 +668,14 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
   } // [];
   my $inc = $class->meses_incompletos($dbh);
   my $lugar = $class->meses_por_lugar($dbh);
+  # #564 (QQ-02 da P6): a data de cada carga registrada, por município e ano
+  my %carga;
+  my ($manifesto) = eval { $dbh->selectrow_array(
+    q{SELECT raw_manifest::text FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'}) };
+  for my $e (@{ (eval { Mojo::JSON::decode_json($manifesto // '[]') }) // [] }) {
+    next unless ref $e eq 'HASH' && $e->{cod_municipio} && $e->{ano};
+    $carga{"$e->{cod_municipio}|$e->{ano}"} = substr($e->{baixado_em} // '', 0, 10) || undef;
+  }
   my (@lista, %por);
   for my $r (@$rows) {
     my $m = $por{ $r->{codigo_ibge} } //= do {
@@ -678,6 +687,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
     my $chave = substr($r->{codigo_ibge}, 0, 6) . "|$r->{ano}";
     # #557: os meses com a folha pela metade
     $m->{anos}[-1]{incompletos} = $inc->{$chave} // [];
+    $m->{anos}[-1]{carga} = $carga{$chave};   # #564: undef = carga não registrada
     # #558 (QT-02 da P2): os meses por escola e os da Secretaria, pela maior
     # parte do valor. "meses" conta só os por escola (o mês com um centavo
     # numa escola e o resto na Secretaria não é folha por escola); sem

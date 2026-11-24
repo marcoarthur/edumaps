@@ -81,6 +81,11 @@ as páginas) abre a lista completa das bases, com o link oficial de cada órgão
   fevereiro; de março a agosto, só o total da Secretaria; 168 escolas)". O
   mês conta como da Secretaria quando a maior parte do valor declarado está
   nela.
+- Cada carga da folha é registrada: o município, o ano, a data e a planilha
+  baixada do SIOPE (com o SHA-256). A lista diz a data da carga de cada
+  município e ano ("carga em 24/11/2026"), e o cartão, a mais recente. As
+  cargas feitas antes desse registro aparecem como "carga não registrada":
+  nenhuma data é inventada.
 
 ## Veja também
 - [Comparar redes](comparar-redes.md)

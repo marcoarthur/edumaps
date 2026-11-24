@@ -25,11 +25,12 @@ describe("meses da folha por escola e da Secretaria (#558)", () => {
     expect(faixasMeses([6])).toBe("junho");
   });
   it("o texto do ano na cobertura", () => {
-    expect(textoAnoFolha({ meses: 8, escolas: 48 })).toBe("8 meses, 48 escolas");
+    expect(textoAnoFolha({ meses: 8, escolas: 48 })).toBe("8 meses, 48 escolas; carga não registrada");
+    expect(textoAnoFolha({ meses: 8, escolas: 48, carga: "2026-11-24" })).toBe("8 meses, 48 escolas; carga em 24/11/2026");
     expect(textoAnoFolha({ meses: 2, escolas: 168, meses_escola: [1, 2], meses_secretaria: [3, 4, 5, 6, 7, 8], incompletos: [{ nome: "junho" }] }))
-      .toBe("por escola só em janeiro e fevereiro; de março a agosto, só o total da Secretaria; junho incompleto; 168 escolas");
-    expect(textoAnoFolha({ meses: 8, escolas: 0, incompletos: [{ nome: "julho" }] })).toBe("só o total da Secretaria; julho incompleto");
+      .toBe("por escola só em janeiro e fevereiro; de março a agosto, só o total da Secretaria; junho incompleto; 168 escolas; carga não registrada");
+    expect(textoAnoFolha({ meses: 8, escolas: 0, incompletos: [{ nome: "julho" }] })).toBe("só o total da Secretaria; julho incompleto; carga não registrada");
     expect(textoAnoFolha({ meses: 12, escolas: 167, meses_escola: [1], meses_secretaria: [] , incompletos: [{ nome: "setembro" }] }))
-      .toBe("12 meses (setembro incompleto), 167 escolas");
+      .toBe("12 meses (setembro incompleto), 167 escolas; carga não registrada");
   });
 });
