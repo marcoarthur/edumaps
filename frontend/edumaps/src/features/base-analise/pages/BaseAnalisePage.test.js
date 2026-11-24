@@ -83,6 +83,9 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Taubaté: R$ 163,3 mi declarados em 2026. Da Secretaria");
     // #571: o salário do magistério da rede inteira, com a Secretaria
     expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Taubaté: salário total R$ 6.975 e base R$ 2.669");
+    // #575: o piso na rede inteira (Ubatuba), com a Secretaria
+    expect(screen.getByTestId("piso-rede-base")).toHaveTextContent("6 profissionais do magistério, 3 deles só no total da Secretaria");
+    expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("carga mais comum: 31. Abaixo do piso");
     expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_siope=2026");
 
     // escolher outro ano: vale a escolha, com o aviso de que sai vazio

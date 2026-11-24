@@ -186,18 +186,26 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     nacional do magistério do ano, por 40 horas (2024: R$ 4.580,57; 2025:
     R$ 4.867,77; 2026: R$ 5.130,63), e quantos profissionais do magistério
     da escola têm o salário base para 40 horas abaixo dele no mês típico (a
-    mediana dos meses da pessoa, sem dezembro). Um mês de admissão ou de
-    desconto sozinho não conta: em Cuiabá (2025), "abaixo em algum mês"
-    daria 673 pessoas; no mês típico, 40. **Não é a verificação legal do
+    mediana dos meses da pessoa, sem dezembro), entre quem recebeu 3 meses
+    ou mais na escola no ano: pagamentos avulsos, rescisões e recém-admitidos
+    ficam fora. A regra pesa: em Cuiabá (2025), "abaixo em algum mês" daria
+    673 pessoas; no mês típico, 43; entre quem recebeu 3 meses ou mais, 6.
+    **Não é a verificação legal do
     piso:** complementos, jornada, licenças e reajuste pago com atraso
     mudam a leitura. O número é uma pergunta para a prefeitura, não uma
     conclusão. Ano sem piso cadastrado deixa as duas colunas vazias. A
     contagem é por escola: quem trabalha em duas escolas conta nas duas, e
-    a soma da rede passa do número de pessoas (Cuiabá 2025: 47 na soma das
-    escolas, 40 pessoas).
+    a soma das escolas pode não bater com o número de pessoas da rede. Para
+    a rede inteira, com a folha da Secretaria, veja o piso na rede, abaixo.
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - **O piso na rede inteira.** Ao lado do salário da rede, a tela diz
+    quantos profissionais do magistério ficam abaixo do piso no mês típico
+    em toda a folha, com a da Secretaria, e quantos deles estão só no total
+    da Secretaria. A contagem por escola não vê a Secretaria: em Cuiabá
+    (2026), as escolas somam poucos casos, e a rede inteira tem 1.559, 1.421
+    só na Secretaria. Pode haver pagamentos parciais no total da Secretaria.
   - **O salário da rede inteira.** Com o bloco marcado, a tela diz, por
     município, o salário do magistério de toda a folha (escolas e total da
     Secretaria): a mediana do total e do base, por mês e sem dezembro, e a

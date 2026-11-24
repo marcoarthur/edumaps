@@ -335,6 +335,11 @@ my $SQL_MESES = <<~"SQL";
 # público da educação básica, por 40 horas semanais, por ano. Sobe uma vez
 # por ano, por ato do MEC: o reajuste entra aqui, no PR do ano, com o ato.
 # Ano sem piso cadastrado deixa as colunas do piso vazias (nada inventado).
+# #575 (QH-01 da P5): na contagem do piso, só quem recebeu 3 meses ou mais
+# no ano (sem dezembro): fora os pagamentos avulsos, as rescisões e os
+# recém-admitidos (em Ubatuba 2026, 553 pessoas só em julho e agosto).
+our $MESES_MIN_PISO = 3;
+
 our %PISO_MAGISTERIO = (
   2024 => { valor => 4580.57, ato => 'portaria do MEC de janeiro de 2024' },
   2025 => { valor => 4867.77, ato => 'portaria do MEC de janeiro de 2025' },
@@ -378,7 +383,8 @@ my $SQL_FOLHA = <<~"SQL";
                    percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md
               FROM pm
              WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0 AND b IS NOT NULL
-             GROUP BY 1, 2, 3) x
+             GROUP BY 1, 2, 3
+            HAVING count(*) >= $MESES_MIN_PISO) x   -- #575: 3 meses ou mais
      GROUP BY 1
   )
   SELECT pm.cod_inep,
@@ -511,7 +517,7 @@ sub _blocos {
         ['piso_magisterio_ano', 'CASE WHEN f.cod_inep IS NOT NULL THEN f.piso END',
           "O piso salarial nacional do magistério do ano da folha, por 40 horas semanais, usado em prof_magisterio_base_abaixo_piso (2024: R\$ 4.580,57; 2025: R\$ 4.867,77; 2026: R\$ 5.130,63, Portaria MEC nº 82/2026). Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
         ['prof_magisterio_base_abaixo_piso', 'CASE WHEN cm.suspeita THEN NULL ELSE f.abaixo_piso END',
-          "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro): um mês de admissão ou de desconto sozinho não conta. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Quem trabalha em mais de uma escola conta em cada uma: a soma das escolas pode passar do número de pessoas da rede. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
+          "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro), entre quem recebeu 3 meses ou mais na escola no ano: um mês de admissão ou de desconto, os pagamentos avulsos e as rescisões não contam. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Quem trabalha em mais de uma escola conta em cada uma: a soma das escolas pode passar do número de pessoas da rede. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
         # #572 (QI-02 da P3): a carga mais comum do município e o aviso.
         ['carga_comum_municipio', 'CASE WHEN f.cod_inep IS NOT NULL THEN cm.carga END',
           "Carga horária mais comum dos profissionais do magistério do município no ano (toda a folha, sem dezembro). Quando a maioria dos pagamentos tem carga abaixo de 20, a carga não parece estar em horas semanais (aulas ou jornada parcial): então salario_40h_magisterio, salario_base_40h_magisterio e prof_magisterio_base_abaixo_piso ficam vazios, e vale o salário sem conversão (salario_medio_magisterio). $SIOPE_VAZIO", 1],
@@ -658,17 +664,34 @@ sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
 # conversão para 40 horas (B1): a carga pode não estar em horas (#572).
 # Chave "<cod6>|<ano>".
 sub salario_rede ($class, $dbh, $cod6 = undef) {
+  my $PISO_VALUES = join ', ', map { sprintf '(%d, %.2f)', $_, $PISO_MAGISTERIO{$_}{valor} } sort keys %PISO_MAGISTERIO;
   my $rows = eval {
     $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod6, $cod6);
       WITH pm AS (
         SELECT cod_municipio::text AS cod6, ano::int AS ano, left(mes, 3) AS m, cpf, nome_profissional,
-               sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch
+               sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch,
+               bool_or(cod_inep <> 99999999) AS esc
           FROM clean.remuneracao_municipal
          WHERE tipo = '$MAGISTERIO' AND left(mes, 3) <> 'Dez'
            AND (?::text IS NULL OR cod_municipio::text = ?)
          GROUP BY 1, 2, 3, 4, 5
       )
-      SELECT cod6, ano,
+      , pp AS (
+        -- #575: por pessoa, na rede inteira: se teve escola no ano, os meses
+        -- pagos e o salário base para 40 horas no mês típico
+        SELECT cod6, ano, cpf, nome_profissional, bool_or(esc) AS esc, count(*) AS meses,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md
+          FROM pm WHERE ch > 0 AND b IS NOT NULL
+         GROUP BY 1, 2, 3, 4
+      ), piso (ano, valor) AS (VALUES $PISO_VALUES)
+      , cont AS (
+        SELECT pp.cod6, pp.ano, max(piso.valor) AS piso,
+               (count(*) FILTER (WHERE md < piso.valor AND meses >= $MESES_MIN_PISO))::int AS abaixo,
+               (count(*) FILTER (WHERE md < piso.valor AND meses >= $MESES_MIN_PISO AND NOT esc))::int AS abaixo_sec
+          FROM pp JOIN piso ON piso.ano = pp.ano
+         GROUP BY 1, 2
+      )
+      SELECT pm.cod6, pm.ano,
              count(DISTINCT (cpf, nome_profissional))::int AS pessoas,
              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY t))::float8 AS total,
              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY b))::float8 AS base,
@@ -676,13 +699,21 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
              -- #572 (QI-02 da P3): a maioria dos pagamentos com carga abaixo
              -- de 20: a carga não parece estar em horas semanais (aulas,
              -- jornada parcial), e as contas por 40 horas não valem.
-             (avg((ch < 20)::int) > 0.5) AS suspeita
-        FROM pm GROUP BY 1, 2
+             (avg((ch < 20)::int) > 0.5) AS suspeita,
+             max(cont.piso)::float8 AS piso, max(cont.abaixo) AS abaixo, max(cont.abaixo_sec) AS abaixo_sec
+        FROM pm LEFT JOIN cont ON cont.cod6 = pm.cod6 AND cont.ano = pm.ano
+       GROUP BY 1, 2
       SQL
   } // [];
   return { map { ("$_->{cod6}|$_->{ano}" => {
     pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
     carga_suspeita => ($_->{suspeita} ? \1 : \0),
+    # #575 (QH-01 da P5): abaixo do piso na rede inteira (com a Secretaria);
+    # sem piso cadastrado ou com a carga fora de horas (#572), sem contagem
+    piso => $_->{piso},
+    ((defined $_->{piso} && !$_->{suspeita})
+      ? (abaixo_piso => $_->{abaixo} // 0, abaixo_piso_so_secretaria => $_->{abaixo_sec} // 0)
+      : (abaixo_piso => undef, abaixo_piso_so_secretaria => undef)),
   }) } @$rows };
 }
 

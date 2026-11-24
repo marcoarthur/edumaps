@@ -196,9 +196,13 @@ sub arquivos_publicos ($manifesto) {
 }
 
 # Resolve o catálogo contra o banco. `$dbh` = DBI handle.
-sub resolver ($class, $dbh) {
+# Com $so (hashref de ids), resolve só essas bases (#575: `versao` pedia o
+# catálogo inteiro, com a cobertura da folha de todos os municípios, para
+# saber o período da população: 6 s em cada `anos` da base de análise).
+sub resolver ($class, $dbh, $so = undef) {
   my @out;
   for my $f (@CATALOGO) {
+    next if $so && !$so->{ $f->{id} };
     my ($ini, $fim) = @{ $f->{periodo} // [] };
     if ($f->{periodo_sql}) {
       ($ini, $fim) = eval { $dbh->selectrow_array($f->{periodo_sql}) };
@@ -257,7 +261,7 @@ sub versao ($class, $dbh, @ids) {
   my %quer = map { $_ => 1 } @ids;
   return {
     map { $_->{id} => { periodo => $_->{periodo}{texto}, carga => $_->{carga} ? $_->{carga}{data} : undef } }
-    grep { $quer{ $_->{id} } } @{ $class->resolver($dbh) }
+    grep { $quer{ $_->{id} } } @{ $class->resolver($dbh, \%quer) }
   };
 }
 

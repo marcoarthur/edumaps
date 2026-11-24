@@ -5,7 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
-  import { listaMeses, faixasMeses, textoSalarioRede } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -188,6 +188,10 @@
     <p class="text-sm text-gray-700 bg-white border border-gray-200 rounded-card shadow-card px-4 py-3" data-testid="salario-rede">
       <strong>Magistério na rede municipal{ano ? ` em ${ano}` : ""}:</strong> {textoSalarioRede(salarioRede)}.
       <span class="text-xs text-gray-500">Toda a folha do município, nas escolas e no total da Secretaria; sem conversão para 40 horas.</span>
+      {#if ehRede && textoPisoRede(salarioRede, ano)}
+        <!-- #575 (QH-01 da P5): só no painel da Secretaria (A1) -->
+        <span class="block text-xs text-gray-700 mt-1" data-testid="piso-rede">{textoPisoRede(salarioRede, ano)}</span>
+      {/if}
     </p>
   {/if}
 

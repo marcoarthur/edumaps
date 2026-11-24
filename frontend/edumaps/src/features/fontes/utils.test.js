@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -45,5 +45,17 @@ describe("salário do magistério da rede (#571)", () => {
     expect(textoSalarioRede({ pessoas: 2961, total: 6975, base: 2669, carga_comum: 18, carga_suspeita: true }))
       .toContain("carga mais comum: 18 (não parece ser em horas semanais, e sim em aulas ou numa jornada parcial: as contas por 40 horas não valem aqui)");
     expect(textoSalarioRede({ pessoas: 10, total: 1, base: 1, carga_comum: 30, carga_suspeita: false })).not.toContain("não parece");
+  });
+});
+
+describe("piso na rede inteira (#575)", () => {
+  it("a contagem com a Secretaria e o aviso", () => {
+    const t = textoPisoRede({ piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421 }, 2026);
+    expect(t).toContain("Abaixo do piso de 2026 (R$ 5.130,63 por 40 horas) no mês típico, entre quem recebeu 3 meses ou mais: 1.559 profissionais do magistério, 1.421 deles só no total da Secretaria.");
+    expect(t).toContain("Não é a verificação legal do piso");
+  });
+  it("sem contagem, nada", () => {
+    expect(textoPisoRede({ piso: 5130.63, abaixo_piso: null }, 2026)).toBe("");
+    expect(textoPisoRede(null, 2026)).toBe("");
   });
 });
