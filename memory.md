@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dz) — #567 (PR #569), docentes do Censo ao lado da folha
+
+- PR #569 (7983c6c), opções A1 e B1: `docentes` no resumo do painel da
+  escola (folha no ano e por mês, Censo `qt_doc_bas`, e o magistério do
+  município só na Secretaria, com `avisar` a partir de 10%); no cartão das
+  categorias, os dois números, o porquê e o aviso.
+- Medido: Ubatuba e Cuiabá 2026, 48% só na Secretaria; Alta Floresta 2024,
+  14%; Cuiabá 2025, 1,7% (sem aviso). EMEB Zeferino 2025: folha 66, Censo
+  50 (o outro sentido).
+- O merge foi pedido antes do CI; esperei o CI do PR, o rebuild e a tela, e
+  só então fiz o merge.
+- Aberta: #568 (P1-FL-02). O LXC continua fora; deploys de #489 a #569.
+- Nota técnica 268; ciclo `2026-11-24-folha-docentes-censo.md`.
+
 ## Sessão 2026-11-24 (dy) — #564 (PR #566), registro da carga; recarga B1
 
 - PR #566 (977547c), opção A1: cada carga do `query_siope` registrada em

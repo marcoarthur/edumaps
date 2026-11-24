@@ -315,6 +315,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       diz "carga não registrada" em todos; recarregar um município (ex.: Ubatuba 2026, com permissão) e conferir
       `psql edumaps_dev -Atc "SELECT jsonb_array_length(raw_manifest) FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'"`
       e "carga em <data>" em `/fontes`.
+- [ ] Docentes do Censo ao lado da folha (#567, sem change nova): `curl -s http://127.0.0.1:3000/api/school/35070212/finance | jq .docentes`
+      traz `folha_ano` 36, `censo.docentes` 62 e `municipio.avisar` true (se a folha do LXC for a mesma do local); o painel
+      `/escola/financeiro?inep=35070212` mostra "Docentes na folha" e o aviso da Secretaria.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
