@@ -102,4 +102,4 @@ soma que fecha com o total declarado (QS-02).
 
 ## Encaminhamento
 
-Achados QS-01 e QS-02 aguardam a aprovação do developer para virar issue.
+Issues **#553** (QS-01) e **#554** (QS-02), abertas com a aprovação do developer.

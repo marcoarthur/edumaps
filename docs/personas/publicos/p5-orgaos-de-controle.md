@@ -118,8 +118,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   comparação de gasto entre municípios (AN-12; SICONFI vazio e sem tela).
 - Folha do Fundeb em Ubatuba (2026-11-24, **não adotaria**, registro):
   QS-01 (a parte do Fundeb na folha não aparece) e QS-02 (a folha da
-  Secretaria fora da soma das escolas), aguardando a aprovação do
-  developer.
+  Secretaria fora da soma das escolas) → #553 e #554.
 
 ## Entradas
 
