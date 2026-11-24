@@ -46,6 +46,12 @@
   const escopo = $derived(ehRede ? "rede municipal" : "escola");
   const escopoTitulo = $derived(ehRede ? "Rede municipal (Secretaria)" : "");
 
+  // #557: só os meses incompletos que estão na série mostrada (a escola pode
+  // não ter folha num mês incompleto do município).
+  const incompletos = $derived(
+    mesesIncompletos.filter((m) => series.some((s) => Number(s.mes_num) === Number(m.mes))),
+  );
+
   const costRows = $derived(buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
   const buckets = $derived(buildCategoryBuckets(categorias));
@@ -146,13 +152,14 @@
     </div>
   </section>
 
-  {#if mesesIncompletos.length}
+  {#if incompletos.length}
     <!-- #557 (QT-01 da P2): mês com a folha do município pela metade -->
     <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="aviso-meses-incompletos">
-      {listaMeses(mesesIncompletos).replace(/^./, (c) => c.toUpperCase())}{ano ? ` de ${ano}` : ""}
-      {mesesIncompletos.length === 1 ? "tem" : "têm"} bem menos profissionais declarados que os outros meses do município
-      ({mesesIncompletos.map((m) => `${m.nome}: ${m.registros.toLocaleString("pt-BR")} registros em ${m.categorias} ${m.categorias === 1 ? "categoria" : "categorias"}, contra ${m.registros_habitual.toLocaleString("pt-BR")} em ${m.categorias_habitual} num mês típico`).join("; ")}).
-      Pode ser a declaração do município ao SIOPE ou a carga. Nesses meses, o custo e os profissionais ficam abaixo do real, e o total do ano também.
+      {listaMeses(incompletos).replace(/^./, (c) => c.toUpperCase())}{ano ? ` de ${ano}` : ""}
+      {incompletos.length === 1 ? "tem" : "têm"} bem menos profissionais declarados que os outros meses do município
+      ({incompletos.map((m) => `${m.nome}: ${m.registros.toLocaleString("pt-BR")} registros em ${m.categorias} ${m.categorias === 1 ? "categoria" : "categorias"}, contra ${m.registros_habitual.toLocaleString("pt-BR")} em ${m.categorias_habitual} num mês típico`).join("; ")}).
+      Pode ser a declaração do município ao SIOPE ou a carga.
+      {incompletos.length === 1 ? "Nesse mês" : "Nesses meses"}, o custo e os profissionais ficam abaixo do real, e o total do ano também.
     </p>
   {/if}
 
