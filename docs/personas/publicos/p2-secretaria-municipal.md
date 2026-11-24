@@ -102,6 +102,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a planilha cita a fonte.
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a divisão por fonte da rede.
 - [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a conta do conselho já fechada.
+- [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QT-01 resolvido; QT-02 (#558) aberto.
 
 ## Pendências
 
@@ -119,7 +120,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   do Censo 2022.
 - Folha do Fundeb em Cuiabá (2026-11-24, **adotaria, em piloto**): QT-01
   (mês com a folha pela metade sem aviso) e QT-02 (a cobertura conta como
-  por escola o mês da Secretaria) → #557 e #558.
+  por escola o mês da Secretaria) → #557, entregue (#559), e #558.
 
 ## Entradas
 

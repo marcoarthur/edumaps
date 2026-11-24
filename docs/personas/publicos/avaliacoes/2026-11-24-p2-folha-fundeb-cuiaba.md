@@ -91,3 +91,12 @@ metade (QT-01) e que 2026 é, quase todo, da Secretaria (QT-02).
 ## Encaminhamento
 
 Issues **#557** (QT-01) e **#558** (QT-02), abertas com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-24: #557 (PR #559) mergeado: QT-01 resolvido.
+  - O mês com bem menos profissionais que o resto do ano é marcado no
+    painel financeiro, na cobertura da folha e na base
+    (`meses_folha_incompletos`), sem corrigir os números nem afirmar a
+    causa.
+- QT-02 (#558) segue aberto.

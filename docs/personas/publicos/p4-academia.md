@@ -102,6 +102,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o arquivo diz a carga.
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o financiamento da folha na base.
 - [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: quanto da folha a base não cobre.
+- [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: que meses tirar antes de modelar.
 
 ## Pendências
 

@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (du) — 3ª avaliação da P2, #557 (PR #559)
+
+- Terceira rodada da P2: o secretário de Cuiabá presta contas da folha do
+  Fundeb. Adotaria, em piloto (mantido).
+  - QT-01: setembro e outubro de 2025 só com o magistério, sem aviso →
+    #557.
+  - QT-02: a cobertura conta como por escola o mês da Secretaria (Cuiabá
+    2026) → #558 (aberta).
+- PR #559 (6b76a37), opções A1 e B1:
+  - `meses_incompletos` (menos categorias que a moda do ano ou menos da
+    metade dos registros do mês mediano), na cobertura, no painel e na
+    coluna `meses_folha_incompletos`;
+  - só marca; a causa (declaração ao SIOPE ou carga) não é afirmada.
+- Ajustes depois de ver a tela: o aviso só com os meses da série da
+  escola, e o mês incompleto também no ano só com a Secretaria.
+- Pendente: conferir no SIOPE setembro e outubro de 2025 de Cuiabá
+  (download com permissão).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #559 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 263; ciclo `2026-11-24-meses-folha-incompletos.md`.
+
 ## Sessão 2026-11-24 (dt) — #554 (PR #556), fechamento da folha
 
 - PR #556 (af9a75a), opções A1 e B1:

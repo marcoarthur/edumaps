@@ -299,6 +299,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Fechamento da folha (#554, sem change nova): `curl -s 'http://127.0.0.1:3000/api/base-analise?uf=SP&codigo_ibge=3555406' | jq '.folha.municipios[].anos[].fechamento'`
       traz, em Ubatuba 2026, `total` perto de 67,7 mi, `escolas_base` 55,6 mi, `secretaria` 11,8 mi e a escola 35659605 em `fora`;
       `curl -s http://127.0.0.1:3000/api/city/3555406/payroll/overall` diz "São Paulo".
+- [ ] Mês com a folha pela metade (#557, sem change nova): `curl -s 'http://127.0.0.1:3000/api/school/51171805/finance?ano=2025' | jq '[.meses_incompletos[].nome]'`
+      dá `["setembro","outubro"]`; `/fontes` mostra "2025 (12 meses (setembro e outubro incompletos), 167 escolas)" em Cuiabá
+      (se a folha do LXC for a mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
