@@ -184,7 +184,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     daria 673 pessoas; no mês típico, 40. **Não é a verificação legal do
     piso:** complementos, jornada, licenças e reajuste pago com atraso
     mudam a leitura. O número é uma pergunta para a prefeitura, não uma
-    conclusão. Ano sem piso cadastrado deixa as duas colunas vazias.
+    conclusão. Ano sem piso cadastrado deixa as duas colunas vazias. A
+    contagem é por escola: quem trabalha em duas escolas conta nas duas, e
+    a soma da rede passa do número de pessoas (Cuiabá 2025: 47 na soma das
+    escolas, 40 pessoas).
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.

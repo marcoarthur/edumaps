@@ -510,7 +510,7 @@ sub _blocos {
         ['piso_magisterio_ano', 'CASE WHEN f.cod_inep IS NOT NULL THEN f.piso END',
           "O piso salarial nacional do magistério do ano da folha, por 40 horas semanais, usado em prof_magisterio_base_abaixo_piso (2024: R\$ 4.580,57; 2025: R\$ 4.867,77; 2026: R\$ 5.130,63, Portaria MEC nº 82/2026). Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
         ['prof_magisterio_base_abaixo_piso', 'f.abaixo_piso',
-          "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro): um mês de admissão ou de desconto sozinho não conta. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
+          "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro): um mês de admissão ou de desconto sozinho não conta. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Quem trabalha em mais de uma escola conta em cada uma: a soma das escolas pode passar do número de pessoas da rede. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
         # #512 (QZ-02): na educação infantil, quem está com as crianças pode
         # estar na folha como auxiliar ou assistente educacional, não no
         # magistério.
