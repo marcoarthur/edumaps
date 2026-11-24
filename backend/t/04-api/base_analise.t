@@ -623,6 +623,8 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
      'escola sem folha: as fontes vazias';
   # #512 (QZ-03): pessoas por mês (ANA e BRUNO nos três meses)
   is $a->[ $i{prof_magisterio_mes} ], '2', 'magistério por mês';
+  # #561: sem mês incompleto, as colunas dos meses completos repetem o ano
+  is [ @$a[ @i{qw(meses_completos gasto_pessoal_meses_completos)} ] ], ['3', '37000'], 'sem mês incompleto: igual ao ano';
   # #512 (QZ-02): a auxiliar, no ano, por mês e o salário sem dezembro
   is [ @$a[ @i{qw(aux_educacional aux_educacional_mes salario_medio_aux_educacional)} ] ], ['1', '1', '1500'],
      'auxiliares e assistentes educacionais';
@@ -751,6 +753,10 @@ subtest 'mês com a folha pela metade (#557)' => sub {
   my ($a) = grep { $_->[0] eq $A } @$c;
   my ($b) = grep { $_->[0] eq $B } @$c;
   is $a->[ $i{meses_folha_incompletos} ], 'mai', 'coluna da base com o mês incompleto';
+  # #561 (QM-01 da P4): o gasto só dos meses completos, para anualizar
+  is [ @$a[ @i{qw(meses_folha meses_completos gasto_pessoal_ano gasto_pessoal_meses_completos)} ] ], ['6', '5', '48000', '46000'],
+    'meses completos: sem maio (2.000); dezembro com o 13º entra';
+  is [ @$b[ @i{qw(meses_completos gasto_pessoal_meses_completos)} ] ], ['', ''], 'escola sem folha: vazio';
   is $b->[ $i{meses_folha_incompletos} ], '', 'escola sem folha: vazio';
   ok $i{meses_folha_incompletos} == $i{meses_folha} + 1, 'logo depois de meses_folha';
 

@@ -186,8 +186,16 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     Nesses meses, o gasto e as médias por mês ficam abaixo do real, e a
     plataforma não corrige: mostra o que foi declarado. A causa pode ser a
     declaração do município ao SIOPE ou a carga. Em Cuiabá (2025), setembro e
-    outubro só trazem o magistério. Para tirar esses meses de uma conta,
-    use a folha mês a mês do painel financeiro.
+    outubro só trazem o magistério.
+  - `meses_completos` e `gasto_pessoal_meses_completos`: os meses com folha
+    da escola fora dos incompletos, e o gasto só deles. Servem para
+    anualizar sem os meses incompletos:
+    `gasto_pessoal_meses_completos × 12 ÷ meses_completos`. Sem mês
+    incompleto, repetem `meses_folha` e `gasto_pessoal_ano`, e a conta vale
+    igual. Dezembro, com o 13º, entra quando está completo. No R:
+    `base$gasto_anual <- base$gasto_pessoal_meses_completos * 12 / base$meses_completos`.
+    As médias por mês (`prof_magisterio_mes`, `aux_educacional_mes`)
+    continuam incluindo os meses incompletos.
   - `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
     `gasto_outras_fontes_ano`: o `gasto_pessoal_ano` dividido pela fonte do
     dinheiro, como o município declara ao SIOPE em cada pagamento (a parcela
