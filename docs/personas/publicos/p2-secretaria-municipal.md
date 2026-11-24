@@ -133,8 +133,28 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Folha do Fundeb em Cuiabá (2026-11-24, **adotaria, em piloto**): QT-01
   (mês com a folha pela metade sem aviso) e QT-02 (a cobertura conta como
   por escola o mês da Secretaria) → #557, entregue (#559), e #558, entregue (#560).
+- Resposta ao tribunal sobre o piso (2026-11-24, **adotaria, em piloto**,
+  modo autônomo): QE-01 (a folha detalhada da Secretaria não aparece) → #585.
 
 ## Entradas
+
+### 2026-11-24 — A resposta ao tribunal sobre o piso (quarta rodada)
+
+**Material:** o painel da Secretaria e de uma escola de Cuiabá, a tela da
+base e a folha por município de MT. Consolidação em
+[`avaliacoes/2026-11-24-p2-piso-resposta-tce.md`](avaliacoes/2026-11-24-p2-piso-resposta-tce.md).
+
+**O que tentou:** responder por que 1.559 profissionais aparecem abaixo do
+piso em 2026: quem são e por quê.
+
+**O que funciona para ele:** o número do tribunal reproduzido, com a regra
+e os avisos; a folha detalhada por escola para os casos nas escolas.
+
+**Barreiras:**
+- QE-01 (atrapalha): a folha detalhada do total da Secretaria não aparece;
+  1.421 dos casos estão só lá.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-24 — Folha do Fundeb no relatório ao conselho (Cuiabá)
 
