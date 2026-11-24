@@ -302,6 +302,9 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Mês com a folha pela metade (#557, sem change nova): `curl -s 'http://127.0.0.1:3000/api/school/51171805/finance?ano=2025' | jq '[.meses_incompletos[].nome]'`
       dá `["setembro","outubro"]`; `/fontes` mostra "2025 (12 meses (setembro e outubro incompletos), 167 escolas)" em Cuiabá
       (se a folha do LXC for a mesma do local).
+- [ ] Meses por escola e da Secretaria (#558, sem change nova): `/fontes` mostra Cuiabá "2026 (por escola só em janeiro e
+      fevereiro; de março a agosto, só o total da Secretaria; …)" e o painel `/escola/financeiro?inep=51171805` (2026) avisa
+      "De março a agosto de 2026, o município declarou a folha só no total da Secretaria" (se a folha do LXC for a mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

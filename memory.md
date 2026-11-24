@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (dv) — #558 (PR #560), meses por escola e da Secretaria
+
+- PR #560 (820fec0), opções A1 e B1:
+  - `meses_por_lugar`: cada mês é da escola ou da Secretaria pela maior
+    parte do valor; a cobertura ganhou `meses_escola` e
+    `meses_secretaria`, e `meses` conta só os por escola (Cuiabá 2026: 6 →
+    2); o ano padrão da base segue esse número;
+  - `textoAnoFolha` (tela da base e `/fontes`) e o aviso do painel da
+    escola sobre os meses só da Secretaria.
+- QT-01 e QT-02 da P2 resolvidos. Abertos: AN-12, #429, #454; conferir no
+  SIOPE setembro e outubro de 2025 de Cuiabá (download com permissão).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #560 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 264; ciclo `2026-11-24-folha-meses-secretaria.md`.
+
 ## Sessão 2026-11-24 (du) — 3ª avaliação da P2, #557 (PR #559)
 
 - Terceira rodada da P2: o secretário de Cuiabá presta contas da folha do

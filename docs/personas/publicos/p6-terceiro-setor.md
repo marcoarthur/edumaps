@@ -97,6 +97,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: a divisão declarada do Fundeb.
 - [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem "diferença" falsa.
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: falta de dado não é demissão.
+- [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 

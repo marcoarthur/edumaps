@@ -99,4 +99,7 @@ Issues **#557** (QT-01) e **#558** (QT-02), abertas com a aprovação do develop
     painel financeiro, na cobertura da folha e na base
     (`meses_folha_incompletos`), sem corrigir os números nem afirmar a
     causa.
-- QT-02 (#558) segue aberto.
+- 2026-11-24: #558 (PR #560) mergeado: QT-02 resolvido.
+  - A cobertura diz em que meses a folha é por escola e em quais é só da
+    Secretaria (Cuiabá 2026: por escola só em janeiro e fevereiro), e o
+    painel da escola avisa os meses em que a folha dela não aparece.

@@ -100,6 +100,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). QS-01 resolvido; QS-02 (#554) aberto.
 - [2026-11-24 — fechamento da folha na base](ciclos/2026-11-24-fechamento-folha.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). QS-02 resolvido.
 - [2026-11-24 — mês com a folha pela metade](ciclos/2026-11-24-meses-folha-incompletos.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: mês incompleto não é corte.
+- [2026-11-24 — meses da folha por escola e da Secretaria](ciclos/2026-11-24-folha-meses-secretaria.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: vê quando a folha deixou de ser por escola.
 
 ## Pendências
 
