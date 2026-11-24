@@ -64,7 +64,11 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   painel da Secretaria, onde não há salário por escola. Não é convertido
   para 40 horas: a carga declarada pode estar em aulas, e não em horas.
   Quando a maioria dos pagamentos tem carga abaixo de 20, a linha avisa que
-  a carga não parece ser em horas semanais (ex.: Taubaté, carga 18).
+  a carga não parece ser em horas semanais (ex.: Taubaté, carga 18). No
+  painel da Secretaria, a linha diz também quantos profissionais da rede
+  inteira ficam abaixo do piso no mês típico (entre quem recebeu 3 meses ou
+  mais), quantos deles só no total da Secretaria, com o aviso de que não é a
+  verificação legal.
 - **Docentes na folha e no Censo.** No cartão das categorias, o painel mostra
   os docentes da folha (no ano e a média por mês) e os do Censo Escolar. Os
   números podem diferir: o professor pode ser pago no total da Secretaria,

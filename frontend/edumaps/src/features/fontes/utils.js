@@ -97,3 +97,20 @@ export function textoSalarioRede(s) {
     : "";
   return `salário total ${brl(s.total)} e base ${brl(s.base)} (medianas por mês, sem dezembro, de ${pessoas})${carga}${aviso}`;
 }
+
+/**
+ * #575 (QH-01 da P5): quem fica abaixo do piso na rede inteira (escolas e o
+ * total da Secretaria), no mês típico, entre quem recebeu 3 meses ou mais.
+ * Sem contagem (sem piso, ou carga fora de horas): "".
+ */
+export function textoPisoRede(s, ano) {
+  if (!s || s.abaixo_piso == null || s.piso == null) return "";
+  const n = Number(s.abaixo_piso);
+  const sec = Number(s.abaixo_piso_so_secretaria) || 0;
+  const pessoas = `${n.toLocaleString("pt-BR")} ${n === 1 ? "profissional" : "profissionais"} do magistério`;
+  const daSec = sec ? `, ${sec.toLocaleString("pt-BR")} ${sec === 1 ? "dele" : "deles"} só no total da Secretaria` : "";
+  return `Abaixo do piso${ano ? ` de ${ano}` : ""} (${brl2(s.piso)} por 40 horas) no mês típico, entre quem recebeu 3 meses ou mais: ${pessoas}${daSec}. `
+    + "Não é a verificação legal do piso (complementos, jornada, licenças, reajuste pago com atraso), e o total da Secretaria pode ter pagamentos parciais.";
+}
+
+const brl2 = (v) => `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

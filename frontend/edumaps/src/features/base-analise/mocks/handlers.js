@@ -17,7 +17,9 @@ export const baseAnaliseHandlers = [
               { codigo_ibge: "3555406", municipio: "Ubatuba", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 48,
                 incompletos: [{ mes: 7, nome: "julho", registros: 500, categorias: 5, registros_habitual: 1200, categorias_habitual: 9 }],
                 fechamento: { total: 67696409, escolas_base: 55590647, secretaria: 11838003, fora_total: 267757,
-                  fora: [{ inep: "35659605", escola: "JOSE LIBORIO - SEU FRANCA EM", valor: 267757 }] } }] },
+                  fora: [{ inep: "35659605", escola: "JOSE LIBORIO - SEU FRANCA EM", valor: 267757 }] },
+                salario_magisterio: { pessoas: 1374, total: 7186, base: 5572, carga_comum: 31, carga_suspeita: false,
+                  piso: 5130.63, abaixo_piso: 6, abaixo_piso_so_secretaria: 3 } }] },
             ] }
         : { padrao: null, escolas: {}, municipios: [] };
     return HttpResponse.json({ ...BASE_ANALISE_FIXTURE, total, folha });

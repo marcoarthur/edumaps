@@ -808,6 +808,9 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
     ['ANA', 'Dezembro', 40, 100, 12000],
   );
   $f->execute($ANO_P, $_->[1], $_->[0], "xxx.$_->[0].563-xx", $A, '600039', 'Municipal', 'Docente', $mag, $_->[2], $_->[3], $_->[4]) for @l;
+  # #575: na Secretaria, sem escola: DUDA abaixo nos três meses; EVA só em março (avulso)
+  $f->execute($ANO_P, $_, 'DUDA', 'xxx.DUDA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 3000, 4000) for qw(Janeiro Fevereiro Março);
+  $f->execute($ANO_P, 'Março', 'EVA', 'xxx.EVA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 1000, 1000);
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_P")->tx);
   my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
@@ -817,6 +820,9 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
     'base médio por 40 h, o piso do ano e só ANA abaixo (BIA não, pelo mês de admissão)';
   is [ @$b[ @i{qw(salario_base_40h_magisterio piso_magisterio_ano prof_magisterio_base_abaixo_piso)} ] ], ['', '', ''], 'escola sem folha: vazio';
   ok $i{salario_base_40h_magisterio} == $i{salario_40h_magisterio} + 1, 'logo depois do salário total';
+  # #575 (QH-01 da P5): na rede inteira, com a Secretaria; EVA (1 mês) não conta
+  my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_P"};
+  is [ @$s{qw(piso abaixo_piso abaixo_piso_so_secretaria)} ], [5130.63, 2, 1], 'rede: ANA e DUDA abaixo, DUDA só na Secretaria';
   is $a->[ $i{carga_comum_municipio} ], '40', '#572: carga mais comum do município, em horas';
 
   my $c1 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=2001")->tx);
