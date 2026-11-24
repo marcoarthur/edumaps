@@ -4,6 +4,21 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (eb) — 4ª avaliação da P3, #571 (PR #573)
+
+- Quarta rodada da P3: o salário da rede municipal (Ubatuba e Taubaté).
+  Adotaria em piloto para escolher a cidade (mantido).
+  - QI-01: o município só com a Secretaria sem salário → #571.
+  - QI-02: a conversão por 40 horas supõe horas (Taubaté, carga 18) →
+    #572 (aberta).
+- PR #573 (2278a68), opções A1 e B1: `salario_rede` (toda a folha do
+  magistério, com a Secretaria; medianas do total e do base, carga mais
+  comum, sem conversão), no painel e na tela da base.
+- O vigia de CI passou a esperar `status = completed` de cada run (um
+  `gh run watch` voltou antes e deu "CI não verde" falso no `cf449cc`).
+- O LXC continua fora; deploys de #489 a #573.
+- Nota técnica 270; ciclo `2026-11-24-salario-rede-municipal.md`.
+
 ## Sessão 2026-11-24 (ea) — #568 (PR #570), meses em vez de competências
 
 - PR #570 (160794d), opções A1 e B1: "Meses com folha" e "No último mês"

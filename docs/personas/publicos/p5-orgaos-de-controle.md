@@ -106,6 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: a falta está na declaração.
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno: aponta quem declara sem escola.
 - [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
+- [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno.
 
 ## Pendências
 

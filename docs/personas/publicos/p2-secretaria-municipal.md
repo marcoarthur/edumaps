@@ -109,6 +109,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a falta de set/out está na declaração.
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a folha sem escola esvazia as escolas.
 - [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno.
+- [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: o salário da rede.
 
 ## Pendências
 
