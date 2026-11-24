@@ -28,7 +28,7 @@ describe("FontesPage (#428)", () => {
     const lista = await screen.findByTestId("cobertura-siope");
     expect(lista).toHaveTextContent("Municípios com a folha carregada (2)");
     expect(lista).toHaveTextContent("Cuiabá/MT: 2026 (6 meses, 168 escolas); 2025 (12 meses (setembro e outubro incompletos), 167 escolas)");
-    expect(lista).toHaveTextContent("Taubaté/SP: 2026 (só o total da Secretaria)");
+    expect(lista).toHaveTextContent("Taubaté/SP: 2026 (só o total da Secretaria; julho incompleto)");
     expect(screen.queryByTestId("cobertura-censo")).toBeNull();
   });
 

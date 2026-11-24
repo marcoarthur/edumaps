@@ -281,7 +281,7 @@
                       Folha por escola em {uf}:
                       {#each folha.municipios as m, i}{i ? "; " : ""}<strong>{m.municipio}</strong> ({m.anos.map((a) => a.escolas
                         ? `${a.ano}: ${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"}`
-                        : `${a.ano}: só o total da Secretaria`).join("; ")}){/each}.
+                        : `${a.ano}: só o total da Secretaria${sufixoIncompletos(a.incompletos)}`).join("; ")}){/each}.
                     {:else}
                       Nenhum município de {uf} tem a folha do SIOPE separada por escola: o bloco sai vazio.
                     {/if}

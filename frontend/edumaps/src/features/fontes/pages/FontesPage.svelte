@@ -126,7 +126,7 @@
                     <strong class="text-gray-800">{m.municipio}/{m.uf}</strong>:
                     {m.anos.map((a) => a.escolas
                       ? `${a.ano} (${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${a.escolas} ${a.escolas === 1 ? "escola" : "escolas"})`
-                      : `${a.ano} (só o total da Secretaria)`).join("; ")}
+                      : `${a.ano} (só o total da Secretaria${a.incompletos?.length ? `; ${sufixoIncompletos(a.incompletos).slice(2, -1)}` : ""})`).join("; ")}
                   </li>
                 {/each}
               </ul>
