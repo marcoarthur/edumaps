@@ -241,6 +241,25 @@ sub payroll($self){
   $self->render(json => $result);
 };
 
+# #585 (QE-01 da P2): a folha detalhada do total da Secretaria do município
+# da escola, no mês (date=MM-AAAA).
+sub payroll_secretaria($self){
+  my $v = $self->validation;
+  $v->optional('date', 'trim')->like(qr<\d{2}[-]\d{4}>);
+  return $self->bad_req if $self->any_error;
+
+  my $model = $self->instantiate_model(model => 'School');
+  my $params = {
+    cod_inep => $self->param('cod_inep'),
+    date     => $self->param('date') // '10-2025',
+  };
+  my $result = $model->secretaria_payroll($params);
+  unless ($result->size > 0) {
+    return $self->render(json => { error => 'Sem folha do total da Secretaria neste mês' }, status => 404);
+  }
+  $self->render(json => $result);
+}
+
 sub payroll_last($self) {
   my $model = $self->instantiate_model(model => 'School');
   my $params = {

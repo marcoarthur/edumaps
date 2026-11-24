@@ -117,7 +117,13 @@
 
   function verFolhaCompleta() {
     if (!selectedPeriod) return;
-    router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}`);
+    // #585 (QE-01 da P2): no painel da Secretaria, a folha do total da Secretaria
+    router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}${ehRede ? "&secretaria=1" : ""}`);
+  }
+
+  function verFolhaSecretaria() {
+    if (!selectedPeriod) return;
+    router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}&secretaria=1`);
   }
 </script>
 
@@ -309,16 +315,21 @@
     <button
       type="button"
       onclick={verFolhaCompleta}
-      disabled={!selectedPeriod || ehRede}
-      title={ehRede ? "A folha detalhada (nomes) só existe quando o SIOPE detalha por escola" : ""}
+      disabled={!selectedPeriod}
       class="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
     >
       Ver folha completa →
     </button>
+    {#if !ehRede && docentes?.municipio?.so_secretaria > 0}
+      <button type="button" onclick={verFolhaSecretaria} disabled={!selectedPeriod} data-testid="ver-folha-secretaria"
+        class="px-4 py-2 border border-blue-700 text-blue-700 text-sm font-medium rounded-md hover:bg-blue-50 disabled:opacity-50">
+        Ver a folha do total da Secretaria →
+      </button>
+    {/if}
     <p class="text-xs text-gray-400 basis-full">
       {#if ehRede}
-        A folha detalhada (nomes dos profissionais) não está disponível: neste
-        município o SIOPE não detalha por escola.
+        A folha detalhada lista as pessoas declaradas no total da Secretaria: o SIOPE não detalha por escola neste
+        município, e não diz em que unidade cada uma trabalha.
       {:else}
         {escola?.nome ?? ""} — a folha lista os profissionais (nomes) apenas na
         página de detalhes.

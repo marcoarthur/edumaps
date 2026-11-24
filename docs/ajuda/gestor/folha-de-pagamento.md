@@ -18,9 +18,13 @@ ultima_revisao: 2026-11-24
 
 Quando o município informa ao **SIOPE** a remuneração por escola, o EduMaps
 mostra a **folha detalhada** da unidade: cada profissional, categoria, carga
-horária, situação e salários do mês escolhido. Quando o município informa só o
-total da Secretaria, a folha detalhada não existe e a tela mostra apenas os
-números da rede.
+horária, situação e salários do mês escolhido. Quando o município informa a
+folha no total da Secretaria, sem escola, a folha detalhada do total da
+Secretaria lista essas pessoas, com o aviso de que o SIOPE não diz em que
+unidade cada uma trabalha e de que pode haver pagamentos parciais. Ela abre
+pelo painel da Secretaria ("Ver folha completa") e, quando o município tem
+gente só no total da Secretaria, pelo painel da escola ("Ver a folha do
+total da Secretaria"). Listas grandes têm busca pelo nome e páginas de 100.
 
 ## Passo a passo
 
@@ -50,7 +54,8 @@ números da rede.
 - **Município sem detalhamento por escola:** em muitos municípios o SIOPE
   registra a folha só na Secretaria. Nesse caso o Painel financeiro avisa
   *"Painel da rede municipal — não desta escola"* e os números são o total da
-  rede; não é possível saber quem atua nesta unidade.
+  rede; a folha detalhada do total da Secretaria existe, mas não é possível
+  saber quem atua nesta unidade.
 - Os dados chegam com o atraso de publicação do SIOPE.
 - Profissionais pagos por outras fontes (fora dos recursos declarados ao
   SIOPE) não aparecem.

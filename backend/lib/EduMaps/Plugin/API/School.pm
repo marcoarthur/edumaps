@@ -26,6 +26,9 @@ sub register ($self, $app, @args) {
 
   $api->get('/:cod_inep/payroll/last' => $check)->to('school#payroll_last')->name('school_last_payroll');
 
+  # #585 (QE-01 da P2): a folha detalhada do total da Secretaria do município
+  $api->get('/:cod_inep/payroll/secretaria' => $check)->to('school#payroll_secretaria')->name('school_payroll_secretaria');
+
   $api->get('/:cod_inep/finance' => $check)->to('school#finance')->name('school_finance');
 
   $api->get('/:cod_inep/grades' => $check)->to('school#grades')->name('school_grades');

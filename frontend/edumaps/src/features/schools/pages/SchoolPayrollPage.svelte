@@ -1,6 +1,6 @@
 <script>
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
-  import { getSchoolPayroll } from "../api/schoolApi.js";
+  import { getSchoolPayroll, getSecretariaPayroll } from "../api/schoolApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import SchoolPayrollTable from "../components/SchoolPayrollTable.svelte";
 
@@ -11,6 +11,20 @@
   // #422: 404 = não há folha desta escola (ausência, não erro)
   let semFolha = $state(false);
   let inep = $state(null);
+  // #585 (QE-01 da P2): a folha do total da Secretaria (sem escola informada)
+  let secretaria = $state(false);
+  // Lista grande (a Secretaria de Cuiabá passa de 12 mil linhas por mês):
+  // filtro por nome e 100 linhas por página.
+  const POR_PAGINA = 100;
+  let filtro = $state("");
+  let pagina = $state(0);
+  const filtrados = $derived(
+    filtro.trim()
+      ? payrollData.filter((p) => (p.nome_profissional ?? "").toLowerCase().includes(filtro.trim().toLowerCase()))
+      : payrollData,
+  );
+  const paginas = $derived(Math.max(1, Math.ceil(filtrados.length / POR_PAGINA)));
+  const visiveis = $derived(filtrados.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA));
   // #536 (QO-02 da P5): letras que já chegaram perdidas no arquivo do SIOPE
   // aparecem como "?" no nome.
   const nomesIlegiveis = $derived(payrollData.filter((p) => (p.nome_profissional ?? "").includes("?")).length);
@@ -26,6 +40,9 @@
     inep = cod_inep;
     semFolha = false;
     const date = getQueryParam("date");
+    secretaria = getQueryParam("secretaria") === "1";
+    filtro = "";
+    pagina = 0;
     if (!cod_inep) {
       error = "Código INEP não informado na URL (?inep=XXXXXXXX).";
       loading = false;
@@ -35,9 +52,13 @@
     loading = true;
     error = null;
     try {
-      const data = await getSchoolPayroll(cod_inep, date || undefined);
+      const data = secretaria
+        ? await getSecretariaPayroll(cod_inep, date || undefined)
+        : await getSchoolPayroll(cod_inep, date || undefined);
       payrollData = data;
-      if (data.length > 0) {
+      if (secretaria) {
+        schoolName = "total da Secretaria (sem escola)";
+      } else if (data.length > 0) {
         schoolName = data[0].escola || `Escola ${cod_inep}`;
       } else {
         schoolName = `Escola ${cod_inep}`;
@@ -94,7 +115,7 @@
   {:else if semFolha}
     <div class="bg-white border border-gray-200 rounded-card shadow-card p-6 space-y-2">
       <p class="text-sm text-gray-700">
-        Não há folha de pagamento desta escola para este mês.
+        {secretaria ? "Não há folha no total da Secretaria do município neste mês." : "Não há folha de pagamento desta escola para este mês."}
       </p>
       <p class="text-sm text-gray-600">
         O
@@ -114,7 +135,23 @@
         ilegível no arquivo do SIOPE e não pôde ser recuperada de outro mês do mesmo profissional.
       </p>
     {/if}
-    <SchoolPayrollTable payrollData={payrollData} />
+    {#if secretaria}
+      <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="aviso-folha-secretaria">
+        Estas pessoas foram declaradas ao SIOPE no total da Secretaria, sem escola informada: o SIOPE não diz em que
+        unidade cada uma trabalha. Pode haver pagamentos parciais (férias, complementos, rescisões).
+      </p>
+    {/if}
+    {#if payrollData.length > POR_PAGINA}
+      <div class="flex flex-wrap items-center gap-3 text-sm" data-testid="paginacao-folha">
+        <label class="text-gray-600" for="filtro-nome">Buscar pelo nome</label>
+        <input id="filtro-nome" type="search" bind:value={filtro} oninput={() => (pagina = 0)}
+          class="border border-gray-300 rounded-md px-2 py-1 text-sm" />
+        <span class="text-gray-600">{filtrados.length.toLocaleString("pt-BR")} {filtrados.length === 1 ? "registro" : "registros"} · página {pagina + 1} de {paginas}</span>
+        <button type="button" class="px-2 py-1 border rounded-md disabled:opacity-50" disabled={pagina === 0} onclick={() => (pagina -= 1)}>← Anterior</button>
+        <button type="button" class="px-2 py-1 border rounded-md disabled:opacity-50" disabled={pagina >= paginas - 1} onclick={() => (pagina += 1)}>Próxima →</button>
+      </div>
+    {/if}
+    <SchoolPayrollTable payrollData={payrollData.length > POR_PAGINA ? visiveis : payrollData} />
   {/if}
   <FonteDado tela="folha" class="pt-2" />
 </div>

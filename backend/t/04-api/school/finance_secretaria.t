@@ -60,4 +60,14 @@ subtest 'escola sem folha própria cai para o agregado da Secretaria' => sub {
     'folha por fonte: Fundeb 70%, 30% e outras, somando o total');
 };
 
+subtest 'folha detalhada do total da Secretaria (#585)' => sub {
+  plan skip_all => 'clean.remuneracao_municipal ausente' unless $has_tables;
+  my $r = $t->get_ok("/api/school/$INEP/payroll/secretaria?date=01-2024")->status_is(200)->tx->res->json;
+  is scalar(@$r), 1, 'janeiro: uma pessoa no total da Secretaria';
+  is $r->[0]{nome_profissional}, 'Servidor Janeiro', 'com o nome';
+  is $r->[0]{salario_total}, 1000, 'e o salário';
+  $t->get_ok("/api/school/$INEP/payroll/secretaria?date=05-2024")->status_is(404);
+  $t->get_ok("/api/school/$INEP/payroll/secretaria?date=xx")->status_is(400);
+};
+
 done_testing;
