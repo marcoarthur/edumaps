@@ -80,4 +80,4 @@ comparar municípios ou cobrir uma rede grande, falta o salário base na base
 
 ## Encaminhamento
 
-Achados QQ-01 e QQ-02 aguardam a aprovação do developer para virar issue.
+Issues **#563** (QQ-01) e **#564** (QQ-02), abertas com a aprovação do developer.

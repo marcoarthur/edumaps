@@ -113,8 +113,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   ranking sem o Censo Demográfico na taxa de atendimento) → #539, entregue (#540).
   Pendente: #454.
 - Piso do magistério na folha (2026-11-24, **adotaria**): QQ-01 (salário
-  base fora da base) e QQ-02 (carga da folha não registrada), aguardando a
-  aprovação do developer.
+  base fora da base) e QQ-02 (carga da folha não registrada) → #563 e #564.
 
 ## Entradas
 
