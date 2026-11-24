@@ -295,7 +295,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   2023). Então o IDEB é **sempre** cruzado com uma lista de escolas, uma
   infraestrutura e uma docência de outro ano, inclusive na edição mais
   recente, que é a padrão. A página e o dicionário (`ano_ideb`) avisam e
-  dizem a distância em anos. Para quem modela:
+  dizem a distância em anos. Com o bloco Remuneração marcado, o aviso diz
+  também o ano da folha do SIOPE (em Cuiabá, a folha é de 2025 e 2026, e o
+  IDEB, de 2023): o salário e o gasto passam a ser de outro ano que o
+  desempenho. Para quem modela:
   - **o preditor vem depois do resultado:** explicar o IDEB de 2023 pela
     infraestrutura de 2025 usa uma medida tirada dois anos depois da prova.
     Diga isso no texto e, se puder, teste a robustez (por exemplo, só com
