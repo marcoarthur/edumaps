@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ee) — #576 (PR #578), aviso do mês incompleto com a carga
+
+- PR #578 (7a839fa), opções A1 e B1: `cargas_folha` e `carga_folha` no
+  painel; com a carga registrada, "a planilha do SIOPE baixada em <data>
+  traz estes meses assim: a falta está na fonte, e não na carga" no
+  painel, "já na planilha do SIOPE" na cobertura e no dicionário.
+- QH-01 e QH-02 da P5 resolvidos. Abertos: AN-12, #429, #454.
+- O LXC continua fora; deploys de #489 a #578.
+- Nota técnica 273; ciclo `2026-11-24-aviso-mes-fonte.md`.
+
 ## Sessão 2026-11-24 (ed) — 5ª avaliação da P5, #575 (PR #577)
 
 - Quinta rodada da P5: a fiscalização do piso em Cuiabá. Não adotaria

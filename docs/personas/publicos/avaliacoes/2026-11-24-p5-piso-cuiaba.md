@@ -84,4 +84,6 @@ Issues **#575** (QH-01) e **#576** (QH-02), abertas com a aprovação do develop
 - 2026-11-24: #575 (PR #577) mergeado: QH-01 resolvido. Cuiabá 2026: 1.559
   abaixo do piso na rede inteira, 1.421 só na Secretaria (entre quem
   recebeu 3 meses ou mais), na tela da base e no painel da Secretaria.
-- QH-02 (#576) segue aberto.
+- 2026-11-24: #576 (PR #578) mergeado: QH-02 resolvido. Com a carga
+  registrada, o aviso diz "a planilha do SIOPE baixada em 24/11/2026 traz
+  estes meses assim: a falta está na fonte, e não na carga".

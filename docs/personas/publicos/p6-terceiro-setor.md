@@ -106,6 +106,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — salário do magistério da rede inteira](ciclos/2026-11-24-salario-rede-municipal.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: Taubaté na pauta.
 - [2026-11-24 — carga que não parece em horas](ciclos/2026-11-24-carga-nao-horas.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
+- [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 
 ## Pendências
 
