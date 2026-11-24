@@ -547,6 +547,51 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
   return \@lista;
 }
 
+# #554 (QS-02 da P5): o fechamento da folha de cada município e ano da UF.
+# A base tem uma linha por escola do Censo em funcionamento, e a soma delas
+# não dá o total declarado: falta a folha da Secretaria (código 99999999,
+# sem escola) e a de escolas que o SIOPE declara e a lista do Censo não tem
+# (código novo, escola fechada). As quatro somas fecham: escolas_base +
+# secretaria + fora_total = total. Chave: "<codigo_ibge de 6 dígitos>|<ano>".
+sub fechamento_folha ($class, $dbh, $uf, $ano_censo) {
+  my $rows = eval {
+    $dbh->selectall_arrayref(q{
+      WITH mun AS (
+        SELECT DISTINCT left(co_municipio::text, 6) AS cod6
+          FROM clean.censo_escolas WHERE sg_uf = ?
+      ), lista AS (
+        SELECT co_entidade FROM clean.censo_escolas
+         WHERE nu_ano_censo = ? AND tp_situacao_funcionamento = 1 AND sg_uf = ?
+      )
+      SELECT r.cod_municipio::text AS cod6, r.ano::int AS ano,
+             CASE WHEN r.cod_inep = 99999999 THEN 'secretaria'
+                  WHEN l.co_entidade IS NOT NULL THEN 'base'
+                  ELSE 'fora' END AS parte,
+             CASE WHEN r.cod_inep = 99999999 OR l.co_entidade IS NOT NULL THEN NULL
+                  ELSE r.cod_inep::text END AS inep,
+             max(r.escola) AS escola,
+             round(sum(r.salario_total))::float8 AS valor
+        FROM clean.remuneracao_municipal r
+        JOIN mun m ON m.cod6 = r.cod_municipio::text
+        LEFT JOIN lista l ON l.co_entidade = r.cod_inep
+       GROUP BY 1, 2, 3, 4
+       ORDER BY 1, 2, 3, valor DESC
+    }, { Slice => {} }, $uf, $ano_censo, $uf);
+  } // [];
+  my %f;
+  for my $r (@$rows) {
+    my $x = $f{"$r->{cod6}|$r->{ano}"} //= { total => 0, escolas_base => 0, secretaria => 0, fora_total => 0, fora => [] };
+    $x->{total} += $r->{valor};
+    if    ($r->{parte} eq 'base')       { $x->{escolas_base} += $r->{valor} }
+    elsif ($r->{parte} eq 'secretaria') { $x->{secretaria}   += $r->{valor} }
+    else {
+      $x->{fora_total} += $r->{valor};
+      push @{ $x->{fora} }, { inep => $r->{inep}, escola => $r->{escola}, valor => $r->{valor} };
+    }
+  }
+  return \%f;
+}
+
 # #512 (QZ-01): o ano padrão da folha para a UF: o último ano com 12 meses
 # em algum município da UF com escolas; sem ano completo, o mais recente com
 # escolas; UF sem folha por escola: undef.

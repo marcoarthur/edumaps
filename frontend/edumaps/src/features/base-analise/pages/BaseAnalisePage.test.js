@@ -77,12 +77,23 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Ubatuba (2026: 8 meses, 48 escolas)");
     expect(screen.getByTestId("cobertura-siope")).toHaveTextContent("Taubaté (2026: só o total da Secretaria)");
     expect(screen.getByTestId("folha-recorte")).toHaveTextContent("48 escolas deste recorte têm folha em 2026");
+    // #554: de onde vem o total declarado, por município
+    expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Ubatuba: R$ 67,7 mi declarados em 2026");
+    expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("35659605, JOSE LIBORIO - SEU FRANCA EM");
+    expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Taubaté: R$ 163,3 mi declarados em 2026. Da Secretaria");
     expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_siope=2026");
 
     // escolher outro ano: vale a escolha, com o aviso de que sai vazio
     await fireEvent.change(sel, { target: { value: "2025" } });
     expect(screen.getByTestId("aviso-folha-vazia")).toHaveTextContent("Nenhuma escola deste recorte tem folha em 2025");
     expect(screen.getByTestId("aviso-folha-vazia")).toHaveTextContent("Anos com folha em SP: 2026");
+  });
+
+  it("#554: com o município no recorte, só a conta dele", async () => {
+    abrir("?uf=SP&codigo_ibge=3555406&blocos=remuneracao");
+    const f = await screen.findByTestId("fechamento-folha");
+    expect(f).toHaveTextContent("Ubatuba: R$ 67,7 mi declarados em 2026");
+    expect(f).not.toHaveTextContent("Taubaté");
   });
 
   it("#512: UF sem folha diz que o bloco sai vazio e fica no padrão do Brasil", async () => {

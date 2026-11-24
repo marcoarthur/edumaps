@@ -101,7 +101,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
 - Sistema pode **dizer quem tem a folha**: os municípios da UF com folha,
   os anos e os meses de cada um, e quantas escolas do recorte têm folha no
   ano escolhido, que por padrão é o último ano completo da própria UF; e
-  avisar quando o recorte sai vazio.
+  avisar quando o recorte sai vazio. Fecha a conta da folha de cada
+  município: o total declarado, o que está nas escolas da base, o da
+  Secretaria (sem escola) e o das escolas que a lista do Censo não tem.
 - Sistema pode **separar pessoas pagas no ano e por mês**, e entregar os
   **auxiliares e assistentes educacionais**, que na educação infantil podem
   ser quem trabalha com as crianças quando a folha não tem magistério.
