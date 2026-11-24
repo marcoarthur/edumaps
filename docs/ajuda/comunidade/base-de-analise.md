@@ -200,6 +200,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - **A folha por município, num arquivo.** Com o bloco marcado e a UF
+    escolhida, o link "Baixar a folha por município" dá um CSV com uma
+    linha por município e ano com folha: os meses por escola e da
+    Secretaria, os meses incompletos, o total declarado e de onde vem
+    (escolas, Secretaria, fora da lista), a parte do Fundeb, o salário e o
+    piso da rede inteira, a carga mais comum e a data e o SHA-256 da carga.
+    Tem dicionário próprio. Serve para comparar prefeituras sem copiar das
+    frases da tela.
   - **O piso na rede inteira.** Ao lado do salário da rede, a tela diz
     quantos profissionais do magistério ficam abaixo do piso no mês típico
     em toda a folha, com a da Secretaria, e quantos deles estão só no total

@@ -834,6 +834,80 @@ sub fechamento_folha ($class, $dbh, $uf, $ano_censo) {
   return \%f;
 }
 
+# #580 (QG-02 da P6): a folha por município, num arquivo: uma linha por
+# município e ano com folha na UF, com o que a tela da base diz em frases
+# (cobertura, fechamento, fontes, salário e piso da rede, carga). Cada
+# coluna: [nome, descrição, numérica?].
+our @FOLHA_MUNICIPIO_COLUNAS = (
+  ['codigo_ibge', 'Código IBGE do município', 0],
+  ['municipio', 'Município', 0],
+  ['uf', 'UF', 0],
+  ['ano', 'Ano (exercício) da folha do SIOPE', 1],
+  ['meses_por_escola', 'Meses em que a maior parte do valor declarado está nas escolas (de 1 a 12). Sem nenhum, os meses da Secretaria', 1],
+  ['meses_lista_escola', 'Os meses por escola (1 a 12, separados por vírgula)', 0],
+  ['meses_lista_secretaria', 'Os meses em que a maior parte do valor está no total da Secretaria, sem escola (1 a 12)', 0],
+  ['meses_incompletos', 'Meses com a folha pela metade (menos categorias que o habitual do ano ou menos da metade dos registros de um mês típico). Com a carga registrada, a falta está na própria planilha do SIOPE', 0],
+  ['escolas_com_folha', 'Escolas com folha no ano, como o SIOPE declara (pode incluir escola fora da lista do Censo)', 1],
+  ['total_declarado', 'Total da folha declarada ao SIOPE no ano, em reais (escolas, Secretaria e fora da lista)', 1],
+  ['total_escolas_base', 'Parte do total nas escolas da lista do Censo (as da base de análise), em reais', 1],
+  ['total_secretaria', 'Parte do total no código da Secretaria (99999999), sem escola, em reais', 1],
+  ['total_fora_lista', 'Parte do total em escolas que o SIOPE declara e a lista do Censo não tem, em reais', 1],
+  ['fundeb_70', 'Parte do total paga com a parcela de 70% do Fundeb, em reais. Não é a verificação do mínimo legal: essa conta usa a receita do Fundeb, que não está na base', 1],
+  ['fundeb_30', 'Parte do total paga com a parcela de 30% do Fundeb, em reais', 1],
+  ['outras_fontes', 'Parte do total paga com outras fontes, em reais', 1],
+  ['magisterio_pessoas', 'Profissionais do magistério pagos no ano em toda a folha (escolas e Secretaria), contados pela pessoa', 1],
+  ['salario_total_mediana', 'Mediana do salário total por pessoa e mês do magistério, sem dezembro e sem conversão para 40 horas, em reais', 1],
+  ['salario_base_mediana', 'Mediana do salário base (vencimento) por pessoa e mês do magistério, sem dezembro, em reais', 1],
+  ['carga_comum', 'Carga horária mais comum do magistério no ano', 1],
+  ['carga_nao_parece_horas', '"sim" quando a maioria dos pagamentos tem carga abaixo de 20: a carga não parece estar em horas semanais, e as contas por 40 horas não valem', 0],
+  ['piso_ano', 'O piso nacional do magistério do ano, por 40 horas semanais. Vazio: ano sem piso cadastrado', 1],
+  ['abaixo_piso_rede', 'Profissionais do magistério de toda a folha com o salário base para 40 horas abaixo do piso no mês típico, entre quem recebeu 3 meses ou mais. Não é a verificação legal do piso. Vazio: sem piso ou com a carga fora de horas', 1],
+  ['abaixo_piso_so_secretaria', 'Desses, os que estão só no total da Secretaria (o total da Secretaria pode ter pagamentos parciais)', 1],
+  ['data_carga', 'Data em que a planilha do SIOPE foi baixada. Vazio: carga feita antes do registro', 0],
+  ['sha256_planilha', 'SHA-256 da planilha do SIOPE baixada nessa carga', 0],
+);
+
+sub folha_municipios ($class, $dbh, $uf) {
+  my $cob  = $class->cobertura_siope($dbh, $uf);
+  my $fech = $class->fechamento_folha($dbh, $uf, $class->anos($dbh)->{censo});
+  my %arq;
+  my ($manifesto) = eval { $dbh->selectrow_array(
+    q{SELECT raw_manifest::text FROM clean.import_metadata WHERE table_name = 'clean.remuneracao_municipal'}) };
+  for my $e (@{ (eval { Mojo::JSON::decode_json($manifesto // '[]') }) // [] }) {
+    next unless ref $e eq 'HASH' && $e->{cod_municipio} && $e->{ano};
+    $arq{"$e->{cod_municipio}|$e->{ano}"} = $e;
+  }
+  my @abrev = qw(jan fev mar abr mai jun jul ago set out nov dez);
+  my @linhas;
+  for my $m (@$cob) {
+    for my $a (@{ $m->{anos} }) {
+      my $k = substr($m->{codigo_ibge}, 0, 6) . "|$a->{ano}";
+      my $f = $fech->{$k} // {};
+      my $s = $a->{salario_magisterio} // {};
+      my $e = $arq{$k} // {};
+      push @linhas, [
+        $m->{codigo_ibge}, $m->{municipio}, $m->{uf}, $a->{ano}, $a->{meses},
+        join(',', @{ $a->{meses_escola} // [] }), join(',', @{ $a->{meses_secretaria} // [] }),
+        join(', ', map { $abrev[ $_->{mes} - 1 ] } @{ $a->{incompletos} // [] }),
+        $a->{escolas}, $f->{total}, $f->{escolas_base}, $f->{secretaria}, $f->{fora_total},
+        @{ $f->{por_fonte} // {} }{qw(fundeb_70 fundeb_30 outras)},
+        $s->{pessoas}, $s->{total}, $s->{base}, $s->{carga_comum},
+        ($s->{carga_suspeita} && ${ $s->{carga_suspeita} } ? 'sim' : ''),
+        $s->{piso}, $s->{abaixo_piso}, $s->{abaixo_piso_so_secretaria},
+        (defined $e->{baixado_em} ? substr($e->{baixado_em}, 0, 10) : undef), $e->{sha256},
+      ];
+    }
+  }
+  my @cab = map { $_->[0] } @FOLHA_MUNICIPIO_COLUNAS;
+  my @num = map { $_->[2] } @FOLHA_MUNICIPIO_COLUNAS;
+  return (\@cab, \@linhas, \@num);
+}
+
+sub folha_municipios_dicionario ($class) {
+  return ([qw(coluna descricao fonte)],
+    [ map { [ $_->[0], $_->[1], 'Folha de pagamento da educação (SIOPE) (FNDE)' ] } @FOLHA_MUNICIPIO_COLUNAS ]);
+}
+
 # #512 (QZ-01): o ano padrão da folha para a UF: o último ano com 12 meses
 # em algum município da UF com escolas; sem ano completo, o mais recente com
 # escolas; UF sem folha por escola: undef.

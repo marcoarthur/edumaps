@@ -81,6 +81,10 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Ubatuba: R$ 67,7 mi declarados em 2026");
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("35659605, JOSE LIBORIO - SEU FRANCA EM");
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Pela fonte: 94,5% pela parcela de 70% do Fundeb"); // #579
+    // #580: a folha por município, num arquivo
+    const links = screen.getByTestId("folha-municipios").querySelectorAll("a");
+    expect(links[0].getAttribute("href")).toBe("/api/base-analise/folha-municipios.csv?uf=SP");
+    expect(links[1].getAttribute("href")).toBe("/api/base-analise/folha-municipios-dicionario.csv");
     expect(screen.getByTestId("fechamento-folha")).toHaveTextContent("Taubaté: R$ 163,3 mi declarados em 2026. Da Secretaria");
     // #571: o salário do magistério da rede inteira, com a Secretaria
     expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Taubaté: salário total R$ 6.975 e base R$ 2.669");
@@ -105,6 +109,7 @@ describe("BaseAnalisePage (#439)", () => {
   it("#512: UF sem folha diz que o bloco sai vazio e fica no padrão do Brasil", async () => {
     abrir("?uf=ES&blocos=remuneracao");
     expect(await screen.findByTestId("cobertura-siope")).toHaveTextContent("Nenhum município de ES");
+    expect(screen.queryByTestId("folha-municipios")).toBeNull(); // #580: sem folha, sem o link
     expect(screen.getByLabelText("Ano da folha (SIOPE)").value).toBe("2025");
   });
 
