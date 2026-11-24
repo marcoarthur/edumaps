@@ -120,8 +120,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Expansão da educação infantil (2026-11-23, **adotaria, em piloto, para
   escolher a cidade**; era não adotaria): sem achado novo; a escolha do
   bairro depende do AN-10 (#429) e da carga dos setores do Censo 2022.
+- Salário da rede municipal (2026-11-24, **adotaria, em piloto**): QI-01
+  (município só com a Secretaria sem salário) e QI-02 (a conversão por 40
+  horas supõe horas), aguardando a aprovação do developer.
 
 ## Entradas
+
+### 2026-11-24 — O salário da rede municipal (quarta rodada)
+
+**Material:** a base das redes municipais de Ubatuba e Taubaté (folha de
+2026), o painel financeiro de uma escola de cada, `/fontes`. Consolidação em
+[`avaliacoes/2026-11-24-p3-salario-rede-municipal.md`](avaliacoes/2026-11-24-p3-salario-rede-municipal.md).
+
+**O que tentou:** saber quanto a prefeitura paga ao professor, para definir
+o salário de uma unidade nova no Vale do Paraíba.
+
+**O que funciona para ele:** em Ubatuba, o salário total (R$ 10,9 mil) e o
+base (R$ 7,7 mil) por 40 horas, por escola, com a data da carga.
+
+**Barreiras:**
+- QI-01 (atrapalha): Taubaté, só com o total da Secretaria, fica sem
+  salário nenhum na base e no painel.
+- QI-02 (incomoda): a conversão por 40 horas supõe horas; em Taubaté a
+  carga típica é 18 (daria R$ 15,9 mil por 40 h).
+
+**Veredito:** **adotaria, em piloto, para escolher a cidade** (mantido).
 
 ### 2026-11-23 — Onde abrir uma unidade de educação infantil (terceira rodada)
 
