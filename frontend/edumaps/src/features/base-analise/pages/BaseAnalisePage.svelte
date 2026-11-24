@@ -4,6 +4,7 @@
   // Base de análise (#439, RV-02): uma linha por escola em funcionamento, com
   // os blocos de indicadores escolhidos, a versão dos dados e um dicionário
   // das colunas. Pública, uma UF por vez. A URL guarda o recorte e os blocos.
+  import { fraseFechamento } from "../utils/fechamentoFolha.js";
   import { onMount } from "svelte";
   import { ApiError } from "@/shared/api/client.js";
   import InputAutocomplete from "@/shared/ui/components/InputAutocomplete.svelte";
@@ -37,6 +38,16 @@
   const temEtapas = $derived(!!catalogo && catalogo.blocos.some((b) => b.id === "etapas"));
   // #444 (BA-01): edição antiga do IDEB cruzada com o Censo mais recente.
   const folhaRecorte = $derived(folha && anoSiope ? (folha.escolas?.[anoSiope] ?? 0) : null);
+  // #554 (QS-02 da P5): de onde vem o total declarado, por município do
+  // recorte (só o município escolhido, se houver um).
+  const fechamentos = $derived(
+    folha && anoSiope
+      ? folha.municipios
+          .filter((m) => !codigoIbge || m.codigo_ibge === codigoIbge)
+          .map((m) => fraseFechamento(m, anoSiope, catalogo?.anos?.censo))
+          .filter(Boolean)
+      : [],
+  );
   const anosFolhaUf = $derived(
     folha ? [...new Set(folha.municipios.flatMap((m) => m.anos.filter((a) => a.escolas > 0).map((a) => a.ano)))].sort((a, b) => b - a) : [],
   );
@@ -286,6 +297,15 @@
                       </p>
                     {/if}
                   {/if}
+                {/if}
+                {#if fechamentos.length}
+                  <!-- #554 (QS-02 da P5): a soma das escolas não é o total declarado -->
+                  <div class="mt-2 text-xs text-gray-700" data-testid="fechamento-folha">
+                    <p>A soma das escolas da base não é o total que o município declara ao SIOPE: falta a folha da Secretaria (sem escola) e a de escolas que a lista do Censo não tem.</p>
+                    <ul class="list-disc ml-5 mt-1">
+                      {#each fechamentos as frase}<li>{frase}</li>{/each}
+                    </ul>
+                  </div>
                 {/if}
                 <!-- #491 (RJ-03): a cobertura é pequena e não aleatória. -->
                 <p class="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2" data-testid="aviso-siope">

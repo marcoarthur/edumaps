@@ -63,6 +63,11 @@ sub _siope_uf ($self, $v) {
   return { municipios => [], padrao => undef } unless defined $uf;
   my $dbh = $self->app->schema->storage->dbh;
   my $cob = $B->cobertura_siope($dbh, $uf);
+  # #554 (QS-02 da P5): em cada ano, o total declarado e de onde ele vem.
+  my $fech = $B->fechamento_folha($dbh, $uf, $B->anos($dbh)->{censo});
+  for my $m (@$cob) {
+    $_->{fechamento} = $fech->{ substr($m->{codigo_ibge}, 0, 6) . "|$_->{ano}" } for @{ $m->{anos} };
+  }
   return { municipios => $cob, padrao => $B->siope_padrao_uf($cob) };
 }
 

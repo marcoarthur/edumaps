@@ -588,6 +588,9 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   my $SIOPE2 = 2002;
   $f->execute($SIOPE2, $_, 'EVA', 'xxx.777.771-xx', $A, '600039', 'Municipal', $aux, 'Outros profissionais da educação', 30, 1600)
     for qw(Janeiro Fevereiro);
+  # #554: escola que o SIOPE declara e o Censo não tem (código novo): fora da lista da base
+  my $FORA = '60003904';
+  $f->execute($SIOPE, 'Janeiro', 'FABIO', 'xxx.444.441-xx', $FORA, '600039', 'Municipal', 'Docente', $mag, 40, 500);
   # mês só com a Secretaria: não conta nos meses da cobertura
   $f->execute($SIOPE2, 'Março', 'DORA', 'xxx.555.551-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 9999);
 
@@ -654,8 +657,17 @@ subtest 'remuneração do SIOPE por escola (#491)' => sub {
   my ($cid) = grep { $_->{codigo_ibge} eq "$MUN" } @{ $cat->{folha}{municipios} };
   ok $cid, 'município do teste na cobertura da UF';
   is $cid->{uf}, 'AC', 'UF do município';
-  is [ map { [ @$_{qw(ano meses escolas)} ] } @{ $cid->{anos} } ], [[2002, 2, 1], [2001, 3, 1]],
-    'anos (mais recente primeiro), meses e escolas';
+  is [ map { [ @$_{qw(ano meses escolas)} ] } @{ $cid->{anos} } ], [[2002, 2, 1], [2001, 3, 2]],
+    'anos (mais recente primeiro), meses e escolas (a do SIOPE fora do Censo também)';
+  # #554 (QS-02 da P5): o total declarado e de onde vem; as partes fecham
+  my ($a2001) = grep { $_->{ano} == 2001 } @{ $cid->{anos} };
+  my $fe = $a2001->{fechamento};
+  is [ @$fe{qw(total escolas_base secretaria fora_total)} ], [47499, 37000, 9999, 500],
+    'fechamento: escolas da base + Secretaria + fora da lista = total';
+  is $fe->{fora}, [{ inep => '60003904', escola => undef, valor => 500 }], 'a escola fora da lista, com o código';
+  my ($a2002) = grep { $_->{ano} == 2002 } @{ $cid->{anos} };
+  is [ @{ $a2002->{fechamento} }{qw(total escolas_base secretaria fora_total)} ], [13199, 3200, 9999, 0],
+    'em 2002: a auxiliar e o mês só da Secretaria';
   is $cat->{folha}{escolas}{2001}, 1, 'escolas do recorte com folha em 2001';
   is $cat->{folha}{escolas}{2002}, 1, 'e em 2002';
   if (!grep { $_->{codigo_ibge} ne "$MUN" } @{ $cat->{folha}{municipios} }) {

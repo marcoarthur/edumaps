@@ -189,6 +189,16 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     amostra: a lista, com os anos de cada município, está em
     [Fontes e metodologia](fontes-e-metodologia.md). No R:
     `base[!is.na(base$prof_magisterio), ]` antes de modelar.
+  - **A soma das escolas não é o total declarado.** O município declara ao
+    SIOPE também a folha da Secretaria, sem escola, e a de escolas que a
+    lista do Censo não tem (código novo ou escola fechada). Nenhuma das
+    duas entra na base, que tem uma linha por escola do Censo. Com o bloco
+    marcado, a tela fecha a conta de cada município no ano: o total
+    declarado, o que está nas escolas da base, o da Secretaria e o das
+    escolas fora da lista, com o código e o nome como o SIOPE declara. Em
+    Ubatuba (2026), R$ 67,7 mi declarados: R$ 55,6 mi nas escolas, R$ 11,8
+    mi da Secretaria e R$ 267,8 mil numa escola fora da lista do Censo
+    2025.
   - **`prof_magisterio` = 0 e o salário vazio:** a escola tem folha, mas
     ninguém no magistério. É o caso das creches em que a folha só traz
     auxiliares e assistentes educacionais (veja `aux_educacional`); o Censo

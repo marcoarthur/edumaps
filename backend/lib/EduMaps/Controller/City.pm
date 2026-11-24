@@ -71,8 +71,10 @@ sub payroll($self) {
 sub overall_payroll($self) {
   my $model = $self->instantiate_model(model => 'City', route_params => [qw(codigo_ibge)]);
 
+  # #554: o modelo devolve o JSON já em bytes UTF-8; com `text` o Mojo
+  # codificava de novo, e "São Paulo" saía "SÃ£o Paulo".
   $self->render(
-    text => $model->overall_payroll,
+    data => $model->overall_payroll,
     format => 'json'
   );
 }

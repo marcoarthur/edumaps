@@ -43,6 +43,10 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   pessoas diferentes podem ter o mesmo CPF mascarado; contar só por ele
   deixava o total abaixo do real.
 - **Agregado da Secretaria ≠ escola.** Em muitos casos os valores são consolidados por rede/município/Secretaria, não por unidade escolar individual (#70/#91).
+  Mesmo onde o SIOPE separa as escolas, parte da folha fica na Secretaria,
+  sem escola: somar as escolas não dá o total do município. A
+  [base de análise](../comunidade/base-de-analise.md) mostra a conta
+  (escolas, Secretaria e escolas fora da lista do Censo).
 - **"n/d"** = não disponível. Ausência nunca é zero (#154).
 - **Ano de referência** — sempre verifique qual exercício está sendo exibido.
 
