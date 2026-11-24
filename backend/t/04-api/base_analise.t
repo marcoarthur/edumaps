@@ -32,7 +32,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
   $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = ? AND tabela_id = '9514'}, {}, "$MUN");
-  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003))', {}, @INEPS, '600039');
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003, 2004))', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -756,6 +756,31 @@ subtest 'mês com a folha pela metade (#557)' => sub {
 
   my $r = $t->get_ok("/api/school/$A/finance?ano=$ANO_F")->status_is(200)->tx->res->json;
   is [ map { $_->{nome} } @{ $r->{meses_incompletos} // [] } ], ['maio'], 'painel financeiro com o mês incompleto';
+};
+
+subtest 'mês da Secretaria não conta como por escola (#558)' => sub {
+  my $ANO_S = 2004;
+  my $f = $dbh->prepare('INSERT INTO clean.remuneracao_municipal
+     (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, carga_horaria, salario_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  my $mag = 'Profissionais do magistério';
+  # janeiro só na escola; fevereiro dividido, a maior parte na escola;
+  # março com um centavo na escola e o resto na Secretaria; abril só na Secretaria
+  my @l = (['Janeiro', $A, 3000], ['Fevereiro', $A, 3000], ['Fevereiro', 99999999, 1000],
+           ['Março', $A, 0.01], ['Março', 99999999, 5000], ['Abril', 99999999, 5000]);
+  $f->execute($ANO_S, $_->[0], 'ANA', 'xxx.111.444-xx', $_->[1], '600039', 'Municipal', 'Docente', $mag, 40, $_->[2]) for @l;
+
+  my $lugar = EduMaps::BaseAnalise->meses_por_lugar($dbh, '600039')->{"600039|$ANO_S"};
+  is $lugar, { escola => [1, 2], secretaria => [3, 4] }, 'pela maior parte do valor';
+
+  my $cat = $t->get_ok("/api/base-analise?uf=AC&codigo_ibge=$MUN")->tx->res->json;
+  my ($cid) = grep { $_->{codigo_ibge} eq "$MUN" } @{ $cat->{folha}{municipios} };
+  my ($a4) = grep { $_->{ano} == $ANO_S } @{ $cid->{anos} };
+  is [ @$a4{qw(meses escolas)} ], [2, 1], 'meses por escola: só janeiro e fevereiro';
+  is [ $a4->{meses_escola}, $a4->{meses_secretaria} ], [[1, 2], [3, 4]], 'as duas listas de meses';
+
+  my $r = $t->get_ok("/api/school/$A/finance?ano=$ANO_S")->status_is(200)->tx->res->json;
+  is $r->{meses_secretaria}, [3, 4], 'painel da escola: os meses só da Secretaria';
 };
 
 done_testing;

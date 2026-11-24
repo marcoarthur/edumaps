@@ -527,6 +527,12 @@ sub financial_summary($self, $params) {
     series     => $series     // [],
     categorias => $categorias // [],
     por_fonte  => $por_fonte,
+    # #558 (QT-02 da P2): os meses do ano em que o município declarou a
+    # folha (quase) só no total da Secretaria: neles a folha da escola não
+    # aparece. Só faz sentido quando o painel é da escola.
+    meses_secretaria => (defined $ano && $siope->{cod_municipio} && $origem eq 'escola'
+      ? ((EduMaps::BaseAnalise->meses_por_lugar($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"} // {})->{secretaria} // [])
+      : []),
     # #557 (QT-01 da P2): os meses do ano em que a folha do município veio
     # pela metade (vale para todas as escolas dele).
     meses_incompletos => (defined $ano && $siope->{cod_municipio}

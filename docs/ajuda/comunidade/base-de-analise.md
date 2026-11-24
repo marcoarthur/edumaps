@@ -175,6 +175,11 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - **Folha por escola só em parte do ano.** Quando o município passa a
+    declarar a folha no total da Secretaria, a tela da base diz em que meses
+    ela é por escola (ex.: Cuiabá 2026, só janeiro e fevereiro; de março a
+    agosto, só a Secretaria). Nas escolas, `meses_folha` fica pequeno, e o
+    gasto do ano cobre só esses meses.
   - `meses_folha_incompletos`: os meses do ano em que a folha do município
     veio pela metade (ex.: `set, out`), com menos categorias de profissionais
     que o habitual do ano ou menos da metade dos registros de um mês típico.
