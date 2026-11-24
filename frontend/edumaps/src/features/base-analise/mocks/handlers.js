@@ -12,7 +12,8 @@ export const baseAnaliseHandlers = [
         ? { padrao: 2026, escolas: { 2026: 48 },
             municipios: [
               { codigo_ibge: "3554102", municipio: "Taubaté", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 0,
-                fechamento: { total: 163254335, escolas_base: 0, secretaria: 163254335, fora_total: 0, fora: [] } }] },
+                fechamento: { total: 163254335, escolas_base: 0, secretaria: 163254335, fora_total: 0, fora: [] },
+                salario_magisterio: { pessoas: 2961, total: 6975, base: 2669, carga_comum: 18 } }] },
               { codigo_ibge: "3555406", municipio: "Ubatuba", uf: "SP", anos: [{ ano: 2026, meses: 8, escolas: 48,
                 incompletos: [{ mes: 7, nome: "julho", registros: 500, categorias: 5, registros_habitual: 1200, categorias_habitual: 9 }],
                 fechamento: { total: 67696409, escolas_base: 55590647, secretaria: 11838003, fora_total: 267757,

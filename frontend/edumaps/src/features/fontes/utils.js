@@ -79,3 +79,17 @@ function textoAnoFolhaSemCarga(a) {
   }
   return `${a.meses} ${a.meses === 1 ? "mês" : "meses"}${sufixoIncompletos(a.incompletos)}, ${escolas}`;
 }
+
+const brl = (v) => `R$ ${Math.round(Number(v) || 0).toLocaleString("pt-BR")}`;
+
+/**
+ * #571 (QI-01 da P3): o salário do magistério da rede inteira (escolas e o
+ * total da Secretaria), por mês, sem dezembro e sem conversão para 40 horas.
+ * "salário total R$ 6.975 e base R$ 2.669 (medianas por mês, sem dezembro, de 2.961 profissionais do magistério); carga mais comum: 18"
+ */
+export function textoSalarioRede(s) {
+  if (!s || !s.pessoas) return "";
+  const pessoas = `${Number(s.pessoas).toLocaleString("pt-BR")} ${s.pessoas === 1 ? "profissional" : "profissionais"} do magistério`;
+  const carga = s.carga_comum != null ? `; carga mais comum: ${Number(s.carga_comum).toLocaleString("pt-BR")}` : "";
+  return `salário total ${brl(s.total)} e base ${brl(s.base)} (medianas por mês, sem dezembro, de ${pessoas})${carga}`;
+}

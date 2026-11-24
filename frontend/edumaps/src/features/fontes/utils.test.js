@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -32,5 +32,13 @@ describe("meses da folha por escola e da Secretaria (#558)", () => {
     expect(textoAnoFolha({ meses: 8, escolas: 0, incompletos: [{ nome: "julho" }] })).toBe("só o total da Secretaria; julho incompleto; carga não registrada");
     expect(textoAnoFolha({ meses: 12, escolas: 167, meses_escola: [1], meses_secretaria: [] , incompletos: [{ nome: "setembro" }] }))
       .toBe("12 meses (setembro incompleto), 167 escolas; carga não registrada");
+  });
+});
+
+describe("salário do magistério da rede (#571)", () => {
+  it("medianas, pessoas e a carga mais comum", () => {
+    expect(textoSalarioRede({ pessoas: 2961, total: 6975, base: 2669, carga_comum: 18 })).toBe(
+      "salário total R$ 6.975 e base R$ 2.669 (medianas por mês, sem dezembro, de 2.961 profissionais do magistério); carga mais comum: 18");
+    expect(textoSalarioRede(null)).toBe("");
   });
 });

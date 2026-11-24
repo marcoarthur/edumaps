@@ -649,6 +649,35 @@ sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
   return \%por;
 }
 
+# #571 (QI-01 da P3): o salário do magistério da rede inteira (escolas e o
+# total da Secretaria), por município e ano: por pessoa e mês, sem dezembro
+# (13º), a mediana do salário total e do base, e a carga mais comum. Sem
+# conversão para 40 horas (B1): a carga pode não estar em horas (#572).
+# Chave "<cod6>|<ano>".
+sub salario_rede ($class, $dbh, $cod6 = undef) {
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod6, $cod6);
+      WITH pm AS (
+        SELECT cod_municipio::text AS cod6, ano::int AS ano, left(mes, 3) AS m, cpf, nome_profissional,
+               sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch
+          FROM clean.remuneracao_municipal
+         WHERE tipo = '$MAGISTERIO' AND left(mes, 3) <> 'Dez'
+           AND (?::text IS NULL OR cod_municipio::text = ?)
+         GROUP BY 1, 2, 3, 4, 5
+      )
+      SELECT cod6, ano,
+             count(DISTINCT (cpf, nome_profissional))::int AS pessoas,
+             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY t))::float8 AS total,
+             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY b))::float8 AS base,
+             (mode() WITHIN GROUP (ORDER BY ch))::float8 AS carga
+        FROM pm GROUP BY 1, 2
+      SQL
+  } // [];
+  return { map { ("$_->{cod6}|$_->{ano}" => {
+    pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
+  }) } @$rows };
+}
+
 sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(q{
@@ -668,6 +697,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
   } // [];
   my $inc = $class->meses_incompletos($dbh);
   my $lugar = $class->meses_por_lugar($dbh);
+  my $salario = $class->salario_rede($dbh);   # #571
   # #564 (QQ-02 da P6): a data de cada carga registrada, por município e ano
   my %carga;
   my ($manifesto) = eval { $dbh->selectrow_array(
@@ -688,6 +718,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
     # #557: os meses com a folha pela metade
     $m->{anos}[-1]{incompletos} = $inc->{$chave} // [];
     $m->{anos}[-1]{carga} = $carga{$chave};   # #564: undef = carga não registrada
+    $m->{anos}[-1]{salario_magisterio} = $salario->{$chave};   # #571: a rede inteira
     # #558 (QT-02 da P2): os meses por escola e os da Secretaria, pela maior
     # parte do valor. "meses" conta só os por escola (o mês com um centavo
     # numa escola e o resto na Secretaria não é folha por escola); sem

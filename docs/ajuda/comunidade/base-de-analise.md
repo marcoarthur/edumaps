@@ -191,6 +191,11 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.
+  - **O salário da rede inteira.** Com o bloco marcado, a tela diz, por
+    município, o salário do magistério de toda a folha (escolas e total da
+    Secretaria): a mediana do total e do base, por mês e sem dezembro, e a
+    carga mais comum. Vale também onde o SIOPE só traz o total da Secretaria
+    e a base sai sem salário (Taubaté).
   - **A data da carga.** A tela da base diz, para cada município e ano com
     folha, quando ela foi baixada do SIOPE ("carga em 24/11/2026"), ou
     "carga não registrada" para as cargas antigas. Cite a data junto do

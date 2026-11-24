@@ -530,6 +530,11 @@ sub financial_summary($self, $params) {
     # #558 (QT-02 da P2): os meses do ano em que o município declarou a
     # folha (quase) só no total da Secretaria: neles a folha da escola não
     # aparece. Só faz sentido quando o painel é da escola.
+    # #571 (QI-01 da P3): o salário do magistério da rede inteira no ano,
+    # com a folha da Secretaria (vale também no painel da Secretaria).
+    salario_rede => (defined $ano && $siope->{cod_municipio}
+      ? EduMaps::BaseAnalise->salario_rede($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
+      : undef),
     # #567 (P1-FL-01): os docentes do Censo ao lado da folha, e quantos
     # profissionais do magistério do município estão só no total da
     # Secretaria (sem escola). Só no painel da escola.

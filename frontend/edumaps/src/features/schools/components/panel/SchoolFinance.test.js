@@ -190,3 +190,17 @@ describe("SchoolFinance — meses e a soma das categorias (#568)", () => {
     expect(screen.queryByTestId("nota-soma-categorias")).toBeNull();
   });
 });
+
+// #571 (QI-01 da P3): o salário do magistério da rede inteira.
+describe("SchoolFinance — salário da rede (#571)", () => {
+  const S = { pessoas: 2961, total: 6975, base: 2669, carga_comum: 18 };
+  it("também no painel da Secretaria", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S } });
+    expect(screen.getByTestId("salario-rede")).toHaveTextContent("Magistério na rede municipal em 2026: salário total R$ 6.975 e base R$ 2.669");
+    expect(screen.getByTestId("salario-rede")).toHaveTextContent("sem conversão para 40 horas");
+  });
+  it("sem dado, sem a linha", () => {
+    setup();
+    expect(screen.queryByTestId("salario-rede")).toBeNull();
+  });
+});
