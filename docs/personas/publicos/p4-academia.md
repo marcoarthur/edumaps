@@ -218,10 +218,37 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   Trigésima sétima rodada (2026-11-23, **adotaria**, com ressalva no DF):
   QL-01 (no Distrito Federal a rede distrital e as conveniadas com o
   governo distrital somem da taxa da rede e do teto) → #545, entregue (#546).
+  Trigésima oitava rodada (2026-11-24, **adotaria**, com ressalva no gasto
+  anual de 2025 em Cuiabá): QM-01 (os meses incompletos marcados, sem como
+  tirá-los da conta), aguardando a aprovação do developer.
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 
 ## Entradas
+
+### 2026-11-24 — Gasto com pessoal por aluno em Cuiabá (trigésima oitava rodada)
+
+**Material:** a base da rede municipal de Cuiabá (folha de 2025) e o
+dicionário, as ajudas da base e de financeiro e folha, o painel de uma
+escola. Consolidação em
+[`avaliacoes/2026-11-24-p4-folha-por-aluno.md`](avaliacoes/2026-11-24-p4-folha-por-aluno.md).
+
+**O que tentou:** "o gasto com pessoal por aluno é maior nas escolas que
+atendem alunos mais pobres?", e a educação infantil contra o fundamental.
+
+**O que funciona para ela:** os meses incompletos em toda linha, com o
+motivo no dicionário; o gasto por fonte somando o do ano; nas 52 escolas
+com INSE (todas com 12 meses), R$ 6.368 por aluno na metade mais pobre
+contra R$ 7.104 na mais rica.
+
+**Barreiras:**
+- QM-01 (atrapalha): sem o gasto dos meses completos, não dá para
+  anualizar; 53 creches com 10 meses e as escolas de fundamental sem os
+  auxiliares em setembro e outubro. A comparação com a educação infantil
+  fica de fora.
+
+**Veredito:** **adotaria** (mantido), com ressalva no gasto anual de 2025
+em Cuiabá.
 
 ### 2026-11-23 — Educação infantil por porte e região (trigésima sétima rodada)
 
