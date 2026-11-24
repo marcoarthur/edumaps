@@ -331,6 +331,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       (2025) diz "A planilha do SIOPE baixada em <data> traz estes meses assim".
 - [ ] Fundeb da folha inteira e folha por município (#579, #580, sem change nova): `curl -s 'http://127.0.0.1:3000/api/base-analise/folha-municipios.csv?uf=SP'`
       traz Taubaté e Ubatuba com 26 colunas (Ubatuba: `fundeb_70` 63980190); a tela da base de SP mostra "Pela fonte: 94,5%…" e o link.
+- [ ] Aviso de anos com a folha (#583, só frontend): a tela da base de Cuiabá com Desempenho e Remuneração (folha 2025)
+      diz "A folha do SIOPE é de 2025, dois anos depois do IDEB (2023)".
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

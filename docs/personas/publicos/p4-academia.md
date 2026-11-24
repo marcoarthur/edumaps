@@ -114,6 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: mesma regra na escola e na rede.
 - [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 - [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
+- [2026-11-24 — aviso de anos com o ano da folha](ciclos/2026-11-24-aviso-anos-folha.md#p4--academia-pesquisadora): adotaria (mantido). QF-01 resolvido.
 
 ## Pendências
 
@@ -232,7 +233,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   anual de 2025 em Cuiabá): QM-01 (os meses incompletos marcados, sem como
   tirá-los da conta) → #561, entregue (#562).
   Trigésima nona rodada (2026-11-24, **adotaria**, modo autônomo): QF-01
-  (o aviso de anos diferentes não fala da folha) → #583.
+  (o aviso de anos diferentes não fala da folha) → #583, entregue (#584).
 - Voltar a checar quando houver mais de um Censo carregado (séries) ou base
   nacional (assinatura).
 

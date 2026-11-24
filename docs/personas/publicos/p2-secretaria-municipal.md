@@ -114,6 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — piso na rede inteira](ciclos/2026-11-24-piso-rede-inteira.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a rede abaixo do piso no painel.
 - [2026-11-24 — aviso do mês incompleto com a carga](ciclos/2026-11-24-aviso-mes-fonte.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno: a correção é na declaração.
 - [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno.
+- [2026-11-24 — aviso de anos com o ano da folha](ciclos/2026-11-24-aviso-anos-folha.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Sem impacto relevante.
 
 ## Pendências
 

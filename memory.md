@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (eg) — modo autônomo: 39ª avaliação da P4, #583 (PR #584)
+
+- Trigésima nona rodada da P4 (salário do professor e IDEB em Cuiabá):
+  adotaria. QF-01 → #583 (PR #584, 9c9bee4): o aviso de anos diz o ano da
+  folha do SIOPE.
+- Carga dos setores do Censo 2022 rodando no local (download liberado): a
+  malha entrou (468.097 setores). A #429 continua dependendo de decisão de
+  produto (público ou pago, recorte do entorno); a carga só prepara.
+- Nota técnica 275; ciclo `2026-11-24-aviso-anos-folha.md`.
+
 ## Sessão 2026-11-24 (ef) — modo autônomo: 4ª avaliação da P6, #579 e #580
 
 - O developer autorizou o modo autônomo às 18:50 ("execute de modo

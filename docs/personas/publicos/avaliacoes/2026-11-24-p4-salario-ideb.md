@@ -53,3 +53,8 @@ que ela mesma precisa notar (QF-01).
 ## Encaminhamento
 
 Issue **#583** (QF-01), aberta no modo autônomo autorizado pelo developer.
+
+## Andamento
+
+- 2026-11-24: #583 (PR #584) mergeado: QF-01 resolvido. O aviso diz "A folha
+  do SIOPE é de 2025, dois anos depois do IDEB (2023)".
