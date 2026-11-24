@@ -103,3 +103,13 @@ soma que fecha com o total declarado (QS-02).
 ## Encaminhamento
 
 Issues **#553** (QS-01) e **#554** (QS-02), abertas com a aprovação do developer.
+
+## Andamento
+
+- 2026-11-24: #553 (PR #555) mergeado: QS-01 resolvido.
+  - O painel financeiro (escola ou Secretaria) mostra a folha do ano por
+    fonte: parcela de 70% do Fundeb, de 30% e outras fontes, com o aviso
+    de que não é a verificação do mínimo legal.
+  - A base traz `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
+    `gasto_outras_fontes_ano`.
+- QS-02 (#554) segue aberto.

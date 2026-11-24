@@ -4,6 +4,27 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ds) — 4ª avaliação da P5, #553 (PR #555)
+
+- Quarta rodada da P5, agora o conselheiro do CACS-Fundeb (Ubatuba, folha
+  de 2026): não adotaria (registro; mantido).
+  - QS-01: a parte do Fundeb na folha não aparecia → #553.
+  - QS-02: a folha da Secretaria fora da soma da base → #554 (aberta).
+- PR #555 (e18813c), opções A1 e B1:
+  - `por_fonte` no resumo financeiro e o cartão "Por fonte de recurso"
+    (Fundeb 70%, 30%, outras), com o aviso de que não é o mínimo legal;
+  - `gasto_fundeb_70_ano`, `gasto_fundeb_30_ano` e
+    `gasto_outras_fontes_ano` na base, em reais inteiros.
+- Na validação, o CSV real mostrou "1,13291e+06": o formatador da base usa
+  `%.6g` para não inteiros. Coluna em reais na base sai arredondada a
+  inteiro (como `gasto_pessoal_ano`), e há um teste contra notação
+  científica.
+- Para rodar a suíte Perl, o banco de fixtures sobe com
+  `EDUMAPS_CI_PORT=55432 db/fixtures/ci_db.sh up` (a 5432 é do compose).
+- O LXC continua fora do ar. Pendentes lá: os deploys de #489 a #555 e a
+  carga `IBGEPopulacaoIdade`.
+- Nota técnica 261; ciclo `2026-11-24-fundeb-na-folha.md`.
+
 ## Sessão 2026-11-24 (dr) — #550 (PR #552), fontes no CSV do ranking
 
 - PR #552 (7ab52fb), opções A1 e B1:

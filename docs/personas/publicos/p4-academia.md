@@ -100,6 +100,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-23 — vagas que faltam para a meta](ciclos/2026-11-23-vagas-faltam-meta.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o déficit em vagas por recorte.
 - [2026-11-23 — taxa bruta de matrícula](ciclos/2026-11-23-taxa-bruta.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o método nomeado.
 - [2026-11-24 — fontes no CSV do ranking](ciclos/2026-11-24-fontes-csv-ranking.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o arquivo diz a carga.
+- [2026-11-24 — folha por fonte de recurso (Fundeb)](ciclos/2026-11-24-fundeb-na-folha.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno: o financiamento da folha na base.
 
 ## Pendências
 

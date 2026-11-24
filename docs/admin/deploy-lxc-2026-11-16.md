@@ -292,6 +292,10 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       é "Creche (0 a 3 anos): taxa bruta de matrícula"; a tela diz "abaixo de 50%" e traz o aviso de que não é o indicador oficial.
 - [ ] Fontes no CSV do ranking (#550, só frontend): na página `/ranking?aba=redes&uf=PE&indicador=atendimento_creche`,
       o "Baixar CSV" traz as colunas `fontes` (Censo Escolar, estimativa e população por idade, com a data da carga) e `fontes_links`.
+- [ ] Folha por fonte de recurso (#553, sem change nova): `curl -s http://127.0.0.1:3000/api/school/35010919/finance | jq .por_fonte`
+      (Secretaria de Taubaté, 2026) traz `fundeb_70` perto de 137,5 mi e `fundeb_30` perto de 25,7 mi; o painel
+      `/escola/financeiro?inep=35010919` mostra o cartão "Por fonte de recurso" com o aviso do mínimo legal; a base de Ubatuba
+      (bloco Remuneração, 2026) traz `gasto_fundeb_70_ano` em reais inteiros, sem notação científica.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
