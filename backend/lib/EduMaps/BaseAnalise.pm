@@ -330,6 +330,21 @@ my $SQL_MESES = <<~"SQL";
    ORDER BY 1, 2, 3
   SQL
 
+# #563 (QQ-01 da P6): o piso salarial profissional nacional do magistério
+# público da educação básica, por 40 horas semanais, por ano. Sobe uma vez
+# por ano, por ato do MEC: o reajuste entra aqui, no PR do ano, com o ato.
+# Ano sem piso cadastrado deixa as colunas do piso vazias (nada inventado).
+our %PISO_MAGISTERIO = (
+  2024 => { valor => 4580.57, ato => 'portaria do MEC de janeiro de 2024' },
+  2025 => { valor => 4867.77, ato => 'portaria do MEC de janeiro de 2025' },
+  2026 => { valor => 5130.63, ato => 'Portaria MEC nº 82, de 29 de janeiro de 2026' },
+);
+
+sub piso_magisterio ($class, $ano) {
+  my $p = $PISO_MAGISTERIO{ $ano // '' } or return undef;
+  return $p->{valor};
+}
+
 # Folha do SIOPE por escola no ano (#491). Primeiro por pessoa e mês (a mesma
 # pessoa pode ter mais de um vínculo na escola no mesmo mês), depois por
 # escola. O mês vem em texto, com um caso conhecido de latin1 ("Março"): as
@@ -337,7 +352,35 @@ my $SQL_MESES = <<~"SQL";
 # fora: não é escola.
 my $MES_NUM_R = _mes_num('r.mes');
 my $SQL_FOLHA = <<~"SQL";
-  SELECT cod_inep,
+  WITH pm AS (
+    SELECT r.cod_inep, left(r.mes, 3) AS m, r.cpf, r.nome_profissional, r.tipo,
+                 r.categoria = '$AUX_EDUCACIONAL' AS aux,
+                 sum(r.salario_total) AS s, sum(r.carga_horaria) AS ch,
+                 sum(r.salario_fundeb_max) AS f70, sum(r.salario_fundeb_min) AS f30,
+                 sum(r.salario_outros) AS fo,
+                 sum(r.salario_base) AS b,   -- #563: o salário base (vencimento)
+                 bool_or(i.mes IS NOT NULL) AS inc   -- #561: mês incompleto do município (#557)
+            FROM clean.remuneracao_municipal r
+            LEFT JOIN ($SQL_MESES) i
+              ON i.cod6 = r.cod_municipio::text AND i.ano = r.ano AND i.mes = $MES_NUM_R
+           WHERE r.ano = ? AND r.cod_inep <> 99999999
+           GROUP BY 1, 2, 3, 4, 5, 6
+  ),
+  -- #563 (QQ-01 da P6): o piso do ano (vazio sem piso cadastrado) e, por
+  -- escola, quem tem o salário base para 40 horas abaixo dele no mês típico
+  -- (a mediana dos meses da pessoa, sem dezembro): o mês de admissão ou de
+  -- desconto sozinho não conta.
+  p AS (SELECT ?::float8 AS piso),
+  pp AS (
+    SELECT cod_inep, (count(*) FILTER (WHERE md < (SELECT piso FROM p)))::int AS abaixo
+      FROM (SELECT cod_inep, cpf, nome_profissional,
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md
+              FROM pm
+             WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0 AND b IS NOT NULL
+             GROUP BY 1, 2, 3) x
+     GROUP BY 1
+  )
+  SELECT pm.cod_inep,
          (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE tipo = '$MAGISTERIO'))::int AS prof_magisterio,
          round((count(*) FILTER (WHERE tipo = '$MAGISTERIO'))::numeric / count(DISTINCT m), 1)::float8 AS prof_magisterio_mes,
          (count(DISTINCT (cpf, nome_profissional)) FILTER (WHERE aux))::int AS aux_educacional,
@@ -353,19 +396,12 @@ my $SQL_FOLHA = <<~"SQL";
          count(DISTINCT m)::int AS meses,
          -- #561 (QM-01 da P4): só os meses fora dos incompletos, para anualizar
          (count(DISTINCT m) FILTER (WHERE NOT inc))::int AS meses_completos,
-         coalesce(round(sum(s) FILTER (WHERE NOT inc)), 0)::float8 AS gasto_completos
-    FROM (SELECT r.cod_inep, left(r.mes, 3) AS m, r.cpf, r.nome_profissional, r.tipo,
-                 r.categoria = '$AUX_EDUCACIONAL' AS aux,
-                 sum(r.salario_total) AS s, sum(r.carga_horaria) AS ch,
-                 sum(r.salario_fundeb_max) AS f70, sum(r.salario_fundeb_min) AS f30,
-                 sum(r.salario_outros) AS fo,
-                 bool_or(i.mes IS NOT NULL) AS inc   -- #561: mês incompleto do município (#557)
-            FROM clean.remuneracao_municipal r
-            LEFT JOIN ($SQL_MESES) i
-              ON i.cod6 = r.cod_municipio::text AND i.ano = r.ano AND i.mes = $MES_NUM_R
-           WHERE r.ano = ? AND r.cod_inep <> 99999999
-           GROUP BY 1, 2, 3, 4, 5, 6) pm
-   GROUP BY cod_inep
+         coalesce(round(sum(s) FILTER (WHERE NOT inc)), 0)::float8 AS gasto_completos,
+         round(avg(b / ch * 40) FILTER (WHERE tipo = '$MAGISTERIO' AND m <> 'Dez' AND ch > 0))::float8 AS salario_base_40h,
+         (SELECT piso FROM p) AS piso,
+         CASE WHEN (SELECT piso FROM p) IS NULL THEN NULL ELSE coalesce(max(pp.abaixo), 0) END AS abaixo_piso
+    FROM pm LEFT JOIN pp ON pp.cod_inep = pm.cod_inep
+   GROUP BY pm.cod_inep
   SQL
 
 sub _blocos {
@@ -468,6 +504,13 @@ sub _blocos {
           "Carga horária semanal média de um profissional do magistério por mês, em horas, sem dezembro. Soma os vínculos da pessoa na escola no mês. $SIOPE_VAZIO", 1],
         ['salario_40h_magisterio', 'f.salario_40h',
           "Salário médio do magistério convertido para 40 horas semanais (salário ÷ carga × 40), em reais, sem dezembro e sem os meses sem carga horária. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
+        # #563 (QQ-01 da P6): o salário base (vencimento), sobre o qual vale o piso.
+        ['salario_base_40h_magisterio', 'f.salario_base_40h',
+          "Salário base (vencimento, sem gratificações nem adicionais) médio por mês de um profissional do magistério, convertido para 40 horas semanais (base ÷ carga × 40), em reais, sem dezembro. É sobre o salário base que vale o piso do magistério; salario_40h_magisterio é o salário total. $SIOPE_VAZIO $SEM_MAGISTERIO", 1],
+        ['piso_magisterio_ano', 'CASE WHEN f.cod_inep IS NOT NULL THEN f.piso END',
+          "O piso salarial nacional do magistério do ano da folha, por 40 horas semanais, usado em prof_magisterio_base_abaixo_piso (2024: R\$ 4.580,57; 2025: R\$ 4.867,77; 2026: R\$ 5.130,63, Portaria MEC nº 82/2026). Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
+        ['prof_magisterio_base_abaixo_piso', 'f.abaixo_piso',
+          "Profissionais do magistério da escola com o salário base para 40 horas abaixo do piso do ano no mês típico (a mediana dos meses da pessoa, sem dezembro): um mês de admissão ou de desconto sozinho não conta. Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. Vazio: ano sem piso cadastrado, ou escola sem folha", 1],
         # #512 (QZ-02): na educação infantil, quem está com as crianças pode
         # estar na folha como auxiliar ou assistente educacional, não no
         # magistério.
@@ -837,7 +880,8 @@ sub linhas ($class, $dbh, $recorte, $blocos, $ano_ideb = undef, $ano_siope = und
   }
   if ($tem{remuneracao}) {
     $joins .= " LEFT JOIN ($SQL_FOLHA) f ON f.cod_inep = e.co_entidade";
-    push @jb, undef, undef, $ano_siope // -1;   # meses incompletos (todos os municípios) e o ano
+    push @jb, undef, undef, $ano_siope // -1,   # meses incompletos (todos os municípios) e o ano
+              $class->piso_magisterio($ano_siope // -1);   # #563: o piso do ano (ou vazio)
     # #557: os meses incompletos do município no ano da folha
     $joins .= " LEFT JOIN (SELECT cod6, string_agg((ARRAY['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'])[mes], ', ' ORDER BY mes) AS meses FROM ($SQL_MESES) q WHERE ano = ? GROUP BY cod6) mi"
             . ' ON mi.cod6 = left(e.co_municipio::text, 6)';

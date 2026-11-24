@@ -49,6 +49,12 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   folha no total da Secretaria, sem separar as escolas, um aviso diz em que
   meses isso aconteceu (ex.: "De março a agosto de 2026"). Nesses meses a
   folha da escola não aparece, e o custo do ano fica abaixo do real.
+- **Salário base e salário total.** O SIOPE traz, em cada pagamento, o
+  salário base (vencimento) e o total (com gratificações e adicionais). O
+  piso do magistério vale para o salário base. A folha detalhada mostra os
+  dois; a [base de análise](../comunidade/base-de-analise.md) traz o salário
+  base para 40 horas por escola e quantos profissionais ficam abaixo do piso
+  do ano, com o aviso de que não é a verificação legal.
 - **Dezembro inclui o 13º salário:** o custo de dezembro é maior que o dos
   outros meses.
 - **Como os profissionais são contados:** cada pessoa conta uma vez, pelo CPF

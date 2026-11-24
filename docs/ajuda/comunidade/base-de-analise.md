@@ -171,7 +171,20 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `salario_40h_magisterio`: médias por pessoa e por mês, **sem dezembro**
     (que traz o 13º). Quem tem dois vínculos na escola no mesmo mês tem os
     salários e as cargas somados. O salário para 40 horas é salário ÷ carga
-    × 40, para comparar escolas com jornadas diferentes.
+    × 40, para comparar escolas com jornadas diferentes. É o salário
+    **total**: o vencimento mais gratificações e adicionais.
+  - `salario_base_40h_magisterio`: o mesmo, só com o salário **base**
+    (vencimento). É sobre ele que vale o piso do magistério.
+  - `piso_magisterio_ano` e `prof_magisterio_base_abaixo_piso`: o piso
+    nacional do magistério do ano, por 40 horas (2024: R$ 4.580,57; 2025:
+    R$ 4.867,77; 2026: R$ 5.130,63), e quantos profissionais do magistério
+    da escola têm o salário base para 40 horas abaixo dele no mês típico (a
+    mediana dos meses da pessoa, sem dezembro). Um mês de admissão ou de
+    desconto sozinho não conta: em Cuiabá (2025), "abaixo em algum mês"
+    daria 673 pessoas; no mês típico, 40. **Não é a verificação legal do
+    piso:** complementos, jornada, licenças e reajuste pago com atraso
+    mudam a leitura. O número é uma pergunta para a prefeitura, não uma
+    conclusão. Ano sem piso cadastrado deixa as duas colunas vazias.
   - `gasto_pessoal_ano`: todo o salário pago na escola no ano, do magistério
     e dos demais profissionais, **com** o 13º. Com `meses_folha` menor que
     12, é o gasto só desses meses.

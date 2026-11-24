@@ -32,7 +32,7 @@ my $limpa = sub {
   $dbh->do('DELETE FROM clean.inse WHERE id_escola IN (?, ?, ?)', {}, @INEPS);
   $dbh->do('DELETE FROM clean.populacao_municipal WHERE codigo_ibge = ?', {}, "$MUN");
   $dbh->do(q{DELETE FROM clean.ibge_agregados WHERE codigo_ibge = ? AND tabela_id = '9514'}, {}, "$MUN");
-  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003, 2004))', {}, @INEPS, '600039');
+  $dbh->do('DELETE FROM clean.remuneracao_municipal WHERE cod_inep IN (?, ?, ?) OR (cod_municipio::text = ? AND ano IN (2001, 2002, 2003, 2004, 2026))', {}, @INEPS, '600039');
 };
 $limpa->();
 END { $limpa->() }
@@ -787,6 +787,45 @@ subtest 'mês da Secretaria não conta como por escola (#558)' => sub {
 
   my $r = $t->get_ok("/api/school/$A/finance?ano=$ANO_S")->status_is(200)->tx->res->json;
   is $r->{meses_secretaria}, [3, 4], 'painel da escola: os meses só da Secretaria';
+};
+
+subtest 'salário base e o piso do magistério (#563)' => sub {
+  my $ANO_P = 2026;
+  is(EduMaps::BaseAnalise->piso_magisterio(2026), 5130.63, 'piso de 2026');
+  is(EduMaps::BaseAnalise->piso_magisterio(2001), undef, 'ano sem piso cadastrado');
+  my $f = $dbh->prepare('INSERT INTO clean.remuneracao_municipal
+     (ano, mes, nome_profissional, cpf, cod_inep, cod_municipio, rede, categoria, tipo, carga_horaria, salario_base, salario_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  my $mag = 'Profissionais do magistério';
+  my @l = (
+    # ANA: base de 4.000 por 40 h nos três meses, abaixo do piso
+    (map { ['ANA', $_, 40, 4000, 6000] } qw(Janeiro Fevereiro Março)),
+    # BIA: admitida em janeiro (mês pela metade), depois 6.000: não conta
+    ['BIA', 'Janeiro', 40, 1000, 1500], ['BIA', 'Fevereiro', 40, 6000, 7000], ['BIA', 'Março', 40, 6000, 7000],
+    # CAIO: 5.000 por 20 h = 10.000 por 40 h
+    (map { ['CAIO', $_, 20, 5000, 5500] } qw(Janeiro Fevereiro Março)),
+    # dezembro fica de fora (13º)
+    ['ANA', 'Dezembro', 40, 100, 12000],
+  );
+  $f->execute($ANO_P, $_->[1], $_->[0], "xxx.$_->[0].563-xx", $A, '600039', 'Municipal', 'Docente', $mag, $_->[2], $_->[3], $_->[4]) for @l;
+
+  my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_P")->tx);
+  my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
+  my ($a) = grep { $_->[0] eq $A } @$c;
+  my ($b) = grep { $_->[0] eq $B } @$c;
+  is [ @$a[ @i{qw(salario_base_40h_magisterio piso_magisterio_ano prof_magisterio_base_abaixo_piso)} ] ], ['6111', '5130,63', '1'],
+    'base médio por 40 h, o piso do ano e só ANA abaixo (BIA não, pelo mês de admissão)';
+  is [ @$b[ @i{qw(salario_base_40h_magisterio piso_magisterio_ano prof_magisterio_base_abaixo_piso)} ] ], ['', '', ''], 'escola sem folha: vazio';
+  ok $i{salario_base_40h_magisterio} == $i{salario_40h_magisterio} + 1, 'logo depois do salário total';
+
+  my $c1 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=2001")->tx);
+  my %j; @j{ @{ $c1->[0] } } = 0 .. $#{ $c1->[0] };
+  my ($a1) = grep { $_->[0] eq $A } @$c1;
+  is [ @$a1[ @j{qw(piso_magisterio_ano prof_magisterio_base_abaixo_piso)} ] ], ['', ''], 'ano sem piso: vazio, não zero';
+
+  my $d = ler_csv($t->get_ok("/api/base-analise/dicionario?uf=AC&blocos=remuneracao&ano_siope=$ANO_P")->tx);
+  my ($ab) = grep { $_->[0] eq 'prof_magisterio_base_abaixo_piso' } @$d;
+  like $ab->[1], qr/Não é a verificação legal do piso/, 'dicionário avisa';
 };
 
 done_testing;
