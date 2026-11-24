@@ -4,6 +4,15 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-24 (ea) — #568 (PR #570), meses em vez de competências
+
+- PR #570 (160794d), opções A1 e B1: "Meses com folha" e "No último mês"
+  no painel; "para este mês" na folha detalhada; nota da soma das
+  categorias só quando passa do total. Só frontend e ajudas.
+- P1-FL-01 e P1-FL-02 resolvidos. Abertos: AN-12, #429, #454.
+- O LXC continua fora; deploys de #489 a #570.
+- Nota técnica 269; ciclo `2026-11-24-painel-meses-categorias.md`.
+
 ## Sessão 2026-11-24 (dz) — #567 (PR #569), docentes do Censo ao lado da folha
 
 - PR #569 (7983c6c), opções A1 e B1: `docentes` no resumo do painel da

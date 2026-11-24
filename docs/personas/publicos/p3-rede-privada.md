@@ -105,6 +105,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 - [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
+- [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p3--rede-privada-mantenedor): adotaria em piloto para escolher a cidade (mantido). Sem impacto.
 
 ## Pendências
 

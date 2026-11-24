@@ -82,4 +82,6 @@ Issues **#567** (P1-FL-01) e **#568** (P1-FL-02), abertas com a aprovação do d
 - 2026-11-24: #567 (PR #569) mergeado: P1-FL-01 resolvido. O painel diz
   "Docentes na folha: 36 em 2026 (26,5 por mês, em média). No Censo Escolar
   2025: 62.", com o porquê e o aviso de 658 dos 1.374 só na Secretaria.
-- P1-FL-02 (#568) segue aberto.
+- 2026-11-24: #568 (PR #570) mergeado: P1-FL-02 resolvido. "Meses com
+  folha", "No último mês (ago/2026)" e a nota da soma das categorias (59
+  contra 57).

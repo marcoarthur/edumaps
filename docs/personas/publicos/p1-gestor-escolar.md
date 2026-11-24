@@ -109,6 +109,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno: a data dos dados.
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). P1-FL-01 resolvido; P1-FL-02 (#568) aberto.
+- [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). P1-FL-02 resolvido.
 
 ## Pendências
 
@@ -122,7 +123,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #541, entregue (#543), e #542, entregue (#544).
 - Folha da própria escola (2026-11-24, **adotaria**): P1-FL-01 (docentes
   da folha contra os do Censo, sem explicação) e P1-FL-02 ("competências" e
-  a soma das categorias) → #567, entregue (#569), e #568.
+  a soma das categorias) → #567, entregue (#569), e #568, entregue (#570).
 
 ## Entradas
 

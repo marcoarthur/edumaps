@@ -102,6 +102,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — salário base do magistério e o piso](ciclos/2026-11-24-salario-base-piso.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). QQ-01 resolvido; QQ-02 (#564) aberto.
 - [2026-11-24 — registro da carga da folha](ciclos/2026-11-24-registro-carga-siope.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). QQ-02 resolvido.
 - [2026-11-24 — docentes do Censo ao lado da folha](ciclos/2026-11-24-folha-docentes-censo.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno: sem "metade dos professores".
+- [2026-11-24 — meses em vez de competências no painel](ciclos/2026-11-24-painel-meses-categorias.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Sem impacto relevante.
 
 ## Pendências
 
