@@ -64,6 +64,10 @@ sub _query_siope($job, $city_id, $year) {
       _registrar_carga($job->app->schema->storage->dbh, $city_id, $year, $total, $arquivo);
     });
     $driver->cleanup;
+    # #595: o salário da rede é pré-calculado; atualiza com a folha nova.
+    # Falhar aqui não desfaz a carga: fica a conta da carga anterior, no log.
+    eval { $job->app->schema->storage->dbh->do('SELECT analytics.refresh_salario_rede()'); 1 }
+      or $job->app->log->error("salário da rede não atualizado após a carga de $city_id/$year: $@");
   } catch($err) {
     $job->app->log->error("Error during $city_id payroll for year $year");
     return $job->fail({ error => $err });

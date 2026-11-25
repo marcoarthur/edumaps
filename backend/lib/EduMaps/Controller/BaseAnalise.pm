@@ -51,20 +51,20 @@ sub _blocos_ano ($self, $v, $anos) {
   if (defined $ano_siope) {
     return (undef, undef, "Sem folha do SIOPE em $ano_siope") unless grep { $_ == $ano_siope } @{ $anos->{siope} };
   } else {
-    $ano_siope = $self->_siope_uf($v)->{padrao} // $anos->{siope_padrao};
+    $ano_siope = $self->_siope_uf($v, $anos)->{padrao} // $anos->{siope_padrao};
   }
   return (\@blocos, $ano, undef, $ano_siope);
 }
 
 # #512 (QZ-01): a folha da UF do recorte: os municípios com os anos e o
 # ano padrão da UF.
-sub _siope_uf ($self, $v) {
+sub _siope_uf ($self, $v, $anos = undef) {
   my $uf = $v->param('uf');
   return { municipios => [], padrao => undef } unless defined $uf;
   my $dbh = $self->app->schema->storage->dbh;
   my $cob = $B->cobertura_siope($dbh, $uf);
   # #554 (QS-02 da P5): em cada ano, o total declarado e de onde ele vem.
-  my $fech = $B->fechamento_folha($dbh, $uf, $B->anos($dbh)->{censo});
+  my $fech = $B->fechamento_folha($dbh, $uf, ($anos // $B->anos($dbh))->{censo});
   for my $m (@$cob) {
     $_->{fechamento} = $fech->{ substr($m->{codigo_ibge}, 0, 6) . "|$_->{ano}" } for @{ $m->{anos} };
   }
@@ -100,7 +100,7 @@ sub index ($self) {
   # #512 (QZ-01): com a UF, a folha dela e as escolas do recorte com folha
   # em cada ano.
   my $folha = defined $ok->{v}->param('uf')
-    ? { %{ $self->_siope_uf($ok->{v}) }, escolas => $B->contar_folha($dbh, $self->_recorte($ok->{v})) }
+    ? { %{ $self->_siope_uf($ok->{v}, $anos) }, escolas => $B->contar_folha($dbh, $self->_recorte($ok->{v})) }
     : undef;
   $self->res->headers->cache_control('public, max-age=600');
   $self->render(json => {
