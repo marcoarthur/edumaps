@@ -114,3 +114,18 @@ export function textoPisoRede(s, ano) {
 }
 
 const brl2 = (v) => `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/**
+ * #589 (P1-FL-03): o salário da escola, na mesma conta da rede, e quanto
+ * difere da rede no total. "salário total R$ 9.353 e base R$ 6.100 (medianas
+ * por mês, sem dezembro, de 36 profissionais do magistério); 30% acima da
+ * rede no salário total"
+ */
+export function textoSalarioEscola(e, rede) {
+  if (!e || !e.pessoas) return "";
+  const base = textoSalarioRede({ ...e, carga_suspeita: false });
+  if (!rede?.total || !e.total) return base;
+  const dif = Math.round((100 * (e.total - rede.total)) / rede.total);
+  const comp = dif === 0 ? "igual à rede no salário total" : `${Math.abs(dif)}% ${dif > 0 ? "acima" : "abaixo"} da rede no salário total`;
+  return `${base}; ${comp}`;
+}

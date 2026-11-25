@@ -254,3 +254,18 @@ describe("SchoolFinance — folha da Secretaria (#585)", () => {
     expect(screen.queryByTestId("ver-folha-secretaria")).toBeNull();
   });
 });
+
+// #589 (P1-FL-03): o salário da escola ao lado do da rede.
+describe("SchoolFinance — salário da escola (#589)", () => {
+  const REDE = { pessoas: 1374, total: 7186, base: 5572, carga_comum: 31, carga_suspeita: false };
+  const ESC = { pessoas: 36, total: 9341, base: 6100, carga_comum: 30 };
+  it("no painel da escola, ao lado da rede", () => {
+    render(SchoolFinance, { props: { inep: "35070212", series: SERIES, categorias: CATEGORIAS, ano: 2026, salarioRede: REDE, salarioEscola: ESC } });
+    expect(screen.getByTestId("salario-escola")).toHaveTextContent("Nesta escola em 2026: salário total R$ 9.341");
+    expect(screen.getByTestId("salario-escola")).toHaveTextContent("30% acima da rede no salário total");
+  });
+  it("não no painel da Secretaria", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", salarioRede: REDE, salarioEscola: ESC } });
+    expect(screen.queryByTestId("salario-escola")).toBeNull();
+  });
+});

@@ -565,6 +565,10 @@ sub financial_summary($self, $params) {
     salario_rede => (defined $ano && $siope->{cod_municipio}
       ? EduMaps::BaseAnalise->salario_rede($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
       : undef),
+    # #589 (P1-FL-03): o salário do magistério da escola, na mesma conta da
+    # rede (só no painel da escola)
+    salario_escola => ($origem eq 'escola' && defined $ano
+      ? EduMaps::BaseAnalise->salario_escola($dbh, $cod, $ano) : undef),
     # #567 (P1-FL-01): os docentes do Censo ao lado da folha, e quantos
     # profissionais do magistério do município estão só no total da
     # Secretaria (sem escola). Só no painel da escola.

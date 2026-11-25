@@ -71,6 +71,11 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   inteira ficam abaixo do piso no mês típico (entre quem recebeu 3 meses ou
   mais), quantos deles só no total da Secretaria, com o aviso de que não é a
   verificação legal.
+- **O salário da escola e o da rede.** No painel da escola, logo abaixo da
+  linha da rede, "Nesta escola" dá o salário do magistério da escola com a
+  mesma conta (mediana por pessoa e mês, sem dezembro, total e base) e
+  quanto ele está acima ou abaixo da rede no salário total. Na base de
+  análise, o salário da escola está em média e por 40 horas, outra conta.
 - **Docentes na folha e no Censo.** No cartão das categorias, o painel mostra
   os docentes da folha (no ano e a média por mês) e os do Censo Escolar. Os
   números podem diferir: o professor pode ser pago no total da Secretaria,
