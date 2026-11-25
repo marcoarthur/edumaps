@@ -4,6 +4,14 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-25 (ek) — modo autônomo: #591 (PR #592), painel financeiro mais rápido
+
+- `raw.br_municipios_2024` é tabela estrangeira (relê o arquivo da malha):
+  usada na cobertura da folha, deixava o painel financeiro em 2,9 s.
+  PR #592: `clean.malha_municipio` e agregação antes da junção (0,3 s);
+  `salario_rede` aceita lista de municípios.
+- Nota técnica 279.
+
 ## Sessão 2026-11-25 (ej) — modo autônomo: 3ª avaliação da P1, #589 (PR #590)
 
 - Comentário na #429 com os setores carregados, a leitura de exemplo
