@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-25 (ej) — modo autônomo: 3ª avaliação da P1, #589 (PR #590)
+
+- Comentário na #429 com os setores carregados, a leitura de exemplo
+  (SENAC Pindamonhangaba: 779 crianças de 0 a 4 anos em 1 km, 76 ms) e as
+  decisões de produto que continuam com o developer.
+- Terceira rodada da P1 (o salário da escola e o da rede): adotaria.
+  P1-FL-03 → #589 (PR #590): `salario_escola` na mesma conta da rede e a
+  diferença no painel.
+- Nota técnica 278; ciclo `2026-11-25-salario-escola-rede.md`.
+
 ## Sessão 2026-11-25 (ei) — modo autônomo: #587 (PR #588), setores do Censo 2022, crash do host
 
 - #587 → PR #588 (1dba699): `unzip` no Dockerfile e no Rexfile; a parte do

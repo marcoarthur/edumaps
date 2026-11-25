@@ -113,6 +113,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno.
 - [2026-11-24 — aviso de anos com o ano da folha](ciclos/2026-11-24-aviso-anos-folha.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-24 — folha detalhada do total da Secretaria](ciclos/2026-11-24-folha-secretaria.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno.
+- [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 
 ## Pendências
 

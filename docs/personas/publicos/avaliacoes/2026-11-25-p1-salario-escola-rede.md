@@ -55,3 +55,8 @@ professores (P1-FL-03).
 ## Encaminhamento
 
 Issue **#589** (P1-FL-03), aberta no modo autônomo autorizado pelo developer.
+
+## Andamento
+
+- 2026-11-25: #589 (PR #590) mergeado: P1-FL-03 resolvido. "Nesta escola em
+  2026: salário total R$ 8.946 … 24% acima da rede no salário total."

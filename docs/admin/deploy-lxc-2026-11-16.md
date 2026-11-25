@@ -335,6 +335,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       diz "A folha do SIOPE é de 2025, dois anos depois do IDEB (2023)".
 - [ ] Folha do total da Secretaria (#585, sem change nova): `curl -s -o /dev/null -w "%{http_code}\n" 'http://127.0.0.1:3000/api/school/51171805/payroll/secretaria?date=04-2026'`
       dá 200 (se a folha do LXC for a mesma do local); a página `/escola/payroll?inep=51171805&date=04-2026&secretaria=1` pagina de 100.
+- [ ] Salário da escola ao lado da rede (#589, sem change nova): o painel `/escola/financeiro?inep=35070212` mostra "Nesta escola
+      em 2026: … 24% acima da rede no salário total" (se a folha do LXC for a mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

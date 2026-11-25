@@ -117,6 +117,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — Fundeb da folha inteira e folha por município](ciclos/2026-11-24-folha-por-municipio.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-24 — aviso de anos com o ano da folha](ciclos/2026-11-24-aviso-anos-folha.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto.
 - [2026-11-24 — folha detalhada do total da Secretaria](ciclos/2026-11-24-folha-secretaria.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno.
+- [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). P1-FL-03 resolvido.
 
 ## Pendências
 
@@ -132,7 +133,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   da folha contra os do Censo, sem explicação) e P1-FL-02 ("competências" e
   a soma das categorias) → #567, entregue (#569), e #568, entregue (#570).
 - Salário da escola e da rede (2026-11-25, **adotaria**, modo autônomo):
-  P1-FL-03 (o salário da escola ao lado do da rede, na mesma conta) → #589.
+  P1-FL-03 (o salário da escola ao lado do da rede, na mesma conta) → #589, entregue (#590).
 
 ## Entradas
 
