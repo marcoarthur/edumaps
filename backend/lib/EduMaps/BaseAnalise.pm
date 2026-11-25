@@ -668,6 +668,10 @@ sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
 sub salario_rede ($class, $dbh, $cod6 = undef) {
   my $lista = ref $cod6 ? $cod6 : defined $cod6 ? [$cod6] : undef;
   my $PISO_VALUES = join ', ', map { sprintf '(%d, %.2f)', $_, $PISO_MAGISTERIO{$_}{valor} } sort keys %PISO_MAGISTERIO;
+  # #595: as medianas ordenam ~73 mil pessoa-mês (Cuiabá); com o work_mem
+  # padrão (4 MB) dois sorts vão a disco. Só nesta consulta.
+  my ($wm) = eval { $dbh->selectrow_array(q{SHOW work_mem}) };
+  eval { $dbh->do(q{SET work_mem = '64MB'}) } if $wm;
   my $rows = eval {
     $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista);
       WITH pm AS (
@@ -708,6 +712,7 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
        GROUP BY 1, 2
       SQL
   } // [];
+  eval { $dbh->do(q{SELECT set_config('work_mem', ?, false)}, undef, $wm) } if $wm;
   return { map { ("$_->{cod6}|$_->{ano}" => {
     pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
     carga_suspeita => ($_->{suspeita} ? \1 : \0),

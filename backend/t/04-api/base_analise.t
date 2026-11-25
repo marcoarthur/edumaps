@@ -849,6 +849,11 @@ subtest 'carga que não parece em horas (#572)' => sub {
   }
   my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_C"};
   is [ $s->{carga_comum}, !!${ $s->{carga_suspeita} } ], [18, 1], 'carga 18 na maioria: suspeita';
+  # #595: o work_mem maior vale só na consulta do salário
+  $dbh->do(q{SET work_mem = '7MB'});
+  EduMaps::BaseAnalise->salario_rede($dbh, '600039');
+  is $dbh->selectrow_array(q{SHOW work_mem}), '7MB', '#595: o work_mem da conexão volta ao que era';
+  $dbh->do(q{RESET work_mem});
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_C")->tx);
   my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
