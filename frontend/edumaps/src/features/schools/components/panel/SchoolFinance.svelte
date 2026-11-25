@@ -5,7 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
-  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, dataBR } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -37,7 +37,7 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, cargaFolha = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, cargaFolha = null, salarioEscola = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -199,6 +199,10 @@
     <p class="text-sm text-gray-700 bg-white border border-gray-200 rounded-card shadow-card px-4 py-3" data-testid="salario-rede">
       <strong>Magistério na rede municipal{ano ? ` em ${ano}` : ""}:</strong> {textoSalarioRede(salarioRede)}.
       <span class="text-xs text-gray-500">Toda a folha do município, nas escolas e no total da Secretaria; sem conversão para 40 horas.</span>
+      {#if !ehRede && salarioEscola?.pessoas}
+        <!-- #589 (P1-FL-03): a escola na mesma conta da rede -->
+        <span class="block mt-1" data-testid="salario-escola"><strong>Nesta escola{ano ? ` em ${ano}` : ""}:</strong> {textoSalarioEscola(salarioEscola, salarioRede)}.</span>
+      {/if}
       {#if ehRede && textoPisoRede(salarioRede, ano)}
         <!-- #575 (QH-01 da P5): só no painel da Secretaria (A1) -->
         <span class="block text-xs text-gray-700 mt-1" data-testid="piso-rede">{textoPisoRede(salarioRede, ano)}</span>

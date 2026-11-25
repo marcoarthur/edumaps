@@ -56,6 +56,8 @@ $f->execute(2001, 'Dezembro', 'ANA', 'xxx.ANA.567-xx', $INEP, $MUN, 'Municipal',
 $r = $t->get_ok("/api/school/$INEP/finance?ano=2001")->tx->res->json;
 is [ @{ $r->{salario_rede} }{qw(pessoas total base carga_comum)} ], [3, 1000, 600, 30],
   'rede inteira: 3 pessoas (escola e Secretaria), sem dezembro';
+# #589 (P1-FL-03): a escola na mesma conta (ANA e BIA na escola; CAIO só na Secretaria)
+is $r->{salario_escola}, { pessoas => 2, total => 1000, base => 600, carga_comum => 30 }, 'salário da escola, mesma conta da rede';
 my ($c) = grep { $_->{codigo_ibge} eq "$CO_MUN" } @{ EduMaps::BaseAnalise->cobertura_siope($dbh) };
 my ($a1) = grep { $_->{ano} == 2001 } @{ $c->{anos} };
 is $a1->{salario_magisterio}{pessoas}, 3, 'na cobertura da folha também';

@@ -25,6 +25,7 @@
   let docentes = $state(null);
   let salarioRede = $state(null);
   let cargaFolha = $state(null);
+  let salarioEscola = $state(null);
   let totalProfissionais = $state(0);
   let origem = $state("escola");
   let rotuloOrigem = $state(null);
@@ -76,6 +77,7 @@
       docentes = data.docentes ?? null;
       salarioRede = data.salario_rede ?? null;
       cargaFolha = data.carga_folha ?? null;
+      salarioEscola = data.salario_escola ?? null;
       totalProfissionais = data.total_profissionais ?? 0;
       origem = data.origem ?? "escola";
       rotuloOrigem = data.rotulo_origem ?? null;
@@ -93,6 +95,7 @@
       docentes = null;
       salarioRede = null;
       cargaFolha = null;
+      salarioEscola = null;
       siope = null;
       error =
         err instanceof ApiError
@@ -276,7 +279,7 @@
           <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
         </div>
       {/if}
-      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {cargaFolha} {totalProfissionais} {origem} {ano} {periodo} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoSalarioEscola } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -65,5 +65,14 @@ describe("mês incompleto com a carga registrada (#576)", () => {
     expect(sufixoIncompletos([{ nome: "setembro" }, { nome: "outubro" }], "2026-11-24")).toBe(" (setembro e outubro incompletos já na planilha do SIOPE)");
     expect(textoAnoFolha({ meses: 12, escolas: 167, incompletos: [{ nome: "setembro" }], carga: "2026-11-24" }))
       .toBe("12 meses (setembro incompleto já na planilha do SIOPE), 167 escolas; carga em 24/11/2026");
+  });
+});
+
+describe("salário da escola (#589)", () => {
+  it("mesma conta da rede e a diferença no total", () => {
+    expect(textoSalarioEscola({ pessoas: 36, total: 9341, base: 6100, carga_comum: 30 }, { total: 7186 }))
+      .toBe("salário total R$ 9.341 e base R$ 6.100 (medianas por mês, sem dezembro, de 36 profissionais do magistério); carga mais comum: 30; 30% acima da rede no salário total");
+    expect(textoSalarioEscola({ pessoas: 2, total: 1000, base: 600 }, { total: 1250 })).toContain("20% abaixo da rede");
+    expect(textoSalarioEscola(null, { total: 1 })).toBe("");
   });
 });

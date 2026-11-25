@@ -732,6 +732,30 @@ sub cargas_folha ($class, $dbh) {
   return \%carga;
 }
 
+# #589 (P1-FL-03): o salário do magistério de uma escola com a mesma conta
+# da rede (salario_rede): por pessoa e mês, sem dezembro, a mediana do total
+# e do base e a carga mais comum, sem conversão para 40 horas.
+sub salario_escola ($class, $dbh, $cod_inep, $ano) {
+  my $r = eval {
+    $dbh->selectrow_hashref(<<~"SQL", undef, $cod_inep, $ano);
+      WITH pm AS (
+        SELECT left(mes, 3) AS m, cpf, nome_profissional,
+               sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch
+          FROM clean.remuneracao_municipal
+         WHERE tipo = '$MAGISTERIO' AND left(mes, 3) <> 'Dez' AND cod_inep = ? AND ano = ?
+         GROUP BY 1, 2, 3
+      )
+      SELECT count(DISTINCT (cpf, nome_profissional))::int AS pessoas,
+             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY t))::float8 AS total,
+             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY b))::float8 AS base,
+             (mode() WITHIN GROUP (ORDER BY ch))::float8 AS carga_comum
+        FROM pm
+      SQL
+  };
+  return undef unless $r && $r->{pessoas};
+  return $r;
+}
+
 sub cobertura_siope ($class, $dbh, $uf = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(q{
