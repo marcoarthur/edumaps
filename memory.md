@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-25 (el) — modo autônomo: #593 (PR #594), corrida na listagem de redes
+
+- Depois do crash, conferido: stack local de pé, suíte Perl verde, CI do
+  main (#592 e nota 279) verde.
+- Flake do `rede/acesso.t`: a listagem de contas de rede caía com 404
+  quando outro teste apagava uma conta entre a leitura dos ids e a carga.
+  PR #594: a listagem pula a conta que sumiu; teste determinístico
+  `t/02-models/rede_contas_corrida.t`.
+- Nota técnica 280.
+
 ## Sessão 2026-11-25 (ek) — modo autônomo: #591 (PR #592), painel financeiro mais rápido
 
 - `raw.br_municipios_2024` é tabela estrangeira (relê o arquivo da malha):
