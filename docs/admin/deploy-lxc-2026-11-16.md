@@ -338,6 +338,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
 - [ ] Salário da escola ao lado da rede (#589, sem change nova): o painel `/escola/financeiro?inep=35070212` mostra "Nesta escola
       em 2026: … 24% acima da rede no salário total" (se a folha do LXC for a mesma do local).
 - [ ] Listagem de redes (#593, sem change nova): o admin abre `/admin/rede` e a lista de contas carrega (sem 404).
+- [ ] Salário da rede em matviews (#595, **change nova** `analytics_salario_rede`: `deploy_db_dev`, depois `deploy_backend_dev` e `deploy_minion_dev`):
+      `psql edumaps_dev -Atc "SELECT count(*) FROM analytics.mv_salario_rede"` > 0 e a base `/base-analise?uf=MT` responde em menos tempo que antes.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-25 (em) — #595 (PR #596), salário da rede em matviews
+
+- Fim do modo autônomo (09:00); de volta a pedir PR e merge.
+- #595: a base de análise com UF levava 3,6 s, o salário da rede 1,7 s.
+  Opção C (developer): `analytics.mv_salario_rede` e
+  `analytics.mv_salario_rede_md` (sem CPF/nome), refresh no fim da carga do
+  SIOPE; o piso segue no Perl. Testes que gravam a folha chamam
+  `analytics.refresh_salario_rede()`. Base de MT: 2,7 s.
+- LXC: `deploy_db_dev` + `deploy_backend_dev` + `deploy_minion_dev`.
+- Nota técnica 281.
+
 ## Sessão 2026-11-25 (el) — modo autônomo: #593 (PR #594), corrida na listagem de redes
 
 - Depois do crash, conferido: stack local de pé, suíte Perl verde, CI do
