@@ -367,18 +367,23 @@ sub siope_disponivel($self, $cod_inep, $ano) {
 # só traz o agregado da secretaria (código 99999999).
 sub folha_cobertura($self) {
   my $dbh = $self->schema->storage->dbh;
+  # Agrega a folha antes e busca o nome na malha municipal local (#591): a
+  # raw.br_municipios_2024 é tabela estrangeira (relê o arquivo da malha a
+  # cada consulta: 2,5 s em todo painel financeiro).
   my $sql_nome = <<~'SQL';
-    SELECT r.cod_municipio,
-           m.nm_mun   AS municipio,
-           m.sigla_uf AS uf,
-           MIN(r.ano)::int AS ano_inicial,
-           MAX(r.ano)::int AS ano_final,
-           (COUNT(DISTINCT r.cod_inep) FILTER (WHERE r.cod_inep <> 99999999))::int AS escolas
-      FROM clean.remuneracao_municipal r
-      LEFT JOIN raw.br_municipios_2024 m
-        ON substr(m.cd_mun::text, 1, 6) = r.cod_municipio::text
-     GROUP BY r.cod_municipio, m.nm_mun, m.sigla_uf
-     ORDER BY m.nm_mun NULLS LAST, r.cod_municipio
+    WITH a AS (
+      SELECT cod_municipio,
+             MIN(ano)::int AS ano_inicial,
+             MAX(ano)::int AS ano_final,
+             (COUNT(DISTINCT cod_inep) FILTER (WHERE cod_inep <> 99999999))::int AS escolas
+        FROM clean.remuneracao_municipal
+       GROUP BY cod_municipio
+    )
+    SELECT a.cod_municipio, m.nome_municipio AS municipio, m.sigla_uf AS uf,
+           a.ano_inicial, a.ano_final, a.escolas
+      FROM a
+      LEFT JOIN clean.malha_municipio m ON left(m.codigo_ibge::text, 6) = a.cod_municipio::text
+     ORDER BY m.nome_municipio NULLS LAST, a.cod_municipio
   SQL
   # Sem a tabela de municípios (ambiente parcial), sai sem o nome.
   my $rows = eval { $dbh->selectall_arrayref($sql_nome, { Slice => {} }) }

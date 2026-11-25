@@ -663,17 +663,20 @@ sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
 # (13º), a mediana do salário total e do base, e a carga mais comum. Sem
 # conversão para 40 horas (B1): a carga pode não estar em horas (#572).
 # Chave "<cod6>|<ano>".
+# $cod6: um código de 6 dígitos ou um arrayref deles (#591: a cobertura de
+# uma UF calcula só os municípios dela, não todos).
 sub salario_rede ($class, $dbh, $cod6 = undef) {
+  my $lista = ref $cod6 ? $cod6 : defined $cod6 ? [$cod6] : undef;
   my $PISO_VALUES = join ', ', map { sprintf '(%d, %.2f)', $_, $PISO_MAGISTERIO{$_}{valor} } sort keys %PISO_MAGISTERIO;
   my $rows = eval {
-    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $cod6, $cod6);
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista);
       WITH pm AS (
         SELECT cod_municipio::text AS cod6, ano::int AS ano, left(mes, 3) AS m, cpf, nome_profissional,
                sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch,
                bool_or(cod_inep <> 99999999) AS esc
           FROM clean.remuneracao_municipal
          WHERE tipo = '$MAGISTERIO' AND left(mes, 3) <> 'Dez'
-           AND (?::text IS NULL OR cod_municipio::text = ?)
+           AND (?::text[] IS NULL OR cod_municipio::text = ANY(?::text[]))
          GROUP BY 1, 2, 3, 4, 5
       )
       , pp AS (
@@ -775,7 +778,7 @@ sub cobertura_siope ($class, $dbh, $uf = undef) {
   } // [];
   my $inc = $class->meses_incompletos($dbh);
   my $lugar = $class->meses_por_lugar($dbh);
-  my $salario = $class->salario_rede($dbh);   # #571
+  my $salario = $class->salario_rede($dbh, [ map { substr($_->{codigo_ibge}, 0, 6) } @$rows ]);   # #571; #591: só os da cobertura
   my %carga = %{ $class->cargas_folha($dbh) };   # #564
   my (@lista, %por);
   for my $r (@$rows) {
