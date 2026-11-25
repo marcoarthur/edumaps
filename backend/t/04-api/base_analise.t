@@ -814,6 +814,7 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
   # #575: na Secretaria, sem escola: DUDA abaixo nos três meses; EVA só em março (avulso)
   $f->execute($ANO_P, $_, 'DUDA', 'xxx.DUDA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 3000, 4000) for qw(Janeiro Fevereiro Março);
   $f->execute($ANO_P, 'Março', 'EVA', 'xxx.EVA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 1000, 1000);
+  $dbh->do('SELECT analytics.refresh_salario_rede()');   # #595: o salário da rede é pré-calculado
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_P")->tx);
   my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };
@@ -847,13 +848,9 @@ subtest 'carga que não parece em horas (#572)' => sub {
     $f->execute($ANO_C, $_, $p, "xxx.$p.572-xx", $A, '600039', 'Municipal', 'Docente', 'Profissionais do magistério', 18, 2000, 5000)
       for qw(Janeiro Fevereiro Março);
   }
+  $dbh->do('SELECT analytics.refresh_salario_rede()');   # #595
   my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_C"};
   is [ $s->{carga_comum}, !!${ $s->{carga_suspeita} } ], [18, 1], 'carga 18 na maioria: suspeita';
-  # #595: o work_mem maior vale só na consulta do salário
-  $dbh->do(q{SET work_mem = '7MB'});
-  EduMaps::BaseAnalise->salario_rede($dbh, '600039');
-  is $dbh->selectrow_array(q{SHOW work_mem}), '7MB', '#595: o work_mem da conexão volta ao que era';
-  $dbh->do(q{RESET work_mem});
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_C")->tx);
   my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };

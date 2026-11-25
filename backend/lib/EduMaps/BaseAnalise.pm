@@ -668,51 +668,28 @@ sub meses_por_lugar ($class, $dbh, $cod6 = undef) {
 sub salario_rede ($class, $dbh, $cod6 = undef) {
   my $lista = ref $cod6 ? $cod6 : defined $cod6 ? [$cod6] : undef;
   my $PISO_VALUES = join ', ', map { sprintf '(%d, %.2f)', $_, $PISO_MAGISTERIO{$_}{valor} } sort keys %PISO_MAGISTERIO;
-  # #595: as medianas ordenam ~73 mil pessoa-mês (Cuiabá); com o work_mem
-  # padrão (4 MB) dois sorts vão a disco. Só nesta consulta.
-  my ($wm) = eval { $dbh->selectrow_array(q{SHOW work_mem}) };
-  eval { $dbh->do(q{SET work_mem = '64MB'}) } if $wm;
+  # #595: as contas vêm pré-calculadas de analytics.mv_salario_rede (as
+  # medianas do mês) e analytics.mv_salario_rede_md (quantas pessoas com
+  # cada mediana do base por 40 h e meses pagos, #575), atualizadas no fim
+  # de cada carga do SIOPE. Aqui só a comparação com o piso do ano.
   my $rows = eval {
-    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista);
-      WITH pm AS (
-        SELECT cod_municipio::text AS cod6, ano::int AS ano, left(mes, 3) AS m, cpf, nome_profissional,
-               sum(salario_total) AS t, sum(salario_base) AS b, sum(carga_horaria) AS ch,
-               bool_or(cod_inep <> 99999999) AS esc
-          FROM clean.remuneracao_municipal
-         WHERE tipo = '$MAGISTERIO' AND left(mes, 3) <> 'Dez'
-           AND (?::text[] IS NULL OR cod_municipio::text = ANY(?::text[]))
-         GROUP BY 1, 2, 3, 4, 5
-      )
-      , pp AS (
-        -- #575: por pessoa, na rede inteira: se teve escola no ano, os meses
-        -- pagos e o salário base para 40 horas no mês típico
-        SELECT cod6, ano, cpf, nome_profissional, bool_or(esc) AS esc, count(*) AS meses,
-               percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md
-          FROM pm WHERE ch > 0 AND b IS NOT NULL
-         GROUP BY 1, 2, 3, 4
-      ), piso (ano, valor) AS (VALUES $PISO_VALUES)
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista, $lista, $lista);
+      WITH piso (ano, valor) AS (VALUES $PISO_VALUES)
       , cont AS (
-        SELECT pp.cod6, pp.ano, max(piso.valor) AS piso,
-               (count(*) FILTER (WHERE md < piso.valor AND meses >= $MESES_MIN_PISO))::int AS abaixo,
-               (count(*) FILTER (WHERE md < piso.valor AND meses >= $MESES_MIN_PISO AND NOT esc))::int AS abaixo_sec
-          FROM pp JOIN piso ON piso.ano = pp.ano
+        SELECT d.cod6, d.ano, max(piso.valor) AS piso,
+               coalesce(sum(d.n) FILTER (WHERE d.md < piso.valor AND d.meses >= $MESES_MIN_PISO), 0)::int AS abaixo,
+               coalesce(sum(d.n) FILTER (WHERE d.md < piso.valor AND d.meses >= $MESES_MIN_PISO AND NOT d.esc), 0)::int AS abaixo_sec
+          FROM analytics.mv_salario_rede_md d JOIN piso ON piso.ano = d.ano
+         WHERE (?::text[] IS NULL OR d.cod6 = ANY(?::text[]))
          GROUP BY 1, 2
       )
-      SELECT pm.cod6, pm.ano,
-             count(DISTINCT (cpf, nome_profissional))::int AS pessoas,
-             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY t))::float8 AS total,
-             round(percentile_cont(0.5) WITHIN GROUP (ORDER BY b))::float8 AS base,
-             (mode() WITHIN GROUP (ORDER BY ch))::float8 AS carga,
-             -- #572 (QI-02 da P3): a maioria dos pagamentos com carga abaixo
-             -- de 20: a carga não parece estar em horas semanais (aulas,
-             -- jornada parcial), e as contas por 40 horas não valem.
-             (avg((ch < 20)::int) > 0.5) AS suspeita,
-             max(cont.piso)::float8 AS piso, max(cont.abaixo) AS abaixo, max(cont.abaixo_sec) AS abaixo_sec
-        FROM pm LEFT JOIN cont ON cont.cod6 = pm.cod6 AND cont.ano = pm.ano
-       GROUP BY 1, 2
+      SELECT r.cod6, r.ano, r.pessoas, r.total, r.base, r.carga, r.suspeita,
+             cont.piso::float8 AS piso, cont.abaixo, cont.abaixo_sec
+        FROM analytics.mv_salario_rede r
+        LEFT JOIN cont ON cont.cod6 = r.cod6 AND cont.ano = r.ano
+       WHERE (?::text[] IS NULL OR r.cod6 = ANY(?::text[]))
       SQL
   } // [];
-  eval { $dbh->do(q{SELECT set_config('work_mem', ?, false)}, undef, $wm) } if $wm;
   return { map { ("$_->{cod6}|$_->{ano}" => {
     pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
     carga_suspeita => ($_->{suspeita} ? \1 : \0),

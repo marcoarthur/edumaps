@@ -38,6 +38,7 @@ $f->execute(2001, $_->[0], $_->[1], "xxx.$_->[1].567-xx", $_->[2], $MUN, 'Munici
   for ['Janeiro', 'ANA', $INEP], ['Fevereiro', 'ANA', $INEP], ['Janeiro', 'BIA', $INEP], ['Janeiro', 'CAIO', 99999999];
 # 2002: só a escola (ninguém só na Secretaria)
 $f->execute(2002, 'Janeiro', 'ANA', 'xxx.ANA.567-xx', $INEP, $MUN, 'Municipal', 'Docente', $MAG);
+$dbh->do('SELECT analytics.refresh_salario_rede()');   # #595: o salário da rede é pré-calculado
 
 my $r = $t->get_ok("/api/school/$INEP/finance?ano=2001")->status_is(200)->tx->res->json;
 my $d = $r->{docentes};
@@ -53,6 +54,7 @@ ok !$r->{docentes}{municipio}{avisar}, 'ninguém só na Secretaria: sem aviso';
 # #571 (QI-01 da P3): o salário do magistério da rede inteira, com a Secretaria
 $dbh->do(q{UPDATE clean.remuneracao_municipal SET salario_base = 600, carga_horaria = 30 WHERE cod_municipio::text = ?}, {}, $MUN);
 $f->execute(2001, 'Dezembro', 'ANA', 'xxx.ANA.567-xx', $INEP, $MUN, 'Municipal', 'Docente', $MAG);   # 13º: fora
+$dbh->do('SELECT analytics.refresh_salario_rede()');   # #595
 $r = $t->get_ok("/api/school/$INEP/finance?ano=2001")->tx->res->json;
 is [ @{ $r->{salario_rede} }{qw(pessoas total base carga_comum)} ], [3, 1000, 600, 30],
   'rede inteira: 3 pessoas (escola e Secretaria), sem dezembro';

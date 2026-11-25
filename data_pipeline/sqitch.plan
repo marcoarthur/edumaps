@@ -188,3 +188,4 @@ escolas_scores_vinculo [escolas_scores_gestora docentes_formacao_continuada_rotu
 populacao_idade_censo2022 [ibge_agregados raw_populacao_faixas_etarias leitor_grants_explicitos] 2026-11-23T12:00:00Z Marco Arthur <arthurpbs@gmail.com> # #533: populacao por idade do Censo 2022 (SIDRA 9514) por etapa e origem das faixas antigas
 remuneracao_nomes_utf8 [raw_siope] 2026-11-23T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #536: nomes da folha do SIOPE codificados duas vezes na fonte, letra perdida pelo CPF ou '?'
 rede_escolas_df [rede_escolas_conveniadas] 2026-11-23T18:00:00Z Marco Arthur <arthurpbs@gmail.com> # #545: no DF as conveniadas com o governo distrital (esfera estadual) contam como conveniadas
+analytics_salario_rede [remuneracao_nomes_utf8] 2026-11-25T15:00:00Z Marco Arthur <arthurpbs@gmail.com> # #595: salario do magisterio da rede pre-calculado em matviews, atualizado no fim da carga do SIOPE
