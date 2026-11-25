@@ -131,8 +131,28 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Folha da própria escola (2026-11-24, **adotaria**): P1-FL-01 (docentes
   da folha contra os do Censo, sem explicação) e P1-FL-02 ("competências" e
   a soma das categorias) → #567, entregue (#569), e #568, entregue (#570).
+- Salário da escola e da rede (2026-11-25, **adotaria**, modo autônomo):
+  P1-FL-03 (o salário da escola ao lado do da rede, na mesma conta) → #589.
 
 ## Entradas
+
+### 2026-11-25 — O salário da escola e o da rede (terceira rodada)
+
+**Material:** o painel financeiro da EM Tancredo Neves (Ubatuba, 2026).
+Consolidação em
+[`avaliacoes/2026-11-25-p1-salario-escola-rede.md`](avaliacoes/2026-11-25-p1-salario-escola-rede.md).
+
+**O que tentou:** responder no conselho se o salário dos professores da
+escola está acima ou abaixo do da rede.
+
+**O que funciona para ela:** o salário da rede (R$ 7.186 de total, mediana),
+com a carga e os avisos; os docentes da folha e do Censo.
+
+**Barreiras:**
+- P1-FL-03 (atrapalha): o salário da escola não aparece no painel; na base,
+  está em média e por 40 horas, e não se compara com a rede.
+
+**Veredito:** **adotaria** (mantido).
 
 ### 2026-11-24 — A folha da própria escola (segunda rodada)
 
