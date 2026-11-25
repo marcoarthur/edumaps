@@ -180,10 +180,22 @@ sub _rd_municipio ($self, $co_municipio) {
 # leitura (admin e a própria conta)
 # ---------------------------------------------------------------------------
 
+# A conta apagada entre a lista de ids e a busca de cada uma fica de fora,
+# em vez de derrubar a listagem inteira com 404 (#593: corrida medida no CI,
+# com testes que criam e apagam contas de rede em paralelo).
 sub rede_contas ($self) {
   my $contas = $self->_rows(
     q{SELECT g.id FROM clean.gestores g WHERE g.access_role = 'rede' ORDER BY g.nome, g.id});
-  return [ map { $self->rede_conta($_->{id}) } @$contas ];
+  my @out;
+  for my $c (@$contas) {
+    my $conta = eval { $self->rede_conta($c->{id}) };
+    if (my $err = $@) {
+      next if ref $err && eval { $err->isa('EduMaps::Roles::Business::Pesquisa::Rede::Erro') } && $err->status == 404;
+      die $err;
+    }
+    push @out, $conta;
+  }
+  return \@out;
 }
 
 sub rede_conta ($self, $gestor_id) {
