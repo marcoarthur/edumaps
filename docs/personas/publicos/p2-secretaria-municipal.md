@@ -137,8 +137,32 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   por escola o mês da Secretaria) → #557, entregue (#559), e #558, entregue (#560).
 - Resposta ao tribunal sobre o piso (2026-11-24, **adotaria, em piloto**,
   modo autônomo): QE-01 (a folha detalhada da Secretaria não aparece) → #585, entregue (#586).
+- Os abaixo do piso na lista da Secretaria (2026-11-25, **adotaria, em
+  piloto**): QB-01 (contagem sem a situação, temporário ou efetivo) e
+  QB-02 (lista sem filtro nem marca do piso): aguardam aprovação para issue.
 
 ## Entradas
+
+### 2026-11-25 — Os 1.421 abaixo do piso na folha da Secretaria (quinta rodada)
+
+**Material:** a folha do total da Secretaria de Cuiabá (abril de 2026), o
+painel da Secretaria, a base e a folha por município de MT. Consolidação em
+[`avaliacoes/2026-11-25-p2-piso-por-vinculo.md`](avaliacoes/2026-11-25-p2-piso-por-vinculo.md).
+
+**O que tentou:** com a lista da Secretaria visível (#585), achar quem são
+os abaixo do piso e o que têm em comum, para responder ao tribunal.
+
+**O que funciona para ele:** a lista existe, com a situação de cada pessoa;
+o número do tribunal reproduzido com a regra.
+
+**Barreiras:**
+- QB-01 (atrapalha): a contagem abaixo do piso não se abre por situação;
+  1.422 dos 1.559 são temporários (30 h, base R$ 3.212,71), e nenhuma tela
+  diz isso.
+- QB-02 (atrapalha): a lista de um mês só busca pelo nome; não filtra pela
+  situação nem marca quem a contagem do ano pôs abaixo do piso.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-24 — A resposta ao tribunal sobre o piso (quarta rodada)
 
