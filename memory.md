@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-25 (ei) — modo autônomo: #587 (PR #588), setores do Censo 2022, crash do host
+
+- #587 → PR #588 (1dba699): `unzip` no Dockerfile e no Rexfile; a parte do
+  Censo dos setores rodou de novo a partir dos ZIPs baixados. Local:
+  468.097 setores com malha e dados; 12.674.640 crianças de 0 a 4 anos.
+- O host reiniciou por volta de 00:57 (25/11). Postgres recuperou pelo WAL,
+  dados íntegros, stack de volta com as imagens do main; o banco de CI
+  (`edumaps-ci-db`) precisa de `EDUMAPS_CI_PORT=55432 db/fixtures/ci_db.sh up`.
+- Nota técnica 277.
+
 ## Sessão 2026-11-24 (eh) — modo autônomo: 4ª avaliação da P2, #585 (PR #586)
 
 - Quarta rodada da P2 (a resposta ao tribunal sobre o piso em Cuiabá):
