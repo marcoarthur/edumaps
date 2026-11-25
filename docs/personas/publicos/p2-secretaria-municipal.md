@@ -138,8 +138,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Resposta ao tribunal sobre o piso (2026-11-24, **adotaria, em piloto**,
   modo autônomo): QE-01 (a folha detalhada da Secretaria não aparece) → #585, entregue (#586).
 - Os abaixo do piso na lista da Secretaria (2026-11-25, **adotaria, em
-  piloto**): QB-01 (contagem sem a situação, temporário ou efetivo) e
-  QB-02 (lista sem filtro nem marca do piso): aguardam aprovação para issue.
+  piloto**): QB-01 (contagem sem a situação, temporário ou efetivo) → #597;
+  QB-02 (lista sem filtro nem marca do piso) → #598.
 
 ## Entradas
 

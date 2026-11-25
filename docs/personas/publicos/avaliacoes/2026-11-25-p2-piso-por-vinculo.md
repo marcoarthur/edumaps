@@ -70,6 +70,6 @@ conferir os casos sem sair dela (QB-02).
 
 ## Encaminhamento
 
-Proposta: duas issues (QB-01 e QB-02), **com a aprovação do developer**.
-QB-01 vem primeiro: responde ao tribunal em uma frase. QB-02 depende da
+Duas issues, abertas com a aprovação do developer: QB-01 → #597 e
+QB-02 → #598. QB-01 vem primeiro: responde ao tribunal em uma frase. QB-02 depende da
 marca por pessoa, que a contagem já calcula.
