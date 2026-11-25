@@ -70,7 +70,12 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   painel da Secretaria, a linha diz também quantos profissionais da rede
   inteira ficam abaixo do piso no mês típico (entre quem recebeu 3 meses ou
   mais), quantos deles só no total da Secretaria, com o aviso de que não é a
-  verificação legal.
+  verificação legal. Diz também quantos deles são temporários, efetivos ou
+  de outra situação (a que o município declarou ao SIOPE nos mais meses do
+  ano) e o perfil mais comum: a carga, o salário base mediano por mês e o
+  piso proporcional a essa carga. Em Cuiabá (2026): 1.417 temporários e 142
+  efetivos; o mais comum é 30 horas, com o piso proporcional de
+  R$ 3.847,97. Para conferir pessoa a pessoa, abra a folha da Secretaria.
 - **O salário da escola e o da rede.** No painel da escola, logo abaixo da
   linha da rede, "Nesta escola" dá o salário do magistério da escola com a
   mesma conta (mediana por pessoa e mês, sem dezembro, total e base) e

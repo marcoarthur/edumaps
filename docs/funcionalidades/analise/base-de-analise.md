@@ -107,7 +107,9 @@ que montam diagnósticos, sem precisar juntar as bases do INEP e do IBGE à mão
 - Sistema pode **comparar o salário base do magistério com o piso
   nacional do ano**: o salário base para 40 horas por escola e quantos
   profissionais ficam abaixo do piso no mês típico, sem afirmar
-  descumprimento.
+  descumprimento; na rede inteira, quantos deles são temporários, efetivos
+  ou de outra situação, e o perfil mais comum (carga, salário base e o piso
+  proporcional a essa carga).
 - Sistema pode **entregar a folha por município num arquivo**: uma linha
   por município e ano, com o total declarado e de onde vem, a parte do
   Fundeb, o salário e o piso da rede e a data da carga, com dicionário.
