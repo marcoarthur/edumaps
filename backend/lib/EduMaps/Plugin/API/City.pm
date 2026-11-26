@@ -16,6 +16,8 @@ sub register ($self, $app, @args) {
   $api->get('/:codigo_ibge/payroll' => $check)->to('city#payroll')->name('city_payroll');
   $api->get('/:codigo_ibge/payroll/overall' => $check)->to('city#overall_payroll')->name('city_overall_payroll');
   $api->get('/:codigo_ibge/payroll/details' => $check)->to('city#payroll_details')->name('city_payroll_details');
+  # #601 (QC-01 da P2): a lista do ano dos abaixo do piso na rede (JSON ou CSV)
+  $api->get('/:codigo_ibge/piso' => $check)->to('city#piso')->name('city_piso');
   $api->get('/search/:name')->to('city#search_by_name')->name('city_search_by_name');
   $api->get('/detail/:name')->to('city#detail_by_name')->name('city_detail_by_name');
   $api->get('/suggestions')->to('city#search_suggestions')->name('city_search_suggestions');
