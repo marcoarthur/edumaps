@@ -750,6 +750,43 @@ sub cargas_folha ($class, $dbh) {
   return \%carga;
 }
 
+# #598 (QB-02 da P2): a marca "abaixo do piso no ano" de cada pessoa de uma
+# lista da folha (as do mês $mes no código $cod_inep), com a regra da
+# contagem da rede (salario_rede): a mediana do base por 40 h nos meses da
+# pessoa em toda a folha do município (escolas e Secretaria), sem dezembro,
+# e só com 3 meses ou mais. Devolve "<cpf>|<nome>" => { base_40h, abaixo }.
+# Vazio (sem marca): ano sem piso ou carga que não parece em horas (#572).
+# Por consulta, sobre a folha: a marca tem CPF e não pode ir para analytics.
+sub piso_pessoas ($class, $dbh, $cod6, $ano, $mes, $cod_inep) {
+  my $piso = $class->piso_magisterio($ano) // return {};
+  my $sal = $class->salario_rede($dbh, "$cod6")->{"$cod6|$ano"} // return {};
+  return {} if $sal->{carga_suspeita} && ${ $sal->{carga_suspeita} };
+  my $rows = eval {
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $ano, $mes, $cod_inep, "$cod6", $ano, "$cod6");
+      WITH lista AS (
+        SELECT DISTINCT cpf, nome_profissional FROM clean.remuneracao_municipal
+         WHERE ano = ? AND mes = ? AND cod_inep = ? AND cod_municipio::text = ?
+           AND tipo = 'Profissionais do magistério'
+      ), pm AS (
+        SELECT r.cpf, r.nome_profissional, left(r.mes, 3) AS m,
+               sum(r.salario_base) AS b, sum(r.carga_horaria) AS ch
+          FROM clean.remuneracao_municipal r JOIN lista USING (cpf, nome_profissional)
+         WHERE r.ano = ? AND r.cod_municipio::text = ?
+           AND r.tipo = 'Profissionais do magistério' AND left(r.mes, 3) <> 'Dez'
+         GROUP BY 1, 2, 3
+      )
+      SELECT cpf, nome_profissional, count(*)::int AS meses,
+             percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md
+        FROM pm WHERE ch > 0 AND b IS NOT NULL
+       GROUP BY 1, 2
+      SQL
+  } // [];
+  return { map { ("$_->{cpf}|$_->{nome_profissional}" => {
+    base_40h => 0 + sprintf('%.2f', $_->{md}),
+    abaixo   => ($_->{meses} >= $MESES_MIN_PISO && $_->{md} < $piso) ? 1 : 0,
+  }) } @$rows };
+}
+
 # #589 (P1-FL-03): o salário do magistério de uma escola com a mesma conta
 # da rede (salario_rede): por pessoa e mês, sem dezembro, a mediana do total
 # e do base e a carga mais comum, sem conversão para 40 horas.

@@ -76,6 +76,16 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   piso proporcional a essa carga. Em Cuiabá (2026): 1.417 temporários e 142
   efetivos; o mais comum é 30 horas, com o piso proporcional de
   R$ 3.847,97. Para conferir pessoa a pessoa, abra a folha da Secretaria.
+- **Conferir na folha detalhada quem fica abaixo do piso.** A folha do mês
+  (da escola ou do total da Secretaria) traz, para cada profissional do
+  magistério, a **base por 40 h no ano** (a do mês típico, em toda a folha
+  do município) e a marca "abaixo do piso" com a mesma regra da contagem do
+  painel. Acima da lista, a tela diz quantos ficam abaixo, e dá para
+  filtrar pela situação do mês (efetivo, temporário, outras) e por "só
+  abaixo do piso no ano", junto da busca pelo nome. Quem trabalhou só um
+  mês na Secretaria e o resto numa escola aparece marcado nas duas listas:
+  a regra olha a folha inteira. Sem piso do ano, ou com a carga fora de
+  horas, a coluna não aparece.
 - **O salário da escola e o da rede.** No painel da escola, logo abaixo da
   linha da rede, "Nesta escola" dá o salário do magistério da escola com a
   mesma conta (mediana por pessoa e mês, sem dezembro, total e base) e

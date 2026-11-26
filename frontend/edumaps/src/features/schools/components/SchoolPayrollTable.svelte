@@ -21,6 +21,8 @@
    * @property {string} segmento_ensino
    * @property {string} situacao
    * @property {string} tipo
+   * @property {number|null} [base_40h_ano]  #598: base por 40 h no ano (mês típico, rede inteira)
+   * @property {boolean|null} [abaixo_piso_ano]  #598: abaixo do piso no ano, pela regra da contagem
    */
 
   // Única chamada a $props() com todas as propriedades
@@ -31,6 +33,8 @@
     caption = 'Folha de Pagamento – Profissionais da Educação',
     /** @type {string} */
     footer = '',
+    /** #598: mostra a coluna da base por 40 h no ano e a marca do piso */
+    mostrarPiso = false,
   } = $props();
 
   // Formata valores monetários (string -> número com 2 casas)
@@ -42,7 +46,17 @@
   }
 
   // Definição das colunas – selecionamos os campos mais relevantes
-  const columns = [
+  // #598 (QB-02 da P2): a base por 40 h da pessoa no ano e a marca do piso
+  const colunaPiso = {
+    key: 'base_40h_ano',
+    label: 'Base por 40 h no ano',
+    sortable: true,
+    render: (row) => row.base_40h_ano == null
+      ? '—'
+      : `${formatCurrency(row.base_40h_ano)}${row.abaixo_piso_ano ? ' · abaixo do piso' : ''}`,
+  };
+
+  const base = [
     {
       key: 'nome_profissional',
       label: 'Profissional',
@@ -76,6 +90,7 @@
       sortable: true,
       render: (row) => formatCurrency(row.salario_total),
     },
+    'PISO',
     {
       key: 'mes',
       label: 'Mês',
@@ -87,6 +102,7 @@
       sortable: true,
     },
   ];
+  const columns = $derived(base.flatMap((c) => (c === 'PISO' ? (mostrarPiso ? [colunaPiso] : []) : [c])));
 </script>
 
 <!-- Sem rowKey: a folha não tem identificador de linha. O CPF vem mascarado

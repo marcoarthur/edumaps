@@ -18,10 +18,21 @@
   const POR_PAGINA = 100;
   let filtro = $state("");
   let pagina = $state(0);
+  // #598 (QB-02 da P2): filtro pela situação da linha (a do mês) e pela marca
+  // "abaixo do piso no ano" (a regra da contagem da rede, calculada no backend)
+  let situacao = $state("");
+  let soAbaixo = $state(false);
+  const sitDe = (p) => (p.situacao === "Efetivo" ? "efetivo" : p.situacao === "Temporário" ? "temporario" : "outros");
+  const situacoes = $derived(new Set(payrollData.map(sitDe)));
+  // pessoas (CPF mascarado e nome), não linhas: há quem tenha dois pagamentos no mês
+  const marcados = $derived(new Set(payrollData.filter((p) => p.abaixo_piso_ano).map((p) => `${p.cpf}|${p.nome_profissional}`)).size);
+  const temPiso = $derived(payrollData.some((p) => p.base_40h_ano != null));
+  const temFiltros = $derived(payrollData.length > POR_PAGINA || marcados > 0 || situacoes.size > 1);
   const filtrados = $derived(
-    filtro.trim()
-      ? payrollData.filter((p) => (p.nome_profissional ?? "").toLowerCase().includes(filtro.trim().toLowerCase()))
-      : payrollData,
+    payrollData.filter((p) =>
+      (!filtro.trim() || (p.nome_profissional ?? "").toLowerCase().includes(filtro.trim().toLowerCase()))
+      && (!situacao || sitDe(p) === situacao)
+      && (!soAbaixo || p.abaixo_piso_ano)),
   );
   const paginas = $derived(Math.max(1, Math.ceil(filtrados.length / POR_PAGINA)));
   const visiveis = $derived(filtrados.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA));
@@ -141,17 +152,39 @@
         unidade cada uma trabalha. Pode haver pagamentos parciais (férias, complementos, rescisões).
       </p>
     {/if}
-    {#if payrollData.length > POR_PAGINA}
+    {#if marcados > 0}
+      <p class="text-sm text-gray-700" data-testid="nota-piso-folha">
+        {marcados.toLocaleString("pt-BR")} {marcados === 1 ? "profissional do magistério fica" : "profissionais do magistério ficam"} abaixo do
+        piso no ano nesta lista: a base por 40 horas no mês típico, em toda a folha do município (escolas e Secretaria),
+        entre quem recebeu 3 meses ou mais, a mesma regra da contagem do painel. Não é a verificação legal do piso
+        (complementos, jornada, licenças, reajuste pago com atraso).
+      </p>
+    {/if}
+    {#if temFiltros}
       <div class="flex flex-wrap items-center gap-3 text-sm" data-testid="paginacao-folha">
         <label class="text-gray-600" for="filtro-nome">Buscar pelo nome</label>
         <input id="filtro-nome" type="search" bind:value={filtro} oninput={() => (pagina = 0)}
           class="border border-gray-300 rounded-md px-2 py-1 text-sm" />
+        <label class="text-gray-600" for="filtro-situacao">Situação</label>
+        <select id="filtro-situacao" bind:value={situacao} onchange={() => (pagina = 0)} data-testid="filtro-situacao"
+          class="border border-gray-300 rounded-md px-2 py-1 text-sm">
+          <option value="">todas</option>
+          <option value="efetivo">efetivo</option>
+          <option value="temporario">temporário</option>
+          <option value="outros">outras</option>
+        </select>
+        {#if marcados > 0}
+          <label class="inline-flex items-center gap-1 text-gray-700">
+            <input type="checkbox" bind:checked={soAbaixo} onchange={() => (pagina = 0)} data-testid="filtro-abaixo-piso" />
+            só abaixo do piso no ano
+          </label>
+        {/if}
         <span class="text-gray-600">{filtrados.length.toLocaleString("pt-BR")} {filtrados.length === 1 ? "registro" : "registros"} · página {pagina + 1} de {paginas}</span>
         <button type="button" class="px-2 py-1 border rounded-md disabled:opacity-50" disabled={pagina === 0} onclick={() => (pagina -= 1)}>← Anterior</button>
         <button type="button" class="px-2 py-1 border rounded-md disabled:opacity-50" disabled={pagina >= paginas - 1} onclick={() => (pagina += 1)}>Próxima →</button>
       </div>
     {/if}
-    <SchoolPayrollTable payrollData={payrollData.length > POR_PAGINA ? visiveis : payrollData} />
+    <SchoolPayrollTable payrollData={visiveis} mostrarPiso={temPiso} />
   {/if}
   <FonteDado tela="folha" class="pt-2" />
 </div>
