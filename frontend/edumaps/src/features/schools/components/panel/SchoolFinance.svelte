@@ -5,6 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
+  import { urlPisoPagina } from "../../api/pisoApi.js";   // #601
   import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
@@ -37,7 +38,7 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, cargaFolha = null, salarioEscola = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -206,6 +207,10 @@
       {#if ehRede && textoPisoRede(salarioRede, ano)}
         <!-- #575 (QH-01 da P5): só no painel da Secretaria (A1) -->
         <span class="block text-xs text-gray-700 mt-1" data-testid="piso-rede">{textoPisoRede(salarioRede, ano)}</span>
+        {#if municipioIbge && salarioRede.abaixo_piso > 0}
+          <!-- #601 (QC-01 da P2): a lista do ano, pessoa a pessoa, com CSV -->
+          <a class="block text-xs text-blue-700 hover:underline mt-1" href={urlPisoPagina(municipioIbge, ano)} data-testid="link-lista-piso">Ver a lista do ano, pessoa a pessoa (com CSV) →</a>
+        {/if}
       {/if}
     </p>
   {/if}

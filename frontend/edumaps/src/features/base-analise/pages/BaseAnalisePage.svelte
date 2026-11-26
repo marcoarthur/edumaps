@@ -11,6 +11,7 @@
   import { fetchMunicipioSuggestions } from "@/features/network-compare/api/networkCompareApi.js";
   import { ufDoMunicipio } from "@/features/ranking-recorte/constants.js";
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
+  import { urlPisoPagina } from "@/features/schools/api/pisoApi.js";   // #601
   import { textoAnoFolha, textoSalarioRede, textoPisoRede } from "@/features/fontes/utils.js";
   import { getBaseAnalise, baseCsvUrl, dicionarioUrl, folhaMunicipiosUrl, FOLHA_MUNICIPIOS_DICIONARIO_URL } from "../api/baseAnaliseApi.js";
 
@@ -54,7 +55,7 @@
     folha && anoSiope
       ? folha.municipios
           .filter((m) => !codigoIbge || m.codigo_ibge === codigoIbge)
-          .map((m) => ({ municipio: m.municipio, s: m.anos.find((a) => a.ano === anoSiope)?.salario_magisterio }))
+          .map((m) => ({ municipio: m.municipio, codigo_ibge: m.codigo_ibge, s: m.anos.find((a) => a.ano === anoSiope)?.salario_magisterio }))
           .filter((x) => x.s?.pessoas)
       : [],
   );
@@ -333,7 +334,7 @@
                   <div class="mt-2 text-xs text-gray-700" data-testid="salario-rede-base">
                     <p>Magistério na rede municipal em {anoSiope} (toda a folha, nas escolas e no total da Secretaria; sem conversão para 40 horas):</p>
                     <ul class="list-disc ml-5 mt-1">
-                      {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.{#if textoPisoRede(x.s, anoSiope)}{" "}<span data-testid="piso-rede-base">{textoPisoRede(x.s, anoSiope)}</span>{/if}</li>{/each}
+                      {#each salariosRede as x}<li>{x.municipio}: {textoSalarioRede(x.s)}.{#if textoPisoRede(x.s, anoSiope)}{" "}<span data-testid="piso-rede-base">{textoPisoRede(x.s, anoSiope)}</span>{#if x.s.abaixo_piso > 0}{" "}<a class="text-blue-700 hover:underline" href={urlPisoPagina(x.codigo_ibge, anoSiope)} data-testid="link-lista-piso-base">Ver a lista do ano →</a>{/if}{/if}</li>{/each}
                     </ul>
                   </div>
                 {/if}

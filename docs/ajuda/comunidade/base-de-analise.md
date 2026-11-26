@@ -220,7 +220,8 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     mediano por mês e o piso proporcional a essa carga. Na folha por
     município, as colunas `abaixo_piso_efetivos`, `abaixo_piso_temporarios`,
     `abaixo_piso_outros`, `abaixo_piso_carga_comum` e
-    `abaixo_piso_base_mediana`.
+    `abaixo_piso_base_mediana`. Ao lado da frase, "Ver a lista do ano"
+    abre as pessoas abaixo do piso no município, com o CSV.
   - **O salário da rede inteira.** Com o bloco marcado, a tela diz, por
     município, o salário do magistério de toda a folha (escolas e total da
     Secretaria): a mediana do total e do base, por mês e sem dezembro, e a

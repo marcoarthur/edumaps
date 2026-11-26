@@ -35,6 +35,8 @@
     footer = '',
     /** #598: mostra a coluna da base por 40 h no ano e a marca do piso */
     mostrarPiso = false,
+    /** #602: ordenação da lista inteira por quem pagina (repassado ao DataTable) */
+    onsort = undefined,
   } = $props();
 
   // Formata valores monetários (string -> número com 2 casas)
@@ -111,6 +113,7 @@
 <DataTable
   columns={columns}
   data={payrollData}
+  {onsort}
   {caption}
   {footer}
 />

@@ -3,6 +3,7 @@
   import { getSchoolPayroll, getSecretariaPayroll } from "../api/schoolApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import SchoolPayrollTable from "../components/SchoolPayrollTable.svelte";
+  import { ordenar } from "@/shared/ui";
 
   let payrollData = $state([]);
   let loading = $state(true);
@@ -34,8 +35,11 @@
       && (!situacao || sitDe(p) === situacao)
       && (!soAbaixo || p.abaixo_piso_ano)),
   );
+  // #602 (QC-02 da P2): a ordenação vale para a lista filtrada inteira
+  let ordem = $state({ campo: null, dir: null });
+  const ordenados = $derived(ordenar(filtrados, ordem.campo, ordem.dir));
   const paginas = $derived(Math.max(1, Math.ceil(filtrados.length / POR_PAGINA)));
-  const visiveis = $derived(filtrados.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA));
+  const visiveis = $derived(ordenados.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA));
   // #536 (QO-02 da P5): letras que já chegaram perdidas no arquivo do SIOPE
   // aparecem como "?" no nome.
   const nomesIlegiveis = $derived(payrollData.filter((p) => (p.nome_profissional ?? "").includes("?")).length);
@@ -184,7 +188,8 @@
         <button type="button" class="px-2 py-1 border rounded-md disabled:opacity-50" disabled={pagina >= paginas - 1} onclick={() => (pagina += 1)}>Próxima →</button>
       </div>
     {/if}
-    <SchoolPayrollTable payrollData={visiveis} mostrarPiso={temPiso} />
+    <SchoolPayrollTable payrollData={visiveis} mostrarPiso={temPiso}
+      onsort={(campo, dir) => { ordem = { campo, dir }; pagina = 0; }} />
   {/if}
   <FonteDado tela="folha" class="pt-2" />
 </div>
