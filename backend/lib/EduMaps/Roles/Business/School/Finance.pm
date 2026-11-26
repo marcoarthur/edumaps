@@ -217,7 +217,23 @@ sub school_payroll($self, $params) {
     }
   );
 
-  return $results;
+  return $self->_marca_piso($results, $year, $month, $cod);
+}
+
+# #598 (QB-02 da P2): em cada linha do magistério, a base por 40 h da pessoa
+# no ano (mês típico, toda a folha do município) e se ela fica abaixo do
+# piso pela regra da contagem da rede. Sem a conta (ano sem piso, carga fora
+# de horas, outro tipo de profissional): os dois campos vêm vazios; com
+# menos de 3 meses, a marca é falsa, como na contagem.
+sub _marca_piso($self, $results, $year, $month, $cod_inep) {
+  my $first = $results->first or return $results;
+  my $cod6 = $first->{cod_municipio} // return $results;
+  my $m = EduMaps::BaseAnalise->piso_pessoas($self->schema->storage->dbh, $cod6, $year, $month, $cod_inep);
+  return $results->each(sub {
+    my $p = $m->{"$_->{cpf}|$_->{nome_profissional}"};
+    $_->{base_40h_ano}    = $p ? $p->{base_40h} : undef;
+    $_->{abaixo_piso_ano} = $p ? ($p->{abaixo} ? \1 : \0) : undef;
+  });
 }
 
 # #585 (QE-01 da P2): a folha detalhada do total da Secretaria (código
@@ -241,7 +257,7 @@ sub secretaria_payroll($self, $params) {
       $_->{salario_fundeb_min} += 0;
       $_->{salario_outros} += 0;
     });
-  return $results;
+  return $self->_marca_piso($results, $year, $month, 99999999);
 }
 
 sub payroll_dates($self, $params) {
