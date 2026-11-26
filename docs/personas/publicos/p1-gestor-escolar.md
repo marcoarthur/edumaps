@@ -120,6 +120,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). P1-FL-03 resolvido.
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Sem impacto relevante.
 - [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno.
+- [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p1--gestor-escolar-diretora-de-escola-municipal): adotaria (mantido). Impacto pequeno.
 
 ## Pendências
 

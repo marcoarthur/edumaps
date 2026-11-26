@@ -66,3 +66,11 @@ de planilha fica em uma tela.
 
 Duas issues, abertas com a aprovação do developer: QC-01 → #601 e
 QC-02 → #602. QC-01 vem primeiro: é o anexo do ofício. QC-02 é pequeno e pode ir junto.
+
+## Andamento
+
+- 2026-11-26: #601 e #602 (PR #603) mergeados: QC-01 e QC-02 resolvidos.
+  A lista do ano dos abaixo do piso abre pelo painel da Secretaria e pela
+  base, com CSV; Cuiabá 2026: 1.559 pessoas (1.417 temporários, 142
+  efetivos), o mesmo total do painel. A ordenação vale para a lista
+  filtrada inteira. Os dois achados desta rodada estão entregues.

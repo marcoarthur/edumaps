@@ -4,6 +4,17 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-26 (ep) — sexta rodada da P2 e #601/#602 (PR #603), lista do ano do piso
+
+- Sexta avaliação da P2 (resposta ao tribunal ponta a ponta): adotaria em
+  piloto (mantido); QC-01 → #601, QC-02 → #602 (abertas com aprovação).
+- #601: `GET /api/city/:codigo_ibge/piso` (JSON/CSV, pública, só CPF
+  mascarado), a regra da contagem da rede, por consulta (sem tabela);
+  página `/municipio/piso` com links do painel da Secretaria e da base.
+  Cuiabá 2026: 1.559 em 0,55 s, igual ao painel.
+- #602: `DataTable` com `onsort`; ordena o filtrado inteiro antes de paginar.
+- LXC: backend + frontend, sem change. Nota técnica 284.
+
 ## Sessão 2026-11-26 (eo) — #598 (PR #600), marca do piso na folha detalhada
 
 - #598 (QB-02 da P2): a folha do mês traz `base_40h_ano` e

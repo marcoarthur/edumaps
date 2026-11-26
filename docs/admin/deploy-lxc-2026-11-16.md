@@ -344,6 +344,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `psql edumaps_dev -Atc "SELECT situacao, sum(n) FROM analytics.mv_salario_rede_md GROUP BY 1"` lista efetivo/temporario/outros, e o painel da Secretaria de Cuiabá diz "Deles, … temporários e … efetivos".
 - [ ] Marca do piso na folha (#598, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`): a página
       `/escola/payroll?inep=51171805&date=04-2026&secretaria=1` diz quantos ficam abaixo do piso no ano e filtra por situação (se a folha do LXC for a mesma do local).
+- [ ] Lista do ano do piso (#601/#602, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`):
+      `curl -s "$API/api/city/5103403/piso?ano=2026" | jq .total` dá o mesmo número do painel da Secretaria de Cuiabá, e `/municipio/piso?ibge=5103403&ano=2026` baixa o CSV.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

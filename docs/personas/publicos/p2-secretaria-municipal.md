@@ -119,6 +119,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). Impacto pequeno.
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QB-01 resolvido.
 - [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QB-02 resolvido.
+- [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QC-01 e QC-02 resolvidos.
 
 ## Pendências
 
@@ -144,7 +145,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   QB-02 (lista sem filtro nem marca do piso) → #598, entregue (#600).
 - A resposta ao tribunal ponta a ponta (2026-11-26, **adotaria, em
   piloto**): QC-01 (não há a lista do ano dos abaixo do piso, nem download)
-  → #601; QC-02 (a ordenação vale só para a página) → #602.
+  → #601, entregue (#603); QC-02 (a ordenação vale só para a página) → #602, entregue (#603).
 
 ## Entradas
 
