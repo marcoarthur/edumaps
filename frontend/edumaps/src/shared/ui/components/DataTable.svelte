@@ -13,8 +13,13 @@
    *   Só vale se for único e preenchido em TODAS as linhas; senão a tabela usa
    *   a posição da linha em `data` (uma chave repetida derrubava a página
    *   inteira com `each_key_duplicate`).
+   * @property {(field: string|null, dir: 'asc'|'desc'|null) => void} [onsort] - #602: com ele, a
+   *   tabela não ordena o que mostra; avisa a coluna e a direção, e quem
+   *   pagina ordena a lista inteira (use `ordenar` de `@/shared/ui`).
    */
-  let { columns = [], data = [], caption = '', footer = '', rowKey = 'id' } = $props();
+  import { ordenar } from '../ordenar.js';
+
+  let { columns = [], data = [], caption = '', footer = '', rowKey = 'id', onsort = undefined } = $props();
 
   // Chave do {#each}: o rowKey quando é único e preenchido em todas as linhas;
   // senão, a posição da linha em `data` (estável ao ordenar).
@@ -31,31 +36,8 @@
   let sortField = $state(null);
   let sortDirection = $state(null); // 'asc' or 'desc'
 
-  // Derived sorted data
-  let sortedData = $derived.by(() => {
-    if (!sortField || !sortDirection) return data;
-
-    const field = sortField;
-    const dir = sortDirection;
-
-    // Determine type for comparison
-    const sample = data[0]?.[field];
-    const isNumeric = typeof sample === 'number' || sample === null || sample === undefined;
-
-    return [...data].sort((a, b) => {
-      let valA = a[field] ?? '';
-      let valB = b[field] ?? '';
-      let compareResult;
-
-      if (isNumeric) {
-        compareResult = (Number(valA) || 0) - (Number(valB) || 0);
-      } else {
-        compareResult = String(valA).localeCompare(String(valB));
-      }
-
-      return dir === 'asc' ? compareResult : -compareResult;
-    });
-  });
+  // Derived sorted data (#602: com `onsort`, quem chama já ordenou)
+  let sortedData = $derived(onsort ? data : ordenar(data, sortField, sortDirection));
 
   function handleSort(columnKey) {
     if (sortField === columnKey) {
@@ -70,6 +52,7 @@
       sortField = columnKey;
       sortDirection = 'asc';
     }
+    onsort?.(sortField, sortDirection);
   }
 
   function getSortIndicator(columnKey) {

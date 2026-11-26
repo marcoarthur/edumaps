@@ -1,0 +1,49 @@
+// #601 (QC-01 da P2): a lista do ano dos abaixo do piso na rede.
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/svelte";
+import { ApiError } from "@/shared/api/client.js";
+
+const mocks = vi.hoisted(() => ({ getPisoLista: vi.fn() }));
+vi.mock("../api/pisoApi.js", async (orig) => ({ ...(await orig()), getPisoLista: mocks.getPisoLista }));
+
+import PisoListaPage from "./PisoListaPage.svelte";
+
+const pessoa = (i, sit, base40) => ({
+  nome: `PESSOA ${String(i).padStart(3, "0")}`, cpf_mascarado: `xxx.${i}-xx`, situacao: sit, carga_comum: 30,
+  base_mensal_mediana: 3212.71, base_40h: base40, meses: 8, secretaria: true, inep_escolas: [], escolas: [],
+});
+
+describe("PisoListaPage (#601)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, "", "/municipio/piso?ibge=5103403&ano=2026");
+  });
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("resumo, CSV, filtro por situação e ordenação da lista inteira (#602)", async () => {
+    const pessoas = [
+      ...Array.from({ length: 150 }, (_, i) => pessoa(i, "temporario", 4000 + i)),
+      { ...pessoa(999, "efetivo", 1000), secretaria: false, inep_escolas: ["51000001"], escolas: ["EMEB UM"] },
+    ];
+    mocks.getPisoLista.mockResolvedValue({ codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", ano: 2026, piso: 5130.63, total: 151, pessoas });
+    render(PisoListaPage);
+    expect(await screen.findByTestId("resumo-lista-piso")).toHaveTextContent("151 profissionais do magistério ficam abaixo do piso de 2026");
+    expect(screen.getByTestId("resumo-lista-piso")).toHaveTextContent("150 temporários, 1 efetivo");
+    expect(mocks.getPisoLista).toHaveBeenCalledWith("5103403", "2026");
+    expect(screen.getByTestId("csv-lista-piso").getAttribute("href")).toBe("/api/city/5103403/piso?ano=2026&formato=csv");
+    expect(screen.getByTestId("contagem-lista-piso")).toHaveTextContent("151 pessoas · página 1 de 2");
+    // a menor base por 40 h está na página 2 pela ordem de nome; ordenar traz para a primeira
+    expect(screen.queryByText("PESSOA 999")).toBeNull();
+    await fireEvent.click(screen.getByText("Base por 40 h"));
+    expect(screen.getByText("PESSOA 999")).toBeInTheDocument();
+    expect(screen.getByText("EMEB UM")).toBeInTheDocument();
+    await fireEvent.change(screen.getByTestId("piso-situacao"), { target: { value: "efetivo" } });
+    expect(screen.getByTestId("contagem-lista-piso")).toHaveTextContent("1 pessoa · página 1 de 1");
+  });
+
+  it("sem piso no ano: diz o motivo", async () => {
+    mocks.getPisoLista.mockRejectedValue(new ApiError("Sem piso cadastrado para 2001", { status: 404 }));
+    render(PisoListaPage);
+    expect(await screen.findByTestId("sem-lista-piso")).toHaveTextContent("Sem piso cadastrado para 2001");
+  });
+});

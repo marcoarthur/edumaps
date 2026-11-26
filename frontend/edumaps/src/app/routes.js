@@ -42,6 +42,7 @@ import {
   SchoolSearchPage,
   SchoolRankingPage,
   SchoolPayrollPage,
+  PisoListaPage,
   SchoolFinancePage,
   SchoolPanelPage,
   SchoolProfilePage,
@@ -61,6 +62,7 @@ export const routes = [
   { path: "/cluster/geotag", component: ClusterGeotagPage },
   { path: "/escola/ranking", component: SchoolRankingPage },
   { path: "/escola/payroll", component: SchoolPayrollPage },
+  { path: "/municipio/piso", component: PisoListaPage },   // #601
   { path: "/escola/financeiro", component: SchoolFinancePage },
   { path: "/escola/panel", component: SchoolPanelPage },
   { path: "/escola/perfil", component: SchoolProfilePage },

@@ -213,6 +213,11 @@ describe("SchoolFinance — piso na rede (#575)", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S } });
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("1.559 profissionais do magistério, 1.421 deles só no total da Secretaria");
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("Deles, 1.422 temporários e 137 efetivos");   // #597
+    expect(screen.queryByTestId("link-lista-piso")).toBeNull();   // sem o código do município, sem link
+  });
+  it("#601: o link para a lista do ano", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S, municipioIbge: "5103403" } });
+    expect(screen.getByTestId("link-lista-piso").getAttribute("href")).toBe("/municipio/piso?ibge=5103403&ano=2026");
   });
   it("não no painel da escola", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2026, salarioRede: S } });

@@ -75,7 +75,13 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   ano) e o perfil mais comum: a carga, o salário base mediano por mês e o
   piso proporcional a essa carga. Em Cuiabá (2026): 1.417 temporários e 142
   efetivos; o mais comum é 30 horas, com o piso proporcional de
-  R$ 3.847,97. Para conferir pessoa a pessoa, abra a folha da Secretaria.
+  R$ 3.847,97. Logo abaixo, **"Ver a lista do ano"** abre quem fica abaixo
+  do piso no ano em toda a rede, uma linha por pessoa: nome, CPF como o
+  SIOPE publica (mascarado), situação no ano, carga, salário base mensal,
+  base por 40 h, meses pagos e onde recebeu (Secretaria e/ou escolas). A
+  lista filtra pela situação, busca pelo nome, ordena a lista inteira e
+  baixa em CSV (o anexo de uma resposta ao tribunal de contas). É a mesma
+  regra e o mesmo total da frase do painel.
 - **Conferir na folha detalhada quem fica abaixo do piso.** A folha do mês
   (da escola ou do total da Secretaria) traz, para cada profissional do
   magistério, a **base por 40 h no ano** (a do mês típico, em toda a folha
@@ -85,7 +91,8 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   abaixo do piso no ano", junto da busca pelo nome. Quem trabalhou só um
   mês na Secretaria e o resto numa escola aparece marcado nas duas listas:
   a regra olha a folha inteira. Sem piso do ano, ou com a carga fora de
-  horas, a coluna não aparece.
+  horas, a coluna não aparece. Ordenar uma coluna ordena a lista filtrada
+  inteira, não só a página.
 - **O salário da escola e o da rede.** No painel da escola, logo abaixo da
   linha da rede, "Nesta escola" dá o salário do magistério da escola com a
   mesma conta (mediana por pessoa e mês, sem dezembro, total e base) e

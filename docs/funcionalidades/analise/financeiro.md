@@ -37,6 +37,9 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   no ano**, com a mesma regra da contagem da rede, e filtrar a lista por
   situação (efetivo, temporário, outras) e por essa marca, para conferir os
   casos pessoa a pessoa.
+- Sistema pode **entregar a lista do ano de quem fica abaixo do piso na rede
+  municipal**, uma pessoa por linha (situação, carga, salário base, meses e
+  onde recebeu), com a regra e o total da contagem, para baixar em planilha.
 - Quando não há folha para a escola, o sistema diz o motivo (escola fora da
   rede municipal, município ainda sem dados, ou o SIOPE não traz a escola) e
   de quais municípios há folha, com os anos e se o dado é por escola ou só o

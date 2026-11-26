@@ -2,6 +2,8 @@ package EduMaps::Controller::City;
 use Mojo::Base 'EduMaps::Controller::Base', -signatures;
 use DateTime;
 use utf8;
+use Mojo::Util ();
+use EduMaps::BaseAnalise ();   # #601: a lista do piso
 
 has default_date => sub { DateTime->new( month => 6, year => 2025 ) };
 has min_search_len => 4;
@@ -102,6 +104,36 @@ sub payroll_details($self) {
     format => 'json',
   );
 
+}
+
+# #601 (QC-01 da P2): quem fica abaixo do piso no ano na rede municipal,
+# uma linha por pessoa (regra da contagem do painel). ?ano=AAAA (padrão: o
+# último ano com folha do município); ?formato=csv baixa o arquivo. Pública,
+# pela mesma decisão da folha por escola (só o CPF mascarado do SIOPE).
+sub piso ($self) {
+  my $v = $self->validation;
+  $v->optional('ano', 'trim')->like(qr/^\d{4}$/);
+  $v->optional('formato', 'trim')->in(qw(json csv));
+  return $self->render(json => { error => 'Parâmetros inválidos' }, status => 400) if $v->has_error;
+  my $ibge = $self->param('codigo_ibge');
+  my $cod6 = substr($ibge, 0, 6);
+  my $dbh  = $self->app->schema->storage->dbh;
+  my $ano  = $v->param('ano') // $dbh->selectrow_array(
+    'SELECT max(ano) FROM clean.remuneracao_municipal WHERE cod_municipio::text = ?', {}, $cod6);
+  return $self->render(json => { error => 'Sem folha do município' }, status => 404) unless $ano;
+  my $l = EduMaps::BaseAnalise->abaixo_piso_lista($dbh, $cod6, $ano);
+  return $self->render(json => { error => $l->{erro} }, status => 404) if $l->{erro};
+  my ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio::text = ? ORDER BY nu_ano_censo DESC LIMIT 1', {}, $ibge);
+  if (($v->param('formato') // 'json') eq 'csv') {
+    $self->res->headers->content_type('text/csv; charset=utf-8');
+    $self->res->headers->content_disposition(qq{attachment; filename="abaixo-piso-$ibge-$ano.csv"});
+    return $self->render(data => Mojo::Util::encode('UTF-8', EduMaps::BaseAnalise->abaixo_piso_csv($l)));
+  }
+  $self->render(json => {
+    codigo_ibge => $ibge, municipio => $nome, uf => $uf, ano => 0 + $ano, %$l,
+    colunas => [ map { { nome => $_->[0], descricao => $_->[1] } } @EduMaps::BaseAnalise::PISO_LISTA_COLUNAS ],
+  });
 }
 
 sub search_by_name($self) {

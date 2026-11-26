@@ -117,3 +117,25 @@ describe("SchoolPayrollPage — situação e piso (#598)", () => {
     expect(screen.queryByTestId("paginacao-folha")).toBeNull();
   });
 });
+
+// #602 (QC-02 da P2): ordenar vale para a lista filtrada inteira, não a página.
+describe("SchoolPayrollPage — ordenação (#602)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, "", "/escola/payroll?inep=51171805&date=04-2026&secretaria=1");
+  });
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("a menor base da página 2 sobe para a primeira", async () => {
+    const linhas = Array.from({ length: 150 }, (_, i) => ({ nome_profissional: `P${String(i).padStart(3, "0")}`, cpf: `c${i}`,
+      categoria: "Docente", carga_horaria: 30, situacao: "Efetivo", salario_base: 5000 - i, salario_total: 6000, mes: "Abril", ano: 2026 }));
+    mocks.getSecretariaPayroll.mockResolvedValue(linhas);
+    render(SchoolPayrollPage);
+    await screen.findByTestId("paginacao-folha");
+    expect(screen.queryByText("P149")).toBeNull();
+    const { fireEvent } = await import("@testing-library/svelte");
+    await fireEvent.click(screen.getByText("Salário Base"));
+    expect(screen.getByText("P149")).toBeInTheDocument();
+    expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("página 1 de 2");
+  });
+});

@@ -24,6 +24,7 @@
   let mesesSecretaria = $state([]);
   let docentes = $state(null);
   let salarioRede = $state(null);
+  let municipioIbge = $state(null);   // #601
   let cargaFolha = $state(null);
   let salarioEscola = $state(null);
   let totalProfissionais = $state(0);
@@ -76,6 +77,7 @@
       mesesSecretaria = data.meses_secretaria ?? [];
       docentes = data.docentes ?? null;
       salarioRede = data.salario_rede ?? null;
+      municipioIbge = data.municipio_ibge ?? null;
       cargaFolha = data.carga_folha ?? null;
       salarioEscola = data.salario_escola ?? null;
       totalProfissionais = data.total_profissionais ?? 0;
@@ -279,7 +281,7 @@
           <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
         </div>
       {/if}
-      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {ano} {periodo} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {municipioIbge} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

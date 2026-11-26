@@ -787,6 +787,91 @@ sub piso_pessoas ($class, $dbh, $cod6, $ano, $mes, $cod_inep) {
   }) } @$rows };
 }
 
+# #601 (QC-01 da P2): a lista do ano de quem fica abaixo do piso na rede
+# municipal, uma linha por pessoa, com a regra da contagem (salario_rede):
+# a mediana do base por 40 h nos meses da pessoa em toda a folha do
+# município, sem dezembro, 3 meses ou mais. A situação é a do ano (a dos
+# mais meses; empate: a do último mês, como na #597). Por consulta, sobre a
+# folha: tem nome e CPF mascarado, e não vai para analytics.
+# Devolve { erro => '...' } sem piso no ano, com a carga fora de horas ou
+# sem folha; senão { piso, total, pessoas => [...] }.
+our @PISO_LISTA_COLUNAS = (
+  ['nome', 'Nome do profissional, como o município declarou ao SIOPE', 0],
+  ['cpf_mascarado', 'CPF como o SIOPE publica (seis dígitos do meio)', 0],
+  ['situacao', 'Situação no ano: efetivo, temporario ou outros (a dos mais meses; empate: a do último mês)', 0],
+  ['carga_comum', 'Carga horária mais comum dos meses da pessoa', 1],
+  ['base_mensal_mediana', 'Mediana do salário base mensal da pessoa, sem conversão para 40 horas, em reais', 1],
+  ['base_40h', 'Salário base para 40 horas no mês típico (mediana dos meses), em reais: o que se compara com o piso', 1],
+  ['piso_ano', 'Piso nacional do magistério do ano, por 40 horas', 1],
+  ['meses', 'Meses pagos no ano, sem dezembro', 1],
+  ['secretaria', '"sim" quando recebeu algum mês no total da Secretaria (sem escola)', 0],
+  ['inep_escolas', 'Códigos INEP das escolas em que recebeu no ano, separados por ";"', 0],
+  ['escolas', 'Nomes das escolas, como o SIOPE traz, separados por ";"', 0],
+);
+
+sub abaixo_piso_lista ($class, $dbh, $cod6, $ano) {
+  my $piso = $class->piso_magisterio($ano) // return { erro => "Sem piso cadastrado para $ano" };
+  my $sal = $class->salario_rede($dbh, "$cod6")->{"$cod6|$ano"}
+    // return { erro => "Sem folha do magistério do município em $ano" };
+  return { erro => 'A carga horária deste município não parece estar em horas semanais: a conta por 40 horas não vale (#572)' }
+    if $sal->{carga_suspeita} && ${ $sal->{carga_suspeita} };
+  my $rows = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, ("$cod6", $ano) x 2);
+    WITH pm AS (
+      SELECT cpf, nome_profissional, left(mes, 3) AS m, sum(salario_base) AS b, sum(carga_horaria) AS ch
+        FROM clean.remuneracao_municipal
+       WHERE cod_municipio::text = ? AND ano = ? AND tipo = 'Profissionais do magistério' AND left(mes, 3) <> 'Dez'
+       GROUP BY 1, 2, 3
+    ), pp AS (
+      SELECT cpf, nome_profissional, count(*)::int AS meses,
+             percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md,
+             mode() WITHIN GROUP (ORDER BY ch) AS carga,
+             percentile_cont(0.5) WITHIN GROUP (ORDER BY b) AS base
+        FROM pm WHERE ch > 0 AND b IS NOT NULL
+       GROUP BY 1, 2
+      HAVING count(*) >= $MESES_MIN_PISO AND percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) < $piso
+    ), linhas AS (
+      SELECT r.cpf, r.nome_profissional, r.cod_inep, r.escola,
+             CASE r.situacao WHEN 'Efetivo' THEN 'efetivo' WHEN 'Temporário' THEN 'temporario' ELSE 'outros' END AS sit,
+             array_position(ARRAY['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov'], left(r.mes, 3)) AS mn
+        FROM clean.remuneracao_municipal r JOIN pp USING (cpf, nome_profissional)
+       WHERE r.cod_municipio::text = ? AND r.ano = ? AND r.tipo = 'Profissionais do magistério' AND left(r.mes, 3) <> 'Dez'
+    ), ps AS (
+      SELECT DISTINCT ON (cpf, nome_profissional) cpf, nome_profissional, sit
+        FROM (SELECT cpf, nome_profissional, sit, count(DISTINCT mn) AS n, max(mn) AS ult FROM linhas GROUP BY 1, 2, 3) x
+       ORDER BY cpf, nome_profissional, n DESC, ult DESC NULLS LAST, sit
+    ), lg AS (
+      SELECT cpf, nome_profissional, bool_or(cod_inep = 99999999) AS sec,
+             array_agg(DISTINCT cod_inep::text) FILTER (WHERE cod_inep <> 99999999) AS ineps,
+             array_agg(DISTINCT escola) FILTER (WHERE cod_inep <> 99999999 AND escola IS NOT NULL) AS nomes
+        FROM linhas GROUP BY 1, 2
+    )
+    SELECT pp.nome_profissional AS nome, pp.cpf, coalesce(ps.sit, 'outros') AS situacao, pp.carga::float8 AS carga,
+           round(pp.base::numeric, 2)::float8 AS base, round(pp.md::numeric, 2)::float8 AS base_40h, pp.meses,
+           coalesce(lg.sec, false) AS sec, lg.ineps, lg.nomes
+      FROM pp LEFT JOIN ps USING (cpf, nome_profissional) LEFT JOIN lg USING (cpf, nome_profissional)
+     ORDER BY pp.nome_profissional, pp.cpf
+    SQL
+  return {
+    piso => $piso, total => scalar @$rows,
+    pessoas => [ map { +{
+      nome => $_->{nome}, cpf_mascarado => $_->{cpf}, situacao => $_->{situacao},
+      carga_comum => $_->{carga}, base_mensal_mediana => $_->{base}, base_40h => $_->{base_40h},
+      meses => $_->{meses}, secretaria => ($_->{sec} ? \1 : \0),
+      inep_escolas => [ sort @{ $_->{ineps} // [] } ], escolas => [ sort @{ $_->{nomes} // [] } ],
+    } } @$rows ],
+  };
+}
+
+sub abaixo_piso_csv ($class, $lista) {
+  my @cab = map { $_->[0] } @PISO_LISTA_COLUNAS;
+  my @num = map { $_->[2] } @PISO_LISTA_COLUNAS;
+  my @linhas = map { [
+    @$_{qw(nome cpf_mascarado situacao carga_comum base_mensal_mediana base_40h)}, $lista->{piso}, $_->{meses},
+    (${ $_->{secretaria} } ? 'sim' : ''), join(';', @{ $_->{inep_escolas} }), join(';', @{ $_->{escolas} }),
+  ] } @{ $lista->{pessoas} };
+  return $class->csv(\@cab, \@linhas, \@num);
+}
+
 # #589 (P1-FL-03): o salário do magistério de uma escola com a mesma conta
 # da rede (salario_rede): por pessoa e mês, sem dezembro, a mediana do total
 # e do base e a carga mais comum, sem conversão para 40 horas.

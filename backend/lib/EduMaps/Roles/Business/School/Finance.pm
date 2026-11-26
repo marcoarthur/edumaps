@@ -583,6 +583,10 @@ sub financial_summary($self, $params) {
       : undef),
     # #571 (QI-01 da P3): o salário do magistério da rede inteira no ano,
     # com a folha da Secretaria (vale também no painel da Secretaria).
+    # #601 (QC-01 da P2): o código IBGE (7 dígitos) do município, para o
+    # link da lista do ano dos abaixo do piso
+    municipio_ibge => scalar $dbh->selectrow_array(
+      'SELECT co_municipio::text FROM clean.censo_escolas WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, $cod),
     salario_rede => (defined $ano && $siope->{cod_municipio}
       ? EduMaps::BaseAnalise->salario_rede($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
       : undef),
