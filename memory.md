@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-26 (en) — quinta rodada da P2 e #597 (PR #599), piso por situação
+
+- Quinta avaliação da P2 (piso por vínculo): adotaria em piloto (mantido);
+  QB-01 → #597, QB-02 → #598 (abertas com aprovação).
+- #597: change nova `analytics_salario_rede_situacao` (refaz
+  `mv_salario_rede_md` com situação, carga e base por pessoa, sem CPF/nome).
+  Situação = a dos mais meses, empate no último mês; perfil = carga mais
+  comum e mediana do base; piso proporcional no Perl. Cuiabá 2026: 1.417
+  temporários e 142 efetivos (a avaliação dizia 1.422/137, outra regra).
+- LXC: `deploy_db_dev` + backend + minion + frontend. Nota técnica 282.
+- Próximo: #598 (QB-02), só com aprovação.
+
 ## Sessão 2026-11-25 (em) — #595 (PR #596), salário da rede em matviews
 
 - Fim do modo autônomo (09:00); de volta a pedir PR e merge.

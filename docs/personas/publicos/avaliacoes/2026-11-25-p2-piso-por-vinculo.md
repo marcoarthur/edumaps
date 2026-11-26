@@ -73,3 +73,11 @@ conferir os casos sem sair dela (QB-02).
 Duas issues, abertas com a aprovação do developer: QB-01 → #597 e
 QB-02 → #598. QB-01 vem primeiro: responde ao tribunal em uma frase. QB-02 depende da
 marca por pessoa, que a contagem já calcula.
+
+## Andamento
+
+- 2026-11-26: #597 (PR #599) mergeado: QB-01 resolvido. Pela situação dos
+  mais meses no ano (empate: a do último mês), Cuiabá 2026 tem 1.417
+  temporários e 142 efetivos abaixo do piso (a tabela acima usou outra
+  regra); o mais comum é 30 h, base mediana R$ 3.212,71, piso proporcional
+  R$ 3.847,97. QB-02 segue na #598.
