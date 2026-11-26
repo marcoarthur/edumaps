@@ -142,8 +142,31 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Os abaixo do piso na lista da Secretaria (2026-11-25, **adotaria, em
   piloto**): QB-01 (contagem sem a situação, temporário ou efetivo) → #597, entregue (#599);
   QB-02 (lista sem filtro nem marca do piso) → #598, entregue (#600).
+- A resposta ao tribunal ponta a ponta (2026-11-26, **adotaria, em
+  piloto**): QC-01 (não há a lista do ano dos abaixo do piso, nem download)
+  e QC-02 (a ordenação vale só para a página): aguardam aprovação para issue.
 
 ## Entradas
+
+### 2026-11-26 — A resposta ao tribunal só pela plataforma (sexta rodada)
+
+**Material:** o painel da rede de Cuiabá e a folha da Secretaria de abril
+de 2026 com os filtros novos. Consolidação em
+[`avaliacoes/2026-11-26-p2-resposta-tce-ponta-a-ponta.md`](avaliacoes/2026-11-26-p2-resposta-tce-ponta-a-ponta.md).
+
+**O que tentou:** responder ao tribunal do começo ao fim: quantos, quem,
+por quê e a lista dos casos.
+
+**O que funciona para ele:** o "por quê" na frase do painel (1.417
+temporários de 30 h a R$ 3.212,71, contra o proporcional de R$ 3.847,97);
+os efetivos abaixo do piso filtrados na lista (143 registros em abril).
+
+**Barreiras:**
+- QC-01 (atrapalha): a lista é de um mês e de um lugar; 55 dos 1.559 não
+  estão em abril na Secretaria, e não há download. Falta a lista do ano.
+- QC-02 (incômodo): ordenar vale só para a página de 100.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-25 — Os 1.421 abaixo do piso na folha da Secretaria (quinta rodada)
 
