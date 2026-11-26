@@ -64,5 +64,5 @@ de planilha fica em uma tela.
 
 ## Encaminhamento
 
-Proposta: duas issues (QC-01 e QC-02), **com a aprovação do developer**.
-QC-01 vem primeiro: é o anexo do ofício. QC-02 é pequeno e pode ir junto.
+Duas issues, abertas com a aprovação do developer: QC-01 → #601 e
+QC-02 → #602. QC-01 vem primeiro: é o anexo do ofício. QC-02 é pequeno e pode ir junto.

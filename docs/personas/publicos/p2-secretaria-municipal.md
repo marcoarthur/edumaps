@@ -144,7 +144,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   QB-02 (lista sem filtro nem marca do piso) → #598, entregue (#600).
 - A resposta ao tribunal ponta a ponta (2026-11-26, **adotaria, em
   piloto**): QC-01 (não há a lista do ano dos abaixo do piso, nem download)
-  e QC-02 (a ordenação vale só para a página): aguardam aprovação para issue.
+  → #601; QC-02 (a ordenação vale só para a página) → #602.
 
 ## Entradas
 
