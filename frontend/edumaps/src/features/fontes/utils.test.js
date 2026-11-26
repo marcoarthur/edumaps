@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoSalarioEscola } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoPisoPerfil, textoSalarioEscola } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -53,6 +53,22 @@ describe("piso na rede inteira (#575)", () => {
     const t = textoPisoRede({ piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421 }, 2026);
     expect(t).toContain("Abaixo do piso de 2026 (R$ 5.130,63 por 40 horas) no mês típico, entre quem recebeu 3 meses ou mais: 1.559 profissionais do magistério, 1.421 deles só no total da Secretaria.");
     expect(t).toContain("Não é a verificação legal do piso");
+  });
+  it("#597: por situação e o perfil de quem fica abaixo", () => {
+    const t = textoPisoRede({ piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421,
+      abaixo_piso_situacao: { efetivo: 137, temporario: 1422, outros: 0 },
+      abaixo_piso_perfil: { carga: 30, base: 3212.71, piso_proporcional: 3847.97 } }, 2026);
+    expect(t).toContain("Deles, 1.422 temporários e 137 efetivos (pela situação dos mais meses no ano).");
+    expect(t).toContain("O mais comum entre eles: 30 horas, com salário base mediano de R$ 3.212,71 por mês (o piso proporcional a 30 horas é R$ 3.847,97).");
+    expect(t.indexOf("Deles")).toBeLessThan(t.indexOf("Não é a verificação legal"));
+  });
+  it("#597: 40 horas sem o proporcional; um só de cada", () => {
+    const t = textoPisoPerfil({ abaixo_piso: 3, abaixo_piso_situacao: { efetivo: 1, temporario: 1, outros: 1 },
+      abaixo_piso_perfil: { carga: 40, base: 3500, piso_proporcional: 5130.63 } });
+    expect(t).toContain("Deles, 1 temporário, 1 efetivo e 1 de outra situação");
+    expect(t).not.toContain("proporcional");
+    expect(textoPisoPerfil({ abaixo_piso: 0, abaixo_piso_situacao: { efetivo: 0, temporario: 0, outros: 0 } })).toBe("");
+    expect(textoPisoPerfil({ abaixo_piso: 5 })).toBe("");
   });
   it("sem contagem, nada", () => {
     expect(textoPisoRede({ piso: 5130.63, abaixo_piso: null }, 2026)).toBe("");

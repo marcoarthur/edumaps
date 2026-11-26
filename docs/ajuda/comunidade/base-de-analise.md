@@ -214,6 +214,13 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     da Secretaria. A contagem por escola não vê a Secretaria: em Cuiabá
     (2026), as escolas somam poucos casos, e a rede inteira tem 1.559, 1.421
     só na Secretaria. Pode haver pagamentos parciais no total da Secretaria.
+    A tela diz também quantos são temporários, efetivos ou de outra
+    situação (a declarada nos mais meses do ano; no empate, a do último
+    mês) e o perfil mais comum de quem fica abaixo: a carga, o salário base
+    mediano por mês e o piso proporcional a essa carga. Na folha por
+    município, as colunas `abaixo_piso_efetivos`, `abaixo_piso_temporarios`,
+    `abaixo_piso_outros`, `abaixo_piso_carga_comum` e
+    `abaixo_piso_base_mediana`.
   - **O salário da rede inteira.** Com o bloco marcado, a tela diz, por
     município, o salário do magistério de toda a folha (escolas e total da
     Secretaria): a mediana do total e do base, por mês e sem dezembro, e a

@@ -675,18 +675,42 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
   my $rows = eval {
     $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista, $lista, $lista);
       WITH piso (ano, valor) AS (VALUES $PISO_VALUES)
-      , cont AS (
-        SELECT d.cod6, d.ano, max(piso.valor) AS piso,
-               coalesce(sum(d.n) FILTER (WHERE d.md < piso.valor AND d.meses >= $MESES_MIN_PISO), 0)::int AS abaixo,
-               coalesce(sum(d.n) FILTER (WHERE d.md < piso.valor AND d.meses >= $MESES_MIN_PISO AND NOT d.esc), 0)::int AS abaixo_sec
+      , d AS (
+        SELECT d.*, piso.valor AS piso, (d.md < piso.valor AND d.meses >= $MESES_MIN_PISO) AS ab
           FROM analytics.mv_salario_rede_md d JOIN piso ON piso.ano = d.ano
          WHERE (?::text[] IS NULL OR d.cod6 = ANY(?::text[]))
+      )
+      , cont AS (
+        SELECT cod6, ano, max(piso) AS piso,
+               coalesce(sum(n) FILTER (WHERE ab), 0)::int AS abaixo,
+               coalesce(sum(n) FILTER (WHERE ab AND NOT esc), 0)::int AS abaixo_sec,
+               -- #597 (QB-01 da P2): por situação da pessoa no ano
+               coalesce(sum(n) FILTER (WHERE ab AND situacao = 'efetivo'), 0)::int AS ab_efetivo,
+               coalesce(sum(n) FILTER (WHERE ab AND situacao = 'temporario'), 0)::int AS ab_temporario,
+               coalesce(sum(n) FILTER (WHERE ab AND situacao = 'outros'), 0)::int AS ab_outros
+          FROM d GROUP BY 1, 2
+      )
+      -- #597: o perfil de quem fica abaixo: a carga mais comum (empate: a
+      -- menor) e a mediana do salário base mensal, pessoa a pessoa
+      , cg AS (
+        SELECT DISTINCT ON (cod6, ano) cod6, ano, carga
+          FROM (SELECT cod6, ano, carga, sum(n) AS n FROM d WHERE ab AND carga IS NOT NULL GROUP BY 1, 2, 3) x
+         ORDER BY cod6, ano, n DESC, carga
+      )
+      , bs AS (
+        SELECT cod6, ano, percentile_cont(0.5) WITHIN GROUP (ORDER BY base) AS base
+          FROM d CROSS JOIN LATERAL generate_series(1, d.n)
+         WHERE ab AND base IS NOT NULL
          GROUP BY 1, 2
       )
       SELECT r.cod6, r.ano, r.pessoas, r.total, r.base, r.carga, r.suspeita,
-             cont.piso::float8 AS piso, cont.abaixo, cont.abaixo_sec
+             cont.piso::float8 AS piso, cont.abaixo, cont.abaixo_sec,
+             cont.ab_efetivo, cont.ab_temporario, cont.ab_outros,
+             cg.carga::float8 AS ab_carga, round(bs.base::numeric, 2)::float8 AS ab_base
         FROM analytics.mv_salario_rede r
         LEFT JOIN cont ON cont.cod6 = r.cod6 AND cont.ano = r.ano
+        LEFT JOIN cg ON cg.cod6 = r.cod6 AND cg.ano = r.ano
+        LEFT JOIN bs ON bs.cod6 = r.cod6 AND bs.ano = r.ano
        WHERE (?::text[] IS NULL OR r.cod6 = ANY(?::text[]))
       SQL
   } // [];
@@ -697,8 +721,17 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
     # sem piso cadastrado ou com a carga fora de horas (#572), sem contagem
     piso => $_->{piso},
     ((defined $_->{piso} && !$_->{suspeita})
-      ? (abaixo_piso => $_->{abaixo} // 0, abaixo_piso_so_secretaria => $_->{abaixo_sec} // 0)
-      : (abaixo_piso => undef, abaixo_piso_so_secretaria => undef)),
+      ? (abaixo_piso => $_->{abaixo} // 0, abaixo_piso_so_secretaria => $_->{abaixo_sec} // 0,
+         # #597 (QB-01 da P2): por situação e o perfil de quem fica abaixo
+         abaixo_piso_situacao => { efetivo => $_->{ab_efetivo} // 0, temporario => $_->{ab_temporario} // 0,
+                                   outros => $_->{ab_outros} // 0 },
+         abaixo_piso_perfil => ($_->{abaixo} ? {
+           carga => $_->{ab_carga}, base => $_->{ab_base},
+           piso_proporcional => (defined $_->{ab_carga} && $_->{ab_carga} > 0
+             ? 0 + sprintf('%.2f', $_->{piso} * $_->{ab_carga} / 40) : undef),
+         } : undef))
+      : (abaixo_piso => undef, abaixo_piso_so_secretaria => undef,
+         abaixo_piso_situacao => undef, abaixo_piso_perfil => undef)),
   }) } @$rows };
 }
 
@@ -872,6 +905,11 @@ our @FOLHA_MUNICIPIO_COLUNAS = (
   ['piso_ano', 'O piso nacional do magistério do ano, por 40 horas semanais. Vazio: ano sem piso cadastrado', 1],
   ['abaixo_piso_rede', 'Profissionais do magistério de toda a folha com o salário base para 40 horas abaixo do piso no mês típico, entre quem recebeu 3 meses ou mais. Não é a verificação legal do piso. Vazio: sem piso ou com a carga fora de horas', 1],
   ['abaixo_piso_so_secretaria', 'Desses, os que estão só no total da Secretaria (o total da Secretaria pode ter pagamentos parciais)', 1],
+  ['abaixo_piso_efetivos', 'Dos abaixo do piso, os efetivos, pela situação declarada ao SIOPE (a dos mais meses da pessoa no ano; empate: a do último mês)', 1],
+  ['abaixo_piso_temporarios', 'Dos abaixo do piso, os temporários, pela mesma regra', 1],
+  ['abaixo_piso_outros', 'Dos abaixo do piso, os de outra situação (outros, cedidos ou sem situação), pela mesma regra', 1],
+  ['abaixo_piso_carga_comum', 'Carga horária mais comum de quem fica abaixo do piso (a de cada pessoa é a dos mais meses)', 1],
+  ['abaixo_piso_base_mediana', 'Mediana do salário base mensal de quem fica abaixo do piso, sem conversão para 40 horas, em reais (a de cada pessoa é a mediana dos meses, sem dezembro)', 1],
   ['data_carga', 'Data em que a planilha do SIOPE foi baixada. Vazio: carga feita antes do registro', 0],
   ['sha256_planilha', 'SHA-256 da planilha do SIOPE baixada nessa carga', 0],
 );
@@ -903,6 +941,8 @@ sub folha_municipios ($class, $dbh, $uf) {
         $s->{pessoas}, $s->{total}, $s->{base}, $s->{carga_comum},
         ($s->{carga_suspeita} && ${ $s->{carga_suspeita} } ? 'sim' : ''),
         $s->{piso}, $s->{abaixo_piso}, $s->{abaixo_piso_so_secretaria},
+        @{ $s->{abaixo_piso_situacao} // {} }{qw(efetivo temporario outros)},
+        @{ $s->{abaixo_piso_perfil} // {} }{qw(carga base)},
         (defined $e->{baixado_em} ? substr($e->{baixado_em}, 0, 10) : undef), $e->{sha256},
       ];
     }

@@ -207,10 +207,12 @@ describe("SchoolFinance — salário da rede (#571)", () => {
 
 // #575 (QH-01 da P5): o piso na rede inteira, só no painel da Secretaria.
 describe("SchoolFinance — piso na rede (#575)", () => {
-  const S = { pessoas: 6578, total: 5049, base: 4751, carga_comum: 30, carga_suspeita: false, piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421 };
+  const S = { pessoas: 6578, total: 5049, base: 4751, carga_comum: 30, carga_suspeita: false, piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421,
+    abaixo_piso_situacao: { efetivo: 137, temporario: 1422, outros: 0 }, abaixo_piso_perfil: { carga: 30, base: 3212.71, piso_proporcional: 3847.97 } };
   it("no painel da Secretaria", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S } });
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("1.559 profissionais do magistério, 1.421 deles só no total da Secretaria");
+    expect(screen.getByTestId("piso-rede")).toHaveTextContent("Deles, 1.422 temporários e 137 efetivos");   // #597
   });
   it("não no painel da escola", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2026, salarioRede: S } });

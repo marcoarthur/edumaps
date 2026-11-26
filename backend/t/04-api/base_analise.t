@@ -814,6 +814,15 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
   # #575: na Secretaria, sem escola: DUDA abaixo nos três meses; EVA só em março (avulso)
   $f->execute($ANO_P, $_, 'DUDA', 'xxx.DUDA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 3000, 4000) for qw(Janeiro Fevereiro Março);
   $f->execute($ANO_P, 'Março', 'EVA', 'xxx.EVA.575-xx', 99999999, '600039', 'Municipal', 'Docente', $mag, 40, 1000, 1000);
+  # #597: a situação da pessoa no ano é a dos mais meses (ANA: temporária em
+  # dois de três); no empate, a do último mês (DUDA: cedida em março, outros)
+  my $sit = $dbh->prepare('UPDATE clean.remuneracao_municipal SET situacao = ? WHERE ano = ? AND cpf = ? AND mes = ?');
+  $sit->execute(@$_) for (
+    ['Efetivo', $ANO_P, 'xxx.ANA.563-xx', 'Janeiro'], ['Temporário', $ANO_P, 'xxx.ANA.563-xx', 'Fevereiro'],
+    ['Temporário', $ANO_P, 'xxx.ANA.563-xx', 'Março'],
+    ['Temporário', $ANO_P, 'xxx.DUDA.575-xx', 'Janeiro'], ['Efetivo', $ANO_P, 'xxx.DUDA.575-xx', 'Fevereiro'],
+    ['Cedido', $ANO_P, 'xxx.DUDA.575-xx', 'Março'],
+  );
   $dbh->do('SELECT analytics.refresh_salario_rede()');   # #595: o salário da rede é pré-calculado
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_P")->tx);
@@ -827,6 +836,16 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
   # #575 (QH-01 da P5): na rede inteira, com a Secretaria; EVA (1 mês) não conta
   my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_P"};
   is [ @$s{qw(piso abaixo_piso abaixo_piso_so_secretaria)} ], [5130.63, 2, 1], 'rede: ANA e DUDA abaixo, DUDA só na Secretaria';
+  # #597 (QB-01 da P2): por situação e o perfil de quem fica abaixo
+  is $s->{abaixo_piso_situacao}, { efetivo => 0, temporario => 1, outros => 1 },
+    'ANA temporária (mais meses), DUDA em outros (empate: o último mês, cedida)';
+  is $s->{abaixo_piso_perfil}, { carga => 40, base => 3500, piso_proporcional => 5130.63 },
+    'carga mais comum, mediana do base (4.000 e 3.000) e o piso proporcional à carga';
+  my $fm = ler_csv($t->get_ok('/api/base-analise/folha-municipios.csv?uf=AC')->tx);
+  my %k; @k{ @{ $fm->[0] } } = 0 .. $#{ $fm->[0] };
+  my ($lp) = grep { $_->[0] eq "$MUN" && $_->[ $k{ano} ] eq "$ANO_P" } @$fm;
+  is [ @$lp[ @k{qw(abaixo_piso_rede abaixo_piso_efetivos abaixo_piso_temporarios abaixo_piso_outros abaixo_piso_carga_comum abaixo_piso_base_mediana)} ] ],
+     ['2', '0', '1', '1', '40', '3500'], 'folha por município: as colunas por situação e o perfil';
   is $a->[ $i{carga_comum_municipio} ], '40', '#572: carga mais comum do município, em horas';
 
   my $c1 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=2001")->tx);
@@ -851,6 +870,7 @@ subtest 'carga que não parece em horas (#572)' => sub {
   $dbh->do('SELECT analytics.refresh_salario_rede()');   # #595
   my $s = EduMaps::BaseAnalise->salario_rede($dbh, '600039')->{"600039|$ANO_C"};
   is [ $s->{carga_comum}, !!${ $s->{carga_suspeita} } ], [18, 1], 'carga 18 na maioria: suspeita';
+  is [ @$s{qw(abaixo_piso_situacao abaixo_piso_perfil)} ], [undef, undef], '#597: sem contagem, sem situação nem perfil';
 
   my $c = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=$ANO_C")->tx);
   my %i; @i{ @{ $c->[0] } } = 0 .. $#{ $c->[0] };

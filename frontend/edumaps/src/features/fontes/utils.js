@@ -110,7 +110,37 @@ export function textoPisoRede(s, ano) {
   const pessoas = `${n.toLocaleString("pt-BR")} ${n === 1 ? "profissional" : "profissionais"} do magistério`;
   const daSec = sec ? `, ${sec.toLocaleString("pt-BR")} ${sec === 1 ? "dele" : "deles"} só no total da Secretaria` : "";
   return `Abaixo do piso${ano ? ` de ${ano}` : ""} (${brl2(s.piso)} por 40 horas) no mês típico, entre quem recebeu 3 meses ou mais: ${pessoas}${daSec}. `
+    + textoPisoPerfil(s)
     + "Não é a verificação legal do piso (complementos, jornada, licenças, reajuste pago com atraso), e o total da Secretaria pode ter pagamentos parciais.";
+}
+
+/**
+ * #597 (QB-01 da P2): quem fica abaixo do piso, pela situação declarada ao
+ * SIOPE, e o perfil mais comum: "Deles, 1.422 temporários e 137 efetivos
+ * (pela situação dos mais meses no ano). O mais comum entre eles: 30 horas,
+ * com salário base mediano de R$ 3.212,71 por mês (o piso proporcional a 30
+ * horas é R$ 3.847,97). " Sem os dados ou sem ninguém abaixo: "".
+ */
+export function textoPisoPerfil(s) {
+  const sit = s?.abaixo_piso_situacao;
+  if (!sit || !Number(s.abaixo_piso)) return "";
+  const n = (v) => Number(v).toLocaleString("pt-BR");
+  const partes = [
+    [Number(sit.temporario) || 0, "temporário", "temporários"],
+    [Number(sit.efetivo) || 0, "efetivo", "efetivos"],
+    [Number(sit.outros) || 0, "de outra situação", "de outra situação"],
+  ].filter(([v]) => v > 0).sort((a, b) => b[0] - a[0])
+    .map(([v, um, varios]) => `${n(v)} ${v === 1 ? um : varios}`);
+  const lista = partes.length > 1 ? `${partes.slice(0, -1).join(", ")} e ${partes.at(-1)}` : partes[0];
+  let t = `Deles, ${lista} (pela situação dos mais meses no ano). `;
+  const p = s.abaixo_piso_perfil;
+  if (p && p.carga != null && p.base != null) {
+    const h = n(p.carga);
+    t += `O mais comum entre eles: ${h} horas, com salário base mediano de ${brl2(p.base)} por mês`
+      + (p.piso_proporcional != null && Number(p.carga) !== 40 ? ` (o piso proporcional a ${h} horas é ${brl2(p.piso_proporcional)})` : "")
+      + ". ";
+  }
+  return t;
 }
 
 const brl2 = (v) => `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
