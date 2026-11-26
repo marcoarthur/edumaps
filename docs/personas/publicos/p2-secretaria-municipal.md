@@ -146,8 +146,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - A resposta ao tribunal ponta a ponta (2026-11-26, **adotaria, em
   piloto**): QC-01 (não há a lista do ano dos abaixo do piso, nem download)
   → #601, entregue (#603); QC-02 (a ordenação vale só para a página) → #602, entregue (#603).
+- O custo de pôr a rede no piso (2026-11-26, **adotaria, em piloto**):
+  QD-01 (sem o custo até o piso), QD-02 (salto entre anos sem aviso),
+  QD-03 (frase do perfil) e QD-04 (base mensal × base por 40 h): aguardam
+  a decisão do developer.
 
 ## Entradas
+
+### 2026-11-26 — Quanto custa pôr a rede no piso (sétima rodada)
+
+**Material:** o painel da rede de Cuiabá e a lista do ano dos abaixo do
+piso, em 2026 e 2025, com o CSV. Consolidação em
+[`avaliacoes/2026-11-26-p2-custo-do-piso.md`](avaliacoes/2026-11-26-p2-custo-do-piso.md).
+
+**O que tentou:** dar ao prefeito o custo de pôr os 1.559 no piso (para a
+LOA de 2027) e explicar a diferença para o ano anterior.
+
+**O que funciona para ele:** a lista do ano com CSV, o mesmo total do
+painel; a conta do custo sai do CSV (R$ 1,03 mi por mês).
+
+**Barreiras:**
+- QD-01 (atrapalha): a plataforma não diz o custo até o piso.
+- QD-02 (atrapalha): de 2025 para 2026, 6 → 1.559 sem aviso; a forma de
+  declarar mudou (Secretaria: 79 → 6.378 do magistério).
+- QD-03 (incômodo): a frase do perfil se contradiz com cargas variadas.
+- QD-04 (incômodo): base mensal e base por 40 h não fecham em 40 linhas.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-26 — A resposta ao tribunal só pela plataforma (sexta rodada)
 
