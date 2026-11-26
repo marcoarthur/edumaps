@@ -33,6 +33,10 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   rede municipal** (não como se fosse da unidade), com aviso de que os números
   não permitem identificar quem atua na escola. A folha detalhada (nomes) fica
   indisponível nesse caso.
+- Sistema pode **marcar, na folha detalhada do mês, quem fica abaixo do piso
+  no ano**, com a mesma regra da contagem da rede, e filtrar a lista por
+  situação (efetivo, temporário, outras) e por essa marca, para conferir os
+  casos pessoa a pessoa.
 - Quando não há folha para a escola, o sistema diz o motivo (escola fora da
   rede municipal, município ainda sem dados, ou o SIOPE não traz a escola) e
   de quais municípios há folha, com os anos e se o dado é por escola ou só o

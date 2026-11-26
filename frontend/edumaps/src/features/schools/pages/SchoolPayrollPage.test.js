@@ -78,3 +78,42 @@ describe("SchoolPayrollPage — total da Secretaria (#585)", () => {
     expect(await screen.findByText(/Não há folha no total da Secretaria/)).toBeInTheDocument();
   });
 });
+
+// #598 (QB-02 da P2): filtro por situação e a marca do piso no ano.
+describe("SchoolPayrollPage — situação e piso (#598)", () => {
+  const p = (nome, situacao, base, abaixo) => ({ nome_profissional: nome, cpf: `xxx.${nome}-xx`, categoria: "Docente",
+    carga_horaria: 30, situacao, salario_base: 3000, salario_total: 4000, mes: "Abril", ano: 2026, escola: "EMEB",
+    base_40h_ano: base, abaixo_piso_ano: abaixo });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, "", "/escola/payroll?inep=51171805&date=04-2026");
+  });
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("conta quem fica abaixo, mostra a coluna e filtra", async () => {
+    mocks.getSchoolPayroll.mockResolvedValue([
+      p("ANA", "Temporário", 4283.61, true), p("ANA", "Temporário", 4283.61, true),
+      p("BIA", "Efetivo", 4000, true), p("CAIO", "Efetivo", 6000, false), p("EVA", "Outros", null, null),
+    ]);
+    render(SchoolPayrollPage);
+    expect(await screen.findByTestId("nota-piso-folha")).toHaveTextContent("2 profissionais do magistério ficam abaixo do piso no ano");
+    expect(screen.getByText("Base por 40 h no ano")).toBeInTheDocument();
+    expect(screen.getByText("R$ 6.000,00")).toBeInTheDocument();
+    expect(screen.getAllByText(/abaixo do piso$/)).toHaveLength(3);
+    const { fireEvent } = await import("@testing-library/svelte");
+    await fireEvent.click(screen.getByTestId("filtro-abaixo-piso"));
+    expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("3 registros");
+    await fireEvent.change(screen.getByTestId("filtro-situacao"), { target: { value: "efetivo" } });
+    expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("1 registro ·");
+    expect(screen.queryByText("CAIO")).toBeNull();
+  });
+
+  it("sem a conta (ano sem piso), sem coluna nem nota", async () => {
+    mocks.getSchoolPayroll.mockResolvedValue([p("ANA", "Efetivo", null, null)]);
+    render(SchoolPayrollPage);
+    await screen.findByText("ANA");
+    expect(screen.queryByTestId("nota-piso-folha")).toBeNull();
+    expect(screen.queryByText("Base por 40 h no ano")).toBeNull();
+    expect(screen.queryByTestId("paginacao-folha")).toBeNull();
+  });
+});
