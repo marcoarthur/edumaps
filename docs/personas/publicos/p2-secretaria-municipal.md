@@ -147,9 +147,9 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   piloto**): QC-01 (não há a lista do ano dos abaixo do piso, nem download)
   → #601, entregue (#603); QC-02 (a ordenação vale só para a página) → #602, entregue (#603).
 - O custo de pôr a rede no piso (2026-11-26, **adotaria, em piloto**):
-  QD-01 (sem o custo até o piso), QD-02 (salto entre anos sem aviso),
-  QD-03 (frase do perfil) e QD-04 (base mensal × base por 40 h): aguardam
-  a decisão do developer.
+  QD-01 (sem o custo até o piso) → #605; QD-02 (salto entre anos sem
+  aviso) → #604; QD-03 (frase do perfil) → #606; QD-04 (base mensal ×
+  base por 40 h) → #607.
 
 ## Entradas
 

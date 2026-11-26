@@ -82,7 +82,7 @@ QD-02 é o mais perigoso: a tela induz a uma leitura errada.
 
 ## Encaminhamento
 
-Achados para o developer decidir se viram issues. Sugestão: QD-02 primeiro
-(evita uma leitura errada), QD-01 em seguida (a pergunta do orçamento);
-QD-03 e QD-04 são pequenos e podem ir juntos com o QD-01, por tocarem a
-mesma conta.
+Quatro issues, abertas com a aprovação do developer: QD-02 → #604, QD-01 →
+#605, QD-03 → #606 e QD-04 → #607. QD-02 vem primeiro (evita uma leitura
+errada); QD-01 em seguida (a pergunta do orçamento); QD-03 e QD-04 são
+pequenos e podem ir junto com o QD-01, por tocarem a mesma conta.
