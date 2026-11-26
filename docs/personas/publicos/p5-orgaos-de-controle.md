@@ -115,6 +115,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — folha detalhada do total da Secretaria](ciclos/2026-11-24-folha-secretaria.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto pequeno.
 - [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Sem impacto relevante.
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
+- [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
 
 ## Pendências
 

@@ -112,6 +112,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-24 — folha detalhada do total da Secretaria](ciclos/2026-11-24-folha-secretaria.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-25 — salário da escola ao lado do da rede](ciclos/2026-11-25-salario-escola-rede.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
+- [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 
 ## Pendências
 

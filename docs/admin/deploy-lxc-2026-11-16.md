@@ -342,6 +342,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `psql edumaps_dev -Atc "SELECT count(*) FROM analytics.mv_salario_rede"` > 0 e a base `/base-analise?uf=MT` responde em menos tempo que antes.
 - [ ] Piso por situação (#597, **change nova** `analytics_salario_rede_situacao`: `deploy_db_dev`, depois `deploy_backend_dev`, `deploy_minion_dev` e `deploy_frontend_dev`):
       `psql edumaps_dev -Atc "SELECT situacao, sum(n) FROM analytics.mv_salario_rede_md GROUP BY 1"` lista efetivo/temporario/outros, e o painel da Secretaria de Cuiabá diz "Deles, … temporários e … efetivos".
+- [ ] Marca do piso na folha (#598, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`): a página
+      `/escola/payroll?inep=51171805&date=04-2026&secretaria=1` diz quantos ficam abaixo do piso no ano e filtra por situação (se a folha do LXC for a mesma do local).
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

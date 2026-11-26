@@ -81,3 +81,7 @@ marca por pessoa, que a contagem já calcula.
   temporários e 142 efetivos abaixo do piso (a tabela acima usou outra
   regra); o mais comum é 30 h, base mediana R$ 3.212,71, piso proporcional
   R$ 3.847,97. QB-02 segue na #598.
+- 2026-11-26: #598 (PR #600) mergeado: QB-02 resolvido. A folha do mês
+  marca quem fica abaixo do piso no ano, com a regra da contagem da rede, e
+  filtra por situação e pela marca (Secretaria de Cuiabá, abril de 2026:
+  1.504 pessoas marcadas). Os dois achados desta rodada estão entregues.

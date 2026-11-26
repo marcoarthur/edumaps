@@ -4,6 +4,16 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-26 (eo) — #598 (PR #600), marca do piso na folha detalhada
+
+- #598 (QB-02 da P2): a folha do mês traz `base_40h_ano` e
+  `abaixo_piso_ano` por pessoa do magistério, com a regra da contagem da
+  rede (folha inteira do município); calculado por consulta, sem tabela
+  (CPF fora de `analytics`). Filtros por situação do mês e "só abaixo do
+  piso"; nota conta pessoas. Cuiabá, Secretaria, abr/2026: 1.504 marcadas.
+- LXC: backend + frontend, sem change. Nota técnica 283.
+- Os dois achados da quinta rodada da P2 entregues.
+
 ## Sessão 2026-11-26 (en) — quinta rodada da P2 e #597 (PR #599), piso por situação
 
 - Quinta avaliação da P2 (piso por vínculo): adotaria em piloto (mantido);
