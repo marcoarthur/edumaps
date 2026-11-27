@@ -122,6 +122,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 - [2026-11-27 — a folha que não se compara ao ano anterior](ciclos/2026-11-27-folha-nao-compara.md#p4--academia-pesquisadora): adotaria (mantido). Impacto médio.
 - [2026-11-27 — o custo até o piso](ciclos/2026-11-27-custo-do-piso.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
+- [2026-11-27 — o painel da rede com toda a folha](ciclos/2026-11-27-painel-rede-inteira.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 
 ## Pendências
 

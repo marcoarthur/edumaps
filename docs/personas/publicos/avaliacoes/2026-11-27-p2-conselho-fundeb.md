@@ -96,3 +96,11 @@ receita do Fundeb.
 Revisado no mesmo dia pelo critério novo do protocolo (a pergunta
 respondida na tela): o antigo QE-03 (formato do CSV) passou a detalhe, e o
 QE-02 foi reescrito como a pergunta do conselho sem resposta na tela.
+
+## Andamento
+
+- 2026-11-27: #610 (PR #612) mergeado: QE-01 resolvido. O painel de uma
+  escola municipal sem folha própria soma toda a folha do município, com
+  as partes ditas (Cuiabá 2025: R$ 489,5 mi, por escola; 2026: R$ 354,2
+  mi, R$ 295,9 mi dele na Secretaria) e o motivo conforme o ano; "Ver folha
+  completa" abre a folha do mês da rede inteira. QE-02 segue na #611.

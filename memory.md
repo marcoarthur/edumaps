@@ -4,6 +4,19 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-27 (es) — oitava rodada da P2 e #610 (PR #612), painel da rede inteira
+
+- Oitava avaliação da P2 (conselho do Fundeb): adotaria em piloto
+  (mantido); QE-01 → #610, QE-02 → #611. Critério novo do protocolo: o
+  achado é a pergunta sem resposta na tela; defeito só de CSV é detalhe.
+- #610: escola municipal sem folha própria → `origem` 'rede' com toda a
+  folha do município (escolas, Secretaria, fora da lista; outras redes
+  fora, #422); objeto `rede` (partes, declaração por ano); rota
+  `/payroll/rede` com o lugar de cada registro. Contagem de pessoas em dois
+  níveis (~3×). Cuiabá 2025 R$ 489,5 mi; 2026 R$ 354,2 mi. Sem migração.
+- LXC: backend + frontend. Nota técnica 287. Próximo: #611 (a folha cabe no
+  Fundeb?), só com aprovação; começa pela fonte da receita.
+
 ## Sessão 2026-11-27 (er) — #605/#606/#607 (PR #609), custo até o piso
 
 - #605: diferença mensal até o piso proporcional (piso × carga ÷ 40 − base

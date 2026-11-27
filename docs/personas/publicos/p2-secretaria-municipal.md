@@ -122,6 +122,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QC-01 e QC-02 resolvidos.
 - [2026-11-27 — a folha que não se compara ao ano anterior](ciclos/2026-11-27-folha-nao-compara.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QD-02 resolvido.
 - [2026-11-27 — o custo até o piso](ciclos/2026-11-27-custo-do-piso.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QD-01, QD-03 e QD-04 resolvidos.
+- [2026-11-27 — o painel da rede com toda a folha](ciclos/2026-11-27-painel-rede-inteira.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QE-01 resolvido.
 
 ## Pendências
 
@@ -153,7 +154,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   aviso) → #604, entregue (#608); QD-03 (frase do perfil) → #606, entregue (#609); QD-04 (base mensal ×
   base por 40 h) → #607, entregue (#609).
 - A folha no conselho do Fundeb (2026-11-27, **adotaria, em piloto**):
-  QE-01 (o painel da rede só com a Secretaria) → #610; QE-02 (a folha cabe
+  QE-01 (o painel da rede só com a Secretaria) → #610, entregue (#612); QE-02 (a folha cabe
   no Fundeb? sem resposta na tela) → #611.
 
 ## Entradas
