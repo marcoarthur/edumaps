@@ -30,6 +30,7 @@
   let totalProfissionais = $state(0);
   let origem = $state("escola");
   let rede = $state(null);   // #610
+  let fundeb = $state(null); // #611
   let rotuloOrigem = $state(null);
   // #422: por que não há folha e onde há (vêm do /finance)
   let ausencia = $state(null);
@@ -84,6 +85,7 @@
       totalProfissionais = data.total_profissionais ?? 0;
       origem = data.origem ?? "escola";
       rede = data.rede ?? null;
+      fundeb = data.fundeb ?? null;
       rotuloOrigem = data.rotulo_origem ?? null;
       siope = data.siope ?? null;
       ausencia = data.ausencia ?? null;
@@ -92,6 +94,7 @@
     } catch (err) {
       escola = null;
       rede = null;
+      fundeb = null;
       series = [];
       categorias = [];
       porFonte = null;
@@ -284,7 +287,7 @@
           <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
         </div>
       {/if}
-      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {municipioIbge} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {rede} {ano} {periodo} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {municipioIbge} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {rede} {fundeb} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

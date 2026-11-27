@@ -67,6 +67,19 @@ our @CATALOGO = (
     telas     => [qw(financeiro folha base_analise)],
   },
   {
+    # #611 (QE-02 da P2): a receita do Fundeb do município, para o bloco "A
+    # folha e o Fundeb" do painel da rede.
+    id        => 'siconfi_fundeb',
+    nome      => 'Receita do Fundeb dos municípios (SICONFI, DCA)',
+    orgao     => 'Tesouro Nacional',
+    descricao => 'Receita bruta realizada do Fundeb e da complementação da União, do balanço anual (DCA, Anexo I-C) que o município entrega ao Tesouro até 30 de abril do ano seguinte. Cobertura parcial: só os municípios já carregados.',
+    url       => 'https://siconfi.tesouro.gov.br/',
+    metodologia => 'https://apidatalake.tesouro.gov.br/docs/siconfi/',
+    tabelas   => ['clean.siconfi_receita#fundeb'],
+    periodo_sql => q{SELECT min(exercicio)::text, max(exercicio)::text FROM clean.siconfi_receita WHERE tipo_receita = 'fundeb'},
+    telas     => [qw(financeiro)],
+  },
+  {
     id        => 'ibge_malha',
     nome      => 'Malha municipal',
     orgao     => 'IBGE',

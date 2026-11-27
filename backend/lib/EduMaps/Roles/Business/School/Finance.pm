@@ -614,6 +614,15 @@ sub financial_summary($self, $params) {
     };
   }
 
+  my $salario_rede = (defined $ano && $siope->{cod_municipio}
+    ? EduMaps::BaseAnalise->salario_rede($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
+    : undef);
+
+  # #611 (QE-02 da P2): a folha e o Fundeb, só no painel da rede.
+  my $fundeb = $origem eq 'rede' && defined $ano
+    ? $self->_folha_fundeb($dbh, $siope->{cod_municipio}, $ano, $por_fonte, $salario_rede, scalar @{ $series // [] })
+    : undef;
+
   return {
     escola     => {
       codigo_inep                => $cod,
@@ -628,6 +637,7 @@ sub financial_summary($self, $params) {
       ? 'Folha de toda a rede municipal (esta escola não tem folha própria no SIOPE)'
       : undef,
     rede       => $rede,   # #610
+    fundeb     => $fundeb, # #611
     total_profissionais => ($total_profissionais // 0) + 0,
     # null quando há dado; senão 'escola_inexistente', 'nao_municipal' (o
     # SIOPE só cobre a remuneração da rede municipal), 'escola_sem_folha' (o
@@ -658,9 +668,7 @@ sub financial_summary($self, $params) {
     # link da lista do ano dos abaixo do piso
     municipio_ibge => scalar $dbh->selectrow_array(
       'SELECT co_municipio::text FROM clean.censo_escolas WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, $cod),
-    salario_rede => (defined $ano && $siope->{cod_municipio}
-      ? EduMaps::BaseAnalise->salario_rede($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
-      : undef),
+    salario_rede => $salario_rede,
     # #589 (P1-FL-03): o salário do magistério da escola, na mesma conta da
     # rede (só no painel da escola)
     salario_escola => ($origem eq 'escola' && defined $ano
@@ -684,6 +692,55 @@ sub financial_summary($self, $params) {
       ano_atual      => DateTime->now->year,
       anos_presentes => $siope->{anos_presentes},
     },
+  };
+}
+
+# #611 (QE-02 da P2): a folha e o Fundeb. A receita do Fundeb do município
+# é a do DCA (SICONFI, Anexo I-C: Fundeb + complementação da União, receita
+# bruta realizada), anual: o DCA de um ano sai até 30/4 do ano seguinte.
+# - Ano com DCA: a parte da receita paga na remuneração pela parcela de 70%
+#   (como o município declara ao SIOPE) e a parte com a adequação ao piso
+#   (#605, em 13 salários) somada.
+# - Ano sem DCA: só a adequação, medida contra a receita do último ano com
+#   DCA (referencia = 1, o texto diz o ano).
+# Não é a verificação legal (despesa liquidada, base da lei sem o VAAR).
+sub _folha_fundeb ($self, $dbh, $cod6, $ano, $por_fonte, $salario_rede, $meses) {
+  return undef unless $cod6;
+  my $rows = $dbh->selectall_arrayref(<<~'SQL', { Slice => {} }, "$cod6", $ano);
+    SELECT exercicio::int AS ano, SUM(valor)::float AS receita,
+           SUM(valor) FILTER (WHERE coluna_receita = '1.7.1.5.00.0.0')::float AS complementacao
+      FROM (SELECT DISTINCT ON (codigo_ibge, exercicio, coluna_receita) *
+              FROM clean.siconfi_receita
+             WHERE tipo_receita = 'fundeb' AND classificacao = 'realizada'
+               AND left(codigo_ibge, 6) = ? AND exercicio <= ?
+             ORDER BY codigo_ibge, exercicio, coluna_receita, dt_snapshot DESC) r
+     GROUP BY 1
+     ORDER BY 1 DESC
+     LIMIT 1
+    SQL
+  my $r = $rows->[0];
+  return undef unless $r && $r->{receita} && $r->{receita} > 0;
+
+  my ($carregado) = $dbh->selectrow_array(
+    "SELECT to_char(retrieved_at, 'YYYY-MM-DD') FROM clean.import_metadata WHERE table_name = 'clean.siconfi_receita#fundeb'");
+  my $custo = $salario_rede && $salario_rede->{abaixo_piso_diferenca_mensal}
+    ? 0 + sprintf('%.2f', $salario_rede->{abaixo_piso_diferenca_mensal} * 13) : 0;
+  my $mesmo = $r->{ano} == $ano;
+  my $pago  = $mesmo && $por_fonte ? $por_fonte->{fundeb_70} : undef;
+  my $pct   = sub ($v) { defined $v ? 0 + sprintf('%.1f', 100 * $v / $r->{receita}) : undef };
+  return {
+    ano_receita    => $r->{ano},
+    referencia     => $mesmo ? 0 : 1,
+    receita        => 0 + sprintf('%.2f', $r->{receita}),
+    complementacao => 0 + sprintf('%.2f', $r->{complementacao} // 0),
+    fonte          => 'SICONFI (Tesouro Nacional), DCA, Anexo I-C: receita bruta realizada do Fundeb e da complementação da União',
+    carregado_em   => $carregado,
+    meses_folha    => $meses,
+    pago_70        => (defined $pago ? 0 + sprintf('%.2f', $pago) : undef),
+    parte_70       => $pct->($pago),
+    custo_piso_ano => $custo,
+    parte_custo_piso => ($custo ? $pct->($custo) : undef),
+    parte_70_com_piso => (defined $pago && $custo ? $pct->($pago + $custo) : undef),
   };
 }
 

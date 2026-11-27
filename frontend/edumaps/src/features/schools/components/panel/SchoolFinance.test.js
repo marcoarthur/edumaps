@@ -321,3 +321,54 @@ describe("SchoolFinance — rede inteira (#610)", () => {
     expect(screen.queryByTestId("partes-rede")).toBeNull();
   });
 });
+
+describe("SchoolFinance — a folha e o Fundeb (#611)", () => {
+  const F = { ano_receita: 2025, referencia: 0, receita: 587981545.84, complementacao: 2600428.8, pago_70: 457200000,
+    parte_70: 77.8, meses_folha: 12, custo_piso_ano: 13400000, parte_custo_piso: 2.3, parte_70_com_piso: 80.0,
+    fonte: "SICONFI (Tesouro Nacional), DCA, Anexo I-C", carregado_em: "2026-11-27" };
+
+  it("ano com receita: a parte paga pela parcela de 70% e com o piso", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, fundeb: F, porFonte: { fundeb_70: 1, fundeb_30: 0, outras: 0, total: 1 } } });
+    expect(screen.getByTestId("folha-fundeb-0")).toHaveTextContent(
+      "Em 2025, a rede pagou R$ 457,2 mi da remuneração pela parcela de 70% do Fundeb: 77,8% da receita do Fundeb do ano (R$ 588,0 mi, com R$ 2,6 mi da complementação da União).");
+    expect(screen.getByTestId("folha-fundeb-1")).toHaveTextContent(
+      "Pôr todos no piso somaria cerca de R$ 13,4 milhões no ano (13 salários, pelo piso proporcional à carga): a parte paga pela parcela de 70% iria a 80,0% da receita.");
+    expect(screen.getByTestId("folha-fundeb-aviso")).toHaveTextContent("Não é a verificação do mínimo de 70%");
+    expect(screen.getByTestId("folha-fundeb-aviso")).toHaveTextContent("carregada em 27/11/2026");
+    expect(screen.getByTestId("aviso-minimo-legal")).toHaveTextContent('bloco "A folha e o Fundeb"');
+  });
+
+  it("adequação pequena: a parte fica praticamente a mesma", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, fundeb: { ...F, custo_piso_ano: 29763.89, parte_70_com_piso: 77.8 } } });
+    expect(screen.getByTestId("folha-fundeb-1")).toHaveTextContent(
+      "Pôr todos no piso somaria cerca de R$ 29,8 mil no ano (13 salários, pelo piso proporcional à carga): a parte paga pela parcela de 70% ficaria praticamente a mesma (77,8% da receita).");
+  });
+
+  it("folha de poucos meses: avisa que a parte é do que foi declarado", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, fundeb: { ...F, meses_folha: 2, custo_piso_ano: 0 } } });
+    expect(screen.getByTestId("folha-fundeb-0")).toHaveTextContent("A folha do SIOPE tem só 2 meses do ano: a parte do ano inteiro é maior.");
+    expect(screen.queryByTestId("folha-fundeb-1")).toBeNull();
+  });
+
+  it("ano sem receita: a adequação contra o último ano publicado", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026,
+      fundeb: { ...F, referencia: 1, pago_70: null, parte_70: null, parte_70_com_piso: null } } });
+    expect(screen.getByTestId("folha-fundeb-0")).toHaveTextContent(
+      "A receita do Fundeb de 2026 ainda não foi publicada: o balanço anual (DCA) sai até 30 de abril do ano seguinte. A última publicada é a de 2025: R$ 588,0 mi, com R$ 2,6 mi da complementação da União.");
+    expect(screen.getByTestId("folha-fundeb-1")).toHaveTextContent(
+      "Pôr todos no piso custaria cerca de R$ 13,4 milhões no ano (13 salários, pelo piso proporcional à carga), o equivalente a 2,3% da receita do Fundeb de 2025.");
+  });
+
+  it("a nota da folha completa diz que lista a rede inteira (#610)", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025 } });
+    expect(screen.getByTestId("nota-folha-rede")).toHaveTextContent("A folha detalhada lista toda a rede municipal no mês");
+  });
+
+  it("sem o bloco no painel da escola ou sem receita", () => {
+    const { unmount } = render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2025, fundeb: F } });
+    expect(screen.queryByTestId("folha-fundeb")).toBeNull();
+    unmount();
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, fundeb: null } });
+    expect(screen.queryByTestId("folha-fundeb")).toBeNull();
+  });
+});
