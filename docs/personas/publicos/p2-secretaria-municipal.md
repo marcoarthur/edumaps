@@ -152,8 +152,34 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   QD-01 (sem o custo até o piso) → #605, entregue (#609); QD-02 (salto entre anos sem
   aviso) → #604, entregue (#608); QD-03 (frase do perfil) → #606, entregue (#609); QD-04 (base mensal ×
   base por 40 h) → #607, entregue (#609).
+- A folha no conselho do Fundeb (2026-11-27, **adotaria, em piloto**):
+  QE-01 (o painel da rede só com a Secretaria), QE-02 (sem a receita do
+  Fundeb) e QE-03 (notação científica nos CSV): aguardam a decisão do
+  developer.
 
 ## Entradas
+
+### 2026-11-27 — A folha da rede no conselho do Fundeb (oitava rodada)
+
+**Material:** o painel da rede de Cuiabá (2025 e 2026), a base de análise
+de MT e o CSV da folha por município. Consolidação em
+[`avaliacoes/2026-11-27-p2-conselho-fundeb.md`](avaliacoes/2026-11-27-p2-conselho-fundeb.md).
+
+**O que tentou:** apresentar ao conselho do Fundeb o gasto com a folha em
+2025 e 2026, a parte da parcela de 70% e se a adequação ao piso cabe.
+
+**O que funciona para ele:** a folha por município, com o total
+declarado, o fechamento e a divisão por fonte.
+
+**Barreiras:**
+- QE-01 (bloqueia): o painel da rede soma só a Secretaria e chama de total
+  da rede (2025: R$ 17,1 mi contra R$ 489,5 mi declarados).
+- QE-02 (atrapalha): sem a receita do Fundeb, não há o percentual.
+- QE-03 (incomoda): números com centavos acima de um milhão em notação
+  científica nos CSV.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido, com ressalva
+forte).
 
 ### 2026-11-26 — Quanto custa pôr a rede no piso (sétima rodada)
 
