@@ -58,8 +58,13 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode **dizer de que fonte saiu a folha do ano**: a parte paga com a
   parcela de 70% do Fundeb, a de 30% e a de outras fontes, como o município
   declara ao SIOPE em cada pagamento, no painel e na base de análise. Avisa
-  que não é a verificação do mínimo de 70% exigido em lei, porque a receita
-  do Fundeb do município não está na plataforma.
+  que não é a verificação do mínimo de 70% exigido em lei.
+- Sistema pode **comparar a folha da rede com a receita do Fundeb** do
+  município (balanço anual ao Tesouro, com a complementação da União): a
+  parte da receita paga na remuneração pela parcela de 70% e a parte com a
+  adequação ao piso. No ano ainda sem balanço, compara o custo do piso com a
+  receita do último ano publicado. Diz a fonte, a data e que não é a
+  verificação legal.
 - Sistema pode **avisar o mês com a folha pela metade** (bem menos
   profissionais declarados que no resto do ano), no painel, na cobertura e
   na base, sem corrigir os números nem afirmar a causa.

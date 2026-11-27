@@ -6,8 +6,8 @@
   // conta usa a receita do Fundeb, que não está na plataforma.
   import { linhasPorFonte, formatBRL } from "../../utils/transformFinanceData.js";
 
-  /** @type {{ porFonte: object|null, titulo?: string }} */
-  let { porFonte = null, titulo = "" } = $props();
+  /** @type {{ porFonte: object|null, titulo?: string, comFundeb?: boolean }} */
+  let { porFonte = null, titulo = "", comFundeb = false } = $props();
 
   const linhas = $derived(linhasPorFonte(porFonte));
   const pct = (v) => v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -34,8 +34,13 @@
       {/each}
     </ul>
     <p class="text-xs text-gray-500 mt-3" data-testid="aviso-minimo-legal">
-      Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a
-      receita do Fundeb do município, que não está na plataforma.
+      {#if comFundeb}
+        Não é a verificação do mínimo de 70% exigido em lei; a parte da receita
+        do Fundeb está no bloco "A folha e o Fundeb".
+      {:else}
+        Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a
+        receita do Fundeb do município, que só aparece no painel da rede.
+      {/if}
     </p>
   </section>
 {/if}

@@ -5,6 +5,7 @@
   import DonutChart from "@/shared/ui/components/charts/DonutChart.svelte";
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
+  import FolhaFundeb from "./FolhaFundeb.svelte";   // #611
   import { urlPisoPagina } from "../../api/pisoApi.js";   // #601
   import { textoMotivoRede, textoPartesRede } from "../../utils/redeFolha.js";   // #610
   import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoQuebraAno, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
@@ -39,7 +40,7 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", rede = null, series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", rede = null, fundeb = null, series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -312,7 +313,12 @@
   {/if}
 
   <!-- #553: por fonte de recurso (Fundeb 70%, 30%, outras) -->
-  <FolhaPorFonte {porFonte} titulo={`${noAno}${ehRede ? " · rede municipal" : ""}`} />
+  <FolhaPorFonte {porFonte} titulo={`${noAno}${ehRede ? " · rede municipal" : ""}`} comFundeb={ehRede && !!fundeb} />
+
+  <!-- #611 (QE-02 da P2): a folha e a receita do Fundeb -->
+  {#if ehRede}
+    <FolhaFundeb {fundeb} {ano} />
+  {/if}
 
   <!-- Folha completa (detalhes por competência) -->
   <section
@@ -348,8 +354,8 @@
     {/if}
     <p class="text-xs text-gray-400 basis-full">
       {#if ehRede}
-        A folha detalhada lista as pessoas declaradas no total da Secretaria: o SIOPE não detalha por escola neste
-        município, e não diz em que unidade cada uma trabalha.
+        <span data-testid="nota-folha-rede">A folha detalhada lista toda a rede municipal no mês, com o lugar de cada pagamento
+        (a escola ou o total da Secretaria); nos pagamentos da Secretaria, o SIOPE não diz em que unidade a pessoa trabalha.</span>
       {:else}
         {escola?.nome ?? ""} — a folha lista os profissionais (nomes) apenas na
         página de detalhes.

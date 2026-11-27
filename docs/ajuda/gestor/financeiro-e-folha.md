@@ -49,8 +49,19 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   **Outras fontes** (fora do Fundeb), com o valor e o percentual. As três
   somam o custo total. **Não é a verificação do mínimo de 70% exigido em
   lei:** essa conta divide o gasto com os profissionais pela receita do
-  Fundeb do município, e a receita não está na plataforma. Serve para
-  conferir a prestação de contas, por exemplo no conselho do Fundeb.
+  Fundeb do município. Serve para conferir a prestação de contas, por
+  exemplo no conselho do Fundeb.
+- **A folha e o Fundeb (painel da rede).** No painel da rede municipal, o
+  bloco **A folha e o Fundeb** compara a folha com a receita do Fundeb do
+  município no ano (o balanço anual do município ao Tesouro, o DCA, com a
+  complementação da União): quanto da receita foi pago na remuneração pela
+  parcela de 70% e a quanto iria se todos os abaixo do piso passassem ao piso
+  proporcional à carga (em 13 salários). O balanço de um ano sai até 30 de
+  abril do ano seguinte; no ano corrente, o bloco diz que a receita ainda não
+  saiu e compara o custo do piso com a receita do último ano publicado.
+  Também **não é a verificação legal**, que usa a despesa liquidada e uma
+  base que não conta toda a complementação da União. A fonte e a data da
+  carga aparecem no bloco.
 - **Mês com a folha pela metade.** Quando um mês tem bem menos profissionais
   declarados que os outros (menos categorias, ou menos da metade dos
   registros de um mês típico), um aviso acima dos gráficos diz qual mês e os
