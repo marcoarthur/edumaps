@@ -104,3 +104,9 @@ QE-02 foi reescrito como a pergunta do conselho sem resposta na tela.
   as partes ditas (Cuiabá 2025: R$ 489,5 mi, por escola; 2026: R$ 354,2
   mi, R$ 295,9 mi dele na Secretaria) e o motivo conforme o ano; "Ver folha
   completa" abre a folha do mês da rede inteira. QE-02 segue na #611.
+- 2026-11-27: #611 (PR #613) mergeado: QE-02 resolvido. O painel da rede
+  tem o bloco "A folha e o Fundeb", com a receita do balanço anual ao
+  Tesouro (DCA): Cuiabá 2025, 77,8% de R$ 588,0 mi pagos pela parcela de
+  70% (a conta da avaliação, R$ 457,2 mi, batia); 2026 sem balanço ainda, a
+  adequação ao piso (~R$ 13,4 mi) equivale a 2,3% da receita de 2025. Os
+  dois achados da oitava rodada estão entregues.

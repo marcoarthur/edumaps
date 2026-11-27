@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-27 (et) — #611 (PR #613), a folha e o Fundeb
+
+- Fonte da receita: SICONFI DCA Anexo I-C (Fundeb + complementação, bruta
+  realizada), loader da #193; tabela local estava vazia: carga de MT
+  2024/2025 (com permissão). API de transferências do Tesouro ("Serviço não
+  encontrado") e dados abertos do SIOPE (HTTP 500) fora no dia.
+- Objeto `fundeb` no painel da rede: parte paga pela parcela de 70% e com a
+  adequação ao piso (13 salários); ano sem DCA mede a adequação contra o
+  último ano (referencia). Fonte `siconfi_fundeb` em `/fontes`. Corrigida
+  a nota da folha completa da rede (resto da #610). Sem migração.
+- Cuiabá 2025: 77,8% de R$ 588,0 mi; 2026: adequação = 2,3% da receita de
+  2025. LXC: backend + frontend + carga DCA. Nota técnica 288. Oitava
+  rodada da P2 entregue (QE-01, QE-02).
+
 ## Sessão 2026-11-27 (es) — oitava rodada da P2 e #610 (PR #612), painel da rede inteira
 
 - Oitava avaliação da P2 (conselho do Fundeb): adotaria em piloto
