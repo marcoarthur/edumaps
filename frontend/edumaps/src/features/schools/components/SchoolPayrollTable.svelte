@@ -35,6 +35,8 @@
     footer = '',
     /** #598: mostra a coluna da base por 40 h no ano e a marca do piso */
     mostrarPiso = false,
+    /** #610: mostra onde a pessoa foi paga (escola ou total da Secretaria) */
+    mostrarOnde = false,
     /** #602: ordenação da lista inteira por quem pagina (repassado ao DataTable) */
     onsort = undefined,
   } = $props();
@@ -104,7 +106,12 @@
       sortable: true,
     },
   ];
-  const columns = $derived(base.flatMap((c) => (c === 'PISO' ? (mostrarPiso ? [colunaPiso] : []) : [c])));
+  // #610 (QE-01 da P2): na folha da rede inteira, onde a pessoa foi paga
+  const colunaOnde = { key: 'onde', label: 'Onde', sortable: true };
+  const columns = $derived([
+    ...(mostrarOnde ? [base[0], colunaOnde] : [base[0]]),
+    ...base.slice(1).flatMap((c) => (c === 'PISO' ? (mostrarPiso ? [colunaPiso] : []) : [c])),
+  ]);
 </script>
 
 <!-- Sem rowKey: a folha não tem identificador de linha. O CPF vem mascarado

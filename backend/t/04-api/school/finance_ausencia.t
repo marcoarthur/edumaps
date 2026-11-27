@@ -65,7 +65,7 @@ subtest 'motivo da ausência' => sub {
   ok scalar @{ $r->{series} } > 0, 'série presente';
 };
 
-subtest 'agregado da secretaria não vaza para outra rede nem soma o município (#422)' => sub {
+subtest 'a folha municipal não vaza para outra rede (#422); a escola municipal vê a rede (#610)' => sub {
   plan skip_all => 'clean.remuneracao_municipal ausente' unless $has_tables;
 
   # antes: a estadual recebia a folha municipal inteira como "Secretaria"
@@ -74,12 +74,13 @@ subtest 'agregado da secretaria não vaza para outra rede nem soma o município 
   is $r->{ausencia}, 'nao_municipal', 'motivo: fora da rede municipal';
   is $r->{origem}, 'escola', 'sem origem secretaria';
 
-  # municipal sem folha própria e sem agregado 99999999: não soma a folha
-  # das outras escolas do município
+  # #610 (QE-01 da P2): municipal sem folha própria mostra o painel da rede
+  # municipal inteira (antes, #422: só o código da Secretaria, e aqui nada)
   $r = $t->get_ok("/api/school/$INEP_MUN_SEM/finance")->status_is(200)->tx->res->json;
-  is scalar @{ $r->{series} }, 0, 'não soma a folha das outras escolas';
-  is $r->{ausencia}, 'escola_sem_folha', 'motivo: o município tem folha, a escola não';
-  is $r->{total_profissionais}, 0, 'nenhum profissional';
+  is $r->{origem}, 'rede', '#610: o painel da rede municipal';
+  is scalar @{ $r->{series} }, 1, 'com a folha das escolas do município';
+  is $r->{ausencia}, undef, 'sem motivo de ausência';
+  is $r->{rede}{declaracao}, 'escola', 'o município declarou por escola';
 };
 
 subtest 'cobertura por município' => sub {

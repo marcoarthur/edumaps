@@ -101,6 +101,11 @@ export function searchPaginatedSchools({
   });
 }
 
+/** #610 (QE-01 da P2): a folha detalhada de toda a rede municipal (escolas e Secretaria) do município da escola, no mês. */
+export function getRedePayroll(codInep, date = "10-2025") {
+  return apiClient.get(`${BASE}/${codInep}/payroll/rede`, { date });
+}
+
 /** #585 (QE-01 da P2): a folha detalhada do total da Secretaria do município da escola, no mês. */
 export function getSecretariaPayroll(codInep, date = "10-2025") {
   return apiClient.get(`${BASE}/${codInep}/payroll/secretaria`, { date });

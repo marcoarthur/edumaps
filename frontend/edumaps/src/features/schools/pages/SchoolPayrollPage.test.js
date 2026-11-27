@@ -1,11 +1,11 @@
 // src/features/schools/pages/SchoolPayrollPage.test.js
 // #422: escola sem folha (404) é ausência, não erro.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/svelte";
+import { render, screen, fireEvent } from "@testing-library/svelte";
 import { ApiError } from "@/shared/api/client.js";
 
-const mocks = vi.hoisted(() => ({ getSchoolPayroll: vi.fn(), getSecretariaPayroll: vi.fn() }));
-vi.mock("../api/schoolApi.js", () => ({ getSchoolPayroll: mocks.getSchoolPayroll, getSecretariaPayroll: mocks.getSecretariaPayroll }));
+const mocks = vi.hoisted(() => ({ getSchoolPayroll: vi.fn(), getSecretariaPayroll: vi.fn(), getRedePayroll: vi.fn() }));
+vi.mock("../api/schoolApi.js", () => ({ getSchoolPayroll: mocks.getSchoolPayroll, getSecretariaPayroll: mocks.getSecretariaPayroll, getRedePayroll: mocks.getRedePayroll }));
 
 import SchoolPayrollPage from "./SchoolPayrollPage.svelte";
 
@@ -137,5 +137,28 @@ describe("SchoolPayrollPage — ordenação (#602)", () => {
     await fireEvent.click(screen.getByText("Salário Base"));
     expect(screen.getByText("P149")).toBeInTheDocument();
     expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("página 1 de 2");
+  });
+});
+
+// #610 (QE-01 da P2): a folha de toda a rede municipal no mês, com "Onde".
+describe("SchoolPayrollPage — rede municipal (#610)", () => {
+  const linha = (i, cod) => ({ nome_profissional: `PESSOA ${i}`, categoria: "Docente", carga_horaria: 30, situacao: "Efetivo",
+    salario_base: 3000, salario_total: 4000, mes: "Janeiro", ano: 2026, cod_inep: cod, escola: cod === 99999999 ? "SEC MUN" : "EMEB UM" });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, "", "/escola/payroll?inep=51091194&date=01-2026&rede=1");
+  });
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("usa a rota da rede, diz onde e filtra pelo lugar", async () => {
+    mocks.getRedePayroll.mockResolvedValue([linha(1, 51000001), linha(2, 51000001), linha(3, 99999999)]);
+    render(SchoolPayrollPage);
+    expect(await screen.findByTestId("aviso-folha-rede")).toHaveTextContent("Neste mês: 2 registros nas escolas e 1 no total da Secretaria.");
+    expect(mocks.getRedePayroll).toHaveBeenCalledWith("51091194", "01-2026");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("rede municipal (escolas e Secretaria)");
+    expect(screen.getByRole("columnheader", { name: /Onde/ })).toBeInTheDocument();
+    expect(screen.getByText("Secretaria (sem escola)")).toBeInTheDocument();
+    await fireEvent.change(screen.getByTestId("filtro-lugar"), { target: { value: "secretaria" } });
+    expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("1 registro · página 1 de 1");
   });
 });

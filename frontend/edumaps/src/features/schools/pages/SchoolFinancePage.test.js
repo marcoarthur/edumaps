@@ -82,7 +82,7 @@ describe("SchoolFinancePage — SIOPE", () => {
   it("avisa quando os dados vêm do agregado da Secretaria", async () => {
     mocks.getSchoolFinance.mockResolvedValue({
       ...FINANCE_MUNICIPAL,
-      origem: "secretaria",
+      origem: "rede",
       rotulo_origem:
         "Folha da Secretaria municipal (o SIOPE não detalha por escola neste município)",
     });
