@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-27 (er) — #605/#606/#607 (PR #609), custo até o piso
+
+- #605: diferença mensal até o piso proporcional (piso × carga ÷ 40 − base
+  do mês típico, centavos por termo), total e por situação, em
+  `salario_rede` e na lista do ano (batem ao centavo); frase com o mês e
+  "em 13 salários" no ano; colunas novas na lista e nos CSV.
+- #606: perfil com a mediana só de quem tem a carga mais comum (e quantos).
+- #607: `base_mensal_tipica` (base por 40 h × carga ÷ 40) no lugar de
+  `base_mensal_mediana`; cada linha fecha.
+- Cuiabá 2026: R$ 1.027.436,19/mês, ~R$ 13,4 mi/ano. LXC: backend +
+  frontend. Nota técnica 286. Os quatro achados da sétima rodada entregues.
+
 ## Sessão 2026-11-27 (eq) — sétima rodada da P2 e #604 (PR #608), folha que não se compara
 
 - Sétima avaliação da P2 (custo do piso): adotaria em piloto (mantido);

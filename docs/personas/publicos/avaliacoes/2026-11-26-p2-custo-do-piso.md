@@ -94,3 +94,10 @@ pequenos e podem ir junto com o QD-01, por tocarem a mesma conta.
   Cuiabá 2026 sai como não comparável (magistério 3.485 → 6.578; só na
   Secretaria 60 (2%) → 3.141 (48%); 6 abaixo do piso em 2025). QD-01, QD-03
   e QD-04 seguem nas #605, #606 e #607.
+- 2026-11-27: #605, #606 e #607 (PR #609) mergeados: QD-01, QD-03 e QD-04
+  resolvidos. O painel, a base e a lista do ano dizem quanto falta por mês
+  para pôr todos no piso proporcional à carga (Cuiabá 2026: R$ 1.027.436,19,
+  cerca de R$ 13,4 milhões no ano; a conta da avaliação, R$ 1,03 mi, batia);
+  o perfil usa a base de quem tem a carga mais comum (2025: R$ 2.012,14
+  contra o proporcional de R$ 2.433,89); cada linha da lista fecha. Os
+  quatro achados desta rodada estão entregues.
