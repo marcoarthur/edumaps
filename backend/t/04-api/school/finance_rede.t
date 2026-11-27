@@ -71,4 +71,29 @@ subtest 'a folha detalhada da rede no mês' => sub {
   $t->get_ok("/api/school/$INEP_SEM/payroll/rede?date=xx")->status_is(400);
 };
 
+subtest '#614: o painel da rede pelo município' => sub {
+  my $e = $t->get_ok("/api/school/$INEP_SEM/finance?ano=2026")->status_is(200)->tx->res->json;
+  my $m = $t->get_ok("/api/city/$CO_MUN/finance?ano=2026")->status_is(200)->tx->res->json;
+  is [ $m->{origem}, $m->{escola}, $m->{municipio}{codigo_ibge}, $m->{municipio_ibge} ],
+     ['rede', undef, $CO_MUN, $CO_MUN], 'a rede, sem escola, com o município';
+  is $m->{rotulo_origem}, 'Folha de toda a rede municipal', 'o rótulo sem a escola';
+  is [ @$m{qw(series total_profissionais por_fonte rede anos ano)} ],
+     [ @$e{qw(series total_profissionais por_fonte rede anos ano)} ], 'o mesmo painel da rede da escola sem folha';
+  my $sem_ano = $t->get_ok("/api/city/$CO_MUN/finance")->status_is(200)->tx->res->json;
+  is $sem_ano->{ano}, 2026, 'sem ano, o mais recente';
+  $t->get_ok("/api/city/$CO_MUN/finance?ano=2019")->status_is(400)->json_is('/anos', [2026]);
+  $t->get_ok("/api/city/$CO_MUN/finance?ano=xx")->status_is(400);
+  $t->get_ok('/api/city/6006129/finance')->status_is(404)->json_like('/error', qr/Sem folha do SIOPE/);
+  $t->get_ok('/api/city/123/finance')->status_is(404);
+  $t->get_ok("/api/city/$CO_MUN/finance/anos")->status_is(200)->json_is('/anos', [2026]);
+  $t->get_ok('/api/city/6006129/finance/anos')->status_is(200)->json_is('/anos', []);
+};
+
+subtest '#614: a folha da rede no mês pelo município' => sub {
+  my $jan = $t->get_ok("/api/city/$CO_MUN/payroll/rede?date=01-2026")->status_is(200)->tx->res->json;
+  is [ sort map { "$_->{nome_profissional}|$_->{cod_inep}" } @$jan ], ["ANA|$INEP_COM", "BIA|$INEP_FORA"], 'janeiro: as duas escolas';
+  $t->get_ok("/api/city/$CO_MUN/payroll/rede?date=05-2026")->status_is(404);
+  $t->get_ok("/api/city/$CO_MUN/payroll/rede?date=xx")->status_is(400);
+};
+
 done_testing;

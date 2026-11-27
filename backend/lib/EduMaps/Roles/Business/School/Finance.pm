@@ -264,8 +264,10 @@ sub secretaria_payroll($self, $params) {
 # (escolas e total da Secretaria), a do painel da rede, com a marca do piso.
 sub rede_payroll($self, $params) {
   croak "need date %m-%Y" unless $params->{date};
-  croak "need cod_inep" unless $params->{cod_inep};
-  my $siope = $self->siope_status($params->{cod_inep});
+  # #614: pela escola ou pelo município (codigo_ibge)
+  croak "need cod_inep or codigo_ibge" unless $params->{cod_inep} || $params->{codigo_ibge};
+  my $siope = $params->{codigo_ibge} ? $self->_siope_municipio($params->{codigo_ibge})
+                                     : $self->siope_status($params->{cod_inep});
   return Mojo::Collection->new unless $siope->{habilitado};
 
   my $dt = $self->parser->parse_datetime($params->{date});
@@ -390,6 +392,32 @@ sub siope_status($self, $cod_inep) {
   };
 }
 
+# #614 (QF-01 da P2): o mesmo resumo do SIOPE, pelo município (7 dígitos).
+# O SIOPE é a folha da rede municipal: o painel é sempre o da rede.
+sub _siope_municipio($self, $ibge) {
+  my $cod6 = substr("$ibge", 0, 6);
+  my $dbh = $self->schema->storage->dbh;
+  my ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT nome_municipio, sigla_uf FROM clean.malha_municipio WHERE codigo_ibge = ?', undef, "$ibge");
+  ($nome, $uf) = $dbh->selectrow_array(
+    'SELECT no_municipio, sg_uf FROM clean.censo_escolas WHERE co_municipio::text = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, "$ibge")
+    unless defined $nome;
+  return {
+    escola_existe  => 1,
+    rede           => 'Municipal',
+    habilitado     => 1,
+    cod_municipio  => $cod6,
+    anos_presentes => $self->_siope_anos_presentes($cod6),
+    nome_municipio => $nome,
+    uf             => $uf,
+  };
+}
+
+# #614: os anos com folha do município (para o perfil da rede mostrar o link).
+sub rede_anos($self, $ibge) {
+  return $self->_siope_anos_presentes(substr("$ibge", 0, 6));
+}
+
 # Pode enfileirar o download do SIOPE para a escola/ano? (regras de negócio)
 sub siope_disponivel($self, $cod_inep, $ano) {
   my $st = $self->siope_status($cod_inep);
@@ -439,15 +467,18 @@ sub folha_cobertura($self) {
 }
 
 sub financial_summary($self, $params) {
-  croak "need cod_inep" unless $params->{cod_inep};
+  # #614 (QF-01 da P2): o painel da rede também se abre pelo município
+  # (codigo_ibge, 7 dígitos), sem depender de uma escola fora da folha.
+  my $ibge = $params->{codigo_ibge};
+  croak "need cod_inep or codigo_ibge" unless $params->{cod_inep} || $ibge;
 
   my $cod = $params->{cod_inep};
   my $dbh = $self->schema->storage->dbh;
 
-  my ($nome) = $dbh->selectrow_array(
+  my ($nome) = $cod ? $dbh->selectrow_array(
     'SELECT escola FROM clean.escolas WHERE codigo_inep = ? LIMIT 1',
     undef, $cod,
-  );
+  ) : ();
 
   # O mês é texto em PT ("Janeiro".."Dezembro"), com um caso conhecido de
   # latin1 ("Março"). Derivamos o número pelo prefixo (robusto a encoding)
@@ -468,10 +499,10 @@ sub financial_summary($self, $params) {
   # A folha pode estar na própria escola OU agregada no município (código
   # 99999999 = "SEC MUN DE EDUC ..."), quando o SIOPE não declara por escola.
   # Tenta a escola; se não houver, cai para o agregado do município.
-  my ($tem_escola) = $dbh->selectrow_array(
+  my ($tem_escola) = $cod ? $dbh->selectrow_array(
     'SELECT 1 FROM clean.remuneracao_municipal WHERE cod_inep = ? LIMIT 1',
     undef, $cod,
-  );
+  ) : ();
 
   # #422: o agregado só vale para escola da REDE MUNICIPAL (o SIOPE é a
   # remuneração municipal) e soma só as linhas da secretaria (99999999).
@@ -483,11 +514,11 @@ sub financial_summary($self, $params) {
   # da Secretaria: em Cuiabá 2025 o painel dizia R$ 17,1 mi de um total
   # declarado de R$ 489,5 mi. A regra da #422 fica: só para escola da rede
   # municipal.
-  my $siope  = $self->siope_status($cod);
+  my $siope  = $ibge ? $self->_siope_municipio($ibge) : $self->siope_status($cod);
   my $origem = 'escola';
   my $where  = 'cod_inep = ?';
   my @bind   = ($cod);
-  if (!$tem_escola && $siope->{habilitado}) {
+  if ($ibge || (!$tem_escola && $siope->{habilitado})) {
     $where  = 'cod_municipio::text = ?';
     @bind   = ($siope->{cod_municipio});
     $origem = 'rede';
@@ -578,7 +609,7 @@ sub financial_summary($self, $params) {
               : !$siope->{habilitado}             ? 'nao_municipal'
               : @{ $siope->{anos_presentes} // [] } ? 'escola_sem_folha'
               :                                     'municipio_sem_carga';
-    $origem = 'escola';   # nada veio do agregado
+    $origem = 'escola' unless $ibge;   # nada veio do agregado
   }
 
   # #610: no painel da rede, de onde vem o total do ano (escolas da lista do
@@ -624,17 +655,20 @@ sub financial_summary($self, $params) {
     : undef;
 
   return {
-    escola     => {
+    escola     => ($ibge ? undef : {
       codigo_inep                => $cod,
       nome                       => $nome,
       dependencia_administrativa => $siope->{rede},
       cod_municipio              => $siope->{cod_municipio},
-    },
+    }),
+    # #614: o painel aberto pelo município
+    municipio  => ($ibge ? { codigo_ibge => "$ibge", nome => $siope->{nome_municipio}, uf => $siope->{uf} } : undef),
     # origem: 'escola' (folha da própria unidade) ou 'rede' (#610: a escola
     # não tem folha própria; o painel é o da rede municipal inteira).
     origem     => $origem,
     rotulo_origem => $origem eq 'rede'
-      ? 'Folha de toda a rede municipal (esta escola não tem folha própria no SIOPE)'
+      ? ($ibge ? 'Folha de toda a rede municipal'
+               : 'Folha de toda a rede municipal (esta escola não tem folha própria no SIOPE)')
       : undef,
     rede       => $rede,   # #610
     fundeb     => $fundeb, # #611
@@ -666,8 +700,8 @@ sub financial_summary($self, $params) {
     # com a folha da Secretaria (vale também no painel da Secretaria).
     # #601 (QC-01 da P2): o código IBGE (7 dígitos) do município, para o
     # link da lista do ano dos abaixo do piso
-    municipio_ibge => scalar $dbh->selectrow_array(
-      'SELECT co_municipio::text FROM clean.censo_escolas WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, $cod),
+    municipio_ibge => ($ibge ? "$ibge" : scalar $dbh->selectrow_array(
+      'SELECT co_municipio::text FROM clean.censo_escolas WHERE co_entidade = ? ORDER BY nu_ano_censo DESC LIMIT 1', undef, $cod)),
     salario_rede => $salario_rede,
     # #589 (P1-FL-03): o salário do magistério da escola, na mesma conta da
     # rede (só no painel da escola)

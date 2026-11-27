@@ -136,6 +136,42 @@ sub piso ($self) {
   });
 }
 
+# #614 (QF-01 da P2): o painel financeiro da rede municipal aberto pelo
+# município, o mesmo do painel da rede de uma escola sem folha própria.
+# Município sem folha carregada → 404; ano sem folha → 400 com os anos.
+sub finance ($self) {
+  my $v = $self->validation;
+  $v->optional('ano', 'trim')->like(qr/^\d{4}$/);
+  return $self->bad_req if $self->any_error;
+  my $ibge  = $self->param('codigo_ibge');
+  my $model = $self->instantiate_model(model => 'School');
+  return $self->render(json => { error => 'Sem folha do SIOPE carregada para a rede municipal deste município' }, status => 404)
+    unless @{ $model->rede_anos($ibge) };
+  my $r = $model->financial_summary({
+    codigo_ibge => $ibge,
+    (defined $v->param('ano') ? (ano => 0 + $v->param('ano')) : ()),
+  });
+  return $self->render(json => { error => 'Sem folha neste ano', anos => $r->{anos} }, status => 400)
+    if ($r->{error} // '') eq 'ano_sem_folha';
+  $self->render(json => $r);
+}
+
+sub finance_anos ($self) {
+  my $model = $self->instantiate_model(model => 'School');
+  $self->render(json => { codigo_ibge => $self->param('codigo_ibge'), anos => $model->rede_anos($self->param('codigo_ibge')) });
+}
+
+sub payroll_rede ($self) {
+  my $v = $self->validation;
+  $v->optional('date', 'trim')->like(qr<^\d{2}-\d{4}$>);
+  return $self->bad_req if $self->any_error;
+  my $model  = $self->instantiate_model(model => 'School');
+  my $result = $model->rede_payroll({ codigo_ibge => $self->param('codigo_ibge'), date => $v->param('date') // '10-2025' });
+  return $self->render(json => { error => 'Sem folha da rede municipal neste mês' }, status => 404)
+    unless $result->size > 0;
+  $self->render(json => $result);
+}
+
 sub search_by_name($self) {
   my $model = $self->instantiate_model(model => 'City', route_params => [qw(name)]);
   my $opts = {name => $self->param('name')};
