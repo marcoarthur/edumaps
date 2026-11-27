@@ -44,6 +44,21 @@ de gestão (§6) recomenda mostrar a funcionalidade a 2 ou 3 gestores reais.
      **detalhe**) e a evidência (tela, texto da ajuda);
    - o veredito: **adotaria**, **adotaria com ressalvas** ou **não
      adotaria**, e por quê.
+   **Critério de achado: a pergunta respondida na tela (2026-11-27,
+   developer).** A rodada avalia se a **pergunta do gestor** se responde na
+   própria interface, de modo relevante, e não se o dado existe numa
+   planilha para baixar. Por isso:
+   - a persona tenta responder a pergunta **na tela**; quando só consegue
+     baixando o CSV e cruzando numa planilha, o achado é a pergunta sem
+     resposta na tela (com a pergunta, o número e a decisão que dependem
+     dela), e não "falta uma coluna";
+   - se uma correlação importa para a decisão, o pedido é um **painel** que
+     a proponha e explique, não um campo a mais na exportação;
+   - defeitos que só afetam o CSV (formato, nome de coluna) e não mudam a
+     resposta na tela são **detalhe**: entram em "Não é achado" ou numa
+     linha de nota, e não viram issue por si;
+   - o pedido do achado descreve o que a tela passa a responder, para quem,
+     e com que aviso; a exportação acompanha a tela, não a substitui.
 4. **Consolidação.** Um arquivo em [`avaliacoes/`](avaliacoes/) junta as
    avaliações da funcionalidade, separa defeito de lacuna e propõe o
    encaminhamento. **Issues só são abertas com a aprovação do developer.**

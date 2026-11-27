@@ -65,8 +65,13 @@ piso, o perfil pela carga e a base do mês típico.
 | Id | Gravidade | O quê | Evidência | Para quem |
 |---|---|---|---|---|
 | QE-01 | bloqueia | **O painel da rede mostra só o total da Secretaria e o chama de total da rede.** Para uma escola sem folha própria, o painel da rede soma só o código da Secretaria (sem escola), diz "Os números abaixo são o total da rede" e que "o SIOPE não detalha a folha por escola neste município", mesmo em anos em que detalha. O número que o secretário levaria ao conselho fica muito abaixo do declarado. Pedido: o painel da rede com toda a folha do município (escolas, Secretaria e fora da lista), como o fechamento da base, com a parte da Secretaria dita à parte; o texto do motivo conforme o ano (por escola em todos os meses, em parte ou só na Secretaria). | Cuiabá 2025: painel R$ 17,1 mi e 816 profissionais; declarado R$ 489,5 mi, 12 meses por escola. 2026: painel R$ 295,9 mi; declarado R$ 354,2 mi (jan e fev por escola) | P2, P5, P6 |
-| QE-02 | atrapalha | **Sem a receita do Fundeb, não há o percentual dos 70%.** A plataforma divide a folha por fonte, mas não tem a receita do Fundeb do município; a pergunta do conselho (quanto da receita foi para a remuneração dos profissionais) e a do prefeito (a adequação cabe?) ficam sem resposta. Pedido: carregar a receita anual do Fundeb por município de uma fonte oficial (a levantar: FNDE, Tesouro ou os indicadores do SIOPE) e mostrar a parte da folha paga pela parcela de 70% sobre essa receita, com o aviso de que não é a verificação legal (que usa a despesa liquidada e as regras da lei). | Cuiabá 2025: R$ 457,2 mi pela parcela de 70%, receita desconhecida na tela | P2, P5, P6 |
-| QE-03 | incomoda | **Números com centavos acima de um milhão saem em notação científica nos CSV.** O formato dos números usa seis dígitos significativos; um valor como 1.027.436,19 vira `1,02744e+06`. Pedido: números não inteiros com as casas decimais fixas (duas para reais), sem notação científica, em todos os CSV que usam o mesmo formato. | `abaixo_piso_diferenca_mensal` de Cuiabá 2026 na folha por município de MT | P2, P4, P6 |
+| QE-02 | atrapalha | **A pergunta do conselho não tem resposta na tela: a folha cabe no Fundeb?** O painel divide a folha por fonte, mas não diz quanto da receita do Fundeb do município foi para a remuneração, nem se a adequação ao piso (R$ 13,4 mi no ano) cabe no que sobra. Hoje ele não chega à resposta nem com planilha: a receita não está na plataforma. Pedido: no painel da rede, um bloco "a folha e o Fundeb" que responda as duas perguntas: a parte da receita anual do Fundeb paga na remuneração (pela parcela de 70%, como o município declara) e quanto a adequação ao piso somaria a essa parte, com o aviso de que não é a verificação legal (que usa a despesa liquidada e as regras da lei). A receita por município vem de uma fonte oficial a levantar (FNDE, Tesouro ou os indicadores do SIOPE). | Cuiabá 2025: R$ 457,2 mi pela parcela de 70%; receita e percentual ausentes da tela | P2, P5, P6 |
+
+Não é achado (detalhe da exportação, pelo critério do protocolo): no CSV
+da folha por município, números com centavos acima de um milhão saem em
+notação científica (`abaixo_piso_diferenca_mensal` de Cuiabá 2026:
+`1,02744e+06`). Não muda a resposta na tela; corrigir junto da próxima
+mudança no formato dos CSV.
 
 Não é achado: agosto de 2026 tem 8.650 registros, dois terços de um mês
 típico, e não é marcado como incompleto (a regra marca abaixo da metade).
@@ -84,5 +89,9 @@ plataforma acabaria ali.
 ## Encaminhamento
 
 Achados para o developer decidir se viram issues. Sugestão: QE-01 primeiro
-(número errado com rótulo certo), QE-03 junto ou logo depois (pequeno);
-QE-02 pede antes levantar a fonte da receita.
+(o número da tela está errado com o rótulo de total da rede); QE-02 em
+seguida, começando por levantar a fonte da receita do Fundeb.
+
+Revisado no mesmo dia pelo critério novo do protocolo (a pergunta
+respondida na tela): o antigo QE-03 (formato do CSV) passou a detalhe, e o
+QE-02 foi reescrito como a pergunta do conselho sem resposta na tela.
