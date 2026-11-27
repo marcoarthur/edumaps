@@ -74,8 +74,8 @@ no ano errado. O conteúdo está pronto; falta a porta.
 
 ## Encaminhamento
 
-Propostas duas issues (só com a aprovação do developer): QF-01 primeiro (a
-porta do painel da rede pelo município), depois QF-02 (o ano no endereço),
-que vale para o painel da escola e o da rede.
+Duas issues, abertas com a aprovação do developer: QF-01 → #614 e QF-02 →
+#615. QF-01 vem primeiro (a porta do painel da rede pelo município); QF-02
+(o ano no endereço) vale para o painel da escola e o da rede.
 
 ## Andamento

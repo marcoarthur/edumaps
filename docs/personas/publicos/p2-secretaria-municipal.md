@@ -158,8 +158,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   QE-01 (o painel da rede só com a Secretaria) → #610, entregue (#612); QE-02 (a folha cabe
   no Fundeb? sem resposta na tela) → #611, entregue (#613).
 - A porta do painel da rede (2026-11-27, **adotaria, em piloto**): QF-01
-  (o painel da rede só abre por uma escola fora da folha) e QF-02 (o link
-  não guarda o ano), a abrir com aprovação.
+  (o painel da rede só abre por uma escola fora da folha) → #614; QF-02 (o
+  link não guarda o ano) → #615.
 
 ## Entradas
 
