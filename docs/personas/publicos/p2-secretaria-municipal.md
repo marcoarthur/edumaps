@@ -153,8 +153,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   aviso) → #604, entregue (#608); QD-03 (frase do perfil) → #606, entregue (#609); QD-04 (base mensal ×
   base por 40 h) → #607, entregue (#609).
 - A folha no conselho do Fundeb (2026-11-27, **adotaria, em piloto**):
-  QE-01 (o painel da rede só com a Secretaria) e QE-02 (a folha cabe no
-  Fundeb? sem resposta na tela): aguardam a decisão do developer.
+  QE-01 (o painel da rede só com a Secretaria) → #610; QE-02 (a folha cabe
+  no Fundeb? sem resposta na tela) → #611.
 
 ## Entradas
 

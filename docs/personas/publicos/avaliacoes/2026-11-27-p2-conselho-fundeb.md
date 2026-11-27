@@ -88,9 +88,10 @@ plataforma acabaria ali.
 
 ## Encaminhamento
 
-Achados para o developer decidir se viram issues. Sugestão: QE-01 primeiro
-(o número da tela está errado com o rótulo de total da rede); QE-02 em
-seguida, começando por levantar a fonte da receita do Fundeb.
+Duas issues, abertas com a aprovação do developer: QE-01 → #610 e QE-02 →
+#611. QE-01 vem primeiro (o número da tela está errado com o rótulo de
+total da rede); QE-02 depende dele e começa por levantar a fonte da
+receita do Fundeb.
 
 Revisado no mesmo dia pelo critério novo do protocolo (a pergunta
 respondida na tela): o antigo QE-03 (formato do CSV) passou a detalhe, e o
