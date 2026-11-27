@@ -120,6 +120,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QB-01 resolvido.
 - [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QB-02 resolvido.
 - [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QC-01 e QC-02 resolvidos.
+- [2026-11-27 — a folha que não se compara ao ano anterior](ciclos/2026-11-27-folha-nao-compara.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QD-02 resolvido.
 
 ## Pendências
 
@@ -148,7 +149,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   → #601, entregue (#603); QC-02 (a ordenação vale só para a página) → #602, entregue (#603).
 - O custo de pôr a rede no piso (2026-11-26, **adotaria, em piloto**):
   QD-01 (sem o custo até o piso) → #605; QD-02 (salto entre anos sem
-  aviso) → #604; QD-03 (frase do perfil) → #606; QD-04 (base mensal ×
+  aviso) → #604, entregue (#608); QD-03 (frase do perfil) → #606; QD-04 (base mensal ×
   base por 40 h) → #607.
 
 ## Entradas

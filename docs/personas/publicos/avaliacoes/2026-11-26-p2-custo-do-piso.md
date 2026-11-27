@@ -86,3 +86,11 @@ Quatro issues, abertas com a aprovação do developer: QD-02 → #604, QD-01 →
 #605, QD-03 → #606 e QD-04 → #607. QD-02 vem primeiro (evita uma leitura
 errada); QD-01 em seguida (a pergunta do orçamento); QD-03 e QD-04 são
 pequenos e podem ir junto com o QD-01, por tocarem a mesma conta.
+
+## Andamento
+
+- 2026-11-27: #604 (PR #608) mergeado: QD-02 resolvido. O painel, a lista
+  do ano e a base avisam quando a folha não se compara à do ano anterior;
+  Cuiabá 2026 sai como não comparável (magistério 3.485 → 6.578; só na
+  Secretaria 60 (2%) → 3.141 (48%); 6 abaixo do piso em 2025). QD-01, QD-03
+  e QD-04 seguem nas #605, #606 e #607.

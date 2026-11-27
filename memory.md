@@ -4,6 +4,18 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-27 (eq) — sétima rodada da P2 e #604 (PR #608), folha que não se compara
+
+- Sétima avaliação da P2 (custo do piso): adotaria em piloto (mantido);
+  QD-02 → #604, QD-01 → #605, QD-03 → #606, QD-04 → #607.
+- #604: `salario_rede` traz `comparacao_ano_anterior` (magistério declarado,
+  só na Secretaria, meses); não se compara com +50%/−33% (queda só com o
+  ano tão completo) ou 20 pontos na parte da Secretaria. Aviso neutro no
+  painel, na lista do ano e na base; coluna `comparavel_ano_anterior` no
+  CSV. Sem migração. Cuiabá 2026: não comparável (6 → 1.559 abaixo).
+- LXC: backend + frontend. Nota técnica 285. Próximo: #605 (custo até o
+  piso), com #606 e #607, só com aprovação.
+
 ## Sessão 2026-11-26 (ep) — sexta rodada da P2 e #601/#602 (PR #603), lista do ano do piso
 
 - Sexta avaliação da P2 (resposta ao tribunal ponta a ponta): adotaria em

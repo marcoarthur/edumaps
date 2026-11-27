@@ -114,6 +114,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto pequeno.
 - [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto médio.
+- [2026-11-27 — a folha que não se compara ao ano anterior](ciclos/2026-11-27-folha-nao-compara.md#p6--terceiro-setor-e-jornalismo-de-dados): adotaria (mantido). Impacto médio.
 
 ## Pendências
 

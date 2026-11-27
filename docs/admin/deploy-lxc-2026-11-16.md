@@ -346,6 +346,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `/escola/payroll?inep=51171805&date=04-2026&secretaria=1` diz quantos ficam abaixo do piso no ano e filtra por situação (se a folha do LXC for a mesma do local).
 - [ ] Lista do ano do piso (#601/#602, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`):
       `curl -s "$API/api/city/5103403/piso?ano=2026" | jq .total` dá o mesmo número do painel da Secretaria de Cuiabá, e `/municipio/piso?ibge=5103403&ano=2026` baixa o CSV.
+- [ ] Folha que não se compara (#604, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`):
+      o painel da rede de Cuiabá em 2026 diz "A folha de 2026 não se compara à de 2025" (se o LXC tiver as folhas de 2025 e 2026), e a folha por município de MT tem a coluna `comparavel_ano_anterior`.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC

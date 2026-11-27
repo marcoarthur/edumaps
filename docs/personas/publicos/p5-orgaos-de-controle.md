@@ -117,6 +117,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-26 — os abaixo do piso por situação](ciclos/2026-11-26-piso-por-situacao.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
 - [2026-11-26 — a marca do piso na folha detalhada](ciclos/2026-11-26-folha-marca-piso.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
 - [2026-11-26 — a lista do ano dos abaixo do piso](ciclos/2026-11-26-lista-piso-ano.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
+- [2026-11-27 — a folha que não se compara ao ano anterior](ciclos/2026-11-27-folha-nao-compara.md#p5--órgãos-de-controle-e-conselhos): não adotaria (registro; mantido). Impacto médio.
 
 ## Pendências
 
