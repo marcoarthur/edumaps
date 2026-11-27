@@ -215,6 +215,11 @@ describe("SchoolFinance — piso na rede (#575)", () => {
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("Deles, 1.422 temporários e 137 efetivos");   // #597
     expect(screen.queryByTestId("link-lista-piso")).toBeNull();   // sem o código do município, sem link
   });
+  it("#605: o custo até o piso na frase do painel", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026,
+      salarioRede: { ...S, abaixo_piso_diferenca_mensal: 1027436.19, abaixo_piso_diferenca_situacao: { efetivo: 88137.53, temporario: 939298.66, outros: 0 } } } });
+    expect(screen.getByTestId("piso-rede")).toHaveTextContent("faltam R$ 1.027.436,19 por mês (R$ 939.298,66 dos temporários e R$ 88.137,53 dos efetivos)");
+  });
   it("#601: o link para a lista do ano", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S, municipioIbge: "5103403" } });
     expect(screen.getByTestId("link-lista-piso").getAttribute("href")).toBe("/municipio/piso?ibge=5103403&ano=2026");

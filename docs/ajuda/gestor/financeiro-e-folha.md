@@ -72,16 +72,28 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   mais), quantos deles só no total da Secretaria, com o aviso de que não é a
   verificação legal. Diz também quantos deles são temporários, efetivos ou
   de outra situação (a que o município declarou ao SIOPE nos mais meses do
-  ano) e o perfil mais comum: a carga, o salário base mediano por mês e o
-  piso proporcional a essa carga. Em Cuiabá (2026): 1.417 temporários e 142
+  ano) e o perfil mais comum: a carga (e quantos a têm), o salário base
+  mediano por mês de quem tem essa carga e o piso proporcional a ela. Em Cuiabá (2026): 1.417 temporários e 142
   efetivos; o mais comum é 30 horas, com o piso proporcional de
   R$ 3.847,97. Logo abaixo, **"Ver a lista do ano"** abre quem fica abaixo
   do piso no ano em toda a rede, uma linha por pessoa: nome, CPF como o
   SIOPE publica (mascarado), situação no ano, carga, salário base mensal,
-  base por 40 h, meses pagos e onde recebeu (Secretaria e/ou escolas). A
+  base por 40 h, piso proporcional à carga, quanto falta por mês, meses
+  pagos e onde recebeu (Secretaria e/ou escolas). A
   lista filtra pela situação, busca pelo nome, ordena a lista inteira e
   baixa em CSV (o anexo de uma resposta ao tribunal de contas). É a mesma
   regra e o mesmo total da frase do painel.
+- **Saber quanto custa pôr todos no piso.** A frase do piso do painel e a
+  lista do ano dizem quanto falta por mês para pôr cada pessoa abaixo do
+  piso no piso proporcional à carga dela (o piso do ano × carga ÷ 40, menos
+  a base do mês típico), somado, por situação, e em 13 salários no ano. Em
+  Cuiabá (2026): R$ 1.027.436,19 por mês (R$ 939.298,66 dos temporários e
+  R$ 88.137,53 dos efetivos), cerca de R$ 13,4 milhões no ano. É uma ordem
+  de grandeza para o orçamento, pelo piso do ano da folha: não entram
+  férias, encargos, gratificações nem o reajuste do piso do ano seguinte, e
+  não é o custo legal da adequação. Na lista, a **base mensal** é a do mês
+  típico (a mesma mediana da base por 40 h, na carga mais comum), e cada
+  linha fecha: piso na carga − base mensal = falta por mês.
 - **Saber se a folha de um ano se compara à do anterior.** De um ano para
   o outro, o município pode mudar a forma de declarar ao SIOPE (passar a
   declarar no total da Secretaria quem vinha nas escolas, ou quem não

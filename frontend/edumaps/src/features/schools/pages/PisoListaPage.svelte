@@ -6,7 +6,7 @@
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { ApiError } from "@/shared/api/client.js";
   import { getPisoLista, urlPisoCsv } from "../api/pisoApi.js";
-  import { textoQuebraAno } from "@/features/fontes/utils.js";
+  import { textoQuebraAno, textoPisoCusto } from "@/features/fontes/utils.js";
 
   const POR_PAGINA = 100;
   let dados = $state(null);
@@ -23,6 +23,9 @@
   const ROTULO_SIT = { efetivo: "efetivo", temporario: "temporário", outros: "outra" };
 
   const pessoas = $derived(dados?.pessoas ?? []);
+  // #605: o custo no formato da contagem do painel, para o mesmo texto
+  const custo = $derived(dados ? { abaixo_piso: dados.total, abaixo_piso_diferenca_mensal: dados.diferenca_mensal,
+    abaixo_piso_diferenca_situacao: dados.diferenca_situacao } : null);
   const porSituacao = $derived(pessoas.reduce((a, p) => ({ ...a, [p.situacao]: (a[p.situacao] ?? 0) + 1 }), {}));
   const filtrados = $derived(pessoas.filter((p) =>
     (!filtro.trim() || (p.nome ?? "").toLowerCase().includes(filtro.trim().toLowerCase()))
@@ -46,8 +49,12 @@
     { key: "cpf_mascarado", label: "CPF (SIOPE)" },
     { key: "situacao", label: "Situação no ano", render: (p) => ROTULO_SIT[p.situacao] ?? p.situacao },
     { key: "carga_comum", label: "Carga", render: (p) => (p.carga_comum == null ? "—" : `${p.carga_comum}h`) },
-    { key: "base_mensal_mediana", label: "Base mensal", render: (p) => brl(p.base_mensal_mediana) },
+    // #607 (QD-04 da P2): a base do mês típico, da mesma mediana da base por 40 h
+    { key: "base_mensal_tipica", label: "Base mensal (mês típico)", render: (p) => brl(p.base_mensal_tipica) },
     { key: "base_40h", label: "Base por 40 h", render: (p) => brl(p.base_40h) },
+    // #605 (QD-01 da P2): o piso proporcional à carga e quanto falta por mês
+    { key: "piso_proporcional", label: "Piso na carga", render: (p) => brl(p.piso_proporcional) },
+    { key: "diferenca_mensal", label: "Falta por mês", render: (p) => brl(p.diferenca_mensal) },
     { key: "meses", label: "Meses" },
     { key: "onde", label: "Onde recebeu" },
   ];
@@ -87,6 +94,12 @@
       {["temporario", "efetivo", "outros"].filter((s) => porSituacao[s]).map((s) => `${porSituacao[s].toLocaleString("pt-BR")} ${s === "outros" ? "de outra situação" : ROTULO_SIT[s] + (porSituacao[s] === 1 ? "" : "s")}`).join(", ")}.
       É a mesma regra da contagem do painel; a situação é a dos mais meses no ano.
     </p>
+    {#if textoPisoCusto(custo, dados.ano)}
+      <!-- #605 (QD-01 da P2): quanto custa pôr todos no piso -->
+      <p class="text-gray-800" data-testid="custo-lista-piso">
+        {textoPisoCusto(custo, dados.ano)}A diferença de cada pessoa é o piso proporcional à carga menos a base do mês típico; não é o custo legal da adequação.
+      </p>
+    {/if}
     {#if textoQuebraAno(dados.comparacao_ano_anterior, dados.ano)}
       <!-- #604 (QD-02 da P2): a folha do ano não se compara à do anterior -->
       <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="quebra-ano-lista">

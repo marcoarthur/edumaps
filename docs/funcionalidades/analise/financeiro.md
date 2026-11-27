@@ -40,6 +40,10 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode **entregar a lista do ano de quem fica abaixo do piso na rede
   municipal**, uma pessoa por linha (situação, carga, salário base, meses e
   onde recebeu), com a regra e o total da contagem, para baixar em planilha.
+- Sistema pode **estimar quanto custa pôr no piso quem fica abaixo dele**:
+  a diferença mensal até o piso proporcional à carga, por pessoa, somada e
+  aberta por situação, e o ano em 13 salários, como ordem de grandeza para
+  o orçamento (sem encargos; não é o custo legal da adequação).
 - Sistema pode **avisar quando a folha de um ano não se compara à do ano
   anterior** (o município mudou a forma de declarar ao SIOPE: o magistério
   declarado ou a parte paga só pela Secretaria mudou muito), dizendo o que
