@@ -673,7 +673,7 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
   # cada mediana do base por 40 h e meses pagos, #575), atualizadas no fim
   # de cada carga do SIOPE. Aqui só a comparação com o piso do ano.
   my $rows = eval {
-    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $lista, $lista, $lista, $lista);
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, ($lista) x 6);
       WITH piso (ano, valor) AS (VALUES $PISO_VALUES)
       , d AS (
         SELECT d.*, piso.valor AS piso, (d.md < piso.valor AND d.meses >= $MESES_MIN_PISO) AS ab
@@ -703,7 +703,18 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
          WHERE ab AND base IS NOT NULL
          GROUP BY 1, 2
       )
+      -- #604 (QD-02 da P2): o volume do magistério no ano (toda a folha,
+      -- sem dezembro), os pagos só no total da Secretaria e os meses, para
+      -- comparar com o ano anterior; sem o piso (vale para todo ano)
+      , vol AS (
+        SELECT cod6, ano, sum(n)::int AS mag, coalesce(sum(n) FILTER (WHERE NOT esc), 0)::int AS so_sec,
+               max(meses)::int AS meses_ano
+          FROM analytics.mv_salario_rede_md
+         WHERE (?::text[] IS NULL OR cod6 = ANY(?::text[]))
+         GROUP BY 1, 2
+      )
       SELECT r.cod6, r.ano, r.pessoas, r.total, r.base, r.carga, r.suspeita,
+             vol.mag, vol.so_sec, vol.meses_ano,
              cont.piso::float8 AS piso, cont.abaixo, cont.abaixo_sec,
              cont.ab_efetivo, cont.ab_temporario, cont.ab_outros,
              cg.carga::float8 AS ab_carga, round(bs.base::numeric, 2)::float8 AS ab_base
@@ -711,10 +722,12 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
         LEFT JOIN cont ON cont.cod6 = r.cod6 AND cont.ano = r.ano
         LEFT JOIN cg ON cg.cod6 = r.cod6 AND cg.ano = r.ano
         LEFT JOIN bs ON bs.cod6 = r.cod6 AND bs.ano = r.ano
+        LEFT JOIN vol ON vol.cod6 = r.cod6 AND vol.ano = r.ano
        WHERE (?::text[] IS NULL OR r.cod6 = ANY(?::text[]))
       SQL
   } // [];
-  return { map { ("$_->{cod6}|$_->{ano}" => {
+  my %r = map { ("$_->{cod6}|$_->{ano}" => {
+    _vol => { mag => $_->{mag}, so_sec => $_->{so_sec}, meses => $_->{meses_ano} },
     pessoas => $_->{pessoas}, total => $_->{total}, base => $_->{base}, carga_comum => $_->{carga},
     carga_suspeita => ($_->{suspeita} ? \1 : \0),
     # #575 (QH-01 da P5): abaixo do piso na rede inteira (com a Secretaria);
@@ -732,7 +745,42 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
          } : undef))
       : (abaixo_piso => undef, abaixo_piso_so_secretaria => undef,
          abaixo_piso_situacao => undef, abaixo_piso_perfil => undef)),
-  }) } @$rows };
+  }) } @$rows;
+  for my $k (keys %r) {
+    my ($c6, $ano) = split /\|/, $k;
+    $r{$k}{comparacao_ano_anterior} = _comparacao_ano($r{$k}, $r{ "$c6|" . ($ano - 1) }, $ano - 1);
+  }
+  delete $_->{_vol} for values %r;
+  return \%r;
+}
+
+# #604 (QD-02 da P2): a folha do ano se compara à do ano anterior? De um ano
+# para o outro, o município pode mudar a forma de declarar ao SIOPE (passar a
+# declarar no total da Secretaria quem vinha nas escolas, ou quem não vinha),
+# e a contagem abaixo do piso salta sem que a rede tenha mudado. Não compara:
+# o magistério declarado cresce 50% ou mais, ou cai um terço ou mais (só com
+# o ano tão completo quanto o anterior: um ano em curso tem menos gente), ou a
+# parte dos pagos só no total da Secretaria muda 20 pontos ou mais. Sem o ano
+# anterior: undef.
+our $QUEBRA_RAZAO = 1.5;
+our $QUEBRA_PONTOS = 20;
+sub _comparacao_ano ($at, $ant, $ano_ant) {
+  return undef unless $ant && $ant->{_vol}{mag} && $at->{_vol}{mag};
+  my ($v, $w) = ($at->{_vol}, $ant->{_vol});
+  my $pct  = 100 * $v->{so_sec} / $v->{mag};
+  my $pct0 = 100 * $w->{so_sec} / $w->{mag};
+  my $razao = $v->{mag} / $w->{mag};
+  my @motivos;
+  push @motivos, 'magisterio'
+    if $razao >= $QUEBRA_RAZAO || ($razao <= 1 / $QUEBRA_RAZAO && ($v->{meses} // 0) >= ($w->{meses} // 0));
+  push @motivos, 'secretaria' if abs($pct - $pct0) >= $QUEBRA_PONTOS;
+  return {
+    ano_anterior => 0 + $ano_ant, comparavel => (@motivos ? \0 : \1), motivos => \@motivos,
+    magisterio => $v->{mag}, magisterio_anterior => $w->{mag},
+    so_secretaria => $v->{so_sec}, so_secretaria_anterior => $w->{so_sec},
+    pct_so_secretaria => 0 + sprintf('%.0f', $pct), pct_so_secretaria_anterior => 0 + sprintf('%.0f', $pct0),
+    abaixo_piso_anterior => $ant->{abaixo_piso},
+  };
 }
 
 # #564 (QQ-02 da P6): a data de cada carga registrada da folha, por
@@ -853,6 +901,7 @@ sub abaixo_piso_lista ($class, $dbh, $cod6, $ano) {
     SQL
   return {
     piso => $piso, total => scalar @$rows,
+    comparacao_ano_anterior => $sal->{comparacao_ano_anterior},   # #604
     pessoas => [ map { +{
       nome => $_->{nome}, cpf_mascarado => $_->{cpf}, situacao => $_->{situacao},
       carga_comum => $_->{carga}, base_mensal_mediana => $_->{base}, base_40h => $_->{base_40h},
@@ -1032,6 +1081,7 @@ our @FOLHA_MUNICIPIO_COLUNAS = (
   ['abaixo_piso_outros', 'Dos abaixo do piso, os de outra situação (outros, cedidos ou sem situação), pela mesma regra', 1],
   ['abaixo_piso_carga_comum', 'Carga horária mais comum de quem fica abaixo do piso (a de cada pessoa é a dos mais meses)', 1],
   ['abaixo_piso_base_mediana', 'Mediana do salário base mensal de quem fica abaixo do piso, sem conversão para 40 horas, em reais (a de cada pessoa é a mediana dos meses, sem dezembro)', 1],
+  ['comparavel_ano_anterior', '"não" quando a folha do magistério do ano não se compara à do ano anterior: o magistério declarado cresceu 50% ou mais ou caiu um terço ou mais (com o ano tão completo quanto o anterior), ou a parte dos pagos só no total da Secretaria mudou 20 pontos ou mais. Pode ser uma mudança na forma de declarar ao SIOPE, e não na rede. Vazio: sem o ano anterior', 0],
   ['data_carga', 'Data em que a planilha do SIOPE foi baixada. Vazio: carga feita antes do registro', 0],
   ['sha256_planilha', 'SHA-256 da planilha do SIOPE baixada nessa carga', 0],
 );
@@ -1065,6 +1115,7 @@ sub folha_municipios ($class, $dbh, $uf) {
         $s->{piso}, $s->{abaixo_piso}, $s->{abaixo_piso_so_secretaria},
         @{ $s->{abaixo_piso_situacao} // {} }{qw(efetivo temporario outros)},
         @{ $s->{abaixo_piso_perfil} // {} }{qw(carga base)},
+        ($s->{comparacao_ano_anterior} ? (${ $s->{comparacao_ano_anterior}{comparavel} } ? 'sim' : 'não') : undef),
         (defined $e->{baixado_em} ? substr($e->{baixado_em}, 0, 10) : undef), $e->{sha256},
       ];
     }
