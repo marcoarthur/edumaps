@@ -157,8 +157,30 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - A folha no conselho do Fundeb (2026-11-27, **adotaria, em piloto**):
   QE-01 (o painel da rede só com a Secretaria) → #610, entregue (#612); QE-02 (a folha cabe
   no Fundeb? sem resposta na tela) → #611, entregue (#613).
+- A porta do painel da rede (2026-11-27, **adotaria, em piloto**): QF-01
+  (o painel da rede só abre por uma escola fora da folha) e QF-02 (o link
+  não guarda o ano), a abrir com aprovação.
 
 ## Entradas
+
+### 2026-11-27 — A porta do painel da rede (nona rodada)
+
+**Material:** o perfil da rede de Cuiabá, o painel de uma escola com folha
+própria e o painel da rede, em 2025 e 2026. Consolidação em
+[`avaliacoes/2026-11-27-p2-porta-da-rede.md`](avaliacoes/2026-11-27-p2-porta-da-rede.md).
+
+**O que tentou:** abrir o painel da rede para conferir o total, a parte do
+Fundeb e o custo do piso, e mandar o link de 2025 ao conselho e ao prefeito.
+
+**O que funciona para ele:** dentro do painel da rede, as respostas estão
+certas e explicadas (R$ 489,5 mi; 77,8% da receita do Fundeb de 2025).
+
+**Barreiras:**
+- QF-01 (bloqueia): o painel da rede só abre por uma escola fora da folha
+  (4 de 171 em Cuiabá); o perfil da rede e o painel da escola não levam a ele.
+- QF-02 (atrapalha): o link do painel não guarda o ano.
+
+**Veredito:** **adotaria, em piloto numa rede** (mantido).
 
 ### 2026-11-27 — A folha da rede no conselho do Fundeb (oitava rodada)
 
