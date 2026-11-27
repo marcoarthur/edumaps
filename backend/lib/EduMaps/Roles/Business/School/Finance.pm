@@ -260,6 +260,28 @@ sub secretaria_payroll($self, $params) {
   return $self->_marca_piso($results, $year, $month, 99999999);
 }
 
+# #610 (QE-01 da P2): a folha detalhada de toda a rede municipal no mês
+# (escolas e total da Secretaria), a do painel da rede, com a marca do piso.
+sub rede_payroll($self, $params) {
+  croak "need date %m-%Y" unless $params->{date};
+  croak "need cod_inep" unless $params->{cod_inep};
+  my $siope = $self->siope_status($params->{cod_inep});
+  return Mojo::Collection->new unless $siope->{habilitado};
+
+  my $dt = $self->parser->parse_datetime($params->{date});
+  my ($year, $month) = ($dt->year, ucfirst($dt->month_name));
+  my $results = $self->schema->resultset('RemuneracaoMunicipal')
+    ->search_rs({ ano => $year, mes => $month, cod_municipio => "$siope->{cod_municipio}" })
+    ->as_hash->get_all->each(sub {
+      $_->{salario_base} += 0;
+      $_->{salario_total} += 0;
+      $_->{salario_fundeb_max} += 0;
+      $_->{salario_fundeb_min} += 0;
+      $_->{salario_outros} += 0;
+    });
+  return $self->_marca_piso($results, $year, $month, undef);
+}
+
 sub payroll_dates($self, $params) {
   croak "need cod_inep" unless $params->{cod_inep};
   my %months = (
@@ -456,14 +478,19 @@ sub financial_summary($self, $params) {
   # Antes somava o município inteiro e valia para qualquer rede: uma escola
   # estadual de Cuiabá aparecia com a folha municipal toda (13.547
   # profissionais) rotulada como "Folha da Secretaria".
+  # #610 (QE-01 da P2): o painel da rede soma TODA a folha do município
+  # (escolas, Secretaria e escolas fora da lista do Censo), não só o código
+  # da Secretaria: em Cuiabá 2025 o painel dizia R$ 17,1 mi de um total
+  # declarado de R$ 489,5 mi. A regra da #422 fica: só para escola da rede
+  # municipal.
   my $siope  = $self->siope_status($cod);
   my $origem = 'escola';
   my $where  = 'cod_inep = ?';
   my @bind   = ($cod);
   if (!$tem_escola && $siope->{habilitado}) {
-    $where  = 'cod_municipio::text = ? AND cod_inep = 99999999';
+    $where  = 'cod_municipio::text = ?';
     @bind   = ($siope->{cod_municipio});
-    $origem = 'secretaria';
+    $origem = 'rede';
   }
 
   # #491 (RJ-02): tudo é de um ano (exercício). Sem o ano pedido, o mais
@@ -483,15 +510,23 @@ sub financial_summary($self, $params) {
     push @bind, $ano;
   }
 
+  # #610: a rede inteira tem ~100 mil linhas por ano (Cuiabá); contar as
+  # pessoas agrupando antes por pessoa (agregação por hash) é ~3x mais rápido
+  # que o COUNT(DISTINCT (cpf, nome)).
   my $series = $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, @bind);
     SELECT
       ano,
       mes,
       $month_case AS mes_num,
-      COALESCE(SUM(salario_total), 0)::float AS total_salario,
-      COUNT(DISTINCT $PESSOA)::int               AS total_profissionais
-    FROM clean.remuneracao_municipal
-    WHERE $where
+      COALESCE(SUM(v), 0)::float AS total_salario,
+      COUNT(*)::int              AS total_profissionais,
+      -- #610: a parte do mês no total da Secretaria (sem escola)
+      COALESCE(SUM(vs), 0)::float AS total_secretaria
+    FROM (SELECT ano, mes, cpf, nome_profissional, SUM(salario_total) AS v,
+                 SUM(salario_total) FILTER (WHERE cod_inep = 99999999) AS vs
+            FROM clean.remuneracao_municipal
+           WHERE $where
+           GROUP BY 1, 2, 3, 4) x
     GROUP BY ano, mes
     ORDER BY ano, mes_num
   SQL
@@ -500,10 +535,12 @@ sub financial_summary($self, $params) {
     SELECT
       categoria,
       tipo,
-      COALESCE(SUM(salario_total), 0)::float AS total_salario,
-      COUNT(DISTINCT $PESSOA)::int               AS total_profissionais
-    FROM clean.remuneracao_municipal
-    WHERE $where
+      COALESCE(SUM(v), 0)::float AS total_salario,
+      COUNT(*)::int              AS total_profissionais
+    FROM (SELECT categoria, tipo, cpf, nome_profissional, SUM(salario_total) AS v
+            FROM clean.remuneracao_municipal
+           WHERE $where
+           GROUP BY 1, 2, 3, 4) x
     GROUP BY categoria, tipo
     ORDER BY total_salario DESC
   SQL
@@ -530,7 +567,7 @@ sub financial_summary($self, $params) {
   # total; a competência mais recente pode ter 1 servidor e parecer que a
   # escola só tem 1.
   my ($total_profissionais) = $dbh->selectrow_array(
-    "SELECT COUNT(DISTINCT $PESSOA)::int FROM clean.remuneracao_municipal WHERE $where",
+    "SELECT COUNT(*)::int FROM (SELECT DISTINCT cpf, nome_profissional FROM clean.remuneracao_municipal WHERE $where) x",
     undef, @bind,
   );
 
@@ -544,6 +581,39 @@ sub financial_summary($self, $params) {
     $origem = 'escola';   # nada veio do agregado
   }
 
+  # #610: no painel da rede, de onde vem o total do ano (escolas da lista do
+  # Censo, total da Secretaria, escolas que o Censo não lista) e como o
+  # município declarou: por escola em todos os meses, em parte ou só na
+  # Secretaria (pela maior parte do valor do mês, #558).
+  my $rede;
+  if ($origem eq 'rede' && defined $ano) {
+    my ($ano_censo) = $dbh->selectrow_array('SELECT max(nu_ano_censo) FROM clean.censo_escolas');
+    my $p = $dbh->selectrow_hashref(<<~'SQL', undef, $siope->{cod_municipio}, $ano, $ano_censo);
+      WITH p AS (
+        SELECT cod_inep, SUM(salario_total) AS v FROM clean.remuneracao_municipal
+         WHERE cod_municipio::text = ? AND ano = ? GROUP BY 1
+      ), c AS (
+        SELECT p.*, (p.cod_inep <> 99999999 AND EXISTS (
+                  SELECT 1 FROM clean.censo_escolas e
+                   WHERE e.co_entidade = p.cod_inep AND e.nu_ano_censo = ? AND e.tp_situacao_funcionamento = 1)) AS lista
+          FROM p
+      )
+      SELECT COALESCE(SUM(v) FILTER (WHERE lista), 0)::float AS escolas,
+             COALESCE(SUM(v) FILTER (WHERE cod_inep = 99999999), 0)::float AS secretaria,
+             COALESCE(SUM(v) FILTER (WHERE cod_inep <> 99999999 AND NOT lista), 0)::float AS fora,
+             (COUNT(*) FILTER (WHERE cod_inep <> 99999999))::int AS escolas_com_folha
+        FROM c
+      SQL
+    my $l = EduMaps::BaseAnalise->meses_por_lugar($dbh, "$siope->{cod_municipio}")->{"$siope->{cod_municipio}|$ano"}
+      // { escola => [], secretaria => [] };
+    $rede = {
+      partes => { map { ($_ => 0 + sprintf('%.2f', $p->{$_} // 0)) } qw(escolas secretaria fora) },
+      escolas_com_folha => $p->{escolas_com_folha} // 0,
+      meses_escola => $l->{escola}, meses_secretaria => $l->{secretaria},
+      declaracao => (!@{ $l->{secretaria} } ? 'escola' : !@{ $l->{escola} } ? 'secretaria' : 'misto'),
+    };
+  }
+
   return {
     escola     => {
       codigo_inep                => $cod,
@@ -551,12 +621,13 @@ sub financial_summary($self, $params) {
       dependencia_administrativa => $siope->{rede},
       cod_municipio              => $siope->{cod_municipio},
     },
-    # origem: 'escola' (folha da própria unidade) ou 'secretaria' (agregado do
-    # município — o SIOPE não declara por escola em parte das cidades).
+    # origem: 'escola' (folha da própria unidade) ou 'rede' (#610: a escola
+    # não tem folha própria; o painel é o da rede municipal inteira).
     origem     => $origem,
-    rotulo_origem => $origem eq 'secretaria'
-      ? 'Folha da Secretaria municipal (o SIOPE não detalha por escola neste município)'
+    rotulo_origem => $origem eq 'rede'
+      ? 'Folha de toda a rede municipal (esta escola não tem folha própria no SIOPE)'
       : undef,
+    rede       => $rede,   # #610
     total_profissionais => ($total_profissionais // 0) + 0,
     # null quando há dado; senão 'escola_inexistente', 'nao_municipal' (o
     # SIOPE só cobre a remuneração da rede municipal), 'escola_sem_folha' (o

@@ -28,6 +28,7 @@ sub register ($self, $app, @args) {
 
   # #585 (QE-01 da P2): a folha detalhada do total da Secretaria do município
   $api->get('/:cod_inep/payroll/secretaria' => $check)->to('school#payroll_secretaria')->name('school_payroll_secretaria');
+  $api->get('/:cod_inep/payroll/rede' => $check)->to('school#payroll_rede')->name('school_payroll_rede');   # #610
 
   $api->get('/:cod_inep/finance' => $check)->to('school#finance')->name('school_finance');
 

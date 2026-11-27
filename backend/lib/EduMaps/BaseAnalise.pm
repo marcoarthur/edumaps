@@ -829,10 +829,11 @@ sub piso_pessoas ($class, $dbh, $cod6, $ano, $mes, $cod_inep) {
   my $sal = $class->salario_rede($dbh, "$cod6")->{"$cod6|$ano"} // return {};
   return {} if $sal->{carga_suspeita} && ${ $sal->{carga_suspeita} };
   my $rows = eval {
-    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $ano, $mes, $cod_inep, "$cod6", $ano, "$cod6");
+    # #610: sem escola (undef), a lista do mês da rede inteira
+    $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, $ano, $mes, $cod_inep, $cod_inep, "$cod6", $ano, "$cod6");
       WITH lista AS (
         SELECT DISTINCT cpf, nome_profissional FROM clean.remuneracao_municipal
-         WHERE ano = ? AND mes = ? AND cod_inep = ? AND cod_municipio::text = ?
+         WHERE ano = ? AND mes = ? AND (?::text IS NULL OR cod_inep::text = ?) AND cod_municipio::text = ?
            AND tipo = 'Profissionais do magistério'
       ), pm AS (
         SELECT r.cpf, r.nome_profissional, left(r.mes, 3) AS m,

@@ -51,8 +51,10 @@ subtest 'escola sem folha própria cai para o agregado da Secretaria' => sub {
   my $r = $t->get_ok("/api/school/$INEP/finance")
     ->status_is(200)->tx->res->json;
 
-  is $r->{origem}, 'secretaria', 'origem sinaliza o agregado do município';
-  like $r->{rotulo_origem} // '', qr/Secretaria/i, 'rótulo de origem presente';
+  is $r->{origem}, 'rede', 'origem: o painel da rede municipal (#610)';
+  like $r->{rotulo_origem} // '', qr/rede municipal/i, 'rótulo de origem presente';
+  is [ @{ $r->{rede} }{qw(declaracao escolas_com_folha)}, $r->{rede}{partes} ],
+     ['secretaria', 0, { escolas => 0, secretaria => 2000, fora => 0 }], '#610: só no total da Secretaria';
   is scalar(@{ $r->{series} }), 2, 'série vem do agregado (2 competências)';
   ok $r->{total_profissionais} >= 2, 'total de profissionais do agregado';
   # #553 (QS-01 da P5): a folha do agregado por fonte de recurso
