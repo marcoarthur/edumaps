@@ -7,7 +7,7 @@
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
   import FolhaFundeb from "./FolhaFundeb.svelte";   // #611
   import { urlPisoPagina } from "../../api/pisoApi.js";   // #601
-  import { textoMotivoRede, textoPartesRede } from "../../utils/redeFolha.js";   // #610
+  import { textoMotivoRede, textoPartesRede, textoDeclaracaoRede } from "../../utils/redeFolha.js";   // #610, #614
   import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoQuebraAno, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
@@ -40,7 +40,7 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", rede = null, fundeb = null, series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", rede = null, fundeb = null, porMunicipio = false, linkRede = null, series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
@@ -52,7 +52,7 @@
   const escopo = $derived(ehRede ? "rede municipal" : "escola");
   const escopoTitulo = $derived(ehRede ? "Rede municipal (escolas e Secretaria)" : "");
   // #610 (QE-01 da P2): por que é o painel da rede, conforme o ano
-  const motivoRede = $derived(textoMotivoRede(rede, ano));
+  const motivoRede = $derived(porMunicipio ? textoDeclaracaoRede(rede, ano) : textoMotivoRede(rede, ano));
   const partesRede = $derived(textoPartesRede(rede));
 
   // #557: só os meses incompletos que estão na série mostrada (a escola pode
@@ -127,6 +127,8 @@
   function verFolhaCompleta() {
     if (!selectedPeriod) return;
     // #610 (QE-01 da P2): no painel da rede, a folha da rede inteira no mês
+    // #614: no painel aberto pelo município, a folha da rede pelo município
+    if (porMunicipio) return router.navigate(`/escola/payroll?codigo_ibge=${municipioIbge}&date=${selectedPeriod}`);
     router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}${ehRede ? "&rede=1" : ""}`);
   }
 
@@ -137,11 +139,25 @@
 </script>
 
 <div class="space-y-6">
-  {#if ehRede}
+  {#if ehRede && porMunicipio}
+    <!-- #614: o painel aberto pelo município -->
+    <div class="rounded-md bg-blue-50 border border-blue-200 text-blue-900 text-sm p-4">
+      <p class="font-semibold">Painel da rede municipal</p>
+      <p class="mt-1" data-testid="motivo-rede">{motivoRede}</p>
+    </div>
+  {:else if ehRede}
     <div class="rounded-md bg-amber-50 border border-amber-300 text-amber-900 text-sm p-4">
       <p class="font-semibold">Painel da rede municipal — não desta escola</p>
       <p class="mt-1" data-testid="motivo-rede">{motivoRede}</p>
+      {#if linkRede}
+        <a class="inline-block mt-2 font-medium underline" href={linkRede} data-testid="link-painel-rede">Abrir o painel da rede pelo município →</a>
+      {/if}
     </div>
+  {:else if linkRede}
+    <!-- #614 (QF-01 da P2): a porta do painel da rede a partir da escola -->
+    <a class="inline-block text-sm font-medium text-blue-700 underline" href={linkRede} data-testid="link-painel-rede">
+      Ver o painel da rede municipal (total, Fundeb e piso) →
+    </a>
   {/if}
 
   <!-- Totais -->
@@ -313,7 +329,7 @@
   {/if}
 
   <!-- #553: por fonte de recurso (Fundeb 70%, 30%, outras) -->
-  <FolhaPorFonte {porFonte} titulo={`${noAno}${ehRede ? " · rede municipal" : ""}`} comFundeb={ehRede && !!fundeb} />
+  <FolhaPorFonte {porFonte} titulo={`${noAno}${ehRede ? " · rede municipal" : ""}`} comFundeb={ehRede && !!fundeb} linkRede={ehRede ? null : linkRede} />
 
   <!-- #611 (QE-02 da P2): a folha e a receita do Fundeb -->
   {#if ehRede}

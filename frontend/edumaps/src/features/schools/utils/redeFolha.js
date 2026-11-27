@@ -74,3 +74,27 @@ export function textosFolhaFundeb(f, ano) {
   return out;
 }
 
+
+/**
+ * #614 (QF-01 da P2): no painel aberto pelo município, onde a rede declarou
+ * a folha no ano. "Em 2025, o município declarou a folha por escola em
+ * todos os meses (167 escolas). Os números abaixo são de toda a rede
+ * municipal: as escolas e o total da Secretaria."
+ */
+export function textoDeclaracaoRede(rede, ano) {
+  const fim = "Os números abaixo são de toda a rede municipal: as escolas e o total da Secretaria.";
+  if (!rede) return fim;
+  const abre = ano ? `Em ${ano}, o` : "O";
+  const esc = Number(rede.escolas_com_folha) || 0;
+  if (rede.declaracao === "escola")
+    return `${abre} município declarou a folha por escola em todos os meses (${n(esc)} ${esc === 1 ? "escola" : "escolas"}). ${fim}`;
+  if (rede.declaracao === "misto")
+    return `${abre} município declarou a folha por escola ${quando(rede.meses_escola)} e só no total da Secretaria, sem separar as escolas, ${quando(rede.meses_secretaria)}. ${fim}`;
+  return `${abre} município declarou a folha só no total da Secretaria, sem separar as escolas. ${fim}`;
+}
+
+/** #614: o endereço do painel da rede pelo município, com o ano. */
+export function urlPainelRede(codigoIbge, ano = null) {
+  if (!codigoIbge) return null;
+  return `/municipio/financeiro?codigo_ibge=${codigoIbge}${ano ? `&ano=${ano}` : ""}`;
+}

@@ -44,6 +44,7 @@ import {
   SchoolPayrollPage,
   PisoListaPage,
   SchoolFinancePage,
+  MunicipioFinanceiroPage,
   SchoolPanelPage,
   SchoolProfilePage,
   SchoolSearchPageRx,
@@ -64,6 +65,7 @@ export const routes = [
   { path: "/escola/payroll", component: SchoolPayrollPage },
   { path: "/municipio/piso", component: PisoListaPage },   // #601
   { path: "/escola/financeiro", component: SchoolFinancePage },
+  { path: "/municipio/financeiro", component: MunicipioFinanceiroPage },   // #614
   { path: "/escola/panel", component: SchoolPanelPage },
   { path: "/escola/perfil", component: SchoolProfilePage },
   { path: "/gestor", component: GestorAcessoPage },

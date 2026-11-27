@@ -11,6 +11,9 @@ import {
 } from "./fixtures.js";
 
 export const schoolsHandlers = [
+  // #614: os anos com folha da rede municipal (o link do perfil da rede)
+  http.get("/api/city/:codigoIbge/finance/anos", ({ params }) =>
+    HttpResponse.json({ codigo_ibge: params.codigoIbge, anos: params.codigoIbge === "5103403" ? [2025, 2026] : [] })),
   http.get(`/api/school/${DEMO_SCHOOL_COD_INEP}/profile`, () => {
     return HttpResponse.json(PROFILE_FIXTURE);
   }),

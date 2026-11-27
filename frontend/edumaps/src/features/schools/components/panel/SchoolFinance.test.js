@@ -372,3 +372,36 @@ describe("SchoolFinance — a folha e o Fundeb (#611)", () => {
     expect(screen.queryByTestId("folha-fundeb")).toBeNull();
   });
 });
+
+describe("SchoolFinance — a porta do painel da rede (#614)", () => {
+  const L = "/municipio/financeiro?codigo_ibge=5103403&ano=2025";
+
+  it("escola com folha própria: o link do painel da rede e o do aviso da fonte", () => {
+    render(SchoolFinance, { props: { inep: "51171805", series: SERIES, categorias: CATEGORIAS, ano: 2025, linkRede: L,
+      porFonte: { fundeb_70: 1, fundeb_30: 0, outras: 0, total: 1 } } });
+    expect(screen.getByTestId("link-painel-rede")).toHaveAttribute("href", L);
+    expect(screen.getByTestId("link-painel-rede")).toHaveTextContent("Ver o painel da rede municipal (total, Fundeb e piso)");
+    expect(screen.getByTestId("link-fundeb-rede")).toHaveAttribute("href", L);
+  });
+
+  it("escola sem folha própria: o painel da rede e o link pelo município", () => {
+    render(SchoolFinance, { props: { inep: "51091194", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, linkRede: L } });
+    expect(screen.getByText("Painel da rede municipal — não desta escola")).toBeInTheDocument();
+    expect(screen.getByTestId("link-painel-rede")).toHaveTextContent("Abrir o painel da rede pelo município");
+  });
+
+  it("sem link fora da rede municipal", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2025 } });
+    expect(screen.queryByTestId("link-painel-rede")).toBeNull();
+  });
+
+  it("pelo município: sem 'não desta escola' e a folha completa pelo município", async () => {
+    render(SchoolFinance, { props: { inep: null, porMunicipio: true, municipioIbge: "5103403", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025,
+      rede: { declaracao: "secretaria", escolas_com_folha: 0, meses_escola: [], meses_secretaria: [1, 12], partes: { escolas: 0, secretaria: 3000, fora: 0 } } } });
+    expect(screen.queryByText(/não desta escola/)).toBeNull();
+    expect(screen.getByTestId("motivo-rede")).toHaveTextContent("Em 2025, o município declarou a folha só no total da Secretaria, sem separar as escolas.");
+    await fireEvent.click(screen.getByRole("button", { name: "Ver folha completa →" }));
+    expect(router.navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/escola\/payroll\?codigo_ibge=5103403&date=/));
+  });
+});
+

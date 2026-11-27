@@ -6,8 +6,8 @@
   // conta usa a receita do Fundeb, que não está na plataforma.
   import { linhasPorFonte, formatBRL } from "../../utils/transformFinanceData.js";
 
-  /** @type {{ porFonte: object|null, titulo?: string, comFundeb?: boolean }} */
-  let { porFonte = null, titulo = "", comFundeb = false } = $props();
+  /** @type {{ porFonte: object|null, titulo?: string, comFundeb?: boolean, linkRede?: string|null }} */
+  let { porFonte = null, titulo = "", comFundeb = false, linkRede = null } = $props();
 
   const linhas = $derived(linhasPorFonte(porFonte));
   const pct = (v) => v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -37,6 +37,10 @@
       {#if comFundeb}
         Não é a verificação do mínimo de 70% exigido em lei; a parte da receita
         do Fundeb está no bloco "A folha e o Fundeb".
+      {:else if linkRede}
+        Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a
+        receita do Fundeb do município, que está no
+        <a class="underline text-blue-700" href={linkRede} data-testid="link-fundeb-rede">painel da rede municipal</a>.
       {:else}
         Não é a verificação do mínimo de 70% exigido em lei: essa conta usa a
         receita do Fundeb do município, que só aparece no painel da rede.

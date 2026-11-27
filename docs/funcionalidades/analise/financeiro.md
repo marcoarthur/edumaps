@@ -34,6 +34,10 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
   (não como se fosse da unidade), dizendo por quê conforme o ano e de onde
   vem o total, com a folha detalhada da rede inteira no mês e onde cada
   pagamento foi declarado.
+- Sistema pode **abrir o painel financeiro da rede municipal pelo
+  município**, a partir do perfil da rede e do painel de cada escola da rede,
+  sem depender de uma escola fora da folha, com o ano no endereço para o
+  link compartilhado abrir no ano escolhido.
 - Sistema pode **marcar, na folha detalhada do mês, quem fica abaixo do piso
   no ano**, com a mesma regra da contagem da rede, e filtrar a lista por
   situação (efetivo, temporário, outras) e por essa marca, para conferir os
