@@ -41,6 +41,13 @@ describe("PisoListaPage (#601)", () => {
     expect(screen.getByTestId("contagem-lista-piso")).toHaveTextContent("1 pessoa · página 1 de 1");
   });
 
+  it("#604: o aviso de que a folha não se compara ao ano anterior", async () => {
+    mocks.getPisoLista.mockResolvedValue({ codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", ano: 2026, piso: 5130.63, total: 1,
+      pessoas: [pessoa(1, "temporario", 4000)], comparacao_ano_anterior: { ano_anterior: 2025, comparavel: false, motivos: ["magisterio", "secretaria"], magisterio: 6578, magisterio_anterior: 3485, so_secretaria: 3141, so_secretaria_anterior: 60, pct_so_secretaria: 48, pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 6 } });
+    render(PisoListaPage);
+    expect(await screen.findByTestId("quebra-ano-lista")).toHaveTextContent("A folha de 2026 não se compara à de 2025");
+  });
+
   it("sem piso no ano: diz o motivo", async () => {
     mocks.getPisoLista.mockRejectedValue(new ApiError("Sem piso cadastrado para 2001", { status: 404 }));
     render(PisoListaPage);

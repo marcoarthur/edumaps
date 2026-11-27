@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoPisoPerfil, textoSalarioEscola } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoPisoPerfil, textoSalarioEscola, textoQuebraAno } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -90,5 +90,23 @@ describe("salário da escola (#589)", () => {
       .toBe("salário total R$ 9.341 e base R$ 6.100 (medianas por mês, sem dezembro, de 36 profissionais do magistério); carga mais comum: 30; 30% acima da rede no salário total");
     expect(textoSalarioEscola({ pessoas: 2, total: 1000, base: 600 }, { total: 1250 })).toContain("20% abaixo da rede");
     expect(textoSalarioEscola(null, { total: 1 })).toBe("");
+  });
+});
+
+describe("folha que não se compara ao ano anterior (#604)", () => {
+  const C = { ano_anterior: 2025, comparavel: false, motivos: ["magisterio", "secretaria"], magisterio: 6578, magisterio_anterior: 3485, so_secretaria: 3141, so_secretaria_anterior: 60, pct_so_secretaria: 48, pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 6 };
+  it("os dois motivos e o número do ano anterior", () => {
+    expect(textoQuebraAno(C, 2026)).toBe("A folha de 2026 não se compara à de 2025: o magistério declarado passou de 3.485 para 6.578, e os pagos só no total da Secretaria de 60 (2%) para 3.141 (48%). "
+      + "Pode ser uma mudança na forma de o município declarar ao SIOPE, e não na rede. Em 2025, 6 ficaram abaixo do piso.");
+  });
+  it("só a Secretaria; sem a contagem do ano anterior", () => {
+    const t = textoQuebraAno({ ...C, motivos: ["secretaria"], abaixo_piso_anterior: null }, 2026);
+    expect(t).toContain("não se compara à de 2025: os pagos só no total da Secretaria passaram de 60 (2%) para 3.141 (48%).");
+    expect(t).not.toContain("abaixo do piso");
+    expect(textoQuebraAno({ ...C, abaixo_piso_anterior: 1 }, 2026)).toContain("Em 2025, 1 ficou abaixo do piso.");
+  });
+  it("comparável ou sem o ano anterior: nada", () => {
+    expect(textoQuebraAno({ ...C, comparavel: true, motivos: [] }, 2026)).toBe("");
+    expect(textoQuebraAno(null, 2026)).toBe("");
   });
 });

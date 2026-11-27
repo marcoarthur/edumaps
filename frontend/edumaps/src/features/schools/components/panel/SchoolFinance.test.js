@@ -219,6 +219,20 @@ describe("SchoolFinance — piso na rede (#575)", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S, municipioIbge: "5103403" } });
     expect(screen.getByTestId("link-lista-piso").getAttribute("href")).toBe("/municipio/piso?ibge=5103403&ano=2026");
   });
+  it("#604: o aviso de que a folha não se compara ao ano anterior, nos dois painéis", () => {
+    const C = { ano_anterior: 2025, comparavel: false, motivos: ["magisterio", "secretaria"], magisterio: 6578, magisterio_anterior: 3485, so_secretaria: 3141, so_secretaria_anterior: 60, pct_so_secretaria: 48, pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 6 };
+    const { unmount } = render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: { ...S, comparacao_ano_anterior: C } } });
+    expect(screen.getByTestId("quebra-ano")).toHaveTextContent("A folha de 2026 não se compara à de 2025");
+    expect(screen.getByTestId("quebra-ano")).toHaveTextContent("Em 2025, 6 ficaram abaixo do piso.");
+    unmount();
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2026, salarioRede: { ...S, comparacao_ano_anterior: C } } });
+    expect(screen.getByTestId("quebra-ano")).toBeInTheDocument();
+  });
+  it("#604: comparável, sem o aviso", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026,
+      salarioRede: { ...S, comparacao_ano_anterior: { ano_anterior: 2025, comparavel: true, motivos: [] } } } });
+    expect(screen.queryByTestId("quebra-ano")).toBeNull();
+  });
   it("não no painel da escola", () => {
     render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, ano: 2026, salarioRede: S } });
     expect(screen.getByTestId("salario-rede")).toBeInTheDocument();

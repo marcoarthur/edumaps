@@ -40,6 +40,11 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode **entregar a lista do ano de quem fica abaixo do piso na rede
   municipal**, uma pessoa por linha (situação, carga, salário base, meses e
   onde recebeu), com a regra e o total da contagem, para baixar em planilha.
+- Sistema pode **avisar quando a folha de um ano não se compara à do ano
+  anterior** (o município mudou a forma de declarar ao SIOPE: o magistério
+  declarado ou a parte paga só pela Secretaria mudou muito), dizendo o que
+  mudou e a contagem abaixo do piso do ano anterior, para que o salto não
+  seja lido como mudança na rede.
 - Quando não há folha para a escola, o sistema diz o motivo (escola fora da
   rede municipal, município ainda sem dados, ou o SIOPE não traz a escola) e
   de quais municípios há folha, com os anos e se o dado é por escola ou só o

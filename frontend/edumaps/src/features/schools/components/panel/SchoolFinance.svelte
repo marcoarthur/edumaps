@@ -6,7 +6,7 @@
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
   import { urlPisoPagina } from "../../api/pisoApi.js";   // #601
-  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
+  import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoQuebraAno, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
     buildCostRows,
@@ -203,6 +203,10 @@
       {#if !ehRede && salarioEscola?.pessoas}
         <!-- #589 (P1-FL-03): a escola na mesma conta da rede -->
         <span class="block mt-1" data-testid="salario-escola"><strong>Nesta escola{ano ? ` em ${ano}` : ""}:</strong> {textoSalarioEscola(salarioEscola, salarioRede)}.</span>
+      {/if}
+      {#if textoQuebraAno(salarioRede.comparacao_ano_anterior, ano)}
+        <!-- #604 (QD-02 da P2): a folha do ano não se compara à do anterior -->
+        <span class="block text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-2 py-1 mt-1" role="note" data-testid="quebra-ano">{textoQuebraAno(salarioRede.comparacao_ano_anterior, ano)}</span>
       {/if}
       {#if ehRede && textoPisoRede(salarioRede, ano)}
         <!-- #575 (QH-01 da P5): só no painel da Secretaria (A1) -->

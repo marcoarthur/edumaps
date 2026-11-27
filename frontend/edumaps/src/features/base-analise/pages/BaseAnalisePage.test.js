@@ -90,7 +90,9 @@ describe("BaseAnalisePage (#439)", () => {
     expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Taubaté: salário total R$ 6.975 e base R$ 2.669");
     // #575: o piso na rede inteira (Ubatuba), com a Secretaria
     expect(screen.getByTestId("piso-rede-base")).toHaveTextContent("6 profissionais do magistério, 3 deles só no total da Secretaria");
-    expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("carga mais comum: 31. Abaixo do piso");
+    // #604: a folha que não se compara ao ano anterior
+    expect(screen.getByTestId("quebra-ano-base")).toHaveTextContent("A folha de 2026 não se compara à de 2025: os pagos só no total da Secretaria passaram de 20 (2%) para 400 (29%)");
+    expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Em 2025, 1 ficou abaixo do piso. Abaixo do piso de 2026");
     expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_siope=2026");
 
     // escolher outro ano: vale a escolha, com o aviso de que sai vazio

@@ -115,6 +115,32 @@ export function textoPisoRede(s, ano) {
 }
 
 /**
+ * #604 (QD-02 da P2): a folha do magistério do ano não se compara à do ano
+ * anterior (o município pode ter mudado a forma de declarar ao SIOPE). Com a
+ * comparação de salario_rede.comparacao_ano_anterior; comparável ou sem o
+ * ano anterior: "".
+ * "A folha de 2026 não se compara à de 2025: o magistério declarado passou
+ * de 3.485 para 6.578, e os pagos só no total da Secretaria de 60 (2%) para
+ * 3.141 (48%). Pode ser uma mudança na forma de o município declarar ao
+ * SIOPE, e não na rede. Em 2025, 6 ficaram abaixo do piso."
+ */
+export function textoQuebraAno(c, ano) {
+  if (!c || c.comparavel !== false) return "";
+  const n = (v) => Number(v).toLocaleString("pt-BR");
+  const a0 = c.ano_anterior;
+  const partes = [];
+  const mot = c.motivos ?? [];
+  if (mot.includes("magisterio")) partes.push(`o magistério declarado passou de ${n(c.magisterio_anterior)} para ${n(c.magisterio)}`);
+  if (mot.includes("secretaria"))
+    partes.push(`os pagos só no total da Secretaria ${partes.length ? "" : "passaram "}de ${n(c.so_secretaria_anterior)} (${c.pct_so_secretaria_anterior}%) para ${n(c.so_secretaria)} (${c.pct_so_secretaria}%)`);
+  if (!partes.length) return "";
+  const ab = c.abaixo_piso_anterior;
+  const antes = ab == null ? "" : ` Em ${a0}, ${n(ab)} ${Number(ab) === 1 ? "ficou" : "ficaram"} abaixo do piso.`;
+  return `A folha${ano ? ` de ${ano}` : ""} não se compara à de ${a0}: ${partes.join(", e ")}. `
+    + `Pode ser uma mudança na forma de o município declarar ao SIOPE, e não na rede.${antes}`;
+}
+
+/**
  * #597 (QB-01 da P2): quem fica abaixo do piso, pela situação declarada ao
  * SIOPE, e o perfil mais comum: "Deles, 1.422 temporários e 137 efetivos
  * (pela situação dos mais meses no ano). O mais comum entre eles: 30 horas,
