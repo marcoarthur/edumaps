@@ -10,7 +10,7 @@ import PisoListaPage from "./PisoListaPage.svelte";
 
 const pessoa = (i, sit, base40) => ({
   nome: `PESSOA ${String(i).padStart(3, "0")}`, cpf_mascarado: `xxx.${i}-xx`, situacao: sit, carga_comum: 30,
-  base_mensal_mediana: 3212.71, base_40h: base40, meses: 8, secretaria: true, inep_escolas: [], escolas: [],
+  base_mensal_tipica: 3212.71, base_40h: base40, piso_proporcional: 3847.97, diferenca_mensal: 635.26, meses: 8, secretaria: true, inep_escolas: [], escolas: [],
 });
 
 describe("PisoListaPage (#601)", () => {
@@ -46,6 +46,16 @@ describe("PisoListaPage (#601)", () => {
       pessoas: [pessoa(1, "temporario", 4000)], comparacao_ano_anterior: { ano_anterior: 2025, comparavel: false, motivos: ["magisterio", "secretaria"], magisterio: 6578, magisterio_anterior: 3485, so_secretaria: 3141, so_secretaria_anterior: 60, pct_so_secretaria: 48, pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 6 } });
     render(PisoListaPage);
     expect(await screen.findByTestId("quebra-ano-lista")).toHaveTextContent("A folha de 2026 não se compara à de 2025");
+  });
+
+  it("#605: o custo na página e as colunas da diferença", async () => {
+    mocks.getPisoLista.mockResolvedValue({ codigo_ibge: "5103403", municipio: "Cuiabá", uf: "MT", ano: 2026, piso: 5130.63, total: 1,
+      diferenca_mensal: 635.26, diferenca_situacao: { efetivo: 0, temporario: 635.26, outros: 0 }, pessoas: [pessoa(1, "temporario", 4283.61)] });
+    render(PisoListaPage);
+    expect(await screen.findByTestId("custo-lista-piso")).toHaveTextContent("faltam R$ 635,26 por mês; em 13 salários, cerca de R$ 8,3 mil no ano, pelo piso de 2026");
+    expect(screen.getByText("Falta por mês")).toBeInTheDocument();
+    expect(screen.getByText("Piso na carga")).toBeInTheDocument();
+    expect(screen.getByText("R$ 635,26")).toBeInTheDocument();
   });
 
   it("sem piso no ano: diz o motivo", async () => {

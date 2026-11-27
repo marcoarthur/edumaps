@@ -93,6 +93,8 @@ describe("BaseAnalisePage (#439)", () => {
     // #604: a folha que não se compara ao ano anterior
     expect(screen.getByTestId("quebra-ano-base")).toHaveTextContent("A folha de 2026 não se compara à de 2025: os pagos só no total da Secretaria passaram de 20 (2%) para 400 (29%)");
     expect(screen.getByTestId("salario-rede-base")).toHaveTextContent("Em 2025, 1 ficou abaixo do piso. Abaixo do piso de 2026");
+    // #605: o custo até o piso, na mesma frase
+    expect(screen.getByTestId("piso-rede-base")).toHaveTextContent("faltam R$ 3.200,50 por mês; em 13 salários, cerca de R$ 41,6 mil no ano, pelo piso de 2026");
     expect(screen.getByTestId("baixar-base").getAttribute("href")).toContain("ano_siope=2026");
 
     // escolher outro ano: vale a escolha, com o aviso de que sai vazio

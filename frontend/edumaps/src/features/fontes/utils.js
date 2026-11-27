@@ -111,6 +111,7 @@ export function textoPisoRede(s, ano) {
   const daSec = sec ? `, ${sec.toLocaleString("pt-BR")} ${sec === 1 ? "dele" : "deles"} só no total da Secretaria` : "";
   return `Abaixo do piso${ano ? ` de ${ano}` : ""} (${brl2(s.piso)} por 40 horas) no mês típico, entre quem recebeu 3 meses ou mais: ${pessoas}${daSec}. `
     + textoPisoPerfil(s)
+    + textoPisoCusto(s, ano)
     + "Não é a verificação legal do piso (complementos, jornada, licenças, reajuste pago com atraso), e o total da Secretaria pode ter pagamentos parciais.";
 }
 
@@ -162,11 +163,44 @@ export function textoPisoPerfil(s) {
   const p = s.abaixo_piso_perfil;
   if (p && p.carga != null && p.base != null) {
     const h = n(p.carga);
-    t += `O mais comum entre eles: ${h} horas, com salário base mediano de ${brl2(p.base)} por mês`
+    // #606 (QD-03 da P2): a base é a mediana só de quem tem essa carga
+    const quantos = p.pessoas_carga != null && Number(p.pessoas_carga) !== Number(s.abaixo_piso) ? ` (${n(p.pessoas_carga)} de ${n(s.abaixo_piso)})` : "";
+    t += `O mais comum entre eles: ${h} horas${quantos}, com salário base mediano de ${brl2(p.base)} por mês`
       + (p.piso_proporcional != null && Number(p.carga) !== 40 ? ` (o piso proporcional a ${h} horas é ${brl2(p.piso_proporcional)})` : "")
       + ". ";
   }
   return t;
+}
+
+/**
+ * #605 (QD-01 da P2): quanto falta por mês para pôr todos no piso
+ * proporcional à carga, por situação, e o ano em 13 salários. "Para pôr
+ * todos no piso proporcional à carga, faltam R$ 1.027.436,19 por mês
+ * (R$ 939.298,66 dos temporários e R$ 88.137,53 dos efetivos); em 13
+ * salários, cerca de R$ 13,4 milhões no ano, pelo piso de 2026, sem férias,
+ * encargos nem gratificações. " Sem a conta: "".
+ */
+export function textoPisoCusto(s, ano) {
+  const v = Number(s?.abaixo_piso_diferenca_mensal);
+  if (!v || !Number(s.abaixo_piso)) return "";
+  const sit = s.abaixo_piso_diferenca_situacao ?? {};
+  const partes = [
+    [Number(sit.temporario) || 0, "dos temporários"],
+    [Number(sit.efetivo) || 0, "dos efetivos"],
+    [Number(sit.outros) || 0, "dos de outra situação"],
+  ].filter(([x]) => x > 0).sort((a, b) => b[0] - a[0]).map(([x, r]) => `${brl2(x)} ${r}`);
+  const abre = partes.length > 1 ? ` (${partes.slice(0, -1).join(", ")} e ${partes.at(-1)})` : "";
+  return `Para pôr todos no piso proporcional à carga, faltam ${brl2(v)} por mês${abre}; `
+    + `em 13 salários, cerca de ${brlAprox(v * 13)} no ano, pelo piso${ano ? ` de ${ano}` : " do ano"}, sem férias, encargos nem gratificações. `;
+}
+
+// "R$ 13,4 milhões", "R$ 29,8 mil", "R$ 850"
+export function brlAprox(v) {
+  const x = Number(v);
+  const f = (y) => y.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  if (x >= 1e6) return `R$ ${f(x / 1e6)} ${x >= 2e6 ? "milhões" : "milhão"}`;
+  if (x >= 1e3) return `R$ ${f(x / 1e3)} mil`;
+  return `R$ ${Math.round(x).toLocaleString("pt-BR")}`;
 }
 
 const brl2 = (v) => `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

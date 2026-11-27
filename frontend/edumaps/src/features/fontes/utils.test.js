@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoPisoPerfil, textoSalarioEscola, textoQuebraAno } from "./utils.js";
+import { listaMeses, sufixoIncompletos, faixasMeses, textoAnoFolha, textoSalarioRede, textoPisoRede, textoPisoPerfil, textoSalarioEscola, textoQuebraAno, textoPisoCusto, brlAprox } from "./utils.js";
 
 describe("meses incompletos da folha (#557)", () => {
   const SET = { nome: "setembro" };
@@ -108,5 +108,34 @@ describe("folha que não se compara ao ano anterior (#604)", () => {
   it("comparável ou sem o ano anterior: nada", () => {
     expect(textoQuebraAno({ ...C, comparavel: true, motivos: [] }, 2026)).toBe("");
     expect(textoQuebraAno(null, 2026)).toBe("");
+  });
+});
+
+describe("custo até o piso (#605) e perfil pela carga (#606)", () => {
+  const S = { piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421,
+    abaixo_piso_situacao: { efetivo: 142, temporario: 1417, outros: 0 },
+    abaixo_piso_perfil: { carga: 30, pessoas_carga: 1512, base: 3212.71, piso_proporcional: 3847.97 },
+    abaixo_piso_diferenca_mensal: 1027436.19, abaixo_piso_diferenca_situacao: { efetivo: 88137.53, temporario: 939298.66, outros: 0 } };
+  it("o custo por mês, por situação e no ano", () => {
+    expect(textoPisoCusto(S, 2026)).toBe("Para pôr todos no piso proporcional à carga, faltam R$ 1.027.436,19 por mês (R$ 939.298,66 dos temporários e R$ 88.137,53 dos efetivos); "
+      + "em 13 salários, cerca de R$ 13,4 milhões no ano, pelo piso de 2026, sem férias, encargos nem gratificações. ");
+  });
+  it("na frase do piso, depois do perfil e antes do aviso", () => {
+    const t = textoPisoRede(S, 2026);
+    expect(t).toContain("O mais comum entre eles: 30 horas (1.512 de 1.559), com salário base mediano de R$ 3.212,71 por mês");
+    expect(t.indexOf("O mais comum")).toBeLessThan(t.indexOf("Para pôr todos"));
+    expect(t.indexOf("Para pôr todos")).toBeLessThan(t.indexOf("Não é a verificação legal"));
+  });
+  it("um só na situação; sem a conta, nada", () => {
+    expect(textoPisoCusto({ abaixo_piso: 1, abaixo_piso_diferenca_mensal: 847.97, abaixo_piso_diferenca_situacao: { temporario: 847.97 } }, 2026))
+      .toContain("faltam R$ 847,97 por mês; em 13 salários, cerca de R$ 11 mil no ano");
+    expect(textoPisoCusto({ abaixo_piso: 0, abaixo_piso_diferenca_mensal: 0 }, 2026)).toBe("");
+    expect(textoPisoCusto(null, 2026)).toBe("");
+  });
+  it("valores aproximados", () => {
+    expect(brlAprox(13356674)).toBe("R$ 13,4 milhões");
+    expect(brlAprox(1200000)).toBe("R$ 1,2 milhão");
+    expect(brlAprox(29764)).toBe("R$ 29,8 mil");
+    expect(brlAprox(850.4)).toBe("R$ 850");
   });
 });

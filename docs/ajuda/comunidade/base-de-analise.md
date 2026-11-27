@@ -220,7 +220,10 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     mediano por mês e o piso proporcional a essa carga. Na folha por
     município, as colunas `abaixo_piso_efetivos`, `abaixo_piso_temporarios`,
     `abaixo_piso_outros`, `abaixo_piso_carga_comum` e
-    `abaixo_piso_base_mediana`. Ao lado da frase, "Ver a lista do ano"
+    `abaixo_piso_base_mediana` (a mediana só de quem tem a carga mais
+    comum). A frase diz também quanto falta por mês para pôr todos no piso
+    proporcional à carga, e em 13 salários no ano (sem férias, encargos nem
+    gratificações); coluna `abaixo_piso_diferenca_mensal`. Ao lado da frase, "Ver a lista do ano"
     abre as pessoas abaixo do piso no município, com o CSV.
   - **A folha que não se compara ao ano anterior.** Quando o magistério
     declarado cresce 50% ou mais (ou cai um terço ou mais, com o ano tão
