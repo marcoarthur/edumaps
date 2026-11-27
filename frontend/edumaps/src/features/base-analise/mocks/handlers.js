@@ -20,7 +20,11 @@ export const baseAnaliseHandlers = [
                   por_fonte: { fundeb_70: 63980190, fundeb_30: 208437, outras: 3507782 },
                   fora: [{ inep: "35659605", escola: "JOSE LIBORIO - SEU FRANCA EM", valor: 267757 }] },
                 salario_magisterio: { pessoas: 1374, total: 7186, base: 5572, carga_comum: 31, carga_suspeita: false,
-                  piso: 5130.63, abaixo_piso: 6, abaixo_piso_so_secretaria: 3 } }] },
+                  piso: 5130.63, abaixo_piso: 6, abaixo_piso_so_secretaria: 3,
+                  // #604: a folha de 2026 não se compara à de 2025
+                  comparacao_ano_anterior: { ano_anterior: 2025, comparavel: false, motivos: ["secretaria"], magisterio: 1374,
+                    magisterio_anterior: 1300, so_secretaria: 400, so_secretaria_anterior: 20, pct_so_secretaria: 29,
+                    pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 1 } } }] },
             ] }
         : { padrao: null, escolas: {}, municipios: [] };
     return HttpResponse.json({ ...BASE_ANALISE_FIXTURE, total, folha });

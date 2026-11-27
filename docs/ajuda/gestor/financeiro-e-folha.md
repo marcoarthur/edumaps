@@ -82,6 +82,17 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   lista filtra pela situação, busca pelo nome, ordena a lista inteira e
   baixa em CSV (o anexo de uma resposta ao tribunal de contas). É a mesma
   regra e o mesmo total da frase do painel.
+- **Saber se a folha de um ano se compara à do anterior.** De um ano para
+  o outro, o município pode mudar a forma de declarar ao SIOPE (passar a
+  declarar no total da Secretaria quem vinha nas escolas, ou quem não
+  vinha), e a contagem abaixo do piso salta sem que a rede tenha mudado.
+  O painel e a lista do ano avisam quando a folha do magistério **não se
+  compara** à do ano anterior: o magistério declarado cresceu 50% ou mais
+  (ou caiu um terço ou mais, com o ano tão completo quanto o anterior), ou
+  a parte dos pagos só no total da Secretaria mudou 20 pontos ou mais. O
+  aviso diz o que mudou e quantos ficaram abaixo do piso no ano anterior.
+  Em Cuiabá: 6 abaixo do piso em 2025 e 1.559 em 2026, com o magistério de
+  3.485 para 6.578 e os pagos só na Secretaria de 60 (2%) para 3.141 (48%).
 - **Conferir na folha detalhada quem fica abaixo do piso.** A folha do mês
   (da escola ou do total da Secretaria) traz, para cada profissional do
   magistério, a **base por 40 h no ano** (a do mês típico, em toda a folha

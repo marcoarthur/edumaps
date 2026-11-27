@@ -222,6 +222,14 @@ indicadores que você escolher. Cada arquivo diz de que ano são os dados, e o
     `abaixo_piso_outros`, `abaixo_piso_carga_comum` e
     `abaixo_piso_base_mediana`. Ao lado da frase, "Ver a lista do ano"
     abre as pessoas abaixo do piso no município, com o CSV.
+  - **A folha que não se compara ao ano anterior.** Quando o magistério
+    declarado cresce 50% ou mais (ou cai um terço ou mais, com o ano tão
+    completo quanto o anterior), ou a parte dos pagos só no total da
+    Secretaria muda 20 pontos ou mais, a tela avisa ao lado do município,
+    com o que mudou e a contagem abaixo do piso do ano anterior. Pode ser
+    uma mudança na forma de declarar ao SIOPE, e não na rede. Na folha por
+    município, a coluna `comparavel_ano_anterior` ("sim", "não" ou vazio,
+    sem o ano anterior).
   - **O salário da rede inteira.** Com o bloco marcado, a tela diz, por
     município, o salário do magistério de toda a folha (escolas e total da
     Secretaria): a mediana do total e do base, por mês e sem dezembro, e a

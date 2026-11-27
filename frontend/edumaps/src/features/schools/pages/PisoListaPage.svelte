@@ -6,6 +6,7 @@
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
   import { ApiError } from "@/shared/api/client.js";
   import { getPisoLista, urlPisoCsv } from "../api/pisoApi.js";
+  import { textoQuebraAno } from "@/features/fontes/utils.js";
 
   const POR_PAGINA = 100;
   let dados = $state(null);
@@ -86,6 +87,12 @@
       {["temporario", "efetivo", "outros"].filter((s) => porSituacao[s]).map((s) => `${porSituacao[s].toLocaleString("pt-BR")} ${s === "outros" ? "de outra situação" : ROTULO_SIT[s] + (porSituacao[s] === 1 ? "" : "s")}`).join(", ")}.
       É a mesma regra da contagem do painel; a situação é a dos mais meses no ano.
     </p>
+    {#if textoQuebraAno(dados.comparacao_ano_anterior, dados.ano)}
+      <!-- #604 (QD-02 da P2): a folha do ano não se compara à do anterior -->
+      <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note" data-testid="quebra-ano-lista">
+        {textoQuebraAno(dados.comparacao_ano_anterior, dados.ano)}
+      </p>
+    {/if}
     <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3" role="note">
       Não é a verificação legal do piso: complementos, jornada, licenças e reajuste pago com atraso mudam a leitura. O total da Secretaria
       pode ter pagamentos parciais. O CPF é o que o SIOPE publica, mascarado.
