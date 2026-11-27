@@ -28,11 +28,12 @@ Gestores escolares, gestão pública, pesquisadores e investidores.
 - Sistema pode **contar cada profissional uma vez**, pela pessoa (CPF mascarado
   e nome), sem juntar pessoas diferentes que o SIOPE publica com o mesmo CPF
   mascarado.
-- Quando o SIOPE de um município não detalha a folha por escola, o sistema pode
-  apresentar o **agregado da Secretaria municipal**, claramente **escopado como
-  rede municipal** (não como se fosse da unidade), com aviso de que os números
-  não permitem identificar quem atua na escola. A folha detalhada (nomes) fica
-  indisponível nesse caso.
+- Quando a escola não tem folha própria no SIOPE, o sistema pode apresentar o
+  **painel de toda a rede municipal** (as escolas, o total da Secretaria e
+  escolas fora da lista do Censo), claramente **escopado como rede municipal**
+  (não como se fosse da unidade), dizendo por quê conforme o ano e de onde
+  vem o total, com a folha detalhada da rede inteira no mês e onde cada
+  pagamento foi declarado.
 - Sistema pode **marcar, na folha detalhada do mês, quem fica abaixo do piso
   no ano**, com a mesma regra da contagem da rede, e filtrar a lista por
   situação (efetivo, temporário, outras) e por essa marca, para conferir os

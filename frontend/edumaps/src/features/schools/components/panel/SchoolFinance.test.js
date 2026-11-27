@@ -60,7 +60,7 @@ describe("SchoolFinance", () => {
         series: SERIES,
         categorias: CATEGORIAS,
         totalProfissionais: 3632,
-        origem: "secretaria",
+        origem: "rede",
       },
     });
 
@@ -93,7 +93,7 @@ describe("SchoolFinance — por fonte de recurso (#553)", () => {
   });
 
   it("no total da Secretaria, diz que é a rede municipal", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", porFonte: { ...UBATUBA } } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", porFonte: { ...UBATUBA } } });
     expect(screen.getByTestId("folha-por-fonte")).toHaveTextContent("rede municipal");
   });
 
@@ -144,7 +144,7 @@ describe("SchoolFinance — meses da Secretaria (#558)", () => {
     expect(screen.getByTestId("aviso-meses-secretaria")).toHaveTextContent("nesse mês");
   });
   it("no painel da Secretaria, sem o aviso", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", mesesSecretaria: [3] } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", mesesSecretaria: [3] } });
     expect(screen.queryByTestId("aviso-meses-secretaria")).toBeNull();
   });
 });
@@ -168,7 +168,7 @@ describe("SchoolFinance — docentes da folha e do Censo (#567)", () => {
     expect(screen.queryByTestId("aviso-so-secretaria")).toBeNull();
   });
   it("no painel da Secretaria, sem o bloco", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", docentes: DOC } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", docentes: DOC } });
     expect(screen.queryByTestId("docentes-folha-censo")).toBeNull();
   });
 });
@@ -195,7 +195,7 @@ describe("SchoolFinance — meses e a soma das categorias (#568)", () => {
 describe("SchoolFinance — salário da rede (#571)", () => {
   const S = { pessoas: 2961, total: 6975, base: 2669, carga_comum: 18 };
   it("também no painel da Secretaria", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026, salarioRede: S } });
     expect(screen.getByTestId("salario-rede")).toHaveTextContent("Magistério na rede municipal em 2026: salário total R$ 6.975 e base R$ 2.669");
     expect(screen.getByTestId("salario-rede")).toHaveTextContent("sem conversão para 40 horas");
   });
@@ -210,23 +210,23 @@ describe("SchoolFinance — piso na rede (#575)", () => {
   const S = { pessoas: 6578, total: 5049, base: 4751, carga_comum: 30, carga_suspeita: false, piso: 5130.63, abaixo_piso: 1559, abaixo_piso_so_secretaria: 1421,
     abaixo_piso_situacao: { efetivo: 137, temporario: 1422, outros: 0 }, abaixo_piso_perfil: { carga: 30, base: 3212.71, piso_proporcional: 3847.97 } };
   it("no painel da Secretaria", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026, salarioRede: S } });
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("1.559 profissionais do magistério, 1.421 deles só no total da Secretaria");
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("Deles, 1.422 temporários e 137 efetivos");   // #597
     expect(screen.queryByTestId("link-lista-piso")).toBeNull();   // sem o código do município, sem link
   });
   it("#605: o custo até o piso na frase do painel", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026,
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026,
       salarioRede: { ...S, abaixo_piso_diferenca_mensal: 1027436.19, abaixo_piso_diferenca_situacao: { efetivo: 88137.53, temporario: 939298.66, outros: 0 } } } });
     expect(screen.getByTestId("piso-rede")).toHaveTextContent("faltam R$ 1.027.436,19 por mês (R$ 939.298,66 dos temporários e R$ 88.137,53 dos efetivos)");
   });
   it("#601: o link para a lista do ano", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: S, municipioIbge: "5103403" } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026, salarioRede: S, municipioIbge: "5103403" } });
     expect(screen.getByTestId("link-lista-piso").getAttribute("href")).toBe("/municipio/piso?ibge=5103403&ano=2026");
   });
   it("#604: o aviso de que a folha não se compara ao ano anterior, nos dois painéis", () => {
     const C = { ano_anterior: 2025, comparavel: false, motivos: ["magisterio", "secretaria"], magisterio: 6578, magisterio_anterior: 3485, so_secretaria: 3141, so_secretaria_anterior: 60, pct_so_secretaria: 48, pct_so_secretaria_anterior: 2, abaixo_piso_anterior: 6 };
-    const { unmount } = render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026, salarioRede: { ...S, comparacao_ano_anterior: C } } });
+    const { unmount } = render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026, salarioRede: { ...S, comparacao_ano_anterior: C } } });
     expect(screen.getByTestId("quebra-ano")).toHaveTextContent("A folha de 2026 não se compara à de 2025");
     expect(screen.getByTestId("quebra-ano")).toHaveTextContent("Em 2025, 6 ficaram abaixo do piso.");
     unmount();
@@ -234,7 +234,7 @@ describe("SchoolFinance — piso na rede (#575)", () => {
     expect(screen.getByTestId("quebra-ano")).toBeInTheDocument();
   });
   it("#604: comparável, sem o aviso", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", ano: 2026,
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026,
       salarioRede: { ...S, comparacao_ano_anterior: { ano_anterior: 2025, comparavel: true, motivos: [] } } } });
     expect(screen.queryByTestId("quebra-ano")).toBeNull();
   });
@@ -263,12 +263,12 @@ describe("SchoolFinance — mês incompleto com a carga registrada (#576)", () =
 
 // #585 (QE-01 da P2): a folha detalhada do total da Secretaria.
 describe("SchoolFinance — folha da Secretaria (#585)", () => {
-  it("no painel da Secretaria, o botão leva à folha da Secretaria", async () => {
-    render(SchoolFinance, { props: { inep: "35010919", series: SERIES, categorias: CATEGORIAS, origem: "secretaria" } });
+  it("#610: no painel da rede, o botão leva à folha da rede inteira", async () => {
+    render(SchoolFinance, { props: { inep: "35010919", series: SERIES, categorias: CATEGORIAS, origem: "rede" } });
     const b = screen.getByRole("button", { name: /Ver folha completa/ });
     expect(b).not.toBeDisabled();
     await fireEvent.click(b);
-    expect(router.navigate).toHaveBeenCalledWith(expect.stringContaining("&secretaria=1"));
+    expect(router.navigate).toHaveBeenCalledWith(expect.stringContaining("&rede=1"));
   });
   it("no painel da escola com gente só na Secretaria, o atalho", () => {
     render(SchoolFinance, { props: { inep: "35070212", series: SERIES, categorias: CATEGORIAS,
@@ -291,7 +291,33 @@ describe("SchoolFinance — salário da escola (#589)", () => {
     expect(screen.getByTestId("salario-escola")).toHaveTextContent("30% acima da rede no salário total");
   });
   it("não no painel da Secretaria", () => {
-    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "secretaria", salarioRede: REDE, salarioEscola: ESC } });
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", salarioRede: REDE, salarioEscola: ESC } });
     expect(screen.queryByTestId("salario-escola")).toBeNull();
+  });
+});
+
+// #610 (QE-01 da P2): o painel da rede municipal inteira, com o motivo do ano
+// e de onde vem o total.
+describe("SchoolFinance — rede inteira (#610)", () => {
+  const R = (declaracao, extra = {}) => ({ declaracao, escolas_com_folha: 167, meses_escola: [], meses_secretaria: [],
+    partes: { escolas: 472422467.32, secretaria: 17050529.49, fora: 0 }, ...extra });
+  it("por escola no ano: a escola não aparece, e as partes do total", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2025, rede: R("escola") } });
+    expect(screen.getByTestId("motivo-rede")).toHaveTextContent("Esta escola não aparece na folha do SIOPE de 2025, embora o município declare por escola (167 escolas).");
+    expect(screen.getByTestId("motivo-rede")).toHaveTextContent("toda a rede municipal (escolas e total da Secretaria)");
+    expect(screen.getByTestId("partes-rede")).toHaveTextContent("Desse total, R$ 472,4 mi nas escolas da lista do Censo e R$ 17,1 mi no total da Secretaria (sem escola).");
+    expect(screen.getAllByText(/Rede municipal \(escolas e Secretaria\)/).length).toBeGreaterThan(0);
+  });
+  it("misto: os meses por escola e os da Secretaria", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2026,
+      rede: R("misto", { meses_escola: [1, 2], meses_secretaria: [3, 4, 5, 6, 7, 8], partes: { escolas: 58309950, secretaria: 295872843, fora: 28235 } }) } });
+    expect(screen.getByTestId("motivo-rede")).toHaveTextContent("Em 2026, o município declarou a folha por escola em janeiro e fevereiro e só no total da Secretaria, sem separar as escolas, de março a agosto");
+    expect(screen.getByTestId("partes-rede")).toHaveTextContent("R$ 58,3 mi nas escolas da lista do Censo, R$ 295,9 mi no total da Secretaria (sem escola) e R$ 28 mil em escolas que o Censo não lista.");
+  });
+  it("só na Secretaria: o motivo, sem as partes", () => {
+    render(SchoolFinance, { props: { inep: "1", series: SERIES, categorias: CATEGORIAS, origem: "rede", ano: 2024,
+      rede: R("secretaria", { escolas_com_folha: 0, partes: { escolas: 0, secretaria: 2000, fora: 0 } }) } });
+    expect(screen.getByTestId("motivo-rede")).toHaveTextContent("Em 2024, o município declarou a folha só no total da Secretaria, sem separar as escolas.");
+    expect(screen.queryByTestId("partes-rede")).toBeNull();
   });
 });

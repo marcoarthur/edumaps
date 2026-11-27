@@ -24,6 +24,21 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
 4. **Como saber que deu certo:** Valores aparecem ou "n/d"
 
 ## Entendendo os números
+- **Painel da rede municipal.** Quando a escola não tem folha própria no
+  SIOPE, o painel é o de **toda a rede municipal**: a folha do município
+  inteira no ano (as escolas, o total da Secretaria sem escola e escolas que
+  o Censo não lista), com o aviso de que os números não permitem
+  identificar quem atua na unidade. O aviso diz por quê, conforme o ano: a
+  escola não aparece na folha embora o município declare por escola; o
+  município declarou por escola em parte dos meses e no total da Secretaria
+  nos outros; ou só no total da Secretaria. Logo abaixo, de onde vem o
+  total ("Desse total, R$ 472,4 mi nas escolas da lista do Censo e
+  R$ 17,1 mi no total da Secretaria"), e o gráfico do custo mensal traz a
+  linha da parte da Secretaria ao lado do total. Em Cuiabá: R$ 489,5 mi em
+  2025 e R$ 354,2 mi em 2026 (até agosto), os mesmos totais da folha por
+  município da base de análise. **Ver folha completa** abre a folha da rede
+  inteira no mês, com a coluna **Onde** (a escola ou o total da Secretaria)
+  e o filtro por lugar.
 - **Um ano por vez.** Em **Ano da folha**, escolha o ano (o padrão é o mais
   recente). O custo total, os profissionais, as categorias e os gráficos são
   desse ano, e o cartão diz os meses ("Custo total em 2025 (jan a dez)"). Um

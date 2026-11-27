@@ -6,6 +6,7 @@
   import Icon from "../icons/Icon.svelte";
   import FolhaPorFonte from "./FolhaPorFonte.svelte";
   import { urlPisoPagina } from "../../api/pisoApi.js";   // #601
+  import { textoMotivoRede, textoPartesRede } from "../../utils/redeFolha.js";   // #610
   import { listaMeses, faixasMeses, textoSalarioRede, textoPisoRede, textoQuebraAno, textoSalarioEscola, dataBR } from "@/features/fontes/utils.js";
   import { router } from "@/app/router.svelte.js";
   import {
@@ -38,17 +39,20 @@
    */
 
   /** @type {Props} */
-  let { inep, escola = null, totalProfissionais = 0, origem = "escola", series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
+  let { inep, escola = null, totalProfissionais = 0, origem = "escola", rede = null, series = [], categorias = [], ano = null, periodo = null, porFonte = null, mesesIncompletos = [], mesesSecretaria = [], docentes = null, salarioRede = null, municipioIbge = null, cargaFolha = null, salarioEscola = null } = $props();
 
   // #491 (RJ-02): o rótulo diz o ano e os meses ("em 2025 (jan a dez)").
   const noAno = $derived(ano ? ` em ${ano}${periodo ? ` (${periodoTexto(periodo)})` : ""}` : " (período)");
   const temDezembro = $derived(series.some((s) => Number(s.mes_num) === 12));
 
-  // Quando o SIOPE não detalha a folha por escola (origem='secretaria'), todo o
-  // painel é escopado como REDE MUNICIPAL — nunca como se fosse da unidade.
-  const ehRede = $derived(origem === "secretaria");
+  // Quando a escola não tem folha própria (origem='rede'), todo o painel é o da
+  // REDE MUNICIPAL inteira (#610: escolas e Secretaria), nunca o da unidade.
+  const ehRede = $derived(origem === "rede");
   const escopo = $derived(ehRede ? "rede municipal" : "escola");
-  const escopoTitulo = $derived(ehRede ? "Rede municipal (Secretaria)" : "");
+  const escopoTitulo = $derived(ehRede ? "Rede municipal (escolas e Secretaria)" : "");
+  // #610 (QE-01 da P2): por que é o painel da rede, conforme o ano
+  const motivoRede = $derived(textoMotivoRede(rede, ano));
+  const partesRede = $derived(textoPartesRede(rede));
 
   // #557: só os meses incompletos que estão na série mostrada (a escola pode
   // não ter folha num mês incompleto do município).
@@ -65,7 +69,10 @@
   // #568 (P1-FL-02): quem está em mais de uma categoria conta em cada uma.
   const somaCategorias = $derived(buckets.reduce((n, b) => n + (Number(b.total_profissionais) || 0), 0));
 
-  const costRows = $derived(buildCostRows(series));
+  // #610: no painel da rede, a linha da parte da Secretaria ao lado do total
+  const costRows = $derived(ehRede && series.some((s) => Number(s.total_secretaria) > 0)
+    ? [...buildCostRows(series), ...series.map((r) => ({ ...buildCostRows([r])[0], group: "Total da Secretaria (sem escola)", value: Number(r.total_secretaria) || 0 }))]
+    : buildCostRows(series));
   const professionalRows = $derived(buildProfessionalsRows(series));
   const buckets = $derived(buildCategoryBuckets(categorias));
   const categoryRows = $derived(buildCategoryRows(buckets));
@@ -87,7 +94,7 @@
       bottom: { mapsTo: "key", scaleType: "labels", title: "Mês" },
     },
     data: { groupMapsTo: "group" },
-    legend: { enabled: false },
+    legend: { enabled: ehRede },
     curve: "curveMonotoneX",
     points: { enabled: true },
   });
@@ -118,8 +125,8 @@
 
   function verFolhaCompleta() {
     if (!selectedPeriod) return;
-    // #585 (QE-01 da P2): no painel da Secretaria, a folha do total da Secretaria
-    router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}${ehRede ? "&secretaria=1" : ""}`);
+    // #610 (QE-01 da P2): no painel da rede, a folha da rede inteira no mês
+    router.navigate(`/escola/payroll?inep=${inep}&date=${selectedPeriod}${ehRede ? "&rede=1" : ""}`);
   }
 
   function verFolhaSecretaria() {
@@ -132,12 +139,7 @@
   {#if ehRede}
     <div class="rounded-md bg-amber-50 border border-amber-300 text-amber-900 text-sm p-4">
       <p class="font-semibold">Painel da rede municipal — não desta escola</p>
-      <p class="mt-1">
-        O SIOPE não detalha a folha por escola neste município; os dados vêm
-        agregados na Secretaria municipal. Os números abaixo são o
-        <strong>total da rede</strong> e <strong>não permitem identificar</strong>
-        quem atua nesta unidade.
-      </p>
+      <p class="mt-1" data-testid="motivo-rede">{motivoRede}</p>
     </div>
   {/if}
 
@@ -170,6 +172,11 @@
       <p class="text-xl font-bold text-gray-900 mt-1">{stats.mesCount}</p>
     </div>
   </section>
+
+  {#if ehRede && partesRede}
+    <!-- #610: de onde vem o total da rede -->
+    <p class="text-sm text-gray-700" data-testid="partes-rede">{partesRede}</p>
+  {/if}
 
   {#if !ehRede && mesesSecretaria.length}
     <!-- #558 (QT-02 da P2): meses em que o município declarou só o total da Secretaria -->
