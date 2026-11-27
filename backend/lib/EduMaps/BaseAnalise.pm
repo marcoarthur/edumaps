@@ -676,7 +676,10 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
     $dbh->selectall_arrayref(<<~"SQL", { Slice => {} }, ($lista) x 6);
       WITH piso (ano, valor) AS (VALUES $PISO_VALUES)
       , d AS (
-        SELECT d.*, piso.valor AS piso, (d.md < piso.valor AND d.meses >= $MESES_MIN_PISO) AS ab
+        SELECT d.*, piso.valor AS piso, (d.md < piso.valor AND d.meses >= $MESES_MIN_PISO) AS ab,
+               -- #605 (QD-01 da P2): a diferença mensal até o piso proporcional
+               -- à carga, por pessoa, em centavos como na lista do ano
+               round((piso.valor * d.carga / 40)::numeric, 2) - round((d.md * d.carga / 40)::numeric, 2) AS dif
           FROM analytics.mv_salario_rede_md d JOIN piso ON piso.ano = d.ano
          WHERE (?::text[] IS NULL OR d.cod6 = ANY(?::text[]))
       )
@@ -687,20 +690,28 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
                -- #597 (QB-01 da P2): por situação da pessoa no ano
                coalesce(sum(n) FILTER (WHERE ab AND situacao = 'efetivo'), 0)::int AS ab_efetivo,
                coalesce(sum(n) FILTER (WHERE ab AND situacao = 'temporario'), 0)::int AS ab_temporario,
-               coalesce(sum(n) FILTER (WHERE ab AND situacao = 'outros'), 0)::int AS ab_outros
+               coalesce(sum(n) FILTER (WHERE ab AND situacao = 'outros'), 0)::int AS ab_outros,
+               sum(dif * n) FILTER (WHERE ab) AS dif,
+               coalesce(sum(dif * n) FILTER (WHERE ab AND situacao = 'efetivo'), 0) AS dif_efetivo,
+               coalesce(sum(dif * n) FILTER (WHERE ab AND situacao = 'temporario'), 0) AS dif_temporario,
+               coalesce(sum(dif * n) FILTER (WHERE ab AND situacao = 'outros'), 0) AS dif_outros
           FROM d GROUP BY 1, 2
       )
       -- #597: o perfil de quem fica abaixo: a carga mais comum (empate: a
-      -- menor) e a mediana do salário base mensal, pessoa a pessoa
+      -- menor) e a mediana do salário base mensal, pessoa a pessoa. #606
+      -- (QD-03 da P2): a mediana só de quem tem essa carga (com cargas
+      -- variadas, a de todos podia ficar acima do piso proporcional), e a
+      -- base do mês típico (#607: base por 40 h x carga / 40, como na lista)
       , cg AS (
-        SELECT DISTINCT ON (cod6, ano) cod6, ano, carga
-          FROM (SELECT cod6, ano, carga, sum(n) AS n FROM d WHERE ab AND carga IS NOT NULL GROUP BY 1, 2, 3) x
+        SELECT DISTINCT ON (cod6, ano) cod6, ano, carga, n
+          FROM (SELECT cod6, ano, carga, sum(n)::int AS n FROM d WHERE ab AND carga IS NOT NULL GROUP BY 1, 2, 3) x
          ORDER BY cod6, ano, n DESC, carga
       )
       , bs AS (
-        SELECT cod6, ano, percentile_cont(0.5) WITHIN GROUP (ORDER BY base) AS base
-          FROM d CROSS JOIN LATERAL generate_series(1, d.n)
-         WHERE ab AND base IS NOT NULL
+        SELECT d.cod6, d.ano, percentile_cont(0.5) WITHIN GROUP (ORDER BY round((d.md * d.carga / 40)::numeric, 2)) AS base
+          FROM d JOIN cg ON cg.cod6 = d.cod6 AND cg.ano = d.ano AND cg.carga = d.carga
+          CROSS JOIN LATERAL generate_series(1, d.n)
+         WHERE d.ab
          GROUP BY 1, 2
       )
       -- #604 (QD-02 da P2): o volume do magistério no ano (toda a folha,
@@ -717,7 +728,9 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
              vol.mag, vol.so_sec, vol.meses_ano,
              cont.piso::float8 AS piso, cont.abaixo, cont.abaixo_sec,
              cont.ab_efetivo, cont.ab_temporario, cont.ab_outros,
-             cg.carga::float8 AS ab_carga, round(bs.base::numeric, 2)::float8 AS ab_base
+             cg.carga::float8 AS ab_carga, cg.n AS ab_carga_n, round(bs.base::numeric, 2)::float8 AS ab_base,
+             cont.dif::float8 AS dif, cont.dif_efetivo::float8 AS dif_efetivo,
+             cont.dif_temporario::float8 AS dif_temporario, cont.dif_outros::float8 AS dif_outros
         FROM analytics.mv_salario_rede r
         LEFT JOIN cont ON cont.cod6 = r.cod6 AND cont.ano = r.ano
         LEFT JOIN cg ON cg.cod6 = r.cod6 AND cg.ano = r.ano
@@ -738,13 +751,19 @@ sub salario_rede ($class, $dbh, $cod6 = undef) {
          # #597 (QB-01 da P2): por situação e o perfil de quem fica abaixo
          abaixo_piso_situacao => { efetivo => $_->{ab_efetivo} // 0, temporario => $_->{ab_temporario} // 0,
                                    outros => $_->{ab_outros} // 0 },
+         # #605 (QD-01 da P2): quanto falta por mês para pôr todos no piso
+         # proporcional à carga, no total e por situação (sem 13º nem encargos)
+         abaixo_piso_diferenca_mensal => 0 + sprintf('%.2f', $_->{dif} // 0),
+         abaixo_piso_diferenca_situacao => { efetivo => 0 + sprintf('%.2f', $_->{dif_efetivo} // 0),
+           temporario => 0 + sprintf('%.2f', $_->{dif_temporario} // 0), outros => 0 + sprintf('%.2f', $_->{dif_outros} // 0) },
          abaixo_piso_perfil => ($_->{abaixo} ? {
-           carga => $_->{ab_carga}, base => $_->{ab_base},
+           carga => $_->{ab_carga}, pessoas_carga => $_->{ab_carga_n}, base => $_->{ab_base},
            piso_proporcional => (defined $_->{ab_carga} && $_->{ab_carga} > 0
              ? 0 + sprintf('%.2f', $_->{piso} * $_->{ab_carga} / 40) : undef),
          } : undef))
       : (abaixo_piso => undef, abaixo_piso_so_secretaria => undef,
-         abaixo_piso_situacao => undef, abaixo_piso_perfil => undef)),
+         abaixo_piso_situacao => undef, abaixo_piso_perfil => undef,
+         abaixo_piso_diferenca_mensal => undef, abaixo_piso_diferenca_situacao => undef)),
   }) } @$rows;
   for my $k (keys %r) {
     my ($c6, $ano) = split /\|/, $k;
@@ -848,9 +867,11 @@ our @PISO_LISTA_COLUNAS = (
   ['cpf_mascarado', 'CPF como o SIOPE publica (seis dígitos do meio)', 0],
   ['situacao', 'Situação no ano: efetivo, temporario ou outros (a dos mais meses; empate: a do último mês)', 0],
   ['carga_comum', 'Carga horária mais comum dos meses da pessoa', 1],
-  ['base_mensal_mediana', 'Mediana do salário base mensal da pessoa, sem conversão para 40 horas, em reais', 1],
+  ['base_mensal_tipica', 'Salário base mensal no mês típico, na carga mais comum: base_40h x carga_comum / 40, em reais (#607: a mesma mediana da base por 40 h)', 1],
   ['base_40h', 'Salário base para 40 horas no mês típico (mediana dos meses), em reais: o que se compara com o piso', 1],
   ['piso_ano', 'Piso nacional do magistério do ano, por 40 horas', 1],
+  ['piso_proporcional', 'Piso do ano proporcional à carga mais comum: piso_ano x carga_comum / 40, em reais', 1],
+  ['diferenca_mensal', 'Quanto falta por mês para o piso proporcional: piso_proporcional - base_mensal_tipica, em reais. Sem 13º, férias, encargos nem gratificações; não é o custo legal da adequação', 1],
   ['meses', 'Meses pagos no ano, sem dezembro', 1],
   ['secretaria', '"sim" quando recebeu algum mês no total da Secretaria (sem escola)', 0],
   ['inep_escolas', 'Códigos INEP das escolas em que recebeu no ano, separados por ";"', 0],
@@ -872,8 +893,7 @@ sub abaixo_piso_lista ($class, $dbh, $cod6, $ano) {
     ), pp AS (
       SELECT cpf, nome_profissional, count(*)::int AS meses,
              percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) AS md,
-             mode() WITHIN GROUP (ORDER BY ch) AS carga,
-             percentile_cont(0.5) WITHIN GROUP (ORDER BY b) AS base
+             mode() WITHIN GROUP (ORDER BY ch) AS carga
         FROM pm WHERE ch > 0 AND b IS NOT NULL
        GROUP BY 1, 2
       HAVING count(*) >= $MESES_MIN_PISO AND percentile_cont(0.5) WITHIN GROUP (ORDER BY b / ch * 40) < $piso
@@ -894,17 +914,27 @@ sub abaixo_piso_lista ($class, $dbh, $cod6, $ano) {
         FROM linhas GROUP BY 1, 2
     )
     SELECT pp.nome_profissional AS nome, pp.cpf, coalesce(ps.sit, 'outros') AS situacao, pp.carga::float8 AS carga,
-           round(pp.base::numeric, 2)::float8 AS base, round(pp.md::numeric, 2)::float8 AS base_40h, pp.meses,
+           round((pp.md * pp.carga / 40)::numeric, 2)::float8 AS base, round(pp.md::numeric, 2)::float8 AS base_40h, pp.meses,
+           round(($piso * pp.carga / 40)::numeric, 2)::float8 AS piso_prop,
+           (round(($piso * pp.carga / 40)::numeric, 2) - round((pp.md * pp.carga / 40)::numeric, 2))::float8 AS dif,
            coalesce(lg.sec, false) AS sec, lg.ineps, lg.nomes
       FROM pp LEFT JOIN ps USING (cpf, nome_profissional) LEFT JOIN lg USING (cpf, nome_profissional)
      ORDER BY pp.nome_profissional, pp.cpf
     SQL
+  # #605 (QD-01 da P2): o total do que falta por mês, e por situação
+  my (%dif, $dif);
+  for (@$rows) { $dif += $_->{dif}; $dif{ $_->{situacao} } += $_->{dif} }
   return {
     piso => $piso, total => scalar @$rows,
     comparacao_ano_anterior => $sal->{comparacao_ano_anterior},   # #604
+    diferenca_mensal => 0 + sprintf('%.2f', $dif // 0),
+    diferenca_situacao => { map { ($_ => 0 + sprintf('%.2f', $dif{$_} // 0)) } qw(efetivo temporario outros) },
     pessoas => [ map { +{
       nome => $_->{nome}, cpf_mascarado => $_->{cpf}, situacao => $_->{situacao},
-      carga_comum => $_->{carga}, base_mensal_mediana => $_->{base}, base_40h => $_->{base_40h},
+      # #607 (QD-04 da P2): a base mensal do mês típico, da mesma mediana
+      # da base por 40 h; a linha fecha: piso_proporcional - base = diferença
+      carga_comum => $_->{carga}, base_mensal_tipica => $_->{base}, base_40h => $_->{base_40h},
+      piso_proporcional => $_->{piso_prop}, diferenca_mensal => $_->{dif},
       meses => $_->{meses}, secretaria => ($_->{sec} ? \1 : \0),
       inep_escolas => [ sort @{ $_->{ineps} // [] } ], escolas => [ sort @{ $_->{nomes} // [] } ],
     } } @$rows ],
@@ -915,7 +945,8 @@ sub abaixo_piso_csv ($class, $lista) {
   my @cab = map { $_->[0] } @PISO_LISTA_COLUNAS;
   my @num = map { $_->[2] } @PISO_LISTA_COLUNAS;
   my @linhas = map { [
-    @$_{qw(nome cpf_mascarado situacao carga_comum base_mensal_mediana base_40h)}, $lista->{piso}, $_->{meses},
+    @$_{qw(nome cpf_mascarado situacao carga_comum base_mensal_tipica base_40h)}, $lista->{piso},
+    @$_{qw(piso_proporcional diferenca_mensal meses)},
     (${ $_->{secretaria} } ? 'sim' : ''), join(';', @{ $_->{inep_escolas} }), join(';', @{ $_->{escolas} }),
   ] } @{ $lista->{pessoas} };
   return $class->csv(\@cab, \@linhas, \@num);
@@ -1080,7 +1111,8 @@ our @FOLHA_MUNICIPIO_COLUNAS = (
   ['abaixo_piso_temporarios', 'Dos abaixo do piso, os temporários, pela mesma regra', 1],
   ['abaixo_piso_outros', 'Dos abaixo do piso, os de outra situação (outros, cedidos ou sem situação), pela mesma regra', 1],
   ['abaixo_piso_carga_comum', 'Carga horária mais comum de quem fica abaixo do piso (a de cada pessoa é a dos mais meses)', 1],
-  ['abaixo_piso_base_mediana', 'Mediana do salário base mensal de quem fica abaixo do piso, sem conversão para 40 horas, em reais (a de cada pessoa é a mediana dos meses, sem dezembro)', 1],
+  ['abaixo_piso_base_mediana', 'Mediana do salário base mensal no mês típico de quem fica abaixo do piso e tem a carga mais comum (abaixo_piso_carga_comum), em reais (a de cada pessoa é a base por 40 h do mês típico x a carga / 40)', 1],
+  ['abaixo_piso_diferenca_mensal', 'Quanto falta por mês para pôr todos os abaixo do piso no piso proporcional à carga de cada um, em reais. Sem 13º, férias, encargos nem gratificações; não é o custo legal da adequação', 1],
   ['comparavel_ano_anterior', '"não" quando a folha do magistério do ano não se compara à do ano anterior: o magistério declarado cresceu 50% ou mais ou caiu um terço ou mais (com o ano tão completo quanto o anterior), ou a parte dos pagos só no total da Secretaria mudou 20 pontos ou mais. Pode ser uma mudança na forma de declarar ao SIOPE, e não na rede. Vazio: sem o ano anterior', 0],
   ['data_carga', 'Data em que a planilha do SIOPE foi baixada. Vazio: carga feita antes do registro', 0],
   ['sha256_planilha', 'SHA-256 da planilha do SIOPE baixada nessa carga', 0],
@@ -1114,7 +1146,7 @@ sub folha_municipios ($class, $dbh, $uf) {
         ($s->{carga_suspeita} && ${ $s->{carga_suspeita} } ? 'sim' : ''),
         $s->{piso}, $s->{abaixo_piso}, $s->{abaixo_piso_so_secretaria},
         @{ $s->{abaixo_piso_situacao} // {} }{qw(efetivo temporario outros)},
-        @{ $s->{abaixo_piso_perfil} // {} }{qw(carga base)},
+        @{ $s->{abaixo_piso_perfil} // {} }{qw(carga base)}, $s->{abaixo_piso_diferenca_mensal},
         ($s->{comparacao_ano_anterior} ? (${ $s->{comparacao_ano_anterior}{comparavel} } ? 'sim' : 'não') : undef),
         (defined $e->{baixado_em} ? substr($e->{baixado_em}, 0, 10) : undef), $e->{sha256},
       ];

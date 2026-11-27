@@ -839,13 +839,16 @@ subtest 'salário base e o piso do magistério (#563)' => sub {
   # #597 (QB-01 da P2): por situação e o perfil de quem fica abaixo
   is $s->{abaixo_piso_situacao}, { efetivo => 0, temporario => 1, outros => 1 },
     'ANA temporária (mais meses), DUDA em outros (empate: o último mês, cedida)';
-  is $s->{abaixo_piso_perfil}, { carga => 40, base => 3500, piso_proporcional => 5130.63 },
-    'carga mais comum, mediana do base (4.000 e 3.000) e o piso proporcional à carga';
+  is $s->{abaixo_piso_perfil}, { carga => 40, pessoas_carga => 2, base => 3500, piso_proporcional => 5130.63 },
+    'carga mais comum (#606: e quantos a têm), mediana do base (4.000 e 3.000) e o piso proporcional à carga';
+  # #605 (QD-01 da P2): quanto falta por mês (ANA 1.130,63; DUDA 2.130,63)
+  is [ $s->{abaixo_piso_diferenca_mensal}, $s->{abaixo_piso_diferenca_situacao} ],
+     [3261.26, { efetivo => 0, temporario => 1130.63, outros => 2130.63 }], '#605: a diferença até o piso, no total e por situação';
   my $fm = ler_csv($t->get_ok('/api/base-analise/folha-municipios.csv?uf=AC')->tx);
   my %k; @k{ @{ $fm->[0] } } = 0 .. $#{ $fm->[0] };
   my ($lp) = grep { $_->[0] eq "$MUN" && $_->[ $k{ano} ] eq "$ANO_P" } @$fm;
-  is [ @$lp[ @k{qw(abaixo_piso_rede abaixo_piso_efetivos abaixo_piso_temporarios abaixo_piso_outros abaixo_piso_carga_comum abaixo_piso_base_mediana)} ] ],
-     ['2', '0', '1', '1', '40', '3500'], 'folha por município: as colunas por situação e o perfil';
+  is [ @$lp[ @k{qw(abaixo_piso_rede abaixo_piso_efetivos abaixo_piso_temporarios abaixo_piso_outros abaixo_piso_carga_comum abaixo_piso_base_mediana abaixo_piso_diferenca_mensal)} ] ],
+     ['2', '0', '1', '1', '40', '3500', '3261,26'], 'folha por município: as colunas por situação, o perfil e a diferença (#605)';
   is $a->[ $i{carga_comum_municipio} ], '40', '#572: carga mais comum do município, em horas';
 
   my $c1 = ler_csv($t->get_ok("/api/base-analise/csv?uf=AC&codigo_ibge=$MUN&blocos=remuneracao&ano_siope=2001")->tx);

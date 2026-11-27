@@ -51,13 +51,25 @@ $f->execute($ANO, $_->[1], $_->[0], "xxx.$_->[0].601-xx", $_->[2], ($_->[2] == $
   $MUN, 'Municipal', 'Docente', $MAG, $_->[3], $_->[4], $_->[5], $_->[5]) for @l;
 $dbh->do('SELECT analytics.refresh_salario_rede()');
 
+my $s_dif = sub { EduMaps::BaseAnalise->salario_rede($dbh, $MUN)->{"$MUN|$ANO"}{abaixo_piso_diferenca_mensal} };
+
 subtest 'lista em JSON' => sub {
   my $r = $t->get_ok("/api/city/$CO_MUN/piso?ano=$ANO")->status_is(200)->tx->res->json;
   is [ @$r{qw(codigo_ibge municipio uf ano piso total)} ], [$CO_MUN, 'Município da Lista', 'AC', $ANO, 5130.63, 2], 'cabeçalho';
   is [ map { $_->{nome} } @{ $r->{pessoas} } ], [qw(ANA BIA)], 'ANA e BIA, em ordem de nome (CAIO acima, DUDA com um mês)';
   my ($ana, $bia) = @{ $r->{pessoas} };
-  is [ @$ana{qw(cpf_mascarado situacao carga_comum base_mensal_mediana base_40h meses)} ],
+  is [ @$ana{qw(cpf_mascarado situacao carga_comum base_mensal_tipica base_40h meses)} ],
      ['xxx.ANA.601-xx', 'temporario', 30, 3000, 4000, 3], 'ANA: situação dos mais meses, sem dezembro';
+  # #605/#607: o piso proporcional à carga e a diferença; a linha fecha
+  is [ @$ana{qw(piso_proporcional diferenca_mensal)} ], [3847.97, 847.97], 'ANA: 30 h, falta 847,97 por mês';
+  is [ @$bia{qw(base_mensal_tipica piso_proporcional diferenca_mensal)} ], [3500, 5130.63, 1630.63], 'BIA: 40 h';
+  is [ $r->{diferenca_mensal}, $r->{diferenca_situacao} ], [2478.6, { efetivo => 1630.63, temporario => 847.97, outros => 0 }],
+     'o total e por situação';
+  is $r->{diferenca_mensal}, $s_dif->(), 'a mesma diferença da contagem do painel';
+  # #606 (QD-03 da P2): com cargas variadas (ANA 30 h, BIA 40 h; empate: a
+  # menor), o perfil traz a base só de quem tem a carga mais comum
+  is(EduMaps::BaseAnalise->salario_rede($dbh, $MUN)->{"$MUN|$ANO"}{abaixo_piso_perfil},
+     { carga => 30, pessoas_carga => 1, base => 3000, piso_proporcional => 3847.97 }, '#606: a base de quem tem 30 h, abaixo do proporcional');
   is [ !!$ana->{secretaria}, $ana->{inep_escolas} ], ['', [$INEP]], 'ANA só na escola';
   is [ !!$bia->{secretaria}, $bia->{inep_escolas}, $bia->{escolas} ], [1, [$INEP], ['ESCOLA DA LISTA']], 'BIA na Secretaria e na escola';
   ok !grep({ exists $_->{cpf} } @{ $r->{pessoas} }), 'só o CPF mascarado, com esse nome';
@@ -70,9 +82,9 @@ subtest 'CSV' => sub {
   my $tx = $t->get_ok("/api/city/$CO_MUN/piso?ano=$ANO&formato=csv")->status_is(200)
     ->header_like('Content-Disposition' => qr/abaixo-piso-$CO_MUN-$ANO\.csv/)->tx;
   my @l = split /\r?\n/, $tx->res->text;
-  like $l[0], qr/^\x{FEFF}?nome;cpf_mascarado;situacao;carga_comum;base_mensal_mediana;base_40h;piso_ano;meses;secretaria;inep_escolas;escolas$/, 'cabeçalho';
+  like $l[0], qr/^\x{FEFF}?nome;cpf_mascarado;situacao;carga_comum;base_mensal_tipica;base_40h;piso_ano;piso_proporcional;diferenca_mensal;meses;secretaria;inep_escolas;escolas$/, 'cabeçalho';
   is scalar(@l), 3, 'duas pessoas';
-  like $l[2], qr/^BIA;xxx\.BIA\.601-xx;efetivo;40;3500;3500;5130,63;3;sim;$INEP;ESCOLA DA LISTA$/, 'linha de BIA';
+  like $l[2], qr/^BIA;xxx\.BIA\.601-xx;efetivo;40;3500;3500;5130,63;5130,63;1630,63;3;sim;$INEP;ESCOLA DA LISTA$/, 'linha de BIA';
 };
 
 subtest 'sem a conta' => sub {
