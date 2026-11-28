@@ -124,6 +124,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-27 — o custo até o piso](ciclos/2026-11-27-custo-do-piso.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 - [2026-11-27 — o painel da rede com toda a folha](ciclos/2026-11-27-painel-rede-inteira.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 - [2026-11-27 — a folha e o Fundeb](ciclos/2026-11-27-folha-e-fundeb.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
+- [2026-11-27 — a porta do painel da rede](ciclos/2026-11-27-porta-da-rede.md#p4--academia-pesquisadora): adotaria (mantido). Impacto pequeno.
 
 ## Pendências
 

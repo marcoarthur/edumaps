@@ -4,6 +4,20 @@
 > e/ou informado pelo usuário, para retomar o contexto em sessões futuras.
 > As seções abaixo ficam em ordem cronológica reversa (sessão mais recente no topo).
 
+## Sessão 2026-11-27 (eu) — nona rodada da P2, #614 (PR #616) e #615 (PR #617), a porta da rede
+
+- Nona avaliação da P2 (a porta do painel da rede): adotaria em piloto
+  (mantido); QF-01 → #614 (o painel da rede só abria por 4 das 171 escolas
+  de Cuiabá), QF-02 → #615 (o link não guardava o ano).
+- #614: `financial_summary` aceita `codigo_ibge`; rotas
+  `/api/city/:ibge/finance`, `/finance/anos`, `/payroll/rede`; página
+  `/municipio/financeiro` (ano no endereço); portas no perfil da rede, no
+  painel de cada escola da rede e no aviso da fonte. Sem migração.
+- #615 (empilhado; retarget para o main antes do merge do pai): o painel
+  da escola lê e escreve o ano no endereço; ano sem folha → o mais recente.
+- LXC: backend + frontend. Nota técnica 289. Backlog restante depende de
+  decisão do developer (#368 fechar, #429, #295, #138, #454).
+
 ## Sessão 2026-11-27 (et) — #611 (PR #613), a folha e o Fundeb
 
 - Fonte da receita: SICONFI DCA Anexo I-C (Fundeb + complementação, bruta

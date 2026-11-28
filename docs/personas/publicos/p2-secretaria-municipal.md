@@ -124,6 +124,7 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - [2026-11-27 — o custo até o piso](ciclos/2026-11-27-custo-do-piso.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QD-01, QD-03 e QD-04 resolvidos.
 - [2026-11-27 — o painel da rede com toda a folha](ciclos/2026-11-27-painel-rede-inteira.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QE-01 resolvido.
 - [2026-11-27 — a folha e o Fundeb](ciclos/2026-11-27-folha-e-fundeb.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QE-02 resolvido.
+- [2026-11-27 — a porta do painel da rede](ciclos/2026-11-27-porta-da-rede.md#p2--secretaria-municipal-secretário-de-educação): adotaria em piloto (mantido). QF-01 e QF-02 resolvidos.
 
 ## Pendências
 
@@ -158,8 +159,8 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
   QE-01 (o painel da rede só com a Secretaria) → #610, entregue (#612); QE-02 (a folha cabe
   no Fundeb? sem resposta na tela) → #611, entregue (#613).
 - A porta do painel da rede (2026-11-27, **adotaria, em piloto**): QF-01
-  (o painel da rede só abre por uma escola fora da folha) → #614; QF-02 (o
-  link não guarda o ano) → #615.
+  (o painel da rede só abre por uma escola fora da folha) → #614, entregue (#616); QF-02 (o
+  link não guarda o ano) → #615, entregue (#617).
 
 ## Entradas
 

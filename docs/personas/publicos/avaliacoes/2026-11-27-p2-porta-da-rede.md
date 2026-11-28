@@ -79,3 +79,10 @@ Duas issues, abertas com a aprovação do developer: QF-01 → #614 e QF-02 →
 (o ano no endereço) vale para o painel da escola e o da rede.
 
 ## Andamento
+
+- 2026-11-27: #614 (PR #616) e #615 (PR #617) mergeados: QF-01 e QF-02
+  resolvidos. O painel da rede abre pelo município
+  (`/municipio/financeiro`), com o cartão no perfil da rede e o link no
+  painel de cada escola da rede municipal (Cuiabá 2025 igual ao painel pela
+  escola: R$ 489,5 mi, 77,8% do Fundeb); o ano fica no endereço, na escola
+  e na rede. Os dois achados da nona rodada estão entregues.

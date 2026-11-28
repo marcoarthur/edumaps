@@ -356,6 +356,8 @@ O agrupamento passa a guardar cada execução (#427): o motor grava em
       `perl ingestion_runner.pl --job=SICONFI --arg uf=MT --arg dca --arg exercicio=2025` (e 2024)):
       `psql edumaps_dev -Atc "SELECT exercicio, count(DISTINCT codigo_ibge) FROM clean.siconfi_receita WHERE tipo_receita='fundeb' GROUP BY 1"`
       dá ~138 em 2025, e o painel `/escola/financeiro?inep=51091194&ano=2025` diz "77,8% da receita do Fundeb do ano".
+- [ ] A porta do painel da rede e o ano no endereço (#614/#615, sem change nova: `deploy_backend_dev` e `deploy_frontend_dev`):
+      `curl -s "$API/api/city/5103403/finance/anos"` lista os anos com folha; o perfil `/municipio/perfil?codigo_ibge=5103403` tem o cartão "Folha e Fundeb da rede municipal", e `/escola/financeiro?inep=51091194&ano=2025` abre em 2025.
 - [ ] Nomes da folha (#536): `psql edumaps_dev -Atc "SELECT ano, count(*) FILTER (WHERE nome_profissional LIKE '%?%') FROM clean.remuneracao_municipal WHERE cod_municipio = '510340' GROUP BY 1"`
       dá 93 em 2025 e 0 em 2026, se a folha do LXC for a mesma do local (senão, conferir só que o verify passa).
 - [ ] O backend alcança o motor pelo `analytics_url` do LXC
