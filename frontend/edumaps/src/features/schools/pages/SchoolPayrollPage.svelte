@@ -19,6 +19,8 @@
   let lugar = $state("");   // "", "secretaria", "escolas"
   // #614 (QF-01 da P2): a folha da rede aberta pelo município (?codigo_ibge=)
   let ibge = $state(null);
+  // #615: o ano da competência pedida, para o link voltar ao painel no mesmo ano
+  let anoDaData = $state(null);
   const SEC = "99999999";
   const ondeDe = (p) => (String(p.cod_inep) === SEC ? "Secretaria (sem escola)" : (p.escola || `escola ${p.cod_inep}`));
   // Lista grande (a Secretaria de Cuiabá passa de 12 mil linhas por mês):
@@ -67,6 +69,7 @@
     ibge = cod_inep ? null : getQueryParam("codigo_ibge");
     semFolha = false;
     const date = getQueryParam("date");
+    anoDaData = /^\d{2}-(\d{4})$/.exec(date ?? "")?.[1] ?? null;
     secretaria = !ibge && getQueryParam("secretaria") === "1";
     rede = !!ibge || (!secretaria && getQueryParam("rede") === "1");
     lugar = "";
@@ -154,7 +157,7 @@
       </p>
       <p class="text-sm text-gray-600">
         O
-        <a class="text-brand-700 underline" href={ibge ? `/municipio/financeiro?codigo_ibge=${ibge}` : `/escola/financeiro?inep=${inep}`}>painel financeiro</a>
+        <a class="text-brand-700 underline" href={(ibge ? `/municipio/financeiro?codigo_ibge=${ibge}` : `/escola/financeiro?inep=${inep}`) + (anoDaData ? `&ano=${anoDaData}` : "")}>painel financeiro</a>
         diz por quê e de quais municípios há folha.
       </p>
     </div>

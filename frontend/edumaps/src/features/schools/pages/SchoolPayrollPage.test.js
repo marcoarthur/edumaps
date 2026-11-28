@@ -184,6 +184,6 @@ describe("SchoolPayrollPage — rede pelo município (#614)", () => {
     mocks.getCityRedePayroll.mockRejectedValue(new ApiError("Sem folha", { status: 404 }));
     render(SchoolPayrollPage);
     expect(await screen.findByText(/Não há folha da rede municipal neste mês/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "painel financeiro" })).toHaveAttribute("href", "/municipio/financeiro?codigo_ibge=5103403");
+    expect(screen.getByRole("link", { name: "painel financeiro" })).toHaveAttribute("href", "/municipio/financeiro?codigo_ibge=5103403&ano=2026");
   });
 });
