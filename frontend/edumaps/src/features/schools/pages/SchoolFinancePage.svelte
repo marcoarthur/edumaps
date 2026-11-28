@@ -13,6 +13,7 @@
   import { restaurarSessao } from "@/features/gestor/utils/gestorAuth.js";
   import { fetchMe } from "@/features/gestor/api/gestorPesquisasApi.js";
   import SchoolFinance from "../components/panel/SchoolFinance.svelte";
+  import { urlPainelRede } from "../utils/redeFolha.js";   // #614
   import FinanceAusencia from "../components/panel/FinanceAusencia.svelte";
 
   let inep = $state(null);
@@ -52,6 +53,8 @@
   let cancelarWatch = null;
 
   const siopeHabilitado = $derived(!!siope?.habilitado && gestorDaEscola);
+  // #614 (QF-01 da P2): a porta do painel da rede pelo município (escola da rede municipal)
+  const linkRede = $derived(siope?.habilitado ? urlPainelRede(municipioIbge, ano) : null);
 
   const anosDisponiveis = $derived.by(() => {
     if (!siope?.habilitado) return [];
@@ -287,7 +290,7 @@
           <span class="text-xs text-gray-500">Os totais, as categorias e os gráficos são deste ano.</span>
         </div>
       {/if}
-      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {municipioIbge} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {rede} {fundeb} {ano} {periodo} />
+      <SchoolFinance {inep} {escola} {series} {categorias} {porFonte} {mesesIncompletos} {mesesSecretaria} {docentes} {salarioRede} {municipioIbge} {cargaFolha} {salarioEscola} {totalProfissionais} {origem} {rede} {fundeb} {linkRede} {ano} {periodo} />
     {/if}
   {/if}
   <FonteDado tela="financeiro" class="pt-2" />

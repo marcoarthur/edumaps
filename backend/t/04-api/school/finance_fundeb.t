@@ -61,6 +61,11 @@ subtest 'ano com DCA: a parte da receita paga pela parcela de 70%' => sub {
   like $x->{fonte}, qr/DCA, Anexo I-C/, 'a fonte dita';
 };
 
+subtest '#614: o mesmo bloco pelo município' => sub {
+  my $x = $t->get_ok("/api/city/$CO_MUN/finance?ano=2025")->status_is(200)->tx->res->json->{fundeb};
+  is [ @$x{qw(ano_receita receita pago_70 parte_70)} ], [2025, 1200, 900, 75], 'a parte do Fundeb pelo município';
+};
+
 subtest 'ano sem DCA: só a referência do último ano' => sub {
   my $x = $t->get_ok("/api/school/$INEP/finance?ano=2026")->status_is(200)->tx->res->json->{fundeb};
   is [ @$x{qw(ano_receita referencia receita pago_70 parte_70)} ], [2025, 1, 1200, undef, undef],

@@ -18,6 +18,10 @@ sub register ($self, $app, @args) {
   $api->get('/:codigo_ibge/payroll/details' => $check)->to('city#payroll_details')->name('city_payroll_details');
   # #601 (QC-01 da P2): a lista do ano dos abaixo do piso na rede (JSON ou CSV)
   $api->get('/:codigo_ibge/piso' => $check)->to('city#piso')->name('city_piso');
+  # #614 (QF-01 da P2): o painel financeiro da rede municipal pelo município
+  $api->get('/:codigo_ibge/finance' => $check)->to('city#finance')->name('city_finance');
+  $api->get('/:codigo_ibge/finance/anos' => $check)->to('city#finance_anos')->name('city_finance_anos');
+  $api->get('/:codigo_ibge/payroll/rede' => $check)->to('city#payroll_rede')->name('city_payroll_rede');
   $api->get('/search/:name')->to('city#search_by_name')->name('city_search_by_name');
   $api->get('/detail/:name')->to('city#detail_by_name')->name('city_detail_by_name');
   $api->get('/suggestions')->to('city#search_suggestions')->name('city_search_suggestions');

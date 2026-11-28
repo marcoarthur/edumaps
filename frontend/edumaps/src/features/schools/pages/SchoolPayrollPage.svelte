@@ -1,6 +1,6 @@
 <script>
   import FonteDado from "@/features/fontes/components/FonteDado.svelte";
-  import { getSchoolPayroll, getSecretariaPayroll, getRedePayroll } from "../api/schoolApi.js";
+  import { getSchoolPayroll, getSecretariaPayroll, getRedePayroll, getCityRedePayroll } from "../api/schoolApi.js";
   import { ApiError } from "@/shared/api/client.js";
   import SchoolPayrollTable from "../components/SchoolPayrollTable.svelte";
   import { ordenar } from "@/shared/ui";
@@ -17,6 +17,8 @@
   // #610 (QE-01 da P2): a folha de toda a rede municipal (escolas e Secretaria)
   let rede = $state(false);
   let lugar = $state("");   // "", "secretaria", "escolas"
+  // #614 (QF-01 da P2): a folha da rede aberta pelo município (?codigo_ibge=)
+  let ibge = $state(null);
   const SEC = "99999999";
   const ondeDe = (p) => (String(p.cod_inep) === SEC ? "Secretaria (sem escola)" : (p.escola || `escola ${p.cod_inep}`));
   // Lista grande (a Secretaria de Cuiabá passa de 12 mil linhas por mês):
@@ -62,14 +64,15 @@
   async function loadPayroll() {
     const cod_inep = getQueryParam("inep");
     inep = cod_inep;
+    ibge = cod_inep ? null : getQueryParam("codigo_ibge");
     semFolha = false;
     const date = getQueryParam("date");
-    secretaria = getQueryParam("secretaria") === "1";
-    rede = !secretaria && getQueryParam("rede") === "1";
+    secretaria = !ibge && getQueryParam("secretaria") === "1";
+    rede = !!ibge || (!secretaria && getQueryParam("rede") === "1");
     lugar = "";
     filtro = "";
     pagina = 0;
-    if (!cod_inep) {
+    if (!cod_inep && !ibge) {
       error = "Código INEP não informado na URL (?inep=XXXXXXXX).";
       loading = false;
       return;
@@ -78,7 +81,9 @@
     loading = true;
     error = null;
     try {
-      const data = secretaria
+      const data = ibge
+        ? await getCityRedePayroll(ibge, date || undefined)
+        : secretaria
         ? await getSecretariaPayroll(cod_inep, date || undefined)
         : rede
           ? await getRedePayroll(cod_inep, date || undefined)
@@ -149,7 +154,7 @@
       </p>
       <p class="text-sm text-gray-600">
         O
-        <a class="text-brand-700 underline" href={`/escola/financeiro?inep=${inep}`}>painel financeiro</a>
+        <a class="text-brand-700 underline" href={ibge ? `/municipio/financeiro?codigo_ibge=${ibge}` : `/escola/financeiro?inep=${inep}`}>painel financeiro</a>
         diz por quê e de quais municípios há folha.
       </p>
     </div>

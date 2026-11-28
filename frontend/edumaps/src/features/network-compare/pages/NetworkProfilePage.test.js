@@ -81,4 +81,16 @@ describe("NetworkProfilePage", () => {
 
     await screen.findByText(/Nenhum código IBGE informado/);
   });
+
+  it("o link da folha e do Fundeb da rede só com folha carregada (#614)", async () => {
+    const { unmount } = renderWithQuery("?codigo_ibge=3551702");
+    await screen.findByText(/Sertãozinho/);
+    expect(screen.queryByTestId("link-folha-rede")).toBeNull();
+    unmount();
+    renderWithQuery("?codigo_ibge=5103403");
+    const link = await screen.findByTestId("link-folha-rede");
+    expect(link).toHaveAttribute("href", "/municipio/financeiro?codigo_ibge=5103403&ano=2026");
+    expect(link).toHaveTextContent("Folha e Fundeb da rede municipal");
+    expect(link).toHaveTextContent("folha do SIOPE de 2025 a 2026");
+  });
 });

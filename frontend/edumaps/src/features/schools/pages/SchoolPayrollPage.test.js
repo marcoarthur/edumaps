@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import { ApiError } from "@/shared/api/client.js";
 
-const mocks = vi.hoisted(() => ({ getSchoolPayroll: vi.fn(), getSecretariaPayroll: vi.fn(), getRedePayroll: vi.fn() }));
-vi.mock("../api/schoolApi.js", () => ({ getSchoolPayroll: mocks.getSchoolPayroll, getSecretariaPayroll: mocks.getSecretariaPayroll, getRedePayroll: mocks.getRedePayroll }));
+const mocks = vi.hoisted(() => ({ getSchoolPayroll: vi.fn(), getSecretariaPayroll: vi.fn(), getRedePayroll: vi.fn(), getCityRedePayroll: vi.fn() }));
+vi.mock("../api/schoolApi.js", () => ({ getSchoolPayroll: mocks.getSchoolPayroll, getSecretariaPayroll: mocks.getSecretariaPayroll, getRedePayroll: mocks.getRedePayroll, getCityRedePayroll: mocks.getCityRedePayroll }));
 
 import SchoolPayrollPage from "./SchoolPayrollPage.svelte";
 
@@ -160,5 +160,30 @@ describe("SchoolPayrollPage — rede municipal (#610)", () => {
     expect(screen.getByText("Secretaria (sem escola)")).toBeInTheDocument();
     await fireEvent.change(screen.getByTestId("filtro-lugar"), { target: { value: "secretaria" } });
     expect(screen.getByTestId("paginacao-folha")).toHaveTextContent("1 registro · página 1 de 1");
+  });
+});
+
+// #614 (QF-01 da P2): a folha da rede aberta pelo município
+describe("SchoolPayrollPage — rede pelo município (#614)", () => {
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("?codigo_ibge= lista a rede inteira, com o lugar", async () => {
+    window.history.replaceState({}, "", "/escola/payroll?codigo_ibge=5103403&date=02-2026");
+    mocks.getCityRedePayroll.mockResolvedValue([
+      { nome_profissional: "ANA", cod_inep: 51171805, escola: "EMEB A", salario_total: 1000 },
+      { nome_profissional: "BIA", cod_inep: 99999999, escola: "SEC MUN", salario_total: 1000 },
+    ]);
+    render(SchoolPayrollPage);
+    expect(await screen.findByText(/Folha de Pagamento – rede municipal/)).toBeInTheDocument();
+    expect(mocks.getCityRedePayroll).toHaveBeenCalledWith("5103403", "02-2026");
+    expect(screen.getByTestId("aviso-folha-rede")).toBeInTheDocument();
+  });
+
+  it("mês sem folha: o link volta ao painel da rede pelo município", async () => {
+    window.history.replaceState({}, "", "/escola/payroll?codigo_ibge=5103403&date=11-2026");
+    mocks.getCityRedePayroll.mockRejectedValue(new ApiError("Sem folha", { status: 404 }));
+    render(SchoolPayrollPage);
+    expect(await screen.findByText(/Não há folha da rede municipal neste mês/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "painel financeiro" })).toHaveAttribute("href", "/municipio/financeiro?codigo_ibge=5103403");
   });
 });

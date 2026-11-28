@@ -110,3 +110,23 @@ export function getRedePayroll(codInep, date = "10-2025") {
 export function getSecretariaPayroll(codInep, date = "10-2025") {
   return apiClient.get(`${BASE}/${codInep}/payroll/secretaria`, { date });
 }
+
+// ---------------------------------------------------------------------------
+// #614 (QF-01 da P2): o painel financeiro da rede municipal pelo município
+// ---------------------------------------------------------------------------
+
+/** O painel da rede (o mesmo do /finance da escola sem folha própria). */
+export function getCityFinance(codigoIbge, ano = null) {
+  const q = ano ? `?ano=${encodeURIComponent(ano)}` : "";
+  return apiClient.get(`/api/city/${codigoIbge}/finance${q}`);
+}
+
+/** Os anos com folha da rede municipal (para o link do perfil da rede). */
+export function getCityFinanceAnos(codigoIbge) {
+  return apiClient.get(`/api/city/${codigoIbge}/finance/anos`);
+}
+
+/** A folha da rede municipal inteira no mês, pelo município. */
+export function getCityRedePayroll(codigoIbge, date = "10-2025") {
+  return apiClient.get(`/api/city/${codigoIbge}/payroll/rede`, { date });
+}

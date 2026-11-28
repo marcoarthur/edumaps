@@ -26,11 +26,15 @@
   import { networkCompareUrl } from "../utils/transformNetworkData.js";
   import InfoHint from "@/shared/ui/components/InfoHint.svelte";
   import { ApiError } from "@/shared/api/client.js";
+  import { getCityFinanceAnos } from "@/features/schools/api/schoolApi.js";   // #614
+  import { urlPainelRede } from "@/features/schools/utils/redeFolha.js";
 
   let ibge = $state(null);
   let profile = $state(null);
   let loading = $state(true);
   let error = $state(null);
+  // #614 (QF-01 da P2): os anos com folha da rede municipal (o link do painel)
+  let anosFolha = $state([]);
 
   async function load(codigoIbge, tpDependencia) {
     loading = true;
@@ -56,6 +60,7 @@
     if (code) {
       ibge = code;
       load(code, dep ? Number(dep) : undefined);
+      getCityFinanceAnos(code).then((r) => { anosFolha = r?.anos ?? []; }).catch(() => { anosFolha = []; });
     } else {
       loading = false;
       error = "Nenhum código IBGE informado (?codigo_ibge=XXXXXXX).";
@@ -87,6 +92,18 @@
       ← Voltar
     </button>
   </header>
+
+  {#if anosFolha.length > 0}
+    <!-- #614: a porta do painel financeiro da rede municipal -->
+    <a href={urlPainelRede(ibge, anosFolha.at(-1))} data-testid="link-folha-rede"
+      class="block rounded-card bg-white border border-gray-200 shadow-card p-4 hover:border-blue-400">
+      <span class="text-sm font-semibold text-blue-700">Folha e Fundeb da rede municipal →</span>
+      <span class="block text-xs text-gray-600 mt-1">
+        O total da folha da rede, a parte da receita do Fundeb paga na remuneração e o custo do piso
+        (folha do SIOPE de {anosFolha.length > 1 ? `${anosFolha[0]} a ${anosFolha.at(-1)}` : anosFolha[0]}).
+      </span>
+    </a>
+  {/if}
 
   {#if loading}
     <div class="text-center py-12">
