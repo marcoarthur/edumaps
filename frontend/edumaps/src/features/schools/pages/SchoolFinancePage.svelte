@@ -42,6 +42,14 @@
   let periodo = $state(null);
   let loading = $state(true);
   let error = $state(null);
+  // #615 (QF-02 da P2): o ano do painel no endereço (o link abre no ano escolhido)
+  let avisoAno = $state(null);
+
+  function poeAnoNoEndereco(a) {
+    const u = new URL(window.location.href);
+    if (a) u.searchParams.set("ano", String(a)); else u.searchParams.delete("ano");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search);
+  }
 
   // SIOPE (remuneração municipal): só a rede municipal tem dados.
   let siope = $state(null);
@@ -72,6 +80,7 @@
     try {
       const data = await getSchoolFinance(codInep, anoPedido);
       ano = data.ano ?? null;
+      poeAnoNoEndereco(ano);
       anos = data.anos ?? [];
       periodo = data.periodo ?? null;
       escola = data.escola ?? null;
@@ -95,6 +104,11 @@
       cobertura = data.cobertura ?? null;
       anoSelecionado = anosDisponiveis.at(-1) ?? null;
     } catch (err) {
+      // #615: ano sem folha no endereço → o mais recente, com o aviso
+      if (anoPedido && err instanceof ApiError && err.status === 400) {
+        avisoAno = `Não há folha em ${anoPedido}; abrimos o ano mais recente.`;
+        return loadFinance(codInep, null);
+      }
       escola = null;
       rede = null;
       fundeb = null;
@@ -162,10 +176,12 @@
   }
 
   onMount(() => {
-    const code = new URLSearchParams(window.location.search).get("inep");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("inep");
+    const anoUrl = params.get("ano");
     if (code) {
       inep = code;
-      loadFinance(code);
+      loadFinance(code, anoUrl && /^\d{4}$/.test(anoUrl) ? Number(anoUrl) : null);
       checarGestor(code);
     } else {
       loading = false;
@@ -198,6 +214,10 @@
       ← Voltar ao painel
     </button>
   </header>
+
+  {#if avisoAno}
+    <p class="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-3" role="note" data-testid="aviso-ano">{avisoAno}</p>
+  {/if}
 
   {#if loading}
     <div class="text-center py-12">
@@ -282,7 +302,7 @@
           <select
             id="ano-folha"
             value={ano}
-            onchange={(e) => loadFinance(inep, Number(e.currentTarget.value))}
+            onchange={(e) => { avisoAno = null; loadFinance(inep, Number(e.currentTarget.value)); }}
             class="h-9 px-2 rounded-md border border-gray-300 text-sm bg-white"
           >
             {#each anos as a (a)}<option value={a}>{a}</option>{/each}

@@ -29,8 +29,9 @@ O módulo financeiro apresenta informações com base no **SIOPE** (Sistema de I
   rede**, o cartão **Folha e Fundeb da rede municipal** (aparece quando o
   município tem a folha do SIOPE carregada), e, no painel de qualquer escola
   da rede municipal, o link **Ver o painel da rede municipal (total, Fundeb e
-  piso)**. O ano escolhido fica no endereço: o link enviado ao conselho abre
-  no mesmo ano. O aviso do topo diz como o município declarou a folha
+  piso)**. Em todos os painéis financeiros (da escola e da rede), o ano
+  escolhido fica no endereço: o link enviado ao conselho abre no mesmo ano
+  (um ano sem folha abre o mais recente, com um aviso). O aviso do topo diz como o município declarou a folha
   naquele ano (por escola, em parte dos meses ou só no total da Secretaria).
 - **Painel da rede municipal.** Quando a escola não tem folha própria no
   SIOPE, o painel é o de **toda a rede municipal**: a folha do município

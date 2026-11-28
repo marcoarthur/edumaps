@@ -21,6 +21,7 @@ vi.mock("@/features/gestor/utils/gestorAuth.js", () => ({ restaurarSessao: mocks
 vi.mock("@/shared/stores/toastStore.js", () => ({ addToast: mocks.addToast }));
 
 import SchoolFinancePage from "./SchoolFinancePage.svelte";
+import { ApiError } from "@/shared/api/client.js";
 
 const INEP = "35051780";
 
@@ -215,5 +216,46 @@ describe("SchoolFinancePage — ano da folha (#491)", () => {
     const sel = await screen.findByLabelText("Ano da folha");
     await fireEvent.change(sel, { target: { value: "2026" } });
     await waitFor(() => expect(mocks.getSchoolFinance).toHaveBeenLastCalledWith(INEP, 2026));
+  });
+});
+
+// #615 (QF-02 da P2): o ano do painel no endereço
+describe("SchoolFinancePage — o ano no endereço (#615)", () => {
+  const COM_ANO = (ano) => ({ ...FINANCE_MUNICIPAL, ano, anos: [2024, 2023],
+    series: [{ ano, mes: "Outubro", mes_num: 10, total_profissionais: 1, total_salario: 100 }] });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.restaurarSessao.mockReturnValue(false);
+    mocks.fetchMe.mockRejectedValue(new Error("sem sessão"));
+  });
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("abre no ano do endereço", async () => {
+    window.history.replaceState({}, "", `/escola/financeiro?inep=${INEP}&ano=2023`);
+    mocks.getSchoolFinance.mockResolvedValue(COM_ANO(2023));
+    render(SchoolFinancePage);
+    await screen.findByLabelText("Ano da folha");
+    expect(mocks.getSchoolFinance).toHaveBeenCalledWith(INEP, 2023);
+    expect(window.location.search).toContain("ano=2023");
+  });
+
+  it("sem ano: abre o mais recente e o põe no endereço; trocar o ano atualiza", async () => {
+    window.history.replaceState({}, "", `/escola/financeiro?inep=${INEP}`);
+    mocks.getSchoolFinance.mockImplementation((_i, a) => Promise.resolve(COM_ANO(a ?? 2024)));
+    render(SchoolFinancePage);
+    const sel = await screen.findByLabelText("Ano da folha");
+    expect(mocks.getSchoolFinance).toHaveBeenCalledWith(INEP, null);
+    expect(window.location.search).toContain("ano=2024");
+    await fireEvent.change(sel, { target: { value: "2023" } });
+    await waitFor(() => expect(window.location.search).toContain("ano=2023"));
+  });
+
+  it("ano sem folha no endereço: o mais recente, com o aviso", async () => {
+    window.history.replaceState({}, "", `/escola/financeiro?inep=${INEP}&ano=2019`);
+    mocks.getSchoolFinance.mockImplementation((_i, a) => a === 2019
+      ? Promise.reject(new ApiError("Sem folha neste ano", { status: 400 })) : Promise.resolve(COM_ANO(2024)));
+    render(SchoolFinancePage);
+    expect(await screen.findByTestId("aviso-ano")).toHaveTextContent("Não há folha em 2019; abrimos o ano mais recente.");
+    await waitFor(() => expect(window.location.search).toContain("ano=2024"));
   });
 });
