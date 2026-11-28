@@ -147,8 +147,33 @@ Veredito ao fim de cada ciclo ([fechamentos](ciclos/README.md)):
 - Fiscalização do piso em Cuiabá (2026-11-24, **não adotaria**, registro):
   QH-01 (a contagem do piso fora da Secretaria) e QH-02 (o aviso do mês
   incompleto sem o registro da carga) → #575, entregue (#577), e #576, entregue (#578).
+- O painel da rede de Cuiabá no conselho do Fundeb (2026-11-27, **não
+  adotaria**, registro; mais perto): QG-01 (a parte do Fundeb ignora os
+  meses pela metade) e QG-02 (a folha por aluno entre as escolas, pela
+  necessidade, sem resposta na tela), a abrir com aprovação.
 
 ## Entradas
+
+### 2026-11-27 — O painel da rede de Cuiabá no conselho do Fundeb (sexta rodada, só registro)
+
+**Material:** o painel da rede de Cuiabá pelo município (2025), a folha do
+mês, a lista do piso e `/fontes`. Consolidação em
+[`avaliacoes/2026-11-27-p5-fundeb-cuiaba.md`](avaliacoes/2026-11-27-p5-fundeb-cuiaba.md).
+
+**O que tentou:** conferir a parte do Fundeb na remuneração que a
+secretaria leva ao conselho e saber se o recurso chegou às escolas que mais
+precisam.
+
+**O que funciona para ele:** o link pelo município no ano certo; o total e
+as partes batem com a base; a receita com fonte oficial, data e aviso.
+
+**Barreiras:**
+- QG-01 (atrapalha): a parte do Fundeb (77,8%) ignora setembro e outubro
+  pela metade; pelos meses completos, perto de 85%.
+- QG-02 (atrapalha): a folha por aluno entre as escolas, pela necessidade,
+  só sai de planilha (INSE IV R$ 6.521, V R$ 7.141 por aluno).
+
+**Veredito:** **não adotaria** (registro; mantido, mais perto).
 
 ### 2026-11-24 — A fiscalização do piso em Cuiabá (quinta rodada, só registro)
 
